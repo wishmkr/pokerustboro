@@ -168,49 +168,55 @@ const _: () = {
 };
 
 pub(crate) unsafe fn AnimMegahornHorn(sprite: *mut Sprite) {
-    let cmd: *mut Anon1 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon1;
+    let cmd: *mut Anon1 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon1;
     if IsContest() != 0 {
         StartSpriteAffineAnim(sprite, 2);
         (*cmd).x2 = -(*cmd).x2;
         (*cmd).x1 = -(*cmd).x1;
-    } else if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
+    } else if GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_PLAYER {
         StartSpriteAffineAnim(sprite, 1);
         (*cmd).y1 = -(*cmd).y1;
         (*cmd).x2 = -(*cmd).x2;
         (*cmd).y2 = -(*cmd).y2;
         (*cmd).x1 = -(*cmd).x1;
     }
-    (*sprite).x = GetBattlerSpriteCoord2(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).x1;
-    (*sprite).y =
-        GetBattlerSpriteCoord2(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16 + (*cmd).y1;
+    (*sprite).x =
+        GetBattlerSpriteCoord2(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16 + (*cmd).x1;
+    (*sprite).y = GetBattlerSpriteCoord2(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET)
+        as i16
+        + (*cmd).y1;
     (*sprite).data[0] = (*cmd).duration;
     (*sprite).data[2] =
-        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).x2;
-    (*sprite).data[4] =
-        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16 + (*cmd).y2;
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16 + (*cmd).x2;
+    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET)
+        as i16
+        + (*cmd).y2;
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
 pub(crate) unsafe fn AnimLeechLifeNeedle(sprite: *mut Sprite) {
-    let cmd: *mut Anon2 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon2;
+    let cmd: *mut Anon2 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon2;
     if IsContest() != 0 {
         (*cmd).x = -(*cmd).x;
         StartSpriteAffineAnim(sprite, 2);
-    } else if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
+    } else if GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_PLAYER {
         (*cmd).y = -(*cmd).y;
         (*cmd).x = -(*cmd).x;
     }
-    (*sprite).x = GetBattlerSpriteCoord2(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).x;
-    (*sprite).y =
-        GetBattlerSpriteCoord2(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16 + (*cmd).y;
+    (*sprite).x =
+        GetBattlerSpriteCoord2(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16 + (*cmd).x;
+    (*sprite).y = GetBattlerSpriteCoord2(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET)
+        as i16
+        + (*cmd).y;
     (*sprite).data[0] = (*cmd).duration;
-    (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
-    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
+    (*sprite).data[4] =
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
 pub(crate) unsafe fn AnimTranslateWebThread(sprite: *mut Sprite) {
-    let cmd: *mut Anon3 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon3;
+    let cmd: *mut Anon3 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon3;
     if IsContest() != 0 {
         (*cmd).unk2 /= 2;
     }
@@ -219,12 +225,13 @@ pub(crate) unsafe fn AnimTranslateWebThread(sprite: *mut Sprite) {
     (*sprite).data[1] = (*sprite).x;
     (*sprite).data[3] = (*sprite).y;
     if (*cmd).targetsBoth == 0 {
-        (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+        (*sprite).data[2] =
+            GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
         (*sprite).data[4] =
-            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+            GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
     } else {
         SetAverageBattlerPositions(
-            gBattleAnimTarget,
+            gBattleAnimTarget.get(),
             TRUE,
             &raw mut (*sprite).data[2],
             &raw mut (*sprite).data[4],
@@ -243,20 +250,20 @@ pub(crate) unsafe fn AnimTranslateWebThread_Step(sprite: *mut Sprite) {
     (*sprite).data[6] = ((*sprite).data[6] + 13) & 0xFF;
 }
 pub(crate) unsafe fn AnimStringWrap(sprite: *mut Sprite) {
-    let cmd: *mut Anon4 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon4;
+    let cmd: *mut Anon4 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon4;
     SetAverageBattlerPositions(
-        gBattleAnimTarget,
+        gBattleAnimTarget.get(),
         FALSE,
         &raw mut (*sprite).x,
         &raw mut (*sprite).y,
     );
-    if GetBattlerSide(gBattleAnimAttacker) != 0 {
+    if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
         (*sprite).x -= (*cmd).x;
     } else {
         (*sprite).x += (*cmd).x;
     }
     (*sprite).y += (*cmd).y;
-    if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
+    if GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_PLAYER {
         (*sprite).y += 8;
     }
     (*sprite).callback = Some(AnimStringWrap_Step);
@@ -312,28 +319,29 @@ pub(crate) unsafe fn AnimSpiderWeb_End(sprite: *mut Sprite) {
     DestroyAnimSprite(sprite);
 }
 pub(crate) unsafe fn AnimTranslateStinger(sprite: *mut Sprite) {
-    let cmd: *mut Anon5 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon5;
+    let cmd: *mut Anon5 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon5;
     if IsContest() != 0 {
         (*cmd).targetX = -(*cmd).targetX;
     } else {
-        if GetBattlerSide(gBattleAnimAttacker) != 0 {
+        if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
             (*cmd).targetX = -(*cmd).targetX;
             (*cmd).intialY = -(*cmd).intialY;
             (*cmd).targetY = -(*cmd).targetY;
         }
     }
     if IsContest() == 0
-        && GetBattlerSide(gBattleAnimAttacker) == GetBattlerSide(gBattleAnimTarget)
-        && (GetBattlerPosition(gBattleAnimTarget) == B_POSITION_PLAYER_LEFT
-            || GetBattlerPosition(gBattleAnimTarget) == B_POSITION_OPPONENT_LEFT)
+        && GetBattlerSide(gBattleAnimAttacker.get()) == GetBattlerSide(gBattleAnimTarget.get())
+        && (GetBattlerPosition(gBattleAnimTarget.get()) == B_POSITION_PLAYER_LEFT
+            || GetBattlerPosition(gBattleAnimTarget.get()) == B_POSITION_OPPONENT_LEFT)
     {
         (*cmd).targetX *= -1;
         (*cmd).initialX *= -1;
     }
     InitSpritePosToAnimAttacker(sprite, TRUE);
     let lVarX: i16 =
-        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).targetX;
-    let lVarY: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16 + (*cmd).targetX;
+    let lVarY: i16 = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET)
+        as i16
         + (*cmd).targetY;
     let mut rot: u16 = ArcTan2Neg(lVarX - (*sprite).x, lVarY - (*sprite).y);
     rot -= 0x4000;
@@ -345,15 +353,16 @@ pub(crate) unsafe fn AnimTranslateStinger(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
 pub(crate) unsafe fn AnimMissileArc(sprite: *mut Sprite) {
-    let cmd: *mut Anon6 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon6;
+    let cmd: *mut Anon6 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon6;
     InitSpritePosToAnimAttacker(sprite, TRUE);
-    if GetBattlerSide(gBattleAnimAttacker) != 0 {
+    if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
         (*cmd).targetX = -(*cmd).targetX;
     }
     (*sprite).data[0] = (*cmd).duration;
     (*sprite).data[2] =
-        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).targetX;
-    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16 + (*cmd).targetX;
+    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET)
+        as i16
         + (*cmd).targetY;
     (*sprite).data[5] = (*cmd).waveAmplitude;
     InitAnimArcTranslation(sprite);
@@ -389,15 +398,16 @@ pub(crate) unsafe fn AnimMissileArc_Step(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn AnimTailGlowOrb(sprite: *mut Sprite) {
-    let cmd: *mut Anon7 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon7;
+    let cmd: *mut Anon7 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon7;
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
-        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
-        (*sprite).y =
-            GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16 + 18;
+        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_X_2) as i16;
+        (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_Y_PIC_OFFSET)
+            as i16
+            + 18;
     } else {
-        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
         (*sprite).y =
-            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16 + 18;
+            GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16 + 18;
     }
     StoreSpriteCallbackInData6(sprite, Some(DestroySpriteAndMatrix));
     (*sprite).callback = Some(RunStoredCallbackWhenAffineAnimEnds);

@@ -42,14 +42,14 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `MultiBootMain` with this module's view of its types.
@@ -138,7 +138,8 @@ static sText_Pal: Table<CArray<u16, 16>> =
 static sText_RubySapphire: Table<CArray<u8, 14>> =
     Table((&raw const crate::data::berry_fix_program::sText_RubySapphire).cast());
 
-pub(crate) static mut sBerryFix: *mut typeof___sBerryFix_0_t = null_mut();
+pub(crate) static sBerryFix: crate::global::Global<*mut typeof___sBerryFix_0_t> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -147,21 +148,21 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `DoSoftReset` with this module's view of its types.
 #[inline]
-unsafe fn DoSoftReset() {
+fn DoSoftReset() {
     unsafe {
         crate::agb_main::DoSoftReset();
     }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -183,57 +184,58 @@ pub unsafe fn CB2_InitBerryFixProgram() {
     ResetTasks();
     ScanlineEffect_Stop();
     SetGpuReg(0x0, 0);
-    sBerryFix = AllocZeroed(80) as *mut typeof___sBerryFix_0_t;
-    (*sBerryFix).state = MAINSTATE_INIT;
-    (*sBerryFix).curScene = SCENE_NONE;
+    crate::gl!(sBerryFix = AllocZeroed(80) as *mut typeof___sBerryFix_0_t);
+    (*crate::gl!(sBerryFix)).state = MAINSTATE_INIT;
+    (*crate::gl!(sBerryFix)).curScene = SCENE_NONE;
     SetMainCallback2(Some(BerryFix_Main));
 }
 pub(crate) unsafe fn BerryFix_Main() {
-    match (*sBerryFix).state {
+    match (*crate::gl!(sBerryFix)).state {
         MAINSTATE_INIT => {
             BerryFix_GpuSet();
-            (*sBerryFix).state = MAINSTATE_BEGIN;
+            (*crate::gl!(sBerryFix)).state = MAINSTATE_BEGIN;
         }
         MAINSTATE_BEGIN => {
             if BerryFix_TrySetScene(SCENE_BEGIN) == SCENE_BEGIN
-                && gMain.newKeys as i32 & A_BUTTON != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
             {
-                (*sBerryFix).state = MAINSTATE_CONNECT;
+                (*crate::gl!(sBerryFix)).state = MAINSTATE_CONNECT;
             }
         }
         MAINSTATE_CONNECT => {
             if BerryFix_TrySetScene(SCENE_ENSURE_CONNECT) == SCENE_ENSURE_CONNECT
-                && gMain.newKeys as i32 & A_BUTTON != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
             {
-                (*sBerryFix).state = MAINSTATE_INIT_MULTIBOOT;
+                (*crate::gl!(sBerryFix)).state = MAINSTATE_INIT_MULTIBOOT;
             }
         }
         MAINSTATE_INIT_MULTIBOOT => {
             if BerryFix_TrySetScene(SCENE_TURN_OFF_POWER) == SCENE_TURN_OFF_POWER {
-                (*sBerryFix).mb.masterp = (*crate::asmdata::gMultiBootProgram_BerryGlitchFix_Start
-                    .cast::<CArray<u8, 15348>>())
-                .as_ptr()
-                .cast_mut();
-                (*sBerryFix).mb.server_type = 0;
-                MultiBootInit(&raw mut (*sBerryFix).mb);
-                (*sBerryFix).timer = 0;
-                (*sBerryFix).state = MAINSTATE_MULTIBOOT;
+                (*crate::gl!(sBerryFix)).mb.masterp =
+                    (*crate::asmdata::gMultiBootProgram_BerryGlitchFix_Start
+                        .cast::<CArray<u8, 15348>>())
+                    .as_ptr()
+                    .cast_mut();
+                (*crate::gl!(sBerryFix)).mb.server_type = 0;
+                MultiBootInit(&raw mut (*crate::gl!(sBerryFix)).mb);
+                (*crate::gl!(sBerryFix)).timer = 0;
+                (*crate::gl!(sBerryFix)).state = MAINSTATE_MULTIBOOT;
             }
         }
         MAINSTATE_MULTIBOOT => {
-            MultiBootMain(&raw mut (*sBerryFix).mb);
-            if (*sBerryFix).mb.probe_count != 0
-                || ((*sBerryFix).mb.response_bit as i32 & 2 == 0
-                    || (*sBerryFix).mb.client_bit as i32 & 2 == 0)
+            MultiBootMain(&raw mut (*crate::gl!(sBerryFix)).mb);
+            if (*crate::gl!(sBerryFix)).mb.probe_count != 0
+                || ((*crate::gl!(sBerryFix)).mb.response_bit as i32 & 2 == 0
+                    || (*crate::gl!(sBerryFix)).mb.client_bit as i32 & 2 == 0)
             {
-                (*sBerryFix).timer = 0;
+                (*crate::gl!(sBerryFix)).timer = 0;
             } else if ({
-                (*sBerryFix).timer += 1;
-                (*sBerryFix).timer
+                (*crate::gl!(sBerryFix)).timer += 1;
+                (*crate::gl!(sBerryFix)).timer
             }) > 180
             {
                 MultiBootStartMaster(
-                    &raw mut (*sBerryFix).mb,
+                    &raw mut (*crate::gl!(sBerryFix)).mb,
                     (*crate::asmdata::gMultiBootProgram_BerryGlitchFix_Start
                         .cast::<CArray<u8, 15348>>())
                     .as_ptr()
@@ -255,31 +257,31 @@ pub(crate) unsafe fn BerryFix_Main() {
                     4,
                     1,
                 );
-                (*sBerryFix).state = MAINSTATE_TRANSMIT;
+                (*crate::gl!(sBerryFix)).state = MAINSTATE_TRANSMIT;
             }
         }
         MAINSTATE_TRANSMIT => {
             if BerryFix_TrySetScene(SCENE_TRANSMITTING) == SCENE_TRANSMITTING {
-                MultiBootMain(&raw mut (*sBerryFix).mb);
-                if MultiBootCheckComplete(&raw mut (*sBerryFix).mb) != 0 {
-                    (*sBerryFix).state = MAINSTATE_EXIT;
-                } else if (*sBerryFix).mb.client_bit as i32 & 2 == 0 {
-                    (*sBerryFix).state = MAINSTATE_FAILED;
+                MultiBootMain(&raw mut (*crate::gl!(sBerryFix)).mb);
+                if MultiBootCheckComplete(&raw mut (*crate::gl!(sBerryFix)).mb) != 0 {
+                    (*crate::gl!(sBerryFix)).state = MAINSTATE_EXIT;
+                } else if (*crate::gl!(sBerryFix)).mb.client_bit as i32 & 2 == 0 {
+                    (*crate::gl!(sBerryFix)).state = MAINSTATE_FAILED;
                 }
             }
         }
         MAINSTATE_EXIT => {
             if BerryFix_TrySetScene(SCENE_FOLLOW_INSTRUCT) == SCENE_FOLLOW_INSTRUCT
-                && gMain.newKeys as i32 & A_BUTTON != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
             {
                 DoSoftReset();
             }
         }
         MAINSTATE_FAILED
             if BerryFix_TrySetScene(SCENE_TRANSMIT_FAILED) == SCENE_TRANSMIT_FAILED
-                && gMain.newKeys as i32 & A_BUTTON != 0 =>
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 =>
         {
-            (*sBerryFix).state = MAINSTATE_BEGIN;
+            (*crate::gl!(sBerryFix)).state = MAINSTATE_BEGIN;
         }
         _ => {}
     }
@@ -409,17 +411,17 @@ unsafe fn BerryFix_GpuSet() {
     CopyWindowToVram(WIN_TITLE, COPYWIN_GFX);
 }
 unsafe fn BerryFix_TrySetScene(scene: i32) -> i32 {
-    if (*sBerryFix).curScene as i32 == scene {
+    if (*crate::gl!(sBerryFix)).curScene as i32 == scene {
         return scene;
     }
-    if (*sBerryFix).curScene == SCENE_NONE {
+    if (*crate::gl!(sBerryFix)).curScene == SCENE_NONE {
         BerryFix_SetScene(scene);
-        (*sBerryFix).curScene = scene as u8;
+        (*crate::gl!(sBerryFix)).curScene = scene as u8;
     } else {
         BerryFix_HideScene();
-        (*sBerryFix).curScene = SCENE_NONE;
+        (*crate::gl!(sBerryFix)).curScene = SCENE_NONE;
     }
-    (*sBerryFix).curScene as i32
+    (*crate::gl!(sBerryFix)).curScene as i32
 }
 unsafe fn BerryFix_SetScene(scene: i32) {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 32, 32);

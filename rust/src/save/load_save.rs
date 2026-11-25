@@ -64,41 +64,47 @@ const CPU_SET_SRC_FIXED: u32 = 0x0100_0000;
 pub struct Blob<const N: usize>(pub [u8; N]);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSaveblock2: Blob<SAVEBLOCK2_ASLR_SIZE> = Blob([0; SAVEBLOCK2_ASLR_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSaveblock2: crate::global::Global<Blob<SAVEBLOCK2_ASLR_SIZE>> =
+    crate::global::Global::new(Blob([0; SAVEBLOCK2_ASLR_SIZE]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSaveblock1: Blob<SAVEBLOCK1_ASLR_SIZE> = Blob([0; SAVEBLOCK1_ASLR_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSaveblock1: crate::global::Global<Blob<SAVEBLOCK1_ASLR_SIZE>> =
+    crate::global::Global::new(Blob([0; SAVEBLOCK1_ASLR_SIZE]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPokemonStorage: Blob<POKEMON_STORAGE_ASLR_SIZE> =
-    Blob([0; POKEMON_STORAGE_ASLR_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPokemonStorage: crate::global::Global<Blob<POKEMON_STORAGE_ASLR_SIZE>> =
+    crate::global::Global::new(Blob([0; POKEMON_STORAGE_ASLR_SIZE]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gLoadedSaveData: Blob<LOADED_SAVE_DATA_SIZE> = Blob([0; LOADED_SAVE_DATA_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gLoadedSaveData: crate::global::Global<Blob<LOADED_SAVE_DATA_SIZE>> =
+    crate::global::Global::new(Blob([0; LOADED_SAVE_DATA_SIZE]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gLastEncryptionKey: crate::global::Global<u32> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gFlashMemoryPresent: u32 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFlashMemoryPresent: crate::global::Global<u32> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gSaveBlock1Ptr: *mut crate::types::SaveBlock1 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gSaveBlock1Ptr: crate::global::Global<*mut crate::types::SaveBlock1> =
+    crate::global::Global::new(core::ptr::null_mut());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gSaveBlock2Ptr: *mut crate::types::SaveBlock2 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gSaveBlock2Ptr: crate::global::Global<*mut crate::types::SaveBlock2> =
+    crate::global::Global::new(core::ptr::null_mut());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gPokemonStoragePtr: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPokemonStoragePtr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(core::ptr::null_mut());
 
 /// `IdentifyFlash` with this module's view of its types.
 #[inline]
@@ -155,12 +161,20 @@ unsafe fn ApplyNewEncryptionKeyToBagItems_(a0: u32) {
 
 #[inline]
 unsafe fn save1() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock1Ptr).read_volatile().cast() }
+    unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read_volatile()
+            .cast()
+    }
 }
 
 #[inline]
 unsafe fn save2() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock2Ptr).read_volatile().cast() }
+    unsafe {
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+            .read_volatile()
+            .cast()
+    }
 }
 
 #[inline]
@@ -190,21 +204,21 @@ unsafe fn copy(src: *const u8, dest: *mut u8, size: usize) {
 pub unsafe fn CheckForFlashMemory() {
     // IdentifyFlash returns 0 on success.
     if unsafe { IdentifyFlash() } == 0 {
-        unsafe { (&raw mut gFlashMemoryPresent).write_volatile(1) };
+        unsafe { (gFlashMemoryPresent.as_ptr()).write_volatile(1) };
         unsafe { InitFlashTimer() };
     } else {
-        unsafe { (&raw mut gFlashMemoryPresent).write_volatile(0) };
+        unsafe { (gFlashMemoryPresent.as_ptr()).write_volatile(0) };
     }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ClearSav2() {
-    unsafe { cpu_fill16_zero((&raw mut gSaveblock2).cast(), SAVEBLOCK2_ASLR_SIZE) };
+    unsafe { cpu_fill16_zero((crate::gl!(&raw gSaveblock2)).cast(), SAVEBLOCK2_ASLR_SIZE) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ClearSav1() {
-    unsafe { cpu_fill16_zero((&raw mut gSaveblock1).cast(), SAVEBLOCK1_ASLR_SIZE) };
+    unsafe { cpu_fill16_zero((crate::gl!(&raw gSaveblock1)).cast(), SAVEBLOCK1_ASLR_SIZE) };
 }
 
 /// `offset` is the sum of the trainer id bytes.
@@ -214,16 +228,24 @@ pub unsafe fn SetSaveBlocksPointers(offset: u16) {
     let offset = offset as usize;
 
     unsafe {
-        (&raw mut gSaveBlock2Ptr)
-            .write_volatile((&raw mut gSaveblock2).cast::<u8>().add(offset).cast())
+        (crate::gl!(&raw gSaveBlock2Ptr)).write_volatile(
+            (crate::gl!(&raw gSaveblock2))
+                .cast::<u8>()
+                .add(offset)
+                .cast(),
+        )
     };
     unsafe {
-        (&raw mut gSaveBlock1Ptr)
-            .write_volatile((&raw mut gSaveblock1).cast::<u8>().add(offset).cast())
+        (crate::gl!(&raw gSaveBlock1Ptr)).write_volatile(
+            (crate::gl!(&raw gSaveblock1))
+                .cast::<u8>()
+                .add(offset)
+                .cast(),
+        )
     };
     unsafe {
-        (&raw mut gPokemonStoragePtr)
-            .write_volatile((&raw mut gPokemonStorage).cast::<u8>().add(offset))
+        (crate::gl!(&raw gPokemonStoragePtr))
+            .write_volatile((crate::gl!(&raw gPokemonStorage)).cast::<u8>().add(offset))
     };
 
     unsafe { SetBagItemsPointers() };
@@ -232,8 +254,10 @@ pub unsafe fn SetSaveBlocksPointers(offset: u16) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn MoveSaveBlocks_ResetHeap() {
-    let main =
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut())).cast::<u8>();
+    let main = (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+        .cast::<u8>()
+        .cast_mut()))
+        .cast::<u8>();
     let vblank_slot = unsafe { main.add(MAIN_VBLANK_CALLBACK).cast::<*mut u8>() };
     let hblank_slot = unsafe { main.add(MAIN_HBLANK_CALLBACK).cast::<*mut u8>() };
 
@@ -242,10 +266,10 @@ pub unsafe fn MoveSaveBlocks_ResetHeap() {
     let hblank = unsafe { hblank_slot.read_volatile() };
     unsafe { vblank_slot.write_volatile(core::ptr::null_mut()) };
     unsafe { hblank_slot.write_volatile(core::ptr::null_mut()) };
-    unsafe { (&raw mut gTrainerHillVBlankCounter).write_volatile(core::ptr::null_mut()) };
+    unsafe { (crate::gl!(&raw gTrainerHillVBlankCounter)).write_volatile(core::ptr::null_mut()) };
 
     // The heap doubles as scratch space for the copies.
-    let heap = (&raw mut gHeap).cast::<u8>();
+    let heap = (crate::gl!(&raw gHeap)).cast::<u8>();
     let save2_copy = heap;
     let save1_copy = unsafe { heap.add(SAVEBLOCK2_SIZE) };
     let storage_copy = unsafe { heap.add(SAVEBLOCK2_SIZE + SAVEBLOCK1_SIZE) };
@@ -254,7 +278,7 @@ pub unsafe fn MoveSaveBlocks_ResetHeap() {
     unsafe { copy(save1(), save1_copy, SAVEBLOCK1_SIZE) };
     unsafe {
         copy(
-            (&raw const gPokemonStoragePtr).read_volatile(),
+            (crate::gl!(&raw gPokemonStoragePtr).cast_const()).read_volatile(),
             storage_copy,
             POKEMON_STORAGE_SIZE,
         )
@@ -271,7 +295,7 @@ pub unsafe fn MoveSaveBlocks_ResetHeap() {
     unsafe {
         copy(
             storage_copy,
-            (&raw const gPokemonStoragePtr).read_volatile(),
+            (crate::gl!(&raw gPokemonStoragePtr).cast_const()).read_volatile(),
             POKEMON_STORAGE_SIZE,
         )
     };
@@ -323,11 +347,11 @@ pub unsafe fn ClearContinueGameWarpStatus2() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn SavePlayerParty() {
-    let count = unsafe { (&raw const gPlayerPartyCount).read_volatile() };
+    let count = unsafe { (gPlayerPartyCount.as_ptr().cast_const()).read_volatile() };
     unsafe { save1().add(SAVE1_PLAYER_PARTY_COUNT).write_volatile(count) };
     unsafe {
         copy(
-            (&raw const (*(&raw const crate::pokemon::gPlayerParty)
+            (&raw const (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
                 .cast::<u8>()
                 .cast_mut()))
                 .cast(),
@@ -340,11 +364,11 @@ pub unsafe fn SavePlayerParty() {
 #[unsafe(no_mangle)]
 pub unsafe fn LoadPlayerParty() {
     let count = unsafe { save1().add(SAVE1_PLAYER_PARTY_COUNT).read_volatile() };
-    unsafe { (&raw mut gPlayerPartyCount).write_volatile(count) };
+    unsafe { (gPlayerPartyCount.as_ptr()).write_volatile(count) };
     unsafe {
         copy(
             save1().add(SAVE1_PLAYER_PARTY),
-            (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+            (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
                 .cast::<u8>()
                 .cast_mut()))
                 .cast(),
@@ -357,9 +381,10 @@ pub unsafe fn LoadPlayerParty() {
 pub unsafe fn SaveObjectEvents() {
     unsafe {
         copy(
-            (&raw const (*(&raw const crate::field_player_avatar::gObjectEvents)
-                .cast::<u8>()
-                .cast_mut()))
+            (&raw const (*(crate::gl!(&raw @at crate::field_player_avatar::gObjectEvents;)
+                .cast_const())
+            .cast::<u8>()
+            .cast_mut()))
                 .cast(),
             save1().add(SAVE1_OBJECT_EVENTS),
             OBJECT_EVENT_SIZE * OBJECT_EVENTS_COUNT,
@@ -372,9 +397,10 @@ pub unsafe fn LoadObjectEvents() {
     unsafe {
         copy(
             save1().add(SAVE1_OBJECT_EVENTS),
-            (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
-                .cast::<u8>()
-                .cast_mut()))
+            (&raw mut (*(crate::gl!(&raw @at crate::field_player_avatar::gObjectEvents;)
+                .cast_const())
+            .cast::<u8>()
+            .cast_mut()))
                 .cast(),
             OBJECT_EVENT_SIZE * OBJECT_EVENTS_COUNT,
         )
@@ -395,7 +421,7 @@ pub unsafe fn CopyPartyAndObjectsFromSave() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn LoadPlayerBag() {
-    let loaded = (&raw mut gLoadedSaveData).cast::<u8>();
+    let loaded = (crate::gl!(&raw gLoadedSaveData)).cast::<u8>();
     for (save_offset, loaded_offset, count) in POCKETS {
         unsafe {
             copy(
@@ -419,7 +445,7 @@ pub unsafe fn LoadPlayerBag() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn SavePlayerBag() {
-    let loaded = (&raw const gLoadedSaveData).cast::<u8>();
+    let loaded = (crate::gl!(&raw gLoadedSaveData).cast_const()).cast::<u8>();
     for (save_offset, loaded_offset, count) in POCKETS {
         unsafe {
             copy(

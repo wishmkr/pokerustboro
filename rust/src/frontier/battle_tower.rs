@@ -210,17 +210,20 @@ static sWinStreakMasks: Table<CArray<CArray<u32, 2>, 4>> =
     Table((&raw const crate::data::battle_tower::sWinStreakMasks).cast());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gFacilityTrainers: *mut BattleFrontierTrainer = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub static mut gFacilityTrainerMons: *mut FacilityMon = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gFacilityTrainers: crate::global::Global<*mut BattleFrontierTrainer> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gFacilityTrainerMons: crate::global::Global<*mut FacilityMon> =
+    crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gFrontierTempParty: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFrontierTempParty: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -241,27 +244,34 @@ pub unsafe fn CallBattleTowerFunc() {
     .unwrap_unchecked()();
 }
 pub(crate) unsafe fn InitTowerChallenge() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
-    (*gSaveBlock2Ptr).frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
-    (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(FALSE);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(FALSE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_disableRecordBattle(FALSE);
     ResetFrontierTrainerIds();
-    if (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & sWinStreakFlags[battleMode][lvlMode] == 0 {
-        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] = 0;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags
+        & sWinStreakFlags[battleMode][lvlMode]
+        == 0
+    {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] = 0;
     }
     ValidateBattleTowerRecordChecksums();
     SetDynamicWarp(
         0,
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
         WARP_ID_NONE,
     );
-    gTrainerBattleOpponent_A = 0;
+    gTrainerBattleOpponent_A.set(0);
 }
 pub(crate) unsafe fn GetTowerData() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
@@ -272,18 +282,19 @@ pub(crate) unsafe fn GetTowerData() {
             gSpecialVar_Result = GetCurrentBattleTowerWinStreak(lvlMode as u8, battleMode as u8);
         }
         TOWER_DATA_WIN_STREAK_ACTIVE => {
-            gSpecialVar_Result = ((*gSaveBlock2Ptr).frontier.winStreakActiveFlags
+            gSpecialVar_Result = ((*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags
                 & sWinStreakFlags[battleMode][lvlMode]
                 != 0) as u16;
         }
         TOWER_DATA_LVL_MODE => {
-            (*gSaveBlock2Ptr).frontier.towerLvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerLvlMode =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn SetTowerData() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
@@ -291,43 +302,44 @@ pub(crate) unsafe fn SetTowerData() {
     {
         0 => {}
         TOWER_DATA_WIN_STREAK => {
-            (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] =
                 *(&raw const crate::ffi::gSpecialVar_0x8006)
                     .cast::<u16>()
                     .cast_mut();
         }
         TOWER_DATA_WIN_STREAK_ACTIVE => {
             if gSpecialVar_0x8006 != 0 {
-                (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |=
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags |=
                     sWinStreakFlags[battleMode][lvlMode];
             } else {
-                (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &=
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags &=
                     sWinStreakMasks[battleMode][lvlMode];
             }
         }
         TOWER_DATA_LVL_MODE => {
-            (*gSaveBlock2Ptr).frontier.towerLvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerLvlMode =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn SetTowerBattleWon() {
-    if gTrainerBattleOpponent_A == TRAINER_EREADER {
-        ClearEReaderTrainer(&raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer);
+    if gTrainerBattleOpponent_A.get() == TRAINER_EREADER {
+        ClearEReaderTrainer(&raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer);
     }
-    if (*gSaveBlock2Ptr).frontier.towerNumWins < MAX_STREAK {
-        (*gSaveBlock2Ptr).frontier.towerNumWins += 1;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerNumWins < MAX_STREAK {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerNumWins += 1;
     }
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum += 1;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum += 1;
     SaveCurrentWinStreak();
-    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum;
 }
 unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
     let mut j: i32 = 0;
     let mut validMons: i32 = 0;
     let mut trainerIds: CArray<i32, 9> = zeroed();
     let mut idsCount: i32 = 0;
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
     let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
     if VarGet(VAR_FRONTIER_FACILITY) != FRONTIER_FACILITY_TOWER {
         return FALSE;
@@ -335,7 +347,8 @@ unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
     let winStreak: i32 = GetCurrentBattleTowerWinStreak(lvlMode, battleMode) as i32;
     let mut i: i32 = 0;
     while i < BATTLE_TOWER_RECORD_COUNT {
-        let record: *mut u32 = &raw mut (*gSaveBlock2Ptr).frontier.towerRecords[i] as *mut u32;
+        let record: *mut u32 =
+            &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i] as *mut u32;
         let mut recordHasData: u32 = 0;
         let mut checksum: u32 = 0;
         for j in 0..58i32 {
@@ -351,8 +364,9 @@ unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
                 if 4 >= 2 { 4 } else { 2 }
             })
         {
-            if (*gSaveBlock2Ptr).frontier.towerRecords[i].party[j].species != SPECIES_NONE
-                && (*gSaveBlock2Ptr).frontier.towerRecords[i].party[j].level
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].party[j].species
+                != SPECIES_NONE
+                && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].party[j].level
                     <= GetFrontierEnemyMonLevel(lvlMode)
             {
                 validMons += 1;
@@ -360,10 +374,10 @@ unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
             j += 1;
         }
         if validMons >= sBattleTowerPartySizes2[battleMode] as i32
-            && (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak as i32 == winStreak
-            && (*gSaveBlock2Ptr).frontier.towerRecords[i].lvlMode == lvlMode
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak as i32 == winStreak
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].lvlMode == lvlMode
             && recordHasData != 0
-            && (*gSaveBlock2Ptr).frontier.towerRecords[i].checksum == checksum
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].checksum == checksum
         {
             trainerIds[idsCount] = i + TRAINER_RECORD_MIXING_FRIEND;
             idsCount += 1;
@@ -373,11 +387,13 @@ unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
     if battleMode == FRONTIER_MODE_SINGLES as u8 {
         ValidateApprenticesChecksums();
         for i in 0..APPRENTICE_COUNT {
-            if (*gSaveBlock2Ptr).apprentices[i].lvlMode() != 0
-                && sApprenticeChallengeThreshold[(*gSaveBlock2Ptr).apprentices[i].numQuestions]
+            if (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].lvlMode() != 0
+                && sApprenticeChallengeThreshold
+                    [(*crate::gl!(gSaveBlock2Ptr)).apprentices[i].numQuestions]
                     as i32
                     == winStreak
-                && (*gSaveBlock2Ptr).apprentices[i].lvlMode() as i32 - 1 == lvlMode as i32
+                && (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].lvlMode() as i32 - 1
+                    == lvlMode as i32
             {
                 trainerIds[idsCount] = i + TRAINER_RECORD_MIXING_APPRENTICE;
                 idsCount += 1;
@@ -385,7 +401,7 @@ unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
         }
     }
     if idsCount != 0 {
-        gTrainerBattleOpponent_A = trainerIds[rem_i32(Random() as i32, idsCount)] as u16;
+        gTrainerBattleOpponent_A.set(trainerIds[rem_i32(Random() as i32, idsCount)] as u16);
         return TRUE;
     } else {
         return FALSE;
@@ -396,7 +412,7 @@ unsafe fn ChooseSpecialBattleTowerTrainer() -> u8 {
     }
 }
 pub(crate) unsafe fn SetNextFacilityOpponent() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     if lvlMode == FRONTIER_LVL_TENT as u32 {
         SetNextBattleTentOpponent();
     } else {
@@ -408,40 +424,44 @@ pub(crate) unsafe fn SetNextFacilityOpponent() {
         if battleMode == FRONTIER_MODE_MULTIS as u32
             || battleMode == FRONTIER_MODE_LINK_MULTIS as u32
         {
-            id = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
-            gTrainerBattleOpponent_A = (*gSaveBlock2Ptr).frontier.trainerIds[id as i32 * 2];
-            gTrainerBattleOpponent_B = (*gSaveBlock2Ptr).frontier.trainerIds[id as i32 * 2 + 1];
-            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B, 1);
+            id = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum;
+            gTrainerBattleOpponent_A
+                .set((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[id as i32 * 2]);
+            gTrainerBattleOpponent_B
+                .set((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[id as i32 * 2 + 1]);
+            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B.get(), 1);
         } else if ChooseSpecialBattleTowerTrainer() != 0 {
-            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-            (*gSaveBlock2Ptr).frontier.trainerIds
-                [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum] = gTrainerBattleOpponent_A;
+            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum] =
+                gTrainerBattleOpponent_A.get();
         } else {
             let mut i: i32 = 0;
             loop {
                 id = GetRandomScaledFrontierTrainerId(
                     challengeNum as u8,
-                    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as u8,
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as u8,
                 );
                 i = 0;
-                while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
-                    if (*gSaveBlock2Ptr).frontier.trainerIds[i] == id {
+                while i < (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
+                    if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == id {
                         break;
                     }
                     i += 1;
                 }
-                if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
+                if i == (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
                     break;
                 }
             }
-            gTrainerBattleOpponent_A = id;
-            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-            if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 + 1
+            gTrainerBattleOpponent_A.set(id);
+            SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 + 1
                 < FRONTIER_STAGES_PER_CHALLENGE as i32
             {
-                (*gSaveBlock2Ptr).frontier.trainerIds
-                    [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum] = gTrainerBattleOpponent_A;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum] =
+                    gTrainerBattleOpponent_A.get();
             }
         }
     }
@@ -502,19 +522,22 @@ pub unsafe fn SetBattleFacilityTrainerGfxId(trainerId: u16, tempVarId: u8) {
     let mut trainerObjectGfxId: u8 = 0;
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
-        facilityClass = (*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass;
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass;
     } else if trainerId == TRAINER_FRONTIER_BRAIN {
         SetFrontierBrainObjEventGfx_2();
         return;
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
-        facilityClass = (*gFacilityTrainers.at(trainerId)).facilityClass;
+        facilityClass = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass;
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        facilityClass = (*gSaveBlock2Ptr).frontier.towerRecords
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
             [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
     } else {
         facilityClass = (*(&raw const crate::data::apprentice::gApprentices)
-            .cast::<CArray<ApprenticeTrainer, 0>>())[(*gSaveBlock2Ptr).apprentices
+            .cast::<CArray<ApprenticeTrainer, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).apprentices
             [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id()]
         .facilityClass;
@@ -588,16 +611,19 @@ pub unsafe fn GetBattleFacilityTrainerGfxId(trainerId: u16) -> u8 {
     let mut trainerObjectGfxId: u8 = 0;
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
-        facilityClass = (*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass;
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass;
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
-        facilityClass = (*gFacilityTrainers.at(trainerId)).facilityClass;
+        facilityClass = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass;
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        facilityClass = (*gSaveBlock2Ptr).frontier.towerRecords
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
             [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
     } else {
         facilityClass = (*(&raw const crate::data::apprentice::gApprentices)
-            .cast::<CArray<ApprenticeTrainer, 0>>())[(*gSaveBlock2Ptr).apprentices
+            .cast::<CArray<ApprenticeTrainer, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).apprentices
             [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id()]
         .facilityClass;
@@ -643,7 +669,8 @@ pub unsafe fn PutNewBattleTowerRecord(newRecordEm: *mut EmeraldBattleTowerRecord
         k = 0;
         j = 0;
         while j < TRAINER_ID_LENGTH as i32 {
-            if (*gSaveBlock2Ptr).frontier.towerRecords[i].trainerId[j] != (*newRecord).trainerId[j]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].trainerId[j]
+                != (*newRecord).trainerId[j]
             {
                 break;
             }
@@ -652,7 +679,9 @@ pub unsafe fn PutNewBattleTowerRecord(newRecordEm: *mut EmeraldBattleTowerRecord
         if j == TRAINER_ID_LENGTH as i32 {
             k = 0;
             while k < PLAYER_NAME_LENGTH {
-                if (*gSaveBlock2Ptr).frontier.towerRecords[i].name[j] != (*newRecord).name[j] {
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].name[j]
+                    != (*newRecord).name[j]
+                {
                     break;
                 }
                 if (*newRecord).name[j] == EOS {
@@ -668,68 +697,75 @@ pub unsafe fn PutNewBattleTowerRecord(newRecordEm: *mut EmeraldBattleTowerRecord
         i += 1;
     }
     if i < BATTLE_TOWER_RECORD_COUNT {
-        (*gSaveBlock2Ptr).frontier.towerRecords[i] = *newRecord;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i] = *newRecord;
         return;
     }
     i = 0;
     while i < BATTLE_TOWER_RECORD_COUNT {
-        if (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak == 0 {
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak == 0 {
             break;
         }
         i += 1;
     }
     if i < BATTLE_TOWER_RECORD_COUNT {
-        (*gSaveBlock2Ptr).frontier.towerRecords[i] = *newRecord;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i] = *newRecord;
         return;
     }
-    slotValues[0] = (*gSaveBlock2Ptr).frontier.towerRecords[0].winStreak;
+    slotValues[0] = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[0].winStreak;
     slotIds[0] = 0;
     slotsCount += 1;
     for i in 1..BATTLE_TOWER_RECORD_COUNT {
         j = 0;
         while j < slotsCount {
-            if (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak < slotValues[j] {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak < slotValues[j] {
                 j = 0;
                 slotsCount = 1;
-                slotValues[0] = (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak;
+                slotValues[0] = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak;
                 slotIds[0] = i as u16;
                 break;
-            } else if (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak > slotValues[j] {
+            } else if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak
+                > slotValues[j]
+            {
                 break;
             }
             j += 1;
         }
         if j == slotsCount {
-            slotValues[slotsCount] = (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak;
+            slotValues[slotsCount] =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak;
             slotIds[slotsCount] = i as u16;
             slotsCount += 1;
         }
     }
     i = rem_i32(Random() as i32, slotsCount);
-    (*gSaveBlock2Ptr).frontier.towerRecords[slotIds[i]] = *newRecord;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[slotIds[i]] = *newRecord;
 }
 pub unsafe fn GetFrontierTrainerFrontSpriteId(trainerId: u16) -> u8 {
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
         return (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex)
-            .cast::<CArray<u8, 0>>())[(*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass];
+            .cast::<CArray<u8, 0>>())[(*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass];
     } else if trainerId == TRAINER_FRONTIER_BRAIN {
         return GetFrontierBrainTrainerPicIndex();
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
         return (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex)
-            .cast::<CArray<u8, 0>>())[(*gFacilityTrainers.at(trainerId)).facilityClass];
+            .cast::<CArray<u8, 0>>())
+            [(*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass];
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             return (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex)
                 .cast::<CArray<u8, 0>>())[GetRecordedBattleRecordMixFriendClass()];
         } else {
             return (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex)
-                .cast::<CArray<u8, 0>>())[(*gSaveBlock2Ptr).frontier.towerRecords
+                .cast::<CArray<u8, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .facilityClass];
         }
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             return (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex)
                 .cast::<CArray<u8, 0>>())[(*(&raw const crate::data::apprentice::gApprentices)
                 .cast::<CArray<ApprenticeTrainer, 0>>())[GetRecordedBattleApprenticeId()]
@@ -737,7 +773,7 @@ pub unsafe fn GetFrontierTrainerFrontSpriteId(trainerId: u16) -> u8 {
         } else {
             return (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex)
                 .cast::<CArray<u8, 0>>())[(*(&raw const crate::data::apprentice::gApprentices)
-                .cast::<CArray<ApprenticeTrainer, 0>>())[(*gSaveBlock2Ptr).apprentices
+                .cast::<CArray<ApprenticeTrainer, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .id()]
             .facilityClass];
@@ -753,7 +789,10 @@ pub unsafe fn GetFrontierOpponentClass(trainerId: u16) -> u8 {
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
         trainerClass = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
-            .cast::<CArray<u8, 0>>())[(*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass];
+            .cast::<CArray<u8, 0>>())[(*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass];
     } else if trainerId == TRAINER_FRONTIER_BRAIN {
         return GetFrontierBrainTrainerClass();
     } else if trainerId == TRAINER_STEVEN_PARTNER {
@@ -762,19 +801,19 @@ pub unsafe fn GetFrontierOpponentClass(trainerId: u16) -> u8 {
             .trainerClass;
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
         trainerClass = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
-            .cast::<CArray<u8, 0>>())[(*gFacilityTrainers.at(trainerId)).facilityClass];
+            .cast::<CArray<u8, 0>>())[(*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass];
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             trainerClass = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
                 .cast::<CArray<u8, 0>>())[GetRecordedBattleRecordMixFriendClass()];
         } else {
             trainerClass = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
-                .cast::<CArray<u8, 0>>())[(*gSaveBlock2Ptr).frontier.towerRecords
+                .cast::<CArray<u8, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .facilityClass];
         }
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             trainerClass = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
                 .cast::<CArray<u8, 0>>())[(*(&raw const crate::data::apprentice::gApprentices)
                 .cast::<CArray<ApprenticeTrainer, 0>>())[GetRecordedBattleApprenticeId()]
@@ -782,7 +821,7 @@ pub unsafe fn GetFrontierOpponentClass(trainerId: u16) -> u8 {
         } else {
             trainerClass = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
                 .cast::<CArray<u8, 0>>())[(*(&raw const crate::data::apprentice::gApprentices)
-                .cast::<CArray<ApprenticeTrainer, 0>>())[(*gSaveBlock2Ptr).apprentices
+                .cast::<CArray<ApprenticeTrainer, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .id()]
             .facilityClass];
@@ -794,25 +833,28 @@ unsafe fn GetFrontierTrainerFacilityClass(trainerId: u16) -> u8 {
     let mut facilityClass: u8 = 0;
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
-        facilityClass = (*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass;
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass;
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
-        facilityClass = (*gFacilityTrainers.at(trainerId)).facilityClass;
+        facilityClass = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass;
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             facilityClass = GetRecordedBattleRecordMixFriendClass();
         } else {
-            facilityClass = (*gSaveBlock2Ptr).frontier.towerRecords
+            facilityClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .facilityClass;
         }
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             facilityClass = (*(&raw const crate::data::apprentice::gApprentices)
                 .cast::<CArray<ApprenticeTrainer, 0>>())[GetRecordedBattleApprenticeId()]
             .facilityClass;
         } else {
             facilityClass = (*(&raw const crate::data::apprentice::gApprentices)
-                .cast::<CArray<ApprenticeTrainer, 0>>())[(*gSaveBlock2Ptr).apprentices
+                .cast::<CArray<ApprenticeTrainer, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .id()]
             .facilityClass;
@@ -825,7 +867,7 @@ pub unsafe fn GetFrontierTrainerName(dst: *mut u8, trainerId: u16) {
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
         for i in 0..PLAYER_NAME_LENGTH {
-            *dst.at(i) = (*gSaveBlock2Ptr).frontier.ereaderTrainer.name[i];
+            *dst.at(i) = (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer.name[i];
         }
     } else if trainerId == TRAINER_FRONTIER_BRAIN {
         CopyFrontierBrainTrainerName(dst);
@@ -838,14 +880,14 @@ pub unsafe fn GetFrontierTrainerName(dst: *mut u8, trainerId: u16) {
         }
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
         for i in 0..PLAYER_NAME_LENGTH {
-            *dst.at(i) = (*gFacilityTrainers.at(trainerId)).trainerName[i];
+            *dst.at(i) = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).trainerName[i];
         }
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             GetRecordedBattleRecordMixFriendName(dst);
             return;
         } else {
-            let record: *mut EmeraldBattleTowerRecord = &raw mut (*gSaveBlock2Ptr)
+            let record: *mut EmeraldBattleTowerRecord = &raw mut (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .towerRecords[trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND];
             TVShowConvertInternationalString(
@@ -858,11 +900,11 @@ pub unsafe fn GetFrontierTrainerName(dst: *mut u8, trainerId: u16) {
     } else {
         let mut id: u8 = 0;
         let mut language: u8 = 0;
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             id = GetRecordedBattleApprenticeId();
             language = GetRecordedBattleApprenticeLanguage();
         } else {
-            let apprentice: *mut Apprentice = &raw mut (*gSaveBlock2Ptr).apprentices
+            let apprentice: *mut Apprentice = &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE];
             id = (*apprentice).id();
             language = (*apprentice).language;
@@ -880,18 +922,21 @@ unsafe fn IsFrontierTrainerFemale(trainerId: u16) -> u8 {
     let mut facilityClass: u8 = 0;
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_EREADER {
-        facilityClass = (*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass;
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass;
     } else if trainerId == TRAINER_FRONTIER_BRAIN {
         return IsFrontierBrainFemale();
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
-        facilityClass = (*gFacilityTrainers.at(trainerId)).facilityClass;
+        facilityClass = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass;
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        facilityClass = (*gSaveBlock2Ptr).frontier.towerRecords
+        facilityClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
             [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
     } else {
         facilityClass = (*(&raw const crate::data::apprentice::gApprentices)
-            .cast::<CArray<ApprenticeTrainer, 0>>())[(*gSaveBlock2Ptr).apprentices
+            .cast::<CArray<ApprenticeTrainer, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).apprentices
             [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id()]
         .facilityClass;
@@ -915,16 +960,16 @@ unsafe fn IsFrontierTrainerFemale(trainerId: u16) -> u8 {
 }
 pub unsafe fn FillFrontierTrainerParty(monsCount: u8) {
     ZeroEnemyPartyMons();
-    FillTrainerParty(gTrainerBattleOpponent_A, 0, monsCount);
+    FillTrainerParty(gTrainerBattleOpponent_A.get(), 0, monsCount);
 }
 pub unsafe fn FillFrontierTrainersParties(monsCount: u8) {
     ZeroEnemyPartyMons();
-    FillTrainerParty(gTrainerBattleOpponent_A, 0, monsCount);
-    FillTrainerParty(gTrainerBattleOpponent_B, 3, monsCount);
+    FillTrainerParty(gTrainerBattleOpponent_A.get(), 0, monsCount);
+    FillTrainerParty(gTrainerBattleOpponent_B.get(), 3, monsCount);
 }
 unsafe fn FillTentTrainerParty(monsCount: u8) {
     ZeroEnemyPartyMons();
-    FillTentTrainerParty_(gTrainerBattleOpponent_A, 0, monsCount);
+    FillTentTrainerParty_(gTrainerBattleOpponent_A.get(), 0, monsCount);
 }
 unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
     let mut i: i32 = 0;
@@ -936,12 +981,13 @@ unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
     let mut monSet: *mut u16 = null_mut();
     if trainerId < FRONTIER_TRAINERS_COUNT {
         fixedIV = GetFrontierTrainerFixedIvs(trainerId);
-        monSet = (*gFacilityTrainers.at(gTrainerBattleOpponent_A)).monSet;
+        monSet = (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_A.get())).monSet;
     } else if trainerId == TRAINER_EREADER {
         for i in (firstMonId as i32)..(firstMonId as i32 + FRONTIER_PARTY_SIZE) {
             CreateBattleTowerMon(
-                &raw mut gEnemyParty[i],
-                &raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer.party[i - firstMonId as i32],
+                crate::gl!(&raw gEnemyParty[i]),
+                &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer.party
+                    [i - firstMonId as i32],
             );
         }
         return;
@@ -951,20 +997,20 @@ unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
         j = 0;
         for i in (firstMonId as i32)..(firstMonId as i32 + monCount as i32) {
-            if (*gSaveBlock2Ptr).frontier.towerRecords
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .party[j]
                 .species
                 != SPECIES_NONE
-                && (*gSaveBlock2Ptr).frontier.towerRecords
+                && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                     [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                     .party[j]
                     .level
                     <= level
             {
                 CreateBattleTowerMon_HandleLevel(
-                    &raw mut gEnemyParty[i],
-                    &raw mut (*gSaveBlock2Ptr).frontier.towerRecords
+                    crate::gl!(&raw gEnemyParty[i]),
+                    &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                         [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                         .party[j],
                     FALSE,
@@ -976,8 +1022,8 @@ unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
     } else {
         for i in (firstMonId as i32)..(firstMonId as i32 + FRONTIER_PARTY_SIZE) {
             CreateApprenticeMon(
-                &raw mut gEnemyParty[i],
-                &raw mut (*gSaveBlock2Ptr).apprentices
+                crate::gl!(&raw gEnemyParty[i]),
+                &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices
                     [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE],
                 i as u8 - firstMonId,
             );
@@ -997,8 +1043,11 @@ unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
         }
         j = 0;
         while j < i + firstMonId as i32 {
-            if GetMonData3(&raw mut gEnemyParty[j], MON_DATA_SPECIES, null_mut())
-                == (*gFacilityTrainerMons.at(monId)).species as u32
+            if GetMonData3(
+                crate::gl!(&raw gEnemyParty[j]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) == (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species as u32
             {
                 break;
             }
@@ -1009,11 +1058,18 @@ unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
         }
         j = 0;
         while j < i + firstMonId as i32 {
-            if GetMonData3(&raw mut gEnemyParty[j], MON_DATA_HELD_ITEM, null_mut())
-                != ITEM_NONE as u32
-                && GetMonData3(&raw mut gEnemyParty[j], MON_DATA_HELD_ITEM, null_mut())
-                    == gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId]
-                        as u32
+            if GetMonData3(
+                crate::gl!(&raw gEnemyParty[j]),
+                MON_DATA_HELD_ITEM,
+                null_mut(),
+            ) != ITEM_NONE as u32
+                && GetMonData3(
+                    crate::gl!(&raw gEnemyParty[j]),
+                    MON_DATA_HELD_ITEM,
+                    null_mut(),
+                ) == gBattleFrontierHeldItems
+                    [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId]
+                    as u32
             {
                 break;
             }
@@ -1034,34 +1090,47 @@ unsafe fn FillTrainerParty(trainerId: u16, firstMonId: u8, monCount: u8) {
         }
         chosenMonIndices[i] = monId;
         CreateMonWithEVSpreadNatureOTID(
-            &raw mut gEnemyParty[i + firstMonId as i32],
-            (*gFacilityTrainerMons.at(monId)).species,
+            {
+                let gl_i0 = i + firstMonId as i32;
+                crate::gl!(&raw gEnemyParty[gl_i0])
+            },
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
             level,
-            (*gFacilityTrainerMons.at(monId)).nature,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
             fixedIV,
-            (*gFacilityTrainerMons.at(monId)).evSpread,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
             otID,
         );
         friendship = MAX_FRIENDSHIP;
         for j in 0..MAX_MON_MOVES {
             SetMonMoveSlot(
-                &raw mut gEnemyParty[i + firstMonId as i32],
-                (*gFacilityTrainerMons.at(monId)).moves[j],
+                {
+                    let gl_i1 = i + firstMonId as i32;
+                    crate::gl!(&raw gEnemyParty[gl_i1])
+                },
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                 j as u8,
             );
-            if (*gFacilityTrainerMons.at(monId)).moves[j] == MOVE_FRUSTRATION {
+            if (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j] == MOVE_FRUSTRATION {
                 friendship = 0;
             }
         }
         SetMonData(
-            &raw mut gEnemyParty[i + firstMonId as i32],
+            {
+                let gl_i2 = i + firstMonId as i32;
+                crate::gl!(&raw gEnemyParty[gl_i2])
+            },
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut gEnemyParty[i + firstMonId as i32],
+            {
+                let gl_i3 = i + firstMonId as i32;
+                crate::gl!(&raw gEnemyParty[gl_i3])
+            },
             MON_DATA_HELD_ITEM,
-            (&raw const gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId])
+            (&raw const gBattleFrontierHeldItems
+                [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                 .cast_mut() as *mut c_void,
         );
         i += 1;
@@ -1071,13 +1140,13 @@ unsafe fn Unused_CreateApprenticeMons(trainerId: u16, firstMonId: u8) {
     let mut friendship: u8 = MAX_FRIENDSHIP;
     let mut level: u8 = 0;
     let mut fixedIV: u8 = 0;
-    let apprentice: *mut Apprentice = &raw mut (*gSaveBlock2Ptr).apprentices[0];
+    let apprentice: *mut Apprentice = &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[0];
     if (*apprentice).numQuestions < 5 {
         fixedIV = 6;
     } else {
         fixedIV = 9;
     }
-    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_50 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_50 {
         level = FRONTIER_MAX_LEVEL_OPEN;
     } else {
         level = FRONTIER_MAX_LEVEL_50;
@@ -1085,7 +1154,10 @@ unsafe fn Unused_CreateApprenticeMons(trainerId: u16, firstMonId: u8) {
     let mut i: i32 = 0;
     while i != FRONTIER_PARTY_SIZE {
         CreateMonWithEVSpread(
-            &raw mut gEnemyParty[firstMonId as i32 + i],
+            {
+                let gl_i4 = firstMonId as i32 + i;
+                crate::gl!(&raw gEnemyParty[gl_i4])
+            },
             (*apprentice).party[i].species,
             level,
             fixedIV,
@@ -1098,12 +1170,18 @@ unsafe fn Unused_CreateApprenticeMons(trainerId: u16, firstMonId: u8) {
             }
         }
         SetMonData(
-            &raw mut gEnemyParty[firstMonId as i32 + i],
+            {
+                let gl_i5 = firstMonId as i32 + i;
+                crate::gl!(&raw gEnemyParty[gl_i5])
+            },
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut gEnemyParty[firstMonId as i32 + i],
+            {
+                let gl_i6 = firstMonId as i32 + i;
+                crate::gl!(&raw gEnemyParty[gl_i6])
+            },
             MON_DATA_HELD_ITEM,
             &raw mut (*apprentice).party[i].item as *mut c_void,
         );
@@ -1112,7 +1190,7 @@ unsafe fn Unused_CreateApprenticeMons(trainerId: u16, firstMonId: u8) {
 }
 pub unsafe fn GetRandomFrontierMonFromSet(trainerId: u16) -> u16 {
     let level: u8 = SetFacilityPtrsGetLevel();
-    let monSet: *mut u16 = (*gFacilityTrainers.at(trainerId)).monSet;
+    let monSet: *mut u16 = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).monSet;
     let mut numMons: u8 = 0;
     let mut monId: u32 = *monSet.at(numMons) as u32;
     while monId != 0xFFFF {
@@ -1134,10 +1212,10 @@ pub unsafe fn GetRandomFrontierMonFromSet(trainerId: u16) -> u16 {
 }
 unsafe fn FillFactoryTrainerParty() {
     ZeroEnemyPartyMons();
-    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_TENT {
-        FillFactoryFrontierTrainerParty(gTrainerBattleOpponent_A, 0);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_TENT {
+        FillFactoryFrontierTrainerParty(gTrainerBattleOpponent_A.get(), 0);
     } else {
-        FillFactoryTentTrainerParty(gTrainerBattleOpponent_A, 0);
+        FillFactoryTentTrainerParty(gTrainerBattleOpponent_A.get(), 0);
     }
 }
 unsafe fn FillFactoryFrontierTrainerParty(trainerId: u16, firstMonId: u8) {
@@ -1145,11 +1223,12 @@ unsafe fn FillFactoryFrontierTrainerParty(trainerId: u16, firstMonId: u8) {
     let mut friendship: u8 = 0;
     let mut fixedIV: u8 = 0;
     if trainerId < FRONTIER_TRAINERS_COUNT {
-        let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+        let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
         let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
-        let challengeNum: u8 =
-            ((*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][0] as i32 / 7) as u8;
-        if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum < 6 {
+        let challengeNum: u8 = ((*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+            [0] as i32
+            / 7) as u8;
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum < 6 {
             fixedIV = GetFactoryMonFixedIV(challengeNum, FALSE);
         } else {
             fixedIV = GetFactoryMonFixedIV(challengeNum, TRUE);
@@ -1158,8 +1237,8 @@ unsafe fn FillFactoryFrontierTrainerParty(trainerId: u16, firstMonId: u8) {
         i = firstMonId;
         while (i as i32) < firstMonId as i32 + FRONTIER_PARTY_SIZE {
             CreateBattleTowerMon(
-                &raw mut gEnemyParty[i],
-                &raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer.party
+                crate::gl!(&raw gEnemyParty[i]),
+                &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer.party
                     [i as i32 - firstMonId as i32],
             );
             i += 1;
@@ -1172,38 +1251,51 @@ unsafe fn FillFactoryFrontierTrainerParty(trainerId: u16, firstMonId: u8) {
         fixedIV = MAX_PER_STAT_IVS;
     }
     let level: u8 = SetFacilityPtrsGetLevel();
-    let otID: u32 = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-        | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-        | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
+    let otID: u32 = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        let monId: u16 = gFrontierTempParty[i];
+        let monId: u16 = crate::gl!(gFrontierTempParty[i]);
         CreateMonWithEVSpreadNatureOTID(
-            &raw mut gEnemyParty[firstMonId as i32 + i as i32],
-            (*gFacilityTrainerMons.at(monId)).species,
+            {
+                let gl_i7 = firstMonId as i32 + i as i32;
+                crate::gl!(&raw gEnemyParty[gl_i7])
+            },
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
             level,
-            (*gFacilityTrainerMons.at(monId)).nature,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
             fixedIV,
-            (*gFacilityTrainerMons.at(monId)).evSpread,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
             otID,
         );
         friendship = 0;
         for j in 0..(MAX_MON_MOVES as u8) {
             SetMonMoveAvoidReturn(
-                &raw mut gEnemyParty[firstMonId as i32 + i as i32],
-                (*gFacilityTrainerMons.at(monId)).moves[j],
+                {
+                    let gl_i8 = firstMonId as i32 + i as i32;
+                    crate::gl!(&raw gEnemyParty[gl_i8])
+                },
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                 j,
             );
         }
         SetMonData(
-            &raw mut gEnemyParty[firstMonId as i32 + i as i32],
+            {
+                let gl_i9 = firstMonId as i32 + i as i32;
+                crate::gl!(&raw gEnemyParty[gl_i9])
+            },
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut gEnemyParty[firstMonId as i32 + i as i32],
+            {
+                let gl_i10 = firstMonId as i32 + i as i32;
+                crate::gl!(&raw gEnemyParty[gl_i10])
+            },
             MON_DATA_HELD_ITEM,
-            (&raw const gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId])
+            (&raw const gBattleFrontierHeldItems
+                [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                 .cast_mut() as *mut c_void,
         );
     }
@@ -1212,41 +1304,54 @@ unsafe fn FillFactoryTentTrainerParty(trainerId: u16, firstMonId: u8) {
     let mut friendship: u8 = 0;
     let level: u8 = TENT_MIN_LEVEL;
     let fixedIV: u8 = 0;
-    let otID: u32 = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-        | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-        | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
+    let otID: u32 = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        let monId: u16 = gFrontierTempParty[i];
+        let monId: u16 = crate::gl!(gFrontierTempParty[i]);
         CreateMonWithEVSpreadNatureOTID(
-            &raw mut gEnemyParty[firstMonId as i32 + i as i32],
-            (*gFacilityTrainerMons.at(monId)).species,
+            {
+                let gl_i11 = firstMonId as i32 + i as i32;
+                crate::gl!(&raw gEnemyParty[gl_i11])
+            },
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
             level,
-            (*gFacilityTrainerMons.at(monId)).nature,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
             fixedIV,
-            (*gFacilityTrainerMons.at(monId)).evSpread,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
             otID,
         );
         friendship = 0;
         for j in 0..(MAX_MON_MOVES as u8) {
             SetMonMoveAvoidReturn(
-                &raw mut gEnemyParty[firstMonId as i32 + i as i32],
-                (*gFacilityTrainerMons.at(monId)).moves[j],
+                {
+                    let gl_i12 = firstMonId as i32 + i as i32;
+                    crate::gl!(&raw gEnemyParty[gl_i12])
+                },
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                 j,
             );
-            if (*gFacilityTrainerMons.at(monId)).moves[j] == MOVE_FRUSTRATION {
+            if (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j] == MOVE_FRUSTRATION {
                 friendship = 0;
             }
         }
         SetMonData(
-            &raw mut gEnemyParty[firstMonId as i32 + i as i32],
+            {
+                let gl_i13 = firstMonId as i32 + i as i32;
+                crate::gl!(&raw gEnemyParty[gl_i13])
+            },
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut gEnemyParty[firstMonId as i32 + i as i32],
+            {
+                let gl_i14 = firstMonId as i32 + i as i32;
+                crate::gl!(&raw gEnemyParty[gl_i14])
+            },
             MON_DATA_HELD_ITEM,
-            (&raw const gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId])
+            (&raw const gBattleFrontierHeldItems
+                [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                 .cast_mut() as *mut c_void,
         );
     }
@@ -1273,23 +1378,27 @@ pub(crate) unsafe fn GetOpponentIntroSpeech() {
     let mut trainerId: u16 = 0;
     SetFacilityPtrsGetLevel();
     if gSpecialVar_0x8005 != 0 {
-        trainerId = gTrainerBattleOpponent_B;
+        trainerId = gTrainerBattleOpponent_B.get();
     } else {
-        trainerId = gTrainerBattleOpponent_A;
+        trainerId = gTrainerBattleOpponent_A.get();
     }
     if trainerId == TRAINER_EREADER {
         FrontierSpeechToString(
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .ereaderTrainer
                 .greeting
                 .as_mut_ptr(),
         );
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
-        FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechBefore.as_mut_ptr());
+        FrontierSpeechToString(
+            (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+                .speechBefore
+                .as_mut_ptr(),
+        );
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
         FrontierSpeechToString(
-            (*gSaveBlock2Ptr).frontier.towerRecords
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .greeting
                 .as_mut_ptr(),
@@ -1300,7 +1409,7 @@ pub(crate) unsafe fn GetOpponentIntroSpeech() {
 }
 pub(crate) unsafe fn HandleSpecialTrainerBattleEnd() {
     RecordedBattle_SaveBattleOutcome();
-    match gBattleScripting.specialTrainerBattleType {
+    match crate::gl!(gBattleScripting.specialTrainerBattleType) {
         SPECIAL_BATTLE_TOWER
         | SPECIAL_BATTLE_DOME
         | SPECIAL_BATTLE_PALACE
@@ -1309,23 +1418,23 @@ pub(crate) unsafe fn HandleSpecialTrainerBattleEnd() {
         | SPECIAL_BATTLE_PIKE_SINGLE
         | SPECIAL_BATTLE_PIKE_DOUBLE
         | SPECIAL_BATTLE_PYRAMID => {
-            if (*gSaveBlock2Ptr).frontier.battlesCount < 0xFFFFFF {
-                (*gSaveBlock2Ptr).frontier.battlesCount += 1;
-                if (*gSaveBlock2Ptr).frontier.battlesCount % 20 == 0 {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.battlesCount < 0xFFFFFF {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.battlesCount += 1;
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.battlesCount % 20 == 0 {
                     UpdateGymLeaderRematch();
                 }
             } else {
-                (*gSaveBlock2Ptr).frontier.battlesCount = 0xFFFFFF;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.battlesCount = 0xFFFFFF;
             }
         }
         SPECIAL_BATTLE_SECRET_BASE => {
             for i in 0..PARTY_SIZE {
                 let mut itemBefore: u16 = GetMonData2(
-                    &raw mut (*gSaveBlock1Ptr).playerParty[i],
+                    &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[i],
                     MON_DATA_HELD_ITEM,
                 ) as u16;
                 SetMonData(
-                    &raw mut gPlayerParty[i],
+                    crate::gl!(&raw gPlayerParty[i]),
                     MON_DATA_HELD_ITEM,
                     &raw mut itemBefore as *mut c_void,
                 );
@@ -1340,36 +1449,36 @@ pub(crate) unsafe fn HandleSpecialTrainerBattleEnd() {
 }
 pub(crate) unsafe fn Task_StartBattleAfterTransition(taskId: u8) {
     if IsBattleTransitionDone() == TRUE {
-        gMain.savedCallback = Some(HandleSpecialTrainerBattleEnd);
+        crate::gl!(gMain.savedCallback = Some(HandleSpecialTrainerBattleEnd));
         SetMainCallback2(Some(CB2_InitBattle));
         DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoSpecialTrainerBattle() {
-    gBattleScripting.specialTrainerBattleType = gSpecialVar_0x8004 as u8;
+    crate::gl!(gBattleScripting.specialTrainerBattleType = gSpecialVar_0x8004 as u8);
     match *(&raw const crate::ffi::gSpecialVar_0x8004)
         .cast::<u16>()
         .cast_mut()
     {
         0 => {
-            gBattleTypeFlags = 264;
+            gBattleTypeFlags.set(264);
             match VarGet(VAR_FRONTIER_BATTLE_MODE) {
                 0 => {
                     FillFrontierTrainerParty(FRONTIER_PARTY_SIZE as u8);
                 }
                 FRONTIER_MODE_DOUBLES => {
                     FillFrontierTrainerParty(FRONTIER_DOUBLES_PARTY_SIZE);
-                    gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
+                    gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_DOUBLE));
                 }
                 FRONTIER_MODE_MULTIS => {
                     FillFrontierTrainersParties(FRONTIER_MULTI_PARTY_SIZE as u8);
-                    gPartnerTrainerId = (*gSaveBlock2Ptr).frontier.trainerIds[17];
-                    FillPartnerParty(gPartnerTrainerId);
-                    gBattleTypeFlags |= 0x408041;
+                    gPartnerTrainerId.set((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[17]);
+                    FillPartnerParty(gPartnerTrainerId.get());
+                    gBattleTypeFlags.set(gBattleTypeFlags.get() | (0x408041));
                 }
                 FRONTIER_MODE_LINK_MULTIS => {
-                    gBattleTypeFlags |= 0x800043;
+                    gBattleTypeFlags.set(gBattleTypeFlags.get() | (0x800043));
                     FillFrontierTrainersParties(FRONTIER_MULTI_PARTY_SIZE as u8);
                 }
                 _ => {}
@@ -1381,9 +1490,9 @@ pub unsafe fn DoSpecialTrainerBattle() {
         1 => {
             for i in 0..PARTY_SIZE {
                 let mut itemBefore: u16 =
-                    GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HELD_ITEM) as u16;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HELD_ITEM) as u16;
                 SetMonData(
-                    &raw mut (*gSaveBlock1Ptr).playerParty[i],
+                    &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[i],
                     MON_DATA_HELD_ITEM,
                     &raw mut itemBefore as *mut c_void,
                 );
@@ -1398,22 +1507,22 @@ pub unsafe fn DoSpecialTrainerBattle() {
             ZeroEnemyPartyMons();
             for i in 0..3i32 {
                 CreateBattleTowerMon(
-                    &raw mut gEnemyParty[i],
-                    &raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer.party[i],
+                    crate::gl!(&raw gEnemyParty[i]),
+                    &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer.party[i],
                 );
             }
-            gBattleTypeFlags = 2056;
-            gTrainerBattleOpponent_A = 0;
+            gBattleTypeFlags.set(2056);
+            gTrainerBattleOpponent_A.set(0);
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
             PlayMapChosenOrBattleBGM(0);
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_E_READER));
         }
         3 => {
-            gBattleTypeFlags = 0x10008;
+            gBattleTypeFlags.set(0x10008);
             if VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_DOUBLES {
-                gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
+                gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_DOUBLE));
             }
-            if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+            if gTrainerBattleOpponent_A.get() == TRAINER_FRONTIER_BRAIN {
                 FillFrontierTrainerParty(DOME_BATTLE_PARTY_SIZE as u8);
             }
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
@@ -1421,11 +1530,11 @@ pub unsafe fn DoSpecialTrainerBattle() {
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_DOME));
         }
         4 => {
-            gBattleTypeFlags = 0x20008;
+            gBattleTypeFlags.set(0x20008);
             if VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_DOUBLES {
-                gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
+                gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_DOUBLE));
             }
-            if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_TENT {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_TENT {
                 FillFrontierTrainerParty(FRONTIER_PARTY_SIZE as u8);
             } else {
                 FillTentTrainerParty(FRONTIER_PARTY_SIZE as u8);
@@ -1435,8 +1544,8 @@ pub unsafe fn DoSpecialTrainerBattle() {
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_PALACE));
         }
         5 => {
-            gBattleTypeFlags = 0x40008;
-            if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_TENT {
+            gBattleTypeFlags.set(0x40008);
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_TENT {
                 FillFrontierTrainerParty(FRONTIER_PARTY_SIZE as u8);
             } else {
                 FillTentTrainerParty(FRONTIER_PARTY_SIZE as u8);
@@ -1446,9 +1555,9 @@ pub unsafe fn DoSpecialTrainerBattle() {
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_ARENA));
         }
         6 => {
-            gBattleTypeFlags = 0x80008;
+            gBattleTypeFlags.set(0x80008);
             if VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_DOUBLES {
-                gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
+                gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_DOUBLE));
             }
             FillFactoryTrainerParty();
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
@@ -1456,30 +1565,30 @@ pub unsafe fn DoSpecialTrainerBattle() {
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_FACTORY));
         }
         7 => {
-            gBattleTypeFlags = 264;
+            gBattleTypeFlags.set(264);
             FillFrontierTrainerParty(FRONTIER_PARTY_SIZE as u8);
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
             PlayMapChosenOrBattleBGM(0);
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_PIKE));
         }
         10 => {
-            gBattleTypeFlags = 0x200008;
+            gBattleTypeFlags.set(0x200008);
             FillFrontierTrainerParty(FRONTIER_PARTY_SIZE as u8);
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
             PlayMapChosenOrBattleBGM(0);
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_PYRAMID));
         }
         9 => {
-            gBattleTypeFlags = 33033;
+            gBattleTypeFlags.set(33033);
             FillFrontierTrainersParties(1);
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
             PlayMapChosenOrBattleBGM(0);
             BattleTransition_StartOnField(GetSpecialBattleTransition(B_TRANSITION_GROUP_B_PIKE));
         }
         SPECIAL_BATTLE_STEVEN => {
-            gBattleTypeFlags = 0x408049;
+            gBattleTypeFlags.set(0x408049);
             FillPartnerParty(TRAINER_STEVEN_PARTNER);
-            gApproachingTrainerId = 0;
+            gApproachingTrainerId.set(0);
             BattleSetup_ConfigureTrainerBattle(
                 (*crate::asmdata::MossdeepCity_SpaceCenter_2F_EventScript_MaxieTrainer
                     .cast::<CArray<u8, 0>>())
@@ -1487,7 +1596,7 @@ pub unsafe fn DoSpecialTrainerBattle() {
                 .cast_mut()
                 .at(1),
             );
-            gApproachingTrainerId = 1;
+            gApproachingTrainerId.set(1);
             BattleSetup_ConfigureTrainerBattle(
                 (*crate::asmdata::MossdeepCity_SpaceCenter_2F_EventScript_TabithaTrainer
                     .cast::<CArray<u8, 0>>())
@@ -1495,7 +1604,7 @@ pub unsafe fn DoSpecialTrainerBattle() {
                 .cast_mut()
                 .at(1),
             );
-            gPartnerTrainerId = TRAINER_STEVEN_PARTNER;
+            gPartnerTrainerId.set(TRAINER_STEVEN_PARTNER);
             CreateTask(Some(Task_StartBattleAfterTransition), 1);
             PlayMapChosenOrBattleBGM(0);
             BattleTransition_StartOnField(B_TRANSITION_MAGMA);
@@ -1504,49 +1613,51 @@ pub unsafe fn DoSpecialTrainerBattle() {
     }
 }
 unsafe fn SaveCurrentWinStreak() {
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
     let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
     let winStreak: u16 = GetCurrentBattleTowerWinStreak(lvlMode, battleMode);
-    if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] < winStreak {
-        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] = winStreak;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] < winStreak {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] = winStreak;
     }
 }
 unsafe fn SaveBattleTowerRecord() {
     let mut lvlMode: u8 = 0;
     let mut class: u8 = 0;
     let playerRecord: *mut EmeraldBattleTowerRecord =
-        &raw mut (*gSaveBlock2Ptr).frontier.towerPlayer;
+        &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer;
     ClearBattleTowerRecord(playerRecord);
-    lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
+    lvlMode = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
     let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
-    if (*gSaveBlock2Ptr).playerGender != MALE {
-        class = gTowerFemaleFacilityClasses[((*gSaveBlock2Ptr).playerTrainerId[0] as u32
-            + (*gSaveBlock2Ptr).playerTrainerId[1] as u32
-            + (*gSaveBlock2Ptr).playerTrainerId[2] as u32
-            + (*gSaveBlock2Ptr).playerTrainerId[3] as u32)
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender != MALE {
+        class = gTowerFemaleFacilityClasses[((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0]
+            as u32
+            + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32
+            + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32
+            + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32)
             % 20];
     } else {
-        class = gTowerMaleFacilityClasses[((*gSaveBlock2Ptr).playerTrainerId[0] as u32
-            + (*gSaveBlock2Ptr).playerTrainerId[1] as u32
-            + (*gSaveBlock2Ptr).playerTrainerId[2] as u32
-            + (*gSaveBlock2Ptr).playerTrainerId[3] as u32)
+        class = gTowerMaleFacilityClasses[((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0]
+            as u32
+            + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32
+            + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32
+            + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32)
             % 30];
     }
     (*playerRecord).lvlMode = lvlMode;
     (*playerRecord).facilityClass = class;
     CopyTrainerId(
         (*playerRecord).trainerId.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr(),
     );
     StringCopy_PlayerName(
         (*playerRecord).name.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     (*playerRecord).winStreak = GetCurrentBattleTowerWinStreak(lvlMode, battleMode);
     for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-        (*playerRecord).greeting[i] = (*gSaveBlock1Ptr).easyChatBattleStart[i];
-        (*playerRecord).speechWon[i] = (*gSaveBlock1Ptr).easyChatBattleWon[i];
-        (*playerRecord).speechLost[i] = (*gSaveBlock1Ptr).easyChatBattleLost[i];
+        (*playerRecord).greeting[i] = (*crate::gl!(gSaveBlock1Ptr)).easyChatBattleStart[i];
+        (*playerRecord).speechWon[i] = (*crate::gl!(gSaveBlock1Ptr)).easyChatBattleWon[i];
+        (*playerRecord).speechLost[i] = (*crate::gl!(gSaveBlock1Ptr)).easyChatBattleLost[i];
     }
     let mut i: i32 = 0;
     while i
@@ -1556,42 +1667,53 @@ unsafe fn SaveBattleTowerRecord() {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        if (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] != 0 {
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] != 0 {
             ConvertPokemonToBattleTowerPokemon(
-                &raw mut gPlayerParty[(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+                &raw mut (*gPlayerParty.as_ptr())
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1],
                 &raw mut (*playerRecord).party[i],
             );
         }
         i += 1;
     }
     (*playerRecord).language = gGameLanguage;
-    CalcEmeraldBattleTowerChecksum(&raw mut (*gSaveBlock2Ptr).frontier.towerPlayer);
+    CalcEmeraldBattleTowerChecksum(&raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer);
     SaveCurrentWinStreak();
 }
 pub(crate) unsafe fn SaveTowerChallenge() {
-    let lvlMode: u16 = (*gSaveBlock2Ptr).frontier.lvlMode() as u16;
+    let lvlMode: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u16;
     let battleMode: u16 = VarGet(VAR_FRONTIER_BATTLE_MODE);
     let challengeNum: i32 =
-        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
     if gSpecialVar_0x8005 == 0
-        && (challengeNum > 1 || (*gSaveBlock2Ptr).frontier.curChallengeBattleNum != 0)
+        && (challengeNum > 1 || (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum != 0)
     {
         SaveBattleTowerRecord();
     }
-    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(TRUE);
     SaveGameFrontier();
 }
 pub(crate) fn BattleTowerNop1() {}
 pub(crate) fn BattleTowerNop2() {}
 unsafe fn GetApprenticeMultiPartnerParty(trainerId: u16) {
     let mut validSpecies: CArray<u32, 3> = zeroed();
-    let species1: u16 = GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SPECIES, null_mut()) as u16;
-    let species2: u16 = GetMonData3(&raw mut gPlayerParty[1], MON_DATA_SPECIES, null_mut()) as u16;
+    let species1: u16 = GetMonData3(
+        crate::gl!(&raw gPlayerParty[0]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as u16;
+    let species2: u16 = GetMonData3(
+        crate::gl!(&raw gPlayerParty[1]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as u16;
     let mut count: i32 = 0;
     for i in 0..MULTI_PARTY_SIZE {
-        let apprenticeSpecies: u16 = (*gSaveBlock2Ptr).apprentices
+        let apprenticeSpecies: u16 = (*crate::gl!(gSaveBlock2Ptr)).apprentices
             [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .party[i]
             .species;
@@ -1600,19 +1722,27 @@ unsafe fn GetApprenticeMultiPartnerParty(trainerId: u16) {
             count += 1;
         }
     }
-    gFrontierTempParty[0] = validSpecies[rem_i32(Random() as i32, count)] as u16;
+    crate::gl!(gFrontierTempParty[0] = validSpecies[rem_i32(Random() as i32, count)] as u16);
     loop {
-        gFrontierTempParty[1] = validSpecies[rem_i32(Random() as i32, count)] as u16;
-        if gFrontierTempParty[0] != gFrontierTempParty[1] {
+        crate::gl!(gFrontierTempParty[1] = validSpecies[rem_i32(Random() as i32, count)] as u16);
+        if crate::gl!(gFrontierTempParty[0]) != crate::gl!(gFrontierTempParty[1]) {
             break;
         }
     }
 }
 unsafe fn GetRecordMixFriendMultiPartnerParty(trainerId: u16) {
     let mut validSpecies: CArray<u32, 3> = zeroed();
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let species1: u16 = GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SPECIES, null_mut()) as u16;
-    let species2: u16 = GetMonData3(&raw mut gPlayerParty[1], MON_DATA_SPECIES, null_mut()) as u16;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
+    let species1: u16 = GetMonData3(
+        crate::gl!(&raw gPlayerParty[0]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as u16;
+    let species2: u16 = GetMonData3(
+        crate::gl!(&raw gPlayerParty[1]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as u16;
     let mut count: i32 = 0;
     let mut i: i32 = 0;
     while i
@@ -1622,21 +1752,22 @@ unsafe fn GetRecordMixFriendMultiPartnerParty(trainerId: u16) {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        if (*gSaveBlock2Ptr).frontier.towerRecords[trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .party[i]
             .species
             != species1
-            && (*gSaveBlock2Ptr).frontier.towerRecords
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .party[i]
                 .species
                 != species2
-            && (*gSaveBlock2Ptr).frontier.towerRecords
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .party[i]
                 .level
                 <= GetFrontierEnemyMonLevel(lvlMode as u8)
-            && (*gSaveBlock2Ptr).frontier.towerRecords
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .party[i]
                 .species
@@ -1647,10 +1778,10 @@ unsafe fn GetRecordMixFriendMultiPartnerParty(trainerId: u16) {
         }
         i += 1;
     }
-    gFrontierTempParty[2] = validSpecies[rem_i32(Random() as i32, count)] as u16;
+    crate::gl!(gFrontierTempParty[2] = validSpecies[rem_i32(Random() as i32, count)] as u16);
     loop {
-        gFrontierTempParty[3] = validSpecies[rem_i32(Random() as i32, count)] as u16;
-        if gFrontierTempParty[2] != gFrontierTempParty[3] {
+        crate::gl!(gFrontierTempParty[3] = validSpecies[rem_i32(Random() as i32, count)] as u16);
+        if crate::gl!(gFrontierTempParty[2]) != crate::gl!(gFrontierTempParty[3]) {
             break;
         }
     }
@@ -1662,14 +1793,23 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
     let mut trainerId: u16 = 0;
     let mut monId: u16 = 0;
     let mut lvlMode: u32 = 0;
-    let objEventTemplates: *mut ObjectEventTemplate =
-        (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
-    lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let objEventTemplates: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
+    lvlMode = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
     let challengeNum: i32 =
-        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
-    let species1: u32 = GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SPECIES, null_mut());
-    let species2: u32 = GetMonData3(&raw mut gPlayerParty[1], MON_DATA_SPECIES, null_mut());
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
+    let species1: u32 = GetMonData3(
+        crate::gl!(&raw gPlayerParty[0]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    );
+    let species2: u32 = GetMonData3(
+        crate::gl!(&raw gPlayerParty[1]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    );
     let level: u32 = SetFacilityPtrsGetLevel() as u32;
     let mut j: i32 = 0;
     loop {
@@ -1677,11 +1817,13 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
             trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, 0);
             i = 0;
             while i < j {
-                if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                     break;
                 }
-                if (*gFacilityTrainers.at((*gSaveBlock2Ptr).frontier.trainerIds[i])).facilityClass
-                    == (*gFacilityTrainers.at(trainerId)).facilityClass
+                if (*(*gFacilityTrainers.as_ptr())
+                    .at((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i]))
+                .facilityClass
+                    == (*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass
                 {
                     break;
                 }
@@ -1691,7 +1833,7 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
                 break;
             }
         }
-        (*gSaveBlock2Ptr).frontier.trainerIds[j] = trainerId;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[j] = trainerId;
         j += 1;
         if j >= 6 {
             break;
@@ -1699,29 +1841,32 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
     }
     let mut r10: i32 = 8;
     for i in 0..6i32 {
-        trainerId = (*gSaveBlock2Ptr).frontier.trainerIds[i];
+        trainerId = (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i];
         (*objEventTemplates.at(i + 1)).graphicsId = GetBattleFacilityTrainerGfxId(trainerId);
         for j in 0..2i32 {
             loop {
                 monId = GetRandomFrontierMonFromSet(trainerId);
                 if j % 2 != 0
-                    && (*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.trainerIds[r10 - 1]))
-                        .itemTableId
-                        == (*gFacilityTrainerMons.at(monId)).itemTableId
+                    && (*(*gFacilityTrainerMons.as_ptr())
+                        .at((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[r10 - 1]))
+                    .itemTableId
+                        == (*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId
                 {
                     continue;
                 }
                 k = 8;
                 while k < r10 {
-                    if (*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.trainerIds[k])).species
-                        == (*gFacilityTrainerMons.at(monId)).species
+                    if (*(*gFacilityTrainerMons.as_ptr())
+                        .at((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[k]))
+                    .species
+                        == (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species
                     {
                         break;
                     }
-                    if species1 == (*gFacilityTrainerMons.at(monId)).species as u32 {
+                    if species1 == (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species as u32 {
                         break;
                     }
-                    if species2 == (*gFacilityTrainerMons.at(monId)).species as u32 {
+                    if species2 == (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species as u32 {
                         break;
                     }
                     k += 1;
@@ -1730,7 +1875,7 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
                     break;
                 }
             }
-            (*gSaveBlock2Ptr).frontier.trainerIds[r10] = monId;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[r10] = monId;
             r10 += 1;
         }
     }
@@ -1738,16 +1883,18 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
     ValidateApprenticesChecksums();
     i = 0;
     while i < APPRENTICE_COUNT {
-        if (*gSaveBlock2Ptr).apprentices[i].lvlMode() != 0
-            && sApprenticeChallengeThreshold[(*gSaveBlock2Ptr).apprentices[i].numQuestions] as i32
+        if (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].lvlMode() != 0
+            && sApprenticeChallengeThreshold
+                [(*crate::gl!(gSaveBlock2Ptr)).apprentices[i].numQuestions] as i32
                 / 7
                 <= challengeNum
-            && (*gSaveBlock2Ptr).apprentices[i].lvlMode() as u32 - 1 == lvlMode
+            && (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].lvlMode() as u32 - 1 == lvlMode
         {
             k = 0;
             for j in 0..MULTI_PARTY_SIZE {
-                if species1 != (*gSaveBlock2Ptr).apprentices[i].party[j].species as u32
-                    && species2 != (*gSaveBlock2Ptr).apprentices[i].party[j].species as u32
+                if species1 != (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].party[j].species as u32
+                    && species2
+                        != (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].party[j].species as u32
                 {
                     k += 1;
                 }
@@ -1760,15 +1907,17 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
         i += 1;
     }
     if r10 != 0 {
-        (*gSaveBlock2Ptr).frontier.trainerIds[6] = spArray[rem_i32(Random() as i32, r10)] as u16;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[6] =
+            spArray[rem_i32(Random() as i32, r10)] as u16;
         (*objEventTemplates.at(7)).graphicsId =
-            GetBattleFacilityTrainerGfxId((*gSaveBlock2Ptr).frontier.trainerIds[6]);
+            GetBattleFacilityTrainerGfxId((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[6]);
         FlagClear(FLAG_HIDE_BATTLE_TOWER_MULTI_BATTLE_PARTNER_ALT_1);
-        GetApprenticeMultiPartnerParty((*gSaveBlock2Ptr).frontier.trainerIds[6]);
+        GetApprenticeMultiPartnerParty((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[6]);
     }
     r10 = 0;
     for i in 0..BATTLE_TOWER_RECORD_COUNT {
-        let record: *mut u32 = &raw mut (*gSaveBlock2Ptr).frontier.towerRecords[i] as *mut u32;
+        let record: *mut u32 =
+            &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i] as *mut u32;
         let mut recordHasData: u32 = 0;
         let mut checksum: u32 = 0;
         j = 0;
@@ -1777,10 +1926,11 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
             checksum += *record.at(j);
             j += 1;
         }
-        if (*gSaveBlock2Ptr).frontier.towerRecords[i].winStreak as i32 / 7 <= challengeNum
-            && (*gSaveBlock2Ptr).frontier.towerRecords[i].lvlMode as u32 == lvlMode
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].winStreak as i32 / 7
+            <= challengeNum
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].lvlMode as u32 == lvlMode
             && recordHasData != 0
-            && (*gSaveBlock2Ptr).frontier.towerRecords[i].checksum == checksum
+            && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].checksum == checksum
         {
             k = 0;
             j = 0;
@@ -1791,12 +1941,16 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
                     if 4 >= 2 { 4 } else { 2 }
                 })
             {
-                if species1 != (*gSaveBlock2Ptr).frontier.towerRecords[i].party[j].species as u32
+                if species1
+                    != (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].party[j].species
+                        as u32
                     && species2
-                        != (*gSaveBlock2Ptr).frontier.towerRecords[i].party[j].species as u32
-                    && (*gSaveBlock2Ptr).frontier.towerRecords[i].party[j].level
+                        != (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].party[j].species
+                            as u32
+                    && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].party[j].level
                         <= GetFrontierEnemyMonLevel(lvlMode as u8)
-                    && (*gSaveBlock2Ptr).frontier.towerRecords[i].party[j].species != SPECIES_NONE
+                    && (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].party[j].species
+                        != SPECIES_NONE
                 {
                     k += 1;
                 }
@@ -1809,11 +1963,12 @@ pub(crate) unsafe fn LoadMultiPartnerCandidatesData() {
         }
     }
     if r10 != 0 {
-        (*gSaveBlock2Ptr).frontier.trainerIds[7] = spArray[rem_i32(Random() as i32, r10)] as u16;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[7] =
+            spArray[rem_i32(Random() as i32, r10)] as u16;
         (*objEventTemplates.at(8)).graphicsId =
-            GetBattleFacilityTrainerGfxId((*gSaveBlock2Ptr).frontier.trainerIds[7]);
+            GetBattleFacilityTrainerGfxId((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[7]);
         FlagClear(FLAG_HIDE_BATTLE_TOWER_MULTI_BATTLE_PARTNER_ALT_2);
-        GetRecordMixFriendMultiPartnerParty((*gSaveBlock2Ptr).frontier.trainerIds[7]);
+        GetRecordMixFriendMultiPartnerParty((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[7]);
     }
 }
 unsafe fn GetPotentialPartnerMoveAndSpecies(trainerId: u16, monId: u16) {
@@ -1822,37 +1977,52 @@ unsafe fn GetPotentialPartnerMoveAndSpecies(trainerId: u16, monId: u16) {
     SetFacilityPtrsGetLevel();
     if trainerId != TRAINER_EREADER {
         if trainerId < FRONTIER_TRAINERS_COUNT {
-            r#move = (*gFacilityTrainerMons.at(monId)).moves[0];
-            species = (*gFacilityTrainerMons.at(monId)).species;
+            r#move = (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[0];
+            species = (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species;
         } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-            r#move = (*gSaveBlock2Ptr).frontier.towerRecords
+            r#move = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
-                .party[gFrontierTempParty[gSpecialVar_0x8005 as i32 + 1]]
-                .moves[0];
-            species = (*gSaveBlock2Ptr).frontier.towerRecords
+                .party[{
+                let gl_i0 = gSpecialVar_0x8005 as i32 + 1;
+                crate::gl!(gFrontierTempParty[gl_i0])
+            }]
+            .moves[0];
+            species = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
-                .party[gFrontierTempParty[gSpecialVar_0x8005 as i32 + 1]]
-                .species;
+                .party[{
+                let gl_i1 = gSpecialVar_0x8005 as i32 + 1;
+                crate::gl!(gFrontierTempParty[gl_i1])
+            }]
+            .species;
         } else {
-            r#move = (*gSaveBlock2Ptr).apprentices
+            r#move = (*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
-                .party[gFrontierTempParty[gSpecialVar_0x8005 as i32 - 1]]
-                .moves[0];
-            species = (*gSaveBlock2Ptr).apprentices
+                .party[{
+                let gl_i2 = gSpecialVar_0x8005 as i32 - 1;
+                crate::gl!(gFrontierTempParty[gl_i2])
+            }]
+            .moves[0];
+            species = (*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
-                .party[gFrontierTempParty[gSpecialVar_0x8005 as i32 - 1]]
-                .species;
+                .party[{
+                let gl_i3 = gSpecialVar_0x8005 as i32 - 1;
+                crate::gl!(gFrontierTempParty[gl_i3])
+            }]
+            .species;
             let mut i: i32 = 0;
             while i < PLAYER_NAME_LENGTH {
-                gStringVar3[i] = (*gSaveBlock2Ptr).apprentices
-                    [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
-                    .playerName[i];
+                crate::gl!(
+                    gStringVar3[i] = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+                        [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+                        .playerName[i]
+                );
                 i += 1;
             }
-            gStringVar3[i] = EOS;
+            crate::gl!(gStringVar3[i] = EOS);
             ConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
-                (*gSaveBlock2Ptr).apprentices[trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).apprentices
+                    [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                     .language,
             );
         }
@@ -1865,7 +2035,7 @@ unsafe fn GetPotentialPartnerMoveAndSpecies(trainerId: u16, monId: u16) {
             .cast_mut(),
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
             [species]
             .as_ptr()
@@ -1880,7 +2050,7 @@ pub(crate) unsafe fn ShowPartnerCandidateMessage() {
     let winStreak: u16 = GetCurrentFacilityWinStreak() as u16;
     let challengeNum: i32 = winStreak as i32 / 7;
     let k: i32 = gSpecialVar_LastTalked as i32 - 2;
-    let trainerId: i32 = (*gSaveBlock2Ptr).frontier.trainerIds[k] as i32;
+    let trainerId: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[k] as i32;
     let mut partnerId: i32 = 0;
     while partnerId < 50 {
         if sPartnerTrainerTextTables[partnerId].facilityClass
@@ -1905,7 +2075,7 @@ pub(crate) unsafe fn ShowPartnerCandidateMessage() {
             } else {
                 let mut i: i32 = 0;
                 while i < PLAYER_NAME_LENGTH {
-                    gStringVar1[i] = (*gSaveBlock2Ptr).apprentices
+                    gStringVar1[i] = (*crate::gl!(gSaveBlock2Ptr)).apprentices
                         [trainerId - TRAINER_RECORD_MIXING_APPRENTICE]
                         .playerName[i];
                     i += 1;
@@ -1913,50 +2083,56 @@ pub(crate) unsafe fn ShowPartnerCandidateMessage() {
                 gStringVar1[i] = EOS;
                 ConvertInternationalString(
                     gStringVar1.as_mut_ptr(),
-                    (*gSaveBlock2Ptr).apprentices[trainerId - TRAINER_RECORD_MIXING_APPRENTICE]
+                    (*crate::gl!(gSaveBlock2Ptr)).apprentices
+                        [trainerId - TRAINER_RECORD_MIXING_APPRENTICE]
                         .language,
                 );
                 ConvertIntToDecimalStringN(
-                    gStringVar2.as_mut_ptr(),
-                    (*gSaveBlock2Ptr).apprentices[trainerId - TRAINER_RECORD_MIXING_APPRENTICE]
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock2Ptr)).apprentices
+                        [trainerId - TRAINER_RECORD_MIXING_APPRENTICE]
                         .number as i32,
                     STR_CONV_MODE_LEFT_ALIGN,
                     3,
                 );
-                GetFrontierTrainerName(gStringVar3.as_mut_ptr(), trainerId as u16);
+                GetFrontierTrainerName((*gStringVar3.as_ptr()).as_mut_ptr(), trainerId as u16);
             }
         }
         PARTNER_MSGID_MON1 => {
-            monId = (*gSaveBlock2Ptr).frontier.trainerIds[8 + k * 2] as i32;
+            monId = (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[8 + k * 2] as i32;
             GetPotentialPartnerMoveAndSpecies(trainerId as u16, monId as u16);
         }
         PARTNER_MSGID_MON2_ASK => {
-            monId = (*gSaveBlock2Ptr).frontier.trainerIds[9 + k * 2] as i32;
+            monId = (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[9 + k * 2] as i32;
             GetPotentialPartnerMoveAndSpecies(trainerId as u16, monId as u16);
         }
         PARTNER_MSGID_ACCEPT => {
-            gPartnerTrainerId = trainerId as u16;
+            gPartnerTrainerId.set(trainerId as u16);
             if trainerId < FRONTIER_TRAINERS_COUNT as i32 {
-                (*gSaveBlock2Ptr).frontier.trainerIds[18] =
-                    (*gSaveBlock2Ptr).frontier.trainerIds[8 + k * 2];
-                (*gSaveBlock2Ptr).frontier.trainerIds[19] =
-                    (*gSaveBlock2Ptr).frontier.trainerIds[9 + k * 2];
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[18] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[8 + k * 2];
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[19] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[9 + k * 2];
             } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE {
-                (*gSaveBlock2Ptr).frontier.trainerIds[18] = gFrontierTempParty[2];
-                (*gSaveBlock2Ptr).frontier.trainerIds[19] = gFrontierTempParty[3];
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[18] =
+                    crate::gl!(gFrontierTempParty[2]);
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[19] =
+                    crate::gl!(gFrontierTempParty[3]);
             } else {
-                (*gSaveBlock2Ptr).frontier.trainerIds[18] = gFrontierTempParty[0];
-                (*gSaveBlock2Ptr).frontier.trainerIds[19] = gFrontierTempParty[1];
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[18] =
+                    crate::gl!(gFrontierTempParty[0]);
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[19] =
+                    crate::gl!(gFrontierTempParty[1]);
             }
             for k in 0..14i32 {
                 loop {
                     i = GetRandomScaledFrontierTrainerId(challengeNum as u8, (k / 2) as u8) as i32;
-                    if gPartnerTrainerId as i32 == i {
+                    if gPartnerTrainerId.get() as i32 == i {
                         continue;
                     }
                     j = 0;
                     while j < k {
-                        if (*gSaveBlock2Ptr).frontier.trainerIds[j] as i32 == i {
+                        if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[j] as i32 == i {
                             break;
                         }
                         j += 1;
@@ -1965,9 +2141,9 @@ pub(crate) unsafe fn ShowPartnerCandidateMessage() {
                         break;
                     }
                 }
-                (*gSaveBlock2Ptr).frontier.trainerIds[k] = i as u16;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[k] = i as u16;
             }
-            (*gSaveBlock2Ptr).frontier.trainerIds[17] = trainerId as u16;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[17] = trainerId as u16;
         }
         PARTNER_MSGID_REJECT => {}
         _ => {}
@@ -1992,8 +2168,9 @@ pub(crate) unsafe fn ShowPartnerCandidateMessage() {
             ),
         );
     } else {
-        let apprenticeId: u8 =
-            (*gSaveBlock2Ptr).apprentices[trainerId - TRAINER_RECORD_MIXING_APPRENTICE].id();
+        let apprenticeId: u8 = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [trainerId - TRAINER_RECORD_MIXING_APPRENTICE]
+            .id();
         ShowFieldMessage(
             *sPartnerApprenticeTextTables[apprenticeId].at(
                 *(&raw const crate::ffi::gSpecialVar_0x8005)
@@ -2007,9 +2184,9 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
     let mut challengeNum: i32 = 0;
     let mut j: i32 = 0;
     let mut trainerId: i32 = 0;
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
-    let battleNum: u32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as u32;
+    let battleNum: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as u32;
     GetMultiplayerId();
     match *(&raw const crate::ffi::gSpecialVar_Result)
         .cast::<u16>()
@@ -2017,8 +2194,9 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
     {
         0 => {
             if battleMode == FRONTIER_MODE_LINK_MULTIS as u32 {
-                challengeNum =
-                    (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
+                challengeNum = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+                    [lvlMode] as i32
+                    / 7;
                 if IsLinkTaskFinished() != 0 {
                     SendBlock(
                         BitmaskAllOtherLinkPlayers(),
@@ -2034,10 +2212,10 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
         1 => {
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
-                if gBlockRecvBuffer[0][0] > gBlockRecvBuffer[1][0] {
-                    challengeNum = gBlockRecvBuffer[0][0] as i32;
+                if crate::gl!(gBlockRecvBuffer[0][0]) > crate::gl!(gBlockRecvBuffer[1][0]) {
+                    challengeNum = crate::gl!(gBlockRecvBuffer[0][0]) as i32;
                 } else {
-                    challengeNum = gBlockRecvBuffer[1][0] as i32;
+                    challengeNum = crate::gl!(gBlockRecvBuffer[1][0]) as i32;
                 }
                 for i in 0..14i32 {
                     loop {
@@ -2046,7 +2224,9 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
                                 as i32;
                         j = 0;
                         while j < i {
-                            if (*gSaveBlock2Ptr).frontier.trainerIds[j] as i32 == trainerId {
+                            if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[j] as i32
+                                == trainerId
+                            {
                                 break;
                             }
                             j += 1;
@@ -2056,7 +2236,7 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
                         }
                     }
                     if i == j {
-                        (*gSaveBlock2Ptr).frontier.trainerIds[i] = trainerId as u16;
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] = trainerId as u16;
                     }
                 }
                 gSpecialVar_Result = 2;
@@ -2066,7 +2246,7 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
-                    &raw mut (*gSaveBlock2Ptr).frontier.trainerIds as *mut c_void,
+                    &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds as *mut c_void,
                     40,
                 );
                 gSpecialVar_Result = 3;
@@ -2076,15 +2256,17 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 memcpy(
-                    &raw mut (*gSaveBlock2Ptr).frontier.trainerIds as *mut u8,
-                    gBlockRecvBuffer.as_mut_ptr() as *mut u8,
+                    &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr()).as_mut_ptr() as *mut u8,
                     40,
                 );
-                gTrainerBattleOpponent_A = (*gSaveBlock2Ptr).frontier.trainerIds[battleNum * 2];
-                gTrainerBattleOpponent_B = (*gSaveBlock2Ptr).frontier.trainerIds[battleNum * 2 + 1];
-                SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-                SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B, 1);
-                if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType == 0 {
+                gTrainerBattleOpponent_A
+                    .set((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[battleNum * 2]);
+                gTrainerBattleOpponent_B
+                    .set((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[battleNum * 2 + 1]);
+                SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+                SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B.get(), 1);
+                if gReceivedRemoteLinkPlayers.get() != 0 && gWirelessCommType.get() == 0 {
                     gSpecialVar_Result = 4;
                 } else {
                     gSpecialVar_Result = 6;
@@ -2096,7 +2278,7 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
             gSpecialVar_Result = 5;
         }
         5 => {
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 gSpecialVar_Result = 6;
             }
         }
@@ -2105,22 +2287,22 @@ pub(crate) unsafe fn LoadLinkMultiOpponentsData() {
     }
 }
 pub(crate) unsafe fn TowerTryCloseLink() {
-    if gWirelessCommType != 0 {
+    if gWirelessCommType.get() != 0 {
         SetCloseLinkCallback();
     }
 }
 pub(crate) unsafe fn SetMultiPartnerGfx() {
-    SetBattleFacilityTrainerGfxId((*gSaveBlock2Ptr).frontier.trainerIds[17], 0xF);
+    SetBattleFacilityTrainerGfxId((*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[17], 0xF);
 }
 pub(crate) unsafe fn SetTowerInterviewData() {
     let mut text: CArray<u8, 32> = zeroed();
     if VarGet(VAR_FRONTIER_BATTLE_MODE) != FRONTIER_MODE_SINGLES as u16 {
         return;
     }
-    GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A);
+    GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A.get());
     StripExtCtrlCodes(text.as_mut_ptr());
     StringCopy(
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .towerInterview
             .opponentName
@@ -2128,46 +2310,56 @@ pub(crate) unsafe fn SetTowerInterviewData() {
         text.as_mut_ptr(),
     );
     GetBattleTowerTrainerLanguage(
-        &raw mut (*gSaveBlock2Ptr).frontier.towerInterview.opponentLanguage,
-        gTrainerBattleOpponent_A,
+        &raw mut (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .towerInterview
+            .opponentLanguage,
+        gTrainerBattleOpponent_A.get(),
     );
-    (*gSaveBlock2Ptr).frontier.towerInterview.opponentSpecies = GetMonData3(
-        &raw mut gEnemyParty[gBattlerPartyIndexes[1]],
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .towerInterview
+        .opponentSpecies = GetMonData3(
+        &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[1])],
         MON_DATA_SPECIES,
         null_mut(),
     ) as u16;
-    (*gSaveBlock2Ptr).frontier.towerInterview.playerSpecies = GetMonData3(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[0]],
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .towerInterview
+        .playerSpecies = GetMonData3(
+        &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[0])],
         MON_DATA_SPECIES,
         null_mut(),
     ) as u16;
     for i in 0..11i32 {
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .towerInterview
-            .opponentMonNickname[i] = gBattleMons[0].nickname[i];
+            .opponentMonNickname[i] = crate::gl!(gBattleMons[0].nickname[i]);
     }
-    (*gSaveBlock2Ptr).frontier.towerBattleOutcome = gBattleOutcome;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerBattleOutcome = gBattleOutcome.get();
 }
 unsafe fn ValidateBattleTowerRecordChecksums() {
-    let mut record: *mut u32 = &raw mut (*gSaveBlock2Ptr).frontier.towerPlayer as *mut u32;
+    let mut record: *mut u32 =
+        &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer as *mut u32;
     let mut checksum: u32 = 0;
     let mut j: i32 = 0;
     while j < 58 {
         checksum += *record.at(j);
         j += 1;
     }
-    if (*gSaveBlock2Ptr).frontier.towerPlayer.checksum != checksum {
-        ClearBattleTowerRecord(&raw mut (*gSaveBlock2Ptr).frontier.towerPlayer);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer.checksum != checksum {
+        ClearBattleTowerRecord(&raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer);
     }
     for i in 0..BATTLE_TOWER_RECORD_COUNT {
-        record = &raw mut (*gSaveBlock2Ptr).frontier.towerRecords[i] as *mut u32;
+        record = &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i] as *mut u32;
         checksum = 0;
         for j in 0..58i32 {
             checksum += *record.at(j);
         }
-        if (*gSaveBlock2Ptr).frontier.towerRecords[i].checksum != checksum {
-            ClearBattleTowerRecord(&raw mut (*gSaveBlock2Ptr).frontier.towerRecords[i]);
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i].checksum != checksum {
+            ClearBattleTowerRecord(&raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[i]);
         }
     }
 }
@@ -2189,7 +2381,8 @@ unsafe fn ClearBattleTowerRecord(record: *mut EmeraldBattleTowerRecord) {
     }
 }
 pub unsafe fn GetCurrentBattleTowerWinStreak(lvlMode: u8, battleMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+    let winStreak: u16 =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -2221,7 +2414,7 @@ pub(crate) unsafe fn AwardBattleTowerRibbons() {
     let mut partyIndex: u32 = 0;
     let mut ribbons: CArray<RibbonCounter, 3> = zeroed();
     let mut ribbonType: u8 = 0;
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
     let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
     let monCount: u8 = GetMonCountForBattleMode(battleMode);
     if lvlMode != FRONTIER_LVL_50 {
@@ -2232,22 +2425,22 @@ pub(crate) unsafe fn AwardBattleTowerRibbons() {
     gSpecialVar_Result = FALSE as u16;
     if GetCurrentBattleTowerWinStreak(lvlMode, battleMode) > 55 {
         for i in 0..(monCount as i32) {
-            partyIndex = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as u32 - 1;
+            partyIndex = (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as u32 - 1;
             ribbons[i].partyIndex = partyIndex as u8;
             ribbons[i].count = 0;
             if GetMonData2(
-                &raw mut (*gSaveBlock1Ptr).playerParty[partyIndex],
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[partyIndex],
                 ribbonType as i32,
             ) == 0
             {
                 gSpecialVar_Result = TRUE as u16;
                 SetMonData(
-                    &raw mut (*gSaveBlock1Ptr).playerParty[partyIndex],
+                    &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[partyIndex],
                     ribbonType as i32,
                     &raw mut gSpecialVar_Result as *mut c_void,
                 );
                 ribbons[i].count =
-                    GetRibbonCount(&raw mut (*gSaveBlock1Ptr).playerParty[partyIndex]);
+                    GetRibbonCount(&raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[partyIndex]);
             }
         }
     }
@@ -2262,7 +2455,7 @@ pub(crate) unsafe fn AwardBattleTowerRibbons() {
         }
         if ribbons[0].count > NUM_CUTIES_RIBBONS {
             TryPutSpotTheCutiesOnAir(
-                &raw mut (*gSaveBlock1Ptr).playerParty[ribbons[0].partyIndex],
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[ribbons[0].partyIndex],
                 ribbonType,
             );
         }
@@ -2270,41 +2463,41 @@ pub(crate) unsafe fn AwardBattleTowerRibbons() {
 }
 unsafe fn FillEReaderTrainerWithPlayerData() {
     let ereaderTrainer: *mut BattleTowerEReaderTrainer =
-        &raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer;
-    if (*gSaveBlock2Ptr).playerGender != MALE {
+        &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer;
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender != MALE {
         (*ereaderTrainer).facilityClass =
-            gTowerFemaleFacilityClasses[((*gSaveBlock2Ptr).playerTrainerId[0] as u32
-                + (*gSaveBlock2Ptr).playerTrainerId[1] as u32
-                + (*gSaveBlock2Ptr).playerTrainerId[2] as u32
-                + (*gSaveBlock2Ptr).playerTrainerId[3] as u32)
+            gTowerFemaleFacilityClasses[((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+                + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32
+                + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32
+                + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32)
                 % 20];
     } else {
         (*ereaderTrainer).facilityClass =
-            gTowerMaleFacilityClasses[((*gSaveBlock2Ptr).playerTrainerId[0] as u32
-                + (*gSaveBlock2Ptr).playerTrainerId[1] as u32
-                + (*gSaveBlock2Ptr).playerTrainerId[2] as u32
-                + (*gSaveBlock2Ptr).playerTrainerId[3] as u32)
+            gTowerMaleFacilityClasses[((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+                + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32
+                + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32
+                + (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32)
                 % 30];
     }
     CopyTrainerId(
         (*ereaderTrainer).trainerId.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr(),
     );
     StringCopy_PlayerName(
         (*ereaderTrainer).name.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     (*ereaderTrainer).winStreak = 1;
     let mut j: i32 = 7;
     for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-        (*ereaderTrainer).greeting[i] = (*gSaveBlock1Ptr).easyChatBattleStart[i];
+        (*ereaderTrainer).greeting[i] = (*crate::gl!(gSaveBlock1Ptr)).easyChatBattleStart[i];
         (*ereaderTrainer).farewellPlayerLost[i] = j as u16;
         (*ereaderTrainer).farewellPlayerWon[i] = j as u16 + 6;
         j += 1;
     }
     for i in 0..3i32 {
         ConvertPokemonToBattleTowerPokemon(
-            &raw mut gPlayerParty[i],
+            crate::gl!(&raw gPlayerParty[i]),
             &raw mut (*ereaderTrainer).party[i],
         );
     }
@@ -2312,16 +2505,22 @@ unsafe fn FillEReaderTrainerWithPlayerData() {
 }
 pub unsafe fn GetEreaderTrainerFrontSpriteId() -> u8 {
     (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex).cast::<CArray<u8, 0>>())
-        [(*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass]
+        [(*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass]
 }
 pub unsafe fn GetEreaderTrainerClassId() -> u8 {
     (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass).cast::<CArray<u8, 0>>())
-        [(*gSaveBlock2Ptr).frontier.ereaderTrainer.facilityClass]
+        [(*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .ereaderTrainer
+            .facilityClass]
 }
 pub unsafe fn GetEreaderTrainerName(dst: *mut u8) {
     let mut i: i32 = 0;
     while i < 5 {
-        *dst.at(i) = (*gSaveBlock2Ptr).frontier.ereaderTrainer.name[i];
+        *dst.at(i) = (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer.name[i];
         i += 1;
     }
     *dst.at(i) = EOS;
@@ -2330,7 +2529,7 @@ pub unsafe fn GetEreaderTrainerName(dst: *mut u8) {
 pub unsafe fn ValidateEReaderTrainer() {
     let mut ereaderTrainer: *mut BattleTowerEReaderTrainer = null_mut();
     gSpecialVar_Result = FALSE as u16;
-    ereaderTrainer = &raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer;
+    ereaderTrainer = &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer;
     let mut checksum: u32 = 0;
     for i in 0..46u32 {
         checksum |= *(ereaderTrainer as *mut u32).at(i);
@@ -2343,8 +2542,13 @@ pub unsafe fn ValidateEReaderTrainer() {
     for i in 0..46u32 {
         checksum += *(ereaderTrainer as *mut u32).at(i);
     }
-    if (*gSaveBlock2Ptr).frontier.ereaderTrainer.checksum != checksum {
-        ClearEReaderTrainer(&raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer);
+    if (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .ereaderTrainer
+        .checksum
+        != checksum
+    {
+        ClearEReaderTrainer(&raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer);
         gSpecialVar_Result = TRUE as u16;
     }
 }
@@ -2362,7 +2566,7 @@ pub unsafe fn ClearEReaderTrainer(ereaderTrainer: *mut BattleTowerEReaderTrainer
 #[unsafe(no_mangle)]
 pub unsafe fn CopyEReaderTrainerGreeting() {
     FrontierSpeechToString(
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .ereaderTrainer
             .greeting
@@ -2370,11 +2574,11 @@ pub unsafe fn CopyEReaderTrainerGreeting() {
     );
 }
 unsafe fn CopyEReaderTrainerFarewellMessage() {
-    if gBattleOutcome == B_OUTCOME_DREW {
+    if gBattleOutcome.get() == B_OUTCOME_DREW {
         gStringVar4[0] = EOS;
-    } else if gBattleOutcome == B_OUTCOME_WON {
+    } else if gBattleOutcome.get() == B_OUTCOME_WON {
         FrontierSpeechToString(
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .ereaderTrainer
                 .farewellPlayerWon
@@ -2382,7 +2586,7 @@ unsafe fn CopyEReaderTrainerFarewellMessage() {
         );
     } else {
         FrontierSpeechToString(
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .ereaderTrainer
                 .farewellPlayerLost
@@ -2392,7 +2596,7 @@ unsafe fn CopyEReaderTrainerFarewellMessage() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryHideBattleTowerReporter() {
-    if (*gSaveBlock2Ptr).frontier.challengeStatus == CHALLENGE_STATUS_SAVING {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus == CHALLENGE_STATUS_SAVING {
         HideBattleTowerReporter();
     }
     if FlagGet(FLAG_CANCEL_BATTLE_ROOM_CHALLENGE) == TRUE {
@@ -2420,7 +2624,10 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
                 }
             }
             CreateMon(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i15 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i15])
+                },
                 sStevenMons[i].species,
                 sStevenMons[i].level,
                 sStevenMons[i].fixedIV,
@@ -2432,7 +2639,10 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
             j = 0;
             while j < PARTY_SIZE {
                 SetMonData(
-                    &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                    {
+                        let gl_i16 = MULTI_PARTY_SIZE + i;
+                        crate::gl!(&raw gPlayerParty[gl_i16])
+                    },
                     MON_DATA_HP_EV + j,
                     (&raw const sStevenMons[i].evs[j]).cast_mut() as *mut c_void,
                 );
@@ -2441,14 +2651,20 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
             j = 0;
             while j < MAX_MON_MOVES {
                 SetMonMoveSlot(
-                    &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                    {
+                        let gl_i17 = MULTI_PARTY_SIZE + i;
+                        crate::gl!(&raw gPlayerParty[gl_i17])
+                    },
                     sStevenMons[i].moves[j],
                     j as u8,
                 );
                 j += 1;
             }
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i18 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i18])
+                },
                 MON_DATA_OT_NAME,
                 (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
                     [804]
@@ -2458,11 +2674,17 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
             );
             j = MALE as i32;
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i19 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i19])
+                },
                 MON_DATA_OT_GENDER,
                 &raw mut j as *mut c_void,
             );
-            CalculateMonStats(&raw mut gPlayerParty[MULTI_PARTY_SIZE + i]);
+            CalculateMonStats({
+                let gl_i20 = MULTI_PARTY_SIZE + i;
+                crate::gl!(&raw gPlayerParty[gl_i20])
+            });
         }
     } else if trainerId == TRAINER_EREADER {
         trainerName[0] = gGameLanguage;
@@ -2471,53 +2693,72 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
         ivs = GetFrontierTrainerFixedIvs(trainerId) as u32;
         otID = Random() as u32 | (Random() as u32) << 16;
         for i in 0..FRONTIER_MULTI_PARTY_SIZE {
-            monId = (*gSaveBlock2Ptr).frontier.trainerIds[i + 18];
+            monId = (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i + 18];
             CreateMonWithEVSpreadNatureOTID(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
-                (*gFacilityTrainerMons.at(monId)).species,
+                {
+                    let gl_i21 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i21])
+                },
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
                 level as u8,
-                (*gFacilityTrainerMons.at(monId)).nature,
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
                 ivs as u8,
-                (*gFacilityTrainerMons.at(monId)).evSpread,
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
                 otID,
             );
             friendship = MAX_FRIENDSHIP as u32;
             j = 0;
             while j < MAX_MON_MOVES {
                 SetMonMoveSlot(
-                    &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
-                    (*gFacilityTrainerMons.at(monId)).moves[j],
+                    {
+                        let gl_i22 = MULTI_PARTY_SIZE + i;
+                        crate::gl!(&raw gPlayerParty[gl_i22])
+                    },
+                    (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                     j as u8,
                 );
-                if (*gFacilityTrainerMons.at(monId)).moves[j] == MOVE_FRUSTRATION {
+                if (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j] == MOVE_FRUSTRATION {
                     friendship = 0;
                 }
                 j += 1;
             }
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i23 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i23])
+                },
                 MON_DATA_FRIENDSHIP,
                 &raw mut friendship as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i24 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i24])
+                },
                 MON_DATA_HELD_ITEM,
-                (&raw const gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId])
+                (&raw const gBattleFrontierHeldItems
+                    [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                     .cast_mut() as *mut c_void,
             );
             j = 0;
             while j < 8 {
-                trainerName[j] = (*gFacilityTrainers.at(trainerId)).trainerName[j];
+                trainerName[j] = (*(*gFacilityTrainers.as_ptr()).at(trainerId)).trainerName[j];
                 j += 1;
             }
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i25 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i25])
+                },
                 MON_DATA_OT_NAME,
                 &raw mut trainerName as *mut c_void,
             );
             j = IsFrontierTrainerFemale(trainerId) as i32;
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i26 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i26])
+                },
                 MON_DATA_OT_GENDER,
                 &raw mut j as *mut c_void,
             );
@@ -2526,9 +2767,9 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
         trainerId -= TRAINER_RECORD_MIXING_FRIEND as u16;
         for i in 0..FRONTIER_MULTI_PARTY_SIZE {
             let record: *mut EmeraldBattleTowerRecord =
-                &raw mut (*gSaveBlock2Ptr).frontier.towerRecords[trainerId];
+                &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[trainerId];
             let mut monData: BattleTowerPokemon =
-                (*record).party[(*gSaveBlock2Ptr).frontier.trainerIds[18 + i]];
+                (*record).party[(*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[18 + i]];
             StringCopy(trainerName.as_mut_ptr(), (*record).name.as_mut_ptr());
             if (*record).language == LANGUAGE_JAPANESE {
                 if monData.nickname[0] != EXT_CTRL_CODE_BEGIN
@@ -2545,18 +2786,27 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
                 }
             }
             CreateBattleTowerMon_HandleLevel(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i27 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i27])
+                },
                 &raw mut monData,
                 TRUE,
             );
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i28 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i28])
+                },
                 MON_DATA_OT_NAME,
                 trainerName.as_mut_ptr() as *mut c_void,
             );
             j = IsFrontierTrainerFemale(trainerId + TRAINER_RECORD_MIXING_FRIEND as u16) as i32;
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i29 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i29])
+                },
                 MON_DATA_OT_GENDER,
                 &raw mut j as *mut c_void,
             );
@@ -2565,13 +2815,19 @@ unsafe fn FillPartnerParty(mut trainerId: u16) {
         trainerId -= TRAINER_RECORD_MIXING_APPRENTICE as u16;
         for i in 0..FRONTIER_MULTI_PARTY_SIZE {
             CreateApprenticeMon(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
-                &raw mut (*gSaveBlock2Ptr).apprentices[trainerId],
-                (*gSaveBlock2Ptr).frontier.trainerIds[18 + i] as u8,
+                {
+                    let gl_i30 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i30])
+                },
+                &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[trainerId],
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[18 + i] as u8,
             );
             j = IsFrontierTrainerFemale(trainerId + TRAINER_RECORD_MIXING_APPRENTICE as u16) as i32;
             SetMonData(
-                &raw mut gPlayerParty[MULTI_PARTY_SIZE + i],
+                {
+                    let gl_i31 = MULTI_PARTY_SIZE + i;
+                    crate::gl!(&raw gPlayerParty[gl_i31])
+                },
                 MON_DATA_OT_GENDER,
                 &raw mut j as *mut c_void,
             );
@@ -2713,13 +2969,13 @@ unsafe fn ClearApprentice(apprentice: *mut Apprentice) {
 }
 unsafe fn ValidateApprenticesChecksums() {
     for i in 0..APPRENTICE_COUNT {
-        let data: *mut u32 = &raw mut (*gSaveBlock2Ptr).apprentices[i] as *mut u32;
+        let data: *mut u32 = &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[i] as *mut u32;
         let mut checksum: u32 = 0;
         for j in 0..16i32 {
             checksum += *data.at(j);
         }
-        if (*gSaveBlock2Ptr).apprentices[i].checksum != checksum {
-            ClearApprentice(&raw mut (*gSaveBlock2Ptr).apprentices[i]);
+        if (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].checksum != checksum {
+            ClearApprentice(&raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[i]);
         }
     }
 }
@@ -2729,30 +2985,30 @@ pub unsafe fn GetBattleTowerTrainerLanguage(dst: *mut u8, trainerId: u16) {
     } else if trainerId < FRONTIER_TRAINERS_COUNT {
         *dst = gGameLanguage;
     } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             *dst = GetRecordedBattleRecordMixFriendLanguage();
         } else {
-            *dst = (*gSaveBlock2Ptr).frontier.towerRecords
+            *dst = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                 [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .language;
         }
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             *dst = GetRecordedBattleApprenticeLanguage();
         } else {
-            *dst = (*gSaveBlock2Ptr).apprentices
+            *dst = (*crate::gl!(gSaveBlock2Ptr)).apprentices
                 [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .language;
         }
     }
 }
 pub unsafe fn SetFacilityPtrsGetLevel() -> u8 {
-    if (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_TENT {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() == FRONTIER_LVL_TENT {
         return SetTentPtrsGetLevel();
     } else {
-        gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
-        gFacilityTrainerMons = gBattleFrontierMons.as_ptr().cast_mut();
-        return GetFrontierEnemyMonLevel((*gSaveBlock2Ptr).frontier.lvlMode());
+        crate::gl!(gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut());
+        crate::gl!(gFacilityTrainerMons = gBattleFrontierMons.as_ptr().cast_mut());
+        return GetFrontierEnemyMonLevel((*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode());
     }
     #[allow(unreachable_code)]
     {
@@ -2777,15 +3033,19 @@ pub unsafe fn GetFrontierEnemyMonLevel(lvlMode: u8) -> u8 {
 pub unsafe fn GetHighestLevelInPlayerParty() -> i32 {
     let mut highestLevel: i32 = 0;
     for i in 0..PARTY_SIZE {
-        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) != 0
+        if GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != 0
             && GetMonData3(
-                &raw mut gPlayerParty[i],
+                crate::gl!(&raw gPlayerParty[i]),
                 MON_DATA_SPECIES_OR_EGG,
                 null_mut(),
             ) != SPECIES_EGG
         {
             let level: i32 =
-                GetMonData3(&raw mut gPlayerParty[i], MON_DATA_LEVEL, null_mut()) as i32;
+                GetMonData3(crate::gl!(&raw gPlayerParty[i]), MON_DATA_LEVEL, null_mut()) as i32;
             if level > highestLevel {
                 highestLevel = level;
             }
@@ -2835,17 +3095,17 @@ unsafe fn GetBattleTentTrainerId() -> u16 {
 unsafe fn SetTentPtrsGetLevel() -> u8 {
     let facility: u32 = VarGet(VAR_FRONTIER_FACILITY) as u32;
     if facility == FRONTIER_FACILITY_FACTORY as u32 {
-        gFacilityTrainers = gSlateportBattleTentTrainers.as_ptr().cast_mut();
-        gFacilityTrainerMons = gSlateportBattleTentMons.as_ptr().cast_mut();
+        crate::gl!(gFacilityTrainers = gSlateportBattleTentTrainers.as_ptr().cast_mut());
+        crate::gl!(gFacilityTrainerMons = gSlateportBattleTentMons.as_ptr().cast_mut());
     } else if facility == FRONTIER_FACILITY_PALACE as u32 {
-        gFacilityTrainers = gVerdanturfBattleTentTrainers.as_ptr().cast_mut();
-        gFacilityTrainerMons = gVerdanturfBattleTentMons.as_ptr().cast_mut();
+        crate::gl!(gFacilityTrainers = gVerdanturfBattleTentTrainers.as_ptr().cast_mut());
+        crate::gl!(gFacilityTrainerMons = gVerdanturfBattleTentMons.as_ptr().cast_mut());
     } else if facility == FRONTIER_FACILITY_ARENA as u32 {
-        gFacilityTrainers = gFallarborBattleTentTrainers.as_ptr().cast_mut();
-        gFacilityTrainerMons = gFallarborBattleTentMons.as_ptr().cast_mut();
+        crate::gl!(gFacilityTrainers = gFallarborBattleTentTrainers.as_ptr().cast_mut());
+        crate::gl!(gFacilityTrainerMons = gFallarborBattleTentMons.as_ptr().cast_mut());
     } else {
-        gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
-        gFacilityTrainerMons = gBattleFrontierMons.as_ptr().cast_mut();
+        crate::gl!(gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut());
+        crate::gl!(gFacilityTrainerMons = gBattleFrontierMons.as_ptr().cast_mut());
     }
     let mut level: u8 = GetHighestLevelInPlayerParty() as u8;
     if level < TENT_MIN_LEVEL {
@@ -2859,21 +3119,24 @@ unsafe fn SetNextBattleTentOpponent() {
     loop {
         trainerId = GetBattleTentTrainerId();
         i = 0;
-        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
-            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+        while i < (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                 break;
             }
             i += 1;
         }
-        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
+        if i == (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
             break;
         }
     }
-    gTrainerBattleOpponent_A = trainerId;
-    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 + 1 < TENT_STAGES_PER_CHALLENGE {
-        (*gSaveBlock2Ptr).frontier.trainerIds[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum] =
-            gTrainerBattleOpponent_A;
+    gTrainerBattleOpponent_A.set(trainerId);
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 + 1
+        < TENT_STAGES_PER_CHALLENGE
+    {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum] =
+            gTrainerBattleOpponent_A.get();
     }
 }
 unsafe fn FillTentTrainerParty_(trainerId: u16, firstMonId: u8, monCount: u8) {
@@ -2883,7 +3146,7 @@ unsafe fn FillTentTrainerParty_(trainerId: u16, firstMonId: u8, monCount: u8) {
     let level: u8 = SetTentPtrsGetLevel();
     let fixedIV: u8 = 0;
     let mut monSet: *mut u16 = null_mut();
-    monSet = (*gFacilityTrainers.at(gTrainerBattleOpponent_A)).monSet;
+    monSet = (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_A.get())).monSet;
     let mut bfMonCount: u8 = 0;
     let mut monId: u16 = *monSet.at(bfMonCount);
     while monId != 0xFFFF {
@@ -2899,8 +3162,11 @@ unsafe fn FillTentTrainerParty_(trainerId: u16, firstMonId: u8, monCount: u8) {
         let monId: u16 = *monSet.at(rem_i32(Random() as i32, bfMonCount as i32));
         j = 0;
         while j < i + firstMonId as i32 {
-            if GetMonData3(&raw mut gEnemyParty[j], MON_DATA_SPECIES, null_mut())
-                == (*gFacilityTrainerMons.at(monId)).species as u32
+            if GetMonData3(
+                crate::gl!(&raw gEnemyParty[j]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) == (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species as u32
             {
                 break;
             }
@@ -2911,11 +3177,18 @@ unsafe fn FillTentTrainerParty_(trainerId: u16, firstMonId: u8, monCount: u8) {
         }
         j = 0;
         while j < i + firstMonId as i32 {
-            if GetMonData3(&raw mut gEnemyParty[j], MON_DATA_HELD_ITEM, null_mut())
-                != ITEM_NONE as u32
-                && GetMonData3(&raw mut gEnemyParty[j], MON_DATA_HELD_ITEM, null_mut())
-                    == gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId]
-                        as u32
+            if GetMonData3(
+                crate::gl!(&raw gEnemyParty[j]),
+                MON_DATA_HELD_ITEM,
+                null_mut(),
+            ) != ITEM_NONE as u32
+                && GetMonData3(
+                    crate::gl!(&raw gEnemyParty[j]),
+                    MON_DATA_HELD_ITEM,
+                    null_mut(),
+                ) == gBattleFrontierHeldItems
+                    [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId]
+                    as u32
             {
                 break;
             }
@@ -2936,34 +3209,47 @@ unsafe fn FillTentTrainerParty_(trainerId: u16, firstMonId: u8, monCount: u8) {
         }
         chosenMonIndices[i] = monId;
         CreateMonWithEVSpreadNatureOTID(
-            &raw mut gEnemyParty[i + firstMonId as i32],
-            (*gFacilityTrainerMons.at(monId)).species,
+            {
+                let gl_i32 = i + firstMonId as i32;
+                crate::gl!(&raw gEnemyParty[gl_i32])
+            },
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
             level,
-            (*gFacilityTrainerMons.at(monId)).nature,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
             fixedIV,
-            (*gFacilityTrainerMons.at(monId)).evSpread,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
             otID,
         );
         friendship = MAX_FRIENDSHIP;
         for j in 0..MAX_MON_MOVES {
             SetMonMoveSlot(
-                &raw mut gEnemyParty[i + firstMonId as i32],
-                (*gFacilityTrainerMons.at(monId)).moves[j],
+                {
+                    let gl_i33 = i + firstMonId as i32;
+                    crate::gl!(&raw gEnemyParty[gl_i33])
+                },
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                 j as u8,
             );
-            if (*gFacilityTrainerMons.at(monId)).moves[j] == MOVE_FRUSTRATION {
+            if (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j] == MOVE_FRUSTRATION {
                 friendship = 0;
             }
         }
         SetMonData(
-            &raw mut gEnemyParty[i + firstMonId as i32],
+            {
+                let gl_i34 = i + firstMonId as i32;
+                crate::gl!(&raw gEnemyParty[gl_i34])
+            },
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut gEnemyParty[i + firstMonId as i32],
+            {
+                let gl_i35 = i + firstMonId as i32;
+                crate::gl!(&raw gEnemyParty[gl_i35])
+            },
             MON_DATA_HELD_ITEM,
-            (&raw const gBattleFrontierHeldItems[(*gFacilityTrainerMons.at(monId)).itemTableId])
+            (&raw const gBattleFrontierHeldItems
+                [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                 .cast_mut() as *mut c_void,
         );
         i += 1;
@@ -3001,7 +3287,8 @@ pub unsafe fn FacilityClassToGraphicsId(facilityClass: u8) -> u8 {
     }
 }
 pub unsafe fn ValidateBattleTowerRecord(recordId: u8) -> u32 {
-    let record: *mut u32 = &raw mut (*gSaveBlock2Ptr).frontier.towerRecords[recordId] as *mut u32;
+    let record: *mut u32 =
+        &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[recordId] as *mut u32;
     let mut checksum: u32 = 0;
     let mut hasData: u32 = 0;
     for i in 0..58i32 {
@@ -3010,8 +3297,10 @@ pub unsafe fn ValidateBattleTowerRecord(recordId: u8) -> u32 {
     }
     if checksum == 0 && hasData == 0 {
         return FALSE as u32;
-    } else if (*gSaveBlock2Ptr).frontier.towerRecords[recordId].checksum != checksum {
-        ClearBattleTowerRecord(&raw mut (*gSaveBlock2Ptr).frontier.towerRecords[recordId]);
+    } else if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[recordId].checksum != checksum {
+        ClearBattleTowerRecord(
+            &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords[recordId],
+        );
         return FALSE as u32;
     } else {
         return TRUE as u32;
@@ -3022,13 +3311,17 @@ pub unsafe fn ValidateBattleTowerRecord(recordId: u8) -> u32 {
     }
 }
 pub unsafe fn TrySetLinkBattleTowerEnemyPartyLevel() {
-    if gBattleTypeFlags & 0x2000002 != 0 {
+    if gBattleTypeFlags.get() & 0x2000002 != 0 {
         let enemyLevel: u8 = SetFacilityPtrsGetLevel();
         for i in 0..PARTY_SIZE {
-            let species: u32 = GetMonData3(&raw mut gEnemyParty[i], MON_DATA_SPECIES, null_mut());
+            let species: u32 = GetMonData3(
+                crate::gl!(&raw gEnemyParty[i]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            );
             if species != 0 {
                 SetMonData(
-                    &raw mut gEnemyParty[i],
+                    crate::gl!(&raw gEnemyParty[i]),
                     MON_DATA_EXP,
                     (&raw const (*(&raw const crate::data::pokemon::gExperienceTables)
                         .cast::<CArray<CArray<u32, 101>, 0>>())
@@ -3037,7 +3330,7 @@ pub unsafe fn TrySetLinkBattleTowerEnemyPartyLevel() {
                             .growthRate][enemyLevel])
                         .cast_mut() as *mut c_void,
                 );
-                CalculateMonStats(&raw mut gEnemyParty[i]);
+                CalculateMonStats(crate::gl!(&raw gEnemyParty[i]));
             }
         }
     }

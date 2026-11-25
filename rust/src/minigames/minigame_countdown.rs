@@ -83,7 +83,7 @@ unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
 }
 /// `SetSpriteMatrixAnchor` with this module's view of its types.
 #[inline]
-unsafe fn SetSpriteMatrixAnchor(a0: *mut Sprite, a1: i16, a2: i16) {
+fn SetSpriteMatrixAnchor(a0: *mut Sprite, a1: i16, a2: i16) {
     unsafe {
         crate::sprite::SetSpriteMatrixAnchor(a0 as _, a1, a2);
     }
@@ -209,7 +209,10 @@ unsafe fn StaticCountdown_CreateSprites(taskId: u8, data: *mut i16) {
     }
     i = 0;
     while (i as i16) < *data.at(8) {
-        sprite = &raw mut gSprites[*data.at(13 + i as i32)];
+        sprite = {
+            let gl_i0 = *data.at(13 + i as i32);
+            crate::gl!(&raw gSprites[gl_i0])
+        };
         (*sprite).oam.set_priority(*data.at(6) as u16);
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).data[sInterval] = *data.at(5);
@@ -231,16 +234,37 @@ pub(crate) unsafe fn Task_StaticCountdown_Init(taskId: u8) {
     *data.at(9) = 120;
     *data.at(10) = 88;
     StaticCountdown_CreateSprites(taskId, data);
-    StartSpriteAnim(&raw mut gSprites[*data.at(14)], ANIM_START_MID);
-    gSprites[*data.at(14)].x2 = -32;
-    StartSpriteAnim(&raw mut gSprites[*data.at(15)], ANIM_START_RIGHT);
-    gSprites[*data.at(15)].x2 = 32;
+    StartSpriteAnim(
+        {
+            let gl_i1 = *data.at(14);
+            crate::gl!(&raw gSprites[gl_i1])
+        },
+        ANIM_START_MID,
+    );
+    {
+        let gl_i2 = *data.at(14);
+        crate::gl!(gSprites[gl_i2].x2 = -32)
+    };
+    StartSpriteAnim(
+        {
+            let gl_i3 = *data.at(15);
+            crate::gl!(&raw gSprites[gl_i3])
+        },
+        ANIM_START_RIGHT,
+    );
+    {
+        let gl_i4 = *data.at(15);
+        crate::gl!(gSprites[gl_i4].x2 = 32)
+    };
 }
 pub(crate) unsafe fn Task_StaticCountdown_Free(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     let mut i: u8 = 0;
     while (i as i16) < *data.at(8) {
-        DestroySprite(&raw mut gSprites[*data.at(13 + i as i32)]);
+        DestroySprite({
+            let gl_i5 = *data.at(13 + i as i32);
+            crate::gl!(&raw gSprites[gl_i5])
+        });
         i += 1;
     }
     FreeSpriteTilesByTag(sSpriteSheet_321Start_Static[*data.at(3)].tag);
@@ -272,14 +296,14 @@ pub(crate) unsafe fn SpriteCB_StaticCountdown(sprite: *mut Sprite) {
         if sw1 == ANIM_START_LEFT {
             PlaySE(SE_PIN);
             StartSpriteAnim(sprite, (*sprite).data[2] as u8);
-            gSprites[*data.at(14)].set_invisible(FALSE as u16);
-            gSprites[*data.at(15)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[*data.at(14)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[*data.at(15)].set_invisible(FALSE as u16);
             break 'l1;
         }
         if sw1 == 4 {
             (*sprite).set_invisible(TRUE as u16);
-            gSprites[*data.at(14)].set_invisible(1);
-            gSprites[*data.at(15)].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[*data.at(14)].set_invisible(1);
+            (*gSprites.as_ptr())[*data.at(15)].set_invisible(TRUE as u16);
             *data = STATE_END;
             return;
         }
@@ -289,16 +313,19 @@ pub(crate) unsafe fn SpriteCB_StaticCountdown(sprite: *mut Sprite) {
 pub(crate) unsafe fn Task_StaticCountdown_Start(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     PlaySE(SE_BALL_BOUNCE_1);
-    gSprites[*data.at(13)].callback = Some(SpriteCB_StaticCountdown);
-    gSprites[*data.at(13)].set_invisible(0);
+    {
+        let gl_i6 = *data.at(13);
+        crate::gl!(gSprites[gl_i6].callback = Some(SpriteCB_StaticCountdown))
+    };
+    (*gSprites.as_ptr())[*data.at(13)].set_invisible(0);
     task_set(taskId, tState, STATE_RUN);
 }
 pub(crate) unsafe fn Task_StaticCountdown_Run(taskId: u8) {
     let mut packet: CArray<u16, 6> = zeroed();
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gReceivedRemoteLinkPlayers != 0 {
-        if gRecvCmds[0][1] == LINKCMD_COUNTDOWN {
-            *data.at(11) = gRecvCmds[0][2] as i16;
+    if gReceivedRemoteLinkPlayers.get() != 0 {
+        if crate::gl!(gRecvCmds[0][1]) == LINKCMD_COUNTDOWN {
+            *data.at(11) = crate::gl!(gRecvCmds[0][2]) as i16;
         }
         if GetMultiplayerId() == 0 {
             *data.at(12) += 1;
@@ -348,14 +375,26 @@ pub(crate) unsafe fn Task_MinigameCountdown(taskId: u8) {
         1 => {
             if RunMinigameCountdownDigitsAnim(*data.at(7) as u8) == 0 {
                 InitStartGraphic(*data.at(7) as u8, *data.at(8) as u8, *data.at(9) as u8);
-                FreeSpriteOamMatrix(&raw mut gSprites[*data.at(7)]);
-                DestroySprite(&raw mut gSprites[*data.at(7)]);
+                FreeSpriteOamMatrix({
+                    let gl_i7 = *data.at(7);
+                    crate::gl!(&raw gSprites[gl_i7])
+                });
+                DestroySprite({
+                    let gl_i8 = *data.at(7);
+                    crate::gl!(&raw gSprites[gl_i8])
+                });
                 *data += 1;
             }
         }
         2 if IsStartGraphicAnimRunning(*data.at(8) as u8) == 0 => {
-            DestroySprite(&raw mut gSprites[*data.at(8)]);
-            DestroySprite(&raw mut gSprites[*data.at(9)]);
+            DestroySprite({
+                let gl_i9 = *data.at(8);
+                crate::gl!(&raw gSprites[gl_i9])
+            });
+            DestroySprite({
+                let gl_i10 = *data.at(9);
+                crate::gl!(&raw gSprites[gl_i10])
+            });
             FreeSpriteTilesByTag(*data.at(2) as u16);
             FreeSpritePaletteByTag(*data.at(3) as u16);
             DestroyTask(taskId);
@@ -364,7 +403,7 @@ pub(crate) unsafe fn Task_MinigameCountdown(taskId: u8) {
     }
 }
 unsafe fn RunMinigameCountdownDigitsAnim(spriteId: u8) -> u32 {
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     'l1: {
         let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
@@ -451,15 +490,16 @@ unsafe fn RunMinigameCountdownDigitsAnim(spriteId: u8) -> u32 {
     TRUE as u32
 }
 unsafe fn InitStartGraphic(spriteId1: u8, spriteId2: u8, spriteId3: u8) {
-    gSprites[spriteId2].y2 = -40;
-    gSprites[spriteId3].y2 = -40;
-    gSprites[spriteId2].set_invisible(FALSE as u16);
-    gSprites[spriteId3].set_invisible(FALSE as u16);
-    gSprites[spriteId2].callback = Some(SpriteCB_Start);
-    gSprites[spriteId3].callback = Some(SpriteCB_Start);
+    crate::gl!(gSprites[spriteId2].y2 = -40);
+    crate::gl!(gSprites[spriteId3].y2 = -40);
+    (*gSprites.as_ptr())[spriteId2].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[spriteId3].set_invisible(FALSE as u16);
+    crate::gl!(gSprites[spriteId2].callback = Some(SpriteCB_Start));
+    crate::gl!(gSprites[spriteId3].callback = Some(SpriteCB_Start));
 }
 unsafe fn IsStartGraphicAnimRunning(spriteId: u8) -> u32 {
-    (gSprites[spriteId].callback == Some(SpriteCB_Start as unsafe fn(*mut Sprite))) as u32
+    (crate::gl!(gSprites[spriteId].callback) == Some(SpriteCB_Start as unsafe fn(*mut Sprite)))
+        as u32
 }
 pub(crate) unsafe fn SpriteCB_Start(sprite: *mut Sprite) {
     let mut y: i32 = 0;
@@ -564,7 +604,13 @@ unsafe fn CreateStartSprite(
     spriteTemplate.paletteTag = palTag;
     *spriteId1 = CreateSprite(&raw mut spriteTemplate, x - 32, y, subpriority) as i16;
     *spriteId2 = CreateSprite(&raw mut spriteTemplate, x + 32, y, subpriority) as i16;
-    gSprites[*spriteId1].set_invisible(TRUE as u16);
-    gSprites[*spriteId2].set_invisible(TRUE as u16);
-    StartSpriteAnim(&raw mut gSprites[*spriteId2], 1);
+    (*gSprites.as_ptr())[*spriteId1].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[*spriteId2].set_invisible(TRUE as u16);
+    StartSpriteAnim(
+        {
+            let gl_i11 = *spriteId2;
+            crate::gl!(&raw gSprites[gl_i11])
+        },
+        1,
+    );
 }

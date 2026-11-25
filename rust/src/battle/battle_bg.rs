@@ -78,26 +78,26 @@ unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -151,7 +151,7 @@ static sVsLettersSpriteSheet: Table<CompressedSpriteSheet> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -174,7 +174,7 @@ unsafe fn UnusedBattleInit() {
         0,
         0,
     );
-    gSprites[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     SetMainCallback2(Some(CB2_UnusedBattleInit));
 }
 pub(crate) unsafe fn CB2_UnusedBattleInit() {
@@ -185,14 +185,14 @@ pub(crate) unsafe fn CB2_UnusedBattleInit() {
 pub unsafe fn BattleInitBgsAndWindows() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, gBattleBgTemplates.as_ptr().cast_mut(), 4);
-    if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
-        gBattleScripting.windowsType = B_WIN_TYPE_ARENA;
-        SetBgTilemapBuffer(1, gBattleAnimBgTilemapBuffer as *mut c_void);
-        SetBgTilemapBuffer(2, gBattleAnimBgTilemapBuffer as *mut c_void);
+    if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0 {
+        crate::gl!(gBattleScripting.windowsType = B_WIN_TYPE_ARENA);
+        SetBgTilemapBuffer(1, crate::gl!(gBattleAnimBgTilemapBuffer) as *mut c_void);
+        SetBgTilemapBuffer(2, crate::gl!(gBattleAnimBgTilemapBuffer) as *mut c_void);
     } else {
-        gBattleScripting.windowsType = B_WIN_TYPE_NORMAL;
+        crate::gl!(gBattleScripting.windowsType = B_WIN_TYPE_NORMAL);
     }
-    InitWindows(gBattleWindowTemplates[gBattleScripting.windowsType]);
+    InitWindows(gBattleWindowTemplates[crate::gl!(gBattleScripting.windowsType)]);
     DeactivateAllTextPrinters();
 }
 pub unsafe fn InitBattleBgsVideo() {
@@ -214,15 +214,15 @@ pub unsafe fn LoadBattleMenuWindowGfx() {
         80,
         32,
     );
-    if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0 {
         Menu_LoadStdPalAt(112);
         LoadMessageBoxGfx(0, 0x30, 112);
-        gPlttBufferUnfaded[118] = 0;
+        crate::gl!(gPlttBufferUnfaded[118] = 0);
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[118] as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[118] as *mut c_void,
             1,
@@ -230,7 +230,7 @@ pub unsafe fn LoadBattleMenuWindowGfx() {
     }
 }
 pub unsafe fn DrawMainBattleBackground() {
-    if gBattleTypeFlags & 0x23f0902 != 0 {
+    if gBattleTypeFlags.get() & 0x23f0902 != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
                 .cast::<CArray<u32, 0>>())
@@ -253,7 +253,7 @@ pub unsafe fn DrawMainBattleBackground() {
             32,
             96,
         );
-    } else if gBattleTypeFlags & BATTLE_TYPE_GROUDON != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_GROUDON != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Cave)
                 .cast::<CArray<u32, 0>>())
@@ -276,7 +276,7 @@ pub unsafe fn DrawMainBattleBackground() {
             32,
             96,
         );
-    } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_KYOGRE != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Water)
                 .cast::<CArray<u32, 0>>())
@@ -299,7 +299,7 @@ pub unsafe fn DrawMainBattleBackground() {
             32,
             96,
         );
-    } else if gBattleTypeFlags & BATTLE_TYPE_RAYQUAZA != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_RAYQUAZA != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Rayquaza)
                 .cast::<CArray<u32, 0>>())
@@ -323,10 +323,10 @@ pub unsafe fn DrawMainBattleBackground() {
             96,
         );
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
             let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
-                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                .trainerClass;
+                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+            .trainerClass;
             if trainerClass == TRAINER_CLASS_LEADER {
                 LZDecompressVram(
                     (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
@@ -572,15 +572,15 @@ pub unsafe fn DrawMainBattleBackground() {
             }
             _ => {
                 LZDecompressVram(
-                    sBattleEnvironmentTable[gBattleEnvironment].tileset as *mut u32,
+                    sBattleEnvironmentTable[gBattleEnvironment.get()].tileset as *mut u32,
                     0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    sBattleEnvironmentTable[gBattleEnvironment].tilemap as *mut u32,
+                    sBattleEnvironmentTable[gBattleEnvironment.get()].tilemap as *mut u32,
                     0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    sBattleEnvironmentTable[gBattleEnvironment].palette as *mut u32,
+                    sBattleEnvironmentTable[gBattleEnvironment.get()].palette as *mut u32,
                     32,
                     96,
                 );
@@ -624,7 +624,7 @@ unsafe fn DrawLinkBattleParticipantPokeballs(
 ) {
     let mut pokeballStatuses: u16 = 0;
     let mut tiles: CArray<u16, 6> = zeroed();
-    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
         if task_get(taskId, 5) != 0 {
             match multiplayerId {
                 0 => {
@@ -676,7 +676,7 @@ unsafe fn DrawLinkBattleParticipantPokeballs(
         );
         CopyBgTilemapBufferToVram(bgId);
     } else {
-        if multiplayerId == gBattleScripting.multiplayerId {
+        if multiplayerId == crate::gl!(gBattleScripting.multiplayerId) {
             pokeballStatuses = task_get(taskId, 3) as u16;
         } else {
             pokeballStatuses = task_get(taskId, 4) as u16;
@@ -701,16 +701,19 @@ unsafe fn DrawLinkBattleParticipantPokeballs(
     }
 }
 unsafe fn DrawLinkBattleVsScreenOutcomeText() {
-    if gBattleOutcome == B_OUTCOME_DREW {
+    if gBattleOutcome.get() == B_OUTCOME_DREW {
         BattlePutTextOnWindow(
             (*(&raw const crate::data::battle_message::gText_Draw).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
             B_WIN_VS_OUTCOME_DRAW,
         );
-    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-        if gBattleOutcome == B_OUTCOME_WON {
-            match gLinkPlayers[gBattleScripting.multiplayerId].id {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
+        if gBattleOutcome.get() == B_OUTCOME_WON {
+            match {
+                let gl_i0 = crate::gl!(gBattleScripting.multiplayerId);
+                crate::gl!(gLinkPlayers[gl_i0].id)
+            } {
                 0 => {
                     BattlePutTextOnWindow(
                         (*(&raw const crate::data::battle_message::gText_Win)
@@ -778,7 +781,10 @@ unsafe fn DrawLinkBattleVsScreenOutcomeText() {
                 _ => {}
             }
         } else {
-            match gLinkPlayers[gBattleScripting.multiplayerId].id {
+            match {
+                let gl_i1 = crate::gl!(gBattleScripting.multiplayerId);
+                crate::gl!(gLinkPlayers[gl_i1].id)
+            } {
                 0 => {
                     BattlePutTextOnWindow(
                         (*(&raw const crate::data::battle_message::gText_Win)
@@ -846,8 +852,12 @@ unsafe fn DrawLinkBattleVsScreenOutcomeText() {
                 _ => {}
             }
         }
-    } else if gBattleOutcome == B_OUTCOME_WON {
-        if gLinkPlayers[gBattleScripting.multiplayerId].id != 0 {
+    } else if gBattleOutcome.get() == B_OUTCOME_WON {
+        if ({
+            let gl_i2 = crate::gl!(gBattleScripting.multiplayerId);
+            crate::gl!(gLinkPlayers[gl_i2].id)
+        }) != 0
+        {
             BattlePutTextOnWindow(
                 (*(&raw const crate::data::battle_message::gText_Win).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -875,7 +885,11 @@ unsafe fn DrawLinkBattleVsScreenOutcomeText() {
             );
         }
     } else {
-        if gLinkPlayers[gBattleScripting.multiplayerId].id != 0 {
+        if ({
+            let gl_i3 = crate::gl!(gBattleScripting.multiplayerId);
+            crate::gl!(gLinkPlayers[gl_i3].id)
+        }) != 0
+        {
             BattlePutTextOnWindow(
                 (*(&raw const crate::data::battle_message::gText_Win).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -910,10 +924,10 @@ pub unsafe fn InitLinkBattleVsScreen(taskId: u8) {
     let mut palId: i32 = 0;
     match task_get(taskId, 0) {
         0 => {
-            if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                 for i in 0..MAX_LINK_PLAYERS {
-                    name = gLinkPlayers[i].name.as_mut_ptr();
-                    linkPlayer = &raw mut gLinkPlayers[i];
+                    name = (*gLinkPlayers.as_ptr())[i].name.as_mut_ptr();
+                    linkPlayer = crate::gl!(&raw gLinkPlayers[i]);
                     match (*linkPlayer).id {
                         0 => {
                             BattlePutTextOnWindow(name, B_WIN_VS_MULTI_PLAYER_1);
@@ -959,16 +973,16 @@ pub unsafe fn InitLinkBattleVsScreen(taskId: u8) {
                     }
                 }
             } else {
-                let mut playerId: u8 = gBattleScripting.multiplayerId;
+                let mut playerId: u8 = crate::gl!(gBattleScripting.multiplayerId);
                 let mut opponentId: u8 = playerId ^ BIT_SIDE;
                 let opponentId_copy: u8 = opponentId;
-                if gLinkPlayers[playerId].id != 0 {
+                if crate::gl!(gLinkPlayers[playerId].id) != 0 {
                     opponentId = playerId;
                     playerId = opponentId_copy;
                 }
-                name = gLinkPlayers[playerId].name.as_mut_ptr();
+                name = (*gLinkPlayers.as_ptr())[playerId].name.as_mut_ptr();
                 BattlePutTextOnWindow(name, B_WIN_VS_PLAYER);
-                name = gLinkPlayers[opponentId].name.as_mut_ptr();
+                name = (*gLinkPlayers.as_ptr())[opponentId].name.as_mut_ptr();
                 BattlePutTextOnWindow(name, B_WIN_VS_OPPONENT);
                 DrawLinkBattleParticipantPokeballs(taskId, playerId, 1, 2, 7);
                 DrawLinkBattleParticipantPokeballs(taskId, opponentId, 2, 2, 7);
@@ -977,37 +991,50 @@ pub unsafe fn InitLinkBattleVsScreen(taskId: u8) {
         }
         1 => {
             palId = AllocSpritePalette(TAG_VS_LETTERS) as i32;
-            gPlttBufferUnfaded[0x100 + palId * 16 + 15] = {
-                gPlttBufferFaded[0x100 + palId * 16 + 15] = 32767;
-                gPlttBufferFaded[0x100 + palId * 16 + 15]
+            {
+                let gl_v = {
+                    {
+                        let gl_v = 32767;
+                        let gl_i1 = 0x100 + palId * 16 + 15;
+                        crate::gl!(gPlttBufferFaded[gl_i1] = gl_v)
+                    };
+                    {
+                        let gl_i2 = 0x100 + palId * 16 + 15;
+                        crate::gl!(gPlttBufferFaded[gl_i2])
+                    }
+                };
+                let gl_i0 = 0x100 + palId * 16 + 15;
+                crate::gl!(gPlttBufferUnfaded[gl_i0] = gl_v)
             };
-            (*gBattleStruct).linkBattleVsSpriteId_V = CreateSprite(
+            (*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V = CreateSprite(
                 (&raw const *sVsLetter_V_SpriteTemplate).cast_mut(),
                 111,
                 80,
                 0,
             );
-            (*gBattleStruct).linkBattleVsSpriteId_S = CreateSprite(
+            (*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S = CreateSprite(
                 (&raw const *sVsLetter_S_SpriteTemplate).cast_mut(),
                 129,
                 80,
                 0,
             );
-            gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].set_invisible(TRUE as u16);
-            gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V]
+                .set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S]
+                .set_invisible(TRUE as u16);
             task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         2 => {
             if task_get(taskId, 5) != 0 {
-                gBattle_BG1_X = 65516 - (Sin2(task_get(taskId, 1) as u16) / 32) as u16;
-                gBattle_BG2_X = 65396 - (Sin2(task_get(taskId, 2) as u16) / 32) as u16;
-                gBattle_BG1_Y = 65500;
-                gBattle_BG2_Y = 65500;
+                gBattle_BG1_X.set(65516 - (Sin2(task_get(taskId, 1) as u16) / 32) as u16);
+                gBattle_BG2_X.set(65396 - (Sin2(task_get(taskId, 2) as u16) / 32) as u16);
+                gBattle_BG1_Y.set(65500);
+                gBattle_BG2_Y.set(65500);
             } else {
-                gBattle_BG1_X = 65516 - (Sin2(task_get(taskId, 1) as u16) / 32) as u16;
-                gBattle_BG1_Y = (Cos2(task_get(taskId, 1) as u16) / 32) as u16 - 164;
-                gBattle_BG2_X = 65396 - (Sin2(task_get(taskId, 2) as u16) / 32) as u16;
-                gBattle_BG2_Y = (Cos2(task_get(taskId, 2) as u16) / 32) as u16 - 164;
+                gBattle_BG1_X.set(65516 - (Sin2(task_get(taskId, 1) as u16) / 32) as u16);
+                gBattle_BG1_Y.set((Cos2(task_get(taskId, 1) as u16) / 32) as u16 - 164);
+                gBattle_BG2_X.set(65396 - (Sin2(task_get(taskId, 2) as u16) / 32) as u16);
+                gBattle_BG2_Y.set((Cos2(task_get(taskId, 2) as u16) / 32) as u16 - 164);
             }
             if task_get(taskId, 2) != 0 {
                 task_set(taskId, 2, task_get(taskId, 2) - 2);
@@ -1018,31 +1045,37 @@ pub unsafe fn InitLinkBattleVsScreen(taskId: u8) {
                 }
                 PlaySE(SE_M_HARDEN);
                 DestroyTask(taskId);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].set_invisible(FALSE as u16);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].set_invisible(FALSE as u16);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S]
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V]
+                    .set_invisible(FALSE as u16);
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S]
+                    .set_invisible(FALSE as u16);
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S]
                     .oam
                     .set_tileNum(
-                        gSprites[(*gBattleStruct).linkBattleVsSpriteId_S]
+                        (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S]
                             .oam
                             .tileNum()
                             + 0x40,
                     );
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].data[0] = 0;
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].data[0] = 1;
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].data[1] =
-                    gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].x;
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].data[1] =
-                    gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].x;
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].data[2] = 0;
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].data[2] = 0;
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V].data[0] =
+                    0;
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S].data[0] =
+                    1;
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V].data[1] =
+                    (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V].x;
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S].data[1] =
+                    (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S].x;
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V].data[2] =
+                    0;
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S].data[2] =
+                    0;
             }
         }
         _ => {}
     }
 }
 pub unsafe fn DrawBattleEntryBackground() {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleVSFrame_Gfx).cast::<CArray<u32, 0>>())
                 .as_ptr()
@@ -1084,12 +1117,12 @@ pub unsafe fn DrawBattleEntryBackground() {
         CopyBgTilemapBufferToVram(2);
         SetGpuReg(REG_OFFSET_WININ, 54);
         SetGpuReg(REG_OFFSET_WINOUT, 54);
-        gBattle_BG1_Y = 0xFF5C;
-        gBattle_BG2_Y = 0xFF5C;
+        gBattle_BG1_Y.set(0xFF5C);
+        gBattle_BG2_Y.set(0xFF5C);
         LoadCompressedSpriteSheetUsingHeap((&raw const *sVsLettersSpriteSheet).cast_mut());
-    } else if gBattleTypeFlags & 0x23f0902 != 0 {
-        if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER == 0
-            || gPartnerTrainerId == TRAINER_STEVEN_PARTNER
+    } else if gBattleTypeFlags.get() & 0x23f0902 != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER == 0
+            || gPartnerTrainerId.get() == TRAINER_STEVEN_PARTNER
         {
             LZDecompressVram(
                 (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Building)
@@ -1129,7 +1162,7 @@ pub unsafe fn DrawBattleEntryBackground() {
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
         }
-    } else if gBattleTypeFlags & BATTLE_TYPE_GROUDON != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_GROUDON != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Cave)
                 .cast::<CArray<u32, 0>>())
@@ -1144,7 +1177,7 @@ pub unsafe fn DrawBattleEntryBackground() {
             .cast_mut(),
             0x600e000_usize as *mut c_void,
         );
-    } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_KYOGRE != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Underwater)
                 .cast::<CArray<u32, 0>>())
@@ -1159,7 +1192,7 @@ pub unsafe fn DrawBattleEntryBackground() {
             .cast_mut(),
             0x600e000_usize as *mut c_void,
         );
-    } else if gBattleTypeFlags & BATTLE_TYPE_RAYQUAZA != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_RAYQUAZA != 0 {
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Rayquaza)
                 .cast::<CArray<u32, 0>>())
@@ -1175,10 +1208,10 @@ pub unsafe fn DrawBattleEntryBackground() {
             0x600e000_usize as *mut c_void,
         );
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
             let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
-                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                .trainerClass;
+                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+            .trainerClass;
             if trainerClass == TRAINER_CLASS_LEADER {
                 LZDecompressVram(
                     (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Building)
@@ -1215,11 +1248,11 @@ pub unsafe fn DrawBattleEntryBackground() {
         }
         if GetCurrentMapBattleScene() == MAP_BATTLE_SCENE_NORMAL {
             LZDecompressVram(
-                sBattleEnvironmentTable[gBattleEnvironment].entryTileset as *mut u32,
+                sBattleEnvironmentTable[gBattleEnvironment.get()].entryTileset as *mut u32,
                 0x6004000_usize as *mut c_void,
             );
             LZDecompressVram(
-                sBattleEnvironmentTable[gBattleEnvironment].entryTilemap as *mut u32,
+                sBattleEnvironmentTable[gBattleEnvironment.get()].entryTilemap as *mut u32,
                 0x600e000_usize as *mut c_void,
             );
         } else {
@@ -1276,7 +1309,7 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                 );
             }
             3 => {
-                if gBattleTypeFlags & 0x23f0902 != 0 {
+                if gBattleTypeFlags.get() & 0x23f0902 != 0 {
                     LZDecompressVram(
                         (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
                             .cast::<CArray<u32, 0>>())
@@ -1284,7 +1317,7 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         .cast_mut(),
                         0x6008000_usize as *mut c_void,
                     );
-                } else if gBattleTypeFlags & BATTLE_TYPE_GROUDON != 0 {
+                } else if gBattleTypeFlags.get() & BATTLE_TYPE_GROUDON != 0 {
                     LZDecompressVram(
                         (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Cave)
                             .cast::<CArray<u32, 0>>())
@@ -1293,10 +1326,10 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         0x6008000_usize as *mut c_void,
                     );
                 } else {
-                    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
                         let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
-                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                            .trainerClass;
+                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+                        .trainerClass;
                         if trainerClass == TRAINER_CLASS_LEADER {
                             LZDecompressVram(
                                 (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
@@ -1362,7 +1395,8 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         }
                         _ => {
                             LZDecompressVram(
-                                sBattleEnvironmentTable[gBattleEnvironment].tileset as *mut u32,
+                                sBattleEnvironmentTable[gBattleEnvironment.get()].tileset
+                                    as *mut u32,
                                 0x6008000_usize as *mut c_void,
                             );
                         }
@@ -1370,7 +1404,7 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                 }
             }
             4 => {
-                if gBattleTypeFlags & 0x23f0902 != 0 {
+                if gBattleTypeFlags.get() & 0x23f0902 != 0 {
                     LZDecompressVram(
                         (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building)
                             .cast::<CArray<u32, 0>>())
@@ -1378,7 +1412,7 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         .cast_mut(),
                         0x600d000_usize as *mut c_void,
                     );
-                } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
+                } else if gBattleTypeFlags.get() & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
                     if gGameVersion == VERSION_RUBY as u8 {
                         LZDecompressVram(
                             (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Cave)
@@ -1397,10 +1431,10 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         );
                     }
                 } else {
-                    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
                         let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
-                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                            .trainerClass;
+                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+                        .trainerClass;
                         if trainerClass == TRAINER_CLASS_LEADER {
                             LZDecompressVram(
                                 (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
@@ -1466,7 +1500,8 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         }
                         _ => {
                             LZDecompressVram(
-                                sBattleEnvironmentTable[gBattleEnvironment].tilemap as *mut u32,
+                                sBattleEnvironmentTable[gBattleEnvironment.get()].tilemap
+                                    as *mut u32,
                                 0x600d000_usize as *mut c_void,
                             );
                         }
@@ -1474,7 +1509,7 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                 }
             }
             5 => {
-                if gBattleTypeFlags & 0x23f0902 != 0 {
+                if gBattleTypeFlags.get() & 0x23f0902 != 0 {
                     LoadCompressedPalette(
                         (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Frontier)
                             .cast::<CArray<u32, 0>>())
@@ -1483,7 +1518,7 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         32,
                         96,
                     );
-                } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
+                } else if gBattleTypeFlags.get() & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
                     if gGameVersion == VERSION_RUBY as u8 {
                         LoadCompressedPalette(
                             (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Groudon).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
@@ -1501,10 +1536,10 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         );
                     }
                 } else {
-                    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
                         let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
-                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                            .trainerClass;
+                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+                        .trainerClass;
                         if trainerClass == TRAINER_CLASS_LEADER {
                             LoadCompressedPalette(
                                 (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_BuildingLeader).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
@@ -1580,7 +1615,8 @@ pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
                         }
                         _ => {
                             LoadCompressedPalette(
-                                sBattleEnvironmentTable[gBattleEnvironment].palette as *mut u32,
+                                sBattleEnvironmentTable[gBattleEnvironment.get()].palette
+                                    as *mut u32,
                                 32,
                                 96,
                             );

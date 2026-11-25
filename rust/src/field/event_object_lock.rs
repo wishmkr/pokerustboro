@@ -94,12 +94,16 @@ unsafe fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8 {
 /// `GetChosenApproachingTrainerObjectEventId` with this module's view of its types.
 #[inline]
 unsafe fn GetChosenApproachingTrainerObjectEventId(a0: u8) -> u8 {
-    unsafe { crate::trainer_see::GetChosenApproachingTrainerObjectEventId(a0) }
+    crate::trainer_see::GetChosenApproachingTrainerObjectEventId(a0)
 }
 
 #[inline]
 unsafe fn selected_object_event() -> usize {
-    unsafe { addr_of!(gSelectedObjectEvent).read_volatile() as usize }
+    unsafe {
+        crate::gl!(&raw gSelectedObjectEvent)
+            .cast_const()
+            .read_volatile() as usize
+    }
 }
 
 /// Freezes `objectEventId` right away when it is not mid-step, and records
@@ -178,7 +182,11 @@ pub unsafe fn IsFreezeSelectedObjectAndPlayerFinished() -> u8 {
 /// those two are frozen once their movement is finished.
 #[unsafe(no_mangle)]
 pub unsafe fn FreezeObjects_WaitForPlayerAndSelected() {
-    let selected = unsafe { addr_of!(gSelectedObjectEvent).read_volatile() };
+    let selected = unsafe {
+        crate::gl!(&raw gSelectedObjectEvent)
+            .cast_const()
+            .read_volatile()
+    };
     unsafe { FreezeObjectEventsExceptOne(selected) };
     let task_id = unsafe { CreateTask(task_freeze_selected_object_and_player, LOCK_TASK_PRIORITY) };
     unsafe { freeze_object_now_if_idle(task_id, selected) };
@@ -252,7 +260,12 @@ unsafe fn task_freeze_object_and_player(task_id: u8) {
 pub unsafe fn FreezeForApproachingTrainers() {
     let trainer1 = unsafe { GetChosenApproachingTrainerObjectEventId(0) };
 
-    if unsafe { addr_of!(gNoOfApproachingTrainers).read_volatile() } == 2 {
+    if unsafe {
+        crate::gl!(&raw gNoOfApproachingTrainers)
+            .cast_const()
+            .read_volatile()
+    } == 2
+    {
         let trainer2 = unsafe { GetChosenApproachingTrainerObjectEventId(1) };
         unsafe { FreezeObjectEventsExceptTwo(trainer1, trainer2) };
 

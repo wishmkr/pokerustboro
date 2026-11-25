@@ -330,12 +330,16 @@ static sSubsprite_RedOutline7: Table<Subsprite> =
 static sSubsprite_RedOutline8: Table<Subsprite> =
     Table((&raw const crate::data::list_menu::sSubsprite_RedOutline8).cast());
 
-pub(crate) static mut sMysteryGiftLinkMenu: sMysteryGiftLinkMenu_t = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub static mut gTempScrollArrowTemplate: ScrollArrowsTemplate = unsafe { zeroed() };
-pub static mut gListMenuOverride: gListMenuOverride_t = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gMultiuseListMenuTemplate: ListMenuTemplate = unsafe { zeroed() };
+pub(crate) static sMysteryGiftLinkMenu: crate::global::Global<sMysteryGiftLinkMenu_t> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gTempScrollArrowTemplate: crate::global::Global<ScrollArrowsTemplate> =
+    crate::global::Global::new(unsafe { zeroed() });
+pub static gListMenuOverride: crate::global::Global<gListMenuOverride_t> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMultiuseListMenuTemplate: crate::global::Global<ListMenuTemplate> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -343,7 +347,7 @@ unsafe fn Alloc(a0: u32) -> *mut c_void {
     unsafe { crate::malloc::Alloc(a0) as *mut c_void }
 }
 
-pub(crate) unsafe fn ListMenuDummyTask(taskId: u8) {}
+pub(crate) fn ListMenuDummyTask(taskId: u8) {}
 pub unsafe fn DoMysteryGiftListMenu(
     windowTemplate: *mut WindowTemplate,
     listMenuTemplate: *mut ListMenuTemplate,
@@ -351,68 +355,84 @@ pub unsafe fn DoMysteryGiftListMenu(
     tileNum: u16,
     palOffset: u16,
 ) -> i32 {
-    match sMysteryGiftLinkMenu.state {
+    match crate::gl!(sMysteryGiftLinkMenu.state) {
         1 => {
-            sMysteryGiftLinkMenu.currItemId =
-                ListMenu_ProcessInput(sMysteryGiftLinkMenu.listTaskId);
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
-                sMysteryGiftLinkMenu.state = 2;
+            crate::gl!(
+                sMysteryGiftLinkMenu.currItemId =
+                    ListMenu_ProcessInput(crate::gl!(sMysteryGiftLinkMenu.listTaskId))
+            );
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+                crate::gl!(sMysteryGiftLinkMenu.state = 2);
             }
-            if gMain.newKeys as i32 & B_BUTTON != 0 {
-                sMysteryGiftLinkMenu.currItemId = LIST_CANCEL;
-                sMysteryGiftLinkMenu.state = 2;
+            if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
+                crate::gl!(sMysteryGiftLinkMenu.currItemId = LIST_CANCEL);
+                crate::gl!(sMysteryGiftLinkMenu.state = 2);
             }
-            if sMysteryGiftLinkMenu.state == 2 {
+            if crate::gl!(sMysteryGiftLinkMenu.state) == 2 {
                 if drawMode == 0 {
-                    ClearWindowTilemap(sMysteryGiftLinkMenu.windowId);
+                    ClearWindowTilemap(crate::gl!(sMysteryGiftLinkMenu.windowId));
                 } else {
                     match drawMode {
                         0 => {
-                            ClearStdWindowAndFrame(sMysteryGiftLinkMenu.windowId, FALSE);
+                            ClearStdWindowAndFrame(
+                                crate::gl!(sMysteryGiftLinkMenu.windowId),
+                                FALSE,
+                            );
                         }
                         2 | 1 => {
-                            ClearStdWindowAndFrame(sMysteryGiftLinkMenu.windowId, FALSE);
+                            ClearStdWindowAndFrame(
+                                crate::gl!(sMysteryGiftLinkMenu.windowId),
+                                FALSE,
+                            );
                         }
                         _ => {}
                     }
                 }
-                CopyWindowToVram(sMysteryGiftLinkMenu.windowId, COPYWIN_MAP);
+                CopyWindowToVram(crate::gl!(sMysteryGiftLinkMenu.windowId), COPYWIN_MAP);
             }
         }
         2 => {
-            DestroyListMenuTask(sMysteryGiftLinkMenu.listTaskId, null_mut(), null_mut());
-            RemoveWindow(sMysteryGiftLinkMenu.windowId);
-            sMysteryGiftLinkMenu.state = 0;
-            return sMysteryGiftLinkMenu.currItemId;
+            DestroyListMenuTask(
+                crate::gl!(sMysteryGiftLinkMenu.listTaskId),
+                null_mut(),
+                null_mut(),
+            );
+            RemoveWindow(crate::gl!(sMysteryGiftLinkMenu.windowId));
+            crate::gl!(sMysteryGiftLinkMenu.state = 0);
+            return crate::gl!(sMysteryGiftLinkMenu.currItemId);
         }
         _ => {
-            sMysteryGiftLinkMenu.windowId = AddWindow(windowTemplate) as u8;
+            crate::gl!(sMysteryGiftLinkMenu.windowId = AddWindow(windowTemplate) as u8);
             'l2: {
                 let sw1: u8 = drawMode;
                 let mut fall = false;
                 if sw1 == 2 {
                     fall = true;
                     LoadUserWindowBorderGfx(
-                        sMysteryGiftLinkMenu.windowId,
+                        crate::gl!(sMysteryGiftLinkMenu.windowId),
                         tileNum,
                         palOffset as u8,
                     );
                 }
                 if fall || sw1 == 1 {
                     DrawTextBorderOuter(
-                        sMysteryGiftLinkMenu.windowId,
+                        crate::gl!(sMysteryGiftLinkMenu.windowId),
                         tileNum,
                         (palOffset as i32 / 16) as u8,
                     );
                     break 'l2;
                 }
             }
-            gMultiuseListMenuTemplate = *listMenuTemplate;
-            gMultiuseListMenuTemplate.windowId = sMysteryGiftLinkMenu.windowId;
-            sMysteryGiftLinkMenu.listTaskId =
-                ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0);
-            CopyWindowToVram(sMysteryGiftLinkMenu.windowId, COPYWIN_MAP);
-            sMysteryGiftLinkMenu.state = 1;
+            crate::gl!(gMultiuseListMenuTemplate = *listMenuTemplate);
+            crate::gl!(
+                gMultiuseListMenuTemplate.windowId = crate::gl!(sMysteryGiftLinkMenu.windowId)
+            );
+            crate::gl!(
+                sMysteryGiftLinkMenu.listTaskId =
+                    ListMenuInit(crate::gl!(&raw gMultiuseListMenuTemplate), 0, 0)
+            );
+            CopyWindowToVram(crate::gl!(sMysteryGiftLinkMenu.windowId), COPYWIN_MAP);
+            crate::gl!(sMysteryGiftLinkMenu.state = 1);
         }
     }
     LIST_NOTHING_CHOSEN
@@ -452,18 +472,18 @@ pub unsafe fn ListMenuInitInRect(
 pub unsafe fn ListMenu_ProcessInput(listTaskId: u8) -> i32 {
     let list: *mut ListMenu =
         (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         return (*(*list)
             .template
             .items
             .at((*list).scrollOffset as i32 + (*list).selectedRow as i32))
         .id;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return LIST_CANCEL;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         ListMenuChangeSelection(list, 1, 1, FALSE);
         return LIST_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         ListMenuChangeSelection(list, 1, 1, 1);
         return LIST_NOTHING_CHOSEN;
     } else {
@@ -471,12 +491,12 @@ pub unsafe fn ListMenu_ProcessInput(listTaskId: u8) -> i32 {
         let mut leftButton: u16 = 0;
         match (*list).template.scrollMultiple() {
             LIST_MULTIPLE_SCROLL_DPAD => {
-                leftButton = gMain.newAndRepeatedKeys & DPAD_LEFT as u16;
-                rightButton = gMain.newAndRepeatedKeys & DPAD_RIGHT as u16;
+                leftButton = crate::gl!(gMain.newAndRepeatedKeys) & DPAD_LEFT as u16;
+                rightButton = crate::gl!(gMain.newAndRepeatedKeys) & DPAD_RIGHT as u16;
             }
             LIST_MULTIPLE_SCROLL_L_R => {
-                leftButton = gMain.newAndRepeatedKeys & L_BUTTON as u16;
-                rightButton = gMain.newAndRepeatedKeys & R_BUTTON as u16;
+                leftButton = crate::gl!(gMain.newAndRepeatedKeys) & L_BUTTON as u16;
+                rightButton = crate::gl!(gMain.newAndRepeatedKeys) & R_BUTTON as u16;
             }
             _ => {
                 leftButton = FALSE as u16;
@@ -615,12 +635,12 @@ unsafe fn ListMenuInitInternal(
     (*list).unk_1D = 0;
     (*list).taskId = TASK_NONE;
     (*list).unk_1F = 0;
-    gListMenuOverride.set_cursorPal((*list).template.cursorPal());
-    gListMenuOverride.set_fillValue((*list).template.fillValue());
-    gListMenuOverride.set_cursorShadowPal((*list).template.cursorShadowPal());
-    gListMenuOverride.set_lettersSpacing((*list).template.lettersSpacing());
-    gListMenuOverride.set_fontId((*list).template.fontId());
-    gListMenuOverride.set_enabled(FALSE);
+    (*gListMenuOverride.as_ptr()).set_cursorPal((*list).template.cursorPal());
+    (*gListMenuOverride.as_ptr()).set_fillValue((*list).template.fillValue());
+    (*gListMenuOverride.as_ptr()).set_cursorShadowPal((*list).template.cursorShadowPal());
+    (*gListMenuOverride.as_ptr()).set_lettersSpacing((*list).template.lettersSpacing());
+    (*gListMenuOverride.as_ptr()).set_fontId((*list).template.fontId());
+    (*gListMenuOverride.as_ptr()).set_enabled(FALSE);
     if (*list).template.totalItems < (*list).template.maxShowed {
         (*list).template.maxShowed = (*list).template.totalItems;
     }
@@ -635,22 +655,22 @@ unsafe fn ListMenuInitInternal(
 }
 unsafe fn ListMenuPrint(list: *mut ListMenu, str: *mut u8, x: u8, y: u8) {
     let mut colors: CArray<u8, 3> = zeroed();
-    if gListMenuOverride.enabled() != 0 {
-        colors[0] = gListMenuOverride.fillValue();
-        colors[1] = gListMenuOverride.cursorPal();
-        colors[2] = gListMenuOverride.cursorShadowPal();
+    if (*gListMenuOverride.as_ptr()).enabled() != 0 {
+        colors[0] = (*gListMenuOverride.as_ptr()).fillValue();
+        colors[1] = (*gListMenuOverride.as_ptr()).cursorPal();
+        colors[2] = (*gListMenuOverride.as_ptr()).cursorShadowPal();
         AddTextPrinterParameterized4(
             (*list).template.windowId,
-            gListMenuOverride.fontId(),
+            (*gListMenuOverride.as_ptr()).fontId(),
             x,
             y,
-            gListMenuOverride.lettersSpacing(),
+            (*gListMenuOverride.as_ptr()).lettersSpacing(),
             0,
             colors.as_mut_ptr(),
             TEXT_SKIP_DRAW as i8,
             str,
         );
-        gListMenuOverride.set_enabled(FALSE);
+        (*gListMenuOverride.as_ptr()).set_enabled(FALSE);
     } else {
         colors[0] = (*list).template.fillValue();
         colors[1] = (*list).template.cursorPal();
@@ -973,10 +993,10 @@ unsafe fn ListMenuCallSelectionChangedCallback(list: *mut ListMenu, onInit: u8) 
     }
 }
 pub unsafe fn ListMenuOverrideSetColors(cursorPal: u8, fillValue: u8, cursorShadowPal: u8) {
-    gListMenuOverride.set_cursorPal(cursorPal);
-    gListMenuOverride.set_fillValue(fillValue);
-    gListMenuOverride.set_cursorShadowPal(cursorShadowPal);
-    gListMenuOverride.set_enabled(TRUE);
+    (*gListMenuOverride.as_ptr()).set_cursorPal(cursorPal);
+    (*gListMenuOverride.as_ptr()).set_fillValue(fillValue);
+    (*gListMenuOverride.as_ptr()).set_cursorShadowPal(cursorShadowPal);
+    (*gListMenuOverride.as_ptr()).set_enabled(TRUE);
 }
 pub unsafe fn ListMenuDefaultCursorMoveFunc(itemIndex: i32, onInit: u8, list: *mut ListMenu) {
     if onInit == 0 {
@@ -1143,13 +1163,37 @@ unsafe fn AddScrollIndicatorArrowObject(
     spriteTemplate.tileTag = tileTag;
     spriteTemplate.paletteTag = palTag;
     let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, x as i16, y as i16, 0);
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    gSprites[spriteId].data[tState] = 0;
-    gSprites[spriteId].data[tAnimNum] = sScrollIndicatorTemplates[arrowDir].animNum() as i16;
-    gSprites[spriteId].data[tBounceDir] = sScrollIndicatorTemplates[arrowDir].bounceDir() as i16;
-    gSprites[spriteId].data[tMultiplier] = sScrollIndicatorTemplates[arrowDir].multiplier as i16;
-    gSprites[spriteId].data[tFrequency] = sScrollIndicatorTemplates[arrowDir].frequency as i16;
-    gSprites[spriteId].data[tSinePos] = 0;
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    {
+        let gl_i0 = tState;
+        crate::gl!(gSprites[spriteId].data[gl_i0] = 0)
+    };
+    {
+        let gl_v = sScrollIndicatorTemplates[arrowDir].animNum() as i16;
+        let gl_i1 = tAnimNum;
+        crate::gl!(gSprites[spriteId].data[gl_i1] = gl_v)
+    };
+    {
+        let gl_v = sScrollIndicatorTemplates[arrowDir].bounceDir() as i16;
+        let gl_i2 = tBounceDir;
+        crate::gl!(gSprites[spriteId].data[gl_i2] = gl_v)
+    };
+    {
+        let gl_i3 = tMultiplier;
+        crate::gl!(
+            gSprites[spriteId].data[gl_i3] = sScrollIndicatorTemplates[arrowDir].multiplier as i16
+        )
+    };
+    {
+        let gl_i4 = tFrequency;
+        crate::gl!(
+            gSprites[spriteId].data[gl_i4] = sScrollIndicatorTemplates[arrowDir].frequency as i16
+        )
+    };
+    {
+        let gl_i5 = tSinePos;
+        crate::gl!(gSprites[spriteId].data[gl_i5] = 0)
+    };
     spriteId
 }
 pub unsafe fn AddScrollIndicatorArrowPair(
@@ -1197,10 +1241,10 @@ pub unsafe fn AddScrollIndicatorArrowPair(
         (*arrowInfo).palTag,
     );
     if (*arrowInfo).palTag == TAG_NONE {
-        gSprites[(*data).topSpriteId]
+        (*gSprites.as_ptr())[(*data).topSpriteId]
             .oam
             .set_paletteNum((*arrowInfo).palNum as u16);
-        gSprites[(*data).bottomSpriteId]
+        (*gSprites.as_ptr())[(*data).bottomSpriteId]
             .oam
             .set_paletteNum((*arrowInfo).palNum as u16);
     }
@@ -1217,51 +1261,51 @@ pub unsafe fn AddScrollIndicatorArrowPairParameterized(
     scrollOffset: *mut u16,
 ) -> u8 {
     if arrowType == SCROLL_ARROW_UP || arrowType == SCROLL_ARROW_DOWN {
-        gTempScrollArrowTemplate.firstArrowType = SCROLL_ARROW_UP as u8;
-        gTempScrollArrowTemplate.firstX = commonPos as u8;
-        gTempScrollArrowTemplate.firstY = firstPos as u8;
-        gTempScrollArrowTemplate.secondArrowType = SCROLL_ARROW_DOWN as u8;
-        gTempScrollArrowTemplate.secondX = commonPos as u8;
-        gTempScrollArrowTemplate.secondY = secondPos as u8;
+        crate::gl!(gTempScrollArrowTemplate.firstArrowType = SCROLL_ARROW_UP as u8);
+        crate::gl!(gTempScrollArrowTemplate.firstX = commonPos as u8);
+        crate::gl!(gTempScrollArrowTemplate.firstY = firstPos as u8);
+        crate::gl!(gTempScrollArrowTemplate.secondArrowType = SCROLL_ARROW_DOWN as u8);
+        crate::gl!(gTempScrollArrowTemplate.secondX = commonPos as u8);
+        crate::gl!(gTempScrollArrowTemplate.secondY = secondPos as u8);
     } else {
-        gTempScrollArrowTemplate.firstArrowType = SCROLL_ARROW_LEFT;
-        gTempScrollArrowTemplate.firstX = firstPos as u8;
-        gTempScrollArrowTemplate.firstY = commonPos as u8;
-        gTempScrollArrowTemplate.secondArrowType = SCROLL_ARROW_RIGHT;
-        gTempScrollArrowTemplate.secondX = secondPos as u8;
-        gTempScrollArrowTemplate.secondY = commonPos as u8;
+        crate::gl!(gTempScrollArrowTemplate.firstArrowType = SCROLL_ARROW_LEFT);
+        crate::gl!(gTempScrollArrowTemplate.firstX = firstPos as u8);
+        crate::gl!(gTempScrollArrowTemplate.firstY = commonPos as u8);
+        crate::gl!(gTempScrollArrowTemplate.secondArrowType = SCROLL_ARROW_RIGHT);
+        crate::gl!(gTempScrollArrowTemplate.secondX = secondPos as u8);
+        crate::gl!(gTempScrollArrowTemplate.secondY = commonPos as u8);
     }
-    gTempScrollArrowTemplate.fullyUpThreshold = 0;
-    gTempScrollArrowTemplate.fullyDownThreshold = fullyDownThreshold as u16;
-    gTempScrollArrowTemplate.tileTag = tileTag as u16;
-    gTempScrollArrowTemplate.palTag = palTag as u16;
-    gTempScrollArrowTemplate.palNum = 0;
-    AddScrollIndicatorArrowPair(&raw mut gTempScrollArrowTemplate, scrollOffset)
+    crate::gl!(gTempScrollArrowTemplate.fullyUpThreshold = 0);
+    crate::gl!(gTempScrollArrowTemplate.fullyDownThreshold = fullyDownThreshold as u16);
+    crate::gl!(gTempScrollArrowTemplate.tileTag = tileTag as u16);
+    crate::gl!(gTempScrollArrowTemplate.palTag = palTag as u16);
+    crate::gl!(gTempScrollArrowTemplate.palNum = 0);
+    AddScrollIndicatorArrowPair(crate::gl!(&raw gTempScrollArrowTemplate), scrollOffset)
 }
 pub(crate) unsafe fn Task_ScrollIndicatorArrowPair(taskId: u8) {
     let data: *mut ScrollIndicatorPair =
         (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
     let currItem: u16 = *(*data).scrollOffset;
     if currItem == (*data).fullyUpThreshold && currItem != 0xFFFF {
-        gSprites[(*data).topSpriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*data).topSpriteId].set_invisible(TRUE as u16);
     } else {
-        gSprites[(*data).topSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*data).topSpriteId].set_invisible(FALSE as u16);
     }
     if currItem == (*data).fullyDownThreshold {
-        gSprites[(*data).bottomSpriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*data).bottomSpriteId].set_invisible(TRUE as u16);
     } else {
-        gSprites[(*data).bottomSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*data).bottomSpriteId].set_invisible(FALSE as u16);
     }
 }
 pub unsafe fn Task_ScrollIndicatorArrowPairOnMainMenu(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     let scrollData: *mut ScrollIndicatorPair = data as *mut c_void as *mut ScrollIndicatorPair;
     if *data.at(15) != 0 {
-        gSprites[(*scrollData).topSpriteId].set_invisible(FALSE as u16);
-        gSprites[(*scrollData).bottomSpriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*scrollData).topSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*scrollData).bottomSpriteId].set_invisible(TRUE as u16);
     } else {
-        gSprites[(*scrollData).topSpriteId].set_invisible(TRUE as u16);
-        gSprites[(*scrollData).bottomSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*scrollData).topSpriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*scrollData).bottomSpriteId].set_invisible(FALSE as u16);
     }
 }
 pub unsafe fn RemoveScrollIndicatorArrowPair(taskId: u8) {
@@ -1273,8 +1317,14 @@ pub unsafe fn RemoveScrollIndicatorArrowPair(taskId: u8) {
     if (*data).palTag != TAG_NONE {
         FreeSpritePaletteByTag((*data).palTag);
     }
-    DestroySprite(&raw mut gSprites[(*data).topSpriteId]);
-    DestroySprite(&raw mut gSprites[(*data).bottomSpriteId]);
+    DestroySprite({
+        let gl_i6 = (*data).topSpriteId;
+        crate::gl!(&raw gSprites[gl_i6])
+    });
+    DestroySprite({
+        let gl_i7 = (*data).bottomSpriteId;
+        crate::gl!(&raw gSprites[gl_i7])
+    });
     DestroyTask(taskId);
 }
 unsafe fn ListMenuAddCursorObjectInternal(cursor: *mut CursorStruct, cursorObjId: u32) -> u8 {
@@ -1313,7 +1363,7 @@ unsafe fn ListMenuRemoveCursorObject(taskId: u8, cursorObjId: u32) {
         _ => {}
     }
 }
-pub(crate) unsafe fn Task_RedOutlineCursor(taskId: u8) {}
+pub(crate) fn Task_RedOutlineCursor(taskId: u8) {}
 pub unsafe fn ListMenuGetRedOutlineCursorSpriteCount(rowWidth: u16, rowHeight: u16) -> u8 {
     let mut i: i32 = 0;
     let mut count: i32 = 4;
@@ -1432,14 +1482,20 @@ unsafe fn ListMenuAddRedOutlineCursorObject(cursor: *mut CursorStruct) -> u8 {
         0,
     );
     SetSubspriteTables(
-        &raw mut gSprites[(*data).spriteId],
+        {
+            let gl_i8 = (*data).spriteId;
+            crate::gl!(&raw gSprites[gl_i8])
+        },
         &raw mut (*data).subspriteTable,
     );
-    gSprites[(*data).spriteId].oam.set_priority(0);
-    gSprites[(*data).spriteId].subpriority = 0;
-    gSprites[(*data).spriteId].set_subspriteTableNum(0);
+    (*gSprites.as_ptr())[(*data).spriteId].oam.set_priority(0);
+    {
+        let gl_i9 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i9].subpriority = 0)
+    };
+    (*gSprites.as_ptr())[(*data).spriteId].set_subspriteTableNum(0);
     if (*cursor).palTag == TAG_NONE {
-        gSprites[(*data).spriteId]
+        (*gSprites.as_ptr())[(*data).spriteId]
             .oam
             .set_paletteNum((*cursor).palNum as u16);
     }
@@ -1448,8 +1504,14 @@ unsafe fn ListMenuAddRedOutlineCursorObject(cursor: *mut CursorStruct) -> u8 {
 unsafe fn ListMenuUpdateRedOutlineCursorObject(taskId: u8, x: u16, y: u16) {
     let data: *mut RedOutlineCursor =
         (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
-    gSprites[(*data).spriteId].x = x as i16 + 120;
-    gSprites[(*data).spriteId].y = y as i16 + 120;
+    {
+        let gl_i10 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i10].x = x as i16 + 120)
+    };
+    {
+        let gl_i11 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i11].y = y as i16 + 120)
+    };
 }
 unsafe fn ListMenuRemoveRedOutlineCursorObject(taskId: u8) {
     let data: *mut RedOutlineCursor =
@@ -1461,7 +1523,10 @@ unsafe fn ListMenuRemoveRedOutlineCursorObject(taskId: u8) {
     if (*data).palTag != TAG_NONE {
         FreeSpritePaletteByTag((*data).palTag);
     }
-    DestroySprite(&raw mut gSprites[(*data).spriteId]);
+    DestroySprite({
+        let gl_i12 = (*data).spriteId;
+        crate::gl!(&raw gSprites[gl_i12])
+    });
     DestroyTask(taskId);
 }
 pub(crate) unsafe fn SpriteCallback_RedArrowCursor(sprite: *mut Sprite) {
@@ -1470,7 +1535,7 @@ pub(crate) unsafe fn SpriteCallback_RedArrowCursor(sprite: *mut Sprite) {
         / 64;
     (*sprite).data[0] += 8;
 }
-pub(crate) unsafe fn Task_RedArrowCursor(taskId: u8) {}
+pub(crate) fn Task_RedArrowCursor(taskId: u8) {}
 unsafe fn ListMenuAddRedArrowCursorObject(cursor: *mut CursorStruct) -> u8 {
     let mut spriteSheet: CompressedSpriteSheet = zeroed();
     let mut spritePal: SpritePalette = zeroed();
@@ -1503,10 +1568,16 @@ unsafe fn ListMenuAddRedArrowCursorObject(cursor: *mut CursorStruct) -> u8 {
         (*cursor).top as i16,
         0,
     );
-    gSprites[(*data).spriteId].x2 = 8;
-    gSprites[(*data).spriteId].y2 = 8;
+    {
+        let gl_i13 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i13].x2 = 8)
+    };
+    {
+        let gl_i14 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i14].y2 = 8)
+    };
     if (*cursor).palTag == TAG_NONE {
-        gSprites[(*data).spriteId]
+        (*gSprites.as_ptr())[(*data).spriteId]
             .oam
             .set_paletteNum((*cursor).palNum as u16);
     }
@@ -1515,8 +1586,14 @@ unsafe fn ListMenuAddRedArrowCursorObject(cursor: *mut CursorStruct) -> u8 {
 unsafe fn ListMenuUpdateRedArrowCursorObject(taskId: u8, x: u16, y: u16) {
     let data: *mut RedArrowCursor =
         (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
-    gSprites[(*data).spriteId].x = x as i16;
-    gSprites[(*data).spriteId].y = y as i16;
+    {
+        let gl_i15 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i15].x = x as i16)
+    };
+    {
+        let gl_i16 = (*data).spriteId;
+        crate::gl!(gSprites[gl_i16].y = y as i16)
+    };
 }
 unsafe fn ListMenuRemoveRedArrowCursorObject(taskId: u8) {
     let data: *mut RedArrowCursor =
@@ -1527,6 +1604,9 @@ unsafe fn ListMenuRemoveRedArrowCursorObject(taskId: u8) {
     if (*data).palTag != TAG_NONE {
         FreeSpritePaletteByTag((*data).palTag);
     }
-    DestroySprite(&raw mut gSprites[(*data).spriteId]);
+    DestroySprite({
+        let gl_i17 = (*data).spriteId;
+        crate::gl!(&raw gSprites[gl_i17])
+    });
     DestroyTask(taskId);
 }

@@ -133,10 +133,10 @@ static sWirelessOptions_NoRecordMix: Table<CArray<*mut u8, 4>> =
 static sWirelessOptions_NoRecordMixBerryCrush: Table<CArray<*mut u8, 3>> =
     Table((&raw const crate::data::script_menu::sWirelessOptions_NoRecordMixBerryCrush).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sProcessInputDelay: crate::global::Global<u8> = crate::global::Global::new(0);
-pub(crate) static mut sLilycoveSSTidalSelections: Aligned<CArray<u8, 7>> =
-    Aligned(unsafe { zeroed() });
+pub(crate) static sLilycoveSSTidalSelections: crate::global::Global<Aligned<CArray<u8, 7>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -200,7 +200,7 @@ unsafe fn GetLengthWithExpandedPlayerName(mut str: *mut u8) -> u16 {
         if *str == PLACEHOLDER_BEGIN {
             str = str.at(1);
             if *str == PLACEHOLDER_ID_PLAYER {
-                length += StringLength((*gSaveBlock2Ptr).playerName.as_mut_ptr());
+                length += StringLength((*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr());
                 str = str.at(1);
             }
         } else {
@@ -253,7 +253,7 @@ unsafe fn InitMultichoiceCheckWrap(ignoreBPress: u8, count: u8, windowId: u8, mu
 pub(crate) unsafe fn Task_HandleMultichoiceInput(taskId: u8) {
     let mut selection: i8 = 0;
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if sProcessInputDelay.get() != 0 {
             sProcessInputDelay.set(sProcessInputDelay.get() - 1);
         } else {
@@ -262,7 +262,7 @@ pub(crate) unsafe fn Task_HandleMultichoiceInput(taskId: u8) {
             } else {
                 selection = Menu_ProcessInput();
             }
-            if gMain.newKeys as i32 & 192 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 192 != 0 {
                 DrawLinkServicesMultichoiceMenu(*data.at(7) as u8);
             }
             if selection != MENU_NOTHING_CHOSEN {
@@ -554,63 +554,73 @@ unsafe fn CreateLilycoveSSTidalMultichoice() {
     let mut windowId: u8 = 0;
     let mut i: u8 = 0;
     while i < SSTIDAL_SELECTION_COUNT {
-        sLilycoveSSTidalSelections[i] = 0xFF;
+        crate::gl!(sLilycoveSSTidalSelections[i] = 0xFF);
         i += 1;
     }
     GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_WIDTH);
     if gSpecialVar_0x8004 == 0 {
-        sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SLATEPORT;
+        crate::gl!(sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SLATEPORT);
         selectionCount += 1;
         if FlagGet(FLAG_MET_SCOTT_ON_SS_TIDAL) == TRUE {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BATTLE_FRONTIER;
+            crate::gl!(
+                sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BATTLE_FRONTIER
+            );
             selectionCount += 1;
         }
     }
     if CheckBagHasItem(ITEM_EON_TICKET, 1) == 1 && FlagGet(FLAG_ENABLE_SHIP_SOUTHERN_ISLAND) == 1 {
         if gSpecialVar_0x8004 == 0 {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SOUTHERN_ISLAND;
+            crate::gl!(
+                sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SOUTHERN_ISLAND
+            );
             selectionCount += 1;
         }
         if gSpecialVar_0x8004 == 1 && FlagGet(FLAG_SHOWN_EON_TICKET) == FALSE {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SOUTHERN_ISLAND;
+            crate::gl!(
+                sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SOUTHERN_ISLAND
+            );
             selectionCount += 1;
             FlagSet(FLAG_SHOWN_EON_TICKET);
         }
     }
     if CheckBagHasItem(ITEM_MYSTIC_TICKET, 1) == 1 && FlagGet(FLAG_ENABLE_SHIP_NAVEL_ROCK) == 1 {
         if gSpecialVar_0x8004 == 0 {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_NAVEL_ROCK;
+            crate::gl!(sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_NAVEL_ROCK);
             selectionCount += 1;
         }
         if gSpecialVar_0x8004 == 1 && FlagGet(FLAG_SHOWN_MYSTIC_TICKET) == FALSE {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_NAVEL_ROCK;
+            crate::gl!(sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_NAVEL_ROCK);
             selectionCount += 1;
             FlagSet(FLAG_SHOWN_MYSTIC_TICKET);
         }
     }
     if CheckBagHasItem(ITEM_AURORA_TICKET, 1) == 1 && FlagGet(FLAG_ENABLE_SHIP_BIRTH_ISLAND) == 1 {
         if gSpecialVar_0x8004 == 0 {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BIRTH_ISLAND;
+            crate::gl!(sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BIRTH_ISLAND);
             selectionCount += 1;
         }
         if gSpecialVar_0x8004 == 1 && FlagGet(FLAG_SHOWN_AURORA_TICKET) == FALSE {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BIRTH_ISLAND;
+            crate::gl!(sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BIRTH_ISLAND);
             selectionCount += 1;
             FlagSet(FLAG_SHOWN_AURORA_TICKET);
         }
     }
     if CheckBagHasItem(ITEM_OLD_SEA_MAP, 1) == 1 && FlagGet(FLAG_ENABLE_SHIP_FARAWAY_ISLAND) == 1 {
         if gSpecialVar_0x8004 == 0 {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_FARAWAY_ISLAND;
+            crate::gl!(
+                sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_FARAWAY_ISLAND
+            );
             selectionCount += 1;
         }
         if gSpecialVar_0x8004 == 1 && FlagGet(FLAG_SHOWN_OLD_SEA_MAP) == FALSE {
-            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_FARAWAY_ISLAND;
+            crate::gl!(
+                sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_FARAWAY_ISLAND
+            );
             selectionCount += 1;
             FlagSet(FLAG_SHOWN_OLD_SEA_MAP);
         }
     }
-    sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_EXIT;
+    crate::gl!(sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_EXIT);
     selectionCount += 1;
     if gSpecialVar_0x8004 == 0 && FlagGet(FLAG_MET_SCOTT_ON_SS_TIDAL) == TRUE {
         count = selectionCount;
@@ -622,7 +632,7 @@ unsafe fn CreateLilycoveSSTidalMultichoice() {
     } else {
         pixelWidth = 0;
         for j in 0..(SSTIDAL_SELECTION_COUNT as u32) {
-            let selection: u8 = sLilycoveSSTidalSelections[j];
+            let selection: u8 = crate::gl!(sLilycoveSSTidalSelections[j]);
             if selection != 0xFF {
                 pixelWidth = DisplayTextAndGetWidth(
                     sLilycoveSSTidalDestinations[selection],
@@ -640,11 +650,11 @@ unsafe fn CreateLilycoveSSTidalMultichoice() {
         SetStandardWindowBorderStyle(windowId, FALSE);
         selectionCount = 0;
         for i in 0..SSTIDAL_SELECTION_COUNT {
-            if sLilycoveSSTidalSelections[i] != 0xFF {
+            if crate::gl!(sLilycoveSSTidalSelections[i]) != 0xFF {
                 AddTextPrinterParameterized(
                     windowId,
                     FONT_NORMAL,
-                    sLilycoveSSTidalDestinations[sLilycoveSSTidalSelections[i]],
+                    sLilycoveSSTidalDestinations[crate::gl!(sLilycoveSSTidalSelections[i])],
                     8,
                     selectionCount * 16 + 1,
                     TEXT_SKIP_DRAW,
@@ -661,10 +671,12 @@ unsafe fn CreateLilycoveSSTidalMultichoice() {
 #[unsafe(no_mangle)]
 pub unsafe fn GetLilycoveSSTidalSelection() {
     if gSpecialVar_Result != MULTI_B_PRESSED {
-        gSpecialVar_Result = sLilycoveSSTidalSelections
-            [*(&raw const crate::ffi::gSpecialVar_Result)
+        gSpecialVar_Result = {
+            let gl_i0 = *(&raw const crate::ffi::gSpecialVar_Result)
                 .cast::<u16>()
-                .cast_mut()] as u16;
+                .cast_mut();
+            crate::gl!(sLilycoveSSTidalSelections[gl_i0])
+        } as u16;
     }
 }
 pub(crate) unsafe fn Task_PokemonPicWindow(taskId: u8) {
@@ -676,7 +688,10 @@ pub(crate) unsafe fn Task_PokemonPicWindow(taskId: u8) {
         1 => {}
         2 => {
             FreeResourcesAndDestroySprite(
-                &raw mut gSprites[(*task).data[tMonSpriteId]],
+                {
+                    let gl_i0 = (*task).data[tMonSpriteId];
+                    crate::gl!(&raw gSprites[gl_i0])
+                },
                 (*task).data[tMonSpriteId] as u8,
             );
             (*task).data[tState] += 1;
@@ -700,8 +715,8 @@ pub unsafe fn ScriptMenu_ShowPokemonPic(species: u16, x: u8, y: u8) -> u8 {
         task_set(taskId, tState, 0);
         task_set(taskId, tMonSpecies, species as i16);
         task_set(taskId, tMonSpriteId, spriteId as i16);
-        gSprites[spriteId].callback = Some(SpriteCallbackDummy);
-        gSprites[spriteId].oam.set_priority(0);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCallbackDummy));
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
         SetStandardWindowBorderStyle(task_get(taskId, 5) as u8, TRUE);
         ScheduleBgCopyTilemapToVram(0);
         return TRUE;
@@ -889,7 +904,7 @@ unsafe fn CreateStartMenuForPokenavTutorial() {
     AddTextPrinterParameterized(
         windowId,
         FONT_NORMAL,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         8,
         73,
         TEXT_SKIP_DRAW,

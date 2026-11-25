@@ -79,21 +79,21 @@ unsafe fn GetDecompressedDataSize(a0: *mut u32) -> u32 {
 }
 /// `InitBgFromTemplate` with this module's view of its types.
 #[inline]
-unsafe fn InitBgFromTemplate(a0: *mut BgTemplate) {
+fn InitBgFromTemplate(a0: *mut BgTemplate) {
     unsafe {
         crate::bg::InitBgFromTemplate(a0 as _);
     }
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -103,7 +103,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `RequestDma3Copy` with this module's view of its types.
 #[inline]
-unsafe fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
     unsafe { crate::dma3_manager::RequestDma3Copy(a0 as _, a1 as _, a2, a3) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -198,14 +198,14 @@ static sSubmenuLeftHeaderSpriteTemplate: Table<SpriteTemplate> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -233,7 +233,7 @@ pub unsafe fn ShutdownPokenav() {
     BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
 }
 pub unsafe fn WaitForPokenavShutdownFade() -> u32 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeMenuHandlerSubstruct2();
         CleanupPokenavMainMenuResources();
         FreeAllWindowBuffers();
@@ -376,7 +376,7 @@ pub(crate) unsafe fn LoopedTask_SlideMenuHeaderDown(state: i32) -> u32 {
 pub unsafe fn CopyPaletteIntoBufferUnfaded(palette: *mut u16, bufferOffset: u32, size: u32) {
     CpuSet(
         palette as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[bufferOffset] as *mut c_void,
         (size / 2) & 0x1FFFFF,
@@ -403,7 +403,7 @@ pub unsafe fn PokenavFillPalette(palIndex: u32, fillValue: u16) {
             volatile_write(&raw mut tmp, fillValue);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[0x100 + palIndex * 16] as *mut c_void,
                 0x1000010,
@@ -480,12 +480,12 @@ pub unsafe fn PokenavFadeScreen(fadeType: i32) {
     }
 }
 pub unsafe fn IsPaletteFadeActive() -> u32 {
-    gPaletteFade.active() as u32
+    (*gPaletteFade.as_ptr()).active() as u32
 }
 pub unsafe fn FadeToBlackExceptPrimary() {
     BlendPalettes(0xfffefffe, 16, 0);
 }
-pub unsafe fn InitBgTemplates(mut templates: *mut BgTemplate, count: i32) {
+pub fn InitBgTemplates(mut templates: *mut BgTemplate, count: i32) {
     for i in 0..count {
         InitBgFromTemplate({
             let t1 = templates;
@@ -538,7 +538,7 @@ unsafe fn InitPokenavMainMenuResources() {
         12,
         0,
     );
-    (*menu).spinningPokenav = &raw mut gSprites[spriteId];
+    (*menu).spinningPokenav = crate::gl!(&raw gSprites[spriteId]);
 }
 unsafe fn CleanupPokenavMainMenuResources() {
     let menu: *mut Pokenav_MainMenu =
@@ -575,7 +575,7 @@ unsafe fn CreateLeftHeaderSprites() {
     AllocSpritePalette(2);
     for i in 0..2i32 {
         spriteId = CreateSprite((&raw const *sLeftHeaderSpriteTemplate).cast_mut(), 0, 0, 1) as i32;
-        (*menu).leftHeaderSprites[i] = &raw mut gSprites[spriteId];
+        (*menu).leftHeaderSprites[i] = crate::gl!(&raw gSprites[spriteId]);
         (*(*menu).leftHeaderSprites[i]).set_invisible(TRUE as u16);
         (*(*menu).leftHeaderSprites[i]).x2 = i as i16 * 64;
         spriteId = CreateSprite(
@@ -584,7 +584,7 @@ unsafe fn CreateLeftHeaderSprites() {
             0,
             2,
         ) as i32;
-        (*menu).submenuLeftHeaderSprites[i] = &raw mut gSprites[spriteId];
+        (*menu).submenuLeftHeaderSprites[i] = crate::gl!(&raw gSprites[spriteId]);
         (*(*menu).submenuLeftHeaderSprites[i]).set_invisible(TRUE as u16);
         (*(*menu).submenuLeftHeaderSprites[i]).x2 = i as i16 * 32;
         (*(*menu).submenuLeftHeaderSprites[i]).y2 = 18;
@@ -631,13 +631,13 @@ unsafe fn LoadLeftHeaderGfxForMenu(menuGfxId: u32) {
     );
     LZ77UnCompWram(
         sMenuLeftHeaderSpriteSheets[menuGfxId].data,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
     );
     RequestDma3Copy(
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -671,12 +671,12 @@ unsafe fn LoadLeftHeaderGfxForSubMenu(menuGfxId: u32) {
     );
     LZ77UnCompWram(
         sPokenavSubMenuLeftHeaderSpriteSheets[menuGfxId].data,
-        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+        &raw mut (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())[4096] as *mut c_void,
     );
     RequestDma3Copy(
-        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+        &raw mut (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())[4096] as *mut c_void,
         ((OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(2048) as *mut c_void as *mut u8)

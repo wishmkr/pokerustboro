@@ -87,8 +87,8 @@ const S_LINK: usize = 0x38;
 /// `struct MysteryGiftServerCmd { u32 instr; u32 parameter; const void *ptr; }`
 const CMD_SIZE: usize = 12;
 
-#[unsafe(link_section = "ewram_data")]
-static mut SERVER: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static SERVER: crate::global::Global<*mut u8> = crate::global::Global::new(core::ptr::null_mut());
 
 /// `MysteryGift_ValidateLinkGameData` with this module's view of its types.
 #[inline]
@@ -183,7 +183,7 @@ fn compare(a: *const u8, b: *const u8) -> u32 {
 
 unsafe fn create(script: *const u8) {
     let server = unsafe { AllocZeroed(S_SIZE) };
-    unsafe { (&raw mut SERVER).write(server) };
+    unsafe { (crate::gl!(&raw SERVER)).write(server) };
     unsafe { server_init(server, script, 0, 1) };
 }
 
@@ -203,7 +203,7 @@ pub unsafe fn MysterGiftServer_CreateForCard() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn MysterGiftServer_Run(end_val: *mut u16) -> u32 {
-    let server = unsafe { (&raw const SERVER).read() };
+    let server = unsafe { (crate::gl!(&raw SERVER).cast_const()).read() };
     if server.is_null() {
         return SVR_RET_END;
     }
@@ -213,7 +213,7 @@ pub unsafe fn MysterGiftServer_Run(end_val: *mut u16) -> u32 {
         unsafe { end_val.write(field(server, S_PARAM) as u16) };
         unsafe { server_free(server) };
         unsafe { Free(server) };
-        unsafe { (&raw mut SERVER).write(core::ptr::null_mut()) };
+        unsafe { (crate::gl!(&raw SERVER)).write(core::ptr::null_mut()) };
     }
     result
 }

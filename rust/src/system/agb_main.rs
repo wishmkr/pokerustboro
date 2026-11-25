@@ -113,15 +113,16 @@ pub static gIntrTableTemplate: [IntrFunc; INTR_COUNT] = [
 ];
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gKeyRepeatStartDelay: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gKeyRepeatStartDelay: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gLinkTransferringData: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gLinkTransferringData: crate::global::Global<u8> = crate::global::Global::new(0);
 /// `struct Main`, 0x43c bytes.
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gMain: crate::types::Main = unsafe { core::mem::zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMain: crate::global::Global<crate::types::Main> =
+    crate::global::Global::new(unsafe { core::mem::zeroed() });
 
 #[cfg(target_arch = "arm")]
 const _: () = assert!(core::mem::size_of::<crate::types::Main>() == MAIN_SIZE);
@@ -132,32 +133,34 @@ const _: () = assert!(core::mem::size_of::<crate::types::Main>() == MAIN_SIZE);
 /// No other reference to it may be in use while the result lives.
 pub unsafe fn main<'a>() -> &'a mut crate::types::Main {
     // SAFETY: exclusivity is the caller's promise.
-    unsafe { &mut *(&raw mut gMain) }
+    unsafe { &mut *(crate::gl!(&raw gMain)) }
 }
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gKeyRepeatContinueDelay: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gSoftResetDisabled: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gSoftResetDisabled: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gIntrTable: Align4<[usize; INTR_COUNT]> = Align4([0; INTR_COUNT]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gIntrTable: crate::global::Global<Align4<[usize; INTR_COUNT]>> =
+    crate::global::Global::new(Align4([0; INTR_COUNT]));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gLinkVSyncDisabled: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gLinkVSyncDisabled: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 // IntrMain is 0x15C bytes with its literal pool (the C build reserved
 // 0x800); rustcheck.sh checks that it still fits.
-pub static mut IntrMain_Buffer: Align4<[u32; 0x80]> = Align4([0; 0x80]);
+pub static IntrMain_Buffer: crate::global::Global<Align4<[u32; 0x80]>> =
+    crate::global::Global::new(Align4([0; 0x80]));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gPcmDmaCounter: crate::global::Global<i8> = crate::global::Global::new(0);
 
 static UNUSED_VAR: crate::global::Global<u16> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static TRAINER_ID: crate::global::Global<u16> = crate::global::Global::new(0);
 
 /// `m4aSoundInit` with this module's view of its types.
@@ -302,7 +305,7 @@ unsafe fn SoftReset(a0: u32) {
 
 #[inline]
 fn main_field(offset: usize) -> *mut u8 {
-    (&raw mut gMain).cast::<u8>().wrapping_add(offset)
+    (crate::gl!(&raw gMain)).cast::<u8>().wrapping_add(offset)
 }
 
 #[inline]
@@ -346,18 +349,18 @@ pub unsafe extern "C" fn AgbMain() -> ! {
     unsafe { ClearDma3Requests() };
     unsafe { ResetBgs() };
     unsafe { SetDefaultFontsPointer() };
-    unsafe { InitHeap((&raw mut gHeap).cast(), HEAP_SIZE) };
-    unsafe { (&raw mut gSoftResetDisabled).write(0) };
-    if unsafe { (&raw const gFlashMemoryPresent).read() } != 1 {
+    unsafe { InitHeap((crate::gl!(&raw gHeap)).cast(), HEAP_SIZE) };
+    unsafe { (gSoftResetDisabled.as_ptr()).write(0) };
+    if unsafe { (gFlashMemoryPresent.as_ptr().cast_const()).read() } != 1 {
         unsafe { SetMainCallback2(None) };
     }
-    unsafe { (&raw mut gLinkTransferringData).write(0) };
+    unsafe { (gLinkTransferringData.as_ptr()).write(0) };
     unsafe { (UNUSED_VAR.as_ptr()).write(0xfc0) };
 
     loop {
         unsafe { read_keys() };
         let held_raw = unsafe { u16_field(M_HELD_KEYS_RAW).read() };
-        if unsafe { (&raw const gSoftResetDisabled).read() } == 0
+        if unsafe { (gSoftResetDisabled.as_ptr().cast_const()).read() } == 0
             && held_raw & A_BUTTON != 0
             && held_raw & B_START_SELECT == B_START_SELECT
         {
@@ -367,18 +370,18 @@ pub unsafe extern "C" fn AgbMain() -> ! {
         }
 
         if unsafe { Overworld_SendKeysToLinkIsRunning() } == 1 {
-            unsafe { (&raw mut gLinkTransferringData).write(1) };
+            unsafe { (gLinkTransferringData.as_ptr()).write(1) };
             unsafe { update_link_and_call_callbacks() };
-            unsafe { (&raw mut gLinkTransferringData).write(0) };
+            unsafe { (gLinkTransferringData.as_ptr()).write(0) };
         } else {
-            unsafe { (&raw mut gLinkTransferringData).write(0) };
+            unsafe { (gLinkTransferringData.as_ptr()).write(0) };
             unsafe { update_link_and_call_callbacks() };
             if unsafe { Overworld_RecvKeysFromLinkIsRunning() } == 1 {
                 unsafe { u16_field(M_NEW_KEYS).write(0) };
                 unsafe { ClearSpriteCopyRequests() };
-                unsafe { (&raw mut gLinkTransferringData).write(1) };
+                unsafe { (gLinkTransferringData.as_ptr()).write(1) };
                 unsafe { update_link_and_call_callbacks() };
-                unsafe { (&raw mut gLinkTransferringData).write(0) };
+                unsafe { (gLinkTransferringData.as_ptr()).write(0) };
             }
         }
         unsafe { PlayTimeCounter_Update() };
@@ -395,12 +398,14 @@ unsafe fn update_link_and_call_callbacks() {
 
 unsafe fn init_main_callbacks() {
     unsafe { main_field(M_VBLANK_COUNTER1).cast::<u32>().write(0) };
-    unsafe { (&raw mut gTrainerHillVBlankCounter).write(core::ptr::null_mut()) };
+    unsafe { (crate::gl!(&raw gTrainerHillVBlankCounter)).write(core::ptr::null_mut()) };
     unsafe { main_field(M_VBLANK_COUNTER2).cast::<u32>().write(0) };
     unsafe { set_callback(M_CALLBACK1, None) };
     unsafe { SetMainCallback2(Some(CB2_InitCopyrightScreenAfterBootup)) };
-    unsafe { (&raw mut gSaveBlock2Ptr).write((&raw mut gSaveblock2).cast()) };
-    unsafe { (&raw mut gPokemonStoragePtr).write((&raw mut gPokemonStorage).cast()) };
+    unsafe { (crate::gl!(&raw gSaveBlock2Ptr)).write((crate::gl!(&raw gSaveblock2)).cast()) };
+    unsafe {
+        (crate::gl!(&raw gPokemonStoragePtr)).write((crate::gl!(&raw gPokemonStorage)).cast())
+    };
 }
 
 unsafe fn call_callbacks() {
@@ -446,7 +451,7 @@ pub unsafe fn EnableVCountIntrAtLine150() {
 #[unsafe(no_mangle)]
 pub unsafe fn InitKeys() {
     unsafe { (gKeyRepeatContinueDelay.as_ptr()).write(5) };
-    unsafe { (&raw mut gKeyRepeatStartDelay).write(40) };
+    unsafe { (gKeyRepeatStartDelay.as_ptr()).write(40) };
     for field in [
         M_HELD_KEYS,
         M_NEW_KEYS,
@@ -479,13 +484,20 @@ unsafe fn read_keys() {
             };
         }
     } else {
-        unsafe { u16_field(M_KEY_REPEAT_COUNTER).write((&raw const gKeyRepeatStartDelay).read()) };
+        unsafe {
+            u16_field(M_KEY_REPEAT_COUNTER)
+                .write((gKeyRepeatStartDelay.as_ptr().cast_const()).read())
+        };
     }
 
     unsafe { u16_field(M_HELD_KEYS_RAW).write(key_input) };
     unsafe { u16_field(M_HELD_KEYS).write(key_input) };
 
-    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
+    let sb2 = unsafe {
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     if unsafe { sb2.add(SB2_OPTIONS_BUTTON_MODE).read() } == OPTIONS_BUTTON_MODE_L_EQUALS_A {
         if unsafe { u16_field(M_NEW_KEYS).read() } & L_BUTTON != 0 {
             unsafe { u16_field(M_NEW_KEYS).write(u16_field(M_NEW_KEYS).read() | A_BUTTON) };
@@ -503,12 +515,12 @@ unsafe fn read_keys() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn InitIntrHandlers() {
-    let table = (&raw mut gIntrTable).cast::<usize>();
+    let table = (crate::gl!(&raw gIntrTable)).cast::<usize>();
     for (i, handler) in gIntrTableTemplate.iter().enumerate() {
         unsafe { table.add(i).write(*handler as usize) };
     }
     // DmaCopy32(3, IntrMain, IntrMain_Buffer, sizeof(IntrMain_Buffer))
-    let buffer = (&raw mut IntrMain_Buffer).cast::<u32>();
+    let buffer = (crate::gl!(&raw IntrMain_Buffer)).cast::<u32>();
     let dma3 = 0x0400_00d4 as *mut u32;
     unsafe { dma3.write_volatile(crate::crt0::IntrMain as *const () as usize as u32) };
     unsafe { dma3.add(1).write_volatile(buffer as usize as u32) };
@@ -539,7 +551,7 @@ pub unsafe fn SetVCountCallback(callback: Option<unsafe fn()>) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn RestoreSerialTimer3IntrHandlers() {
-    let table = (&raw mut gIntrTable).cast::<usize>();
+    let table = (crate::gl!(&raw gIntrTable)).cast::<usize>();
     unsafe { table.add(1).write(serial_intr as IntrFunc as usize) };
     unsafe { table.add(2).write(Timer3Intr as IntrFunc as usize) };
 }
@@ -557,15 +569,15 @@ unsafe fn mark_interrupt(flag: u16) {
 }
 
 unsafe extern "C" fn vblank_intr() {
-    if unsafe { (&raw const gWirelessCommType).read_volatile() } != 0 {
+    if unsafe { (gWirelessCommType.as_ptr().cast_const()).read_volatile() } != 0 {
         unsafe { RfuVSync() };
-    } else if unsafe { (&raw const gLinkVSyncDisabled).read_volatile() } == 0 {
+    } else if unsafe { (gLinkVSyncDisabled.as_ptr().cast_const()).read_volatile() } == 0 {
         unsafe { LinkVSync() };
     }
 
     let counter1 = main_field(M_VBLANK_COUNTER1).cast::<u32>();
     unsafe { counter1.write_volatile(counter1.read_volatile().wrapping_add(1)) };
-    let hill = unsafe { (&raw const gTrainerHillVBlankCounter).read_volatile() };
+    let hill = unsafe { (crate::gl!(&raw gTrainerHillVBlankCounter).cast_const()).read_volatile() };
     if !hill.is_null() && unsafe { hill.read_volatile() } < 0xffff_ffff {
         unsafe { hill.write_volatile(hill.read_volatile() + 1) };
     }
@@ -578,7 +590,9 @@ unsafe extern "C" fn vblank_intr() {
     unsafe { CopyBufferedValuesToGpuRegs() };
     unsafe { ProcessDma3Requests() };
     let pcm = unsafe {
-        (&raw const (*(&raw const crate::m4a::gSoundInfo).cast::<u8>().cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::m4a::gSoundInfo;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(SOUND_INFO_PCM_DMA_COUNTER)
             .read_volatile()
     };
@@ -587,7 +601,7 @@ unsafe extern "C" fn vblank_intr() {
     unsafe { TryReceiveLinkBattleData() };
 
     let in_battle = unsafe { main_field(M_FLAGS).read_volatile() } & M_IN_BATTLE != 0;
-    let flags = unsafe { (&raw const gBattleTypeFlags).read_volatile() };
+    let flags = unsafe { (gBattleTypeFlags.as_ptr().cast_const()).read_volatile() };
     if !in_battle || flags & BATTLE_TYPE_LINK_FRONTIER_RECORDED == 0 {
         Random();
     }
@@ -597,7 +611,7 @@ unsafe extern "C" fn vblank_intr() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn InitFlashTimer() {
-    let table = (&raw mut gIntrTable).cast::<usize>();
+    let table = (crate::gl!(&raw gIntrTable)).cast::<usize>();
     unsafe { SetFlashTimerIntr(2, table.add(7)) };
 }
 
@@ -633,12 +647,12 @@ unsafe fn wait_for_vblank() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn SetTrainerHillVBlankCounter(counter: *mut u32) {
-    unsafe { (&raw mut gTrainerHillVBlankCounter).write(counter) };
+    unsafe { (crate::gl!(&raw gTrainerHillVBlankCounter)).write(counter) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ClearTrainerHillVBlankCounter() {
-    unsafe { (&raw mut gTrainerHillVBlankCounter).write(core::ptr::null_mut()) };
+    unsafe { (crate::gl!(&raw gTrainerHillVBlankCounter)).write(core::ptr::null_mut()) };
 }
 
 /// `DmaStop(n)`
@@ -667,7 +681,7 @@ pub unsafe fn DoSoftReset() -> ! {
 pub unsafe fn ClearPokemonCrySongs() {
     let bytes = MAX_POKEMON_CRIES * POKEMON_CRY_SONG_SIZE;
     unsafe {
-        (&raw mut (*(&raw const crate::m4a::gPokemonCrySongs)
+        (&raw mut (*(crate::gl!(&raw @at crate::m4a::gPokemonCrySongs;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .write_bytes(0, bytes)

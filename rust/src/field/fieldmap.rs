@@ -97,19 +97,23 @@ const _: () = {
 static sDummyConnectionFlags: Table<ConnectionFlags> =
     Table((&raw const crate::data::fieldmap::sDummyConnectionFlags).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBackupMapData: Aligned<CArray<u16, 10240>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBackupMapData: crate::global::Global<Aligned<CArray<u16, 10240>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gMapHeader: MapHeader = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub static mut gCamera: Camera = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMapConnectionFlags: ConnectionFlags = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFiller: u32 = 0;
-#[unsafe(link_section = "common_data")]
-pub static mut gBackupMapLayout: BackupMapLayout = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gMapHeader: crate::global::Global<MapHeader> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gCamera: crate::global::Global<Camera> = crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMapConnectionFlags: crate::global::Global<ConnectionFlags> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sFiller: crate::global::Global<u32> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gBackupMapLayout: crate::global::Global<BackupMapLayout> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `CpuFastSet` with this module's view of its types.
 #[inline]
@@ -120,7 +124,7 @@ unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -130,17 +134,20 @@ pub unsafe fn GetMapHeaderFromConnection(connection: *mut MapConnection) -> *mut
     Overworld_GetMapHeaderByGroupAndId((*connection).mapGroup as u16, (*connection).mapNum as u16)
 }
 pub unsafe fn InitMap() {
-    InitMapLayoutData(&raw mut gMapHeader);
-    SetOccupiedSecretBaseEntranceMetatiles(gMapHeader.events);
+    InitMapLayoutData(crate::gl!(&raw gMapHeader));
+    SetOccupiedSecretBaseEntranceMetatiles(crate::gl!(gMapHeader.events));
     RunOnLoadMapScript();
 }
 pub unsafe fn InitMapFromSavedGame() {
-    InitMapLayoutData(&raw mut gMapHeader);
+    InitMapLayoutData(crate::gl!(&raw gMapHeader));
     InitSecretBaseAppearance(FALSE);
-    SetOccupiedSecretBaseEntranceMetatiles(gMapHeader.events);
+    SetOccupiedSecretBaseEntranceMetatiles(crate::gl!(gMapHeader.events));
     LoadSavedMapView();
     RunOnLoadMapScript();
-    UpdateTVScreensOnMap(gBackupMapLayout.width, gBackupMapLayout.height);
+    UpdateTVScreensOnMap(
+        crate::gl!(gBackupMapLayout.width),
+        crate::gl!(gBackupMapLayout.height),
+    );
 }
 pub unsafe fn InitBattlePyramidMap(setPlayerPosition: u8) {
     {
@@ -148,11 +155,11 @@ pub unsafe fn InitBattlePyramidMap(setPlayerPosition: u8) {
         volatile_write(&raw mut tmp, 0x3ff03ff);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            sBackupMapData.as_mut_ptr() as *mut c_void,
+            (*sBackupMapData.as_ptr()).as_mut_ptr() as *mut c_void,
             0x1001400,
         );
     }
-    GenerateBattlePyramidFloorLayout(sBackupMapData.as_mut_ptr(), setPlayerPosition);
+    GenerateBattlePyramidFloorLayout((*sBackupMapData.as_ptr()).as_mut_ptr(), setPlayerPosition);
 }
 pub unsafe fn InitTrainerHillMap() {
     {
@@ -160,11 +167,11 @@ pub unsafe fn InitTrainerHillMap() {
         volatile_write(&raw mut tmp, 0x3ff03ff);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            sBackupMapData.as_mut_ptr() as *mut c_void,
+            (*sBackupMapData.as_ptr()).as_mut_ptr() as *mut c_void,
             0x1001400,
         );
     }
-    GenerateTrainerHillFloorLayout(sBackupMapData.as_mut_ptr());
+    GenerateTrainerHillFloorLayout((*sBackupMapData.as_ptr()).as_mut_ptr());
 }
 unsafe fn InitMapLayoutData(mapHeader: *mut MapHeader) {
     let mapLayout: *mut MapLayout = (*mapHeader).mapLayout;
@@ -173,14 +180,15 @@ unsafe fn InitMapLayoutData(mapHeader: *mut MapHeader) {
         volatile_write(&raw mut tmp, 0x3ff03ff);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            sBackupMapData.as_mut_ptr() as *mut c_void,
+            (*sBackupMapData.as_ptr()).as_mut_ptr() as *mut c_void,
             0x1001400,
         );
     }
-    gBackupMapLayout.map = sBackupMapData.as_mut_ptr();
-    gBackupMapLayout.width = (*mapLayout).width + MAP_OFFSET_W;
-    gBackupMapLayout.height = (*mapLayout).height + MAP_OFFSET_H;
-    if gBackupMapLayout.width * gBackupMapLayout.height > MAX_MAP_DATA_SIZE {
+    crate::gl!(gBackupMapLayout.map = (*sBackupMapData.as_ptr()).as_mut_ptr());
+    crate::gl!(gBackupMapLayout.width = (*mapLayout).width + MAP_OFFSET_W);
+    crate::gl!(gBackupMapLayout.height = (*mapLayout).height + MAP_OFFSET_H);
+    if crate::gl!(gBackupMapLayout.width) * crate::gl!(gBackupMapLayout.height) > MAX_MAP_DATA_SIZE
+    {
         return;
     }
     InitBackupMapLayoutData(
@@ -190,9 +198,9 @@ unsafe fn InitMapLayoutData(mapHeader: *mut MapHeader) {
     );
     InitBackupMapLayoutConnections(mapHeader);
 }
-unsafe fn InitBackupMapLayoutData(mut map: *mut u16, width: u16, height: u16) {
-    let mut dest: *mut u16 = gBackupMapLayout.map;
-    dest = dest.at(gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET);
+fn InitBackupMapLayoutData(mut map: *mut u16, width: u16, height: u16) {
+    let mut dest: *mut u16 = crate::gl!(gBackupMapLayout.map);
+    dest = dest.at(crate::gl!(gBackupMapLayout.width) * MAP_OFFSET + MAP_OFFSET);
     for y in 0..(height as i32) {
         CpuSet(
             map as *mut c_void,
@@ -212,7 +220,7 @@ unsafe fn InitBackupMapLayoutConnections(mapHeader: *mut MapHeader) {
     }
     count = (*(*mapHeader).connections).count;
     let mut connection: *mut MapConnection = (*(*mapHeader).connections).connections;
-    sMapConnectionFlags = *sDummyConnectionFlags;
+    crate::gl!(sMapConnectionFlags = *sDummyConnectionFlags);
     let mut i: i32 = 0;
     while i < count {
         cMap = GetMapHeaderFromConnection(connection);
@@ -220,19 +228,19 @@ unsafe fn InitBackupMapLayoutConnections(mapHeader: *mut MapHeader) {
         match (*connection).direction {
             CONNECTION_SOUTH => {
                 FillSouthConnection(mapHeader, cMap, offset);
-                sMapConnectionFlags.set_south(TRUE);
+                (*sMapConnectionFlags.as_ptr()).set_south(TRUE);
             }
             CONNECTION_NORTH => {
                 FillNorthConnection(mapHeader, cMap, offset);
-                sMapConnectionFlags.set_north(TRUE);
+                (*sMapConnectionFlags.as_ptr()).set_north(TRUE);
             }
             CONNECTION_WEST => {
                 FillWestConnection(mapHeader, cMap, offset);
-                sMapConnectionFlags.set_west(TRUE);
+                (*sMapConnectionFlags.as_ptr()).set_west(TRUE);
             }
             CONNECTION_EAST => {
                 FillEastConnection(mapHeader, cMap, offset);
-                sMapConnectionFlags.set_east(TRUE);
+                (*sMapConnectionFlags.as_ptr()).set_east(TRUE);
             }
             _ => {}
         }
@@ -253,14 +261,16 @@ unsafe fn FillConnection(
     let mut src: *mut u16 = (*(*connectedMapHeader).mapLayout)
         .map
         .at(mapWidth * y2 + x2);
-    let mut dest: *mut u16 = gBackupMapLayout.map.at(gBackupMapLayout.width * y + x);
+    let mut dest: *mut u16 = (*gBackupMapLayout.as_ptr())
+        .map
+        .at(crate::gl!(gBackupMapLayout.width) * y + x);
     for i in 0..height {
         CpuSet(
             src as *mut c_void,
             dest as *mut c_void,
             (width * 2 / 2) as u32 & 0x1FFFFF,
         );
-        dest = dest.at(gBackupMapLayout.width);
+        dest = dest.at(crate::gl!(gBackupMapLayout.width));
         src = src.at(mapWidth);
     }
 }
@@ -280,18 +290,18 @@ unsafe fn FillSouthConnection(
     if x < 0 {
         x2 = -x;
         x += cWidth;
-        if x < gBackupMapLayout.width {
+        if x < crate::gl!(gBackupMapLayout.width) {
             width = x;
         } else {
-            width = gBackupMapLayout.width;
+            width = crate::gl!(gBackupMapLayout.width);
         }
         x = 0;
     } else {
         x2 = 0;
-        if x + cWidth < gBackupMapLayout.width {
+        if x + cWidth < crate::gl!(gBackupMapLayout.width) {
             width = cWidth;
         } else {
-            width = gBackupMapLayout.width - x;
+            width = crate::gl!(gBackupMapLayout.width) - x;
         }
     }
     FillConnection(x, y, connectedMapHeader, x2, 0, width, MAP_OFFSET);
@@ -313,18 +323,18 @@ unsafe fn FillNorthConnection(
     if x < 0 {
         x2 = -x;
         x += cWidth;
-        if x < gBackupMapLayout.width {
+        if x < crate::gl!(gBackupMapLayout.width) {
             width = x;
         } else {
-            width = gBackupMapLayout.width;
+            width = crate::gl!(gBackupMapLayout.width);
         }
         x = 0;
     } else {
         x2 = 0;
-        if x + cWidth < gBackupMapLayout.width {
+        if x + cWidth < crate::gl!(gBackupMapLayout.width) {
             width = cWidth;
         } else {
-            width = gBackupMapLayout.width - x;
+            width = crate::gl!(gBackupMapLayout.width) - x;
         }
     }
     FillConnection(x, 0, connectedMapHeader, x2, y2, width, MAP_OFFSET);
@@ -345,18 +355,18 @@ unsafe fn FillWestConnection(
     let x2: i32 = cWidth - MAP_OFFSET;
     if y < 0 {
         y2 = -y;
-        if y + cHeight < gBackupMapLayout.height {
+        if y + cHeight < crate::gl!(gBackupMapLayout.height) {
             height = y + cHeight;
         } else {
-            height = gBackupMapLayout.height;
+            height = crate::gl!(gBackupMapLayout.height);
         }
         y = 0;
     } else {
         y2 = 0;
-        if y + cHeight < gBackupMapLayout.height {
+        if y + cHeight < crate::gl!(gBackupMapLayout.height) {
             height = cHeight;
         } else {
-            height = gBackupMapLayout.height - y;
+            height = crate::gl!(gBackupMapLayout.height) - y;
         }
     }
     FillConnection(0, y, connectedMapHeader, x2, y2, MAP_OFFSET, height);
@@ -376,47 +386,57 @@ unsafe fn FillEastConnection(
     let mut y: i32 = offset + MAP_OFFSET;
     if y < 0 {
         y2 = -y;
-        if y + cHeight < gBackupMapLayout.height {
+        if y + cHeight < crate::gl!(gBackupMapLayout.height) {
             height = y + cHeight;
         } else {
-            height = gBackupMapLayout.height;
+            height = crate::gl!(gBackupMapLayout.height);
         }
         y = 0;
     } else {
         y2 = 0;
-        if y + cHeight < gBackupMapLayout.height {
+        if y + cHeight < crate::gl!(gBackupMapLayout.height) {
             height = cHeight;
         } else {
-            height = gBackupMapLayout.height - y;
+            height = crate::gl!(gBackupMapLayout.height) - y;
         }
     }
     FillConnection(x, y, connectedMapHeader, 0, y2, 8, height);
 }
 pub unsafe fn MapGridGetElevationAt(x: i32, y: i32) -> u8 {
-    let block: u16 =
-        (if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
-            *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) as i32
-        } else {
-            *(*gMapHeader.mapLayout)
-                .border
-                .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
-                | 0x0C00
-        }) as u16;
+    let block: u16 = (if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + crate::gl!(gBackupMapLayout.width) * y) as i32
+    } else {
+        *(*crate::gl!(gMapHeader.mapLayout))
+            .border
+            .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
+            | 0x0C00
+    }) as u16;
     if block == MAPGRID_UNDEFINED {
         return 0;
     }
     ((block as i32 & 0xF000) >> 12) as u8
 }
 pub unsafe fn MapGridGetCollisionAt(x: i32, y: i32) -> u8 {
-    let block: u16 =
-        (if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
-            *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) as i32
-        } else {
-            *(*gMapHeader.mapLayout)
-                .border
-                .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
-                | 0x0C00
-        }) as u16;
+    let block: u16 = (if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + crate::gl!(gBackupMapLayout.width) * y) as i32
+    } else {
+        *(*crate::gl!(gMapHeader.mapLayout))
+            .border
+            .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
+            | 0x0C00
+    }) as u16;
     if block == MAPGRID_UNDEFINED {
         return 1;
     }
@@ -424,17 +444,22 @@ pub unsafe fn MapGridGetCollisionAt(x: i32, y: i32) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn MapGridGetMetatileIdAt(x: i32, y: i32) -> i32 {
-    let block: i32 =
-        if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
-            *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) as i32
-        } else {
-            *(*gMapHeader.mapLayout)
-                .border
-                .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
-                | 0x0C00
-        };
+    let block: i32 = if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + crate::gl!(gBackupMapLayout.width) * y) as i32
+    } else {
+        *(*crate::gl!(gMapHeader.mapLayout))
+            .border
+            .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
+            | 0x0C00
+    };
     if block == MAPGRID_UNDEFINED as i32 {
-        return (*(*gMapHeader.mapLayout)
+        return (*(*crate::gl!(gMapHeader.mapLayout))
             .border
             .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
             | 0x0C00)
@@ -450,23 +475,37 @@ pub unsafe fn MapGridGetMetatileLayerTypeAt(x: i32, y: i32) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn MapGridSetMetatileIdAt(x: i32, y: i32, metatile: u16) {
-    if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
-        *gBackupMapLayout.map.at(x + y * gBackupMapLayout.width) &= MAPGRID_ELEVATION_MASK;
-        *gBackupMapLayout.map.at(x + y * gBackupMapLayout.width) |= metatile & 4095;
+    if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + y * crate::gl!(gBackupMapLayout.width)) &= MAPGRID_ELEVATION_MASK;
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + y * crate::gl!(gBackupMapLayout.width)) |= metatile & 4095;
     }
 }
 pub unsafe fn MapGridSetMetatileEntryAt(x: i32, y: i32, metatile: u16) {
-    if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
-        *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) = metatile;
+    if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + crate::gl!(gBackupMapLayout.width) * y) = metatile;
     }
 }
 pub unsafe fn GetMetatileAttributesById(metatile: u16) -> u16 {
     if metatile < NUM_METATILES_IN_PRIMARY {
-        return *(*(*gMapHeader.mapLayout).primaryTileset)
+        return *(*(*crate::gl!(gMapHeader.mapLayout)).primaryTileset)
             .metatileAttributes
             .at(metatile);
     } else if metatile < NUM_METATILES_TOTAL {
-        return *(*(*gMapHeader.mapLayout).secondaryTileset)
+        return *(*(*crate::gl!(gMapHeader.mapLayout)).secondaryTileset)
             .metatileAttributes
             .at(metatile as i32 - NUM_METATILES_IN_PRIMARY as i32);
     } else {
@@ -482,24 +521,27 @@ pub unsafe fn SaveMapView() {
     let mut y: i32 = 0;
     let mut mapView: *mut u16 = null_mut();
     let mut width: i32 = 0;
-    mapView = (*gSaveBlock1Ptr).mapView.as_mut_ptr();
-    width = gBackupMapLayout.width;
-    x = (*gSaveBlock1Ptr).pos.x as i32;
-    y = (*gSaveBlock1Ptr).pos.y as i32;
+    mapView = (*crate::gl!(gSaveBlock1Ptr)).mapView.as_mut_ptr();
+    width = crate::gl!(gBackupMapLayout.width);
+    x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32;
+    y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32;
     for i in y..(y + MAP_OFFSET_H) {
         for j in x..(x + MAP_OFFSET_W) {
             *({
                 let t1 = mapView;
                 mapView = mapView.at(1);
                 t1
-            }) = sBackupMapData[width * i + j];
+            }) = {
+                let gl_i0 = width * i + j;
+                crate::gl!(sBackupMapData[gl_i0])
+            };
         }
     }
 }
 unsafe fn SavedMapViewIsEmpty() -> u32 {
     let mut marker: u32 = 0;
     for i in 0..256u16 {
-        marker |= (*gSaveBlock1Ptr).mapView[i] as u32;
+        marker |= (*crate::gl!(gSaveBlock1Ptr)).mapView[i] as u32;
     }
     if marker == 0 {
         return TRUE as u32;
@@ -518,7 +560,7 @@ unsafe fn ClearSavedMapView() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gSaveBlock1Ptr).mapView.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gSaveBlock1Ptr)).mapView.as_mut_ptr() as *mut c_void,
                 0x1000100,
             );
         }
@@ -530,30 +572,37 @@ unsafe fn LoadSavedMapView() {
     let mut y: i32 = 0;
     let mut mapView: *mut u16 = null_mut();
     let mut width: i32 = 0;
-    mapView = (*gSaveBlock1Ptr).mapView.as_mut_ptr();
+    mapView = (*crate::gl!(gSaveBlock1Ptr)).mapView.as_mut_ptr();
     if SavedMapViewIsEmpty() != 0 {
         return;
     }
-    width = gBackupMapLayout.width;
-    x = (*gSaveBlock1Ptr).pos.x as i32;
-    y = (*gSaveBlock1Ptr).pos.y as i32;
+    width = crate::gl!(gBackupMapLayout.width);
+    x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32;
+    y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32;
     let mut i: i32 = y;
     while i < y + MAP_OFFSET_H {
         if i == y && i != 0 {
             yMode = 0;
-        } else if i == y + MAP_OFFSET_H - 1 && i != (*gMapHeader.mapLayout).height - 1 {
+        } else if i == y + MAP_OFFSET_H - 1 && i != (*crate::gl!(gMapHeader.mapLayout)).height - 1 {
             yMode = 1;
         } else {
             yMode = 0xFF;
         }
         for j in x..(x + MAP_OFFSET_W) {
             if SkipCopyingMetatileFromSavedMap(
-                &raw mut sBackupMapData[j + width * i],
+                {
+                    let gl_i1 = j + width * i;
+                    crate::gl!(&raw sBackupMapData[gl_i1])
+                },
                 width as u16,
                 yMode,
             ) == 0
             {
-                sBackupMapData[j + width * i] = *mapView;
+                {
+                    let gl_v = *mapView;
+                    let gl_i2 = j + width * i;
+                    crate::gl!(sBackupMapData[gl_i2] = gl_v)
+                };
             }
             mapView = mapView.at(1);
         }
@@ -563,7 +612,7 @@ unsafe fn LoadSavedMapView() {
         if y != 0 {
             FixLongGrassMetatilesWindowTop(j as i16, y as i16 - 1);
         }
-        if i < (*gMapHeader.mapLayout).height - 1 {
+        if i < (*crate::gl!(gMapHeader.mapLayout)).height - 1 {
             FixLongGrassMetatilesWindowBottom(j as i16, y as i16 + MAP_OFFSET_H as i16 - 1);
         }
     }
@@ -571,12 +620,12 @@ unsafe fn LoadSavedMapView() {
 }
 unsafe fn MoveMapViewToBackup(direction: u8) {
     let mut width: i32 = 0;
-    let mapView: *mut u16 = (*gSaveBlock1Ptr).mapView.as_mut_ptr();
-    width = gBackupMapLayout.width;
+    let mapView: *mut u16 = (*crate::gl!(gSaveBlock1Ptr)).mapView.as_mut_ptr();
+    width = crate::gl!(gBackupMapLayout.width);
     let mut i: i32 = 0;
     let mut j: i32 = 0;
-    let mut x0: i32 = (*gSaveBlock1Ptr).pos.x as i32;
-    let mut y0: i32 = (*gSaveBlock1Ptr).pos.y as i32;
+    let mut x0: i32 = (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32;
+    let mut y0: i32 = (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32;
     let mut x2: i32 = MAP_OFFSET_W;
     let mut y2: i32 = MAP_OFFSET_H;
     match direction {
@@ -600,16 +649,26 @@ unsafe fn MoveMapViewToBackup(direction: u8) {
     }
     for y in 0..y2 {
         for x in 0..x2 {
-            sBackupMapData[x + x0 + width * (y + y0)] = *mapView.at(i + x + MAP_OFFSET_W * (j + y));
+            {
+                let gl_v = *mapView.at(i + x + MAP_OFFSET_W * (j + y));
+                let gl_i3 = x + x0 + width * (y + y0);
+                crate::gl!(sBackupMapData[gl_i3] = gl_v)
+            };
         }
     }
     ClearSavedMapView();
 }
 pub unsafe fn GetMapBorderIdAt(x: i32, y: i32) -> i32 {
-    if (if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
-        *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) as i32
+    if (if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
+        *(*gBackupMapLayout.as_ptr())
+            .map
+            .at(x + crate::gl!(gBackupMapLayout.width) * y) as i32
     } else {
-        *(*gMapHeader.mapLayout)
+        *(*crate::gl!(gMapHeader.mapLayout))
             .border
             .at(((x + 1) & 1) + (((y + 1) & 1) << 1)) as i32
             | 0x0C00
@@ -617,23 +676,23 @@ pub unsafe fn GetMapBorderIdAt(x: i32, y: i32) -> i32 {
     {
         return CONNECTION_INVALID;
     }
-    if x >= gBackupMapLayout.width - 8 {
-        if sMapConnectionFlags.east() == 0 {
+    if x >= crate::gl!(gBackupMapLayout.width) - 8 {
+        if (*sMapConnectionFlags.as_ptr()).east() == 0 {
             return CONNECTION_INVALID;
         }
         return CONNECTION_EAST as i32;
     } else if x < MAP_OFFSET {
-        if sMapConnectionFlags.west() == 0 {
+        if (*sMapConnectionFlags.as_ptr()).west() == 0 {
             return CONNECTION_INVALID;
         }
         return CONNECTION_WEST as i32;
-    } else if y >= gBackupMapLayout.height - MAP_OFFSET {
-        if sMapConnectionFlags.south() == 0 {
+    } else if y >= crate::gl!(gBackupMapLayout.height) - MAP_OFFSET {
+        if (*sMapConnectionFlags.as_ptr()).south() == 0 {
             return CONNECTION_INVALID;
         }
         return CONNECTION_SOUTH as i32;
     } else if y < MAP_OFFSET {
-        if sMapConnectionFlags.north() == 0 {
+        if (*sMapConnectionFlags.as_ptr()).north() == 0 {
             return CONNECTION_INVALID;
         }
         return CONNECTION_NORTH as i32;
@@ -647,19 +706,19 @@ pub unsafe fn GetMapBorderIdAt(x: i32, y: i32) -> i32 {
 }
 pub unsafe fn GetPostCameraMoveMapBorderId(x: i32, y: i32) -> i32 {
     GetMapBorderIdAt(
-        (*gSaveBlock1Ptr).pos.x as i32 + MAP_OFFSET + x,
-        (*gSaveBlock1Ptr).pos.y as i32 + MAP_OFFSET + y,
+        (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32 + MAP_OFFSET + x,
+        (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32 + MAP_OFFSET + y,
     )
 }
 pub unsafe fn CanCameraMoveInDirection(direction: i32) -> u32 {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
-    x = (*gSaveBlock1Ptr).pos.x as i32
+    x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32
         + MAP_OFFSET
         + (*(&raw const crate::data::overworld::gDirectionToVectors).cast::<CArray<UCoords32, 0>>())
             [direction]
             .x as i32;
-    y = (*gSaveBlock1Ptr).pos.y as i32
+    y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32
         + MAP_OFFSET
         + (*(&raw const crate::data::overworld::gDirectionToVectors).cast::<CArray<UCoords32, 0>>())
             [direction]
@@ -678,20 +737,20 @@ unsafe fn SetPositionFromConnection(
     let mapHeader: *mut MapHeader = GetMapHeaderFromConnection(connection);
     match direction {
         4 => {
-            (*gSaveBlock1Ptr).pos.x = -(x as i16);
-            (*gSaveBlock1Ptr).pos.y -= (*connection).offset as i16;
+            (*crate::gl!(gSaveBlock1Ptr)).pos.x = -(x as i16);
+            (*crate::gl!(gSaveBlock1Ptr)).pos.y -= (*connection).offset as i16;
         }
         3 => {
-            (*gSaveBlock1Ptr).pos.x = (*(*mapHeader).mapLayout).width as i16;
-            (*gSaveBlock1Ptr).pos.y -= (*connection).offset as i16;
+            (*crate::gl!(gSaveBlock1Ptr)).pos.x = (*(*mapHeader).mapLayout).width as i16;
+            (*crate::gl!(gSaveBlock1Ptr)).pos.y -= (*connection).offset as i16;
         }
         1 => {
-            (*gSaveBlock1Ptr).pos.x -= (*connection).offset as i16;
-            (*gSaveBlock1Ptr).pos.y = -(y as i16);
+            (*crate::gl!(gSaveBlock1Ptr)).pos.x -= (*connection).offset as i16;
+            (*crate::gl!(gSaveBlock1Ptr)).pos.y = -(y as i16);
         }
         2 => {
-            (*gSaveBlock1Ptr).pos.x -= (*connection).offset as i16;
-            (*gSaveBlock1Ptr).pos.y = (*(*mapHeader).mapLayout).height as i16;
+            (*crate::gl!(gSaveBlock1Ptr)).pos.x -= (*connection).offset as i16;
+            (*crate::gl!(gSaveBlock1Ptr)).pos.y = (*(*mapHeader).mapLayout).height as i16;
         }
         _ => {}
     }
@@ -700,35 +759,35 @@ pub unsafe fn CameraMove(x: i32, y: i32) -> u8 {
     let mut connection: *mut MapConnection = null_mut();
     let mut old_x: i32 = 0;
     let mut old_y: i32 = 0;
-    gCamera.set_active(FALSE);
+    (*gCamera.as_ptr()).set_active(FALSE);
     let direction: i32 = GetPostCameraMoveMapBorderId(x, y);
     if direction == CONNECTION_NONE || direction == CONNECTION_INVALID {
-        (*gSaveBlock1Ptr).pos.x += x as i16;
-        (*gSaveBlock1Ptr).pos.y += y as i16;
+        (*crate::gl!(gSaveBlock1Ptr)).pos.x += x as i16;
+        (*crate::gl!(gSaveBlock1Ptr)).pos.y += y as i16;
     } else {
         SaveMapView();
         ClearMirageTowerPulseBlendEffect();
-        old_x = (*gSaveBlock1Ptr).pos.x as i32;
-        old_y = (*gSaveBlock1Ptr).pos.y as i32;
+        old_x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32;
+        old_y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32;
         connection = GetIncomingConnection(
             direction as u8,
-            (*gSaveBlock1Ptr).pos.x as i32,
-            (*gSaveBlock1Ptr).pos.y as i32,
+            (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32,
+            (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32,
         );
         SetPositionFromConnection(connection, direction, x, y);
         LoadMapFromCameraTransition((*connection).mapGroup, (*connection).mapNum);
-        gCamera.set_active(TRUE);
-        gCamera.x = old_x - (*gSaveBlock1Ptr).pos.x as i32;
-        gCamera.y = old_y - (*gSaveBlock1Ptr).pos.y as i32;
-        (*gSaveBlock1Ptr).pos.x += x as i16;
-        (*gSaveBlock1Ptr).pos.y += y as i16;
+        (*gCamera.as_ptr()).set_active(TRUE);
+        crate::gl!(gCamera.x = old_x - (*crate::gl!(gSaveBlock1Ptr)).pos.x as i32);
+        crate::gl!(gCamera.y = old_y - (*crate::gl!(gSaveBlock1Ptr)).pos.y as i32);
+        (*crate::gl!(gSaveBlock1Ptr)).pos.x += x as i16;
+        (*crate::gl!(gSaveBlock1Ptr)).pos.y += y as i16;
         MoveMapViewToBackup(direction as u8);
     }
-    gCamera.active()
+    (*gCamera.as_ptr()).active()
 }
 unsafe fn GetIncomingConnection(direction: u8, x: i32, y: i32) -> *mut MapConnection {
     let mut count: i32 = 0;
-    let connections: *mut MapConnections = gMapHeader.connections;
+    let connections: *mut MapConnections = crate::gl!(gMapHeader.connections);
     if connections.is_null() || (*connections).connections.is_null() {
         return null_mut();
     }
@@ -757,7 +816,7 @@ unsafe fn IsPosInIncomingConnectingMap(
         CONNECTION_SOUTH | CONNECTION_NORTH => {
             return IsCoordInIncomingConnectingMap(
                 x,
-                (*gMapHeader.mapLayout).width,
+                (*crate::gl!(gMapHeader.mapLayout)).width,
                 (*(*mapHeader).mapLayout).width,
                 (*connection).offset,
             );
@@ -765,7 +824,7 @@ unsafe fn IsPosInIncomingConnectingMap(
         CONNECTION_WEST | CONNECTION_EAST => {
             return IsCoordInIncomingConnectingMap(
                 y,
-                (*gMapHeader.mapLayout).height,
+                (*crate::gl!(gMapHeader.mapLayout)).height,
                 (*(*mapHeader).mapLayout).height,
                 (*connection).offset,
             );
@@ -820,11 +879,11 @@ unsafe fn IsPosInConnectingMap(connection: *mut MapConnection, x: i32, y: i32) -
 pub unsafe fn GetMapConnectionAtPos(x: i16, y: i16) -> *mut MapConnection {
     let mut count: i32 = 0;
     let mut direction: u8 = 0;
-    if gMapHeader.connections.is_null() {
+    if (*gMapHeader.as_ptr()).connections.is_null() {
         return null_mut();
     }
-    count = (*gMapHeader.connections).count;
-    let mut connection: *mut MapConnection = (*gMapHeader.connections).connections;
+    count = (*crate::gl!(gMapHeader.connections)).count;
+    let mut connection: *mut MapConnection = (*crate::gl!(gMapHeader.connections)).connections;
     let mut i: i32 = 0;
     while i < count {
         'l1: {
@@ -834,13 +893,13 @@ pub unsafe fn GetMapConnectionAtPos(x: i16, y: i16) -> *mut MapConnection {
             } else if direction == CONNECTION_NORTH && y > 6 {
                 break 'l1;
             } else if direction == CONNECTION_SOUTH
-                && (y as i32) < (*gMapHeader.mapLayout).height + MAP_OFFSET
+                && (y as i32) < (*crate::gl!(gMapHeader.mapLayout)).height + MAP_OFFSET
             {
                 break 'l1;
             } else if direction == CONNECTION_WEST && x > 6 {
                 break 'l1;
             } else if direction == CONNECTION_EAST
-                && (x as i32) < (*gMapHeader.mapLayout).width + MAP_OFFSET
+                && (x as i32) < (*crate::gl!(gMapHeader.mapLayout)).width + MAP_OFFSET
             {
                 break 'l1;
             }
@@ -856,27 +915,35 @@ pub unsafe fn GetMapConnectionAtPos(x: i16, y: i16) -> *mut MapConnection {
     null_mut()
 }
 pub unsafe fn SetCameraFocusCoords(x: u16, y: u16) {
-    (*gSaveBlock1Ptr).pos.x = x as i16 - MAP_OFFSET as i16;
-    (*gSaveBlock1Ptr).pos.y = y as i16 - MAP_OFFSET as i16;
+    (*crate::gl!(gSaveBlock1Ptr)).pos.x = x as i16 - MAP_OFFSET as i16;
+    (*crate::gl!(gSaveBlock1Ptr)).pos.y = y as i16 - MAP_OFFSET as i16;
 }
 pub unsafe fn GetCameraFocusCoords(x: *mut u16, y: *mut u16) {
-    *x = (*gSaveBlock1Ptr).pos.x as u16 + MAP_OFFSET as u16;
-    *y = (*gSaveBlock1Ptr).pos.y as u16 + MAP_OFFSET as u16;
+    *x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as u16 + MAP_OFFSET as u16;
+    *y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as u16 + MAP_OFFSET as u16;
 }
 unsafe fn SetCameraCoords(x: u16, y: u16) {
-    (*gSaveBlock1Ptr).pos.x = x as i16;
-    (*gSaveBlock1Ptr).pos.y = y as i16;
+    (*crate::gl!(gSaveBlock1Ptr)).pos.x = x as i16;
+    (*crate::gl!(gSaveBlock1Ptr)).pos.y = y as i16;
 }
 pub unsafe fn GetCameraCoords(x: *mut u16, y: *mut u16) {
-    *x = (*gSaveBlock1Ptr).pos.x as u16;
-    *y = (*gSaveBlock1Ptr).pos.y as u16;
+    *x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as u16;
+    *y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as u16;
 }
 pub unsafe fn MapGridSetMetatileImpassabilityAt(x: i32, y: i32, impassable: u32) {
-    if x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height {
+    if x >= 0
+        && x < crate::gl!(gBackupMapLayout.width)
+        && y >= 0
+        && y < crate::gl!(gBackupMapLayout.height)
+    {
         if impassable != 0 {
-            *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) |= MAPGRID_COLLISION_MASK;
+            *(*gBackupMapLayout.as_ptr())
+                .map
+                .at(x + crate::gl!(gBackupMapLayout.width) * y) |= MAPGRID_COLLISION_MASK;
         } else {
-            *gBackupMapLayout.map.at(x + gBackupMapLayout.width * y) &= 62463;
+            *(*gBackupMapLayout.as_ptr())
+                .map
+                .at(x + crate::gl!(gBackupMapLayout.width) * y) &= 62463;
         }
     }
 }

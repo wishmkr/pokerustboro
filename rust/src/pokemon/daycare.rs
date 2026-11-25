@@ -83,12 +83,12 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `GiveMailToMon` with this module's view of its types.
 #[inline]
-unsafe fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
+fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
     unsafe { crate::mail_data::GiveMailToMon(a0 as _, a1 as _) }
 }
 /// `MonHasMail` with this module's view of its types.
 #[inline]
-unsafe fn MonHasMail(a0: *mut Pokemon) -> u8 {
+fn MonHasMail(a0: *mut Pokemon) -> u8 {
     unsafe { crate::mail_data::MonHasMail(a0 as _) }
 }
 /// `SetBoxMonData` with this module's view of its types.
@@ -115,7 +115,7 @@ unsafe fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8 {
 }
 /// `TakeMailFromMon` with this module's view of its types.
 #[inline]
-unsafe fn TakeMailFromMon(a0: *mut Pokemon) {
+fn TakeMailFromMon(a0: *mut Pokemon) {
     unsafe {
         crate::mail_data::TakeMailFromMon(a0 as _);
     }
@@ -138,23 +138,25 @@ static sDaycareListMenuLevelTemplate: Table<ListMenuTemplate> =
 static sJapaneseEggNickname: Table<CArray<u8, 4>> =
     Table((&raw const crate::data::daycare::sJapaneseEggNickname).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHatchedEggLevelUpMoves: Aligned<CArray<u16, 50>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHatchedEggFatherMoves: Aligned<CArray<u16, 4>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHatchedEggFinalMoves: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHatchedEggEggMoves: Aligned<CArray<u16, 10>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHatchedEggMotherMoves: Aligned<CArray<u16, 4>> =
-    Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHatchedEggLevelUpMoves: crate::global::Global<Aligned<CArray<u16, 50>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHatchedEggFatherMoves: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHatchedEggFinalMoves: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHatchedEggEggMoves: crate::global::Global<Aligned<CArray<u16, 10>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHatchedEggMotherMoves: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `AddTextPrinter` with this module's view of its types.
 #[inline]
-unsafe fn AddTextPrinter(
+fn AddTextPrinter(
     a0: *mut TextPrinterTemplate,
     a1: u8,
     a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
@@ -216,7 +218,7 @@ unsafe fn StorePokemonInDaycare(mon: *mut Pokemon, daycareMon: *mut DaycareMon) 
     if MonHasMail(mon) != 0 {
         StringCopy(
             (*daycareMon).mail.otName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         GetMonNickname2(mon, (*daycareMon).mail.monName.as_mut_ptr());
         StripExtCtrlCodes((*daycareMon).mail.monName.as_mut_ptr());
@@ -225,7 +227,7 @@ unsafe fn StorePokemonInDaycare(mon: *mut Pokemon, daycareMon: *mut DaycareMon) 
             .mail
             .set_monLanguage(GetMonData2(mon, MON_DATA_LANGUAGE) as u8);
         let mailId: u8 = GetMonData2(mon, MON_DATA_MAIL) as u8;
-        (*daycareMon).mail.message = (*gSaveBlock1Ptr).mail[mailId];
+        (*daycareMon).mail.message = (*crate::gl!(gSaveBlock1Ptr)).mail[mailId];
         TakeMailFromMon(mon);
     }
     (*daycareMon).mon = (*mon).r#box;
@@ -243,8 +245,8 @@ unsafe fn StorePokemonInEmptyDaycareSlot(mon: *mut Pokemon, daycare: *mut DayCar
 pub unsafe fn StoreSelectedPokemonInDaycare() {
     let monId: u8 = GetCursorSelectionMonId();
     StorePokemonInEmptyDaycareSlot(
-        &raw mut gPlayerParty[monId],
-        &raw mut (*gSaveBlock1Ptr).daycare,
+        crate::gl!(&raw gPlayerParty[monId]),
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
     );
 }
 unsafe fn ShiftDaycareSlots(daycare: *mut DayCare) {
@@ -272,7 +274,7 @@ unsafe fn ApplyDaycareExperience(mon: *mut Pokemon) {
             {
                 firstMove = FALSE;
                 if learnedMove == MON_HAS_MAX_MOVES {
-                    DeleteFirstMoveAndGiveMoveToMon(mon, gMoveToLearn);
+                    DeleteFirstMoveAndGiveMoveToMon(mon, gMoveToLearn.get());
                 }
             }
         } else {
@@ -296,10 +298,10 @@ unsafe fn TakeSelectedPokemonFromDaycare(daycareMon: *mut DaycareMon) -> u16 {
         );
         ApplyDaycareExperience(&raw mut pokemon);
     }
-    gPlayerParty[5] = pokemon;
+    crate::gl!(gPlayerParty[5] = pokemon);
     if (*daycareMon).mail.message.itemId != 0 {
         GiveMailToMon(
-            &raw mut gPlayerParty[5],
+            crate::gl!(&raw gPlayerParty[5]),
             &raw mut (*daycareMon).mail.message,
         );
         ClearDaycareMonMail(&raw mut (*daycareMon).mail);
@@ -318,7 +320,7 @@ unsafe fn TakeSelectedPokemonMonFromDaycareShiftSlots(daycare: *mut DayCare, slo
 #[unsafe(no_mangle)]
 pub unsafe fn TakePokemonFromDaycare() -> u16 {
     TakeSelectedPokemonMonFromDaycareShiftSlots(
-        &raw mut (*gSaveBlock1Ptr).daycare,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
         gSpecialVar_0x8004 as u8,
     )
 }
@@ -340,7 +342,7 @@ unsafe fn GetNumLevelsGainedFromSteps(daycareMon: *mut DaycareMon) -> u8 {
 unsafe fn GetNumLevelsGainedForDaycareMon(daycareMon: *mut DaycareMon) -> u8 {
     let numLevelsGained: u8 = GetNumLevelsGainedFromSteps(daycareMon);
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         numLevelsGained as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         2,
@@ -353,7 +355,7 @@ unsafe fn PrepareDaycareCostStringForSelectedMon(daycareMon: *mut DaycareMon) ->
     GetBoxMonNickname(&raw mut (*daycareMon).mon, gStringVar1.as_mut_ptr());
     let cost: u32 = 100 + 100 * numLevelsGained as u32;
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         cost as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         5,
@@ -366,28 +368,30 @@ unsafe fn PrepareDaycareCostStringForMon(daycare: *mut DayCare, slotId: u8) -> u
 #[unsafe(no_mangle)]
 pub unsafe fn GetDaycareCostAndPrepareString() {
     gSpecialVar_0x8005 = PrepareDaycareCostStringForMon(
-        &raw mut (*gSaveBlock1Ptr).daycare,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
         gSpecialVar_0x8004 as u8,
     );
 }
 unsafe fn Debug_AddDaycareSteps(numSteps: u16) {
-    (*gSaveBlock1Ptr).daycare.mons[0].steps += numSteps as u32;
-    (*gSaveBlock1Ptr).daycare.mons[1].steps += numSteps as u32;
+    (*crate::gl!(gSaveBlock1Ptr)).daycare.mons[0].steps += numSteps as u32;
+    (*crate::gl!(gSaveBlock1Ptr)).daycare.mons[1].steps += numSteps as u32;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetNumLevelsGainedFromDaycare() -> u8 {
     if GetBoxMonData2(
-        &raw mut (*gSaveBlock1Ptr).daycare.mons[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()]
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare.mons
+            [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut()]
         .mon,
         MON_DATA_SPECIES,
     ) != 0
     {
         return GetNumLevelsGainedForDaycareMon(
-            &raw mut (*gSaveBlock1Ptr).daycare.mons[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare.mons
+                [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()],
         );
     }
     0
@@ -476,7 +480,7 @@ unsafe fn GetParentToInheritNature(daycare: *mut DayCare) -> i32 {
 }
 unsafe fn _TriggerPendingDaycareEgg(daycare: *mut DayCare) {
     let mut natureTries: i32 = 0;
-    SeedRng2(gMain.vblankCounter2 as u16);
+    SeedRng2(crate::gl!(gMain.vblankCounter2) as u16);
     let parent: i32 = GetParentToInheritNature(daycare);
     if parent < 0 {
         (*daycare).offspringPersonality =
@@ -507,10 +511,10 @@ unsafe fn _TriggerPendingDaycareMaleEgg(daycare: *mut DayCare) {
     FlagSet(FLAG_PENDING_DAYCARE_EGG);
 }
 pub unsafe fn TriggerPendingDaycareEgg() {
-    _TriggerPendingDaycareEgg(&raw mut (*gSaveBlock1Ptr).daycare);
+    _TriggerPendingDaycareEgg(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
 }
 unsafe fn TriggerPendingDaycareMaleEgg() {
-    _TriggerPendingDaycareMaleEgg(&raw mut (*gSaveBlock1Ptr).daycare);
+    _TriggerPendingDaycareMaleEgg(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
 }
 unsafe fn RemoveIVIndexFromList(ivs: *mut u8, selectedIv: u8) {
     let mut temp: CArray<u8, 6> = zeroed();
@@ -621,33 +625,39 @@ unsafe fn BuildEggMoveset(egg: *mut Pokemon, father: *mut BoxPokemon, mother: *m
     let mut j: u16 = 0;
     let mut numSharedParentMoves: u16 = 0;
     for i in 0..(MAX_MON_MOVES as u16) {
-        sHatchedEggMotherMoves[i] = MOVE_NONE;
-        sHatchedEggFatherMoves[i] = MOVE_NONE;
-        sHatchedEggFinalMoves[i] = MOVE_NONE;
+        crate::gl!(sHatchedEggMotherMoves[i] = MOVE_NONE);
+        crate::gl!(sHatchedEggFatherMoves[i] = MOVE_NONE);
+        crate::gl!(sHatchedEggFinalMoves[i] = MOVE_NONE);
     }
     for i in 0..EGG_MOVES_ARRAY_COUNT {
-        sHatchedEggEggMoves[i] = MOVE_NONE;
+        crate::gl!(sHatchedEggEggMoves[i] = MOVE_NONE);
     }
     let mut i: u16 = 0;
     while (i as i32) < (if 20 > 50 { 20 } else { 50 }) {
-        sHatchedEggLevelUpMoves[i] = MOVE_NONE;
+        crate::gl!(sHatchedEggLevelUpMoves[i] = MOVE_NONE);
         i += 1;
     }
     let numLevelUpMoves: u32 = GetLevelUpMovesBySpecies(
         GetMonData2(egg, MON_DATA_SPECIES) as u16,
-        sHatchedEggLevelUpMoves.as_mut_ptr(),
+        (*sHatchedEggLevelUpMoves.as_ptr()).as_mut_ptr(),
     ) as u32;
     for i in 0..(MAX_MON_MOVES as u16) {
-        sHatchedEggFatherMoves[i] = GetBoxMonData2(father, MON_DATA_MOVE1 + i as i32) as u16;
-        sHatchedEggMotherMoves[i] = GetBoxMonData2(mother, MON_DATA_MOVE1 + i as i32) as u16;
+        crate::gl!(
+            sHatchedEggFatherMoves[i] = GetBoxMonData2(father, MON_DATA_MOVE1 + i as i32) as u16
+        );
+        crate::gl!(
+            sHatchedEggMotherMoves[i] = GetBoxMonData2(mother, MON_DATA_MOVE1 + i as i32) as u16
+        );
     }
-    let numEggMoves: u16 = GetEggMoves(egg, sHatchedEggEggMoves.as_mut_ptr()) as u16;
+    let numEggMoves: u16 = GetEggMoves(egg, (*sHatchedEggEggMoves.as_ptr()).as_mut_ptr()) as u16;
     for i in 0..(MAX_MON_MOVES as u16) {
-        if sHatchedEggFatherMoves[i] != MOVE_NONE {
+        if crate::gl!(sHatchedEggFatherMoves[i]) != MOVE_NONE {
             for j in 0..numEggMoves {
-                if sHatchedEggFatherMoves[i] == sHatchedEggEggMoves[j] {
-                    if GiveMoveToMon(egg, sHatchedEggFatherMoves[i]) == MON_HAS_MAX_MOVES {
-                        DeleteFirstMoveAndGiveMoveToMon(egg, sHatchedEggFatherMoves[i]);
+                if crate::gl!(sHatchedEggFatherMoves[i]) == crate::gl!(sHatchedEggEggMoves[j]) {
+                    if GiveMoveToMon(egg, crate::gl!(sHatchedEggFatherMoves[i]))
+                        == MON_HAS_MAX_MOVES
+                    {
+                        DeleteFirstMoveAndGiveMoveToMon(egg, crate::gl!(sHatchedEggFatherMoves[i]));
                     }
                     break;
                 }
@@ -657,46 +667,51 @@ unsafe fn BuildEggMoveset(egg: *mut Pokemon, father: *mut BoxPokemon, mother: *m
         }
     }
     for i in 0..(MAX_MON_MOVES as u16) {
-        if sHatchedEggFatherMoves[i] != MOVE_NONE {
+        if crate::gl!(sHatchedEggFatherMoves[i]) != MOVE_NONE {
             for j in 0..58u16 {
-                if sHatchedEggFatherMoves[i] == ItemIdToBattleMoveId(ITEM_TM01 + j)
+                if crate::gl!(sHatchedEggFatherMoves[i]) == ItemIdToBattleMoveId(ITEM_TM01 + j)
                     && CanMonLearnTMHM(egg, j as u8) != 0
-                    && GiveMoveToMon(egg, sHatchedEggFatherMoves[i]) == MON_HAS_MAX_MOVES
+                    && GiveMoveToMon(egg, crate::gl!(sHatchedEggFatherMoves[i]))
+                        == MON_HAS_MAX_MOVES
                 {
-                    DeleteFirstMoveAndGiveMoveToMon(egg, sHatchedEggFatherMoves[i]);
+                    DeleteFirstMoveAndGiveMoveToMon(egg, crate::gl!(sHatchedEggFatherMoves[i]));
                 }
             }
         }
     }
     i = 0;
     while i < MAX_MON_MOVES as u16 {
-        if sHatchedEggFatherMoves[i] == MOVE_NONE {
+        if crate::gl!(sHatchedEggFatherMoves[i]) == MOVE_NONE {
             break;
         }
         for j in 0..(MAX_MON_MOVES as u16) {
-            if sHatchedEggFatherMoves[i] == sHatchedEggMotherMoves[j]
-                && sHatchedEggFatherMoves[i] != MOVE_NONE
+            if crate::gl!(sHatchedEggFatherMoves[i]) == crate::gl!(sHatchedEggMotherMoves[j])
+                && crate::gl!(sHatchedEggFatherMoves[i]) != MOVE_NONE
             {
-                sHatchedEggFinalMoves[{
-                    let t1 = numSharedParentMoves;
-                    numSharedParentMoves += 1;
-                    t1
-                }] = sHatchedEggFatherMoves[i];
+                {
+                    let gl_v = crate::gl!(sHatchedEggFatherMoves[i]);
+                    let gl_i0 = {
+                        let t1 = numSharedParentMoves;
+                        numSharedParentMoves += 1;
+                        t1
+                    };
+                    crate::gl!(sHatchedEggFinalMoves[gl_i0] = gl_v)
+                };
             }
         }
         i += 1;
     }
     for i in 0..(MAX_MON_MOVES as u16) {
-        if sHatchedEggFinalMoves[i] == MOVE_NONE {
+        if crate::gl!(sHatchedEggFinalMoves[i]) == MOVE_NONE {
             break;
         }
         j = 0;
         while (j as u32) < numLevelUpMoves {
-            if sHatchedEggLevelUpMoves[j] != MOVE_NONE
-                && sHatchedEggFinalMoves[i] == sHatchedEggLevelUpMoves[j]
+            if crate::gl!(sHatchedEggLevelUpMoves[j]) != MOVE_NONE
+                && crate::gl!(sHatchedEggFinalMoves[i]) == crate::gl!(sHatchedEggLevelUpMoves[j])
             {
-                if GiveMoveToMon(egg, sHatchedEggFinalMoves[i]) == MON_HAS_MAX_MOVES {
-                    DeleteFirstMoveAndGiveMoveToMon(egg, sHatchedEggFinalMoves[i]);
+                if GiveMoveToMon(egg, crate::gl!(sHatchedEggFinalMoves[i])) == MON_HAS_MAX_MOVES {
+                    DeleteFirstMoveAndGiveMoveToMon(egg, crate::gl!(sHatchedEggFinalMoves[i]));
                 }
                 break;
             }
@@ -710,7 +725,7 @@ unsafe fn RemoveEggFromDayCare(daycare: *mut DayCare) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn RejectEggFromDayCare() {
-    RemoveEggFromDayCare(&raw mut (*gSaveBlock1Ptr).daycare);
+    RemoveEggFromDayCare(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
 }
 unsafe fn AlterEggSpeciesWithIncenseItem(species: *mut u16, daycare: *mut DayCare) {
     let mut motherItem: u16 = 0;
@@ -786,7 +801,7 @@ unsafe fn _GiveEggFromDaycare(daycare: *mut DayCare) {
     }
     let mut isEgg: u8 = TRUE;
     SetMonData(&raw mut egg, MON_DATA_IS_EGG, &raw mut isEgg as *mut c_void);
-    gPlayerParty[5] = egg;
+    crate::gl!(gPlayerParty[5] = egg);
     CompactPartySlots();
     CalculatePlayerPartyCount();
     RemoveEggFromDayCare(daycare);
@@ -859,7 +874,7 @@ unsafe fn SetInitialEggData(mon: *mut Pokemon, species: u16, daycare: *mut DayCa
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GiveEggFromDaycare() {
-    _GiveEggFromDaycare(&raw mut (*gSaveBlock1Ptr).daycare);
+    _GiveEggFromDaycare(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
 }
 unsafe fn TryProduceOrHatchEgg(daycare: *mut DayCare) -> u8 {
     let mut validEggs: u32 = 0;
@@ -888,15 +903,15 @@ unsafe fn TryProduceOrHatchEgg(daycare: *mut DayCare) -> u8 {
         let mut eggCycles: u32 = 0;
         let toSub: u8 = GetEggCyclesToSubtract();
         i = 0;
-        while i < gPlayerPartyCount as u32 {
+        while i < gPlayerPartyCount.get() as u32 {
             'l2: {
-                if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0 {
+                if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0 {
                     break 'l2;
                 }
-                if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_IS_BAD_EGG) != 0 {
+                if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SANITY_IS_BAD_EGG) != 0 {
                     break 'l2;
                 }
-                eggCycles = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_FRIENDSHIP);
+                eggCycles = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_FRIENDSHIP);
                 if eggCycles != 0 {
                     if eggCycles >= toSub as u32 {
                         eggCycles -= toSub as u32;
@@ -904,7 +919,7 @@ unsafe fn TryProduceOrHatchEgg(daycare: *mut DayCare) -> u8 {
                         eggCycles -= 1;
                     }
                     SetMonData(
-                        &raw mut gPlayerParty[i],
+                        crate::gl!(&raw gPlayerParty[i]),
                         MON_DATA_FRIENDSHIP,
                         &raw mut eggCycles as *mut c_void,
                     );
@@ -919,7 +934,7 @@ unsafe fn TryProduceOrHatchEgg(daycare: *mut DayCare) -> u8 {
     FALSE
 }
 pub unsafe fn ShouldEggHatch() -> u8 {
-    TryProduceOrHatchEgg(&raw mut (*gSaveBlock1Ptr).daycare)
+    TryProduceOrHatchEgg(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare)
 }
 unsafe fn IsEggPending(daycare: *mut DayCare) -> u8 {
     ((*daycare).offspringPersonality != 0) as u8
@@ -933,40 +948,49 @@ unsafe fn _GetDaycareMonNicknames(daycare: *mut DayCare) {
             MON_DATA_OT_NAME,
             otName.as_mut_ptr(),
         );
-        StringCopy(gStringVar3.as_mut_ptr(), otName.as_mut_ptr());
+        StringCopy((*gStringVar3.as_ptr()).as_mut_ptr(), otName.as_mut_ptr());
     }
     if GetBoxMonData2(&raw mut (*daycare).mons[1].mon, MON_DATA_SPECIES) != 0 {
-        GetBoxMonNickname(&raw mut (*daycare).mons[1].mon, gStringVar2.as_mut_ptr());
+        GetBoxMonNickname(
+            &raw mut (*daycare).mons[1].mon,
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetSelectedMonNicknameAndSpecies() -> u16 {
     GetBoxMonNickname(
-        &raw mut gPlayerParty[GetCursorSelectionMonId()].r#box,
+        {
+            let gl_i0 = GetCursorSelectionMonId();
+            crate::gl!(&raw gPlayerParty[gl_i0].r#box)
+        },
         gStringVar1.as_mut_ptr(),
     );
     GetBoxMonData2(
-        &raw mut gPlayerParty[GetCursorSelectionMonId()].r#box,
+        {
+            let gl_i1 = GetCursorSelectionMonId();
+            crate::gl!(&raw gPlayerParty[gl_i1].r#box)
+        },
         MON_DATA_SPECIES,
     ) as u16
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetDaycareMonNicknames() {
-    _GetDaycareMonNicknames(&raw mut (*gSaveBlock1Ptr).daycare);
+    _GetDaycareMonNicknames(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetDaycareState() -> u8 {
-    if IsEggPending(&raw mut (*gSaveBlock1Ptr).daycare) != 0 {
+    if IsEggPending(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare) != 0 {
         return DAYCARE_EGG_WAITING;
     }
-    let numMons: u8 = CountPokemonInDaycare(&raw mut (*gSaveBlock1Ptr).daycare);
+    let numMons: u8 = CountPokemonInDaycare(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
     if numMons != 0 {
         return numMons + 1;
     }
     DAYCARE_NO_MONS
 }
 unsafe fn GetDaycarePokemonCount() -> u8 {
-    let ret: u8 = CountPokemonInDaycare(&raw mut (*gSaveBlock1Ptr).daycare);
+    let ret: u8 = CountPokemonInDaycare(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare);
     if ret != 0 {
         return ret;
     }
@@ -1041,7 +1065,7 @@ unsafe fn GetDaycareCompatibilityScore(daycare: *mut DayCare) -> u8 {
     }
 }
 unsafe fn GetDaycareCompatibilityScoreFromSave() -> u8 {
-    GetDaycareCompatibilityScore(&raw mut (*gSaveBlock1Ptr).daycare)
+    GetDaycareCompatibilityScore(&raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare)
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetDaycareCompatibilityString() {
@@ -1177,7 +1201,7 @@ unsafe fn DaycareAddTextPrinter(windowId: u8, text: *mut u8, x: u32, y: u32) {
     printer.currentX = x as u8;
     printer.currentY = y as u8;
     printer.set_unk(0);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_useAlternateDownArrow(0);
@@ -1226,13 +1250,13 @@ unsafe fn DaycarePrintMonLvl(daycare: *mut DayCare, windowId: u8, daycareSlotId:
 pub(crate) unsafe fn DaycarePrintMonInfo(windowId: u8, daycareSlotId: u32, y: u8) {
     if daycareSlotId < DAYCARE_MON_COUNT as u32 {
         DaycarePrintMonNickname(
-            &raw mut (*gSaveBlock1Ptr).daycare,
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
             windowId,
             daycareSlotId,
             y as u32,
         );
         DaycarePrintMonLvl(
-            &raw mut (*gSaveBlock1Ptr).daycare,
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
             windowId,
             daycareSlotId,
             y as u32,
@@ -1241,7 +1265,7 @@ pub(crate) unsafe fn DaycarePrintMonInfo(windowId: u8, daycareSlotId: u32, y: u8
 }
 pub(crate) unsafe fn Task_HandleDaycareLevelMenuInput(taskId: u8) {
     let input: u32 = ListMenu_ProcessInput(task_get(taskId, tMenuListTaskId) as u8) as u32;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         match input {
             0 | 1 => {
                 gSpecialVar_Result = input as u16;
@@ -1260,7 +1284,7 @@ pub(crate) unsafe fn Task_HandleDaycareLevelMenuInput(taskId: u8) {
         RemoveWindow(task_get(taskId, tWindowId) as u8);
         DestroyTask(taskId);
         ScriptContext_Enable();
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         gSpecialVar_Result = DAYCARE_EXITED_LEVEL_MENU;
         DestroyListMenuTask(
             task_get(taskId, tMenuListTaskId) as u8,
@@ -1288,5 +1312,5 @@ pub unsafe fn ShowDaycareLevelMenu() {
 #[unsafe(no_mangle)]
 pub unsafe fn ChooseSendDaycareMon() {
     ChooseMonForDaycare();
-    gMain.savedCallback = Some(CB2_ReturnToField);
+    crate::gl!(gMain.savedCallback = Some(CB2_ReturnToField));
 }

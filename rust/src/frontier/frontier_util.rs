@@ -184,7 +184,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `DoSoftReset` with this module's view of its types.
 #[inline]
-unsafe fn DoSoftReset() {
+fn DoSoftReset() {
     unsafe {
         crate::agb_main::DoSoftReset();
     }
@@ -199,33 +199,33 @@ pub unsafe fn CallFrontierUtilFunc() {
 }
 pub(crate) unsafe fn GetChallengeStatus() {
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0xFF);
-    match (*gSaveBlock2Ptr).frontier.challengeStatus {
+    match (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus {
         0 => {}
         CHALLENGE_STATUS_SAVING => {
             FrontierGamblerSetWonOrLost(FALSE);
             VarSet(
                 VAR_TEMP_CHALLENGE_STATUS,
-                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus as u16,
             );
         }
         CHALLENGE_STATUS_LOST => {
             FrontierGamblerSetWonOrLost(FALSE);
             VarSet(
                 VAR_TEMP_CHALLENGE_STATUS,
-                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus as u16,
             );
         }
         CHALLENGE_STATUS_WON => {
             FrontierGamblerSetWonOrLost(TRUE);
             VarSet(
                 VAR_TEMP_CHALLENGE_STATUS,
-                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus as u16,
             );
         }
         CHALLENGE_STATUS_PAUSED => {
             VarSet(
                 VAR_TEMP_CHALLENGE_STATUS,
-                (*gSaveBlock2Ptr).frontier.challengeStatus as u16,
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus as u16,
             );
         }
         _ => {}
@@ -242,26 +242,27 @@ pub(crate) unsafe fn GetFrontierData() {
         .cast_mut()
     {
         FRONTIER_DATA_CHALLENGE_STATUS => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.challengeStatus as u16;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus as u16;
         }
         FRONTIER_DATA_LVL_MODE => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.lvlMode() as u16;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u16;
         }
         FRONTIER_DATA_BATTLE_NUM => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum;
         }
         FRONTIER_DATA_PAUSED => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.challengePaused() as u16;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.challengePaused() as u16;
         }
         FRONTIER_DATA_BATTLE_OUTCOME => {
-            gSpecialVar_Result = gBattleOutcome as u16;
-            gBattleOutcome = 0;
+            gSpecialVar_Result = gBattleOutcome.get() as u16;
+            gBattleOutcome.set(0);
         }
         FRONTIER_DATA_RECORD_DISABLED => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.disableRecordBattle() as u16;
+            gSpecialVar_Result =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.disableRecordBattle() as u16;
         }
         FRONTIER_DATA_HEARD_BRAIN_SPEECH => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.battledBrainFlags
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.battledBrainFlags
                 & sBattledBrainBitFlags[facility][hasSymbol];
         }
         _ => {}
@@ -279,21 +280,21 @@ pub(crate) unsafe fn SetFrontierData() {
         .cast_mut()
     {
         FRONTIER_DATA_CHALLENGE_STATUS => {
-            (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8006 as u8;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8006 as u8;
         }
         FRONTIER_DATA_LVL_MODE => {
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .set_lvlMode(gSpecialVar_0x8006 as u8);
         }
         FRONTIER_DATA_BATTLE_NUM => {
-            (*gSaveBlock2Ptr).frontier.curChallengeBattleNum =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum =
                 *(&raw const crate::ffi::gSpecialVar_0x8006)
                     .cast::<u16>()
                     .cast_mut();
         }
         FRONTIER_DATA_PAUSED => {
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .set_challengePaused(gSpecialVar_0x8006 as u8);
         }
@@ -306,17 +307,18 @@ pub(crate) unsafe fn SetFrontierData() {
                     if 4 >= 2 { 4 } else { 2 }
                 })
             {
-                (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] = gSelectedOrderFromParty[i] as u16;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] =
+                    crate::gl!(gSelectedOrderFromParty[i]) as u16;
                 i += 1;
             }
         }
         FRONTIER_DATA_RECORD_DISABLED => {
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .set_disableRecordBattle(gSpecialVar_0x8006 as u8);
         }
         FRONTIER_DATA_HEARD_BRAIN_SPEECH => {
-            (*gSaveBlock2Ptr).frontier.battledBrainFlags |=
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.battledBrainFlags |=
                 sBattledBrainBitFlags[facility][hasSymbol];
         }
         _ => {}
@@ -325,18 +327,23 @@ pub(crate) unsafe fn SetFrontierData() {
 pub(crate) unsafe fn SetSelectedPartyOrder() {
     ClearSelectedPartyOrder();
     for i in 0..(gSpecialVar_0x8005 as i32) {
-        gSelectedOrderFromParty[i] = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as u8;
+        crate::gl!(
+            gSelectedOrderFromParty[i] =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as u8
+        );
     }
     ReducePlayerPartyToSelectedMons();
 }
-pub(crate) unsafe fn DoSoftReset_() {
+pub(crate) fn DoSoftReset_() {
     DoSoftReset();
 }
 pub(crate) unsafe fn SetFrontierTrainers() {
-    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
-        .cast::<CArray<BattleFrontierTrainer, 0>>())
-    .as_ptr()
-    .cast_mut();
+    crate::gl!(
+        gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
+            .cast::<CArray<BattleFrontierTrainer, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
 }
 pub(crate) unsafe fn SaveSelectedParty() {
     let mut i: u8 = 0;
@@ -347,10 +354,11 @@ pub(crate) unsafe fn SaveSelectedParty() {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        let monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
+        let monId: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] - 1;
         if monId < PARTY_SIZE as u16 {
-            (*gSaveBlock1Ptr).playerParty
-                [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1] = gPlayerParty[i];
+            (*crate::gl!(gSaveBlock1Ptr)).playerParty
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1] =
+                crate::gl!(gPlayerParty[i]);
         }
         i += 1;
     }
@@ -391,7 +399,7 @@ pub(crate) unsafe fn ShowFacilityResultsWindow() {
     }
 }
 unsafe fn IsWinStreakActive(challenge: u32) -> u8 {
-    if (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & challenge != 0 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags & challenge != 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -469,7 +477,8 @@ unsafe fn TowerPrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     );
 }
 unsafe fn TowerPrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    let num: u16 = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode];
+    let num: u16 =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[battleMode][lvlMode];
     TowerPrintStreak(
         (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -481,7 +490,8 @@ unsafe fn TowerPrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y:
     );
 }
 unsafe fn TowerGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+    let winStreak: u16 =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -616,7 +626,7 @@ unsafe fn ShowTowerResultsWindow(battleMode: u8) {
     CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
 unsafe fn DomeGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
+    let winStreak: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -754,7 +764,7 @@ unsafe fn ShowDomeResultsWindow(battleMode: u8) {
         (*(&raw const crate::data::strings::gText_ClearStreak).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][0],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[battleMode][0],
         64,
         121,
         49,
@@ -766,7 +776,9 @@ unsafe fn ShowDomeResultsWindow(battleMode: u8) {
         (*(&raw const crate::data::strings::gText_Championships).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][0],
+        (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .domeTotalChampionships[battleMode][0],
         64,
         112,
         65,
@@ -779,7 +791,7 @@ unsafe fn ShowDomeResultsWindow(battleMode: u8) {
         (*(&raw const crate::data::strings::gText_ClearStreak).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][1],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[battleMode][1],
         64,
         121,
         113,
@@ -791,7 +803,9 @@ unsafe fn ShowDomeResultsWindow(battleMode: u8) {
         (*(&raw const crate::data::strings::gText_Championships).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][1],
+        (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .domeTotalChampionships[battleMode][1],
         64,
         112,
         129,
@@ -835,7 +849,9 @@ unsafe fn PalacePrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     );
 }
 unsafe fn PalacePrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    let num: u16 = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode];
+    let num: u16 = (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .palaceRecordWinStreaks[battleMode][lvlMode];
     PalacePrintStreak(
         (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -847,7 +863,8 @@ unsafe fn PalacePrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y
     );
 }
 unsafe fn PalaceGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode];
+    let winStreak: u16 =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -952,7 +969,7 @@ unsafe fn ShowPalaceResultsWindow(battleMode: u8) {
     CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
 unsafe fn PikeGetWinStreak(lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+    let winStreak: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1068,7 +1085,7 @@ unsafe fn ShowPikeResultsWindow() {
         (*(&raw const crate::data::strings::gText_RoomsCleared).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[0],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[0],
         64,
         114,
         49,
@@ -1080,7 +1097,7 @@ unsafe fn ShowPikeResultsWindow() {
         (*(&raw const crate::data::strings::gText_TimesCleared).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[0],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeTotalStreaks[0],
         64,
         114,
         65,
@@ -1093,7 +1110,7 @@ unsafe fn ShowPikeResultsWindow() {
         (*(&raw const crate::data::strings::gText_RoomsCleared).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[1],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[1],
         64,
         114,
         113,
@@ -1105,7 +1122,7 @@ unsafe fn ShowPikeResultsWindow() {
         (*(&raw const crate::data::strings::gText_TimesCleared).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[1],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeTotalStreaks[1],
         64,
         114,
         129,
@@ -1149,7 +1166,7 @@ unsafe fn ArenaPrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     );
 }
 unsafe fn ArenaPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    let num: u16 = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode];
+    let num: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaRecordStreaks[lvlMode];
     ArenaPrintStreak(
         (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1161,7 +1178,7 @@ unsafe fn ArenaPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
     );
 }
 unsafe fn ArenaGetWinStreak(lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode];
+    let winStreak: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1308,8 +1325,12 @@ unsafe fn FactoryPrintStreak(
     );
 }
 unsafe fn FactoryPrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, x3: u8, y: u8) {
-    let num1: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode];
-    let num2: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordRentsCount[battleMode][lvlMode];
+    let num1: u16 = (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .factoryRecordWinStreaks[battleMode][lvlMode];
+    let num2: u16 = (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .factoryRecordRentsCount[battleMode][lvlMode];
     FactoryPrintStreak(
         (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1323,7 +1344,8 @@ unsafe fn FactoryPrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, 
     );
 }
 unsafe fn FactoryGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode];
+    let winStreak: u16 =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1335,7 +1357,7 @@ unsafe fn FactoryGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
     }
 }
 unsafe fn FactoryGetRentsCount(battleMode: u8, lvlMode: u8) -> u16 {
-    let rents: u16 = (*gSaveBlock2Ptr).frontier.factoryRentsCount[battleMode][lvlMode];
+    let rents: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryRentsCount[battleMode][lvlMode];
     if rents > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1498,7 +1520,7 @@ unsafe fn PyramidPrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) 
     );
 }
 unsafe fn PyramidPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    let num: u16 = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode];
+    let num: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[lvlMode];
     PyramidPrintStreak(
         (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1510,7 +1532,7 @@ unsafe fn PyramidPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
     );
 }
 unsafe fn PyramidGetWinStreak(lvlMode: u8) -> u16 {
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+    let winStreak: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1725,7 +1747,7 @@ unsafe fn ShowLinkContestResultsWindow() {
         for j in 0..CONTESTANT_COUNT {
             ConvertIntToDecimalStringN(
                 gStringVar4.as_mut_ptr(),
-                (*gSaveBlock2Ptr).contestLinkResults[i][j] as i32,
+                (*crate::gl!(gSaveBlock2Ptr)).contestLinkResults[i][j] as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 4,
             );
@@ -1745,58 +1767,67 @@ unsafe fn ShowLinkContestResultsWindow() {
 }
 pub(crate) unsafe fn CheckPutFrontierTVShowOnAir() {
     let mut name: CArray<u8, 32> = zeroed();
-    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let lvlMode: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as i32;
     let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     match facility {
         0 => {
-            if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode]
-                > (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[battleMode][lvlMode]
             {
-                (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[battleMode][lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode];
                 if battleMode == FRONTIER_MODE_LINK_MULTIS as i32 {
                     StringCopy(
                         name.as_mut_ptr(),
-                        gLinkPlayers[gBattleScripting.multiplayerId as i32 ^ 1]
+                        (*gLinkPlayers.as_ptr())
+                            [crate::gl!(gBattleScripting.multiplayerId) as i32 ^ 1]
                             .name
                             .as_mut_ptr(),
                     );
                     StripExtCtrlCodes(name.as_mut_ptr());
                     StringCopy(
-                        (*gSaveBlock2Ptr).frontier.opponentNames[lvlMode].as_mut_ptr(),
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.opponentNames[lvlMode].as_mut_ptr(),
                         name.as_mut_ptr(),
                     );
                     SetTrainerId(
-                        gLinkPlayers[gBattleScripting.multiplayerId as i32 ^ 1].trainerId,
-                        (*gSaveBlock2Ptr).frontier.opponentTrainerIds[lvlMode].as_mut_ptr(),
+                        {
+                            let gl_i0 = crate::gl!(gBattleScripting.multiplayerId) as i32 ^ 1;
+                            crate::gl!(gLinkPlayers[gl_i0].trainerId)
+                        },
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.opponentTrainerIds[lvlMode]
+                            .as_mut_ptr(),
                     );
                 }
-                if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] > 1
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] > 1
                     && ShouldAirFrontierTVShow() != 0
                 {
                     match battleMode {
                         FRONTIER_MODE_SINGLES => {
                             TryPutFrontierTVShowOnAir(
-                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+                                    [lvlMode],
                                 FRONTIER_SHOW_TOWER_SINGLES,
                             );
                         }
                         1 => {
                             TryPutFrontierTVShowOnAir(
-                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+                                    [lvlMode],
                                 FRONTIER_SHOW_TOWER_DOUBLES,
                             );
                         }
                         2 => {
                             TryPutFrontierTVShowOnAir(
-                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+                                    [lvlMode],
                                 FRONTIER_SHOW_TOWER_MULTIS,
                             );
                         }
                         3 => {
                             TryPutFrontierTVShowOnAir(
-                                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode],
+                                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+                                    [lvlMode],
                                 FRONTIER_SHOW_TOWER_LINK_MULTIS,
                             );
                         }
@@ -1806,22 +1837,24 @@ pub(crate) unsafe fn CheckPutFrontierTVShowOnAir() {
             }
         }
         FRONTIER_FACILITY_DOME => {
-            if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode]
-                > (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][lvlMode]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[battleMode][lvlMode]
             {
-                (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
-                if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] > 1
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[battleMode][lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode];
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode] > 1
                     && ShouldAirFrontierTVShow() != 0
                 {
                     if battleMode == FRONTIER_MODE_SINGLES {
                         TryPutFrontierTVShowOnAir(
-                            (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode],
+                            (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode]
+                                [lvlMode],
                             FRONTIER_SHOW_DOME_SINGLES,
                         );
                     } else {
                         TryPutFrontierTVShowOnAir(
-                            (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode],
+                            (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode]
+                                [lvlMode],
                             FRONTIER_SHOW_DOME_DOUBLES,
                         );
                     }
@@ -1829,22 +1862,28 @@ pub(crate) unsafe fn CheckPutFrontierTVShowOnAir() {
             }
         }
         FRONTIER_FACILITY_PALACE => {
-            if (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode]
-                > (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr))
+                    .frontier
+                    .palaceRecordWinStreaks[battleMode][lvlMode]
             {
-                (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode];
-                if (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] > 1
+                (*crate::gl!(gSaveBlock2Ptr))
+                    .frontier
+                    .palaceRecordWinStreaks[battleMode][lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode];
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode] > 1
                     && ShouldAirFrontierTVShow() != 0
                 {
                     if battleMode == FRONTIER_MODE_SINGLES {
                         TryPutFrontierTVShowOnAir(
-                            (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode],
+                            (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode]
+                                [lvlMode],
                             FRONTIER_SHOW_PALACE_SINGLES,
                         );
                     } else {
                         TryPutFrontierTVShowOnAir(
-                            (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode],
+                            (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode]
+                                [lvlMode],
                             FRONTIER_SHOW_PALACE_DOUBLES,
                         );
                     }
@@ -1852,40 +1891,48 @@ pub(crate) unsafe fn CheckPutFrontierTVShowOnAir() {
             }
         }
         FRONTIER_FACILITY_ARENA => {
-            if (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode]
-                > (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaRecordStreaks[lvlMode]
             {
-                (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode];
-                if (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] > 1
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaRecordStreaks[lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode];
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode] > 1
                     && ShouldAirFrontierTVShow() != 0
                 {
                     TryPutFrontierTVShowOnAir(
-                        (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode],
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode],
                         FRONTIER_SHOW_ARENA,
                     );
                 }
             }
         }
         FRONTIER_FACILITY_FACTORY => {
-            if (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode]
-                > (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr))
+                    .frontier
+                    .factoryRecordWinStreaks[battleMode][lvlMode]
             {
-                (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode];
-                (*gSaveBlock2Ptr).frontier.factoryRecordRentsCount[battleMode][lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.factoryRentsCount[battleMode][lvlMode];
-                if (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] > 1
+                (*crate::gl!(gSaveBlock2Ptr))
+                    .frontier
+                    .factoryRecordWinStreaks[battleMode][lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode];
+                (*crate::gl!(gSaveBlock2Ptr))
+                    .frontier
+                    .factoryRecordRentsCount[battleMode][lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryRentsCount[battleMode][lvlMode];
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode] > 1
                     && ShouldAirFrontierTVShow() != 0
                 {
                     if battleMode == FRONTIER_MODE_SINGLES {
                         TryPutFrontierTVShowOnAir(
-                            (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode],
+                            (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode]
+                                [lvlMode],
                             FRONTIER_SHOW_FACTORY_SINGLES,
                         );
                     } else {
                         TryPutFrontierTVShowOnAir(
-                            (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode],
+                            (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode]
+                                [lvlMode],
                             FRONTIER_SHOW_FACTORY_DOUBLES,
                         );
                     }
@@ -1893,32 +1940,32 @@ pub(crate) unsafe fn CheckPutFrontierTVShowOnAir() {
             }
         }
         FRONTIER_FACILITY_PIKE => {
-            if (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode]
-                > (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[lvlMode]
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[lvlMode]
             {
-                (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
-                if (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] > 1
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[lvlMode] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode];
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] > 1
                     && ShouldAirFrontierTVShow() != 0
                 {
                     TryPutFrontierTVShowOnAir(
-                        (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode],
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode],
                         FRONTIER_SHOW_PIKE,
                     );
                 }
             }
         }
         FRONTIER_FACILITY_PYRAMID
-            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode]
-                > (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =>
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode]
+                > (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[lvlMode] =>
         {
-            (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =
-                (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
-            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] > 1
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[lvlMode] =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode];
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] > 1
                 && ShouldAirFrontierTVShow() != 0
             {
                 TryPutFrontierTVShowOnAir(
-                    (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode],
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode],
                     FRONTIER_SHOW_PYRAMID,
                 );
             }
@@ -1969,7 +2016,7 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
         FRONTIER_BEFORE_TEXT => {
             if trainerId == TRAINER_EREADER {
                 FrontierSpeechToString(
-                    (*gSaveBlock2Ptr)
+                    (*crate::gl!(gSaveBlock2Ptr))
                         .frontier
                         .ereaderTrainer
                         .greeting
@@ -1979,11 +2026,13 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
                 CopyFrontierBrainText(FALSE);
             } else if trainerId < FRONTIER_TRAINERS_COUNT {
                 FrontierSpeechToString(
-                    (*gFacilityTrainers.at(trainerId)).speechBefore.as_mut_ptr(),
+                    (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+                        .speechBefore
+                        .as_mut_ptr(),
                 );
             } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
                 FrontierSpeechToString(
-                    (*gSaveBlock2Ptr).frontier.towerRecords
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                         [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                         .greeting
                         .as_mut_ptr(),
@@ -1997,7 +2046,7 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
         FRONTIER_PLAYER_LOST_TEXT => {
             if trainerId == TRAINER_EREADER {
                 FrontierSpeechToString(
-                    (*gSaveBlock2Ptr)
+                    (*crate::gl!(gSaveBlock2Ptr))
                         .frontier
                         .ereaderTrainer
                         .farewellPlayerLost
@@ -2006,24 +2055,28 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
             } else if trainerId == TRAINER_FRONTIER_BRAIN {
                 CopyFrontierBrainText(FALSE);
             } else if trainerId < FRONTIER_TRAINERS_COUNT {
-                FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechWin.as_mut_ptr());
+                FrontierSpeechToString(
+                    (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+                        .speechWin
+                        .as_mut_ptr(),
+                );
             } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
                     FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
                 } else {
                     FrontierSpeechToString(
-                        (*gSaveBlock2Ptr).frontier.towerRecords
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                             [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                             .speechWon
                             .as_mut_ptr(),
                     );
                 }
             } else {
-                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
                     FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
                 } else {
                     FrontierSpeechToString(
-                        (*gSaveBlock2Ptr).apprentices
+                        (*crate::gl!(gSaveBlock2Ptr)).apprentices
                             [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                             .speechWon
                             .as_mut_ptr(),
@@ -2034,7 +2087,7 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
         FRONTIER_PLAYER_WON_TEXT => {
             if trainerId == TRAINER_EREADER {
                 FrontierSpeechToString(
-                    (*gSaveBlock2Ptr)
+                    (*crate::gl!(gSaveBlock2Ptr))
                         .frontier
                         .ereaderTrainer
                         .farewellPlayerWon
@@ -2043,20 +2096,24 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
             } else if trainerId == TRAINER_FRONTIER_BRAIN {
                 CopyFrontierBrainText(TRUE);
             } else if trainerId < FRONTIER_TRAINERS_COUNT {
-                FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechLose.as_mut_ptr());
+                FrontierSpeechToString(
+                    (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+                        .speechLose
+                        .as_mut_ptr(),
+                );
             } else if trainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
                     FrontierSpeechToString(GetRecordedBattleEasyChatSpeech());
                 } else {
                     FrontierSpeechToString(
-                        (*gSaveBlock2Ptr).frontier.towerRecords
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
                             [trainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                             .speechLost
                             .as_mut_ptr(),
                     );
                 }
             } else {
-                if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
                     trainerId = GetRecordedBattleApprenticeId() as u16;
                     FrontierSpeechToString(
                         (*(&raw const crate::data::apprentice::gApprentices).cast::<CArray<
@@ -2069,7 +2126,7 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
                             .cast_mut(),
                     );
                 } else {
-                    trainerId = (*gSaveBlock2Ptr).apprentices
+                    trainerId = (*crate::gl!(gSaveBlock2Ptr)).apprentices
                         [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                         .id() as u16;
                     FrontierSpeechToString(
@@ -2089,51 +2146,55 @@ pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
     }
 }
 pub unsafe fn ResetWinStreaks() {
-    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags = 0;
     for battleMode in 0..(FRONTIER_MODE_COUNT as i32) {
         for lvlMode in 0..(FRONTIER_LVL_TENT as i32) {
-            (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] = 0;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] = 0;
             if battleMode < FRONTIER_MODE_MULTIS as i32 {
-                (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] = 0;
-                (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] = 0;
-                (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode] = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode] = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode] = 0;
             }
             if battleMode == FRONTIER_MODE_SINGLES {
-                (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] = 0;
-                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] = 0;
-                (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode] = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] = 0;
             }
         }
     }
-    if (*gSaveBlock2Ptr).frontier.challengeStatus != 0 {
-        (*gSaveBlock2Ptr).frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus != 0 {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
     }
 }
 pub unsafe fn GetCurrentFacilityWinStreak() -> u32 {
-    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let lvlMode: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as i32;
     let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     match facility {
         0 => {
-            return (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode]
+                as u32;
         }
         FRONTIER_FACILITY_DOME => {
-            return (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode]
+                as u32;
         }
         FRONTIER_FACILITY_PALACE => {
-            return (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode]
+                as u32;
         }
         FRONTIER_FACILITY_ARENA => {
-            return (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode] as u32;
         }
         FRONTIER_FACILITY_FACTORY => {
-            return (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode]
+                as u32;
         }
         FRONTIER_FACILITY_PIKE => {
-            return (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] as u32;
         }
         FRONTIER_FACILITY_PYRAMID => {
-            return (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as u32;
+            return (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] as u32;
         }
         _ => {
             return 0;
@@ -2146,11 +2207,11 @@ pub unsafe fn GetCurrentFacilityWinStreak() -> u32 {
 }
 pub unsafe fn ResetFrontierTrainerIds() {
     for i in 0..20i32 {
-        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] = 0xFFFF;
     }
 }
 pub(crate) unsafe fn IsTrainerFrontierBrain() {
-    if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+    if gTrainerBattleOpponent_A.get() == TRAINER_FRONTIER_BRAIN {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -2162,33 +2223,40 @@ pub unsafe fn GetPlayerSymbolCountForFacility(facility: u8) -> u8 {
 }
 pub(crate) unsafe fn GiveBattlePoints() {
     let mut challengeNum: i32 = 0;
-    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let lvlMode: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as i32;
     let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     match facility {
         0 => {
-            challengeNum =
-                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as i32 / 7;
+            challengeNum = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode]
+                [lvlMode] as i32
+                / 7;
         }
         FRONTIER_FACILITY_DOME => {
-            challengeNum = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] as i32;
+            challengeNum =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode] as i32;
         }
         FRONTIER_FACILITY_PALACE => {
-            challengeNum =
-                (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] as i32 / 7;
+            challengeNum = (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode]
+                [lvlMode] as i32
+                / 7;
         }
         FRONTIER_FACILITY_ARENA => {
-            challengeNum = (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] as i32 / 7;
+            challengeNum =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode] as i32 / 7;
         }
         FRONTIER_FACILITY_FACTORY => {
-            challengeNum =
-                (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] as i32 / 7;
+            challengeNum = (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode]
+                [lvlMode] as i32
+                / 7;
         }
         FRONTIER_FACILITY_PIKE => {
-            challengeNum = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as i32 / 14;
+            challengeNum =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] as i32 / 14;
         }
         FRONTIER_FACILITY_PYRAMID => {
-            challengeNum = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as i32 / 7;
+            challengeNum =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] as i32 / 7;
         }
         _ => {}
     }
@@ -2199,30 +2267,30 @@ pub(crate) unsafe fn GiveBattlePoints() {
         challengeNum = 29;
     }
     let mut points: i32 = sBattlePointAwards[challengeNum][facility][battleMode] as i32;
-    if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+    if gTrainerBattleOpponent_A.get() == TRAINER_FRONTIER_BRAIN {
         points += 10;
     }
-    (*gSaveBlock2Ptr).frontier.battlePoints += points as u16;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.battlePoints += points as u16;
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
         points,
         STR_CONV_MODE_LEFT_ALIGN,
         2,
     );
-    if (*gSaveBlock2Ptr).frontier.battlePoints > MAX_BATTLE_FRONTIER_POINTS {
-        (*gSaveBlock2Ptr).frontier.battlePoints = MAX_BATTLE_FRONTIER_POINTS;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.battlePoints > MAX_BATTLE_FRONTIER_POINTS {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.battlePoints = MAX_BATTLE_FRONTIER_POINTS;
     }
-    points = (*gSaveBlock2Ptr).frontier.cardBattlePoints as i32;
+    points = (*crate::gl!(gSaveBlock2Ptr)).frontier.cardBattlePoints as i32;
     points += sBattlePointAwards[challengeNum][facility][battleMode] as i32;
     IncrementDailyBattlePoints(sBattlePointAwards[challengeNum][facility][battleMode] as u16);
-    if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+    if gTrainerBattleOpponent_A.get() == TRAINER_FRONTIER_BRAIN {
         points += 10;
         IncrementDailyBattlePoints(10);
     }
     if points > 0xFFFF {
         points = 0xFFFF;
     }
-    (*gSaveBlock2Ptr).frontier.cardBattlePoints = points as u16;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.cardBattlePoints = points as u16;
 }
 pub(crate) unsafe fn GetFacilitySymbolCount() {
     let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
@@ -2237,7 +2305,7 @@ pub(crate) unsafe fn GiveFacilitySymbol() {
     }
 }
 pub(crate) unsafe fn CheckBattleTypeFlag() {
-    if gBattleTypeFlags & gSpecialVar_0x8005 as u32 != 0 {
+    if gBattleTypeFlags.get() & gSpecialVar_0x8005 as u32 != 0 {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -2404,12 +2472,14 @@ pub(crate) unsafe fn CheckPartyIneligibility() {
         monId = monIdLooper;
         count = 0;
         loop {
-            let species: u16 =
-                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
+            let species: u16 = GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPECIES_OR_EGG,
+            ) as u16;
             let heldItem: u16 =
-                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HELD_ITEM) as u16;
-            let level: u8 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
-            let hp: u16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP) as u16;
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HELD_ITEM) as u16;
+            let level: u8 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_LEVEL) as u8;
+            let hp: u16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HP) as u16;
             if VarGet(VAR_FRONTIER_FACILITY) == FRONTIER_FACILITY_PYRAMID as u16 {
                 if heldItem == ITEM_NONE {
                     AppendIfValid(
@@ -2512,7 +2582,7 @@ pub(crate) unsafe fn CheckPartyIneligibility() {
         }
     } else {
         gSpecialVar_0x8004 = FALSE as u16;
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .set_lvlMode(gSpecialVar_Result as u8);
     }
@@ -2521,55 +2591,70 @@ pub(crate) unsafe fn ValidateVisitingTrainer() {
     ValidateEReaderTrainer();
 }
 pub(crate) unsafe fn IncrementWinStreak() {
-    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let lvlMode: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as i32;
     let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     match facility {
         0 => {
-            if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode]
+                < MAX_STREAK
+            {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode] += 1;
                 if battleMode == FRONTIER_MODE_SINGLES {
                     SetGameStat(
                         GAME_STAT_BATTLE_TOWER_SINGLES_STREAK,
-                        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as u32,
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode]
+                            as u32,
                     );
-                    (*gSaveBlock2Ptr).frontier.towerSinglesStreak =
-                        (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerSinglesStreak =
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerWinStreaks[battleMode][lvlMode];
                 }
             }
         }
         FRONTIER_FACILITY_DOME => {
-            if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode]
+                < MAX_STREAK
+            {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.domeWinStreaks[battleMode][lvlMode] += 1;
             }
-            if (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr))
+                .frontier
+                .domeTotalChampionships[battleMode][lvlMode]
+                < MAX_STREAK
+            {
+                (*crate::gl!(gSaveBlock2Ptr))
+                    .frontier
+                    .domeTotalChampionships[battleMode][lvlMode] += 1;
             }
         }
         FRONTIER_FACILITY_PALACE => {
-            if (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode]
+                < MAX_STREAK
+            {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.palaceWinStreaks[battleMode][lvlMode] += 1;
             }
         }
         FRONTIER_FACILITY_ARENA => {
-            if (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode] < MAX_STREAK {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaWinStreaks[lvlMode] += 1;
             }
         }
         FRONTIER_FACILITY_FACTORY => {
-            if (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode]
+                < MAX_STREAK
+            {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode][lvlMode] += 1;
             }
         }
         FRONTIER_FACILITY_PIKE => {
-            if (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] += 1;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] < MAX_STREAK {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] += 1;
             }
         }
         FRONTIER_FACILITY_PYRAMID
-            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] < MAX_STREAK =>
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] < MAX_STREAK =>
         {
-            (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] += 1;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] += 1;
         }
         _ => {}
     }
@@ -2583,15 +2668,15 @@ pub(crate) unsafe fn RestoreHeldItems() {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        if (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] != 0 {
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] != 0 {
             let mut item: u16 = GetMonData3(
-                &raw mut (*gSaveBlock1Ptr).playerParty
-                    [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1],
                 MON_DATA_HELD_ITEM,
                 null_mut(),
             ) as u16;
             SetMonData(
-                &raw mut gPlayerParty[i],
+                crate::gl!(&raw gPlayerParty[i]),
                 MON_DATA_HELD_ITEM,
                 &raw mut item as *mut c_void,
             );
@@ -2601,7 +2686,9 @@ pub(crate) unsafe fn RestoreHeldItems() {
 }
 pub(crate) unsafe fn SaveRecordBattle() {
     gSpecialVar_Result = MoveRecordedBattleToSaveData() as u16;
-    (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_disableRecordBattle(TRUE);
 }
 pub(crate) unsafe fn BufferFrontierTrainerName() {
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
@@ -2609,10 +2696,13 @@ pub(crate) unsafe fn BufferFrontierTrainerName() {
         .cast_mut()
     {
         0 => {
-            GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gTrainerBattleOpponent_A);
+            GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gTrainerBattleOpponent_A.get());
         }
         1 => {
-            GetFrontierTrainerName(gStringVar2.as_mut_ptr(), gTrainerBattleOpponent_A);
+            GetFrontierTrainerName(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                gTrainerBattleOpponent_A.get(),
+            );
         }
         _ => {}
     }
@@ -2627,18 +2717,23 @@ pub(crate) unsafe fn ResetSketchedMoves() {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        let monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
+        let monId: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] - 1;
         if monId < PARTY_SIZE as u16 {
             for j in 0..(MAX_MON_MOVES as u8) {
                 k = 0;
                 while k < MAX_MON_MOVES as u8 {
                     if GetMonData3(
-                        &raw mut (*gSaveBlock1Ptr).playerParty
-                            [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+                        &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[(*crate::gl!(
+                            gSaveBlock2Ptr
+                        ))
+                        .frontier
+                        .selectedPartyMons[i]
+                            as i32
+                            - 1],
                         MON_DATA_MOVE1 + k as i32,
                         null_mut(),
                     ) == GetMonData3(
-                        &raw mut gPlayerParty[i],
+                        crate::gl!(&raw gPlayerParty[i]),
                         MON_DATA_MOVE1 + j as i32,
                         null_mut(),
                     ) {
@@ -2647,11 +2742,12 @@ pub(crate) unsafe fn ResetSketchedMoves() {
                     k += 1;
                 }
                 if k == MAX_MON_MOVES as u8 {
-                    SetMonMoveSlot(&raw mut gPlayerParty[i], MOVE_SKETCH, j);
+                    SetMonMoveSlot(crate::gl!(&raw gPlayerParty[i]), MOVE_SKETCH, j);
                 }
             }
-            (*gSaveBlock1Ptr).playerParty
-                [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1] = gPlayerParty[i];
+            (*crate::gl!(gSaveBlock1Ptr)).playerParty
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1] =
+                crate::gl!(gPlayerParty[i]);
         }
         i += 1;
     }
@@ -2701,7 +2797,7 @@ unsafe fn Print1PRecord(
             winStreak = MAX_STREAK;
         }
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             winStreak as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             4,
@@ -2780,7 +2876,7 @@ unsafe fn Print2PRecord(position: i32, x: i32, y: i32, hallRecord: *mut RankingH
             winStreak = MAX_STREAK;
         }
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             winStreak as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             4,
@@ -2804,7 +2900,7 @@ unsafe fn Fill1PRecords(dst: *mut RankingHall1P, hallFacilityId: i32, lvlMode: i
     GetPlayerHallRecords(playerHallRecords);
     let mut i: i32 = 0;
     while i < HALL_RECORDS_COUNT {
-        record1P[i] = (*gSaveBlock2Ptr).hallRecords1P[hallFacilityId][lvlMode][i];
+        record1P[i] = (*crate::gl!(gSaveBlock2Ptr)).hallRecords1P[hallFacilityId][lvlMode][i];
         i += 1;
     }
     record1P[3] = (*playerHallRecords).onePlayer[hallFacilityId][lvlMode];
@@ -2831,7 +2927,7 @@ unsafe fn Fill2PRecords(dst: *mut RankingHall2P, lvlMode: i32) {
     GetPlayerHallRecords(playerHallRecords);
     let mut i: i32 = 0;
     while i < HALL_RECORDS_COUNT {
-        record2P[i] = (*gSaveBlock2Ptr).hallRecords2P[lvlMode][i];
+        record2P[i] = (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[lvlMode][i];
         i += 1;
     }
     record2P[3] = (*playerHallRecords).twoPlayers[lvlMode];
@@ -2883,8 +2979,8 @@ unsafe fn PrintHallRecords(hallFacilityId: i32, lvlMode: i32) {
         None,
     );
     if hallFacilityId == RANKING_HALL_TOWER_LINK {
-        (*gSaveBlock2Ptr).frontier.opponentNames[0][7] = EOS;
-        (*gSaveBlock2Ptr).frontier.opponentNames[1][7] = EOS;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.opponentNames[0][7] = EOS;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.opponentNames[1][7] = EOS;
         Fill2PRecords(records2P.as_mut_ptr(), lvlMode);
         for i in 0..HALL_RECORDS_COUNT {
             Print2PRecord(i, 1, 4, &raw mut records2P[i]);
@@ -2919,27 +3015,33 @@ pub unsafe fn ClearRankingHallRecords() {
         for j in 0..FRONTIER_LVL_MODE_COUNT {
             for k in 0..HALL_RECORDS_COUNT {
                 CopyTrainerId(
-                    (*gSaveBlock2Ptr).hallRecords1P[i][j][k].id.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock2Ptr)).hallRecords1P[i][j][k]
+                        .id
+                        .as_mut_ptr(),
                     emptyId.as_mut_ptr(),
                 );
-                (*gSaveBlock2Ptr).hallRecords1P[i][j][k].name[0] = EOS;
-                (*gSaveBlock2Ptr).hallRecords1P[i][j][k].winStreak = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).hallRecords1P[i][j][k].name[0] = EOS;
+                (*crate::gl!(gSaveBlock2Ptr)).hallRecords1P[i][j][k].winStreak = 0;
             }
         }
     }
     for j in 0..FRONTIER_LVL_MODE_COUNT {
         for k in 0..HALL_RECORDS_COUNT {
             CopyTrainerId(
-                (*gSaveBlock2Ptr).hallRecords2P[j][k].id1.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j][k]
+                    .id1
+                    .as_mut_ptr(),
                 emptyId.as_mut_ptr(),
             );
             CopyTrainerId(
-                (*gSaveBlock2Ptr).hallRecords2P[j][k].id2.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j][k]
+                    .id2
+                    .as_mut_ptr(),
                 emptyId.as_mut_ptr(),
             );
-            (*gSaveBlock2Ptr).hallRecords2P[j][k].name1[0] = EOS;
-            (*gSaveBlock2Ptr).hallRecords2P[j][k].name2[0] = EOS;
-            (*gSaveBlock2Ptr).hallRecords2P[j][k].winStreak = 0;
+            (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j][k].name1[0] = EOS;
+            (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j][k].name2[0] = EOS;
+            (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j][k].winStreak = 0;
         }
     }
 }
@@ -2947,22 +3049,22 @@ pub unsafe fn ClearRankingHallRecords() {
 pub unsafe fn SaveGameFrontier() {
     let monsParty: *mut Pokemon = AllocZeroed(600) as *mut Pokemon;
     for i in 0..PARTY_SIZE {
-        *monsParty.at(i) = gPlayerParty[i];
+        *monsParty.at(i) = crate::gl!(gPlayerParty[i]);
     }
-    let i: i32 = gPlayerPartyCount as i32;
+    let i: i32 = gPlayerPartyCount.get() as i32;
     LoadPlayerParty();
     SetContinueGameWarpStatusToDynamicWarp();
     TrySavingData(SAVE_LINK);
     ClearContinueGameWarpStatus2();
-    gPlayerPartyCount = i as u8;
+    gPlayerPartyCount.set(i as u8);
     for i in 0..PARTY_SIZE {
-        gPlayerParty[i] = *monsParty.at(i);
+        crate::gl!(gPlayerParty[i] = *monsParty.at(i));
     }
     Free(monsParty as *mut c_void);
 }
 pub unsafe fn GetFrontierBrainTrainerPicIndex() -> u8 {
     let mut facility: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
         facility = GetRecordedBattleFrontierFacility() as i32;
     } else {
         facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
@@ -2973,7 +3075,7 @@ pub unsafe fn GetFrontierBrainTrainerPicIndex() -> u8 {
 }
 pub unsafe fn GetFrontierBrainTrainerClass() -> u8 {
     let mut facility: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
         facility = GetRecordedBattleFrontierFacility() as i32;
     } else {
         facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
@@ -2984,7 +3086,7 @@ pub unsafe fn GetFrontierBrainTrainerClass() -> u8 {
 }
 pub unsafe fn CopyFrontierBrainTrainerName(dst: *mut u8) {
     let mut facility: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
         facility = GetRecordedBattleFrontierFacility() as i32;
     } else {
         facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
@@ -3043,7 +3145,7 @@ pub unsafe fn CreateFrontierBrainPokemon() {
                 }
             }
             CreateMon(
-                &raw mut gEnemyParty[monPartyId],
+                crate::gl!(&raw gEnemyParty[monPartyId]),
                 sFrontierBrainsMons[facility][symbol][i].species,
                 monLevel as u8,
                 sFrontierBrainsMons[facility][symbol][i].fixedIV,
@@ -3053,7 +3155,7 @@ pub unsafe fn CreateFrontierBrainPokemon() {
                 FRONTIER_BRAIN_OTID,
             );
             SetMonData(
-                &raw mut gEnemyParty[monPartyId],
+                crate::gl!(&raw gEnemyParty[monPartyId]),
                 MON_DATA_HELD_ITEM,
                 (&raw const sFrontierBrainsMons[facility][symbol][i].heldItem).cast_mut()
                     as *mut c_void,
@@ -3061,7 +3163,7 @@ pub unsafe fn CreateFrontierBrainPokemon() {
             j = 0;
             while j < NUM_STATS {
                 SetMonData(
-                    &raw mut gEnemyParty[monPartyId],
+                    crate::gl!(&raw gEnemyParty[monPartyId]),
                     MON_DATA_HP_EV + j,
                     (&raw const sFrontierBrainsMons[facility][symbol][i].evs[j]).cast_mut()
                         as *mut c_void,
@@ -3071,7 +3173,7 @@ pub unsafe fn CreateFrontierBrainPokemon() {
             friendship = MAX_FRIENDSHIP;
             for j in 0..MAX_MON_MOVES {
                 SetMonMoveSlot(
-                    &raw mut gEnemyParty[monPartyId],
+                    crate::gl!(&raw gEnemyParty[monPartyId]),
                     sFrontierBrainsMons[facility][symbol][i].moves[j],
                     j as u8,
                 );
@@ -3080,11 +3182,11 @@ pub unsafe fn CreateFrontierBrainPokemon() {
                 }
             }
             SetMonData(
-                &raw mut gEnemyParty[monPartyId],
+                crate::gl!(&raw gEnemyParty[monPartyId]),
                 MON_DATA_FRIENDSHIP,
                 &raw mut friendship as *mut c_void,
             );
-            CalculateMonStats(&raw mut gEnemyParty[monPartyId]);
+            CalculateMonStats(crate::gl!(&raw gEnemyParty[monPartyId]));
             monPartyId += 1;
         }
         selectedMonBits >>= 1;
@@ -3096,7 +3198,7 @@ pub unsafe fn GetFrontierBrainMonSpecies(monId: u8) -> u16 {
     sFrontierBrainsMons[facility][symbol][monId].species
 }
 pub unsafe fn SetFrontierBrainObjEventGfx(facility: u8) {
-    gTrainerBattleOpponent_A = TRAINER_FRONTIER_BRAIN;
+    gTrainerBattleOpponent_A.set(TRAINER_FRONTIER_BRAIN);
     VarSet(
         VAR_OBJ_GFX_ID_0,
         sFrontierBrainObjEventGfx[facility][0] as u16,
@@ -3146,7 +3248,7 @@ pub unsafe fn GetFronterBrainSymbol() -> i32 {
 unsafe fn CopyFrontierBrainText(playerWonText: u8) {
     let mut facility: i32 = 0;
     let mut symbol: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
         facility = GetRecordedBattleFrontierFacility() as i32;
         symbol = GetRecordedBattleFronterBrainSymbol() as i32;
     } else {

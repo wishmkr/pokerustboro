@@ -110,7 +110,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -122,14 +122,14 @@ unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
@@ -164,7 +164,7 @@ unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
 }
 /// `StringAppendN` with this module's view of its types.
 #[inline]
-unsafe fn StringAppendN(a0: *mut u8, a1: *mut u8, a2: u8) -> *mut u8 {
+fn StringAppendN(a0: *mut u8, a1: *mut u8, a2: u8) -> *mut u8 {
     unsafe { crate::string_util::StringAppendN(a0 as _, a1 as _, a2) as *mut u8 }
 }
 /// `StringCopy` with this module's view of its types.
@@ -425,8 +425,9 @@ static sTransferredToPCMessages: Table<CArray<*mut u8, 4>> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 6>> =
     Table((&raw const crate::data::naming_screen::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sNamingScreen: *mut NamingScreenData = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sNamingScreen: crate::global::Global<*mut NamingScreenData> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -458,12 +459,12 @@ unsafe fn Alloc(a0: u32) -> *mut c_void {
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -485,16 +486,16 @@ pub unsafe fn DoNamingScreen(
     monPersonality: u32,
     returnCallback: Option<unsafe fn()>,
 ) {
-    sNamingScreen = Alloc(7744) as *mut NamingScreenData;
-    if sNamingScreen.is_null() {
+    crate::gl!(sNamingScreen = Alloc(7744) as *mut NamingScreenData);
+    if (*sNamingScreen.as_ptr()).is_null() {
         SetMainCallback2(returnCallback);
     } else {
-        (*sNamingScreen).templateNum = templateNum;
-        (*sNamingScreen).monSpecies = monSpecies;
-        (*sNamingScreen).monGender = monGender;
-        (*sNamingScreen).monPersonality = monPersonality;
-        (*sNamingScreen).destBuffer = destBuffer;
-        (*sNamingScreen).returnCallback = returnCallback;
+        (*crate::gl!(sNamingScreen)).templateNum = templateNum;
+        (*crate::gl!(sNamingScreen)).monSpecies = monSpecies;
+        (*crate::gl!(sNamingScreen)).monGender = monGender;
+        (*crate::gl!(sNamingScreen)).monPersonality = monPersonality;
+        (*crate::gl!(sNamingScreen)).destBuffer = destBuffer;
+        (*crate::gl!(sNamingScreen)).returnCallback = returnCallback;
         if templateNum == NAMING_SCREEN_PLAYER {
             StartTimer1();
         }
@@ -502,42 +503,42 @@ pub unsafe fn DoNamingScreen(
     }
 }
 pub(crate) unsafe fn CB2_LoadNamingScreen() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             ResetVHBlank();
             NamingScreen_Init();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             NamingScreen_InitBGs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ResetPaletteFade();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ResetSpriteData();
             FreeAllSpritePalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             ResetTasks();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             LoadPalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             LoadGfx();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             CreateSprites();
             UpdatePaletteFade();
             NamingScreen_ShowBgs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         _ => {
             CreateHelperTasks();
@@ -546,34 +547,41 @@ pub(crate) unsafe fn CB2_LoadNamingScreen() {
     }
 }
 unsafe fn NamingScreen_Init() {
-    (*sNamingScreen).state = STATE_FADE_IN;
-    (*sNamingScreen).bg1vOffset = 0;
-    (*sNamingScreen).bg2vOffset = 0;
-    (*sNamingScreen).bg1Priority = 1;
-    (*sNamingScreen).bg2Priority = 2;
-    (*sNamingScreen).bgToReveal = 0;
-    (*sNamingScreen).bgToHide = 1;
-    (*sNamingScreen).template = sNamingScreenTemplates[(*sNamingScreen).templateNum];
-    (*sNamingScreen).currentPage = (*(*sNamingScreen).template).initialPage;
-    (*sNamingScreen).inputCharBaseXPos =
-        ((DISPLAY_WIDTH as i32 - (*(*sNamingScreen).template).maxChars as i32 * 8) / 2) as u16 + 6;
-    if (*sNamingScreen).templateNum == NAMING_SCREEN_WALDA {
-        (*sNamingScreen).inputCharBaseXPos += 11;
+    (*crate::gl!(sNamingScreen)).state = STATE_FADE_IN;
+    (*crate::gl!(sNamingScreen)).bg1vOffset = 0;
+    (*crate::gl!(sNamingScreen)).bg2vOffset = 0;
+    (*crate::gl!(sNamingScreen)).bg1Priority = 1;
+    (*crate::gl!(sNamingScreen)).bg2Priority = 2;
+    (*crate::gl!(sNamingScreen)).bgToReveal = 0;
+    (*crate::gl!(sNamingScreen)).bgToHide = 1;
+    (*crate::gl!(sNamingScreen)).template =
+        sNamingScreenTemplates[(*crate::gl!(sNamingScreen)).templateNum];
+    (*crate::gl!(sNamingScreen)).currentPage = (*(*crate::gl!(sNamingScreen)).template).initialPage;
+    (*crate::gl!(sNamingScreen)).inputCharBaseXPos = ((DISPLAY_WIDTH as i32
+        - (*(*crate::gl!(sNamingScreen)).template).maxChars as i32 * 8)
+        / 2) as u16
+        + 6;
+    if (*crate::gl!(sNamingScreen)).templateNum == NAMING_SCREEN_WALDA {
+        (*crate::gl!(sNamingScreen)).inputCharBaseXPos += 11;
     }
-    (*sNamingScreen).keyRepeatStartDelayCopy = gKeyRepeatStartDelay as u8;
-    memset((*sNamingScreen).textBuffer.as_mut_ptr(), EOS as i32, 16);
-    if (*(*sNamingScreen).template).copyExistingString != 0 {
+    (*crate::gl!(sNamingScreen)).keyRepeatStartDelayCopy = gKeyRepeatStartDelay.get() as u8;
+    memset(
+        (*crate::gl!(sNamingScreen)).textBuffer.as_mut_ptr(),
+        EOS as i32,
+        16,
+    );
+    if (*(*crate::gl!(sNamingScreen)).template).copyExistingString != 0 {
         StringCopy(
-            (*sNamingScreen).textBuffer.as_mut_ptr(),
-            (*sNamingScreen).destBuffer,
+            (*crate::gl!(sNamingScreen)).textBuffer.as_mut_ptr(),
+            (*crate::gl!(sNamingScreen)).destBuffer,
         );
     }
-    gKeyRepeatStartDelay = 16;
+    gKeyRepeatStartDelay.set(16);
 }
 unsafe fn SetSpritesVisible() {
     for i in 0..MAX_SPRITES {
-        if gSprites[i].inUse() != 0 {
-            gSprites[i].set_invisible(FALSE as u16);
+        if (*gSprites.as_ptr())[i].inUse() != 0 {
+            (*gSprites.as_ptr())[i].set_invisible(FALSE as u16);
         }
     }
     SetCursorInvisibility(FALSE);
@@ -676,22 +684,23 @@ unsafe fn NamingScreen_InitBGs() {
     InitStandardTextBoxWindows();
     InitTextBoxGfxAndPrinters();
     for i in 0..WIN_COUNT {
-        (*sNamingScreen).windows[i] = AddWindow((&raw const sWindowTemplates[i]).cast_mut()) as u8;
+        (*crate::gl!(sNamingScreen)).windows[i] =
+            AddWindow((&raw const sWindowTemplates[i]).cast_mut()) as u8;
     }
     SetGpuReg(REG_OFFSET_DISPCNT, 4160);
     SetGpuReg(REG_OFFSET_BLDCNT, 1600);
     SetGpuReg(REG_OFFSET_BLDALPHA, 2060);
     SetBgTilemapBuffer(
         1,
-        (*sNamingScreen).tilemapBuffer1.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tilemapBuffer1.as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sNamingScreen).tilemapBuffer2.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tilemapBuffer2.as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         3,
-        (*sNamingScreen).tilemapBuffer3.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tilemapBuffer3.as_mut_ptr() as *mut c_void,
     );
     FillBgTilemapBufferRect_Palette0(1, 0, 0, 0, 0x20, 0x20);
     FillBgTilemapBufferRect_Palette0(2, 0, 0, 0, 0x20, 0x20);
@@ -702,7 +711,7 @@ unsafe fn CreateNamingScreenTask() {
     SetMainCallback2(Some(CB2_NamingScreen));
 }
 pub(crate) unsafe fn Task_NamingScreen(taskId: u8) {
-    match (*sNamingScreen).state {
+    match (*crate::gl!(sNamingScreen)).state {
         STATE_FADE_IN => {
             MainState_FadeIn();
             SetSpritesVisible();
@@ -743,10 +752,10 @@ unsafe fn PageToNextGfxId(page: u8) -> u8 {
     sPageToNextGfxId[page]
 }
 unsafe fn CurrentPageToNextKeyboardId() -> u8 {
-    sPageToNextKeyboardId[(*sNamingScreen).currentPage]
+    sPageToNextKeyboardId[(*crate::gl!(sNamingScreen)).currentPage]
 }
 unsafe fn CurrentPageToKeyboardId() -> u8 {
-    sPageToKeyboardId[(*sNamingScreen).currentPage]
+    sPageToKeyboardId[(*crate::gl!(sNamingScreen)).currentPage]
 }
 unsafe fn MainState_FadeIn() -> u8 {
     DrawBgTilemap(
@@ -756,7 +765,7 @@ unsafe fn MainState_FadeIn() -> u8 {
         .as_ptr()
         .cast_mut() as *mut c_void,
     );
-    (*sNamingScreen).currentPage = KBPAGE_LETTERS_UPPER;
+    (*crate::gl!(sNamingScreen)).currentPage = KBPAGE_LETTERS_UPPER;
     DrawBgTilemap(
         2,
         (*(&raw const crate::data::graphics::gNamingScreenKeyboardLower_Tilemap)
@@ -771,8 +780,14 @@ unsafe fn MainState_FadeIn() -> u8 {
         .as_ptr()
         .cast_mut() as *mut c_void,
     );
-    PrintKeyboardKeys((*sNamingScreen).windows[1], KEYBOARD_LETTERS_LOWER);
-    PrintKeyboardKeys((*sNamingScreen).windows[0], KEYBOARD_LETTERS_UPPER);
+    PrintKeyboardKeys(
+        (*crate::gl!(sNamingScreen)).windows[1],
+        KEYBOARD_LETTERS_LOWER,
+    );
+    PrintKeyboardKeys(
+        (*crate::gl!(sNamingScreen)).windows[0],
+        KEYBOARD_LETTERS_UPPER,
+    );
     NamingScreen_Dummy(2, KEYBOARD_LETTERS_LOWER);
     NamingScreen_Dummy(1, KEYBOARD_LETTERS_UPPER);
     DrawTextEntry();
@@ -783,14 +798,14 @@ unsafe fn MainState_FadeIn() -> u8 {
     CopyBgTilemapBufferToVram(3);
     BlendPalettes(PALETTES_ALL, 16, 0);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-    (*sNamingScreen).state += 1;
+    (*crate::gl!(sNamingScreen)).state += 1;
     FALSE
 }
 unsafe fn MainState_WaitFadeIn() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetInputState(INPUT_STATE_ENABLED);
         SetCursorFlashing(TRUE);
-        (*sNamingScreen).state += 1;
+        (*crate::gl!(sNamingScreen)).state += 1;
     }
     FALSE
 }
@@ -801,7 +816,7 @@ unsafe fn MainState_MoveToOKButton() -> u8 {
     if IsCursorAnimFinished() != 0 {
         SetInputState(INPUT_STATE_ENABLED);
         MoveCursorToOKButton();
-        (*sNamingScreen).state = STATE_HANDLE_INPUT;
+        (*crate::gl!(sNamingScreen)).state = STATE_HANDLE_INPUT;
     }
     FALSE
 }
@@ -810,14 +825,14 @@ unsafe fn MainState_PressedOKButton() -> u8 {
     SetInputState(INPUT_STATE_DISABLED);
     SetCursorFlashing(FALSE);
     TryStartButtonFlash(BUTTON_COUNT as u8, FALSE, TRUE);
-    if (*sNamingScreen).templateNum == NAMING_SCREEN_CAUGHT_MON
+    if (*crate::gl!(sNamingScreen)).templateNum == NAMING_SCREEN_CAUGHT_MON
         && CalculatePlayerPartyCount() >= PARTY_SIZE as u8
     {
         DisplaySentToPCMessage();
-        (*sNamingScreen).state = STATE_WAIT_SENT_TO_PC_MESSAGE;
+        (*crate::gl!(sNamingScreen)).state = STATE_WAIT_SENT_TO_PC_MESSAGE;
         return FALSE;
     } else {
-        (*sNamingScreen).state = STATE_FADE_OUT;
+        (*crate::gl!(sNamingScreen)).state = STATE_FADE_OUT;
         return TRUE;
     }
     #[allow(unreachable_code)]
@@ -827,19 +842,19 @@ unsafe fn MainState_PressedOKButton() -> u8 {
 }
 unsafe fn MainState_FadeOut() -> u8 {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    (*sNamingScreen).state += 1;
+    (*crate::gl!(sNamingScreen)).state += 1;
     FALSE
 }
 unsafe fn MainState_Exit() -> u8 {
-    if gPaletteFade.active() == 0 {
-        if (*sNamingScreen).templateNum == NAMING_SCREEN_PLAYER {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if (*crate::gl!(sNamingScreen)).templateNum == NAMING_SCREEN_PLAYER {
             SeedRngAndSetTrainerId();
         }
-        SetMainCallback2((*sNamingScreen).returnCallback);
+        SetMainCallback2((*crate::gl!(sNamingScreen)).returnCallback);
         DestroyTask(FindTaskIdByFunc(Some(Task_NamingScreen)));
         FreeAllWindowBuffers();
-        Free(sNamingScreen as *mut c_void);
-        sNamingScreen = null_mut();
+        Free(crate::gl!(sNamingScreen) as *mut c_void);
+        crate::gl!(sNamingScreen = null_mut());
     }
     FALSE
 }
@@ -850,15 +865,21 @@ unsafe fn DisplaySentToPCMessage() {
             gStringVar1.as_mut_ptr(),
             GetBoxNamePtr(VarGet(VAR_PC_BOX_TO_SEND_MON) as u8),
         );
-        StringCopy(gStringVar2.as_mut_ptr(), (*sNamingScreen).destBuffer);
+        StringCopy(
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
+            (*crate::gl!(sNamingScreen)).destBuffer,
+        );
     } else {
         StringCopy(
             gStringVar1.as_mut_ptr(),
             GetBoxNamePtr(VarGet(VAR_PC_BOX_TO_SEND_MON) as u8),
         );
-        StringCopy(gStringVar2.as_mut_ptr(), (*sNamingScreen).destBuffer);
         StringCopy(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
+            (*crate::gl!(sNamingScreen)).destBuffer,
+        );
+        StringCopy(
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             GetBoxNamePtr(GetPCBoxToSendMon() as u8),
         );
         stringToDisplay = 2;
@@ -871,7 +892,7 @@ unsafe fn DisplaySentToPCMessage() {
         sTransferredToPCMessages[stringToDisplay],
     );
     DrawDialogueFrame(0, 0);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(TRUE);
@@ -889,8 +910,8 @@ unsafe fn DisplaySentToPCMessage() {
 }
 unsafe fn MainState_WaitSentToPCMessage() -> u8 {
     RunTextPrinters();
-    if IsTextPrinterActive(0) == 0 && gMain.newKeys as i32 & A_BUTTON != 0 {
-        (*sNamingScreen).state = STATE_FADE_OUT;
+    if IsTextPrinterActive(0) == 0 && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        (*crate::gl!(sNamingScreen)).state = STATE_FADE_OUT;
     }
     FALSE
 }
@@ -901,7 +922,7 @@ unsafe fn MainState_StartPageSwap() -> u8 {
     SetCursorInvisibility(TRUE);
     TryStartButtonFlash(BUTTON_PAGE, FALSE, TRUE);
     PlaySE(SE_WIN_OPEN);
-    (*sNamingScreen).state = STATE_WAIT_PAGE_SWAP;
+    (*crate::gl!(sNamingScreen)).state = STATE_WAIT_PAGE_SWAP;
     FALSE
 }
 unsafe fn MainState_WaitPageSwap() -> u8 {
@@ -911,9 +932,10 @@ unsafe fn MainState_WaitPageSwap() -> u8 {
     if IsPageSwapAnimNotInProgress() != 0 {
         GetCursorPos(&raw mut cursorX, &raw mut cursorY);
         onLastColumn = (cursorX == GetCurrentPageColumnCount() as i16) as u32;
-        (*sNamingScreen).state = STATE_HANDLE_INPUT;
-        (*sNamingScreen).currentPage += 1;
-        (*sNamingScreen).currentPage = ((*sNamingScreen).currentPage as i32 % 3) as u8;
+        (*crate::gl!(sNamingScreen)).state = STATE_HANDLE_INPUT;
+        (*crate::gl!(sNamingScreen)).currentPage += 1;
+        (*crate::gl!(sNamingScreen)).currentPage =
+            ((*crate::gl!(sNamingScreen)).currentPage as i32 % 3) as u8;
         if onLastColumn != 0 {
             cursorX = GetCurrentPageColumnCount() as i16;
         } else {
@@ -950,37 +972,39 @@ unsafe fn IsPageSwapAnimNotInProgress() -> u8 {
     }
 }
 pub(crate) unsafe fn PageSwapAnimState_Init(task: *mut Task) -> u8 {
-    (*sNamingScreen).bg1vOffset = 0;
-    (*sNamingScreen).bg2vOffset = 0;
+    (*crate::gl!(sNamingScreen)).bg1vOffset = 0;
+    (*crate::gl!(sNamingScreen)).bg2vOffset = 0;
     (*task).data[tState] += 1;
     0
 }
 pub(crate) unsafe fn PageSwapAnimState_1(task: *mut Task) -> u8 {
     let mut vOffsets: CArray<*mut u16, 2> = zeroed();
-    vOffsets[0] = &raw mut (*sNamingScreen).bg2vOffset;
-    vOffsets[1] = &raw mut (*sNamingScreen).bg1vOffset;
+    vOffsets[0] = &raw mut (*crate::gl!(sNamingScreen)).bg2vOffset;
+    vOffsets[1] = &raw mut (*crate::gl!(sNamingScreen)).bg1vOffset;
     (*task).data[tFrameCount] += 4;
-    *vOffsets[(*sNamingScreen).bgToReveal] = Sin((*task).data[tFrameCount], 40) as u16;
-    *vOffsets[(*sNamingScreen).bgToHide] = Sin(((*task).data[tFrameCount] + 128) & 0xFF, 40) as u16;
+    *vOffsets[(*crate::gl!(sNamingScreen)).bgToReveal] = Sin((*task).data[tFrameCount], 40) as u16;
+    *vOffsets[(*crate::gl!(sNamingScreen)).bgToHide] =
+        Sin(((*task).data[tFrameCount] + 128) & 0xFF, 40) as u16;
     if (*task).data[tFrameCount] >= 64 {
-        let temp: u8 = (*sNamingScreen).bg1Priority as u8;
-        (*sNamingScreen).bg1Priority = (*sNamingScreen).bg2Priority;
-        (*sNamingScreen).bg2Priority = temp as u16;
+        let temp: u8 = (*crate::gl!(sNamingScreen)).bg1Priority as u8;
+        (*crate::gl!(sNamingScreen)).bg1Priority = (*crate::gl!(sNamingScreen)).bg2Priority;
+        (*crate::gl!(sNamingScreen)).bg2Priority = temp as u16;
         (*task).data[tState] += 1;
     }
     0
 }
 pub(crate) unsafe fn PageSwapAnimState_2(task: *mut Task) -> u8 {
     let mut vOffsets: CArray<*mut u16, 2> = zeroed();
-    vOffsets[0] = &raw mut (*sNamingScreen).bg2vOffset;
-    vOffsets[1] = &raw mut (*sNamingScreen).bg1vOffset;
+    vOffsets[0] = &raw mut (*crate::gl!(sNamingScreen)).bg2vOffset;
+    vOffsets[1] = &raw mut (*crate::gl!(sNamingScreen)).bg1vOffset;
     (*task).data[tFrameCount] += 4;
-    *vOffsets[(*sNamingScreen).bgToReveal] = Sin((*task).data[tFrameCount], 40) as u16;
-    *vOffsets[(*sNamingScreen).bgToHide] = Sin(((*task).data[tFrameCount] + 128) & 0xFF, 40) as u16;
+    *vOffsets[(*crate::gl!(sNamingScreen)).bgToReveal] = Sin((*task).data[tFrameCount], 40) as u16;
+    *vOffsets[(*crate::gl!(sNamingScreen)).bgToHide] =
+        Sin(((*task).data[tFrameCount] + 128) & 0xFF, 40) as u16;
     if (*task).data[tFrameCount] >= 128 {
-        let temp: u8 = (*sNamingScreen).bgToReveal;
-        (*sNamingScreen).bgToReveal = (*sNamingScreen).bgToHide;
-        (*sNamingScreen).bgToHide = temp;
+        let temp: u8 = (*crate::gl!(sNamingScreen)).bgToReveal;
+        (*crate::gl!(sNamingScreen)).bgToReveal = (*crate::gl!(sNamingScreen)).bgToHide;
+        (*crate::gl!(sNamingScreen)).bgToHide = temp;
         (*task).data[tState] += 1;
     }
     0
@@ -1059,7 +1083,7 @@ unsafe fn GetButtonPalOffset(button: u8) -> u16 {
 }
 unsafe fn RestoreButtonColor(button: u8) {
     let index: u16 = GetButtonPalOffset(button);
-    gPlttBufferFaded[index] = gPlttBufferUnfaded[index];
+    crate::gl!(gPlttBufferFaded[index] = crate::gl!(gPlttBufferUnfaded[index]));
 }
 unsafe fn StartButtonFlash(task: *mut Task, button: u8, keepFlashing: u8) {
     (*task).data[0] = button as i16;
@@ -1147,21 +1171,32 @@ unsafe fn CreateSprites() {
     CreateInputTargetIcon();
 }
 unsafe fn CreateCursorSprite() {
-    (*sNamingScreen).cursorSpriteId =
+    (*crate::gl!(sNamingScreen)).cursorSpriteId =
         CreateSprite((&raw const *sSpriteTemplate_Cursor).cast_mut(), 38, 88, 1);
     SetCursorInvisibility(TRUE);
-    gSprites[(*sNamingScreen).cursorSpriteId]
+    (*gSprites.as_ptr())[(*crate::gl!(sNamingScreen)).cursorSpriteId]
         .oam
         .set_priority(1);
-    gSprites[(*sNamingScreen).cursorSpriteId]
+    (*gSprites.as_ptr())[(*crate::gl!(sNamingScreen)).cursorSpriteId]
         .oam
         .set_objMode(ST_OAM_OBJ_BLEND);
-    gSprites[(*sNamingScreen).cursorSpriteId].data[sColorIncr] = 1;
-    gSprites[(*sNamingScreen).cursorSpriteId].data[sColorIncr] = 2;
+    {
+        let gl_i0 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        let gl_i1 = sColorIncr;
+        crate::gl!(gSprites[gl_i0].data[gl_i1] = 1)
+    };
+    {
+        let gl_i2 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        let gl_i3 = sColorIncr;
+        crate::gl!(gSprites[gl_i2].data[gl_i3] = 2)
+    };
     SetCursorPos(0, 0);
 }
 unsafe fn SetCursorPos(x: i16, y: i16) {
-    let cursorSprite: *mut Sprite = &raw mut gSprites[(*sNamingScreen).cursorSpriteId];
+    let cursorSprite: *mut Sprite = {
+        let gl_i4 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        crate::gl!(&raw gSprites[gl_i4])
+    };
     if x < sPageColumnCounts[CurrentPageToKeyboardId()] as i16 {
         (*cursorSprite).x = sPageColumnXPos[CurrentPageToKeyboardId()][x] as i16 + 38;
     } else {
@@ -1174,7 +1209,10 @@ unsafe fn SetCursorPos(x: i16, y: i16) {
     (*cursorSprite).data[sY] = y;
 }
 unsafe fn GetCursorPos(x: *mut i16, y: *mut i16) {
-    let cursorSprite: *mut Sprite = &raw mut gSprites[(*sNamingScreen).cursorSpriteId];
+    let cursorSprite: *mut Sprite = {
+        let gl_i5 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        crate::gl!(&raw gSprites[gl_i5])
+    };
     *x = (*cursorSprite).data[sX];
     *y = (*cursorSprite).data[sY];
 }
@@ -1182,19 +1220,43 @@ unsafe fn MoveCursorToOKButton() {
     SetCursorPos(GetCurrentPageColumnCount() as i16, 2);
 }
 unsafe fn SetCursorInvisibility(invisible: u8) {
-    gSprites[(*sNamingScreen).cursorSpriteId].data[4] &= -256;
-    gSprites[(*sNamingScreen).cursorSpriteId].data[4] |= invisible as i16;
-    StartSpriteAnim(&raw mut gSprites[(*sNamingScreen).cursorSpriteId], 0);
+    {
+        let gl_i6 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        crate::gl!(gSprites[gl_i6].data[4] &= -256)
+    };
+    {
+        let gl_i7 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        crate::gl!(gSprites[gl_i7].data[4] |= invisible as i16)
+    };
+    StartSpriteAnim(
+        {
+            let gl_i8 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+            crate::gl!(&raw gSprites[gl_i8])
+        },
+        0,
+    );
 }
 unsafe fn SetCursorFlashing(flashing: u8) {
-    gSprites[(*sNamingScreen).cursorSpriteId].data[4] &= 0xFF;
-    gSprites[(*sNamingScreen).cursorSpriteId].data[4] |= (flashing as i16) << 8;
+    {
+        let gl_i9 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        crate::gl!(gSprites[gl_i9].data[4] &= 0xFF)
+    };
+    {
+        let gl_i10 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+        crate::gl!(gSprites[gl_i10].data[4] |= (flashing as i16) << 8)
+    };
 }
 unsafe fn SquishCursor() {
-    StartSpriteAnim(&raw mut gSprites[(*sNamingScreen).cursorSpriteId], 1);
+    StartSpriteAnim(
+        {
+            let gl_i11 = (*crate::gl!(sNamingScreen)).cursorSpriteId;
+            crate::gl!(&raw gSprites[gl_i11])
+        },
+        1,
+    );
 }
 unsafe fn IsCursorAnimFinished() -> u8 {
-    gSprites[(*sNamingScreen).cursorSpriteId].animEnded() as u8
+    (*gSprites.as_ptr())[(*crate::gl!(sNamingScreen)).cursorSpriteId].animEnded() as u8
 }
 unsafe fn GetKeyRoleAtCursorPos() -> u8 {
     let mut cursorX: i16 = 0;
@@ -1220,46 +1282,65 @@ unsafe fn CreatePageSwapButtonSprites() {
         88,
         0,
     );
-    (*sNamingScreen).swapBtnFrameSpriteId = frameSpriteId;
+    (*crate::gl!(sNamingScreen)).swapBtnFrameSpriteId = frameSpriteId;
     SetSubspriteTables(
-        &raw mut gSprites[frameSpriteId],
+        crate::gl!(&raw gSprites[frameSpriteId]),
         sSubspriteTable_PageSwapFrame.as_ptr().cast_mut(),
     );
-    gSprites[frameSpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[frameSpriteId].set_invisible(TRUE as u16);
     let textSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_PageSwapText).cast_mut(),
         204,
         84,
         1,
     );
-    gSprites[frameSpriteId].data[sTextSpriteId] = textSpriteId as i16;
+    {
+        let gl_i12 = sTextSpriteId;
+        crate::gl!(gSprites[frameSpriteId].data[gl_i12] = textSpriteId as i16)
+    };
     SetSubspriteTables(
-        &raw mut gSprites[textSpriteId],
+        crate::gl!(&raw gSprites[textSpriteId]),
         sSubspriteTable_PageSwapText.as_ptr().cast_mut(),
     );
-    gSprites[textSpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[textSpriteId].set_invisible(TRUE as u16);
     let buttonSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_PageSwapButton).cast_mut(),
         204,
         83,
         2,
     );
-    gSprites[buttonSpriteId].oam.set_priority(1);
-    gSprites[frameSpriteId].data[sButtonSpriteId] = buttonSpriteId as i16;
-    gSprites[buttonSpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[buttonSpriteId].oam.set_priority(1);
+    {
+        let gl_i13 = sButtonSpriteId;
+        crate::gl!(gSprites[frameSpriteId].data[gl_i13] = buttonSpriteId as i16)
+    };
+    (*gSprites.as_ptr())[buttonSpriteId].set_invisible(TRUE as u16);
 }
 unsafe fn StartPageSwapButtonAnim() {
-    let sprite: *mut Sprite = &raw mut gSprites[(*sNamingScreen).swapBtnFrameSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i14 = (*crate::gl!(sNamingScreen)).swapBtnFrameSpriteId;
+        crate::gl!(&raw gSprites[gl_i14])
+    };
     (*sprite).data[sState] = 2;
-    (*sprite).data[sPage] = (*sNamingScreen).currentPage as i16;
+    (*sprite).data[sPage] = (*crate::gl!(sNamingScreen)).currentPage as i16;
 }
 pub(crate) unsafe fn SpriteCB_PageSwap(sprite: *mut Sprite) {
     while sPageSwapSpriteFuncs[(*sprite).data[sState]].unwrap_unchecked()(sprite) != 0 {}
 }
 pub(crate) unsafe fn PageSwapSprite_Init(sprite: *mut Sprite) -> u8 {
-    let text: *mut Sprite = &raw mut gSprites[(*sprite).data[sTextSpriteId]];
-    let button: *mut Sprite = &raw mut gSprites[(*sprite).data[sButtonSpriteId]];
-    SetPageSwapButtonGfx(PageToNextGfxId((*sNamingScreen).currentPage), text, button);
+    let text: *mut Sprite = {
+        let gl_i15 = (*sprite).data[sTextSpriteId];
+        crate::gl!(&raw gSprites[gl_i15])
+    };
+    let button: *mut Sprite = {
+        let gl_i16 = (*sprite).data[sButtonSpriteId];
+        crate::gl!(&raw gSprites[gl_i16])
+    };
+    SetPageSwapButtonGfx(
+        PageToNextGfxId((*crate::gl!(sNamingScreen)).currentPage),
+        text,
+        button,
+    );
     (*sprite).data[sState] += 1;
     FALSE
 }
@@ -1267,8 +1348,14 @@ pub(crate) fn PageSwapSprite_Idle(sprite: *mut Sprite) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn PageSwapSprite_SlideOff(sprite: *mut Sprite) -> u8 {
-    let text: *mut Sprite = &raw mut gSprites[(*sprite).data[sTextSpriteId]];
-    let button: *mut Sprite = &raw mut gSprites[(*sprite).data[sButtonSpriteId]];
+    let text: *mut Sprite = {
+        let gl_i17 = (*sprite).data[sTextSpriteId];
+        crate::gl!(&raw gSprites[gl_i17])
+    };
+    let button: *mut Sprite = {
+        let gl_i18 = (*sprite).data[sButtonSpriteId];
+        crate::gl!(&raw gSprites[gl_i18])
+    };
     (*text).y2 += 1;
     if (*text).y2 > 7 {
         (*sprite).data[sState] += 1;
@@ -1283,7 +1370,10 @@ pub(crate) unsafe fn PageSwapSprite_SlideOff(sprite: *mut Sprite) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn PageSwapSprite_SlideOn(sprite: *mut Sprite) -> u8 {
-    let text: *mut Sprite = &raw mut gSprites[(*sprite).data[sTextSpriteId]];
+    let text: *mut Sprite = {
+        let gl_i19 = (*sprite).data[sTextSpriteId];
+        crate::gl!(&raw gSprites[gl_i19])
+    };
     (*text).set_invisible(FALSE as u16);
     (*text).y2 += 1;
     if (*text).y2 >= 0 {
@@ -1307,10 +1397,10 @@ unsafe fn CreateBackOkSprites() {
         0,
     );
     SetSubspriteTables(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         sSubspriteTable_Button.as_ptr().cast_mut(),
     );
-    gSprites[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_OkButton).cast_mut(),
         204,
@@ -1318,77 +1408,77 @@ unsafe fn CreateBackOkSprites() {
         0,
     );
     SetSubspriteTables(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         sSubspriteTable_Button.as_ptr().cast_mut(),
     );
-    gSprites[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
 }
 pub(crate) unsafe fn CreateTextEntrySprites() {
-    let mut xPos: i16 = (*sNamingScreen).inputCharBaseXPos as i16 - 5;
+    let mut xPos: i16 = (*crate::gl!(sNamingScreen)).inputCharBaseXPos as i16 - 5;
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_InputArrow).cast_mut(),
         xPos,
         56,
         0,
     );
-    gSprites[spriteId].oam.set_priority(3);
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    xPos = (*sNamingScreen).inputCharBaseXPos as i16;
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    xPos = (*crate::gl!(sNamingScreen)).inputCharBaseXPos as i16;
     let mut i: u8 = 0;
-    while i < (*(*sNamingScreen).template).maxChars {
+    while i < (*(*crate::gl!(sNamingScreen)).template).maxChars {
         spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_Underscore).cast_mut(),
             xPos + 3,
             60,
             0,
         );
-        gSprites[spriteId].oam.set_priority(3);
-        gSprites[spriteId].data[0] = i as i16;
-        gSprites[spriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
+        crate::gl!(gSprites[spriteId].data[0] = i as i16);
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
         i += 1;
         xPos += 8;
     }
 }
 unsafe fn CreateInputTargetIcon() {
-    sIconFunctions[(*(*sNamingScreen).template).iconFunction].unwrap_unchecked()();
+    sIconFunctions[(*(*crate::gl!(sNamingScreen)).template).iconFunction].unwrap_unchecked()();
 }
 pub(crate) fn NamingScreen_NoIcon() {}
 pub(crate) unsafe fn NamingScreen_CreatePlayerIcon() {
     let rivalGfxId: u8 = GetRivalAvatarGraphicsIdByStateIdAndGender(
         PLAYER_AVATAR_STATE_NORMAL,
-        (*sNamingScreen).monSpecies as u8,
+        (*crate::gl!(sNamingScreen)).monSpecies as u8,
     );
     let spriteId: u8 =
         CreateObjectGraphicsSprite(rivalGfxId as u16, Some(SpriteCallbackDummy), 56, 37, 0);
-    gSprites[spriteId].oam.set_priority(3);
-    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_SOUTH);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), ANIM_STD_GO_SOUTH);
 }
 pub(crate) unsafe fn NamingScreen_CreatePCIcon() {
     let spriteId: u8 = CreateSprite((&raw const *sSpriteTemplate_PCIcon).cast_mut(), 56, 41, 0);
     SetSubspriteTables(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         sSubspriteTable_PCIcon.as_ptr().cast_mut(),
     );
-    gSprites[spriteId].oam.set_priority(3);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
 }
 pub(crate) unsafe fn NamingScreen_CreateMonIcon() {
     LoadMonIconPalettes();
     let spriteId: u8 = CreateMonIcon(
-        (*sNamingScreen).monSpecies,
+        (*crate::gl!(sNamingScreen)).monSpecies,
         Some(SpriteCallbackDummy),
         56,
         40,
         0,
-        (*sNamingScreen).monPersonality,
+        (*crate::gl!(sNamingScreen)).monPersonality,
         1,
     );
-    gSprites[spriteId].oam.set_priority(3);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
 }
 pub(crate) unsafe fn NamingScreen_CreateWaldaDadIcon() {
     let spriteId: u8 =
         CreateObjectGraphicsSprite(OBJ_EVENT_GFX_MAN_1, Some(SpriteCallbackDummy), 56, 37, 0);
-    gSprites[spriteId].oam.set_priority(3);
-    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_SOUTH);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), ANIM_STD_GO_SOUTH);
 }
 unsafe fn HandleKeyboardEvent() -> u8 {
     let input: u8 = GetInputEvent();
@@ -1416,7 +1506,7 @@ pub(crate) unsafe fn KeyboardKeyHandler_Character(input: u8) -> u8 {
         SquishCursor();
         if textFull != 0 {
             SetInputState(INPUT_STATE_OVERRIDE);
-            (*sNamingScreen).state = STATE_MOVE_TO_OK_BUTTON;
+            (*crate::gl!(sNamingScreen)).state = STATE_MOVE_TO_OK_BUTTON;
         }
     }
     FALSE
@@ -1444,7 +1534,7 @@ pub(crate) unsafe fn KeyboardKeyHandler_OK(input: u8) -> u8 {
     TryStartButtonFlash(BUTTON_OK, TRUE, FALSE);
     if input == INPUT_A_BUTTON {
         PlaySE(SE_SELECT);
-        (*sNamingScreen).state = STATE_PRESSED_OK;
+        (*crate::gl!(sNamingScreen)).state = STATE_PRESSED_OK;
         return TRUE;
     } else {
         return FALSE;
@@ -1455,7 +1545,7 @@ pub(crate) unsafe fn KeyboardKeyHandler_OK(input: u8) -> u8 {
     }
 }
 unsafe fn SwapKeyboardPage() -> u8 {
-    (*sNamingScreen).state = STATE_START_PAGE_SWAP;
+    (*crate::gl!(sNamingScreen)).state = STATE_START_PAGE_SWAP;
     TRUE
 }
 unsafe fn CreateInputHandlerTask() {
@@ -1477,13 +1567,13 @@ pub(crate) unsafe fn Input_Disabled(task: *mut Task) {
 }
 pub(crate) unsafe fn Input_Enabled(task: *mut Task) {
     (*task).data[tKeyboardEvent] = INPUT_NONE;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         (*task).data[tKeyboardEvent] = INPUT_A_BUTTON as i16;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*task).data[tKeyboardEvent] = INPUT_B_BUTTON as i16;
-    } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
         (*task).data[tKeyboardEvent] = INPUT_SELECT as i16;
-    } else if gMain.newKeys as i32 & START_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
         (*task).data[tKeyboardEvent] = INPUT_START as i16;
     } else {
         HandleDpadMovement(task);
@@ -1511,16 +1601,16 @@ unsafe fn HandleDpadMovement(task: *mut Task) {
     let mut cursorY: i16 = 0;
     GetCursorPos(&raw mut cursorX, &raw mut cursorY);
     let mut input: u16 = INPUT_NONE as u16;
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         input = INPUT_DPAD_UP;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         input = INPUT_DPAD_DOWN;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
         input = INPUT_DPAD_LEFT;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
         input = INPUT_DPAD_RIGHT;
     }
     let prevCursorX: i16 = cursorX;
@@ -1567,31 +1657,35 @@ unsafe fn HandleDpadMovement(task: *mut Task) {
     SetCursorPos(cursorX, cursorY);
 }
 pub(crate) unsafe fn DrawNormalTextEntryBox() {
-    FillWindowPixelBuffer((*sNamingScreen).windows[3], 17);
+    FillWindowPixelBuffer((*crate::gl!(sNamingScreen)).windows[3], 17);
     AddTextPrinterParameterized(
-        (*sNamingScreen).windows[3],
+        (*crate::gl!(sNamingScreen)).windows[3],
         FONT_NORMAL,
-        (*(*sNamingScreen).template).title,
+        (*(*crate::gl!(sNamingScreen)).template).title,
         8,
         1,
         0,
         None,
     );
-    PutWindowTilemap((*sNamingScreen).windows[3]);
+    PutWindowTilemap((*crate::gl!(sNamingScreen)).windows[3]);
 }
 pub(crate) unsafe fn DrawMonTextEntryBox() {
     let mut buffer: CArray<u8, 32> = zeroed();
     StringCopy(
         buffer.as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
-            [(*sNamingScreen).monSpecies]
+            [(*crate::gl!(sNamingScreen)).monSpecies]
             .as_ptr()
             .cast_mut(),
     );
-    StringAppendN(buffer.as_mut_ptr(), (*(*sNamingScreen).template).title, 15);
-    FillWindowPixelBuffer((*sNamingScreen).windows[3], 17);
+    StringAppendN(
+        buffer.as_mut_ptr(),
+        (*(*crate::gl!(sNamingScreen)).template).title,
+        15,
+    );
+    FillWindowPixelBuffer((*crate::gl!(sNamingScreen)).windows[3], 17);
     AddTextPrinterParameterized(
-        (*sNamingScreen).windows[3],
+        (*crate::gl!(sNamingScreen)).windows[3],
         FONT_NORMAL,
         buffer.as_mut_ptr(),
         8,
@@ -1599,13 +1693,14 @@ pub(crate) unsafe fn DrawMonTextEntryBox() {
         0,
         None,
     );
-    PutWindowTilemap((*sNamingScreen).windows[3]);
+    PutWindowTilemap((*crate::gl!(sNamingScreen)).windows[3]);
 }
 unsafe fn DrawTextEntryBox() {
-    sDrawTextEntryBoxFuncs[(*sNamingScreen).templateNum].unwrap_unchecked()();
+    sDrawTextEntryBoxFuncs[(*crate::gl!(sNamingScreen)).templateNum].unwrap_unchecked()();
 }
 unsafe fn TryDrawGenderIcon() {
-    sDrawGenderIconFuncs[(*(*sNamingScreen).template).addGenderIcon].unwrap_unchecked()();
+    sDrawGenderIconFuncs[(*(*crate::gl!(sNamingScreen)).template).addGenderIcon].unwrap_unchecked()(
+    );
 }
 pub(crate) fn DummyGenderIcon() {}
 pub(crate) unsafe fn DrawGenderIcon() {
@@ -1617,8 +1712,8 @@ pub(crate) unsafe fn DrawGenderIcon() {
             .as_ptr()
             .cast_mut(),
     );
-    if (*sNamingScreen).monGender != MON_GENDERLESS as u16 {
-        if (*sNamingScreen).monGender == MON_FEMALE as u16 {
+    if (*crate::gl!(sNamingScreen)).monGender != MON_GENDERLESS as u16 {
+        if (*crate::gl!(sNamingScreen)).monGender == MON_FEMALE as u16 {
             StringCopy(
                 text.as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_FemaleSymbol).cast::<CArray<u8, 0>>())
@@ -1628,7 +1723,7 @@ pub(crate) unsafe fn DrawGenderIcon() {
             isFemale = TRUE;
         }
         AddTextPrinterParameterized3(
-            (*sNamingScreen).windows[2],
+            (*crate::gl!(sNamingScreen)).windows[2],
             FONT_NORMAL,
             104,
             1,
@@ -1642,17 +1737,17 @@ unsafe fn GetCharAtKeyboardPos(x: i16, y: i16) -> u8 {
     sKeyboardChars[CurrentPageToKeyboardId()][y][x]
 }
 unsafe fn GetTextEntryPosition() -> u8 {
-    for i in 0..(*(*sNamingScreen).template).maxChars {
-        if (*sNamingScreen).textBuffer[i] == EOS {
+    for i in 0..(*(*crate::gl!(sNamingScreen)).template).maxChars {
+        if (*crate::gl!(sNamingScreen)).textBuffer[i] == EOS {
             return i;
         }
     }
-    (*(*sNamingScreen).template).maxChars - 1
+    (*(*crate::gl!(sNamingScreen)).template).maxChars - 1
 }
 unsafe fn GetPreviousTextCaretPosition() -> u8 {
-    let mut i: i8 = (*(*sNamingScreen).template).maxChars as i8 - 1;
+    let mut i: i8 = (*(*crate::gl!(sNamingScreen)).template).maxChars as i8 - 1;
     while i > 0 {
-        if (*sNamingScreen).textBuffer[i] != EOS {
+        if (*crate::gl!(sNamingScreen)).textBuffer[i] != EOS {
             return i as u8;
         }
         i -= 1;
@@ -1661,10 +1756,10 @@ unsafe fn GetPreviousTextCaretPosition() -> u8 {
 }
 unsafe fn DeleteTextCharacter() {
     let index: u8 = GetPreviousTextCaretPosition();
-    (*sNamingScreen).textBuffer[index] = 0;
+    (*crate::gl!(sNamingScreen)).textBuffer[index] = 0;
     DrawTextEntry();
     CopyBgTilemapBufferToVram(3);
-    (*sNamingScreen).textBuffer[index] = EOS;
+    (*crate::gl!(sNamingScreen)).textBuffer[index] = EOS;
     let keyRole: u8 = GetKeyRoleAtCursorPos();
     if keyRole == KEY_ROLE_CHAR || keyRole == KEY_ROLE_BACKSPACE {
         TryStartButtonFlash(BUTTON_BACK, FALSE, TRUE);
@@ -1679,7 +1774,9 @@ unsafe fn AddTextCharacter() -> u8 {
     DrawTextEntry();
     CopyBgTilemapBufferToVram(3);
     PlaySE(SE_SELECT);
-    if GetPreviousTextCaretPosition() as i32 != (*(*sNamingScreen).template).maxChars as i32 - 1 {
+    if GetPreviousTextCaretPosition() as i32
+        != (*(*crate::gl!(sNamingScreen)).template).maxChars as i32 - 1
+    {
         return FALSE;
     } else {
         return TRUE;
@@ -1691,16 +1788,18 @@ unsafe fn AddTextCharacter() -> u8 {
 }
 unsafe fn BufferCharacter(ch: u8) {
     let index: u8 = GetTextEntryPosition();
-    (*sNamingScreen).textBuffer[index] = ch;
+    (*crate::gl!(sNamingScreen)).textBuffer[index] = ch;
 }
 unsafe fn SaveInputText() {
     let mut i: u8 = 0;
-    while i < (*(*sNamingScreen).template).maxChars {
-        if (*sNamingScreen).textBuffer[i] != CHAR_SPACE && (*sNamingScreen).textBuffer[i] != EOS {
+    while i < (*(*crate::gl!(sNamingScreen)).template).maxChars {
+        if (*crate::gl!(sNamingScreen)).textBuffer[i] != CHAR_SPACE
+            && (*crate::gl!(sNamingScreen)).textBuffer[i] != EOS
+        {
             StringCopyN(
-                (*sNamingScreen).destBuffer,
-                (*sNamingScreen).textBuffer.as_mut_ptr(),
-                (*(*sNamingScreen).template).maxChars + 1,
+                (*crate::gl!(sNamingScreen)).destBuffer,
+                (*crate::gl!(sNamingScreen)).textBuffer.as_mut_ptr(),
+                (*(*crate::gl!(sNamingScreen)).template).maxChars + 1,
             );
             break;
         }
@@ -1712,23 +1811,23 @@ pub(crate) unsafe fn LoadGfx() {
         (*(&raw const crate::data::graphics::gNamingScreenMenu_Gfx).cast::<CArray<u32, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tileBuffer.as_mut_ptr() as *mut c_void,
     );
     LoadBgTiles(
         1,
-        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tileBuffer.as_mut_ptr() as *mut c_void,
         1536,
         0,
     );
     LoadBgTiles(
         2,
-        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tileBuffer.as_mut_ptr() as *mut c_void,
         1536,
         0,
     );
     LoadBgTiles(
         3,
-        (*sNamingScreen).tileBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sNamingScreen)).tileBuffer.as_mut_ptr() as *mut c_void,
         1536,
         0,
     );
@@ -1758,16 +1857,16 @@ fn NamingScreen_Dummy(bg: u8, page: u8) {}
 unsafe fn DrawTextEntry() {
     let mut temp: CArray<u8, 2> = zeroed();
     let mut extraWidth: u16 = 0;
-    let maxChars: u8 = (*(*sNamingScreen).template).maxChars;
-    let x: u16 = (*sNamingScreen).inputCharBaseXPos - 0x40;
-    FillWindowPixelBuffer((*sNamingScreen).windows[2], 17);
+    let maxChars: u8 = (*(*crate::gl!(sNamingScreen)).template).maxChars;
+    let x: u16 = (*crate::gl!(sNamingScreen)).inputCharBaseXPos - 0x40;
+    FillWindowPixelBuffer((*crate::gl!(sNamingScreen)).windows[2], 17);
     for i in 0..maxChars {
-        temp[0] = (*sNamingScreen).textBuffer[i];
+        temp[0] = (*crate::gl!(sNamingScreen)).textBuffer[i];
         temp[1] = (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Empty)
             .cast::<CArray<u8, 0>>())[0];
         extraWidth = (if IsWideLetter(temp[0]) == TRUE { 2 } else { 0 }) as u16;
         AddTextPrinterParameterized(
-            (*sNamingScreen).windows[2],
+            (*crate::gl!(sNamingScreen)).windows[2],
             FONT_NORMAL,
             temp.as_mut_ptr(),
             i * 8 + x as u8 + extraWidth as u8,
@@ -1777,8 +1876,8 @@ unsafe fn DrawTextEntry() {
         );
     }
     TryDrawGenderIcon();
-    CopyWindowToVram((*sNamingScreen).windows[2], COPYWIN_GFX);
-    PutWindowTilemap((*sNamingScreen).windows[2]);
+    CopyWindowToVram((*crate::gl!(sNamingScreen)).windows[2], COPYWIN_GFX);
+    PutWindowTilemap((*crate::gl!(sNamingScreen)).windows[2]);
 }
 unsafe fn PrintKeyboardKeys(window: u8, page: u8) {
     FillWindowPixelBuffer(window, sFillValues[page]);
@@ -1804,15 +1903,15 @@ unsafe fn DrawKeyboardPageOnDeck() {
     if bg1Priority > bg2Priority {
         bg = 1;
         bg_ = 1;
-        windowId = (*sNamingScreen).windows[0];
+        windowId = (*crate::gl!(sNamingScreen)).windows[0];
     } else {
         bg = 2;
         bg_ = 2;
-        windowId = (*sNamingScreen).windows[1];
+        windowId = (*crate::gl!(sNamingScreen)).windows[1];
     }
     DrawBgTilemap(
         bg,
-        sNextKeyboardPageTilemaps[(*sNamingScreen).currentPage] as *mut c_void,
+        sNextKeyboardPageTilemaps[(*crate::gl!(sNamingScreen)).currentPage] as *mut c_void,
     );
     PrintKeyboardKeys(windowId, CurrentPageToNextKeyboardId());
     NamingScreen_Dummy(bg, CurrentPageToNextKeyboardId());
@@ -1820,9 +1919,9 @@ unsafe fn DrawKeyboardPageOnDeck() {
 }
 unsafe fn PrintControls() {
     let mut color: CArray<u8, 3> = CArray([15, 1, 2]);
-    FillWindowPixelBuffer((*sNamingScreen).windows[4], 255);
+    FillWindowPixelBuffer((*crate::gl!(sNamingScreen)).windows[4], 255);
     AddTextPrinterParameterized3(
-        (*sNamingScreen).windows[4],
+        (*crate::gl!(sNamingScreen)).windows[4],
         FONT_SMALL,
         2,
         1,
@@ -1832,8 +1931,8 @@ unsafe fn PrintControls() {
             .as_ptr()
             .cast_mut(),
     );
-    PutWindowTilemap((*sNamingScreen).windows[4]);
-    CopyWindowToVram((*sNamingScreen).windows[4], COPYWIN_FULL);
+    PutWindowTilemap((*crate::gl!(sNamingScreen)).windows[4]);
+    CopyWindowToVram((*crate::gl!(sNamingScreen)).windows[4], COPYWIN_FULL);
 }
 pub(crate) unsafe fn CB2_NamingScreen() {
     RunTasks();
@@ -1852,12 +1951,12 @@ pub(crate) unsafe fn VBlankCB_NamingScreen() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
-    SetGpuReg(REG_OFFSET_BG1VOFS, (*sNamingScreen).bg1vOffset);
-    SetGpuReg(REG_OFFSET_BG2VOFS, (*sNamingScreen).bg2vOffset);
+    SetGpuReg(REG_OFFSET_BG1VOFS, (*crate::gl!(sNamingScreen)).bg1vOffset);
+    SetGpuReg(REG_OFFSET_BG2VOFS, (*crate::gl!(sNamingScreen)).bg2vOffset);
     SetGpuReg(REG_OFFSET_BG1CNT, GetGpuReg(REG_OFFSET_BG1CNT) & 0xFFFC);
-    SetGpuRegBits(REG_OFFSET_BG1CNT, (*sNamingScreen).bg1Priority);
+    SetGpuRegBits(REG_OFFSET_BG1CNT, (*crate::gl!(sNamingScreen)).bg1Priority);
     SetGpuReg(REG_OFFSET_BG2CNT, GetGpuReg(REG_OFFSET_BG2CNT) & 0xFFFC);
-    SetGpuRegBits(REG_OFFSET_BG2CNT, (*sNamingScreen).bg2Priority);
+    SetGpuRegBits(REG_OFFSET_BG2CNT, (*crate::gl!(sNamingScreen)).bg2Priority);
 }
 unsafe fn NamingScreen_ShowBgs() {
     ShowBg(0);
@@ -1878,8 +1977,8 @@ fn IsWideLetter(character: u8) -> u8 {
 unsafe fn Debug_NamingScreenPlayer() {
     DoNamingScreen(
         NAMING_SCREEN_PLAYER,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerGender as u16,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16,
         0,
         0,
         Some(CB2_ReturnToFieldWithOpenMenu),
@@ -1888,8 +1987,8 @@ unsafe fn Debug_NamingScreenPlayer() {
 unsafe fn Debug_NamingScreenBox() {
     DoNamingScreen(
         NAMING_SCREEN_BOX,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerGender as u16,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16,
         0,
         0,
         Some(CB2_ReturnToFieldWithOpenMenu),
@@ -1898,8 +1997,8 @@ unsafe fn Debug_NamingScreenBox() {
 unsafe fn Debug_NamingScreenCaughtMon() {
     DoNamingScreen(
         NAMING_SCREEN_CAUGHT_MON,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerGender as u16,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16,
         0,
         0,
         Some(CB2_ReturnToFieldWithOpenMenu),
@@ -1908,8 +2007,8 @@ unsafe fn Debug_NamingScreenCaughtMon() {
 unsafe fn Debug_NamingScreenNickname() {
     DoNamingScreen(
         NAMING_SCREEN_NICKNAME,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerGender as u16,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16,
         0,
         0,
         Some(CB2_ReturnToFieldWithOpenMenu),

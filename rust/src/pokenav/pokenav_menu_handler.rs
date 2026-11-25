@@ -191,12 +191,12 @@ pub(crate) unsafe fn HandleMainMenuInput(menu: *mut Pokenav_Menu) -> u32 {
     if UpdateMenuCursorPos(menu) != 0 {
         return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         'l1: {
             let sw1: u8 = sMenuItems[(*menu).menuType][(*menu).cursorPos];
             let fall = false;
             if sw1 == 0 {
-                (*menu).helpBarIndex = (if (*gSaveBlock2Ptr).regionMapZoom() != 0 {
+                (*menu).helpBarIndex = (if (*crate::gl!(gSaveBlock2Ptr)).regionMapZoom() != 0 {
                     HELPBAR_MAP_ZOOMED_IN
                 } else {
                     HELPBAR_MAP_ZOOMED_OUT
@@ -231,7 +231,7 @@ pub(crate) unsafe fn HandleMainMenuInput(menu: *mut Pokenav_Menu) -> u32 {
             }
         }
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return POKENAV_MENU_FUNC_EXIT as u32;
     }
     POKENAV_MENU_FUNC_NONE
@@ -240,7 +240,7 @@ pub(crate) unsafe fn HandleMainMenuInputTutorial(menu: *mut Pokenav_Menu) -> u32
     if UpdateMenuCursorPos(menu) != 0 {
         return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         if sMenuItems[(*menu).menuType][(*menu).cursorPos] == POKENAV_MENUITEM_MATCH_CALL {
             (*menu).helpBarIndex = HELPBAR_MC_TRAINER_LIST as u16;
             SetMenuIdAndCB(menu, POKENAV_MATCH_CALL);
@@ -250,7 +250,7 @@ pub(crate) unsafe fn HandleMainMenuInputTutorial(menu: *mut Pokenav_Menu) -> u32
             return POKENAV_MENU_FUNC_NONE;
         }
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_FAILURE);
         return POKENAV_MENU_FUNC_NONE;
     }
@@ -260,7 +260,7 @@ pub(crate) unsafe fn HandleMainMenuInputEndTutorial(menu: *mut Pokenav_Menu) -> 
     if UpdateMenuCursorPos(menu) != 0 {
         return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         let menuItem: u32 = sMenuItems[(*menu).menuType][(*menu).cursorPos] as u32;
         if menuItem != POKENAV_MENUITEM_MATCH_CALL as u32
             && menuItem != POKENAV_MENUITEM_SWITCH_OFF as u32
@@ -274,7 +274,7 @@ pub(crate) unsafe fn HandleMainMenuInputEndTutorial(menu: *mut Pokenav_Menu) -> 
         } else {
             return 0xffffffff;
         }
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return 0xffffffff;
     }
     POKENAV_MENU_FUNC_NONE
@@ -284,7 +284,7 @@ pub(crate) unsafe fn HandleCantOpenRibbonsInput(menu: *mut Pokenav_Menu) -> u32 
         (*menu).callback = GetMainMenuInputHandler();
         return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         (*menu).callback = GetMainMenuInputHandler();
         return POKENAV_MENU_FUNC_RESHOW_DESCRIPTION;
     }
@@ -294,7 +294,7 @@ pub(crate) unsafe fn HandleConditionMenuInput(menu: *mut Pokenav_Menu) -> u32 {
     if UpdateMenuCursorPos(menu) != 0 {
         return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         match sMenuItems[(*menu).menuType][(*menu).cursorPos] {
             POKENAV_MENUITEM_CONDITION_SEARCH => {
                 (*menu).menuType = POKENAV_MENU_TYPE_CONDITION_SEARCH as u16;
@@ -316,7 +316,7 @@ pub(crate) unsafe fn HandleConditionMenuInput(menu: *mut Pokenav_Menu) -> u32 {
             _ => {}
         }
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         if (*menu).cursorPos != sLastCursorPositions[(*menu).menuType] as i16 {
             (*menu).cursorPos = sLastCursorPositions[(*menu).menuType] as i16;
             (*menu).callback = Some(CB2_ReturnToMainMenu);
@@ -333,7 +333,7 @@ pub(crate) unsafe fn HandleConditionSearchMenuInput(menu: *mut Pokenav_Menu) -> 
     if UpdateMenuCursorPos(menu) != 0 {
         return POKENAV_MENU_FUNC_MOVE_CURSOR;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         let menuItem: u8 = sMenuItems[(*menu).menuType][(*menu).cursorPos];
         if menuItem != POKENAV_MENUITEM_CONDITION_SEARCH_CANCEL {
             SetSelectedConditionSearch(
@@ -348,7 +348,7 @@ pub(crate) unsafe fn HandleConditionSearchMenuInput(menu: *mut Pokenav_Menu) -> 
             return POKENAV_MENU_FUNC_RETURN_TO_CONDITION;
         }
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         if (*menu).cursorPos != sLastCursorPositions[(*menu).menuType] as i16 {
             (*menu).cursorPos = sLastCursorPositions[(*menu).menuType] as i16;
             (*menu).callback = Some(CB2_ReturnToConditionMenu);
@@ -389,7 +389,7 @@ unsafe fn ReturnToConditionMenu(menu: *mut Pokenav_Menu) {
     (*menu).callback = Some(HandleConditionMenuInput);
 }
 unsafe fn UpdateMenuCursorPos(menu: *mut Pokenav_Menu) -> u32 {
-    if gMain.newKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         if ({
             (*menu).cursorPos -= 1;
             (*menu).cursorPos
@@ -399,7 +399,7 @@ unsafe fn UpdateMenuCursorPos(menu: *mut Pokenav_Menu) -> u32 {
         }
         (*menu).currMenuItem = sMenuItems[(*menu).menuType][(*menu).cursorPos] as u16;
         return TRUE as u32;
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         (*menu).cursorPos += 1;
         if (*menu).cursorPos > sLastCursorPositions[(*menu).menuType] as i16 {
             (*menu).cursorPos = 0;

@@ -56,7 +56,7 @@ unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -68,14 +68,14 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
 }
 /// `RequestDma3Copy` with this module's view of its types.
 #[inline]
-unsafe fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
     unsafe { crate::dma3_manager::RequestDma3Copy(a0 as _, a1 as _, a2, a3) }
 }
 /// `SpriteCallbackDummy` with this module's view of its types.
@@ -119,8 +119,9 @@ static sOamData_MarkingCombo: Table<OamData> =
 static sOamData_MenuWindow: Table<OamData> =
     Table((&raw const crate::data::mon_markings::sOamData_MenuWindow).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenu: *mut MonMarkingsMenu = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMenu: crate::global::Global<*mut MonMarkingsMenu> =
+    crate::global::Global::new(null_mut());
 
 /// `CpuFastSet` with this module's view of its types.
 #[inline]
@@ -131,7 +132,7 @@ unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -143,67 +144,71 @@ unsafe fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal {
 }
 
 pub unsafe fn InitMonMarkingsMenu(ptr: *mut MonMarkingsMenu) {
-    sMenu = ptr;
+    crate::gl!(sMenu = ptr);
 }
 unsafe fn BufferMenuWindowTiles() {
     let frame: *mut TilesPal =
-        GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8);
-    (*sMenu).frameTiles = (*frame).tiles;
-    (*sMenu).framePalette = (*frame).pal;
-    (*sMenu).tileLoadState = 0;
+        GetWindowFrameTilesPal((*crate::gl!(gSaveBlock2Ptr)).optionsWindowFrameType() as u8);
+    (*crate::gl!(sMenu)).frameTiles = (*frame).tiles;
+    (*crate::gl!(sMenu)).framePalette = (*frame).pal;
+    (*crate::gl!(sMenu)).tileLoadState = 0;
     {
         {
             let mut tmp: u16 = 0;
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*sMenu).windowSpriteTiles.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMenu)).windowSpriteTiles.as_mut_ptr() as *mut c_void,
                 0x1000800,
             );
         }
     }
 }
 unsafe fn BufferMenuFrameTiles() -> u8 {
-    let dest: *mut u8 = (*sMenu)
+    let dest: *mut u8 = (*crate::gl!(sMenu))
         .windowSpriteTiles
         .as_mut_ptr()
-        .at((*sMenu).tileLoadState as i32 * 0x100);
-    match (*sMenu).tileLoadState {
+        .at((*crate::gl!(sMenu)).tileLoadState as i32 * 0x100);
+    match (*crate::gl!(sMenu)).tileLoadState {
         0 => {
-            CpuFastSet((*sMenu).frameTiles as *mut c_void, dest as *mut c_void, 8);
-            for i in 0..6u16 {
-                CpuFastSet(
-                    (*sMenu).frameTiles.at(32) as *mut c_void,
-                    dest.at(32 * (i as i32 + 1)) as *mut c_void,
-                    8,
-                );
-            }
             CpuFastSet(
-                (*sMenu).frameTiles.at(64) as *mut c_void,
-                dest.at(224) as *mut c_void,
-                8,
-            );
-            (*sMenu).tileLoadState += 1;
-        }
-        13 => {
-            CpuFastSet(
-                (*sMenu).frameTiles.at(192) as *mut c_void,
+                (*crate::gl!(sMenu)).frameTiles as *mut c_void,
                 dest as *mut c_void,
                 8,
             );
             for i in 0..6u16 {
                 CpuFastSet(
-                    (*sMenu).frameTiles.at(224) as *mut c_void,
+                    (*crate::gl!(sMenu)).frameTiles.at(32) as *mut c_void,
                     dest.at(32 * (i as i32 + 1)) as *mut c_void,
                     8,
                 );
             }
             CpuFastSet(
-                (*sMenu).frameTiles.at(256) as *mut c_void,
+                (*crate::gl!(sMenu)).frameTiles.at(64) as *mut c_void,
                 dest.at(224) as *mut c_void,
                 8,
             );
-            (*sMenu).tileLoadState += 1;
+            (*crate::gl!(sMenu)).tileLoadState += 1;
+        }
+        13 => {
+            CpuFastSet(
+                (*crate::gl!(sMenu)).frameTiles.at(192) as *mut c_void,
+                dest as *mut c_void,
+                8,
+            );
+            for i in 0..6u16 {
+                CpuFastSet(
+                    (*crate::gl!(sMenu)).frameTiles.at(224) as *mut c_void,
+                    dest.at(32 * (i as i32 + 1)) as *mut c_void,
+                    8,
+                );
+            }
+            CpuFastSet(
+                (*crate::gl!(sMenu)).frameTiles.at(256) as *mut c_void,
+                dest.at(224) as *mut c_void,
+                8,
+            );
+            (*crate::gl!(sMenu)).tileLoadState += 1;
             return FALSE;
         }
         14 => {
@@ -211,23 +216,23 @@ unsafe fn BufferMenuFrameTiles() -> u8 {
         }
         _ => {
             CpuFastSet(
-                (*sMenu).frameTiles.at(96) as *mut c_void,
+                (*crate::gl!(sMenu)).frameTiles.at(96) as *mut c_void,
                 dest as *mut c_void,
                 8,
             );
             for i in 0..6u16 {
                 CpuFastSet(
-                    (*sMenu).frameTiles.at(128) as *mut c_void,
+                    (*crate::gl!(sMenu)).frameTiles.at(128) as *mut c_void,
                     dest.at(32 * (i as i32 + 1)) as *mut c_void,
                     8,
                 );
             }
             CpuFastSet(
-                (*sMenu).frameTiles.at(160) as *mut c_void,
+                (*crate::gl!(sMenu)).frameTiles.at(160) as *mut c_void,
                 dest.at(224) as *mut c_void,
                 8,
             );
-            (*sMenu).tileLoadState += 1;
+            (*crate::gl!(sMenu)).tileLoadState += 1;
         }
     }
     TRUE
@@ -237,73 +242,80 @@ pub unsafe fn BufferMonMarkingsMenuTiles() {
     while BufferMenuFrameTiles() != 0 {}
 }
 pub unsafe fn OpenMonMarkingsMenu(markings: u8, x: i16, y: i16) {
-    (*sMenu).cursorPos = 0;
-    (*sMenu).markings = markings;
+    (*crate::gl!(sMenu)).cursorPos = 0;
+    (*crate::gl!(sMenu)).markings = markings;
     for i in 0..NUM_MON_MARKINGS {
-        (*sMenu).markingsArray[i] = shr_i32((*sMenu).markings as i32, i as u32) as u8 & 1;
+        (*crate::gl!(sMenu)).markingsArray[i] =
+            shr_i32((*crate::gl!(sMenu)).markings as i32, i as u32) as u8 & 1;
     }
-    CreateMonMarkingsMenuSprites(x, y, (*sMenu).baseTileTag, (*sMenu).basePaletteTag);
+    CreateMonMarkingsMenuSprites(
+        x,
+        y,
+        (*crate::gl!(sMenu)).baseTileTag,
+        (*crate::gl!(sMenu)).basePaletteTag,
+    );
 }
 pub unsafe fn FreeMonMarkingsMenu() {
     for i in 0..2u16 {
-        FreeSpriteTilesByTag((*sMenu).baseTileTag + i);
-        FreeSpritePaletteByTag((*sMenu).basePaletteTag + i);
+        FreeSpriteTilesByTag((*crate::gl!(sMenu)).baseTileTag + i);
+        FreeSpritePaletteByTag((*crate::gl!(sMenu)).basePaletteTag + i);
     }
     let mut i: u16 = 0;
     while i < 2 {
-        if (*sMenu).windowSprites[i].is_null() {
+        if (*crate::gl!(sMenu)).windowSprites[i].is_null() {
             return;
         }
-        DestroySprite((*sMenu).windowSprites[i]);
-        (*sMenu).windowSprites[i] = null_mut();
+        DestroySprite((*crate::gl!(sMenu)).windowSprites[i]);
+        (*crate::gl!(sMenu)).windowSprites[i] = null_mut();
         i += 1;
     }
     for i in 0..NUM_MON_MARKINGS {
-        if (*sMenu).markingSprites[i].is_null() {
+        if (*crate::gl!(sMenu)).markingSprites[i].is_null() {
             return;
         }
-        DestroySprite((*sMenu).markingSprites[i]);
-        (*sMenu).markingSprites[i] = null_mut();
+        DestroySprite((*crate::gl!(sMenu)).markingSprites[i]);
+        (*crate::gl!(sMenu)).markingSprites[i] = null_mut();
     }
-    if !(*sMenu).cursorSprite.is_null() {
-        DestroySprite((*sMenu).cursorSprite);
-        (*sMenu).cursorSprite = null_mut();
+    if !(*crate::gl!(sMenu)).cursorSprite.is_null() {
+        DestroySprite((*crate::gl!(sMenu)).cursorSprite);
+        (*crate::gl!(sMenu)).cursorSprite = null_mut();
     }
-    if !(*sMenu).textSprite.is_null() {
-        DestroySprite((*sMenu).textSprite);
-        (*sMenu).textSprite = null_mut();
+    if !(*crate::gl!(sMenu)).textSprite.is_null() {
+        DestroySprite((*crate::gl!(sMenu)).textSprite);
+        (*crate::gl!(sMenu)).textSprite = null_mut();
     }
 }
 pub unsafe fn HandleMonMarkingsMenuInput() -> u8 {
-    if gMain.newKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         PlaySE(SE_SELECT);
         if ({
-            (*sMenu).cursorPos -= 1;
-            (*sMenu).cursorPos
+            (*crate::gl!(sMenu)).cursorPos -= 1;
+            (*crate::gl!(sMenu)).cursorPos
         }) < 0
         {
-            (*sMenu).cursorPos = SELECTION_CANCEL;
+            (*crate::gl!(sMenu)).cursorPos = SELECTION_CANCEL;
         }
         return TRUE;
     }
-    if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         PlaySE(SE_SELECT);
         if ({
-            (*sMenu).cursorPos += 1;
-            (*sMenu).cursorPos
+            (*crate::gl!(sMenu)).cursorPos += 1;
+            (*crate::gl!(sMenu)).cursorPos
         }) > SELECTION_CANCEL
         {
-            (*sMenu).cursorPos = 0;
+            (*crate::gl!(sMenu)).cursorPos = 0;
         }
         return TRUE;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        match (*sMenu).cursorPos {
+        match (*crate::gl!(sMenu)).cursorPos {
             SELECTION_OK => {
-                (*sMenu).markings = 0;
+                (*crate::gl!(sMenu)).markings = 0;
                 for i in 0..NUM_MON_MARKINGS {
-                    (*sMenu).markings |= shl_i32((*sMenu).markingsArray[i] as i32, i as u32) as u8;
+                    (*crate::gl!(sMenu)).markings |=
+                        shl_i32((*crate::gl!(sMenu)).markingsArray[i] as i32, i as u32) as u8;
                 }
                 return FALSE;
             }
@@ -312,11 +324,11 @@ pub unsafe fn HandleMonMarkingsMenuInput() -> u8 {
             }
             _ => {}
         }
-        (*sMenu).markingsArray[(*sMenu).cursorPos] =
-            ((*sMenu).markingsArray[(*sMenu).cursorPos] == 0) as u8;
+        (*crate::gl!(sMenu)).markingsArray[(*crate::gl!(sMenu)).cursorPos] =
+            ((*crate::gl!(sMenu)).markingsArray[(*crate::gl!(sMenu)).cursorPos] == 0) as u8;
         return TRUE;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return FALSE;
     }
@@ -325,7 +337,7 @@ pub unsafe fn HandleMonMarkingsMenuInput() -> u8 {
 unsafe fn CreateMonMarkingsMenuSprites(x: i16, y: i16, baseTileTag: u16, basePaletteTag: u16) {
     let mut spriteId: u8 = 0;
     let mut sheets: CArray<SpriteSheet, 3> = zeroed();
-    sheets[0].data = (*sMenu).windowSpriteTiles.as_mut_ptr() as *mut c_void;
+    sheets[0].data = (*crate::gl!(sMenu)).windowSpriteTiles.as_mut_ptr() as *mut c_void;
     sheets[0].size = 0x1000;
     sheets[0].tag = baseTileTag;
     sheets[1].data = (*(&raw const crate::data::graphics::gMonMarkingsMenu_Gfx)
@@ -335,7 +347,7 @@ unsafe fn CreateMonMarkingsMenuSprites(x: i16, y: i16, baseTileTag: u16, basePal
     sheets[1].size = 0x320;
     sheets[1].tag = baseTileTag + 1;
     let mut palettes: CArray<SpritePalette, 3> = zeroed();
-    palettes[0].data = (*sMenu).framePalette;
+    palettes[0].data = (*crate::gl!(sMenu)).framePalette;
     palettes[0].tag = basePaletteTag;
     palettes[1].data = (*(&raw const crate::data::graphics::gMonMarkingsMenu_Pal)
         .cast::<CArray<u16, 0>>())
@@ -359,15 +371,15 @@ unsafe fn CreateMonMarkingsMenuSprites(x: i16, y: i16, baseTileTag: u16, basePal
     while i < 2 {
         spriteId = CreateSprite(&raw mut template, x + 32, y + 32, 1);
         if spriteId != MAX_SPRITES {
-            (*sMenu).windowSprites[i] = &raw mut gSprites[spriteId];
-            StartSpriteAnim(&raw mut gSprites[spriteId], i as u8);
+            (*crate::gl!(sMenu)).windowSprites[i] = crate::gl!(&raw gSprites[spriteId]);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), i as u8);
         } else {
-            (*sMenu).windowSprites[i] = null_mut();
+            (*crate::gl!(sMenu)).windowSprites[i] = null_mut();
             return;
         }
         i += 1;
     }
-    (*(*sMenu).windowSprites[1]).y = y + 96;
+    (*(*crate::gl!(sMenu)).windowSprites[1]).y = y + 96;
     template.tileTag += 1;
     template.paletteTag += 1;
     template.anims = sAnims_MenuSprite.as_ptr().cast_mut();
@@ -376,46 +388,51 @@ unsafe fn CreateMonMarkingsMenuSprites(x: i16, y: i16, baseTileTag: u16, basePal
     for i in 0..NUM_MON_MARKINGS {
         spriteId = CreateSprite(&raw mut template, x + 32, y + 16 + 16 * i as i16, 0);
         if spriteId != MAX_SPRITES {
-            (*sMenu).markingSprites[i] = &raw mut gSprites[spriteId];
-            gSprites[spriteId].data[0] = i as i16;
+            (*crate::gl!(sMenu)).markingSprites[i] = crate::gl!(&raw gSprites[spriteId]);
+            crate::gl!(gSprites[spriteId].data[0] = i as i16);
         } else {
-            (*sMenu).markingSprites[i] = null_mut();
+            (*crate::gl!(sMenu)).markingSprites[i] = null_mut();
             return;
         }
     }
     template.callback = Some(SpriteCallbackDummy);
     spriteId = CreateSprite(&raw mut template, 0, 0, 0);
     if spriteId != MAX_SPRITES {
-        (*sMenu).textSprite = &raw mut gSprites[spriteId];
-        (*(*sMenu).textSprite).oam.set_shape(0);
-        (*(*sMenu).textSprite).oam.set_size(2);
-        StartSpriteAnim((*sMenu).textSprite, ANIM_TEXT);
-        (*(*sMenu).textSprite).x = x + 32;
-        (*(*sMenu).textSprite).y = y + 80;
-        CalcCenterToCornerVec((*sMenu).textSprite, 1, 2, ST_OAM_AFFINE_OFF as u8);
+        (*crate::gl!(sMenu)).textSprite = crate::gl!(&raw gSprites[spriteId]);
+        (*(*crate::gl!(sMenu)).textSprite).oam.set_shape(0);
+        (*(*crate::gl!(sMenu)).textSprite).oam.set_size(2);
+        StartSpriteAnim((*crate::gl!(sMenu)).textSprite, ANIM_TEXT);
+        (*(*crate::gl!(sMenu)).textSprite).x = x + 32;
+        (*(*crate::gl!(sMenu)).textSprite).y = y + 80;
+        CalcCenterToCornerVec(
+            (*crate::gl!(sMenu)).textSprite,
+            1,
+            2,
+            ST_OAM_AFFINE_OFF as u8,
+        );
     } else {
-        (*sMenu).textSprite = null_mut();
+        (*crate::gl!(sMenu)).textSprite = null_mut();
     }
     template.callback = Some(SpriteCB_Cursor);
     spriteId = CreateSprite(&raw mut template, x + 12, 0, 0);
     if spriteId != MAX_SPRITES {
-        (*sMenu).cursorSprite = &raw mut gSprites[spriteId];
-        (*(*sMenu).cursorSprite).data[0] = y + 16;
-        StartSpriteAnim((*sMenu).cursorSprite, ANIM_CURSOR);
+        (*crate::gl!(sMenu)).cursorSprite = crate::gl!(&raw gSprites[spriteId]);
+        (*(*crate::gl!(sMenu)).cursorSprite).data[0] = y + 16;
+        StartSpriteAnim((*crate::gl!(sMenu)).cursorSprite, ANIM_CURSOR);
     } else {
-        (*sMenu).cursorSprite = null_mut();
+        (*crate::gl!(sMenu)).cursorSprite = null_mut();
     }
 }
 pub(crate) fn SpriteCB_Dummy(sprite: *mut Sprite) {}
 pub(crate) unsafe fn SpriteCB_Marking(sprite: *mut Sprite) {
-    if (*sMenu).markingsArray[(*sprite).data[sMarkingId]] != 0 {
+    if (*crate::gl!(sMenu)).markingsArray[(*sprite).data[sMarkingId]] != 0 {
         StartSpriteAnim(sprite, 2 * (*sprite).data[sMarkingId] as u8 + 1);
     } else {
         StartSpriteAnim(sprite, 2 * (*sprite).data[sMarkingId] as u8);
     }
 }
 pub(crate) unsafe fn SpriteCB_Cursor(sprite: *mut Sprite) {
-    (*sprite).y = 16 * (*sMenu).cursorPos as i16 + (*sprite).data[sCursorYOffset];
+    (*sprite).y = 16 * (*crate::gl!(sMenu)).cursorPos as i16 + (*sprite).data[sCursorYOffset];
 }
 pub unsafe fn CreateMonMarkingAllCombosSprite(
     tileTag: u16,
@@ -466,7 +483,7 @@ pub(crate) unsafe fn CreateMarkingComboSprite(
     LoadSpritePalette(&raw mut sprPalette);
     let spriteId: u8 = CreateSprite(&raw mut template, 0, 0, 0);
     if spriteId != MAX_SPRITES {
-        return &raw mut gSprites[spriteId];
+        return crate::gl!(&raw gSprites[spriteId]);
     } else {
         return null_mut();
     }
@@ -475,7 +492,7 @@ pub(crate) unsafe fn CreateMarkingComboSprite(
         null_mut()
     }
 }
-pub unsafe fn UpdateMonMarkingTiles(markings: u8, dest: *mut c_void) {
+pub fn UpdateMonMarkingTiles(markings: u8, dest: *mut c_void) {
     RequestDma3Copy(
         (&raw const sMonMarkings_Gfx[markings as i32 * 0x80]).cast_mut() as *mut c_void,
         dest,

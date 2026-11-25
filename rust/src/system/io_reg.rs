@@ -1,5 +1,5 @@
 #[used]
-#[unsafe(link_section = ".rodata")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".rodata"))]
 static UNUSED: [u32; 16] = [
     0,
     0,
@@ -20,11 +20,11 @@ static UNUSED: [u32; 16] = [
 ];
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = ".rodata")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".rodata"))]
 pub static gOverworldBackgroundLayerFlags: [u16; 4] = [1 << 8, 1 << 9, 1 << 10, 1 << 11];
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = ".rodata")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".rodata"))]
 pub static gOrbEffectBackgroundLayerFlags: [u16; 4] = [1 << 0, 1 << 1, 1 << 2, 1 << 3];
 
 #[cfg(test)]

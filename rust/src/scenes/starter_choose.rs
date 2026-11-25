@@ -81,14 +81,14 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -98,7 +98,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -189,12 +189,12 @@ unsafe fn AddTextPrinterParameterized(
 }
 /// `GetOverworldTextboxPalettePtr` with this module's view of its types.
 #[inline]
-unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+fn GetOverworldTextboxPalettePtr() -> *mut u16 {
     unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -325,31 +325,40 @@ pub unsafe fn CB2_ChooseStarter() {
     let taskId: u8 = CreateTask(Some(Task_StarterChoose), 0);
     task_set(taskId, 0, 1);
     let mut spriteId: u8 = CreateSprite((&raw const *sSpriteTemplate_Hand).cast_mut(), 120, 56, 2);
-    gSprites[spriteId].data[0] = taskId as i16;
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
         sPokeballCoords[0][0] as i16,
         sPokeballCoords[0][1] as i16,
         2,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[sBallId] = 0;
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    {
+        let gl_i0 = sBallId;
+        crate::gl!(gSprites[spriteId].data[gl_i0] = 0)
+    };
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
         sPokeballCoords[1][0] as i16,
         sPokeballCoords[1][1] as i16,
         2,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[sBallId] = 1;
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    {
+        let gl_i1 = sBallId;
+        crate::gl!(gSprites[spriteId].data[gl_i1] = 1)
+    };
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
         sPokeballCoords[2][0] as i16,
         sPokeballCoords[2][1] as i16,
         2,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[sBallId] = 2;
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    {
+        let gl_i2 = sBallId;
+        crate::gl!(gSprites[spriteId].data[gl_i2] = 2)
+    };
     sStarterLabelWindowId.set(WINDOW_NONE as u16);
 }
 pub(crate) unsafe fn CB2_StarterChoose() {
@@ -379,7 +388,7 @@ pub(crate) unsafe fn Task_StarterChoose(taskId: u8) {
 }
 pub(crate) unsafe fn Task_HandleStarterChooseInput(taskId: u8) {
     let selection: u8 = task_get(taskId, tStarterSelection) as u8;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         ClearStarterLabel();
         let mut spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_StarterCircle).cast_mut(),
@@ -393,18 +402,20 @@ pub(crate) unsafe fn Task_HandleStarterChooseInput(taskId: u8) {
             sPokeballCoords[selection][0],
             sPokeballCoords[selection][1],
         );
-        gSprites[spriteId].affineAnims = (&raw const *sAffineAnims_StarterPokemon).cast_mut();
-        gSprites[spriteId].callback = Some(SpriteCB_StarterPokemon);
+        crate::gl!(
+            gSprites[spriteId].affineAnims = (&raw const *sAffineAnims_StarterPokemon).cast_mut()
+        );
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_StarterPokemon));
         task_set(taskId, tPkmnSpriteId, spriteId as i16);
         task_set_func(taskId, Some(Task_WaitForStarterSprite));
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 && selection > 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 && selection > 0 {
         task_set(
             taskId,
             tStarterSelection,
             task_get(taskId, tStarterSelection) - 1,
         );
         task_set_func(taskId, Some(Task_MoveStarterChooseCursor));
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 && selection < 2 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 && selection < 2 {
         task_set(
             taskId,
             tStarterSelection,
@@ -414,9 +425,15 @@ pub(crate) unsafe fn Task_HandleStarterChooseInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_WaitForStarterSprite(taskId: u8) {
-    if gSprites[task_get(taskId, tCircleSpriteId)].affineAnimEnded() != 0
-        && gSprites[task_get(taskId, tCircleSpriteId)].x == STARTER_PKMN_POS_X
-        && gSprites[task_get(taskId, tCircleSpriteId)].y == STARTER_PKMN_POS_Y
+    if (*gSprites.as_ptr())[task_get(taskId, tCircleSpriteId)].affineAnimEnded() != 0
+        && ({
+            let gl_i3 = task_get(taskId, tCircleSpriteId);
+            crate::gl!(gSprites[gl_i3].x)
+        }) == STARTER_PKMN_POS_X
+        && ({
+            let gl_i4 = task_get(taskId, tCircleSpriteId);
+            crate::gl!(gSprites[gl_i4].y)
+        }) == STARTER_PKMN_POS_Y
     {
         task_set_func(taskId, Some(Task_AskConfirmStarter));
     }
@@ -453,16 +470,16 @@ pub(crate) unsafe fn Task_HandleConfirmStarterInput(taskId: u8) {
         0 => {
             gSpecialVar_Result = task_get(taskId, tStarterSelection) as u16;
             ResetAllPicSprites();
-            SetMainCallback2(gMain.savedCallback);
+            SetMainCallback2(crate::gl!(gMain.savedCallback));
         }
         1 | MENU_B_PRESSED => {
             PlaySE(SE_SELECT);
             spriteId = task_get(taskId, tPkmnSpriteId) as u8;
-            FreeOamMatrix(gSprites[spriteId].oam.matrixNum() as u8);
+            FreeOamMatrix((*gSprites.as_ptr())[spriteId].oam.matrixNum() as u8);
             FreeAndDestroyMonPicSprite(spriteId as u16);
             spriteId = task_get(taskId, tCircleSpriteId) as u8;
-            FreeOamMatrix(gSprites[spriteId].oam.matrixNum() as u8);
-            DestroySprite(&raw mut gSprites[spriteId]);
+            FreeOamMatrix((*gSprites.as_ptr())[spriteId].oam.matrixNum() as u8);
+            DestroySprite(crate::gl!(&raw gSprites[spriteId]));
             task_set_func(taskId, Some(Task_DeclineStarter));
         }
         _ => {}
@@ -551,7 +568,7 @@ unsafe fn CreatePokemonFrontSprite(species: u16, x: u8, y: u8) -> u8 {
         14,
         TAG_NONE,
     ) as u8;
-    gSprites[spriteId].oam.set_priority(0);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_SelectionHand(sprite: *mut Sprite) {

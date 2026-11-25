@@ -81,7 +81,7 @@ unsafe fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
 }
 /// `LoadPokedexAreaMapGfx` with this module's view of its types.
 #[inline]
-unsafe fn LoadPokedexAreaMapGfx(a0: *mut PokedexAreaMapTemplate) {
+fn LoadPokedexAreaMapGfx(a0: *mut PokedexAreaMapTemplate) {
     unsafe {
         crate::pokedex_area_region_map::LoadPokedexAreaMapGfx(a0 as _);
     }
@@ -232,8 +232,9 @@ static sPokedexAreaMapTemplate: Table<PokedexAreaMapTemplate> =
 static sSpeciesHiddenFromAreaScreen: Table<CArray<u16, 1>> =
     Table((&raw const crate::data::pokedex_area_screen::sSpeciesHiddenFromAreaScreen).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokedexAreaScreen: *mut typeof___sPokedexAreaScreen_0_t = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPokedexAreaScreen: crate::global::Global<*mut typeof___sPokedexAreaScreen_0_t> =
+    crate::global::Global::new(null_mut());
 static CreateAreaMarkerSprites_x: crate::global::Global<i16> = crate::global::Global::new(0);
 static CreateAreaMarkerSprites_y: crate::global::Global<i16> = crate::global::Global::new(0);
 static CreateAreaMarkerSprites_i: crate::global::Global<i16> = crate::global::Global::new(0);
@@ -248,26 +249,26 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
 }
 
 unsafe fn ResetDrawAreaGlowState() {
-    (*sPokedexAreaScreen).drawAreaGlowState = 0;
+    (*crate::gl!(sPokedexAreaScreen)).drawAreaGlowState = 0;
 }
 unsafe fn DrawAreaGlow() -> u8 {
-    match (*sPokedexAreaScreen).drawAreaGlowState {
+    match (*crate::gl!(sPokedexAreaScreen)).drawAreaGlowState {
         0 => {
-            FindMapsWithMon((*sPokedexAreaScreen).species);
+            FindMapsWithMon((*crate::gl!(sPokedexAreaScreen)).species);
         }
         1 => {
             BuildAreaGlowTilemap();
@@ -282,7 +283,9 @@ unsafe fn DrawAreaGlow() -> u8 {
             );
             LoadBgTilemap(
                 2,
-                (*sPokedexAreaScreen).areaGlowTilemap.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sPokedexAreaScreen))
+                    .areaGlowTilemap
+                    .as_mut_ptr() as *mut c_void,
                 1280,
                 0,
             );
@@ -291,12 +294,13 @@ unsafe fn DrawAreaGlow() -> u8 {
             if FreeTempTileDataBuffersIfPossible() == 0 {
                 CpuSet(
                     sAreaGlow_Pal.as_ptr().cast_mut() as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[160] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[160] as *mut c_void,
                     0x4000008,
                 );
-                (*sPokedexAreaScreen).drawAreaGlowState += 1;
+                (*crate::gl!(sPokedexAreaScreen)).drawAreaGlowState += 1;
             }
             return TRUE;
         }
@@ -307,21 +311,21 @@ unsafe fn DrawAreaGlow() -> u8 {
             return FALSE;
         }
     }
-    (*sPokedexAreaScreen).drawAreaGlowState += 1;
+    (*crate::gl!(sPokedexAreaScreen)).drawAreaGlowState += 1;
     TRUE
 }
 unsafe fn FindMapsWithMon(species: u16) {
     let mut i: u16 = 0;
     let mut roamer: *mut Roamer = null_mut();
-    (*sPokedexAreaScreen).alteringCaveCounter = 0;
-    (*sPokedexAreaScreen).alteringCaveId = VarGet(VAR_ALTERING_CAVE_WILD_SET);
-    if (*sPokedexAreaScreen).alteringCaveId >= NUM_ALTERING_CAVE_TABLES {
-        (*sPokedexAreaScreen).alteringCaveId = 0;
+    (*crate::gl!(sPokedexAreaScreen)).alteringCaveCounter = 0;
+    (*crate::gl!(sPokedexAreaScreen)).alteringCaveId = VarGet(VAR_ALTERING_CAVE_WILD_SET);
+    if (*crate::gl!(sPokedexAreaScreen)).alteringCaveId >= NUM_ALTERING_CAVE_TABLES {
+        (*crate::gl!(sPokedexAreaScreen)).alteringCaveId = 0;
     }
-    roamer = &raw mut (*gSaveBlock1Ptr).roamer;
+    roamer = &raw mut (*crate::gl!(gSaveBlock1Ptr)).roamer;
     if species != (*roamer).species {
-        (*sPokedexAreaScreen).numOverworldAreas = 0;
-        (*sPokedexAreaScreen).numSpecialAreas = 0;
+        (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas = 0;
+        (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas = 0;
         for i in 0..1u16 {
             if sSpeciesHiddenFromAreaScreen[i] == species {
                 return;
@@ -388,40 +392,43 @@ unsafe fn FindMapsWithMon(species: u16) {
             i += 1;
         }
     } else {
-        (*sPokedexAreaScreen).numSpecialAreas = 0;
+        (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas = 0;
         if (*roamer).active != 0 {
             GetRoamerLocation(
-                &raw mut (*sPokedexAreaScreen).overworldAreasWithMons[0].mapGroup,
-                &raw mut (*sPokedexAreaScreen).overworldAreasWithMons[0].mapNum,
+                &raw mut (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons[0].mapGroup,
+                &raw mut (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons[0].mapNum,
             );
-            (*sPokedexAreaScreen).overworldAreasWithMons[0].regionMapSectionId =
+            (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons[0].regionMapSectionId =
                 (*Overworld_GetMapHeaderByGroupAndId(
-                    (*sPokedexAreaScreen).overworldAreasWithMons[0].mapGroup as u16,
-                    (*sPokedexAreaScreen).overworldAreasWithMons[0].mapNum as u16,
+                    (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons[0].mapGroup as u16,
+                    (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons[0].mapNum as u16,
                 ))
                 .regionMapSectionId as u16;
-            (*sPokedexAreaScreen).numOverworldAreas = 1;
+            (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas = 1;
         } else {
-            (*sPokedexAreaScreen).numOverworldAreas = 0;
+            (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas = 0;
         }
     }
 }
 unsafe fn SetAreaHasMon(mapGroup: u16, mapNum: u16) {
-    if (*sPokedexAreaScreen).numOverworldAreas < MAX_AREA_HIGHLIGHTS {
-        (*sPokedexAreaScreen).overworldAreasWithMons[(*sPokedexAreaScreen).numOverworldAreas]
+    if (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas < MAX_AREA_HIGHLIGHTS {
+        (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons
+            [(*crate::gl!(sPokedexAreaScreen)).numOverworldAreas]
             .mapGroup = mapGroup as u8;
-        (*sPokedexAreaScreen).overworldAreasWithMons[(*sPokedexAreaScreen).numOverworldAreas]
+        (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons
+            [(*crate::gl!(sPokedexAreaScreen)).numOverworldAreas]
             .mapNum = mapNum as u8;
-        (*sPokedexAreaScreen).overworldAreasWithMons[(*sPokedexAreaScreen).numOverworldAreas]
+        (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons
+            [(*crate::gl!(sPokedexAreaScreen)).numOverworldAreas]
             .regionMapSectionId = CorrectSpecialMapSecId(
             (*Overworld_GetMapHeaderByGroupAndId(mapGroup, mapNum)).regionMapSectionId as u16,
         );
-        (*sPokedexAreaScreen).numOverworldAreas += 1;
+        (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas += 1;
     }
 }
 unsafe fn SetSpecialMapHasMon(mapGroup: u16, mapNum: u16) {
     let mut i: i32 = 0;
-    if (*sPokedexAreaScreen).numSpecialAreas < MAX_AREA_MARKERS {
+    if (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas < MAX_AREA_MARKERS {
         let regionMapSectionId: u16 = GetRegionMapSectionId(mapGroup as u8, mapNum as u8);
         if regionMapSectionId < MAPSEC_NONE {
             for i in 0..3i32 {
@@ -437,15 +444,18 @@ unsafe fn SetSpecialMapHasMon(mapGroup: u16, mapNum: u16) {
                 i += 1;
             }
             i = 0;
-            while i < (*sPokedexAreaScreen).numSpecialAreas as i32 {
-                if (*sPokedexAreaScreen).specialAreaRegionMapSectionIds[i] == regionMapSectionId {
+            while i < (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas as i32 {
+                if (*crate::gl!(sPokedexAreaScreen)).specialAreaRegionMapSectionIds[i]
+                    == regionMapSectionId
+                {
                     break;
                 }
                 i += 1;
             }
-            if i == (*sPokedexAreaScreen).numSpecialAreas as i32 {
-                (*sPokedexAreaScreen).specialAreaRegionMapSectionIds[i] = regionMapSectionId;
-                (*sPokedexAreaScreen).numSpecialAreas += 1;
+            if i == (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas as i32 {
+                (*crate::gl!(sPokedexAreaScreen)).specialAreaRegionMapSectionIds[i] =
+                    regionMapSectionId;
+                (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas += 1;
             }
         }
     }
@@ -455,9 +465,9 @@ unsafe fn GetRegionMapSectionId(mapGroup: u8, mapNum: u8) -> u16 {
 }
 unsafe fn MapHasSpecies(info: *mut WildPokemonHeader, species: u16) -> u8 {
     if GetRegionMapSectionId((*info).mapGroup, (*info).mapNum) == MAPSEC_ALTERING_CAVE {
-        (*sPokedexAreaScreen).alteringCaveCounter += 1;
-        if (*sPokedexAreaScreen).alteringCaveCounter as i32
-            != (*sPokedexAreaScreen).alteringCaveId as i32 + 1
+        (*crate::gl!(sPokedexAreaScreen)).alteringCaveCounter += 1;
+        if (*crate::gl!(sPokedexAreaScreen)).alteringCaveCounter as i32
+            != (*crate::gl!(sPokedexAreaScreen)).alteringCaveId as i32 + 1
         {
             return FALSE;
         }
@@ -504,17 +514,18 @@ unsafe fn MonListHasSpecies(info: *mut WildPokemonInfo, species: u16, size: u16)
 unsafe fn BuildAreaGlowTilemap() {
     let mut j: u16 = 0;
     for i in 0..640u16 {
-        (*sPokedexAreaScreen).areaGlowTilemap[i] = 0;
+        (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] = 0;
     }
     let mut i: u16 = 0;
-    while i < (*sPokedexAreaScreen).numOverworldAreas {
+    while i < (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas {
         j = 0;
         for y in 0..AREA_SCREEN_HEIGHT {
             for x in 0..(AREA_SCREEN_WIDTH as u16) {
                 if GetRegionMapSecIdAt(x, y)
-                    == (*sPokedexAreaScreen).overworldAreasWithMons[i].regionMapSectionId
+                    == (*crate::gl!(sPokedexAreaScreen)).overworldAreasWithMons[i]
+                        .regionMapSectionId
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j] = GLOW_FULL;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j] = GLOW_FULL;
                 }
                 j += 1;
             }
@@ -524,96 +535,112 @@ unsafe fn BuildAreaGlowTilemap() {
     j = 0;
     for y in 0..AREA_SCREEN_HEIGHT {
         for x in 0..(AREA_SCREEN_WIDTH as u16) {
-            if (*sPokedexAreaScreen).areaGlowTilemap[j] == GLOW_FULL {
-                if x != 0 && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - 1] != GLOW_FULL {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - 1] |= GLOW_EDGE_L;
+            if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j] == GLOW_FULL {
+                if x != 0
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j as i32 - 1] != GLOW_FULL
+                {
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j as i32 - 1] |= GLOW_EDGE_L;
                 }
-                if x != 31 && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + 1] != GLOW_FULL {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + 1] |= 1;
+                if x != 31
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j as i32 + 1] != GLOW_FULL
+                {
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j as i32 + 1] |= 1;
                 }
                 if y != 0
-                    && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - AREA_SCREEN_WIDTH]
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 - AREA_SCREEN_WIDTH]
                         != GLOW_FULL
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - AREA_SCREEN_WIDTH] |=
-                        GLOW_EDGE_T;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 - AREA_SCREEN_WIDTH] |= GLOW_EDGE_T;
                 }
                 if y != 19
-                    && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + AREA_SCREEN_WIDTH]
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 + AREA_SCREEN_WIDTH]
                         != GLOW_FULL
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + AREA_SCREEN_WIDTH] |=
-                        GLOW_EDGE_B;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 + AREA_SCREEN_WIDTH] |= GLOW_EDGE_B;
                 }
                 if x != 0
                     && y != 0
-                    && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - AREA_SCREEN_WIDTH - 1]
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 - AREA_SCREEN_WIDTH - 1]
                         != GLOW_FULL
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - AREA_SCREEN_WIDTH - 1] |=
-                        GLOW_CORNER_TL;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 - AREA_SCREEN_WIDTH - 1] |= GLOW_CORNER_TL;
                 }
                 if x != 31
                     && y != 0
-                    && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - AREA_SCREEN_WIDTH + 1]
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 - AREA_SCREEN_WIDTH + 1]
                         != GLOW_FULL
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - AREA_SCREEN_WIDTH + 1] |=
-                        GLOW_CORNER_TR;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 - AREA_SCREEN_WIDTH + 1] |= GLOW_CORNER_TR;
                 }
                 if x != 0
                     && y != 19
-                    && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + AREA_SCREEN_WIDTH - 1]
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 + AREA_SCREEN_WIDTH - 1]
                         != GLOW_FULL
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + 32 - 1] |= 32;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[j as i32 + 32 - 1] |= 32;
                 }
                 if x != 31
                     && y != 19
-                    && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + AREA_SCREEN_WIDTH + 1]
+                    && (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 + AREA_SCREEN_WIDTH + 1]
                         != GLOW_FULL
                 {
-                    (*sPokedexAreaScreen).areaGlowTilemap[j as i32 + AREA_SCREEN_WIDTH + 1] |=
-                        GLOW_CORNER_BR;
+                    (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap
+                        [j as i32 + AREA_SCREEN_WIDTH + 1] |= GLOW_CORNER_BR;
                 }
             }
             j += 1;
         }
     }
     for i in 0..640u16 {
-        if (*sPokedexAreaScreen).areaGlowTilemap[i] == GLOW_FULL {
-            (*sPokedexAreaScreen).areaGlowTilemap[i] = GLOW_TILE_FULL;
-            (*sPokedexAreaScreen).areaGlowTilemap[i] |= 40960;
-        } else if (*sPokedexAreaScreen).areaGlowTilemap[i] != 0 {
-            if (*sPokedexAreaScreen).areaGlowTilemap[i] as i32 & GLOW_EDGE_L as i32 != 0 {
-                (*sPokedexAreaScreen).areaGlowTilemap[i] &= 65487;
+        if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] == GLOW_FULL {
+            (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] = GLOW_TILE_FULL;
+            (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] |= 40960;
+        } else if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] != 0 {
+            if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] as i32 & GLOW_EDGE_L as i32 != 0
+            {
+                (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] &= 65487;
             }
-            if (*sPokedexAreaScreen).areaGlowTilemap[i] as i32 & GLOW_EDGE_R != 0 {
-                (*sPokedexAreaScreen).areaGlowTilemap[i] &= 65343;
+            if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] as i32 & GLOW_EDGE_R != 0 {
+                (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] &= 65343;
             }
-            if (*sPokedexAreaScreen).areaGlowTilemap[i] as i32 & GLOW_EDGE_T as i32 != 0 {
-                (*sPokedexAreaScreen).areaGlowTilemap[i] &= 65455;
+            if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] as i32 & GLOW_EDGE_T as i32 != 0
+            {
+                (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] &= 65455;
             }
-            if (*sPokedexAreaScreen).areaGlowTilemap[i] as i32 & GLOW_EDGE_B as i32 != 0 {
-                (*sPokedexAreaScreen).areaGlowTilemap[i] &= 65375;
+            if (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] as i32 & GLOW_EDGE_B as i32 != 0
+            {
+                (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] &= 65375;
             }
-            (*sPokedexAreaScreen).areaGlowTilemap[i] =
-                sAreaGlowTilemapMapping[(*sPokedexAreaScreen).areaGlowTilemap[i]] as u16;
-            (*sPokedexAreaScreen).areaGlowTilemap[i] |= 40960;
+            (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] = sAreaGlowTilemapMapping
+                [(*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i]]
+                as u16;
+            (*crate::gl!(sPokedexAreaScreen)).areaGlowTilemap[i] |= 40960;
         }
     }
 }
 unsafe fn StartAreaGlow() {
-    if (*sPokedexAreaScreen).numSpecialAreas != 0 && (*sPokedexAreaScreen).numOverworldAreas == 0 {
-        (*sPokedexAreaScreen).showingMarkers = TRUE;
+    if (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas != 0
+        && (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas == 0
+    {
+        (*crate::gl!(sPokedexAreaScreen)).showingMarkers = TRUE;
     } else {
-        (*sPokedexAreaScreen).showingMarkers = FALSE;
+        (*crate::gl!(sPokedexAreaScreen)).showingMarkers = FALSE;
     }
-    (*sPokedexAreaScreen).markerTimer = 0;
-    (*sPokedexAreaScreen).glowTimer = 0;
-    (*sPokedexAreaScreen).areaShadeBldArgLo = 0;
-    (*sPokedexAreaScreen).areaShadeBldArgHi = 64;
-    (*sPokedexAreaScreen).markerFlashCounter = 1;
+    (*crate::gl!(sPokedexAreaScreen)).markerTimer = 0;
+    (*crate::gl!(sPokedexAreaScreen)).glowTimer = 0;
+    (*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgLo = 0;
+    (*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgHi = 64;
+    (*crate::gl!(sPokedexAreaScreen)).markerFlashCounter = 1;
     SetGpuReg(REG_OFFSET_BLDCNT, 16196);
     SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
     DoAreaGlow();
@@ -622,57 +649,57 @@ unsafe fn DoAreaGlow() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut i: u16 = 0;
-    if (*sPokedexAreaScreen).showingMarkers == 0 {
-        if (*sPokedexAreaScreen).markerTimer == 0 {
-            (*sPokedexAreaScreen).glowTimer += 1;
-            if (*sPokedexAreaScreen).glowTimer as i32 & 1 != 0 {
-                (*sPokedexAreaScreen).areaShadeBldArgLo =
-                    ((*sPokedexAreaScreen).areaShadeBldArgLo + 4) & 0x7f;
+    if (*crate::gl!(sPokedexAreaScreen)).showingMarkers == 0 {
+        if (*crate::gl!(sPokedexAreaScreen)).markerTimer == 0 {
+            (*crate::gl!(sPokedexAreaScreen)).glowTimer += 1;
+            if (*crate::gl!(sPokedexAreaScreen)).glowTimer as i32 & 1 != 0 {
+                (*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgLo =
+                    ((*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgLo + 4) & 0x7f;
             } else {
-                (*sPokedexAreaScreen).areaShadeBldArgHi =
-                    ((*sPokedexAreaScreen).areaShadeBldArgHi + 4) & 0x7f;
+                (*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgHi =
+                    ((*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgHi + 4) & 0x7f;
             }
             x = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
-                [(*sPokedexAreaScreen).areaShadeBldArgLo]
+                [(*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgLo]
                 >> 4) as u16;
             y = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
-                [(*sPokedexAreaScreen).areaShadeBldArgHi]
+                [(*crate::gl!(sPokedexAreaScreen)).areaShadeBldArgHi]
                 >> 4) as u16;
             SetGpuReg(REG_OFFSET_BLDALPHA, y << 8 | x);
-            (*sPokedexAreaScreen).markerTimer = 0;
-            if (*sPokedexAreaScreen).glowTimer == 64 {
-                (*sPokedexAreaScreen).glowTimer = 0;
-                if (*sPokedexAreaScreen).numSpecialAreas != 0 {
-                    (*sPokedexAreaScreen).showingMarkers = TRUE;
+            (*crate::gl!(sPokedexAreaScreen)).markerTimer = 0;
+            if (*crate::gl!(sPokedexAreaScreen)).glowTimer == 64 {
+                (*crate::gl!(sPokedexAreaScreen)).glowTimer = 0;
+                if (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas != 0 {
+                    (*crate::gl!(sPokedexAreaScreen)).showingMarkers = TRUE;
                 }
             }
         } else {
-            (*sPokedexAreaScreen).markerTimer -= 1;
+            (*crate::gl!(sPokedexAreaScreen)).markerTimer -= 1;
         }
     } else {
-        (*sPokedexAreaScreen).markerTimer += 1;
-        if (*sPokedexAreaScreen).markerTimer > 12 {
-            (*sPokedexAreaScreen).markerTimer = 0;
-            (*sPokedexAreaScreen).markerFlashCounter += 1;
+        (*crate::gl!(sPokedexAreaScreen)).markerTimer += 1;
+        if (*crate::gl!(sPokedexAreaScreen)).markerTimer > 12 {
+            (*crate::gl!(sPokedexAreaScreen)).markerTimer = 0;
+            (*crate::gl!(sPokedexAreaScreen)).markerFlashCounter += 1;
             i = 0;
-            while i < (*sPokedexAreaScreen).numSpecialAreas {
-                (*(*sPokedexAreaScreen).areaMarkerSprites[i])
-                    .set_invisible((*sPokedexAreaScreen).markerFlashCounter as u16 & 1);
+            while i < (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas {
+                (*(*crate::gl!(sPokedexAreaScreen)).areaMarkerSprites[i])
+                    .set_invisible((*crate::gl!(sPokedexAreaScreen)).markerFlashCounter as u16 & 1);
                 i += 1;
             }
-            if (*sPokedexAreaScreen).markerFlashCounter > 4 {
-                (*sPokedexAreaScreen).markerFlashCounter = 1;
-                if (*sPokedexAreaScreen).numOverworldAreas != 0 {
-                    (*sPokedexAreaScreen).showingMarkers = FALSE;
+            if (*crate::gl!(sPokedexAreaScreen)).markerFlashCounter > 4 {
+                (*crate::gl!(sPokedexAreaScreen)).markerFlashCounter = 1;
+                if (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas != 0 {
+                    (*crate::gl!(sPokedexAreaScreen)).showingMarkers = FALSE;
                 }
             }
         }
     }
 }
 pub unsafe fn ShowPokedexAreaScreen(species: u16, screenSwitchState: *mut u8) {
-    sPokedexAreaScreen = AllocZeroed(5564) as *mut typeof___sPokedexAreaScreen_0_t;
-    (*sPokedexAreaScreen).species = species;
-    (*sPokedexAreaScreen).screenSwitchState = screenSwitchState;
+    crate::gl!(sPokedexAreaScreen = AllocZeroed(5564) as *mut typeof___sPokedexAreaScreen_0_t);
+    (*crate::gl!(sPokedexAreaScreen)).species = species;
+    (*crate::gl!(sPokedexAreaScreen)).screenSwitchState = screenSwitchState;
     *screenSwitchState = 0;
     let taskId: u8 = CreateTask(Some(Task_ShowPokedexAreaScreen), 0);
     task_set(taskId, tState, 0);
@@ -690,7 +717,7 @@ pub(crate) unsafe fn Task_ShowPokedexAreaScreen(taskId: u8) {
             SetBgAttribute(3, BG_ATTR_CHARBASEINDEX, 3);
             LoadPokedexAreaMapGfx((&raw const *sPokedexAreaMapTemplate).cast_mut());
             StringFill(
-                (*sPokedexAreaScreen).charBuffer.as_mut_ptr(),
+                (*crate::gl!(sPokedexAreaScreen)).charBuffer.as_mut_ptr(),
                 CHAR_SPACE,
                 16,
             );
@@ -710,7 +737,7 @@ pub(crate) unsafe fn Task_ShowPokedexAreaScreen(taskId: u8) {
             }
         }
         5 => {
-            ShowRegionMapForPokedexAreaScreen(&raw mut (*sPokedexAreaScreen).regionMap);
+            ShowRegionMapForPokedexAreaScreen(&raw mut (*crate::gl!(sPokedexAreaScreen)).regionMap);
             CreateRegionMapPlayerIcon(1, 1);
             PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(0, -8);
         }
@@ -753,18 +780,18 @@ pub(crate) unsafe fn Task_HandlePokedexAreaScreenInput(taskId: u8) {
             task_set(taskId, tState, 0);
         }
         if fall || sw1 == 0 {
-            if gPaletteFade.active() != 0 {
+            if (*gPaletteFade.as_ptr()).active() != 0 {
                 return;
             }
             break 'l1;
         }
         if sw1 == 1 {
-            if gMain.newKeys as i32 & B_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 task_set(taskId, 1, 1);
                 PlaySE(SE_PC_OFF);
-            } else if gMain.newKeys as i32 & DPAD_RIGHT != 0
-                || gMain.newKeys as i32 & R_BUTTON != 0
-                    && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
+            } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+                || crate::gl!(gMain.newKeys) as i32 & R_BUTTON != 0
+                    && (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
             {
                 task_set(taskId, 1, 2);
                 PlaySE(SE_DEX_PAGE);
@@ -778,16 +805,16 @@ pub(crate) unsafe fn Task_HandlePokedexAreaScreenInput(taskId: u8) {
             break 'l1;
         }
         if sw1 == 3 {
-            if gPaletteFade.active() != 0 {
+            if (*gPaletteFade.as_ptr()).active() != 0 {
                 return;
             }
             DestroyAreaScreenSprites();
-            *(*sPokedexAreaScreen).screenSwitchState = task_get(taskId, 1) as u8;
+            *(*crate::gl!(sPokedexAreaScreen)).screenSwitchState = task_get(taskId, 1) as u8;
             ResetPokedexAreaMapBg();
             DestroyTask(taskId);
             FreePokedexAreaMapBgNum();
-            Free(sPokedexAreaScreen as *mut c_void);
-            sPokedexAreaScreen = null_mut();
+            Free(crate::gl!(sPokedexAreaScreen) as *mut c_void);
+            crate::gl!(sPokedexAreaScreen = null_mut());
             return;
         }
     }
@@ -803,10 +830,12 @@ unsafe fn CreateAreaMarkerSprites() {
     LoadSpritePalette((&raw const *sAreaMarkerSpritePalette).cast_mut());
     CreateAreaMarkerSprites_numSprites.set(0);
     CreateAreaMarkerSprites_i.set(0);
-    while (CreateAreaMarkerSprites_i.get() as i32) < (*sPokedexAreaScreen).numSpecialAreas as i32 {
+    while (CreateAreaMarkerSprites_i.get() as i32)
+        < (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas as i32
+    {
         CreateAreaMarkerSprites_mapSecId.set(
-            (*sPokedexAreaScreen).specialAreaRegionMapSectionIds[CreateAreaMarkerSprites_i.get()]
-                as i16,
+            (*crate::gl!(sPokedexAreaScreen)).specialAreaRegionMapSectionIds
+                [CreateAreaMarkerSprites_i.get()] as i16,
         );
         CreateAreaMarkerSprites_x.set(
             8 * ((*(&raw const crate::data::region_map::gRegionMapEntries)
@@ -848,37 +877,40 @@ unsafe fn CreateAreaMarkerSprites() {
             0,
         );
         if spriteId != MAX_SPRITES {
-            gSprites[spriteId].set_invisible(TRUE as u16);
-            (*sPokedexAreaScreen).areaMarkerSprites[{
+            (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+            (*crate::gl!(sPokedexAreaScreen)).areaMarkerSprites[{
                 let t1 = CreateAreaMarkerSprites_numSprites.get();
                 CreateAreaMarkerSprites_numSprites
                     .set(CreateAreaMarkerSprites_numSprites.get() + 1);
                 t1
-            }] = &raw mut gSprites[spriteId];
+            }] = crate::gl!(&raw gSprites[spriteId]);
         }
         CreateAreaMarkerSprites_i.set(CreateAreaMarkerSprites_i.get() + 1);
     }
-    (*sPokedexAreaScreen).numAreaMarkerSprites = CreateAreaMarkerSprites_numSprites.get() as u16;
+    (*crate::gl!(sPokedexAreaScreen)).numAreaMarkerSprites =
+        CreateAreaMarkerSprites_numSprites.get() as u16;
 }
 unsafe fn DestroyAreaScreenSprites() {
     FreeSpriteTilesByTag(TAG_AREA_MARKER);
     FreeSpritePaletteByTag(TAG_AREA_MARKER);
     let mut i: u16 = 0;
-    while i < (*sPokedexAreaScreen).numAreaMarkerSprites {
-        DestroySprite((*sPokedexAreaScreen).areaMarkerSprites[i]);
+    while i < (*crate::gl!(sPokedexAreaScreen)).numAreaMarkerSprites {
+        DestroySprite((*crate::gl!(sPokedexAreaScreen)).areaMarkerSprites[i]);
         i += 1;
     }
     FreeSpriteTilesByTag(TAG_AREA_UNKNOWN);
     FreeSpritePaletteByTag(TAG_AREA_UNKNOWN);
     for i in 0..3u16 {
-        if !(*sPokedexAreaScreen).areaUnknownSprites[i].is_null() {
-            DestroySprite((*sPokedexAreaScreen).areaUnknownSprites[i]);
+        if !(*crate::gl!(sPokedexAreaScreen)).areaUnknownSprites[i].is_null() {
+            DestroySprite((*crate::gl!(sPokedexAreaScreen)).areaUnknownSprites[i]);
         }
     }
 }
 unsafe fn LoadAreaUnknownGraphics() {
     let mut spriteSheet: SpriteSheet = zeroed();
-    spriteSheet.data = (*sPokedexAreaScreen).areaUnknownGraphicsBuffer.as_mut_ptr() as *mut c_void;
+    spriteSheet.data = (*crate::gl!(sPokedexAreaScreen))
+        .areaUnknownGraphicsBuffer
+        .as_mut_ptr() as *mut c_void;
     spriteSheet.size = 1536;
     spriteSheet.tag = TAG_AREA_UNKNOWN;
     LZ77UnCompWram(
@@ -886,15 +918,19 @@ unsafe fn LoadAreaUnknownGraphics() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sPokedexAreaScreen).areaUnknownGraphicsBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sPokedexAreaScreen))
+            .areaUnknownGraphicsBuffer
+            .as_mut_ptr() as *mut c_void,
     );
     LoadSpriteSheet(&raw mut spriteSheet);
     LoadSpritePalette((&raw const *sAreaUnknownSpritePalette).cast_mut());
 }
 unsafe fn CreateAreaUnknownSprites() {
-    if (*sPokedexAreaScreen).numOverworldAreas != 0 || (*sPokedexAreaScreen).numSpecialAreas != 0 {
+    if (*crate::gl!(sPokedexAreaScreen)).numOverworldAreas != 0
+        || (*crate::gl!(sPokedexAreaScreen)).numSpecialAreas != 0
+    {
         for i in 0..3u16 {
-            (*sPokedexAreaScreen).areaUnknownSprites[i] = null_mut();
+            (*crate::gl!(sPokedexAreaScreen)).areaUnknownSprites[i] = null_mut();
         }
     } else {
         for i in 0..3u16 {
@@ -905,12 +941,13 @@ unsafe fn CreateAreaUnknownSprites() {
                 0,
             );
             if spriteId != MAX_SPRITES {
-                gSprites[spriteId]
+                (*gSprites.as_ptr())[spriteId]
                     .oam
-                    .set_tileNum(gSprites[spriteId].oam.tileNum() + i * 16);
-                (*sPokedexAreaScreen).areaUnknownSprites[i] = &raw mut gSprites[spriteId];
+                    .set_tileNum((*gSprites.as_ptr())[spriteId].oam.tileNum() + i * 16);
+                (*crate::gl!(sPokedexAreaScreen)).areaUnknownSprites[i] =
+                    crate::gl!(&raw gSprites[spriteId]);
             } else {
-                (*sPokedexAreaScreen).areaUnknownSprites[i] = null_mut();
+                (*crate::gl!(sPokedexAreaScreen)).areaUnknownSprites[i] = null_mut();
             }
         }
     }

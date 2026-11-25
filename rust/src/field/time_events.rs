@@ -88,7 +88,7 @@ pub fn update_shoal_tide_flag() {
     // SAFETY: as above; gLocalTime is only written by the RTC code.
     let hour = unsafe {
         RtcCalcLocalTime();
-        (*(&raw const gLocalTime)).hours
+        (*(crate::gl!(&raw gLocalTime).cast_const())).hours
     };
     if is_high_tide_hour(hour) {
         flag_set(FLAG_SYS_SHOAL_TIDE);

@@ -119,12 +119,12 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `GetMaxWidthInMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
     unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
 }
 /// `GetMaxWidthInSubsetOfMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInSubsetOfMenuTable(a0: *mut MenuAction, a1: *mut u8, a2: i32) -> i32 {
+fn GetMaxWidthInSubsetOfMenuTable(a0: *mut MenuAction, a1: *mut u8, a2: i32) -> i32 {
     unsafe {
         crate::international_string_util::GetMaxWidthInSubsetOfMenuTable(a0 as _, a1 as _, a2)
     }
@@ -238,14 +238,17 @@ static sWindowTemplates_ItemStorage: Table<CArray<WindowTemplate, 6>> =
 static sWindowTemplates_MainMenus: Table<CArray<WindowTemplate, 3>> =
     Table((&raw const crate::data::player_pc::sWindowTemplates_MainMenus).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTopMenuOptionOrder: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTopMenuOptionOrder: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sTopMenuNumOptions: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerPCItemPageInfo: PlayerPCItemPageStruct = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sItemStorageMenu: *mut ItemStorageMenu = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPlayerPCItemPageInfo: crate::global::Global<PlayerPCItemPageStruct> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sItemStorageMenu: crate::global::Global<*mut ItemStorageMenu> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -291,7 +294,10 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 #[unsafe(no_mangle)]
 pub unsafe fn NewGameInitPCItems() {
     let mut i: u8 = 0;
-    ClearItemSlots((*gSaveBlock1Ptr).pcItems.as_mut_ptr(), PC_ITEMS_COUNT);
+    ClearItemSlots(
+        (*crate::gl!(gSaveBlock1Ptr)).pcItems.as_mut_ptr(),
+        PC_ITEMS_COUNT,
+    );
     loop {
         if sNewGamePCItems[i][0] == ITEM_NONE || sNewGamePCItems[i][1] == 0 {
             break;
@@ -304,7 +310,7 @@ pub unsafe fn NewGameInitPCItems() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn BedroomPC() {
-    sTopMenuOptionOrder = sBedroomPC_OptionOrder.as_ptr().cast_mut();
+    crate::gl!(sTopMenuOptionOrder = sBedroomPC_OptionOrder.as_ptr().cast_mut());
     sTopMenuNumOptions.set(4);
     DisplayItemMessageOnField(
         CreateTask(Some(TaskDummy), 0),
@@ -316,7 +322,7 @@ pub unsafe fn BedroomPC() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn PlayerPC() {
-    sTopMenuOptionOrder = sPlayerPC_OptionOrder.as_ptr().cast_mut();
+    crate::gl!(sTopMenuOptionOrder = sPlayerPC_OptionOrder.as_ptr().cast_mut());
     sTopMenuNumOptions.set(3);
     DisplayItemMessageOnField(
         CreateTask(Some(TaskDummy), 0),
@@ -337,7 +343,7 @@ pub(crate) unsafe fn InitPlayerPCMenu(taskId: u8) {
     }
     windowTemplate.width = GetMaxWidthInSubsetOfMenuTable(
         sPlayerPCMenuActions.as_ptr().cast_mut(),
-        sTopMenuOptionOrder,
+        crate::gl!(sTopMenuOptionOrder),
         sTopMenuNumOptions.get() as i32,
     ) as u8;
     *data.at(4) = AddWindow(&raw mut windowTemplate);
@@ -346,7 +352,7 @@ pub(crate) unsafe fn InitPlayerPCMenu(taskId: u8) {
         *data.at(4) as u8,
         sTopMenuNumOptions.get(),
         sPlayerPCMenuActions.as_ptr().cast_mut(),
-        sTopMenuOptionOrder,
+        crate::gl!(sTopMenuOptionOrder),
     );
     InitMenuInUpperLeftCornerNormal(*data.at(4) as u8, sTopMenuNumOptions.get(), 0);
     ScheduleBgCopyTilemapToVram(0);
@@ -378,7 +384,7 @@ pub(crate) unsafe fn PlayerPCProcessMenuInput(taskId: u8) {
             ScheduleBgCopyTilemapToVram(0);
             task_set_func(
                 taskId,
-                sPlayerPCMenuActions[*sTopMenuOptionOrder.at(inputOptionId)]
+                sPlayerPCMenuActions[*(*sTopMenuOptionOrder.as_ptr()).at(inputOptionId)]
                     .func
                     .void_u8,
             );
@@ -399,8 +405,8 @@ pub(crate) unsafe fn PlayerPC_ItemStorage(taskId: u8) {
     task_set_func(taskId, Some(ItemStorageMenuProcessInput));
 }
 pub(crate) unsafe fn PlayerPC_Mailbox(taskId: u8) {
-    gPlayerPCItemPageInfo.count = GetMailboxMailCount();
-    if gPlayerPCItemPageInfo.count == 0 {
+    crate::gl!(gPlayerPCItemPageInfo.count = GetMailboxMailCount());
+    if crate::gl!(gPlayerPCItemPageInfo.count) == 0 {
         DisplayItemMessageOnField(
             taskId,
             (*(&raw const crate::data::strings::gText_NoMailHere).cast::<CArray<u8, 0>>())
@@ -409,12 +415,12 @@ pub(crate) unsafe fn PlayerPC_Mailbox(taskId: u8) {
             Some(ReshowPlayerPC),
         );
     } else {
-        gPlayerPCItemPageInfo.cursorPos = 0;
-        gPlayerPCItemPageInfo.itemsAbove = 0;
-        gPlayerPCItemPageInfo.scrollIndicatorTaskId = TASK_NONE;
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos = 0);
+        crate::gl!(gPlayerPCItemPageInfo.itemsAbove = 0);
+        crate::gl!(gPlayerPCItemPageInfo.scrollIndicatorTaskId = TASK_NONE);
         Mailbox_CompactMailList();
         SetPlayerPCListCount(taskId);
-        if MailboxMenu_Alloc(gPlayerPCItemPageInfo.count) == TRUE {
+        if MailboxMenu_Alloc(crate::gl!(gPlayerPCItemPageInfo.count)) == TRUE {
             ClearDialogWindowAndFrame(0, 0);
             Mailbox_DrawMailboxMenu(taskId);
             task_set_func(taskId, Some(Mailbox_ProcessInput));
@@ -434,7 +440,7 @@ pub(crate) unsafe fn PlayerPC_Decoration(taskId: u8) {
 }
 pub(crate) unsafe fn PlayerPC_TurnOff(taskId: u8) {
     if sTopMenuNumOptions.get() == 4 {
-        if (*gSaveBlock2Ptr).playerGender == MALE {
+        if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
             ScriptContext_SetupScript(
                 (*crate::asmdata::LittlerootTown_BrendansHouse_2F_EventScript_TurnOffPlayerPC
                     .cast::<CArray<u8, 0>>())
@@ -503,14 +509,14 @@ pub(crate) unsafe fn ItemStorage_Deposit(taskId: u8) {
     FadeScreen(FADE_TO_BLACK, 0);
 }
 pub(crate) unsafe fn Task_ItemStorage_Deposit(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         CB2_GoToItemDepositMenu();
         DestroyTask(taskId);
     }
 }
 pub unsafe fn CB2_PlayerPCExitBagMenu() {
-    gFieldCallback = Some(ItemStorage_ReshowAfterBagMenu);
+    crate::gl!(gFieldCallback = Some(ItemStorage_ReshowAfterBagMenu));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 pub(crate) unsafe fn ItemStorage_ReshowAfterBagMenu() {
@@ -563,15 +569,17 @@ unsafe fn ItemStorage_Enter(taskId: u8, toss: u8) {
     let data: *mut u16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut u16;
     *data.at(3) = toss as u16;
     ItemStorage_EraseMainMenu(taskId);
-    gPlayerPCItemPageInfo.cursorPos = 0;
-    gPlayerPCItemPageInfo.itemsAbove = 0;
-    gPlayerPCItemPageInfo.scrollIndicatorTaskId = TASK_NONE;
+    crate::gl!(gPlayerPCItemPageInfo.cursorPos = 0);
+    crate::gl!(gPlayerPCItemPageInfo.itemsAbove = 0);
+    crate::gl!(gPlayerPCItemPageInfo.scrollIndicatorTaskId = TASK_NONE);
     SetPlayerPCListCount(taskId);
     ItemStorage_Init();
     FreeAndReserveObjectSpritePalettes();
     LoadListMenuSwapLineGfx();
     CreateSwapLineSprites(
-        (*sItemStorageMenu).swapLineSpriteIds.as_mut_ptr(),
+        (*crate::gl!(sItemStorageMenu))
+            .swapLineSpriteIds
+            .as_mut_ptr(),
         SWAP_LINE_LENGTH,
     );
     ClearDialogWindowAndFrame(0, 0);
@@ -581,11 +589,11 @@ pub(crate) unsafe fn ItemStorage_Exit(taskId: u8) {
     ItemStorage_EraseMainMenu(taskId);
     ReshowPlayerPC(taskId);
 }
-unsafe fn SetPlayerPCListCount(taskId: u8) {
-    if gPlayerPCItemPageInfo.count > 7 {
-        gPlayerPCItemPageInfo.pageItems = 8;
+fn SetPlayerPCListCount(taskId: u8) {
+    if crate::gl!(gPlayerPCItemPageInfo.count) > 7 {
+        crate::gl!(gPlayerPCItemPageInfo.pageItems = 8);
     } else {
-        gPlayerPCItemPageInfo.pageItems = gPlayerPCItemPageInfo.count + 1;
+        crate::gl!(gPlayerPCItemPageInfo.pageItems = crate::gl!(gPlayerPCItemPageInfo.count) + 1);
     }
 }
 unsafe fn ItemStorage_EraseMainMenu(taskId: u8) {
@@ -598,7 +606,7 @@ unsafe fn ItemStorage_EraseMainMenu(taskId: u8) {
 unsafe fn GetMailboxMailCount() -> u8 {
     let mut mailInPC: u8 = 0;
     for i in (PARTY_SIZE as u8)..MAIL_COUNT {
-        if (*gSaveBlock1Ptr).mail[i].itemId != ITEM_NONE {
+        if (*crate::gl!(gSaveBlock1Ptr)).mail[i].itemId != ITEM_NONE {
             mailInPC += 1;
         }
     }
@@ -608,10 +616,10 @@ unsafe fn Mailbox_CompactMailList() {
     let mut temp: Mail = zeroed();
     for i in (PARTY_SIZE as u8)..15 {
         for j in (i + 1)..MAIL_COUNT {
-            if (*gSaveBlock1Ptr).mail[i].itemId == ITEM_NONE {
-                temp = (*gSaveBlock1Ptr).mail[i];
-                (*gSaveBlock1Ptr).mail[i] = (*gSaveBlock1Ptr).mail[j];
-                (*gSaveBlock1Ptr).mail[j] = temp;
+            if (*crate::gl!(gSaveBlock1Ptr)).mail[i].itemId == ITEM_NONE {
+                temp = (*crate::gl!(gSaveBlock1Ptr)).mail[i];
+                (*crate::gl!(gSaveBlock1Ptr)).mail[i] = (*crate::gl!(gSaveBlock1Ptr)).mail[j];
+                (*crate::gl!(gSaveBlock1Ptr)).mail[j] = temp;
             }
         }
     }
@@ -640,24 +648,26 @@ unsafe fn Mailbox_DrawMailboxMenu(taskId: u8) {
     task_set(
         taskId,
         tListTaskId,
-        MailboxMenu_CreateList(&raw mut gPlayerPCItemPageInfo) as i16,
+        MailboxMenu_CreateList(crate::gl!(&raw gPlayerPCItemPageInfo)) as i16,
     );
-    MailboxMenu_AddScrollArrows(&raw mut gPlayerPCItemPageInfo);
+    MailboxMenu_AddScrollArrows(crate::gl!(&raw gPlayerPCItemPageInfo));
 }
 pub(crate) unsafe fn Mailbox_ProcessInput(taskId: u8) {
     let data: *mut u16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut u16;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let inputOptionId: i32 = ListMenu_ProcessInput(*data.at(5) as u8);
         ListMenuGetScrollAndRow(
             *data.at(5) as u8,
-            &raw mut gPlayerPCItemPageInfo.itemsAbove,
-            &raw mut gPlayerPCItemPageInfo.cursorPos,
+            crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+            crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
         );
         match inputOptionId {
             LIST_NOTHING_CHOSEN => {}
             LIST_CANCEL => {
                 PlaySE(SE_SELECT);
-                RemoveScrollIndicatorArrowPair(gPlayerPCItemPageInfo.scrollIndicatorTaskId);
+                RemoveScrollIndicatorArrowPair(crate::gl!(
+                    gPlayerPCItemPageInfo.scrollIndicatorTaskId
+                ));
                 Mailbox_ReturnToPlayerPC(taskId);
             }
             _ => {
@@ -666,11 +676,13 @@ pub(crate) unsafe fn Mailbox_ProcessInput(taskId: u8) {
                 MailboxMenu_RemoveWindow(MAILBOXWIN_LIST);
                 DestroyListMenuTask(
                     *data.at(5) as u8,
-                    &raw mut gPlayerPCItemPageInfo.itemsAbove,
-                    &raw mut gPlayerPCItemPageInfo.cursorPos,
+                    crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+                    crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
                 );
                 ScheduleBgCopyTilemapToVram(0);
-                RemoveScrollIndicatorArrowPair(gPlayerPCItemPageInfo.scrollIndicatorTaskId);
+                RemoveScrollIndicatorArrowPair(crate::gl!(
+                    gPlayerPCItemPageInfo.scrollIndicatorTaskId
+                ));
                 task_set_func(taskId, Some(Mailbox_PrintWhatToDoWithPlayerMailText));
             }
         }
@@ -679,9 +691,9 @@ pub(crate) unsafe fn Mailbox_ProcessInput(taskId: u8) {
 pub(crate) unsafe fn Mailbox_PrintWhatToDoWithPlayerMailText(taskId: u8) {
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        (*gSaveBlock1Ptr).mail[gPlayerPCItemPageInfo.itemsAbove as i32
+        (*crate::gl!(gSaveBlock1Ptr)).mail[crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as i32
             + PARTY_SIZE
-            + gPlayerPCItemPageInfo.cursorPos as i32]
+            + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32]
             .playerName
             .as_mut_ptr(),
     );
@@ -736,13 +748,14 @@ pub(crate) unsafe fn Mailbox_DoMailRead(taskId: u8) {
     task_set_func(taskId, Some(Mailbox_FadeAndReadMail));
 }
 pub(crate) unsafe fn Mailbox_FadeAndReadMail(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         MailboxMenu_Free();
         CleanupOverworldWindowsAndTilemaps();
         ReadMail(
-            &raw mut (*gSaveBlock1Ptr).mail[gPlayerPCItemPageInfo.itemsAbove as i32
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).mail[crate::gl!(gPlayerPCItemPageInfo.itemsAbove)
+                as i32
                 + PARTY_SIZE
-                + gPlayerPCItemPageInfo.cursorPos as i32],
+                + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32],
             Some(Mailbox_ReturnToFieldFromReadMail),
             TRUE,
         );
@@ -750,13 +763,13 @@ pub(crate) unsafe fn Mailbox_FadeAndReadMail(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Mailbox_ReturnToFieldFromReadMail() {
-    gFieldCallback = Some(Mailbox_ReshowAfterMail);
+    crate::gl!(gFieldCallback = Some(Mailbox_ReshowAfterMail));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 pub(crate) unsafe fn Mailbox_ReshowAfterMail() {
     LoadMessageBoxAndBorderGfx();
     let taskId: u8 = CreateTask(Some(Mailbox_HandleReturnToProcessInput), 0);
-    if MailboxMenu_Alloc(gPlayerPCItemPageInfo.count) == TRUE {
+    if MailboxMenu_Alloc(crate::gl!(gPlayerPCItemPageInfo.count)) == TRUE {
         Mailbox_DrawMailboxMenu(taskId);
     } else {
         DestroyTask(taskId);
@@ -804,9 +817,11 @@ pub(crate) unsafe fn Mailbox_HandleConfirmMoveToBag(taskId: u8) {
     }
 }
 unsafe fn Mailbox_DoMailMoveToBag(taskId: u8) {
-    let mail: *mut Mail = &raw mut (*gSaveBlock1Ptr).mail[gPlayerPCItemPageInfo.itemsAbove as i32
-        + PARTY_SIZE
-        + gPlayerPCItemPageInfo.cursorPos as i32];
+    let mail: *mut Mail =
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mail[crate::gl!(gPlayerPCItemPageInfo.itemsAbove)
+            as i32
+            + PARTY_SIZE
+            + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32];
     if AddBagItem((*mail).itemId, 1) == 0 {
         DisplayItemMessageOnField(
             taskId,
@@ -826,12 +841,13 @@ unsafe fn Mailbox_DoMailMoveToBag(taskId: u8) {
         );
         ClearMail(mail);
         Mailbox_CompactMailList();
-        gPlayerPCItemPageInfo.count -= 1;
-        if (gPlayerPCItemPageInfo.count as i32)
-            < gPlayerPCItemPageInfo.pageItems as i32 + gPlayerPCItemPageInfo.itemsAbove as i32
-            && gPlayerPCItemPageInfo.itemsAbove != 0
+        crate::gl!(gPlayerPCItemPageInfo.count -= 1);
+        if (crate::gl!(gPlayerPCItemPageInfo.count) as i32)
+            < crate::gl!(gPlayerPCItemPageInfo.pageItems) as i32
+                + crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as i32
+            && crate::gl!(gPlayerPCItemPageInfo.itemsAbove) != 0
         {
-            gPlayerPCItemPageInfo.itemsAbove -= 1;
+            crate::gl!(gPlayerPCItemPageInfo.itemsAbove -= 1);
         }
         SetPlayerPCListCount(taskId);
     }
@@ -848,7 +864,7 @@ pub(crate) unsafe fn Mailbox_Give(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Mailbox_DoGiveMailPokeMenu(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         MailboxMenu_Free();
         CleanupOverworldWindowsAndTilemaps();
         ChooseMonToGiveMailFromMailbox();
@@ -856,24 +872,25 @@ pub(crate) unsafe fn Mailbox_DoGiveMailPokeMenu(taskId: u8) {
     }
 }
 pub unsafe fn Mailbox_ReturnToMailListAfterDeposit() {
-    gFieldCallback = Some(Mailbox_UpdateMailListAfterDeposit);
+    crate::gl!(gFieldCallback = Some(Mailbox_UpdateMailListAfterDeposit));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 pub(crate) unsafe fn Mailbox_UpdateMailListAfterDeposit() {
     let taskId: u8 = CreateTask(Some(Mailbox_HandleReturnToProcessInput), 0);
-    let prevCount: u8 = gPlayerPCItemPageInfo.count;
-    gPlayerPCItemPageInfo.count = GetMailboxMailCount();
+    let prevCount: u8 = crate::gl!(gPlayerPCItemPageInfo.count);
+    crate::gl!(gPlayerPCItemPageInfo.count = GetMailboxMailCount());
     Mailbox_CompactMailList();
-    if prevCount != gPlayerPCItemPageInfo.count
-        && (gPlayerPCItemPageInfo.count as i32)
-            < gPlayerPCItemPageInfo.pageItems as i32 + gPlayerPCItemPageInfo.itemsAbove as i32
-        && gPlayerPCItemPageInfo.itemsAbove != 0
+    if prevCount != crate::gl!(gPlayerPCItemPageInfo.count)
+        && (crate::gl!(gPlayerPCItemPageInfo.count) as i32)
+            < crate::gl!(gPlayerPCItemPageInfo.pageItems) as i32
+                + crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as i32
+        && crate::gl!(gPlayerPCItemPageInfo.itemsAbove) != 0
     {
-        gPlayerPCItemPageInfo.itemsAbove -= 1;
+        crate::gl!(gPlayerPCItemPageInfo.itemsAbove -= 1);
     }
     SetPlayerPCListCount(taskId);
     LoadMessageBoxAndBorderGfx();
-    if MailboxMenu_Alloc(gPlayerPCItemPageInfo.count) == TRUE {
+    if MailboxMenu_Alloc(crate::gl!(gPlayerPCItemPageInfo.count)) == TRUE {
         Mailbox_DrawMailboxMenu(taskId);
     } else {
         DestroyTask(taskId);
@@ -897,23 +914,23 @@ pub(crate) unsafe fn Mailbox_Cancel(taskId: u8) {
     task_set_func(taskId, Some(Mailbox_ProcessInput));
 }
 unsafe fn ItemStorage_Init() {
-    sItemStorageMenu = AllocZeroed(1648) as *mut ItemStorageMenu;
+    crate::gl!(sItemStorageMenu = AllocZeroed(1648) as *mut ItemStorageMenu);
     memset(
-        (*sItemStorageMenu).windowIds.as_mut_ptr(),
+        (*crate::gl!(sItemStorageMenu)).windowIds.as_mut_ptr(),
         WINDOW_NONE as i32,
         ITEMPC_WIN_COUNT,
     );
-    (*sItemStorageMenu).toSwapPos = NOT_SWAPPING;
-    (*sItemStorageMenu).spriteId = SPRITE_NONE;
+    (*crate::gl!(sItemStorageMenu)).toSwapPos = NOT_SWAPPING;
+    (*crate::gl!(sItemStorageMenu)).spriteId = SPRITE_NONE;
 }
 unsafe fn ItemStorage_Free() {
     for i in 0..ITEMPC_WIN_COUNT {
         ItemStorage_RemoveWindow(i as u8);
     }
-    Free(sItemStorageMenu as *mut c_void);
+    Free(crate::gl!(sItemStorageMenu) as *mut c_void);
 }
 unsafe fn ItemStorage_AddWindow(i: u8) -> u8 {
-    let windowIdLoc: *mut u8 = &raw mut (*sItemStorageMenu).windowIds[i];
+    let windowIdLoc: *mut u8 = &raw mut (*crate::gl!(sItemStorageMenu)).windowIds[i];
     if *windowIdLoc == WINDOW_NONE {
         *windowIdLoc = AddWindow((&raw const sWindowTemplates_ItemStorage[i]).cast_mut()) as u8;
         DrawStdFrameWithCustomTileAndPalette(*windowIdLoc, FALSE, 0x214, 0xE);
@@ -922,7 +939,7 @@ unsafe fn ItemStorage_AddWindow(i: u8) -> u8 {
     *windowIdLoc
 }
 unsafe fn ItemStorage_RemoveWindow(i: u8) {
-    let windowIdLoc: *mut u8 = &raw mut (*sItemStorageMenu).windowIds[i];
+    let windowIdLoc: *mut u8 = &raw mut (*crate::gl!(sItemStorageMenu)).windowIds[i];
     if *windowIdLoc != WINDOW_NONE {
         ClearStdWindowAndFrameToTransparent(*windowIdLoc, FALSE);
         ClearWindowTilemap(*windowIdLoc);
@@ -933,28 +950,36 @@ unsafe fn ItemStorage_RemoveWindow(i: u8) {
 }
 pub unsafe fn ItemStorage_RefreshListMenu() {
     let mut i: u16 = 0;
-    while (i as i32) < gPlayerPCItemPageInfo.count as i32 - 1 {
+    while (i as i32) < crate::gl!(gPlayerPCItemPageInfo.count) as i32 - 1 {
         CopyItemName_PlayerPC(
-            &raw mut (*sItemStorageMenu).itemNames[i][0],
-            (*gSaveBlock1Ptr).pcItems[i].itemId,
+            &raw mut (*crate::gl!(sItemStorageMenu)).itemNames[i][0],
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[i].itemId,
         );
-        (*sItemStorageMenu).listItems[i].name = &raw mut (*sItemStorageMenu).itemNames[i][0];
-        (*sItemStorageMenu).listItems[i].id = i as i32;
+        (*crate::gl!(sItemStorageMenu)).listItems[i].name =
+            &raw mut (*crate::gl!(sItemStorageMenu)).itemNames[i][0];
+        (*crate::gl!(sItemStorageMenu)).listItems[i].id = i as i32;
         i += 1;
     }
     StringCopy(
-        &raw mut (*sItemStorageMenu).itemNames[i][0],
+        &raw mut (*crate::gl!(sItemStorageMenu)).itemNames[i][0],
         (*(&raw const crate::data::strings::gText_Cancel2).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*sItemStorageMenu).listItems[i].name = &raw mut (*sItemStorageMenu).itemNames[i][0];
-    (*sItemStorageMenu).listItems[i].id = LIST_CANCEL;
-    gMultiuseListMenuTemplate = *sListMenuTemplate_ItemStorage;
-    gMultiuseListMenuTemplate.windowId = ItemStorage_AddWindow(ITEMPC_WIN_LIST);
-    gMultiuseListMenuTemplate.totalItems = gPlayerPCItemPageInfo.count as u16;
-    gMultiuseListMenuTemplate.items = (*sItemStorageMenu).listItems.as_mut_ptr();
-    gMultiuseListMenuTemplate.maxShowed = gPlayerPCItemPageInfo.pageItems as u16;
+    (*crate::gl!(sItemStorageMenu)).listItems[i].name =
+        &raw mut (*crate::gl!(sItemStorageMenu)).itemNames[i][0];
+    (*crate::gl!(sItemStorageMenu)).listItems[i].id = LIST_CANCEL;
+    crate::gl!(gMultiuseListMenuTemplate = *sListMenuTemplate_ItemStorage);
+    crate::gl!(gMultiuseListMenuTemplate.windowId = ItemStorage_AddWindow(ITEMPC_WIN_LIST));
+    crate::gl!(
+        gMultiuseListMenuTemplate.totalItems = crate::gl!(gPlayerPCItemPageInfo.count) as u16
+    );
+    crate::gl!(
+        gMultiuseListMenuTemplate.items = (*crate::gl!(sItemStorageMenu)).listItems.as_mut_ptr()
+    );
+    crate::gl!(
+        gMultiuseListMenuTemplate.maxShowed = crate::gl!(gPlayerPCItemPageInfo.pageItems) as u16
+    );
 }
 pub unsafe fn CopyItemName_PlayerPC(string: *mut u8, itemId: u16) {
     CopyItemName(itemId, string);
@@ -963,10 +988,10 @@ pub(crate) unsafe fn ItemStorage_MoveCursor(id: i32, onInit: u8, list: *mut List
     if onInit != TRUE {
         PlaySE(SE_SELECT);
     }
-    if (*sItemStorageMenu).toSwapPos == NOT_SWAPPING {
+    if (*crate::gl!(sItemStorageMenu)).toSwapPos == NOT_SWAPPING {
         ItemStorage_EraseItemIcon();
         if id != LIST_CANCEL {
-            ItemStorage_DrawItemIcon((*gSaveBlock1Ptr).pcItems[id].itemId);
+            ItemStorage_DrawItemIcon((*crate::gl!(gSaveBlock1Ptr)).pcItems[id].itemId);
         } else {
             ItemStorage_DrawItemIcon(ITEM_LIST_END);
         }
@@ -975,8 +1000,8 @@ pub(crate) unsafe fn ItemStorage_MoveCursor(id: i32, onInit: u8, list: *mut List
 }
 pub(crate) unsafe fn ItemStorage_PrintMenuItem(windowId: u8, id: u32, yOffset: u8) {
     if id != LIST_CANCEL as u32 {
-        if (*sItemStorageMenu).toSwapPos != NOT_SWAPPING {
-            if (*sItemStorageMenu).toSwapPos == id as u8 {
+        if (*crate::gl!(sItemStorageMenu)).toSwapPos != NOT_SWAPPING {
+            if (*crate::gl!(sItemStorageMenu)).toSwapPos == id as u8 {
                 ItemStorage_DrawSwapArrow(yOffset, 0, TEXT_SKIP_DRAW);
             } else {
                 ItemStorage_DrawSwapArrow(yOffset, 0xFF, 0xFF);
@@ -984,7 +1009,7 @@ pub(crate) unsafe fn ItemStorage_PrintMenuItem(windowId: u8, id: u32, yOffset: u
         }
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
-            (*gSaveBlock1Ptr).pcItems[id].quantity as i32,
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[id].quantity as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             3,
         );
@@ -1007,9 +1032,9 @@ pub(crate) unsafe fn ItemStorage_PrintMenuItem(windowId: u8, id: u32, yOffset: u
 }
 unsafe fn ItemStorage_PrintDescription(id: i32) {
     let mut description: *mut u8 = null_mut();
-    let windowId: u8 = (*sItemStorageMenu).windowIds[1];
+    let windowId: u8 = (*crate::gl!(sItemStorageMenu)).windowIds[1];
     if id != LIST_CANCEL {
-        description = GetItemDescription((*gSaveBlock1Ptr).pcItems[id].itemId);
+        description = GetItemDescription((*crate::gl!(gSaveBlock1Ptr)).pcItems[id].itemId);
     } else {
         description = ItemStorage_GetMessage(MSG_GO_BACK_TO_PREV);
     }
@@ -1017,23 +1042,26 @@ unsafe fn ItemStorage_PrintDescription(id: i32) {
     AddTextPrinterParameterized(windowId, FONT_NORMAL, description, 0, 1, 0, None);
 }
 unsafe fn ItemStorage_AddScrollIndicator() {
-    if gPlayerPCItemPageInfo.scrollIndicatorTaskId == TASK_NONE {
-        gPlayerPCItemPageInfo.scrollIndicatorTaskId = AddScrollIndicatorArrowPairParameterized(
-            SCROLL_ARROW_UP,
-            176,
-            12,
-            148,
-            gPlayerPCItemPageInfo.count as i32 - gPlayerPCItemPageInfo.pageItems as i32,
-            TAG_SCROLL_ARROW,
-            TAG_SCROLL_ARROW,
-            &raw mut gPlayerPCItemPageInfo.itemsAbove,
+    if crate::gl!(gPlayerPCItemPageInfo.scrollIndicatorTaskId) == TASK_NONE {
+        crate::gl!(
+            gPlayerPCItemPageInfo.scrollIndicatorTaskId = AddScrollIndicatorArrowPairParameterized(
+                SCROLL_ARROW_UP,
+                176,
+                12,
+                148,
+                crate::gl!(gPlayerPCItemPageInfo.count) as i32
+                    - crate::gl!(gPlayerPCItemPageInfo.pageItems) as i32,
+                TAG_SCROLL_ARROW,
+                TAG_SCROLL_ARROW,
+                crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+            )
         );
     }
 }
 unsafe fn ItemStorage_RemoveScrollIndicator() {
-    if gPlayerPCItemPageInfo.scrollIndicatorTaskId != TASK_NONE {
-        RemoveScrollIndicatorArrowPair(gPlayerPCItemPageInfo.scrollIndicatorTaskId);
-        gPlayerPCItemPageInfo.scrollIndicatorTaskId = TASK_NONE;
+    if crate::gl!(gPlayerPCItemPageInfo.scrollIndicatorTaskId) != TASK_NONE {
+        RemoveScrollIndicatorArrowPair(crate::gl!(gPlayerPCItemPageInfo.scrollIndicatorTaskId));
+        crate::gl!(gPlayerPCItemPageInfo.scrollIndicatorTaskId = TASK_NONE);
     }
 }
 unsafe fn ItemStorage_SetSwapArrow(listTaskId: u8, b: u8, speed: u8) {
@@ -1044,7 +1072,7 @@ unsafe fn ItemStorage_SetSwapArrow(listTaskId: u8, b: u8, speed: u8) {
     );
 }
 unsafe fn ItemStorage_DrawSwapArrow(y: u8, b: u8, speed: u8) {
-    let windowId: u8 = (*sItemStorageMenu).windowIds[0];
+    let windowId: u8 = (*crate::gl!(sItemStorageMenu)).windowIds[0];
     if b == 0xFF {
         FillWindowPixelRect(
             windowId,
@@ -1072,44 +1100,47 @@ unsafe fn ItemStorage_DrawSwapArrow(y: u8, b: u8, speed: u8) {
 }
 unsafe fn ItemStorage_DrawItemIcon(itemId: u16) {
     let mut spriteId: u8 = 0;
-    let spriteIdLoc: *mut u8 = &raw mut (*sItemStorageMenu).spriteId;
+    let spriteIdLoc: *mut u8 = &raw mut (*crate::gl!(sItemStorageMenu)).spriteId;
     if *spriteIdLoc == SPRITE_NONE {
         FreeSpriteTilesByTag(TAG_ITEM_ICON);
         FreeSpritePaletteByTag(TAG_ITEM_ICON);
         spriteId = AddItemIconSprite(TAG_ITEM_ICON, TAG_ITEM_ICON, itemId);
         if spriteId != MAX_SPRITES {
             *spriteIdLoc = spriteId;
-            gSprites[spriteId].oam.set_priority(0);
-            gSprites[spriteId].x2 = 24;
-            gSprites[spriteId].y2 = 80;
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
+            crate::gl!(gSprites[spriteId].x2 = 24);
+            crate::gl!(gSprites[spriteId].y2 = 80);
         }
     }
 }
 unsafe fn ItemStorage_EraseItemIcon() {
-    let spriteIdLoc: *mut u8 = &raw mut (*sItemStorageMenu).spriteId;
+    let spriteIdLoc: *mut u8 = &raw mut (*crate::gl!(sItemStorageMenu)).spriteId;
     if *spriteIdLoc != SPRITE_NONE {
         FreeSpriteTilesByTag(TAG_ITEM_ICON);
         FreeSpritePaletteByTag(TAG_ITEM_ICON);
-        DestroySprite(&raw mut gSprites[*spriteIdLoc]);
+        DestroySprite({
+            let gl_i0 = *spriteIdLoc;
+            crate::gl!(&raw gSprites[gl_i0])
+        });
         *spriteIdLoc = SPRITE_NONE;
     }
 }
 unsafe fn ItemStorage_CompactList() {
     CompactPCItems();
     SetItemListPerPageCount(
-        (*gSaveBlock1Ptr).pcItems.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).pcItems.as_mut_ptr(),
         PC_ITEMS_COUNT,
-        &raw mut gPlayerPCItemPageInfo.pageItems,
-        &raw mut gPlayerPCItemPageInfo.count,
+        crate::gl!(&raw gPlayerPCItemPageInfo.pageItems),
+        crate::gl!(&raw gPlayerPCItemPageInfo.count),
         8,
     );
 }
 unsafe fn ItemStorage_CompactCursor() {
     SetCursorWithinListBounds(
-        &raw mut gPlayerPCItemPageInfo.itemsAbove,
-        &raw mut gPlayerPCItemPageInfo.cursorPos,
-        gPlayerPCItemPageInfo.pageItems,
-        gPlayerPCItemPageInfo.count,
+        crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+        crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
+        crate::gl!(gPlayerPCItemPageInfo.pageItems),
+        crate::gl!(gPlayerPCItemPageInfo.count),
     );
 }
 pub(crate) unsafe fn ItemStorage_CreateListMenu(taskId: u8) {
@@ -1132,7 +1163,7 @@ pub(crate) unsafe fn ItemStorage_CreateListMenu(taskId: u8) {
     }
     let x: u32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 104) as u32;
     AddTextPrinterParameterized(
-        (*sItemStorageMenu).windowIds[3],
+        (*crate::gl!(sItemStorageMenu)).windowIds[3],
         FONT_NORMAL,
         text,
         x as u8,
@@ -1140,14 +1171,14 @@ pub(crate) unsafe fn ItemStorage_CreateListMenu(taskId: u8) {
         0,
         None,
     );
-    CopyWindowToVram((*sItemStorageMenu).windowIds[2], COPYWIN_GFX);
+    CopyWindowToVram((*crate::gl!(sItemStorageMenu)).windowIds[2], COPYWIN_GFX);
     ItemStorage_CompactList();
     ItemStorage_CompactCursor();
     ItemStorage_RefreshListMenu();
     *data.at(5) = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
-        gPlayerPCItemPageInfo.itemsAbove,
-        gPlayerPCItemPageInfo.cursorPos,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
+        crate::gl!(gPlayerPCItemPageInfo.itemsAbove),
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos),
     ) as i16;
     ItemStorage_AddScrollIndicator();
     ScheduleBgCopyTilemapToVram(0);
@@ -1217,7 +1248,7 @@ unsafe fn ItemStorage_GetMessage(itemId: u16) -> *mut u8 {
     string
 }
 unsafe fn ItemStorage_PrintMessage(string: *mut u8) {
-    let windowId: u8 = (*sItemStorageMenu).windowIds[1];
+    let windowId: u8 = (*crate::gl!(sItemStorageMenu)).windowIds[1];
     FillWindowPixelBuffer(windowId, 17);
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), string);
     AddTextPrinterParameterized(
@@ -1232,14 +1263,15 @@ unsafe fn ItemStorage_PrintMessage(string: *mut u8) {
 }
 pub(crate) unsafe fn ItemStorage_ProcessInput(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
         ListMenuGetScrollAndRow(
             *data.at(5) as u8,
-            &raw mut gPlayerPCItemPageInfo.itemsAbove,
-            &raw mut gPlayerPCItemPageInfo.cursorPos,
+            crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+            crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
         );
-        if gPlayerPCItemPageInfo.itemsAbove as i32 + gPlayerPCItemPageInfo.cursorPos as i32
-            != gPlayerPCItemPageInfo.count as i32 - 1
+        if crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as i32
+            + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32
+            != crate::gl!(gPlayerPCItemPageInfo.count) as i32 - 1
         {
             PlaySE(SE_SELECT);
             ItemStorage_StartItemSwap(taskId);
@@ -1248,8 +1280,8 @@ pub(crate) unsafe fn ItemStorage_ProcessInput(taskId: u8) {
         let id: i32 = ListMenu_ProcessInput(*data.at(5) as u8);
         ListMenuGetScrollAndRow(
             *data.at(5) as u8,
-            &raw mut gPlayerPCItemPageInfo.itemsAbove,
-            &raw mut gPlayerPCItemPageInfo.cursorPos,
+            crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+            crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
         );
         match id {
             LIST_NOTHING_CHOSEN => {}
@@ -1282,7 +1314,9 @@ unsafe fn ItemStorage_ExitItemList(taskId: u8) {
     ItemStorage_RemoveScrollIndicator();
     DestroyListMenuTask(*data.at(5) as u8, null_mut(), null_mut());
     DestroySwapLineSprites(
-        (*sItemStorageMenu).swapLineSpriteIds.as_mut_ptr(),
+        (*crate::gl!(sItemStorageMenu))
+            .swapLineSpriteIds
+            .as_mut_ptr(),
         SWAP_LINE_LENGTH,
     );
     ItemStorage_Free();
@@ -1291,12 +1325,12 @@ unsafe fn ItemStorage_ExitItemList(taskId: u8) {
 unsafe fn ItemStorage_StartItemSwap(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     ListMenuSetTemplateField(*data.at(5) as u8, LISTFIELD_CURSORKIND, CURSOR_INVISIBLE);
-    (*sItemStorageMenu).toSwapPos =
-        gPlayerPCItemPageInfo.itemsAbove as u8 + gPlayerPCItemPageInfo.cursorPos as u8;
+    (*crate::gl!(sItemStorageMenu)).toSwapPos = crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as u8
+        + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as u8;
     ItemStorage_SetSwapArrow(*data.at(5) as u8, 0, 0);
-    ItemStorage_UpdateSwapLinePos((*sItemStorageMenu).toSwapPos);
+    ItemStorage_UpdateSwapLinePos((*crate::gl!(sItemStorageMenu)).toSwapPos);
     CopyItemName(
-        (*gSaveBlock1Ptr).pcItems[(*sItemStorageMenu).toSwapPos].itemId,
+        (*crate::gl!(gSaveBlock1Ptr)).pcItems[(*crate::gl!(sItemStorageMenu)).toSwapPos].itemId,
         gStringVar1.as_mut_ptr(),
     );
     ItemStorage_PrintMessage(ItemStorage_GetMessage(MSG_SWITCH_WHICH_ITEM));
@@ -1305,11 +1339,11 @@ unsafe fn ItemStorage_StartItemSwap(taskId: u8) {
 pub(crate) unsafe fn ItemStorage_ProcessItemSwapInput(taskId: u8) {
     let mut data: *mut i16 = null_mut();
     data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
         ListMenuGetScrollAndRow(
             *data.at(5) as u8,
-            &raw mut gPlayerPCItemPageInfo.itemsAbove,
-            &raw mut gPlayerPCItemPageInfo.cursorPos,
+            crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+            crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
         );
         ItemStorage_FinishItemSwap(taskId, FALSE);
         return;
@@ -1317,19 +1351,21 @@ pub(crate) unsafe fn ItemStorage_ProcessItemSwapInput(taskId: u8) {
     let id: i32 = ListMenu_ProcessInput(*data.at(5) as u8);
     ListMenuGetScrollAndRow(
         *data.at(5) as u8,
-        &raw mut gPlayerPCItemPageInfo.itemsAbove,
-        &raw mut gPlayerPCItemPageInfo.cursorPos,
+        crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+        crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
     );
     SetSwapLineSpritesInvisibility(
-        (*sItemStorageMenu).swapLineSpriteIds.as_mut_ptr(),
+        (*crate::gl!(sItemStorageMenu))
+            .swapLineSpriteIds
+            .as_mut_ptr(),
         SWAP_LINE_LENGTH,
         FALSE,
     );
-    ItemStorage_UpdateSwapLinePos(gPlayerPCItemPageInfo.cursorPos as u8);
+    ItemStorage_UpdateSwapLinePos(crate::gl!(gPlayerPCItemPageInfo.cursorPos) as u8);
     match id {
         LIST_NOTHING_CHOSEN => {}
         LIST_CANCEL => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 ItemStorage_FinishItemSwap(taskId, FALSE);
             } else {
                 ItemStorage_FinishItemSwap(taskId, TRUE);
@@ -1342,44 +1378,49 @@ pub(crate) unsafe fn ItemStorage_ProcessItemSwapInput(taskId: u8) {
 }
 unsafe fn ItemStorage_FinishItemSwap(taskId: u8, canceled: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let newPos: u16 = gPlayerPCItemPageInfo.itemsAbove + gPlayerPCItemPageInfo.cursorPos;
+    let newPos: u16 =
+        crate::gl!(gPlayerPCItemPageInfo.itemsAbove) + crate::gl!(gPlayerPCItemPageInfo.cursorPos);
     PlaySE(SE_SELECT);
     DestroyListMenuTask(
         *data.at(5) as u8,
-        &raw mut gPlayerPCItemPageInfo.itemsAbove,
-        &raw mut gPlayerPCItemPageInfo.cursorPos,
+        crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+        crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
     );
     if canceled == 0
-        && (*sItemStorageMenu).toSwapPos as u16 != newPos
-        && (*sItemStorageMenu).toSwapPos as i32 != newPos as i32 - 1
+        && (*crate::gl!(sItemStorageMenu)).toSwapPos as u16 != newPos
+        && (*crate::gl!(sItemStorageMenu)).toSwapPos as i32 != newPos as i32 - 1
     {
         MoveItemSlotInList(
-            (*gSaveBlock1Ptr).pcItems.as_mut_ptr(),
-            (*sItemStorageMenu).toSwapPos as u32,
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems.as_mut_ptr(),
+            (*crate::gl!(sItemStorageMenu)).toSwapPos as u32,
             newPos as u32,
         );
         ItemStorage_RefreshListMenu();
     }
-    if ((*sItemStorageMenu).toSwapPos as u16) < newPos {
-        gPlayerPCItemPageInfo.cursorPos -= 1;
+    if ((*crate::gl!(sItemStorageMenu)).toSwapPos as u16) < newPos {
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos -= 1);
     }
     SetSwapLineSpritesInvisibility(
-        (*sItemStorageMenu).swapLineSpriteIds.as_mut_ptr(),
+        (*crate::gl!(sItemStorageMenu))
+            .swapLineSpriteIds
+            .as_mut_ptr(),
         SWAP_LINE_LENGTH,
         TRUE,
     );
-    (*sItemStorageMenu).toSwapPos = NOT_SWAPPING;
+    (*crate::gl!(sItemStorageMenu)).toSwapPos = NOT_SWAPPING;
     *data.at(5) = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
-        gPlayerPCItemPageInfo.itemsAbove,
-        gPlayerPCItemPageInfo.cursorPos,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
+        crate::gl!(gPlayerPCItemPageInfo.itemsAbove),
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos),
     ) as i16;
     ScheduleBgCopyTilemapToVram(0);
     task_set_func(taskId, Some(ItemStorage_ProcessInput));
 }
 unsafe fn ItemStorage_UpdateSwapLinePos(y: u8) {
     UpdateSwapLineSpritesPos(
-        (*sItemStorageMenu).swapLineSpriteIds.as_mut_ptr(),
+        (*crate::gl!(sItemStorageMenu))
+            .swapLineSpriteIds
+            .as_mut_ptr(),
         SWAP_LINE_LENGTH,
         128,
         (y as u16 + 1) * 16,
@@ -1405,26 +1446,27 @@ unsafe fn ItemStorage_PrintItemQuantity(windowId: u8, value: u16, mode: u32, x: 
 }
 unsafe fn ItemStorage_DoItemAction(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let pos: u16 = gPlayerPCItemPageInfo.cursorPos + gPlayerPCItemPageInfo.itemsAbove;
+    let pos: u16 =
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos) + crate::gl!(gPlayerPCItemPageInfo.itemsAbove);
     ItemStorage_RemoveScrollIndicator();
     *data.at(2) = 1;
     if *data.at(3) == 0 {
-        if (*gSaveBlock1Ptr).pcItems[pos].quantity == 1 {
+        if (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].quantity == 1 {
             ItemStorage_DoItemWithdraw(taskId);
             return;
         }
         CopyItemName(
-            (*gSaveBlock1Ptr).pcItems[pos].itemId,
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId,
             gStringVar1.as_mut_ptr(),
         );
         ItemStorage_PrintMessage(ItemStorage_GetMessage(MSG_HOW_MANY_TO_WITHDRAW));
     } else {
-        if (*gSaveBlock1Ptr).pcItems[pos].quantity == 1 {
+        if (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].quantity == 1 {
             ItemStorage_DoItemToss(taskId);
             return;
         }
         CopyItemName(
-            (*gSaveBlock1Ptr).pcItems[pos].itemId,
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId,
             gStringVar1.as_mut_ptr(),
         );
         ItemStorage_PrintMessage(ItemStorage_GetMessage(MSG_HOW_MANY_TO_TOSS));
@@ -1441,9 +1483,12 @@ unsafe fn ItemStorage_DoItemAction(taskId: u8) {
 }
 pub(crate) unsafe fn ItemStorage_HandleQuantityRolling(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let pos: u16 = gPlayerPCItemPageInfo.cursorPos + gPlayerPCItemPageInfo.itemsAbove;
-    if AdjustQuantityAccordingToDPadInput(data.at(2), (*gSaveBlock1Ptr).pcItems[pos].quantity)
-        == TRUE
+    let pos: u16 =
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos) + crate::gl!(gPlayerPCItemPageInfo.itemsAbove);
+    if AdjustQuantityAccordingToDPadInput(
+        data.at(2),
+        (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].quantity,
+    ) == TRUE
     {
         ItemStorage_PrintItemQuantity(
             ItemStorage_AddWindow(ITEMPC_WIN_QUANTITY),
@@ -1454,7 +1499,7 @@ pub(crate) unsafe fn ItemStorage_HandleQuantityRolling(taskId: u8) {
             3,
         );
     } else {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             PlaySE(SE_SELECT);
             ItemStorage_RemoveWindow(ITEMPC_WIN_QUANTITY);
             if *data.at(3) == 0 {
@@ -1462,11 +1507,11 @@ pub(crate) unsafe fn ItemStorage_HandleQuantityRolling(taskId: u8) {
             } else {
                 ItemStorage_DoItemToss(taskId);
             }
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_SELECT);
             ItemStorage_RemoveWindow(ITEMPC_WIN_QUANTITY);
             ItemStorage_PrintMessage(ItemStorage_GetMessage(
-                (*gSaveBlock1Ptr).pcItems[pos].itemId,
+                (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId,
             ));
             ItemStorage_ReturnToListInput(taskId);
         }
@@ -1474,14 +1519,19 @@ pub(crate) unsafe fn ItemStorage_HandleQuantityRolling(taskId: u8) {
 }
 unsafe fn ItemStorage_DoItemWithdraw(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let pos: u16 = gPlayerPCItemPageInfo.cursorPos + gPlayerPCItemPageInfo.itemsAbove;
-    if AddBagItem((*gSaveBlock1Ptr).pcItems[pos].itemId, *data.at(2) as u16) == TRUE {
+    let pos: u16 =
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos) + crate::gl!(gPlayerPCItemPageInfo.itemsAbove);
+    if AddBagItem(
+        (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId,
+        *data.at(2) as u16,
+    ) == TRUE
+    {
         CopyItemName(
-            (*gSaveBlock1Ptr).pcItems[pos].itemId,
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId,
             gStringVar1.as_mut_ptr(),
         );
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             *data.at(2) as i32,
             STR_CONV_MODE_LEFT_ALIGN,
             3,
@@ -1496,14 +1546,15 @@ unsafe fn ItemStorage_DoItemWithdraw(taskId: u8) {
 }
 unsafe fn ItemStorage_DoItemToss(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let pos: u16 = gPlayerPCItemPageInfo.cursorPos + gPlayerPCItemPageInfo.itemsAbove;
-    if GetItemImportance((*gSaveBlock1Ptr).pcItems[pos].itemId) == 0 {
+    let pos: u16 =
+        crate::gl!(gPlayerPCItemPageInfo.cursorPos) + crate::gl!(gPlayerPCItemPageInfo.itemsAbove);
+    if GetItemImportance((*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId) == 0 {
         CopyItemName(
-            (*gSaveBlock1Ptr).pcItems[pos].itemId,
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[pos].itemId,
             gStringVar1.as_mut_ptr(),
         );
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             *data.at(2) as i32,
             STR_CONV_MODE_LEFT_ALIGN,
             3,
@@ -1531,41 +1582,43 @@ pub(crate) unsafe fn ItemStorage_TossItemYes(taskId: u8) {
 }
 pub(crate) unsafe fn ItemStorage_TossItemNo(taskId: u8) {
     ItemStorage_PrintMessage(ItemStorage_GetMessage(
-        (*gSaveBlock1Ptr).pcItems
-            [gPlayerPCItemPageInfo.itemsAbove as i32 + gPlayerPCItemPageInfo.cursorPos as i32]
+        (*crate::gl!(gSaveBlock1Ptr)).pcItems[crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as i32
+            + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32]
             .itemId,
     ));
     ItemStorage_ReturnToListInput(taskId);
 }
 pub(crate) unsafe fn ItemStorage_HandleRemoveItem(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         RemovePCItem(
-            gPlayerPCItemPageInfo.cursorPos as u8 + gPlayerPCItemPageInfo.itemsAbove as u8,
+            crate::gl!(gPlayerPCItemPageInfo.cursorPos) as u8
+                + crate::gl!(gPlayerPCItemPageInfo.itemsAbove) as u8,
             *data.at(2) as u16,
         );
         DestroyListMenuTask(
             *data.at(5) as u8,
-            &raw mut gPlayerPCItemPageInfo.itemsAbove,
-            &raw mut gPlayerPCItemPageInfo.cursorPos,
+            crate::gl!(&raw gPlayerPCItemPageInfo.itemsAbove),
+            crate::gl!(&raw gPlayerPCItemPageInfo.cursorPos),
         );
         ItemStorage_CompactList();
         ItemStorage_CompactCursor();
         ItemStorage_RefreshListMenu();
         *data.at(5) = ListMenuInit(
-            &raw mut gMultiuseListMenuTemplate,
-            gPlayerPCItemPageInfo.itemsAbove,
-            gPlayerPCItemPageInfo.cursorPos,
+            crate::gl!(&raw gMultiuseListMenuTemplate),
+            crate::gl!(gPlayerPCItemPageInfo.itemsAbove),
+            crate::gl!(gPlayerPCItemPageInfo.cursorPos),
         ) as i16;
         ItemStorage_ReturnToListInput(taskId);
     }
 }
 pub(crate) unsafe fn ItemStorage_HandleErrorMessageInput(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         ItemStorage_PrintMessage(ItemStorage_GetMessage(
-            (*gSaveBlock1Ptr).pcItems
-                [gPlayerPCItemPageInfo.itemsAbove as i32 + gPlayerPCItemPageInfo.cursorPos as i32]
+            (*crate::gl!(gSaveBlock1Ptr)).pcItems[crate::gl!(gPlayerPCItemPageInfo.itemsAbove)
+                as i32
+                + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32]
                 .itemId,
         ));
         ItemStorage_ReturnToListInput(taskId);

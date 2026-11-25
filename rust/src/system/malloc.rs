@@ -30,10 +30,11 @@ const CPU_SET_32BIT: u32 = 0x0400_0000;
 pub struct Heap(pub [u8; HEAP_SIZE]);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gHeap: Heap = Heap([0; HEAP_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gHeap: crate::global::Global<Heap> = crate::global::Global::new(Heap([0; HEAP_SIZE]));
 
-static mut HEAP_START: *mut u8 = core::ptr::null_mut();
+static HEAP_START: crate::global::Global<*mut u8> =
+    crate::global::Global::new(core::ptr::null_mut());
 static HEAP_BYTES: crate::global::Global<u32> = crate::global::Global::new(0);
 
 #[inline]
@@ -250,34 +251,34 @@ pub unsafe fn CheckMemBlockInternal(heap_start: *mut u8, pointer: *mut u8) -> u3
 
 #[unsafe(no_mangle)]
 pub unsafe fn InitHeap(heap_start: *mut u8, heap_size: u32) {
-    unsafe { (&raw mut HEAP_START).write(heap_start) };
+    unsafe { (crate::gl!(&raw HEAP_START)).write(heap_start) };
     unsafe { (HEAP_BYTES.as_ptr()).write(heap_size) };
     unsafe { PutFirstMemBlockHeader(heap_start, heap_size) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn Alloc(requested: u32) -> *mut u8 {
-    unsafe { AllocInternal((&raw const HEAP_START).read(), requested) }
+    unsafe { AllocInternal((crate::gl!(&raw HEAP_START).cast_const()).read(), requested) }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn AllocZeroed(requested: u32) -> *mut u8 {
-    unsafe { AllocZeroedInternal((&raw const HEAP_START).read(), requested) }
+    unsafe { AllocZeroedInternal((crate::gl!(&raw HEAP_START).cast_const()).read(), requested) }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn Free(pointer: *mut u8) {
-    unsafe { FreeInternal((&raw const HEAP_START).read(), pointer) };
+    unsafe { FreeInternal((crate::gl!(&raw HEAP_START).cast_const()).read(), pointer) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn CheckMemBlock(pointer: *mut u8) -> u32 {
-    unsafe { CheckMemBlockInternal((&raw const HEAP_START).read(), pointer) }
+    unsafe { CheckMemBlockInternal((crate::gl!(&raw HEAP_START).cast_const()).read(), pointer) }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn CheckHeap() -> u32 {
-    let head = unsafe { (&raw const HEAP_START).read() };
+    let head = unsafe { (crate::gl!(&raw HEAP_START).cast_const()).read() };
     let mut pos = head;
 
     loop {

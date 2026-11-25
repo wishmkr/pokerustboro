@@ -85,7 +85,11 @@ unsafe fn CopyItemName(a0: u16, a1: *mut u8) {
 
 #[inline]
 unsafe fn sb2() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() }
+    unsafe {
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    }
 }
 
 #[inline]
@@ -155,11 +159,15 @@ unsafe fn init_palace_challenge() {
         unsafe { streak(SB2_PALACE_WIN_STREAKS, battle_mode, lvl_mode).write(0) };
     }
 
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
+    let sb1 = unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     let map_group = unsafe { sb1.add(SB1_LOCATION_MAP_GROUP).read() } as i8;
     let map_num = unsafe { sb1.add(SB1_LOCATION_MAP_NUM).read() } as i8;
     unsafe { SetDynamicWarp(0, map_group, map_num, WARP_ID_NONE) };
-    unsafe { (&raw mut gTrainerBattleOpponent_A).write(0) };
+    unsafe { (gTrainerBattleOpponent_A.as_ptr()).write(0) };
 }
 
 unsafe fn get_palace_data() {
@@ -218,15 +226,17 @@ unsafe fn get_palace_comment_id() {
 unsafe fn set_palace_opponent() {
     let roll = u32::from(Random()) % 255;
     let opponent = (5 * roll / 64) as u16;
-    unsafe { (&raw mut gTrainerBattleOpponent_A).write(opponent) };
+    unsafe { (gTrainerBattleOpponent_A.as_ptr()).write(opponent) };
     unsafe { SetBattleFacilityTrainerGfxId(opponent, 0) };
 }
 
 unsafe fn buffer_opponent_intro_speech() {
-    let opponent = unsafe { (&raw const gTrainerBattleOpponent_A).read() };
+    let opponent = unsafe { (gTrainerBattleOpponent_A.as_ptr().cast_const()).read() };
     if opponent < FRONTIER_TRAINERS_COUNT {
         let trainers = unsafe {
-            (&raw const (*(&raw const crate::battle_tower::gFacilityTrainers).cast::<*const u8>()))
+            (&raw const (*(crate::gl!(&raw @at crate::battle_tower::gFacilityTrainers;)
+                .cast_const())
+            .cast::<*const u8>()))
                 .read()
         };
         let trainer = unsafe { trainers.add(usize::from(opponent) * FRONTIER_TRAINER_SIZE) };

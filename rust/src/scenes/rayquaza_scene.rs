@@ -80,7 +80,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -94,14 +94,14 @@ unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -113,7 +113,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `ScanlineEffect_SetParams` with this module's view of its types.
 #[inline]
-unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
     unsafe {
         crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
     }
@@ -296,8 +296,9 @@ static sTakesFlight_SmokeCoords: Table<CArray<CArray<i8, 2>, 10>> =
 static sTasksForAnimations: Table<CArray<Option<unsafe fn(u8)>, 7>> =
     Table((&raw const crate::data::rayquaza_scene::sTasksForAnimations).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRayScene: *mut RayquazaScene = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRayScene: crate::global::Global<*mut RayquazaScene> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -320,10 +321,10 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 pub unsafe fn DoRayquazaScene(animId: u8, endEarly: u8, exitCallback: Option<unsafe fn()>) {
-    sRayScene = AllocZeroed(8216) as *mut RayquazaScene;
-    (*sRayScene).animId = animId;
-    (*sRayScene).exitCallback = exitCallback;
-    (*sRayScene).endEarly = endEarly;
+    crate::gl!(sRayScene = AllocZeroed(8216) as *mut RayquazaScene);
+    (*crate::gl!(sRayScene)).animId = animId;
+    (*crate::gl!(sRayScene)).exitCallback = exitCallback;
+    (*crate::gl!(sRayScene)).endEarly = endEarly;
     SetMainCallback2(Some(CB2_InitRayquazaScene));
 }
 pub(crate) unsafe fn CB2_InitRayquazaScene() {
@@ -335,7 +336,7 @@ pub(crate) unsafe fn CB2_InitRayquazaScene() {
     ResetSpriteData();
     ResetTasks();
     FillPalette(0, 240, 32);
-    CreateTask(sTasksForAnimations[(*sRayScene).animId], 0);
+    CreateTask(sTasksForAnimations[(*crate::gl!(sRayScene)).animId], 0);
     SetMainCallback2(Some(CB2_RayquazaScene));
 }
 pub(crate) unsafe fn CB2_RayquazaScene() {
@@ -351,22 +352,22 @@ pub(crate) unsafe fn VBlankCB_RayquazaScene() {
     TransferPlttBuffer();
 }
 pub(crate) unsafe fn Task_EndAfterFadeScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         ResetSpriteData();
         FreeAllSpritePalettes();
-        SetMainCallback2((*sRayScene).exitCallback);
-        Free(sRayScene as *mut c_void);
+        SetMainCallback2((*crate::gl!(sRayScene)).exitCallback);
+        Free(crate::gl!(sRayScene) as *mut c_void);
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn Task_SetNextAnim(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        if (*sRayScene).endEarly == TRUE {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if (*crate::gl!(sRayScene)).endEarly == TRUE {
             task_set_func(taskId, Some(Task_EndAfterFadeScreen));
         } else {
-            (*sRayScene).animId += 1;
-            (*sRayScene).unk = 0;
-            task_set_func(taskId, sTasksForAnimations[(*sRayScene).animId]);
+            (*crate::gl!(sRayScene)).animId += 1;
+            (*crate::gl!(sRayScene)).unk = 0;
+            task_set_func(taskId, sTasksForAnimations[(*crate::gl!(sRayScene)).animId]);
         }
     }
 }
@@ -375,8 +376,8 @@ unsafe fn SetWindowsHideVertBorders() {
     SetGpuReg(REG_OFFSET_WINOUT, 0);
     SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
     SetGpuReg(REG_OFFSET_WIN0V, 6280);
-    gPlttBufferUnfaded[0] = 0;
-    gPlttBufferFaded[0] = 0;
+    crate::gl!(gPlttBufferUnfaded[0] = 0);
+    crate::gl!(gPlttBufferFaded[0] = 0);
 }
 unsafe fn ResetWindowDimensions() {
     SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL);
@@ -385,7 +386,7 @@ unsafe fn ResetWindowDimensions() {
 pub(crate) unsafe fn Task_HandleDuoFightPre(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     DuoFight_AnimateRain();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let frame: i16 = *data;
         if frame == 64 {
             DuoFight_Lightning1();
@@ -414,8 +415,8 @@ unsafe fn DuoFightPre_CreateGroudonSprites() -> u8 {
         72,
         3,
     );
-    gSprites[spriteId].callback = Some(SpriteCB_DuoFightPre_Groudon);
-    data = gSprites[spriteId].data.as_mut_ptr();
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_DuoFightPre_Groudon));
+    data = (*gSprites.as_ptr())[spriteId].data.as_mut_ptr();
     *data = CreateSprite(
         (&raw const *sSpriteTemplate_DuoFightPre_Groudon).cast_mut(),
         56,
@@ -434,7 +435,13 @@ unsafe fn DuoFightPre_CreateGroudonSprites() -> u8 {
         114,
         1,
     ) as i16;
-    StartSpriteAnim(&raw mut gSprites[*data], 1);
+    StartSpriteAnim(
+        {
+            let gl_i0 = *data;
+            crate::gl!(&raw gSprites[gl_i0])
+        },
+        1,
+    );
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_DuoFightPre_Groudon(sprite: *mut Sprite) {
@@ -443,28 +450,73 @@ pub(crate) unsafe fn SpriteCB_DuoFightPre_Groudon(sprite: *mut Sprite) {
     *data.at(5) &= 0x1F;
     if *data.at(5) == 0 && (*sprite).x != 72 {
         (*sprite).x -= 1;
-        gSprites[(*sprite).data[sGroudonBodySpriteId]].x -= 1;
-        gSprites[*data.at(1)].x -= 1;
-        gSprites[*data.at(2)].x -= 1;
+        {
+            let gl_i1 = (*sprite).data[sGroudonBodySpriteId];
+            crate::gl!(gSprites[gl_i1].x -= 1)
+        };
+        {
+            let gl_i2 = *data.at(1);
+            crate::gl!(gSprites[gl_i2].x -= 1)
+        };
+        {
+            let gl_i3 = *data.at(2);
+            crate::gl!(gSprites[gl_i3].x -= 1)
+        };
     }
     match (*sprite).animCmdIndex {
         0 => {
-            gSprites[*data.at(1)].x2 = 0;
-            gSprites[*data.at(1)].y2 = 0;
-            gSprites[*data.at(2)].x2 = 0;
-            gSprites[*data.at(2)].y2 = 0;
+            {
+                let gl_i4 = *data.at(1);
+                crate::gl!(gSprites[gl_i4].x2 = 0)
+            };
+            {
+                let gl_i5 = *data.at(1);
+                crate::gl!(gSprites[gl_i5].y2 = 0)
+            };
+            {
+                let gl_i6 = *data.at(2);
+                crate::gl!(gSprites[gl_i6].x2 = 0)
+            };
+            {
+                let gl_i7 = *data.at(2);
+                crate::gl!(gSprites[gl_i7].y2 = 0)
+            };
         }
         1 | 3 => {
-            gSprites[*data.at(1)].x2 = -1;
-            gSprites[*data.at(1)].y2 = 0;
-            gSprites[*data.at(2)].x2 = -1;
-            gSprites[*data.at(2)].y2 = 0;
+            {
+                let gl_i8 = *data.at(1);
+                crate::gl!(gSprites[gl_i8].x2 = -1)
+            };
+            {
+                let gl_i9 = *data.at(1);
+                crate::gl!(gSprites[gl_i9].y2 = 0)
+            };
+            {
+                let gl_i10 = *data.at(2);
+                crate::gl!(gSprites[gl_i10].x2 = -1)
+            };
+            {
+                let gl_i11 = *data.at(2);
+                crate::gl!(gSprites[gl_i11].y2 = 0)
+            };
         }
         2 => {
-            gSprites[*data.at(1)].x2 = -1;
-            gSprites[*data.at(1)].y2 = 1;
-            gSprites[*data.at(2)].x2 = -2;
-            gSprites[*data.at(2)].y2 = 1;
+            {
+                let gl_i12 = *data.at(1);
+                crate::gl!(gSprites[gl_i12].x2 = -1)
+            };
+            {
+                let gl_i13 = *data.at(1);
+                crate::gl!(gSprites[gl_i13].y2 = 1)
+            };
+            {
+                let gl_i14 = *data.at(2);
+                crate::gl!(gSprites[gl_i14].x2 = -2)
+            };
+            {
+                let gl_i15 = *data.at(2);
+                crate::gl!(gSprites[gl_i15].y2 = 1)
+            };
         }
         _ => {}
     }
@@ -477,8 +529,8 @@ unsafe fn DuoFightPre_CreateKyogreSprites() -> u8 {
         96,
         1,
     );
-    gSprites[spriteId].callback = Some(SpriteCB_DuoFightPre_Kyogre);
-    data = gSprites[spriteId].data.as_mut_ptr();
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_DuoFightPre_Kyogre));
+    data = (*gSprites.as_ptr())[spriteId].data.as_mut_ptr();
     *data = (CreateSprite(
         (&raw const *sSpriteTemplate_DuoFightPre_Kyogre).cast_mut(),
         168,
@@ -544,14 +596,62 @@ unsafe fn DuoFightPre_CreateKyogreSprites() -> u8 {
         120,
         1,
     ) as i16;
-    StartSpriteAnim(&raw mut gSprites[*data >> 8], 1);
-    StartSpriteAnim(&raw mut gSprites[*data as i32 & 0xFF], 2);
-    StartSpriteAnim(&raw mut gSprites[*data.at(1) >> 8], 3);
-    StartSpriteAnim(&raw mut gSprites[*data.at(1) as i32 & 0xFF], 4);
-    StartSpriteAnim(&raw mut gSprites[*data.at(2) >> 8], 5);
-    StartSpriteAnim(&raw mut gSprites[*data.at(2) as i32 & 0xFF], 6);
-    StartSpriteAnim(&raw mut gSprites[*data.at(3) >> 8], 7);
-    StartSpriteAnim(&raw mut gSprites[*data.at(3) as i32 & 0xFF], 8);
+    StartSpriteAnim(
+        {
+            let gl_i16 = *data >> 8;
+            crate::gl!(&raw gSprites[gl_i16])
+        },
+        1,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i17 = *data as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i17])
+        },
+        2,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i18 = *data.at(1) >> 8;
+            crate::gl!(&raw gSprites[gl_i18])
+        },
+        3,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i19 = *data.at(1) as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i19])
+        },
+        4,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i20 = *data.at(2) >> 8;
+            crate::gl!(&raw gSprites[gl_i20])
+        },
+        5,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i21 = *data.at(2) as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i21])
+        },
+        6,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i22 = *data.at(3) >> 8;
+            crate::gl!(&raw gSprites[gl_i22])
+        },
+        7,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i23 = *data.at(3) as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i23])
+        },
+        8,
+    );
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_DuoFightPre_Kyogre(sprite: *mut Sprite) {
@@ -560,52 +660,163 @@ pub(crate) unsafe fn SpriteCB_DuoFightPre_Kyogre(sprite: *mut Sprite) {
     *data.at(5) &= 0x1F;
     if *data.at(5) == 0 && (*sprite).x != 152 {
         (*sprite).x += 1;
-        gSprites[(*sprite).data[0] >> 8].x += 1;
-        gSprites[(*sprite).data[0] as i32 & 0xFF].x += 1;
-        gSprites[*data.at(1) >> 8].x += 1;
-        gSprites[*data.at(1) as i32 & 0xFF].x += 1;
-        gSprites[*data.at(2) >> 8].x += 1;
-        gSprites[*data.at(2) as i32 & 0xFF].x += 1;
-        gSprites[*data.at(3) >> 8].x += 1;
-        gSprites[*data.at(3) as i32 & 0xFF].x += 1;
-        gSprites[*data.at(4) >> 8].x += 1;
-        gSprites[*data.at(4) as i32 & 0xFF].x += 1;
+        {
+            let gl_i24 = (*sprite).data[0] >> 8;
+            crate::gl!(gSprites[gl_i24].x += 1)
+        };
+        {
+            let gl_i25 = (*sprite).data[0] as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i25].x += 1)
+        };
+        {
+            let gl_i26 = *data.at(1) >> 8;
+            crate::gl!(gSprites[gl_i26].x += 1)
+        };
+        {
+            let gl_i27 = *data.at(1) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i27].x += 1)
+        };
+        {
+            let gl_i28 = *data.at(2) >> 8;
+            crate::gl!(gSprites[gl_i28].x += 1)
+        };
+        {
+            let gl_i29 = *data.at(2) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i29].x += 1)
+        };
+        {
+            let gl_i30 = *data.at(3) >> 8;
+            crate::gl!(gSprites[gl_i30].x += 1)
+        };
+        {
+            let gl_i31 = *data.at(3) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i31].x += 1)
+        };
+        {
+            let gl_i32 = *data.at(4) >> 8;
+            crate::gl!(gSprites[gl_i32].x += 1)
+        };
+        {
+            let gl_i33 = *data.at(4) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i33].x += 1)
+        };
     }
-    match gSprites[*data.at(2) as i32 & 0xFF].animCmdIndex {
+    match {
+        let gl_i34 = *data.at(2) as i32 & 0xFF;
+        crate::gl!(gSprites[gl_i34].animCmdIndex)
+    } {
         0 => {
             (*sprite).y2 = 0;
-            gSprites[*data >> 8].y2 = 0;
-            gSprites[*data as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(1) >> 8].y2 = 0;
-            gSprites[*data.at(1) as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(2) >> 8].y2 = 0;
-            gSprites[*data.at(2) as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(3) >> 8].y2 = 0;
-            gSprites[*data.at(3) as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(4) >> 8].y2 = 0;
-            gSprites[*data.at(4) as i32 & 0xFF].y2 = 0;
+            {
+                let gl_i35 = *data >> 8;
+                crate::gl!(gSprites[gl_i35].y2 = 0)
+            };
+            {
+                let gl_i36 = *data as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i36].y2 = 0)
+            };
+            {
+                let gl_i37 = *data.at(1) >> 8;
+                crate::gl!(gSprites[gl_i37].y2 = 0)
+            };
+            {
+                let gl_i38 = *data.at(1) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i38].y2 = 0)
+            };
+            {
+                let gl_i39 = *data.at(2) >> 8;
+                crate::gl!(gSprites[gl_i39].y2 = 0)
+            };
+            {
+                let gl_i40 = *data.at(2) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i40].y2 = 0)
+            };
+            {
+                let gl_i41 = *data.at(3) >> 8;
+                crate::gl!(gSprites[gl_i41].y2 = 0)
+            };
+            {
+                let gl_i42 = *data.at(3) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i42].y2 = 0)
+            };
+            {
+                let gl_i43 = *data.at(4) >> 8;
+                crate::gl!(gSprites[gl_i43].y2 = 0)
+            };
+            {
+                let gl_i44 = *data.at(4) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i44].y2 = 0)
+            };
         }
         1 | 3 => {
             (*sprite).y2 = 1;
-            gSprites[*data >> 8].y2 = 1;
-            gSprites[*data as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(1) >> 8].y2 = 1;
-            gSprites[*data.at(1) as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(2) >> 8].y2 = 1;
-            gSprites[*data.at(2) as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(3) >> 8].y2 = 1;
-            gSprites[*data.at(3) as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(4) >> 8].y2 = 1;
-            gSprites[*data.at(4) as i32 & 0xFF].y2 = 1;
+            {
+                let gl_i45 = *data >> 8;
+                crate::gl!(gSprites[gl_i45].y2 = 1)
+            };
+            {
+                let gl_i46 = *data as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i46].y2 = 1)
+            };
+            {
+                let gl_i47 = *data.at(1) >> 8;
+                crate::gl!(gSprites[gl_i47].y2 = 1)
+            };
+            {
+                let gl_i48 = *data.at(1) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i48].y2 = 1)
+            };
+            {
+                let gl_i49 = *data.at(2) >> 8;
+                crate::gl!(gSprites[gl_i49].y2 = 1)
+            };
+            {
+                let gl_i50 = *data.at(2) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i50].y2 = 1)
+            };
+            {
+                let gl_i51 = *data.at(3) >> 8;
+                crate::gl!(gSprites[gl_i51].y2 = 1)
+            };
+            {
+                let gl_i52 = *data.at(3) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i52].y2 = 1)
+            };
+            {
+                let gl_i53 = *data.at(4) >> 8;
+                crate::gl!(gSprites[gl_i53].y2 = 1)
+            };
+            {
+                let gl_i54 = *data.at(4) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i54].y2 = 1)
+            };
         }
         2 => {
             (*sprite).y2 = 2;
-            gSprites[*data >> 8].y2 = 2;
-            gSprites[*data as i32 & 0xFF].y2 = 2;
-            gSprites[*data.at(1) >> 8].y2 = 2;
-            gSprites[*data.at(1) as i32 & 0xFF].y2 = 2;
-            gSprites[*data.at(2) >> 8].y2 = 2;
-            gSprites[*data.at(4) as i32 & 0xFF].y2 = 2;
+            {
+                let gl_i55 = *data >> 8;
+                crate::gl!(gSprites[gl_i55].y2 = 2)
+            };
+            {
+                let gl_i56 = *data as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i56].y2 = 2)
+            };
+            {
+                let gl_i57 = *data.at(1) >> 8;
+                crate::gl!(gSprites[gl_i57].y2 = 2)
+            };
+            {
+                let gl_i58 = *data.at(1) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i58].y2 = 2)
+            };
+            {
+                let gl_i59 = *data.at(2) >> 8;
+                crate::gl!(gSprites[gl_i59].y2 = 2)
+            };
+            {
+                let gl_i60 = *data.at(4) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i60].y2 = 2)
+            };
         }
         _ => {}
     }
@@ -620,15 +831,15 @@ unsafe fn InitDuoFightSceneBgs() {
     InitBgsFromTemplates(0, sBgTemplates_DuoFight.as_ptr().cast_mut(), 3);
     SetBgTilemapBuffer(
         0,
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         1,
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(0);
@@ -657,21 +868,21 @@ unsafe fn LoadDuoFightSceneGfx() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneDuoFight_Clouds1_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneDuoFight_Clouds3_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     LoadCompressedPalette(
         (*(&raw const crate::data::graphics::gRaySceneDuoFight_Clouds_Pal)
@@ -700,9 +911,10 @@ pub(crate) unsafe fn Task_DuoFightAnim(taskId: u8) {
         volatile_write(&raw mut tmp, 0);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())
             .as_mut_ptr() as *mut c_void,
             0x10003c0,
         );
@@ -710,7 +922,7 @@ pub(crate) unsafe fn Task_DuoFightAnim(taskId: u8) {
     ScanlineEffect_SetParams(*sScanlineParams_DuoFight_Clouds);
     *data = 0;
     *data.at(1) = CreateTask(Some(Task_DuoFight_AnimateClouds), 0) as i16;
-    if (*sRayScene).animId == RAY_ANIM_DUO_FIGHT_PRE {
+    if (*crate::gl!(sRayScene)).animId == RAY_ANIM_DUO_FIGHT_PRE {
         *data.at(2) = DuoFightPre_CreateGroudonSprites() as i16;
         *data.at(3) = DuoFightPre_CreateKyogreSprites() as i16;
         task_set_func(taskId, Some(Task_HandleDuoFightPre));
@@ -729,50 +941,62 @@ pub(crate) unsafe fn Task_DuoFight_AnimateClouds(taskId: u8) {
     let data: *mut u16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut u16;
     for i in 24..92i16 {
         if i <= 47 {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i] = *data >> 8;
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = *data >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = *data >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = *data >> 8;
         } else if i <= 63 {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i] = *data.at(1) >> 8;
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = *data.at(1) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = *data.at(1) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = *data.at(1) >> 8;
         } else if i <= 75 {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i] = *data.at(2) >> 8;
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = *data.at(2) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = *data.at(2) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = *data.at(2) >> 8;
         } else if i <= 83 {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i] = *data.at(3) >> 8;
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = *data.at(3) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = *data.at(3) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = *data.at(3) >> 8;
         } else if i <= 87 {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i] = *data.at(4) >> 8;
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = *data.at(4) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = *data.at(4) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = *data.at(4) >> 8;
         } else {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i] = *data.at(5) >> 8;
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = *data.at(5) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = *data.at(5) >> 8;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = *data.at(5) >> 8;
         }
     }
-    if (*sRayScene).animId == RAY_ANIM_DUO_FIGHT_PRE {
+    if (*crate::gl!(sRayScene)).animId == RAY_ANIM_DUO_FIGHT_PRE {
         *data += 448;
         *data.at(1) += 384;
         *data.at(2) += 320;
@@ -791,7 +1015,7 @@ pub(crate) unsafe fn Task_DuoFight_AnimateClouds(taskId: u8) {
 pub(crate) unsafe fn Task_HandleDuoFight(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     DuoFight_AnimateRain();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let frame: i16 = *data;
         if frame == 32 || frame == 112 {
             DuoFight_Lightning1();
@@ -839,8 +1063,14 @@ unsafe fn DuoFight_AnimateRain() {
 }
 pub(crate) unsafe fn DuoFight_PanOffScene(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    DuoFight_SlideGroudonDown(&raw mut gSprites[*data.at(2)]);
-    DuoFight_SlideKyogreDown(&raw mut gSprites[*data.at(3)]);
+    DuoFight_SlideGroudonDown({
+        let gl_i61 = *data.at(2);
+        crate::gl!(&raw gSprites[gl_i61])
+    });
+    DuoFight_SlideKyogreDown({
+        let gl_i62 = *data.at(3);
+        crate::gl!(&raw gSprites[gl_i62])
+    });
     let bgY: u16 = GetBgY(1) as u16;
     if GetBgY(1) == 0 || bgY > 0x8000 {
         ChangeBgY(1, 0x400, BG_COORD_SUB);
@@ -861,7 +1091,7 @@ unsafe fn DuoFightEnd(taskId: u8, palDelay: i8) {
 pub(crate) unsafe fn Task_DuoFightEnd(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     DuoFight_AnimateRain();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(*data.at(1) as u8);
         ChangeBgY(1, 0, BG_COORD_SET);
         SetVBlankCallback(None);
@@ -880,8 +1110,8 @@ unsafe fn DuoFight_CreateGroudonSprites() -> u8 {
         72,
         3,
     );
-    gSprites[spriteId].callback = Some(SpriteCB_DuoFight_Groudon);
-    data = gSprites[spriteId].data.as_mut_ptr();
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_DuoFight_Groudon));
+    data = (*gSprites.as_ptr())[spriteId].data.as_mut_ptr();
     *data = CreateSprite(
         (&raw const *sSpriteTemplate_DuoFight_Groudon).cast_mut(),
         66,
@@ -900,7 +1130,13 @@ unsafe fn DuoFight_CreateGroudonSprites() -> u8 {
         114,
         1,
     ) as i16;
-    StartSpriteAnim(&raw mut gSprites[*data], 1);
+    StartSpriteAnim(
+        {
+            let gl_i63 = *data;
+            crate::gl!(&raw gSprites[gl_i63])
+        },
+        1,
+    );
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_DuoFight_Groudon(sprite: *mut Sprite) {
@@ -909,28 +1145,73 @@ pub(crate) unsafe fn SpriteCB_DuoFight_Groudon(sprite: *mut Sprite) {
     *data.at(5) &= 0xF;
     if *data.at(5) as i32 & 7 == 0 && (*sprite).x != 72 {
         (*sprite).x -= 1;
-        gSprites[(*sprite).data[sGroudonBodySpriteId]].x -= 1;
-        gSprites[*data.at(1)].x -= 1;
-        gSprites[*data.at(2)].x -= 1;
+        {
+            let gl_i64 = (*sprite).data[sGroudonBodySpriteId];
+            crate::gl!(gSprites[gl_i64].x -= 1)
+        };
+        {
+            let gl_i65 = *data.at(1);
+            crate::gl!(gSprites[gl_i65].x -= 1)
+        };
+        {
+            let gl_i66 = *data.at(2);
+            crate::gl!(gSprites[gl_i66].x -= 1)
+        };
     }
     match (*sprite).animCmdIndex {
         0 => {
-            gSprites[*data.at(1)].x2 = 0;
-            gSprites[*data.at(1)].y2 = 0;
-            gSprites[*data.at(2)].x2 = 0;
-            gSprites[*data.at(2)].y2 = 0;
+            {
+                let gl_i67 = *data.at(1);
+                crate::gl!(gSprites[gl_i67].x2 = 0)
+            };
+            {
+                let gl_i68 = *data.at(1);
+                crate::gl!(gSprites[gl_i68].y2 = 0)
+            };
+            {
+                let gl_i69 = *data.at(2);
+                crate::gl!(gSprites[gl_i69].x2 = 0)
+            };
+            {
+                let gl_i70 = *data.at(2);
+                crate::gl!(gSprites[gl_i70].y2 = 0)
+            };
         }
         1 | 3 => {
-            gSprites[*data.at(1)].x2 = -1;
-            gSprites[*data.at(1)].y2 = 0;
-            gSprites[*data.at(2)].x2 = -1;
-            gSprites[*data.at(2)].y2 = 0;
+            {
+                let gl_i71 = *data.at(1);
+                crate::gl!(gSprites[gl_i71].x2 = -1)
+            };
+            {
+                let gl_i72 = *data.at(1);
+                crate::gl!(gSprites[gl_i72].y2 = 0)
+            };
+            {
+                let gl_i73 = *data.at(2);
+                crate::gl!(gSprites[gl_i73].x2 = -1)
+            };
+            {
+                let gl_i74 = *data.at(2);
+                crate::gl!(gSprites[gl_i74].y2 = 0)
+            };
         }
         2 => {
-            gSprites[*data.at(1)].x2 = -1;
-            gSprites[*data.at(1)].y2 = 1;
-            gSprites[*data.at(2)].x2 = -2;
-            gSprites[*data.at(2)].y2 = 1;
+            {
+                let gl_i75 = *data.at(1);
+                crate::gl!(gSprites[gl_i75].x2 = -1)
+            };
+            {
+                let gl_i76 = *data.at(1);
+                crate::gl!(gSprites[gl_i76].y2 = 1)
+            };
+            {
+                let gl_i77 = *data.at(2);
+                crate::gl!(gSprites[gl_i77].x2 = -2)
+            };
+            {
+                let gl_i78 = *data.at(2);
+                crate::gl!(gSprites[gl_i78].y2 = 1)
+            };
         }
         _ => {}
     }
@@ -939,9 +1220,18 @@ unsafe fn DuoFight_SlideGroudonDown(sprite: *mut Sprite) {
     let data: *mut i16 = (*sprite).data.as_mut_ptr();
     if (*sprite).y <= DISPLAY_HEIGHT as i16 {
         (*sprite).y += 8;
-        gSprites[(*sprite).data[sGroudonBodySpriteId]].y += 8;
-        gSprites[*data.at(1)].y += 8;
-        gSprites[*data.at(2)].y += 8;
+        {
+            let gl_i79 = (*sprite).data[sGroudonBodySpriteId];
+            crate::gl!(gSprites[gl_i79].y += 8)
+        };
+        {
+            let gl_i80 = *data.at(1);
+            crate::gl!(gSprites[gl_i80].y += 8)
+        };
+        {
+            let gl_i81 = *data.at(2);
+            crate::gl!(gSprites[gl_i81].y += 8)
+        };
     }
 }
 unsafe fn DuoFight_CreateKyogreSprites() -> u8 {
@@ -952,8 +1242,8 @@ unsafe fn DuoFight_CreateKyogreSprites() -> u8 {
         96,
         1,
     );
-    gSprites[spriteId].callback = Some(SpriteCB_DuoFight_Kyogre);
-    data = gSprites[spriteId].data.as_mut_ptr();
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_DuoFight_Kyogre));
+    data = (*gSprites.as_ptr())[spriteId].data.as_mut_ptr();
     *data = (CreateSprite(
         (&raw const *sSpriteTemplate_DuoFight_Kyogre).cast_mut(),
         158,
@@ -1019,14 +1309,62 @@ unsafe fn DuoFight_CreateKyogreSprites() -> u8 {
         120,
         1,
     ) as i16;
-    StartSpriteAnim(&raw mut gSprites[*data >> 8], 1);
-    StartSpriteAnim(&raw mut gSprites[*data as i32 & 0xFF], 2);
-    StartSpriteAnim(&raw mut gSprites[*data.at(1) >> 8], 3);
-    StartSpriteAnim(&raw mut gSprites[*data.at(1) as i32 & 0xFF], 4);
-    StartSpriteAnim(&raw mut gSprites[*data.at(2) >> 8], 5);
-    StartSpriteAnim(&raw mut gSprites[*data.at(2) as i32 & 0xFF], 6);
-    StartSpriteAnim(&raw mut gSprites[*data.at(3) >> 8], 7);
-    StartSpriteAnim(&raw mut gSprites[*data.at(3) as i32 & 0xFF], 8);
+    StartSpriteAnim(
+        {
+            let gl_i82 = *data >> 8;
+            crate::gl!(&raw gSprites[gl_i82])
+        },
+        1,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i83 = *data as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i83])
+        },
+        2,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i84 = *data.at(1) >> 8;
+            crate::gl!(&raw gSprites[gl_i84])
+        },
+        3,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i85 = *data.at(1) as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i85])
+        },
+        4,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i86 = *data.at(2) >> 8;
+            crate::gl!(&raw gSprites[gl_i86])
+        },
+        5,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i87 = *data.at(2) as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i87])
+        },
+        6,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i88 = *data.at(3) >> 8;
+            crate::gl!(&raw gSprites[gl_i88])
+        },
+        7,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i89 = *data.at(3) as i32 & 0xFF;
+            crate::gl!(&raw gSprites[gl_i89])
+        },
+        8,
+    );
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_DuoFight_Kyogre(sprite: *mut Sprite) {
@@ -1035,52 +1373,163 @@ pub(crate) unsafe fn SpriteCB_DuoFight_Kyogre(sprite: *mut Sprite) {
     *data.at(5) &= 0xF;
     if *data.at(5) as i32 & 7 == 0 && (*sprite).x != 152 {
         (*sprite).x += 1;
-        gSprites[(*sprite).data[0] >> 8].x += 1;
-        gSprites[(*sprite).data[0] as i32 & 0xFF].x += 1;
-        gSprites[*data.at(1) >> 8].x += 1;
-        gSprites[*data.at(1) as i32 & 0xFF].x += 1;
-        gSprites[*data.at(2) >> 8].x += 1;
-        gSprites[*data.at(2) as i32 & 0xFF].x += 1;
-        gSprites[*data.at(3) >> 8].x += 1;
-        gSprites[*data.at(3) as i32 & 0xFF].x += 1;
-        gSprites[*data.at(4) >> 8].x += 1;
-        gSprites[*data.at(4) as i32 & 0xFF].x += 1;
+        {
+            let gl_i90 = (*sprite).data[0] >> 8;
+            crate::gl!(gSprites[gl_i90].x += 1)
+        };
+        {
+            let gl_i91 = (*sprite).data[0] as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i91].x += 1)
+        };
+        {
+            let gl_i92 = *data.at(1) >> 8;
+            crate::gl!(gSprites[gl_i92].x += 1)
+        };
+        {
+            let gl_i93 = *data.at(1) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i93].x += 1)
+        };
+        {
+            let gl_i94 = *data.at(2) >> 8;
+            crate::gl!(gSprites[gl_i94].x += 1)
+        };
+        {
+            let gl_i95 = *data.at(2) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i95].x += 1)
+        };
+        {
+            let gl_i96 = *data.at(3) >> 8;
+            crate::gl!(gSprites[gl_i96].x += 1)
+        };
+        {
+            let gl_i97 = *data.at(3) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i97].x += 1)
+        };
+        {
+            let gl_i98 = *data.at(4) >> 8;
+            crate::gl!(gSprites[gl_i98].x += 1)
+        };
+        {
+            let gl_i99 = *data.at(4) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i99].x += 1)
+        };
     }
-    match gSprites[*data.at(2) as i32 & 0xFF].animCmdIndex {
+    match {
+        let gl_i100 = *data.at(2) as i32 & 0xFF;
+        crate::gl!(gSprites[gl_i100].animCmdIndex)
+    } {
         0 => {
             (*sprite).y2 = 0;
-            gSprites[*data >> 8].y2 = 0;
-            gSprites[*data as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(1) >> 8].y2 = 0;
-            gSprites[*data.at(1) as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(2) >> 8].y2 = 0;
-            gSprites[*data.at(2) as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(3) >> 8].y2 = 0;
-            gSprites[*data.at(3) as i32 & 0xFF].y2 = 0;
-            gSprites[*data.at(4) >> 8].y2 = 0;
-            gSprites[*data.at(4) as i32 & 0xFF].y2 = 0;
+            {
+                let gl_i101 = *data >> 8;
+                crate::gl!(gSprites[gl_i101].y2 = 0)
+            };
+            {
+                let gl_i102 = *data as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i102].y2 = 0)
+            };
+            {
+                let gl_i103 = *data.at(1) >> 8;
+                crate::gl!(gSprites[gl_i103].y2 = 0)
+            };
+            {
+                let gl_i104 = *data.at(1) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i104].y2 = 0)
+            };
+            {
+                let gl_i105 = *data.at(2) >> 8;
+                crate::gl!(gSprites[gl_i105].y2 = 0)
+            };
+            {
+                let gl_i106 = *data.at(2) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i106].y2 = 0)
+            };
+            {
+                let gl_i107 = *data.at(3) >> 8;
+                crate::gl!(gSprites[gl_i107].y2 = 0)
+            };
+            {
+                let gl_i108 = *data.at(3) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i108].y2 = 0)
+            };
+            {
+                let gl_i109 = *data.at(4) >> 8;
+                crate::gl!(gSprites[gl_i109].y2 = 0)
+            };
+            {
+                let gl_i110 = *data.at(4) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i110].y2 = 0)
+            };
         }
         1 | 3 => {
             (*sprite).y2 = 1;
-            gSprites[*data >> 8].y2 = 1;
-            gSprites[*data as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(1) >> 8].y2 = 1;
-            gSprites[*data.at(1) as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(2) >> 8].y2 = 1;
-            gSprites[*data.at(2) as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(3) >> 8].y2 = 1;
-            gSprites[*data.at(3) as i32 & 0xFF].y2 = 1;
-            gSprites[*data.at(4) >> 8].y2 = 1;
-            gSprites[*data.at(4) as i32 & 0xFF].y2 = 1;
+            {
+                let gl_i111 = *data >> 8;
+                crate::gl!(gSprites[gl_i111].y2 = 1)
+            };
+            {
+                let gl_i112 = *data as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i112].y2 = 1)
+            };
+            {
+                let gl_i113 = *data.at(1) >> 8;
+                crate::gl!(gSprites[gl_i113].y2 = 1)
+            };
+            {
+                let gl_i114 = *data.at(1) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i114].y2 = 1)
+            };
+            {
+                let gl_i115 = *data.at(2) >> 8;
+                crate::gl!(gSprites[gl_i115].y2 = 1)
+            };
+            {
+                let gl_i116 = *data.at(2) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i116].y2 = 1)
+            };
+            {
+                let gl_i117 = *data.at(3) >> 8;
+                crate::gl!(gSprites[gl_i117].y2 = 1)
+            };
+            {
+                let gl_i118 = *data.at(3) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i118].y2 = 1)
+            };
+            {
+                let gl_i119 = *data.at(4) >> 8;
+                crate::gl!(gSprites[gl_i119].y2 = 1)
+            };
+            {
+                let gl_i120 = *data.at(4) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i120].y2 = 1)
+            };
         }
         2 => {
             (*sprite).y2 = 2;
-            gSprites[*data >> 8].y2 = 2;
-            gSprites[*data as i32 & 0xFF].y2 = 2;
-            gSprites[*data.at(1) >> 8].y2 = 2;
-            gSprites[*data.at(1) as i32 & 0xFF].y2 = 2;
-            gSprites[*data.at(2) >> 8].y2 = 2;
-            gSprites[*data.at(4) as i32 & 0xFF].y2 = 2;
+            {
+                let gl_i121 = *data >> 8;
+                crate::gl!(gSprites[gl_i121].y2 = 2)
+            };
+            {
+                let gl_i122 = *data as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i122].y2 = 2)
+            };
+            {
+                let gl_i123 = *data.at(1) >> 8;
+                crate::gl!(gSprites[gl_i123].y2 = 2)
+            };
+            {
+                let gl_i124 = *data.at(1) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i124].y2 = 2)
+            };
+            {
+                let gl_i125 = *data.at(2) >> 8;
+                crate::gl!(gSprites[gl_i125].y2 = 2)
+            };
+            {
+                let gl_i126 = *data.at(4) as i32 & 0xFF;
+                crate::gl!(gSprites[gl_i126].y2 = 2)
+            };
         }
         _ => {}
     }
@@ -1089,16 +1538,46 @@ unsafe fn DuoFight_SlideKyogreDown(sprite: *mut Sprite) {
     let data: *mut i16 = (*sprite).data.as_mut_ptr();
     if (*sprite).y <= DISPLAY_HEIGHT as i16 {
         (*sprite).y += 8;
-        gSprites[(*sprite).data[0] >> 8].y += 8;
-        gSprites[(*sprite).data[0] as i32 & 0xFF].y += 8;
-        gSprites[*data.at(1) >> 8].y += 8;
-        gSprites[*data.at(1) as i32 & 0xFF].y += 8;
-        gSprites[*data.at(2) >> 8].y += 8;
-        gSprites[*data.at(2) as i32 & 0xFF].y += 8;
-        gSprites[*data.at(3) >> 8].y += 8;
-        gSprites[*data.at(3) as i32 & 0xFF].y += 8;
-        gSprites[*data.at(4) >> 8].y += 8;
-        gSprites[*data.at(4) as i32 & 0xFF].y += 8;
+        {
+            let gl_i127 = (*sprite).data[0] >> 8;
+            crate::gl!(gSprites[gl_i127].y += 8)
+        };
+        {
+            let gl_i128 = (*sprite).data[0] as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i128].y += 8)
+        };
+        {
+            let gl_i129 = *data.at(1) >> 8;
+            crate::gl!(gSprites[gl_i129].y += 8)
+        };
+        {
+            let gl_i130 = *data.at(1) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i130].y += 8)
+        };
+        {
+            let gl_i131 = *data.at(2) >> 8;
+            crate::gl!(gSprites[gl_i131].y += 8)
+        };
+        {
+            let gl_i132 = *data.at(2) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i132].y += 8)
+        };
+        {
+            let gl_i133 = *data.at(3) >> 8;
+            crate::gl!(gSprites[gl_i133].y += 8)
+        };
+        {
+            let gl_i134 = *data.at(3) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i134].y += 8)
+        };
+        {
+            let gl_i135 = *data.at(4) >> 8;
+            crate::gl!(gSprites[gl_i135].y += 8)
+        };
+        {
+            let gl_i136 = *data.at(4) as i32 & 0xFF;
+            crate::gl!(gSprites[gl_i136].y += 8)
+        };
     }
 }
 unsafe fn InitTakesFlightSceneBgs() {
@@ -1107,15 +1586,15 @@ unsafe fn InitTakesFlightSceneBgs() {
     InitBgsFromTemplates(1, sBgTemplates_TakesFlight.as_ptr().cast_mut(), 3);
     SetBgTilemapBuffer(
         0,
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         1,
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(0);
@@ -1163,21 +1642,21 @@ unsafe fn LoadTakesFlightSceneGfx() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneTakesFlight_Bg_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneTakesFlight_Rayquaza_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     LoadCompressedPalette(
         (*(&raw const crate::data::graphics::gRaySceneTakesFlight_Rayquaza_Pal)
@@ -1287,7 +1766,7 @@ pub(crate) unsafe fn Task_HandleRayTakesFlight(taskId: u8) {
     }
 }
 unsafe fn Task_RayTakesFlightEnd(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetVBlankCallback(None);
         ResetSpriteData();
         FreeAllSpritePalettes();
@@ -1303,11 +1782,15 @@ pub(crate) unsafe fn Task_TakesFlight_CreateSmoke(taskId: u8) {
             sTakesFlight_SmokeCoords[*data][1] as i16 * 4 + 80,
             0,
         );
-        gSprites[spriteId].data[0] = *data as i8 as i16;
-        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
-        gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
-        gSprites[spriteId].oam.set_priority(2);
-        InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
+        crate::gl!(gSprites[spriteId].data[0] = *data as i8 as i16);
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_objMode(ST_OAM_OBJ_BLEND);
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_affineMode(ST_OAM_AFFINE_DOUBLE);
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
+        InitSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]));
         if *data == 9 {
             DestroyTask(taskId);
             return;
@@ -1334,19 +1817,19 @@ unsafe fn InitDescendsSceneBgs() {
     InitBgsFromTemplates(0, sBgTemplates_Descends.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
         0,
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         1,
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         3,
-        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(0);
@@ -1386,27 +1869,27 @@ unsafe fn LoadDescendsSceneGfx() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneDescends_Bg_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
     );
     {
         let mut tmp: u32 = 0;
         volatile_write(&raw mut tmp, 0);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
             0x1000200,
         );
     }
     CpuFastSet(
-        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
         512,
     );
     {
@@ -1414,7 +1897,7 @@ unsafe fn LoadDescendsSceneGfx() {
         volatile_write(&raw mut tmp, 0);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            &raw mut (*sRayScene).tilemapBuffers[1][256] as *mut c_void,
+            &raw mut (*crate::gl!(sRayScene)).tilemapBuffers[1][256] as *mut c_void,
             0x10000d0,
         );
     }
@@ -1425,30 +1908,32 @@ unsafe fn LoadDescendsSceneGfx() {
         0,
         64,
     );
-    gPlttBufferUnfaded[0] = 32767;
-    gPlttBufferFaded[0] = 32767;
+    crate::gl!(gPlttBufferUnfaded[0] = 32767);
+    crate::gl!(gPlttBufferFaded[0] = 32767);
     LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Descends_Rayquaza).cast_mut());
     LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Descends_RayquazaTail).cast_mut());
     LoadCompressedSpritePalette((&raw const *sSpritePal_Descends_Rayquaza).cast_mut());
 }
 pub(crate) unsafe fn HBlankCB_RayDescends() {
     let vcount: u16 = GetGpuReg(REG_OFFSET_VCOUNT);
-    if (24..=135).contains(&vcount) && vcount as i32 - 24 <= (*sRayScene).revealedLightLine as i32 {
+    if (24..=135).contains(&vcount)
+        && vcount as i32 - 24 <= (*crate::gl!(sRayScene)).revealedLightLine as i32
+    {
         volatile_write(67108946_usize as *mut u16, 0xD08);
     } else {
         volatile_write(67108946_usize as *mut u16, 0x1000);
     }
     if vcount == 0 {
-        if (*sRayScene).revealedLightLine <= 0x1FFF {
-            if (*sRayScene).revealedLightLine <= 39 {
-                (*sRayScene).revealedLightLine += 4;
-            } else if (*sRayScene).revealedLightLine <= 79 {
-                (*sRayScene).revealedLightLine += 2;
+        if (*crate::gl!(sRayScene)).revealedLightLine <= 0x1FFF {
+            if (*crate::gl!(sRayScene)).revealedLightLine <= 39 {
+                (*crate::gl!(sRayScene)).revealedLightLine += 4;
+            } else if (*crate::gl!(sRayScene)).revealedLightLine <= 79 {
+                (*crate::gl!(sRayScene)).revealedLightLine += 2;
             } else {
-                (*sRayScene).revealedLightLine += 1;
+                (*crate::gl!(sRayScene)).revealedLightLine += 1;
             }
         }
-        (*sRayScene).revealedLightTimer += 1;
+        (*crate::gl!(sRayScene)).revealedLightTimer += 1;
     }
 }
 pub(crate) unsafe fn Task_RayDescendsAnim(taskId: u8) {
@@ -1459,8 +1944,8 @@ pub(crate) unsafe fn Task_RayDescendsAnim(taskId: u8) {
     SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
     BlendPalettes(PALETTES_ALL, 0x10, 0);
     SetVBlankCallback(Some(VBlankCB_RayquazaScene));
-    (*sRayScene).revealedLightLine = 0;
-    (*sRayScene).revealedLightTimer = 0;
+    (*crate::gl!(sRayScene)).revealedLightLine = 0;
+    (*crate::gl!(sRayScene)).revealedLightTimer = 0;
     *data = 0;
     *data.at(1) = 0;
     *data.at(2) = 0;
@@ -1481,7 +1966,7 @@ pub(crate) unsafe fn Task_HandleRayDescends(taskId: u8) {
             }
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 if *data.at(1) == 10 {
                     *data.at(1) = 0;
                     *data += 1;
@@ -1519,7 +2004,7 @@ pub(crate) unsafe fn Task_HandleRayDescends(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_RayDescendsEnd(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetVBlankCallback(None);
         SetHBlankCallback(None);
         ResetSpriteData();
@@ -1534,16 +2019,16 @@ unsafe fn CreateDescendsRayquazaSprite() -> u8 {
         0,
         0,
     );
-    let data: *mut i16 = gSprites[spriteId].data.as_mut_ptr();
+    let data: *mut i16 = (*gSprites.as_ptr())[spriteId].data.as_mut_ptr();
     *data = CreateSprite(
         (&raw const *sSpriteTemplate_Descends_RayquazaTail).cast_mut(),
         184,
         -48,
         0,
     ) as i16;
-    gSprites[spriteId].callback = Some(SpriteCB_Descends_Rayquaza);
-    gSprites[spriteId].oam.set_priority(3);
-    gSprites[*data].oam.set_priority(3);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Descends_Rayquaza));
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
+    (*gSprites.as_ptr())[*data].oam.set_priority(3);
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_Descends_Rayquaza(sprite: *mut Sprite) {
@@ -1573,11 +2058,17 @@ pub(crate) unsafe fn SpriteCB_Descends_Rayquaza(sprite: *mut Sprite) {
     }
     if rem_i32(*data.at(2) as i32, *data.at(3) as i32) == 0 {
         (*sprite).x2 -= 1;
-        gSprites[*data].x2 -= 1;
+        {
+            let gl_i137 = *data;
+            crate::gl!(gSprites[gl_i137].x2 -= 1)
+        };
     }
     if rem_i32(*data.at(2) as i32, *data.at(4) as i32) == 0 {
         (*sprite).y2 += 1;
-        gSprites[*data].y2 += 1;
+        {
+            let gl_i138 = *data;
+            crate::gl!(gSprites[gl_i138].y2 += 1)
+        };
     }
     *data.at(2) += 1;
 }
@@ -1587,19 +2078,19 @@ unsafe fn InitChargesSceneBgs() {
     InitBgsFromTemplates(0, sBgTemplates_Charges.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
         0,
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         1,
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         3,
-        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(0);
@@ -1649,27 +2140,27 @@ unsafe fn LoadChargesSceneGfx() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneCharges_Rayquaza_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneCharges_Streaks_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneCharges_Bg_Tilemap).cast::<CArray<u32, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*sRayScene).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
     );
     LoadCompressedPalette(
         (*(&raw const crate::data::graphics::gRaySceneCharges_Bg_Pal).cast::<CArray<u32, 0>>())
@@ -1766,7 +2257,7 @@ unsafe fn RayCharges_AnimateBg() {
 pub(crate) unsafe fn Task_RayChargesEnd(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     RayCharges_AnimateBg();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetVBlankCallback(None);
         ResetWindowDimensions();
         DestroyTask(*data.at(2) as u8);
@@ -1779,15 +2270,15 @@ unsafe fn InitChasesAwaySceneBgs() {
     InitBgsFromTemplates(1, sBgTemplates_ChasesAway.as_ptr().cast_mut(), 3);
     SetBgTilemapBuffer(
         0,
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         1,
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(0);
@@ -1826,21 +2317,21 @@ unsafe fn LoadChasesAwaySceneGfx() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneChasesAway_Light_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gRaySceneChasesAway_Ring_Tilemap)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sRayScene).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sRayScene)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     LoadCompressedPalette(
         (*(&raw const crate::data::graphics::gRaySceneChasesAway_Bg_Pal).cast::<CArray<u32, 0>>())
@@ -1894,8 +2385,10 @@ pub(crate) unsafe fn Task_HandleRayChasesAway(taskId: u8) {
             }
         }
         1 => {
-            if gSprites[*data.at(5)].callback
-                == Some(SpriteCB_ChasesAway_RayquazaFloat as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i139 = *data.at(5);
+                crate::gl!(gSprites[gl_i139].callback)
+            }) == Some(SpriteCB_ChasesAway_RayquazaFloat as unsafe fn(*mut Sprite))
             {
                 if *data.at(1) == 64 {
                     ChasesAway_KyogreStartLeave(taskId);
@@ -1946,7 +2439,7 @@ pub(crate) unsafe fn Task_ChasesAway_AnimateBg(taskId: u8) {
 }
 pub(crate) unsafe fn Task_RayChasesAwayEnd(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         StopMapMusic();
         if *data.at(1) == 0 {
             SetVBlankCallback(None);
@@ -1971,22 +2464,22 @@ unsafe fn ChasesAway_CreateTrioSprites(taskId: u8) {
         120,
         0,
     ) as i16;
-    let mut spriteData: *mut i16 = gSprites[*taskData.at(3)].data.as_mut_ptr();
+    let mut spriteData: *mut i16 = (*gSprites.as_ptr())[*taskData.at(3)].data.as_mut_ptr();
     *spriteData = CreateSprite(
         (&raw const *sSpriteTemplate_ChasesAway_GroudonTail).cast_mut(),
         16,
         130,
         0,
     ) as i16;
-    gSprites[*taskData.at(3)].oam.set_priority(1);
-    gSprites[*spriteData].oam.set_priority(1);
+    (*gSprites.as_ptr())[*taskData.at(3)].oam.set_priority(1);
+    (*gSprites.as_ptr())[*spriteData].oam.set_priority(1);
     *taskData.at(4) = CreateSprite(
         (&raw const *sSpriteTemplate_ChasesAway_Kyogre).cast_mut(),
         160,
         128,
         1,
     ) as i16;
-    spriteData = gSprites[*taskData.at(4)].data.as_mut_ptr();
+    spriteData = (*gSprites.as_ptr())[*taskData.at(4)].data.as_mut_ptr();
     *spriteData = CreateSprite(
         (&raw const *sSpriteTemplate_ChasesAway_Kyogre).cast_mut(),
         192,
@@ -1999,49 +2492,106 @@ unsafe fn ChasesAway_CreateTrioSprites(taskId: u8) {
         128,
         1,
     ) as i16;
-    gSprites[*taskData.at(4)].oam.set_priority(1);
-    gSprites[*spriteData].oam.set_priority(1);
-    gSprites[*spriteData.at(1)].oam.set_priority(1);
-    StartSpriteAnim(&raw mut gSprites[*spriteData], 1);
-    StartSpriteAnim(&raw mut gSprites[*spriteData.at(1)], 2);
+    (*gSprites.as_ptr())[*taskData.at(4)].oam.set_priority(1);
+    (*gSprites.as_ptr())[*spriteData].oam.set_priority(1);
+    (*gSprites.as_ptr())[*spriteData.at(1)].oam.set_priority(1);
+    StartSpriteAnim(
+        {
+            let gl_i140 = *spriteData;
+            crate::gl!(&raw gSprites[gl_i140])
+        },
+        1,
+    );
+    StartSpriteAnim(
+        {
+            let gl_i141 = *spriteData.at(1);
+            crate::gl!(&raw gSprites[gl_i141])
+        },
+        2,
+    );
     *taskData.at(5) = CreateSprite(
         (&raw const *sSpriteTemplate_ChasesAway_Rayquaza).cast_mut(),
         120,
         -65,
         0,
     ) as i16;
-    spriteData = gSprites[*taskData.at(5)].data.as_mut_ptr();
+    spriteData = (*gSprites.as_ptr())[*taskData.at(5)].data.as_mut_ptr();
     *spriteData = CreateSprite(
         (&raw const *sSpriteTemplate_ChasesAway_RayquazaTail).cast_mut(),
         120,
         -113,
         0,
     ) as i16;
-    gSprites[*taskData.at(5)].oam.set_priority(1);
-    gSprites[*spriteData].oam.set_priority(1);
+    (*gSprites.as_ptr())[*taskData.at(5)].oam.set_priority(1);
+    (*gSprites.as_ptr())[*spriteData].oam.set_priority(1);
 }
 unsafe fn ChasesAway_PushDuoBack(taskId: u8) {
     let taskData: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    gSprites[*taskData.at(3)].callback = Some(SpriteCB_ChasesAway_DuoRingPush);
-    gSprites[*taskData.at(3)].data[4] = 0;
-    gSprites[*taskData.at(3)].data[sDecel] = 0;
-    gSprites[*taskData.at(3)].data[sSpeed] = 4;
-    gSprites[*taskData.at(3)].data[sIsKyogre] = FALSE as i16;
-    gSprites[*taskData.at(4)].callback = Some(SpriteCB_ChasesAway_DuoRingPush);
-    gSprites[*taskData.at(4)].data[4] = 0;
-    gSprites[*taskData.at(4)].data[sDecel] = 0;
-    gSprites[*taskData.at(4)].data[sSpeed] = 4;
-    gSprites[*taskData.at(4)].data[sIsKyogre] = TRUE as i16;
+    {
+        let gl_i142 = *taskData.at(3);
+        crate::gl!(gSprites[gl_i142].callback = Some(SpriteCB_ChasesAway_DuoRingPush))
+    };
+    {
+        let gl_i143 = *taskData.at(3);
+        crate::gl!(gSprites[gl_i143].data[4] = 0)
+    };
+    {
+        let gl_i144 = *taskData.at(3);
+        let gl_i145 = sDecel;
+        crate::gl!(gSprites[gl_i144].data[gl_i145] = 0)
+    };
+    {
+        let gl_i146 = *taskData.at(3);
+        let gl_i147 = sSpeed;
+        crate::gl!(gSprites[gl_i146].data[gl_i147] = 4)
+    };
+    {
+        let gl_i148 = *taskData.at(3);
+        let gl_i149 = sIsKyogre;
+        crate::gl!(gSprites[gl_i148].data[gl_i149] = FALSE as i16)
+    };
+    {
+        let gl_i150 = *taskData.at(4);
+        crate::gl!(gSprites[gl_i150].callback = Some(SpriteCB_ChasesAway_DuoRingPush))
+    };
+    {
+        let gl_i151 = *taskData.at(4);
+        crate::gl!(gSprites[gl_i151].data[4] = 0)
+    };
+    {
+        let gl_i152 = *taskData.at(4);
+        let gl_i153 = sDecel;
+        crate::gl!(gSprites[gl_i152].data[gl_i153] = 0)
+    };
+    {
+        let gl_i154 = *taskData.at(4);
+        let gl_i155 = sSpeed;
+        crate::gl!(gSprites[gl_i154].data[gl_i155] = 4)
+    };
+    {
+        let gl_i156 = *taskData.at(4);
+        let gl_i157 = sIsKyogre;
+        crate::gl!(gSprites[gl_i156].data[gl_i157] = TRUE as i16)
+    };
 }
 pub(crate) unsafe fn SpriteCB_ChasesAway_DuoRingPush(sprite: *mut Sprite) {
     if (*sprite).data[4] as i32 & 7 == 0 {
         if (*sprite).data[sIsKyogre] == 0 {
             (*sprite).x -= (*sprite).data[sSpeed];
-            gSprites[(*sprite).data[sBodyPartSpriteId1]].x -= (*sprite).data[sSpeed];
+            {
+                let gl_i158 = (*sprite).data[sBodyPartSpriteId1];
+                crate::gl!(gSprites[gl_i158].x -= (*sprite).data[sSpeed])
+            };
         } else {
             (*sprite).x += (*sprite).data[sSpeed];
-            gSprites[(*sprite).data[sBodyPartSpriteId1]].x += (*sprite).data[sSpeed];
-            gSprites[(*sprite).data[sBodyPartSpriteId2]].x += (*sprite).data[sSpeed];
+            {
+                let gl_i159 = (*sprite).data[sBodyPartSpriteId1];
+                crate::gl!(gSprites[gl_i159].x += (*sprite).data[sSpeed])
+            };
+            {
+                let gl_i160 = (*sprite).data[sBodyPartSpriteId2];
+                crate::gl!(gSprites[gl_i160].x += (*sprite).data[sSpeed])
+            };
         }
         (*sprite).data[sDecel] += 1;
         (*sprite).data[sSpeed] -= (*sprite).data[sDecel];
@@ -2057,23 +2607,44 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_DuoRingPush(sprite: *mut Sprite) {
 }
 unsafe fn ChasesAway_GroudonStartLeave(taskId: u8) {
     let taskData: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    gSprites[*taskData.at(3)].callback = Some(SpriteCB_ChasesAway_GroudonLeave);
-    StartSpriteAnim(&raw mut gSprites[*taskData.at(3)], 1);
+    {
+        let gl_i161 = *taskData.at(3);
+        crate::gl!(gSprites[gl_i161].callback = Some(SpriteCB_ChasesAway_GroudonLeave))
+    };
+    StartSpriteAnim(
+        {
+            let gl_i162 = *taskData.at(3);
+            crate::gl!(&raw gSprites[gl_i162])
+        },
+        1,
+    );
 }
 pub(crate) unsafe fn SpriteCB_ChasesAway_GroudonLeave(sprite: *mut Sprite) {
     match (*sprite).animCmdIndex {
         0 | 2 => {
             if (*sprite).animDelayCounter() as i32 % 12 == 0 {
                 (*sprite).x -= 2;
-                gSprites[(*sprite).data[0]].x -= 2;
+                {
+                    let gl_i163 = (*sprite).data[0];
+                    crate::gl!(gSprites[gl_i163].x -= 2)
+                };
             }
-            gSprites[(*sprite).data[0]].y2 = 0;
+            {
+                let gl_i164 = (*sprite).data[0];
+                crate::gl!(gSprites[gl_i164].y2 = 0)
+            };
         }
         1 | 3 => {
-            gSprites[(*sprite).data[0]].y2 = -2;
+            {
+                let gl_i165 = (*sprite).data[0];
+                crate::gl!(gSprites[gl_i165].y2 = -2)
+            };
             if (*sprite).animDelayCounter() as i32 & 15 == 0 {
                 (*sprite).y += 1;
-                gSprites[(*sprite).data[0]].y += 1;
+                {
+                    let gl_i166 = (*sprite).data[0];
+                    crate::gl!(gSprites[gl_i166].y += 1)
+                };
             }
         }
         _ => {}
@@ -2081,10 +2652,19 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_GroudonLeave(sprite: *mut Sprite) {
 }
 unsafe fn ChasesAway_KyogreStartLeave(taskId: u8) {
     let taskData: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let spriteData: *mut i16 = gSprites[*taskData.at(4)].data.as_mut_ptr();
-    gSprites[*taskData.at(4)].callback = Some(SpriteCB_ChasesAway_KyogreLeave);
-    gSprites[*spriteData].callback = Some(SpriteCB_ChasesAway_KyogreLeave);
-    gSprites[*spriteData.at(1)].callback = Some(SpriteCB_ChasesAway_KyogreLeave);
+    let spriteData: *mut i16 = (*gSprites.as_ptr())[*taskData.at(4)].data.as_mut_ptr();
+    {
+        let gl_i167 = *taskData.at(4);
+        crate::gl!(gSprites[gl_i167].callback = Some(SpriteCB_ChasesAway_KyogreLeave))
+    };
+    {
+        let gl_i168 = *spriteData;
+        crate::gl!(gSprites[gl_i168].callback = Some(SpriteCB_ChasesAway_KyogreLeave))
+    };
+    {
+        let gl_i169 = *spriteData.at(1);
+        crate::gl!(gSprites[gl_i169].callback = Some(SpriteCB_ChasesAway_KyogreLeave))
+    };
 }
 pub(crate) unsafe fn SpriteCB_ChasesAway_KyogreLeave(sprite: *mut Sprite) {
     if (*sprite).data[4] as i32 & 3 == 0 {
@@ -2101,15 +2681,15 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_KyogreLeave(sprite: *mut Sprite) {
             132,
             0,
         ) as i16;
-        gSprites[(*sprite).data[7]].oam.set_priority(1);
+        (*gSprites.as_ptr())[(*sprite).data[7]].oam.set_priority(1);
         (*sprite).data[7] = CreateSprite(
             (&raw const *sSpriteTemplate_ChasesAway_KyogreSplash).cast_mut(),
             224,
             132,
             0,
         ) as i16;
-        gSprites[(*sprite).data[7]].oam.set_priority(1);
-        gSprites[(*sprite).data[7]].set_hFlip(1);
+        (*gSprites.as_ptr())[(*sprite).data[7]].oam.set_priority(1);
+        (*gSprites.as_ptr())[(*sprite).data[7]].set_hFlip(1);
         (*sprite).data[5] += 1;
     }
     if (*sprite).data[5] > 127 {
@@ -2129,13 +2709,22 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_Rayquaza(sprite: *mut Sprite) {
     let frame: i16 = (*sprite).data[7];
     if frame <= 64 {
         (*sprite).y2 += 2;
-        gSprites[(*sprite).data[sTailSpriteId]].y2 += 2;
+        {
+            let gl_i170 = (*sprite).data[sTailSpriteId];
+            crate::gl!(gSprites[gl_i170].y2 += 2)
+        };
         if (*sprite).data[7] == 64 {
             ChasesAway_SetRayquazaAnim(sprite, 1, 0, -48);
             (*sprite).data[4] = 5;
             (*sprite).data[5] = -1;
-            gSprites[(*sprite).data[sTailSpriteId]].data[4] = 3;
-            gSprites[(*sprite).data[sTailSpriteId]].data[5] = 5;
+            {
+                let gl_i171 = (*sprite).data[sTailSpriteId];
+                crate::gl!(gSprites[gl_i171].data[4] = 3)
+            };
+            {
+                let gl_i172 = (*sprite).data[sTailSpriteId];
+                crate::gl!(gSprites[gl_i172].data[5] = 5)
+            };
         }
     } else if frame <= 111 {
         SpriteCB_ChasesAway_RayquazaFloat(sprite);
@@ -2146,8 +2735,14 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_Rayquaza(sprite: *mut Sprite) {
             ChasesAway_SetRayquazaAnim(sprite, 2, 48, 16);
         }
     } else if frame == 112 {
-        gSprites[(*sprite).data[sTailSpriteId]].data[4] = 7;
-        gSprites[(*sprite).data[sTailSpriteId]].data[5] = 3;
+        {
+            let gl_i173 = (*sprite).data[sTailSpriteId];
+            crate::gl!(gSprites[gl_i173].data[4] = 7)
+        };
+        {
+            let gl_i174 = (*sprite).data[sTailSpriteId];
+            crate::gl!(gSprites[gl_i174].data[5] = 3)
+        };
         SpriteCB_ChasesAway_RayquazaFloat(sprite);
     } else if frame <= 327 {
         SpriteCB_ChasesAway_RayquazaFloat(sprite);
@@ -2155,14 +2750,20 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_Rayquaza(sprite: *mut Sprite) {
         SpriteCB_ChasesAway_RayquazaFloat(sprite);
         ChasesAway_SetRayquazaAnim(sprite, 3, 48, 16);
         (*sprite).x2 = 1;
-        gSprites[(*sprite).data[sTailSpriteId]].x2 = 1;
+        {
+            let gl_i175 = (*sprite).data[sTailSpriteId];
+            crate::gl!(gSprites[gl_i175].x2 = 1)
+        };
         PlayCry_Normal(SPECIES_RAYQUAZA as u16, 0);
         CreateTask(Some(Task_ChasesAway_AnimateRing), 0);
     } else {
         match frame {
             376 => {
                 (*sprite).x2 = 0;
-                gSprites[(*sprite).data[sTailSpriteId]].x2 = 0;
+                {
+                    let gl_i176 = (*sprite).data[sTailSpriteId];
+                    crate::gl!(gSprites[gl_i176].x2 = 0)
+                };
                 SpriteCB_ChasesAway_RayquazaFloat(sprite);
                 ChasesAway_SetRayquazaAnim(sprite, 2, 48, 16);
                 (*sprite).callback = Some(SpriteCB_ChasesAway_RayquazaFloat);
@@ -2176,15 +2777,24 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_Rayquaza(sprite: *mut Sprite) {
     }
     if (*sprite).data[7] > 328 && (*sprite).data[7] as i32 & 1 == 0 {
         (*sprite).x2 *= -1;
-        gSprites[(*sprite).data[sTailSpriteId]].x2 = (*sprite).x2;
+        {
+            let gl_i177 = (*sprite).data[sTailSpriteId];
+            crate::gl!(gSprites[gl_i177].x2 = (*sprite).x2)
+        };
     }
     (*sprite).data[7] += 1;
 }
 pub(crate) unsafe fn SpriteCB_ChasesAway_RayquazaFloat(body: *mut Sprite) {
-    let tail: *mut Sprite = &raw mut gSprites[(*body).data[sTailSpriteId]];
+    let tail: *mut Sprite = {
+        let gl_i178 = (*body).data[sTailSpriteId];
+        crate::gl!(&raw gSprites[gl_i178])
+    };
     if (*body).data[sFloatTimer] as i32 & (*tail).data[4] as i32 == 0 {
         (*body).y2 += (*body).data[4];
-        gSprites[(*body).data[sTailSpriteId]].y2 += (*body).data[4];
+        {
+            let gl_i179 = (*body).data[sTailSpriteId];
+            crate::gl!(gSprites[gl_i179].y2 += (*body).data[4])
+        };
         (*body).data[4] += (*body).data[5];
         if (*body).data[4] >= (*tail).data[5] || (*body).data[4] as i32 <= -((*tail).data[5] as i32)
         {
@@ -2199,7 +2809,10 @@ pub(crate) unsafe fn SpriteCB_ChasesAway_RayquazaFloat(body: *mut Sprite) {
     (*body).data[sFloatTimer] += 1;
 }
 unsafe fn ChasesAway_SetRayquazaAnim(body: *mut Sprite, animNum: u8, x: i16, y: i16) {
-    let tail: *mut Sprite = &raw mut gSprites[(*body).data[sTailSpriteId]];
+    let tail: *mut Sprite = {
+        let gl_i180 = (*body).data[sTailSpriteId];
+        crate::gl!(&raw gSprites[gl_i180])
+    };
     (*tail).x = (*body).x + x;
     (*tail).y = (*body).y + y;
     (*tail).x2 = (*body).x2;

@@ -173,21 +173,21 @@ unsafe fn ScriptReadWord(a0: *mut ScriptContext) -> u32 {
 }
 /// `ScriptReturn` with this module's view of its types.
 #[inline]
-unsafe fn ScriptReturn(a0: *mut ScriptContext) {
+fn ScriptReturn(a0: *mut ScriptContext) {
     unsafe {
         crate::script::ScriptReturn(a0 as _);
     }
 }
 /// `SetupNativeScript` with this module's view of its types.
 #[inline]
-unsafe fn SetupNativeScript(a0: *mut ScriptContext, a1: Option<unsafe fn() -> u8>) {
+fn SetupNativeScript(a0: *mut ScriptContext, a1: Option<unsafe fn() -> u8>) {
     unsafe {
         crate::script::SetupNativeScript(a0 as _, a1);
     }
 }
 /// `StopScript` with this module's view of its types.
 #[inline]
-unsafe fn StopScript(a0: *mut ScriptContext) {
+fn StopScript(a0: *mut ScriptContext) {
     unsafe {
         crate::script::StopScript(a0 as _);
     }
@@ -200,19 +200,20 @@ static sScriptStringVars: Table<CArray<*mut u8, 3>> =
     Table((&raw const crate::data::scrcmd::sScriptStringVars).cast());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gRamScriptRetAddr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gRamScriptRetAddr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAddressOffset: crate::global::Global<u32> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPauseCounter: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMovingNpcId: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMovingNpcMapGroup: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMovingNpcMapNum: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFieldEffectScriptId: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sBrailleWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 
@@ -249,7 +250,7 @@ unsafe fn AddTextPrinterParameterized(
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -264,7 +265,7 @@ pub fn ScrCmd_nop1(ctx: *mut ScriptContext) -> u8 {
     FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_end(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_end(ctx: *mut ScriptContext) -> u8 {
     StopScript(ctx);
     FALSE
 }
@@ -309,7 +310,7 @@ pub unsafe fn ScrCmd_goto(ctx: *mut ScriptContext) -> u8 {
     FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_return(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_return(ctx: *mut ScriptContext) -> u8 {
     ScriptReturn(ctx);
     FALSE
 }
@@ -486,7 +487,7 @@ pub unsafe fn ScrCmd_callstd_if(ctx: *mut ScriptContext) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ScrCmd_returnram(ctx: *mut ScriptContext) -> u8 {
-    ScriptJump(ctx, gRamScriptRetAddr);
+    ScriptJump(ctx, crate::gl!(gRamScriptRetAddr));
     FALSE
 }
 #[unsafe(no_mangle)]
@@ -825,7 +826,7 @@ pub unsafe fn ScrCmd_setflashlevel(ctx: *mut ScriptContext) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn IsPaletteNotActive() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -874,16 +875,16 @@ pub unsafe fn ScrCmd_fadescreenswapbuffers(ctx: *mut ScriptContext) -> u8 {
     match mode {
         FADE_FROM_BLACK | FADE_FROM_WHITE => {
             CpuSet(
-                gPaletteDecompressionBuffer.as_mut_ptr() as *mut c_void,
-                gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+                (*gPaletteDecompressionBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
                 0x4000100,
             );
             FadeScreen(mode, 0);
         }
         _ => {
             CpuSet(
-                gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
-                gPaletteDecompressionBuffer.as_mut_ptr() as *mut c_void,
+                (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*gPaletteDecompressionBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
                 0x4000100,
             );
             FadeScreen(mode, 0);
@@ -892,7 +893,7 @@ pub unsafe fn ScrCmd_fadescreenswapbuffers(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(IsPaletteNotActive));
     TRUE
 }
-pub(crate) unsafe fn RunPauseTimer() -> u8 {
+pub(crate) fn RunPauseTimer() -> u8 {
     if ({
         sPauseCounter.set(sPauseCounter.get() - 1);
         sPauseCounter.get()
@@ -928,9 +929,9 @@ pub fn ScrCmd_dotimebasedevents(ctx: *mut ScriptContext) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn ScrCmd_gettime(ctx: *mut ScriptContext) -> u8 {
     RtcCalcLocalTime();
-    gSpecialVar_0x8000 = gLocalTime.hours as u16;
-    gSpecialVar_0x8001 = gLocalTime.minutes as u16;
-    gSpecialVar_0x8002 = gLocalTime.seconds as u16;
+    gSpecialVar_0x8000 = crate::gl!(gLocalTime.hours) as u16;
+    gSpecialVar_0x8001 = crate::gl!(gLocalTime.minutes) as u16;
+    gSpecialVar_0x8002 = crate::gl!(gLocalTime.seconds) as u16;
     FALSE
 }
 #[unsafe(no_mangle)]
@@ -1240,8 +1241,8 @@ pub unsafe fn ScrCmd_setescapewarp(ctx: *mut ScriptContext) -> u8 {
 pub unsafe fn ScrCmd_getplayerxy(ctx: *mut ScriptContext) -> u8 {
     let pX: *mut u16 = GetVarPointer(ScriptReadHalfword(ctx));
     let pY: *mut u16 = GetVarPointer(ScriptReadHalfword(ctx));
-    *pX = (*gSaveBlock1Ptr).pos.x as u16;
-    *pY = (*gSaveBlock1Ptr).pos.y as u16;
+    *pX = (*crate::gl!(gSaveBlock1Ptr)).pos.x as u16;
+    *pY = (*crate::gl!(gSaveBlock1Ptr)).pos.y as u16;
     FALSE
 }
 #[unsafe(no_mangle)]
@@ -1266,7 +1267,7 @@ pub(crate) unsafe fn WaitForSoundEffectFinish() -> u8 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_waitse(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_waitse(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(WaitForSoundEffectFinish));
     TRUE
 }
@@ -1279,7 +1280,7 @@ pub(crate) unsafe fn WaitForFanfareFinish() -> u8 {
     IsFanfareTaskInactive()
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_waitfanfare(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_waitfanfare(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(WaitForFanfareFinish));
     TRUE
 }
@@ -1347,8 +1348,8 @@ pub unsafe fn ScrCmd_applymovement(ctx: *mut ScriptContext) -> u8 {
     let movementScript: *mut c_void = ScriptReadWord(ctx) as usize as *mut c_void;
     ScriptMovement_StartObjectMovementScript(
         localId as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
         movementScript as *mut u8,
     );
     sMovingNpcId.set(localId);
@@ -1390,8 +1391,8 @@ pub unsafe fn ScrCmd_waitmovement(ctx: *mut ScriptContext) -> u8 {
     if localId != LOCALID_NONE as u16 {
         sMovingNpcId.set(localId);
     }
-    sMovingNpcMapGroup.set((*gSaveBlock1Ptr).location.mapGroup as u16);
-    sMovingNpcMapNum.set((*gSaveBlock1Ptr).location.mapNum as u16);
+    sMovingNpcMapGroup.set((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u16);
+    sMovingNpcMapNum.set((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u16);
     SetupNativeScript(ctx, Some(WaitForMovementFinish));
     TRUE
 }
@@ -1421,8 +1422,8 @@ pub unsafe fn ScrCmd_removeobject(ctx: *mut ScriptContext) -> u8 {
     let localId: u16 = VarGet(ScriptReadHalfword(ctx));
     RemoveObjectEventByLocalIdAndMap(
         localId as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
     FALSE
 }
@@ -1447,8 +1448,8 @@ pub unsafe fn ScrCmd_addobject(ctx: *mut ScriptContext) -> u8 {
     let objectId: u16 = VarGet(ScriptReadHalfword(ctx));
     TrySpawnObjectEvent(
         objectId as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
     FALSE
 }
@@ -1475,8 +1476,8 @@ pub unsafe fn ScrCmd_setobjectxy(ctx: *mut ScriptContext) -> u8 {
     let y: u16 = VarGet(ScriptReadHalfword(ctx));
     TryMoveObjectEventToMapCoords(
         localId as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
         x as i16,
         y as i16,
     );
@@ -1495,8 +1496,8 @@ pub unsafe fn ScrCmd_copyobjectxytoperm(ctx: *mut ScriptContext) -> u8 {
     let localId: u16 = VarGet(ScriptReadHalfword(ctx));
     TryOverrideObjectEventTemplateCoords(
         localId as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
     FALSE
 }
@@ -1571,9 +1572,12 @@ pub unsafe fn ScrCmd_resetobjectsubpriority(ctx: *mut ScriptContext) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ScrCmd_faceplayer(ctx: *mut ScriptContext) -> u8 {
-    if gObjectEvents[gSelectedObjectEvent].active() != 0 {
+    if (*gObjectEvents.as_ptr())[crate::gl!(gSelectedObjectEvent)].active() != 0 {
         ObjectEventFaceOppositeDirection(
-            &raw mut gObjectEvents[gSelectedObjectEvent],
+            {
+                let gl_s0 = crate::gl!(gSelectedObjectEvent);
+                crate::gl!(&raw gObjectEvents[gl_s0])
+            },
             GetPlayerFacingDirection(),
         );
     }
@@ -1589,8 +1593,8 @@ pub unsafe fn ScrCmd_turnobject(ctx: *mut ScriptContext) -> u8 {
     });
     ObjectEventTurnByLocalIdAndMap(
         localId as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
         direction,
     );
     FALSE
@@ -1674,7 +1678,7 @@ pub unsafe fn ScrCmd_lock(ctx: *mut ScriptContext) -> u8 {
     if IsOverworldLinkActive() != 0 {
         return FALSE;
     } else {
-        if gObjectEvents[gSelectedObjectEvent].active() != 0 {
+        if (*gObjectEvents.as_ptr())[crate::gl!(gSelectedObjectEvent)].active() != 0 {
             FreezeObjects_WaitForPlayerAndSelected();
             SetupNativeScript(ctx, Some(IsFreezeSelectedObjectAndPlayerFinished));
         } else {
@@ -1692,7 +1696,7 @@ pub unsafe fn ScrCmd_lock(ctx: *mut ScriptContext) -> u8 {
 pub unsafe fn ScrCmd_releaseall(ctx: *mut ScriptContext) -> u8 {
     HideFieldMessageBox();
     let playerObjectId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
-    ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[playerObjectId]);
+    ObjectEventClearHeldMovementIfFinished(crate::gl!(&raw gObjectEvents[playerObjectId]));
     ScriptMovement_UnfreezeObjectEvents();
     UnfreezeObjectEvents();
     FALSE
@@ -1700,11 +1704,14 @@ pub unsafe fn ScrCmd_releaseall(ctx: *mut ScriptContext) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn ScrCmd_release(ctx: *mut ScriptContext) -> u8 {
     HideFieldMessageBox();
-    if gObjectEvents[gSelectedObjectEvent].active() != 0 {
-        ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[gSelectedObjectEvent]);
+    if (*gObjectEvents.as_ptr())[crate::gl!(gSelectedObjectEvent)].active() != 0 {
+        ObjectEventClearHeldMovementIfFinished({
+            let gl_s0 = crate::gl!(gSelectedObjectEvent);
+            crate::gl!(&raw gObjectEvents[gl_s0])
+        });
     }
     let playerObjectId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
-    ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[playerObjectId]);
+    ObjectEventClearHeldMovementIfFinished(crate::gl!(&raw gObjectEvents[playerObjectId]));
     ScriptMovement_UnfreezeObjectEvents();
     UnfreezeObjectEvents();
     FALSE
@@ -1733,11 +1740,11 @@ pub unsafe fn ScrCmd_messageautoscroll(ctx: *mut ScriptContext) -> u8 {
     if msg.is_null() {
         msg = (*ctx).data[0] as usize as *mut u8;
     }
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_autoScroll(TRUE);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_forceMidTextSpeed(TRUE);
@@ -1756,7 +1763,7 @@ pub unsafe fn ScrCmd_messageinstant(ctx: *mut ScriptContext) -> u8 {
     FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_waitmessage(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_waitmessage(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(IsFieldMessageBoxHidden));
     TRUE
 }
@@ -1765,17 +1772,17 @@ pub unsafe fn ScrCmd_closemessage(ctx: *mut ScriptContext) -> u8 {
     HideFieldMessageBox();
     FALSE
 }
-pub(crate) unsafe fn WaitForAorBPress() -> u8 {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+pub(crate) fn WaitForAorBPress() -> u8 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         return TRUE;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return TRUE;
     }
     FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_waitbuttonpress(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_waitbuttonpress(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(WaitForAorBPress));
     TRUE
 }
@@ -2094,7 +2101,7 @@ pub unsafe fn ScrCmd_bufferleadmonspeciesname(ctx: *mut ScriptContext) -> u8 {
     let dest: *mut u8 = sScriptStringVars[stringVarIndex];
     let partyIndex: u8 = GetLeadMonIndex();
     let species: u32 = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_SPECIES,
         null_mut(),
     );
@@ -2116,7 +2123,7 @@ pub unsafe fn ScrCmd_bufferpartymonnick(ctx: *mut ScriptContext) -> u8 {
     });
     let partyIndex: u16 = VarGet(ScriptReadHalfword(ctx));
     GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_NICKNAME,
         sScriptStringVars[stringVarIndex],
     );
@@ -2314,13 +2321,16 @@ pub unsafe fn ScrCmd_checkpartymove(ctx: *mut ScriptContext) -> u8 {
     let r#move: u16 = ScriptReadHalfword(ctx);
     gSpecialVar_Result = PARTY_SIZE as u16;
     for i in 0..(PARTY_SIZE as u8) {
-        let species: u16 =
-            GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) as u16;
+        let species: u16 = GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
         if species == 0 {
             break;
         }
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
-            && MonKnowsMove(&raw mut gPlayerParty[i], r#move) == TRUE
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0
+            && MonKnowsMove(crate::gl!(&raw gPlayerParty[i]), r#move) == TRUE
         {
             gSpecialVar_Result = i as u16;
             gSpecialVar_0x8004 = species;
@@ -2338,7 +2348,7 @@ pub unsafe fn ScrCmd_addmoney(ctx: *mut ScriptContext) -> u8 {
         t2
     });
     if ignore == 0 {
-        AddMoney(&raw mut (*gSaveBlock1Ptr).money, amount);
+        AddMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money, amount);
     }
     FALSE
 }
@@ -2351,7 +2361,7 @@ pub unsafe fn ScrCmd_removemoney(ctx: *mut ScriptContext) -> u8 {
         t2
     });
     if ignore == 0 {
-        RemoveMoney(&raw mut (*gSaveBlock1Ptr).money, amount);
+        RemoveMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money, amount);
     }
     FALSE
 }
@@ -2364,7 +2374,8 @@ pub unsafe fn ScrCmd_checkmoney(ctx: *mut ScriptContext) -> u8 {
         t2
     });
     if ignore == 0 {
-        gSpecialVar_Result = IsEnoughMoney(&raw mut (*gSaveBlock1Ptr).money, amount) as u16;
+        gSpecialVar_Result =
+            IsEnoughMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money, amount) as u16;
     }
     FALSE
 }
@@ -2386,7 +2397,11 @@ pub unsafe fn ScrCmd_showmoneybox(ctx: *mut ScriptContext) -> u8 {
         t6
     });
     if ignore == 0 {
-        DrawMoneyBox(GetMoney(&raw mut (*gSaveBlock1Ptr).money) as i32, x, y);
+        DrawMoneyBox(
+            GetMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money) as i32,
+            x,
+            y,
+        );
     }
     FALSE
 }
@@ -2413,7 +2428,7 @@ pub unsafe fn ScrCmd_updatemoneybox(ctx: *mut ScriptContext) -> u8 {
         t6
     });
     if ignore == 0 {
-        ChangeAmountInMoneyBox(GetMoney(&raw mut (*gSaveBlock1Ptr).money) as i32);
+        ChangeAmountInMoneyBox(GetMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money) as i32);
     }
     FALSE
 }
@@ -2596,7 +2611,7 @@ pub unsafe fn ScrCmd_showcontestresults(ctx: *mut ScriptContext) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ScrCmd_contestlinktransfer(ctx: *mut ScriptContext) -> u8 {
-    ContestLinkTransfer(gSpecialVar_ContestCategory as u8);
+    ContestLinkTransfer(gSpecialVar_ContestCategory.get() as u8);
     ScriptContext_Stop();
     TRUE
 }
@@ -2614,7 +2629,7 @@ pub unsafe fn ScrCmd_setfieldeffectargument(ctx: *mut ScriptContext) -> u8 {
         (*ctx).scriptPtr = (*ctx).scriptPtr.at(1);
         t2
     });
-    gFieldEffectArguments[argNum] = VarGet(ScriptReadHalfword(ctx)) as i16 as i32;
+    crate::gl!(gFieldEffectArguments[argNum] = VarGet(ScriptReadHalfword(ctx)) as i16 as i32);
     FALSE
 }
 pub(crate) unsafe fn WaitForFieldEffectFinish() -> u8 {
@@ -2642,7 +2657,7 @@ pub unsafe fn ScrCmd_setrespawn(ctx: *mut ScriptContext) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ScrCmd_checkplayergender(ctx: *mut ScriptContext) -> u8 {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).playerGender as u16;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16;
     FALSE
 }
 #[unsafe(no_mangle)]
@@ -2653,7 +2668,7 @@ pub unsafe fn ScrCmd_playmoncry(ctx: *mut ScriptContext) -> u8 {
     FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_waitmoncry(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_waitmoncry(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(IsCryFinished));
     TRUE
 }
@@ -2703,7 +2718,7 @@ pub(crate) unsafe fn IsDoorAnimationStopped() -> u8 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_waitdooranim(ctx: *mut ScriptContext) -> u8 {
+pub fn ScrCmd_waitdooranim(ctx: *mut ScriptContext) -> u8 {
     SetupNativeScript(ctx, Some(IsDoorAnimationStopped));
     TRUE
 }
@@ -2790,8 +2805,8 @@ pub unsafe fn ScrCmd_freerotatingtilepuzzle(ctx: *mut ScriptContext) -> u8 {
     FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScrCmd_selectapproachingtrainer(ctx: *mut ScriptContext) -> u8 {
-    gSelectedObjectEvent = GetCurrentApproachingTrainerObjectEventId();
+pub fn ScrCmd_selectapproachingtrainer(ctx: *mut ScriptContext) -> u8 {
+    crate::gl!(gSelectedObjectEvent = GetCurrentApproachingTrainerObjectEventId());
     FALSE
 }
 #[unsafe(no_mangle)]
@@ -2799,7 +2814,7 @@ pub unsafe fn ScrCmd_lockfortrainer(ctx: *mut ScriptContext) -> u8 {
     if IsOverworldLinkActive() != 0 {
         return FALSE;
     } else {
-        if gObjectEvents[gSelectedObjectEvent].active() != 0 {
+        if (*gObjectEvents.as_ptr())[crate::gl!(gSelectedObjectEvent)].active() != 0 {
             FreezeForApproachingTrainers();
             SetupNativeScript(ctx, Some(IsFreezeObjectAndPlayerFinished));
         }
@@ -2815,7 +2830,7 @@ pub unsafe fn ScrCmd_setmodernfatefulencounter(ctx: *mut ScriptContext) -> u8 {
     let mut isModernFatefulEncounter: u8 = TRUE;
     let partyIndex: u16 = VarGet(ScriptReadHalfword(ctx));
     SetMonData(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_MODERN_FATEFUL_ENCOUNTER,
         &raw mut isModernFatefulEncounter as *mut c_void,
     );
@@ -2825,7 +2840,7 @@ pub unsafe fn ScrCmd_setmodernfatefulencounter(ctx: *mut ScriptContext) -> u8 {
 pub unsafe fn ScrCmd_checkmodernfatefulencounter(ctx: *mut ScriptContext) -> u8 {
     let partyIndex: u16 = VarGet(ScriptReadHalfword(ctx));
     gSpecialVar_Result = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_MODERN_FATEFUL_ENCOUNTER,
         null_mut(),
     ) as u16;
@@ -2835,7 +2850,7 @@ pub unsafe fn ScrCmd_checkmodernfatefulencounter(ctx: *mut ScriptContext) -> u8 
 pub unsafe fn ScrCmd_trywondercardscript(ctx: *mut ScriptContext) -> u8 {
     let script: *mut u8 = GetSavedRamScriptIfValid();
     if !script.is_null() {
-        gRamScriptRetAddr = (*ctx).scriptPtr;
+        crate::gl!(gRamScriptRetAddr = (*ctx).scriptPtr);
         ScriptJump(ctx, script);
     }
     FALSE
@@ -2875,7 +2890,7 @@ pub unsafe fn ScrCmd_setmonmetlocation(ctx: *mut ScriptContext) -> u8 {
     });
     if partyIndex < PARTY_SIZE as u16 {
         SetMonData(
-            &raw mut gPlayerParty[partyIndex],
+            crate::gl!(&raw gPlayerParty[partyIndex]),
             MON_DATA_MET_LOCATION,
             &raw mut location as *mut c_void,
         );

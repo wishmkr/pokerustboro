@@ -44,7 +44,7 @@ unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
@@ -200,29 +200,33 @@ static sRoundedDownGrayscaleMap: Table<CArray<u8, 32>> =
     Table((&raw const crate::data::palette::sRoundedDownGrayscaleMap).cast());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPlttBufferUnfaded: Aligned<CArray<u16, 512>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPlttBufferUnfaded: crate::global::Global<Aligned<CArray<u16, 512>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPlttBufferFaded: Aligned<CArray<u16, 512>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPaletteStructs: CArray<PaletteStruct, 16> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPlttBufferFaded: crate::global::Global<Aligned<CArray<u16, 512>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPaletteStructs: crate::global::Global<CArray<PaletteStruct, 16>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPaletteFade: PaletteFadeControl = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFiller: u32 = 0;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPaletteFade: crate::global::Global<PaletteFadeControl> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sFiller: crate::global::Global<u32> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPlttBufferTransferPending: crate::global::Global<u32> =
     crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPaletteDecompressionBuffer: Aligned<CArray<u8, 1024>> =
-    Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPaletteDecompressionBuffer: crate::global::Global<Aligned<CArray<u8, 1024>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -230,15 +234,18 @@ unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn LoadCompressedPalette(src: *mut u32, offset: u16, size: u16) {
-    LZDecompressWram(src, gPaletteDecompressionBuffer.as_mut_ptr() as *mut c_void);
+    LZDecompressWram(
+        src,
+        (*gPaletteDecompressionBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+    );
     CpuSet(
-        gPaletteDecompressionBuffer.as_mut_ptr() as *mut c_void,
-        &raw mut gPlttBufferUnfaded[offset] as *mut c_void,
+        (*gPaletteDecompressionBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+        crate::gl!(&raw gPlttBufferUnfaded[offset]) as *mut c_void,
         (size as i32 / 2) as u32 & 0x1FFFFF,
     );
     CpuSet(
-        gPaletteDecompressionBuffer.as_mut_ptr() as *mut c_void,
-        &raw mut gPlttBufferFaded[offset] as *mut c_void,
+        (*gPaletteDecompressionBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+        crate::gl!(&raw gPlttBufferFaded[offset]) as *mut c_void,
         (size as i32 / 2) as u32 & 0x1FFFFF,
     );
 }
@@ -246,12 +253,12 @@ pub unsafe fn LoadCompressedPalette(src: *mut u32, offset: u16, size: u16) {
 pub unsafe fn LoadPalette(src: *mut c_void, offset: u16, size: u16) {
     CpuSet(
         src,
-        &raw mut gPlttBufferUnfaded[offset] as *mut c_void,
+        crate::gl!(&raw gPlttBufferUnfaded[offset]) as *mut c_void,
         (size as i32 / 2) as u32 & 0x1FFFFF,
     );
     CpuSet(
         src,
-        &raw mut gPlttBufferFaded[offset] as *mut c_void,
+        crate::gl!(&raw gPlttBufferFaded[offset]) as *mut c_void,
         (size as i32 / 2) as u32 & 0x1FFFFF,
     );
 }
@@ -263,7 +270,7 @@ pub unsafe fn FillPalette(value: u16, offset: u16, size: u16) {
             volatile_write(&raw mut tmp, value);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut gPlttBufferUnfaded[offset] as *mut c_void,
+                crate::gl!(&raw gPlttBufferUnfaded[offset]) as *mut c_void,
                 0x1000000 | (size as i32 / 2) as u32 & 0x1FFFFF,
             );
         }
@@ -274,7 +281,7 @@ pub unsafe fn FillPalette(value: u16, offset: u16, size: u16) {
             volatile_write(&raw mut tmp, value);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut gPlttBufferFaded[offset] as *mut c_void,
+                crate::gl!(&raw gPlttBufferFaded[offset]) as *mut c_void,
                 0x1000000 | (size as i32 / 2) as u32 & 0x1FFFFF,
             );
         }
@@ -282,9 +289,9 @@ pub unsafe fn FillPalette(value: u16, offset: u16, size: u16) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TransferPlttBuffer() {
-    if gPaletteFade.bufferTransferDisabled() == 0 {
+    if (*gPaletteFade.as_ptr()).bufferTransferDisabled() == 0 {
         {
-            let mut _src: *mut c_void = gPlttBufferFaded.as_mut_ptr() as *mut c_void;
+            let mut _src: *mut c_void = (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void;
             let mut _dest: *mut c_void = PLTT as i32 as usize as *mut c_void;
             let mut _size: u32 = PLTT_SIZE;
             {
@@ -300,7 +307,9 @@ pub unsafe fn TransferPlttBuffer() {
             }
         }
         sPlttBufferTransferPending.set(FALSE as u32);
-        if gPaletteFade.mode() == HARDWARE_FADE && gPaletteFade.active() != 0 {
+        if (*gPaletteFade.as_ptr()).mode() == HARDWARE_FADE
+            && (*gPaletteFade.as_ptr()).active() != 0
+        {
             UpdateBlendRegisters();
         }
     }
@@ -312,14 +321,14 @@ pub unsafe fn UpdatePaletteFade() -> u8 {
     if sPlttBufferTransferPending.get() != 0 {
         return PALETTE_FADE_STATUS_LOADING;
     }
-    if gPaletteFade.mode() == NORMAL_FADE {
+    if (*gPaletteFade.as_ptr()).mode() == NORMAL_FADE {
         result = UpdateNormalPaletteFade();
-    } else if gPaletteFade.mode() == FAST_FADE {
+    } else if (*gPaletteFade.as_ptr()).mode() == FAST_FADE {
         result = UpdateFastPaletteFade();
     } else {
         result = UpdateHardwarePaletteFade();
     }
-    sPlttBufferTransferPending.set(gPaletteFade.multipurpose1 | dummy as u32);
+    sPlttBufferTransferPending.set(crate::gl!(gPaletteFade.multipurpose1) | dummy as u32);
     result
 }
 #[unsafe(no_mangle)]
@@ -332,8 +341,8 @@ pub unsafe fn ResetPaletteFade() {
 unsafe fn ReadPlttIntoBuffers() {
     let pltt: *mut u16 = PLTT as i32 as usize as *mut u16;
     for i in 0..512u16 {
-        gPlttBufferUnfaded[i] = *pltt.at(i);
-        gPlttBufferFaded[i] = *pltt.at(i);
+        crate::gl!(gPlttBufferUnfaded[i] = *pltt.at(i));
+        crate::gl!(gPlttBufferFaded[i] = *pltt.at(i));
     }
 }
 #[unsafe(no_mangle)]
@@ -346,40 +355,43 @@ pub unsafe fn BeginNormalPaletteFade(
 ) -> u8 {
     let mut temp: u8 = 0;
     let color: u16 = blendColor;
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         return FALSE;
     } else {
-        gPaletteFade.set_deltaY(2);
+        (*gPaletteFade.as_ptr()).set_deltaY(2);
         if delay < 0 {
-            gPaletteFade.set_deltaY(gPaletteFade.deltaY() + delay as u8 * 255);
+            (*gPaletteFade.as_ptr())
+                .set_deltaY((*gPaletteFade.as_ptr()).deltaY() + delay as u8 * 255);
             delay = 0;
         }
-        gPaletteFade.multipurpose1 = selectedPalettes;
-        gPaletteFade.set_delayCounter(delay as u8);
-        gPaletteFade.set_multipurpose2(delay as u16);
-        gPaletteFade.set_y(startY as u16);
-        gPaletteFade.set_targetY(targetY as u16);
-        gPaletteFade.set_blendColor(color);
-        gPaletteFade.set_active(TRUE as u16);
-        gPaletteFade.set_mode(NORMAL_FADE);
+        crate::gl!(gPaletteFade.multipurpose1 = selectedPalettes);
+        (*gPaletteFade.as_ptr()).set_delayCounter(delay as u8);
+        (*gPaletteFade.as_ptr()).set_multipurpose2(delay as u16);
+        (*gPaletteFade.as_ptr()).set_y(startY as u16);
+        (*gPaletteFade.as_ptr()).set_targetY(targetY as u16);
+        (*gPaletteFade.as_ptr()).set_blendColor(color);
+        (*gPaletteFade.as_ptr()).set_active(TRUE as u16);
+        (*gPaletteFade.as_ptr()).set_mode(NORMAL_FADE);
         if startY < targetY {
-            gPaletteFade.set_yDec(0);
+            (*gPaletteFade.as_ptr()).set_yDec(0);
         } else {
-            gPaletteFade.set_yDec(1);
+            (*gPaletteFade.as_ptr()).set_yDec(1);
         }
         UpdatePaletteFade();
-        temp = gPaletteFade.bufferTransferDisabled() as u8;
-        gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+        temp = (*gPaletteFade.as_ptr()).bufferTransferDisabled() as u8;
+        (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
         CpuSet(
-            gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+            (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
             PLTT as i32 as usize as *mut c_void,
             0x4000100,
         );
         sPlttBufferTransferPending.set(FALSE as u32);
-        if gPaletteFade.mode() == HARDWARE_FADE && gPaletteFade.active() != 0 {
+        if (*gPaletteFade.as_ptr()).mode() == HARDWARE_FADE
+            && (*gPaletteFade.as_ptr()).active() != 0
+        {
             UpdateBlendRegisters();
         }
-        gPaletteFade.set_bufferTransferDisabled(temp as u16);
+        (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(temp as u16);
         return TRUE;
     }
     #[allow(unreachable_code)]
@@ -400,7 +412,7 @@ unsafe fn BeginPlttFade(
 unsafe fn PaletteStruct_Run(a1: u8, unkFlags: *mut u32) {
     for i in 0..NUM_PALETTE_STRUCTS {
         'l1: {
-            let palstruct: *mut PaletteStruct = &raw mut sPaletteStructs[i];
+            let palstruct: *mut PaletteStruct = crate::gl!(&raw sPaletteStructs[i]);
             if (*palstruct).active() != 0 && (*(*palstruct).template).pst_field_8_0() == a1 as u16 {
                 if (*palstruct).srcIndex() == (*(*palstruct).template).srcCount() as u32 {
                     PaletteStruct_TryEnd(palstruct);
@@ -425,18 +437,27 @@ unsafe fn PaletteStruct_Copy(palStruct: *mut PaletteStruct, unkFlags: *mut u32) 
     let mut srcOffset: u16 = (*palStruct).srcIndex() as u16 * (*(*palStruct).template).size();
     if (*(*palStruct).template).pst_field_8_0() == 0 {
         while (i as u16) < (*(*palStruct).template).size() {
-            gPlttBufferUnfaded[(*palStruct).destOffset()] =
-                *(*(*palStruct).template).src.at(srcOffset);
-            gPlttBufferFaded[(*palStruct).destOffset()] =
-                *(*(*palStruct).template).src.at(srcOffset);
+            {
+                let gl_v = *(*(*palStruct).template).src.at(srcOffset);
+                let gl_i0 = (*palStruct).destOffset();
+                crate::gl!(gPlttBufferUnfaded[gl_i0] = gl_v)
+            };
+            {
+                let gl_v = *(*(*palStruct).template).src.at(srcOffset);
+                let gl_i1 = (*palStruct).destOffset();
+                crate::gl!(gPlttBufferFaded[gl_i1] = gl_v)
+            };
             i += 1;
             (*palStruct).set_destOffset((*palStruct).destOffset() + 1);
             srcOffset += 1;
         }
     } else {
         while (i as u16) < (*(*palStruct).template).size() {
-            gPlttBufferFaded[(*palStruct).destOffset()] =
-                *(*(*palStruct).template).src.at(srcOffset);
+            {
+                let gl_v = *(*(*palStruct).template).src.at(srcOffset);
+                let gl_i2 = (*palStruct).destOffset();
+                crate::gl!(gPlttBufferFaded[gl_i2] = gl_v)
+            };
             i += 1;
             (*palStruct).set_destOffset((*palStruct).destOffset() + 1);
             srcOffset += 1;
@@ -456,28 +477,35 @@ unsafe fn PaletteStruct_Copy(palStruct: *mut PaletteStruct, unkFlags: *mut u32) 
     *unkFlags |= shl_i32(1, (*palStruct).baseDestOffset() >> 4) as u32;
 }
 unsafe fn PaletteStruct_Blend(palStruct: *mut PaletteStruct, unkFlags: *mut u32) {
-    if gPaletteFade.active() != 0
-        && shl_i32(1, (*palStruct).baseDestOffset() >> 4) as u32 & gPaletteFade.multipurpose1 != 0
+    if (*gPaletteFade.as_ptr()).active() != 0
+        && shl_i32(1, (*palStruct).baseDestOffset() >> 4) as u32
+            & crate::gl!(gPaletteFade.multipurpose1)
+            != 0
     {
         if (*(*palStruct).template).pst_field_8_0() == 0 {
-            if gPaletteFade.delayCounter() as u16 != gPaletteFade.multipurpose2() {
+            if (*gPaletteFade.as_ptr()).delayCounter() as u16
+                != (*gPaletteFade.as_ptr()).multipurpose2()
+            {
                 BlendPalette(
                     (*palStruct).baseDestOffset() as u16,
                     (*(*palStruct).template).size(),
-                    gPaletteFade.y() as u8,
-                    gPaletteFade.blendColor(),
+                    (*gPaletteFade.as_ptr()).y() as u8,
+                    (*gPaletteFade.as_ptr()).blendColor(),
                 );
             }
         } else {
-            if gPaletteFade.delayCounter() == 0
+            if (*gPaletteFade.as_ptr()).delayCounter() == 0
                 && (*palStruct).countdown1 != (*(*palStruct).template).time1
             {
                 let srcOffset: u32 =
                     (*palStruct).srcIndex() * (*(*palStruct).template).size() as u32;
                 let mut i: u8 = 0;
                 while (i as u16) < (*(*palStruct).template).size() {
-                    gPlttBufferFaded[(*palStruct).baseDestOffset() + i as u32] =
-                        *(*(*palStruct).template).src.at(srcOffset + i as u32);
+                    {
+                        let gl_v = *(*(*palStruct).template).src.at(srcOffset + i as u32);
+                        let gl_i3 = (*palStruct).baseDestOffset() + i as u32;
+                        crate::gl!(gPlttBufferFaded[gl_i3] = gl_v)
+                    };
                     i += 1;
                 }
             }
@@ -512,48 +540,50 @@ pub unsafe fn PaletteStruct_ResetById(id: u16) {
     }
 }
 unsafe fn PaletteStruct_Reset(paletteNum: u8) {
-    sPaletteStructs[paletteNum].template = (&raw const *sDummyPaletteStructTemplate).cast_mut();
-    sPaletteStructs[paletteNum].set_active(FALSE as u32);
-    sPaletteStructs[paletteNum].set_baseDestOffset(0);
-    sPaletteStructs[paletteNum].set_destOffset(0);
-    sPaletteStructs[paletteNum].set_srcIndex(0);
-    sPaletteStructs[paletteNum].set_flag(0);
-    sPaletteStructs[paletteNum].countdown1 = 0;
-    sPaletteStructs[paletteNum].countdown2 = 0;
+    crate::gl!(
+        sPaletteStructs[paletteNum].template = (&raw const *sDummyPaletteStructTemplate).cast_mut()
+    );
+    (*sPaletteStructs.as_ptr())[paletteNum].set_active(FALSE as u32);
+    (*sPaletteStructs.as_ptr())[paletteNum].set_baseDestOffset(0);
+    (*sPaletteStructs.as_ptr())[paletteNum].set_destOffset(0);
+    (*sPaletteStructs.as_ptr())[paletteNum].set_srcIndex(0);
+    (*sPaletteStructs.as_ptr())[paletteNum].set_flag(0);
+    crate::gl!(sPaletteStructs[paletteNum].countdown1 = 0);
+    crate::gl!(sPaletteStructs[paletteNum].countdown2 = 0);
 }
 pub unsafe fn ResetPaletteFadeControl() {
-    gPaletteFade.multipurpose1 = 0;
-    gPaletteFade.set_multipurpose2(0);
-    gPaletteFade.set_delayCounter(0);
-    gPaletteFade.set_y(0);
-    gPaletteFade.set_targetY(0);
-    gPaletteFade.set_blendColor(0);
-    gPaletteFade.set_active(FALSE as u16);
-    gPaletteFade.set_multipurpose2(0);
-    gPaletteFade.set_yDec(0);
-    gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-    gPaletteFade.set_shouldResetBlendRegisters(FALSE as u16);
-    gPaletteFade.set_hardwareFadeFinishing(FALSE as u16);
-    gPaletteFade.set_softwareFadeFinishing(FALSE as u16);
-    gPaletteFade.set_softwareFadeFinishingCounter(0);
-    gPaletteFade.set_objPaletteToggle(0);
-    gPaletteFade.set_deltaY(2);
+    crate::gl!(gPaletteFade.multipurpose1 = 0);
+    (*gPaletteFade.as_ptr()).set_multipurpose2(0);
+    (*gPaletteFade.as_ptr()).set_delayCounter(0);
+    (*gPaletteFade.as_ptr()).set_y(0);
+    (*gPaletteFade.as_ptr()).set_targetY(0);
+    (*gPaletteFade.as_ptr()).set_blendColor(0);
+    (*gPaletteFade.as_ptr()).set_active(FALSE as u16);
+    (*gPaletteFade.as_ptr()).set_multipurpose2(0);
+    (*gPaletteFade.as_ptr()).set_yDec(0);
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+    (*gPaletteFade.as_ptr()).set_shouldResetBlendRegisters(FALSE as u16);
+    (*gPaletteFade.as_ptr()).set_hardwareFadeFinishing(FALSE as u16);
+    (*gPaletteFade.as_ptr()).set_softwareFadeFinishing(FALSE as u16);
+    (*gPaletteFade.as_ptr()).set_softwareFadeFinishingCounter(0);
+    (*gPaletteFade.as_ptr()).set_objPaletteToggle(0);
+    (*gPaletteFade.as_ptr()).set_deltaY(2);
 }
 unsafe fn PaletteStruct_SetUnusedFlag(id: u16) {
     let paletteNum: u8 = PaletteStruct_GetPalNum(id);
     if paletteNum != NUM_PALETTE_STRUCTS {
-        sPaletteStructs[paletteNum].set_flag(TRUE as u32);
+        (*sPaletteStructs.as_ptr())[paletteNum].set_flag(TRUE as u32);
     }
 }
 unsafe fn PaletteStruct_ClearUnusedFlag(id: u16) {
     let paletteNum: u8 = PaletteStruct_GetPalNum(id);
     if paletteNum != NUM_PALETTE_STRUCTS {
-        sPaletteStructs[paletteNum].set_flag(FALSE as u32);
+        (*sPaletteStructs.as_ptr())[paletteNum].set_flag(FALSE as u32);
     }
 }
 unsafe fn PaletteStruct_GetPalNum(id: u16) -> u8 {
     for i in 0..NUM_PALETTE_STRUCTS {
-        if (*sPaletteStructs[i].template).id == id {
+        if (*crate::gl!(sPaletteStructs[i].template)).id == id {
             return i;
         }
     }
@@ -562,28 +592,31 @@ unsafe fn PaletteStruct_GetPalNum(id: u16) -> u8 {
 unsafe fn UpdateNormalPaletteFade() -> u8 {
     let mut paletteOffset: u16 = 0;
     let mut selectedPalettes: u16 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         return PALETTE_FADE_STATUS_DONE as u8;
     }
     if IsSoftwarePaletteFadeFinishing() != 0 {
-        return (if gPaletteFade.active() != 0 {
+        return (if (*gPaletteFade.as_ptr()).active() != 0 {
             PALETTE_FADE_STATUS_ACTIVE
         } else {
             PALETTE_FADE_STATUS_DONE
         }) as u8;
     } else {
-        if gPaletteFade.objPaletteToggle() == 0 {
-            if (gPaletteFade.delayCounter() as u16) < gPaletteFade.multipurpose2() {
-                gPaletteFade.set_delayCounter(gPaletteFade.delayCounter() + 1);
+        if (*gPaletteFade.as_ptr()).objPaletteToggle() == 0 {
+            if ((*gPaletteFade.as_ptr()).delayCounter() as u16)
+                < (*gPaletteFade.as_ptr()).multipurpose2()
+            {
+                (*gPaletteFade.as_ptr())
+                    .set_delayCounter((*gPaletteFade.as_ptr()).delayCounter() + 1);
                 return 2;
             }
-            gPaletteFade.set_delayCounter(0);
+            (*gPaletteFade.as_ptr()).set_delayCounter(0);
         }
         paletteOffset = 0;
-        if gPaletteFade.objPaletteToggle() == 0 {
-            selectedPalettes = gPaletteFade.multipurpose1 as u16;
+        if (*gPaletteFade.as_ptr()).objPaletteToggle() == 0 {
+            selectedPalettes = crate::gl!(gPaletteFade.multipurpose1) as u16;
         } else {
-            selectedPalettes = (gPaletteFade.multipurpose1 >> 16) as u16;
+            selectedPalettes = (crate::gl!(gPaletteFade.multipurpose1) >> 16) as u16;
             paletteOffset = OBJ_PLTT_OFFSET;
         }
         while selectedPalettes != 0 {
@@ -591,38 +624,39 @@ unsafe fn UpdateNormalPaletteFade() -> u8 {
                 BlendPalette(
                     paletteOffset,
                     16,
-                    gPaletteFade.y() as u8,
-                    gPaletteFade.blendColor(),
+                    (*gPaletteFade.as_ptr()).y() as u8,
+                    (*gPaletteFade.as_ptr()).blendColor(),
                 );
             }
             selectedPalettes >>= 1;
             paletteOffset += 16;
         }
-        gPaletteFade.set_objPaletteToggle(gPaletteFade.objPaletteToggle() ^ 1);
-        if gPaletteFade.objPaletteToggle() == 0 {
-            if gPaletteFade.y() == gPaletteFade.targetY() {
-                gPaletteFade.multipurpose1 = 0;
-                gPaletteFade.set_softwareFadeFinishing(TRUE as u16);
+        (*gPaletteFade.as_ptr())
+            .set_objPaletteToggle((*gPaletteFade.as_ptr()).objPaletteToggle() ^ 1);
+        if (*gPaletteFade.as_ptr()).objPaletteToggle() == 0 {
+            if (*gPaletteFade.as_ptr()).y() == (*gPaletteFade.as_ptr()).targetY() {
+                crate::gl!(gPaletteFade.multipurpose1 = 0);
+                (*gPaletteFade.as_ptr()).set_softwareFadeFinishing(TRUE as u16);
             } else {
                 let mut val: i8 = 0;
-                if gPaletteFade.yDec() == 0 {
-                    val = gPaletteFade.y() as i8;
-                    val += gPaletteFade.deltaY() as i8;
-                    if val as i32 > gPaletteFade.targetY() as i32 {
-                        val = gPaletteFade.targetY() as i8;
+                if (*gPaletteFade.as_ptr()).yDec() == 0 {
+                    val = (*gPaletteFade.as_ptr()).y() as i8;
+                    val += (*gPaletteFade.as_ptr()).deltaY() as i8;
+                    if val as i32 > (*gPaletteFade.as_ptr()).targetY() as i32 {
+                        val = (*gPaletteFade.as_ptr()).targetY() as i8;
                     }
-                    gPaletteFade.set_y(val as u16);
+                    (*gPaletteFade.as_ptr()).set_y(val as u16);
                 } else {
-                    val = gPaletteFade.y() as i8;
-                    val -= gPaletteFade.deltaY() as i8;
-                    if (val as i32) < gPaletteFade.targetY() as i32 {
-                        val = gPaletteFade.targetY() as i8;
+                    val = (*gPaletteFade.as_ptr()).y() as i8;
+                    val -= (*gPaletteFade.as_ptr()).deltaY() as i8;
+                    if (val as i32) < (*gPaletteFade.as_ptr()).targetY() as i32 {
+                        val = (*gPaletteFade.as_ptr()).targetY() as i8;
                     }
-                    gPaletteFade.set_y(val as u16);
+                    (*gPaletteFade.as_ptr()).set_y(val as u16);
                 }
             }
         }
-        return (if gPaletteFade.active() != 0 {
+        return (if (*gPaletteFade.as_ptr()).active() != 0 {
             PALETTE_FADE_STATUS_ACTIVE
         } else {
             PALETTE_FADE_STATUS_DONE
@@ -633,13 +667,19 @@ unsafe fn UpdateNormalPaletteFade() -> u8 {
         0
     }
 }
-pub unsafe fn InvertPlttBuffer(mut selectedPalettes: u32) {
+pub fn InvertPlttBuffer(mut selectedPalettes: u32) {
     let mut paletteOffset: u16 = 0;
     while selectedPalettes != 0 {
         if selectedPalettes & 1 != 0 {
             for i in 0..16u8 {
-                gPlttBufferFaded[paletteOffset as i32 + i as i32] =
-                    !gPlttBufferFaded[paletteOffset as i32 + i as i32];
+                {
+                    let gl_v = !{
+                        let gl_i5 = paletteOffset as i32 + i as i32;
+                        crate::gl!(gPlttBufferFaded[gl_i5])
+                    };
+                    let gl_i4 = paletteOffset as i32 + i as i32;
+                    crate::gl!(gPlttBufferFaded[gl_i4] = gl_v)
+                };
             }
         }
         selectedPalettes >>= 1;
@@ -651,8 +691,10 @@ pub unsafe fn TintPlttBuffer(mut selectedPalettes: u32, r: i8, g: i8, b: i8) {
     while selectedPalettes != 0 {
         if selectedPalettes & 1 != 0 {
             for i in 0..16u8 {
-                let data: *mut PlttData =
-                    &raw mut gPlttBufferFaded[paletteOffset as i32 + i as i32] as *mut PlttData;
+                let data: *mut PlttData = {
+                    let gl_i6 = paletteOffset as i32 + i as i32;
+                    crate::gl!(&raw gPlttBufferFaded[gl_i6])
+                } as *mut PlttData;
                 (*data).set_r((*data).r() + r as u16);
                 (*data).set_g((*data).g() + g as u16);
                 (*data).set_b((*data).b() + b as u16);
@@ -662,13 +704,19 @@ pub unsafe fn TintPlttBuffer(mut selectedPalettes: u32, r: i8, g: i8, b: i8) {
         paletteOffset += 16;
     }
 }
-pub unsafe fn UnfadePlttBuffer(mut selectedPalettes: u32) {
+pub fn UnfadePlttBuffer(mut selectedPalettes: u32) {
     let mut paletteOffset: u16 = 0;
     while selectedPalettes != 0 {
         if selectedPalettes & 1 != 0 {
             for i in 0..16u8 {
-                gPlttBufferFaded[paletteOffset as i32 + i as i32] =
-                    gPlttBufferUnfaded[paletteOffset as i32 + i as i32];
+                {
+                    let gl_v = {
+                        let gl_i8 = paletteOffset as i32 + i as i32;
+                        crate::gl!(gPlttBufferUnfaded[gl_i8])
+                    };
+                    let gl_i7 = paletteOffset as i32 + i as i32;
+                    crate::gl!(gPlttBufferFaded[gl_i7] = gl_v)
+                };
             }
         }
         selectedPalettes >>= 1;
@@ -676,14 +724,14 @@ pub unsafe fn UnfadePlttBuffer(mut selectedPalettes: u32) {
     }
 }
 pub unsafe fn BeginFastPaletteFade(submode: u8) {
-    gPaletteFade.set_deltaY(2);
+    (*gPaletteFade.as_ptr()).set_deltaY(2);
     BeginFastPaletteFadeInternal(submode);
 }
 unsafe fn BeginFastPaletteFadeInternal(submode: u8) {
-    gPaletteFade.set_y(31);
-    gPaletteFade.set_multipurpose2(submode as u16 & 0x3F);
-    gPaletteFade.set_active(TRUE as u16);
-    gPaletteFade.set_mode(FAST_FADE);
+    (*gPaletteFade.as_ptr()).set_y(31);
+    (*gPaletteFade.as_ptr()).set_multipurpose2(submode as u16 & 0x3F);
+    (*gPaletteFade.as_ptr()).set_active(TRUE as u16);
+    (*gPaletteFade.as_ptr()).set_mode(FAST_FADE);
     if submode == FAST_FADE_IN_FROM_BLACK as u8 {
         {
             {
@@ -691,7 +739,7 @@ unsafe fn BeginFastPaletteFadeInternal(submode: u8) {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+                    (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
                     0x1000200,
                 );
             }
@@ -704,7 +752,7 @@ unsafe fn BeginFastPaletteFadeInternal(submode: u8) {
                 volatile_write(&raw mut tmp, 32767);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+                    (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
                     0x1000200,
                 );
             }
@@ -721,31 +769,32 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
     let mut r: i8 = 0;
     let mut g: i8 = 0;
     let mut b: i8 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         return PALETTE_FADE_STATUS_DONE as u8;
     }
     if IsSoftwarePaletteFadeFinishing() != 0 {
-        return (if gPaletteFade.active() != 0 {
+        return (if (*gPaletteFade.as_ptr()).active() != 0 {
             PALETTE_FADE_STATUS_ACTIVE
         } else {
             PALETTE_FADE_STATUS_DONE
         }) as u8;
     }
-    if gPaletteFade.objPaletteToggle() != 0 {
+    if (*gPaletteFade.as_ptr()).objPaletteToggle() != 0 {
         paletteOffsetStart = OBJ_PLTT_OFFSET;
         paletteOffsetEnd = 512;
     } else {
         paletteOffsetStart = 0;
         paletteOffsetEnd = OBJ_PLTT_OFFSET;
     }
-    match gPaletteFade.multipurpose2() {
+    match (*gPaletteFade.as_ptr()).multipurpose2() {
         FAST_FADE_IN_FROM_WHITE => {
             for i in paletteOffsetStart..paletteOffsetEnd {
-                let unfaded: *mut PlttData = &raw mut gPlttBufferUnfaded[i] as *mut PlttData;
+                let unfaded: *mut PlttData =
+                    crate::gl!(&raw gPlttBufferUnfaded[i]) as *mut PlttData;
                 r0 = (*unfaded).r() as i8;
                 g0 = (*unfaded).g() as i8;
                 b0 = (*unfaded).b() as i8;
-                let faded: *mut PlttData = &raw mut gPlttBufferFaded[i] as *mut PlttData;
+                let faded: *mut PlttData = crate::gl!(&raw gPlttBufferFaded[i]) as *mut PlttData;
                 r = (*faded).r() as i8 - 2;
                 g = (*faded).g() as i8 - 2;
                 b = (*faded).b() as i8 - 2;
@@ -758,12 +807,12 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
                 if b < b0 {
                     b = b0;
                 }
-                gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10;
+                crate::gl!(gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10);
             }
         }
         FAST_FADE_OUT_TO_WHITE => {
             for i in paletteOffsetStart..paletteOffsetEnd {
-                let data: *mut PlttData = &raw mut gPlttBufferFaded[i] as *mut PlttData;
+                let data: *mut PlttData = crate::gl!(&raw gPlttBufferFaded[i]) as *mut PlttData;
                 r = (*data).r() as i8 + 2;
                 g = (*data).g() as i8 + 2;
                 b = (*data).b() as i8 + 2;
@@ -776,16 +825,17 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
                 if b > 31 {
                     b = 31;
                 }
-                gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10;
+                crate::gl!(gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10);
             }
         }
         FAST_FADE_IN_FROM_BLACK => {
             for i in paletteOffsetStart..paletteOffsetEnd {
-                let unfaded: *mut PlttData = &raw mut gPlttBufferUnfaded[i] as *mut PlttData;
+                let unfaded: *mut PlttData =
+                    crate::gl!(&raw gPlttBufferUnfaded[i]) as *mut PlttData;
                 r0 = (*unfaded).r() as i8;
                 g0 = (*unfaded).g() as i8;
                 b0 = (*unfaded).b() as i8;
-                let faded: *mut PlttData = &raw mut gPlttBufferFaded[i] as *mut PlttData;
+                let faded: *mut PlttData = crate::gl!(&raw gPlttBufferFaded[i]) as *mut PlttData;
                 r = (*faded).r() as i8 + 2;
                 g = (*faded).g() as i8 + 2;
                 b = (*faded).b() as i8 + 2;
@@ -798,12 +848,12 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
                 if b > b0 {
                     b = b0;
                 }
-                gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10;
+                crate::gl!(gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10);
             }
         }
         FAST_FADE_OUT_TO_BLACK => {
             for i in paletteOffsetStart..paletteOffsetEnd {
-                let data: *mut PlttData = &raw mut gPlttBufferFaded[i] as *mut PlttData;
+                let data: *mut PlttData = crate::gl!(&raw gPlttBufferFaded[i]) as *mut PlttData;
                 r = (*data).r() as i8 - 2;
                 g = (*data).g() as i8 - 2;
                 b = (*data).b() as i8 - 2;
@@ -816,30 +866,31 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
                 if b < 0 {
                     b = 0;
                 }
-                gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10;
+                crate::gl!(gPlttBufferFaded[i] = r as u16 | (g as u16) << 5 | (b as u16) << 10);
             }
         }
         _ => {}
     }
-    gPaletteFade.set_objPaletteToggle(gPaletteFade.objPaletteToggle() ^ 1);
-    if gPaletteFade.objPaletteToggle() != 0 {
-        return (if gPaletteFade.active() != 0 {
+    (*gPaletteFade.as_ptr()).set_objPaletteToggle((*gPaletteFade.as_ptr()).objPaletteToggle() ^ 1);
+    if (*gPaletteFade.as_ptr()).objPaletteToggle() != 0 {
+        return (if (*gPaletteFade.as_ptr()).active() != 0 {
             PALETTE_FADE_STATUS_ACTIVE
         } else {
             PALETTE_FADE_STATUS_DONE
         }) as u8;
     }
-    if (gPaletteFade.y() as i32 - gPaletteFade.deltaY() as i32) < 0 {
-        gPaletteFade.set_y(0);
+    if ((*gPaletteFade.as_ptr()).y() as i32 - (*gPaletteFade.as_ptr()).deltaY() as i32) < 0 {
+        (*gPaletteFade.as_ptr()).set_y(0);
     } else {
-        gPaletteFade.set_y(gPaletteFade.y() - gPaletteFade.deltaY() as u16);
+        (*gPaletteFade.as_ptr())
+            .set_y((*gPaletteFade.as_ptr()).y() - (*gPaletteFade.as_ptr()).deltaY() as u16);
     }
-    if gPaletteFade.y() == 0 {
-        match gPaletteFade.multipurpose2() {
+    if (*gPaletteFade.as_ptr()).y() == 0 {
+        match (*gPaletteFade.as_ptr()).multipurpose2() {
             FAST_FADE_IN_FROM_WHITE | FAST_FADE_IN_FROM_BLACK => {
                 CpuSet(
-                    gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
-                    gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+                    (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
+                    (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
                     0x4000100,
                 );
             }
@@ -848,7 +899,7 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
                 volatile_write(&raw mut tmp, 0xffffffff);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+                    (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
                     0x5000100,
                 );
             }
@@ -857,16 +908,16 @@ unsafe fn UpdateFastPaletteFade() -> u8 {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+                    (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
                     0x5000100,
                 );
             }
             _ => {}
         }
-        gPaletteFade.set_mode(NORMAL_FADE);
-        gPaletteFade.set_softwareFadeFinishing(TRUE as u16);
+        (*gPaletteFade.as_ptr()).set_mode(NORMAL_FADE);
+        (*gPaletteFade.as_ptr()).set_softwareFadeFinishing(TRUE as u16);
     }
-    (if gPaletteFade.active() != 0 {
+    (if (*gPaletteFade.as_ptr()).active() != 0 {
         PALETTE_FADE_STATUS_ACTIVE
     } else {
         PALETTE_FADE_STATUS_DONE
@@ -880,80 +931,86 @@ pub unsafe fn BeginHardwarePaletteFade(
     targetY: u8,
     shouldResetBlendRegisters: u8,
 ) {
-    gPaletteFade.multipurpose1 = blendCnt as u32;
-    gPaletteFade.set_delayCounter(delay);
-    gPaletteFade.set_multipurpose2(delay as u16);
-    gPaletteFade.set_y(y as u16);
-    gPaletteFade.set_targetY(targetY as u16);
-    gPaletteFade.set_active(TRUE as u16);
-    gPaletteFade.set_mode(HARDWARE_FADE);
-    gPaletteFade.set_shouldResetBlendRegisters(shouldResetBlendRegisters as u16 & 1);
-    gPaletteFade.set_hardwareFadeFinishing(FALSE as u16);
+    crate::gl!(gPaletteFade.multipurpose1 = blendCnt as u32);
+    (*gPaletteFade.as_ptr()).set_delayCounter(delay);
+    (*gPaletteFade.as_ptr()).set_multipurpose2(delay as u16);
+    (*gPaletteFade.as_ptr()).set_y(y as u16);
+    (*gPaletteFade.as_ptr()).set_targetY(targetY as u16);
+    (*gPaletteFade.as_ptr()).set_active(TRUE as u16);
+    (*gPaletteFade.as_ptr()).set_mode(HARDWARE_FADE);
+    (*gPaletteFade.as_ptr()).set_shouldResetBlendRegisters(shouldResetBlendRegisters as u16 & 1);
+    (*gPaletteFade.as_ptr()).set_hardwareFadeFinishing(FALSE as u16);
     if y < targetY {
-        gPaletteFade.set_yDec(0);
+        (*gPaletteFade.as_ptr()).set_yDec(0);
     } else {
-        gPaletteFade.set_yDec(1);
+        (*gPaletteFade.as_ptr()).set_yDec(1);
     }
 }
 unsafe fn UpdateHardwarePaletteFade() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         return PALETTE_FADE_STATUS_DONE as u8;
     }
-    if (gPaletteFade.delayCounter() as u16) < gPaletteFade.multipurpose2() {
-        gPaletteFade.set_delayCounter(gPaletteFade.delayCounter() + 1);
+    if ((*gPaletteFade.as_ptr()).delayCounter() as u16) < (*gPaletteFade.as_ptr()).multipurpose2() {
+        (*gPaletteFade.as_ptr()).set_delayCounter((*gPaletteFade.as_ptr()).delayCounter() + 1);
         return PALETTE_FADE_STATUS_DELAY;
     }
-    gPaletteFade.set_delayCounter(0);
-    if gPaletteFade.yDec() == 0 {
-        gPaletteFade.set_y(gPaletteFade.y() + 1);
-        if gPaletteFade.y() > gPaletteFade.targetY() {
-            gPaletteFade.set_hardwareFadeFinishing(gPaletteFade.hardwareFadeFinishing() + 1);
-            gPaletteFade.set_y(gPaletteFade.y() - 1);
+    (*gPaletteFade.as_ptr()).set_delayCounter(0);
+    if (*gPaletteFade.as_ptr()).yDec() == 0 {
+        (*gPaletteFade.as_ptr()).set_y((*gPaletteFade.as_ptr()).y() + 1);
+        if (*gPaletteFade.as_ptr()).y() > (*gPaletteFade.as_ptr()).targetY() {
+            (*gPaletteFade.as_ptr())
+                .set_hardwareFadeFinishing((*gPaletteFade.as_ptr()).hardwareFadeFinishing() + 1);
+            (*gPaletteFade.as_ptr()).set_y((*gPaletteFade.as_ptr()).y() - 1);
         }
     } else {
         let y: i32 = ({
-            let t1 = gPaletteFade.y();
-            gPaletteFade.set_y(gPaletteFade.y() - 1);
+            let t1 = (*gPaletteFade.as_ptr()).y();
+            (*gPaletteFade.as_ptr()).set_y((*gPaletteFade.as_ptr()).y() - 1);
             t1
         }) as i32;
-        if y - 1 < gPaletteFade.targetY() as i32 {
-            gPaletteFade.set_hardwareFadeFinishing(gPaletteFade.hardwareFadeFinishing() + 1);
-            gPaletteFade.set_y(gPaletteFade.y() + 1);
+        if y - 1 < (*gPaletteFade.as_ptr()).targetY() as i32 {
+            (*gPaletteFade.as_ptr())
+                .set_hardwareFadeFinishing((*gPaletteFade.as_ptr()).hardwareFadeFinishing() + 1);
+            (*gPaletteFade.as_ptr()).set_y((*gPaletteFade.as_ptr()).y() + 1);
         }
     }
-    if gPaletteFade.hardwareFadeFinishing() != 0 {
-        if gPaletteFade.shouldResetBlendRegisters() != 0 {
-            gPaletteFade.multipurpose1 = 0;
-            gPaletteFade.set_y(0);
+    if (*gPaletteFade.as_ptr()).hardwareFadeFinishing() != 0 {
+        if (*gPaletteFade.as_ptr()).shouldResetBlendRegisters() != 0 {
+            crate::gl!(gPaletteFade.multipurpose1 = 0);
+            (*gPaletteFade.as_ptr()).set_y(0);
         }
-        gPaletteFade.set_shouldResetBlendRegisters(FALSE as u16);
+        (*gPaletteFade.as_ptr()).set_shouldResetBlendRegisters(FALSE as u16);
     }
-    (if gPaletteFade.active() != 0 {
+    (if (*gPaletteFade.as_ptr()).active() != 0 {
         PALETTE_FADE_STATUS_ACTIVE
     } else {
         PALETTE_FADE_STATUS_DONE
     }) as u8
 }
 unsafe fn UpdateBlendRegisters() {
-    SetGpuReg(REG_OFFSET_BLDCNT, gPaletteFade.multipurpose1 as u16);
-    SetGpuReg(REG_OFFSET_BLDY, gPaletteFade.y());
-    if gPaletteFade.hardwareFadeFinishing() != 0 {
-        gPaletteFade.set_hardwareFadeFinishing(FALSE as u16);
-        gPaletteFade.set_mode(0);
-        gPaletteFade.multipurpose1 = 0;
-        gPaletteFade.set_y(0);
-        gPaletteFade.set_active(FALSE as u16);
+    SetGpuReg(
+        REG_OFFSET_BLDCNT,
+        crate::gl!(gPaletteFade.multipurpose1) as u16,
+    );
+    SetGpuReg(REG_OFFSET_BLDY, (*gPaletteFade.as_ptr()).y());
+    if (*gPaletteFade.as_ptr()).hardwareFadeFinishing() != 0 {
+        (*gPaletteFade.as_ptr()).set_hardwareFadeFinishing(FALSE as u16);
+        (*gPaletteFade.as_ptr()).set_mode(0);
+        crate::gl!(gPaletteFade.multipurpose1 = 0);
+        (*gPaletteFade.as_ptr()).set_y(0);
+        (*gPaletteFade.as_ptr()).set_active(FALSE as u16);
     }
 }
 unsafe fn IsSoftwarePaletteFadeFinishing() -> u8 {
-    if gPaletteFade.softwareFadeFinishing() != 0 {
-        if gPaletteFade.softwareFadeFinishingCounter() == 4 {
-            gPaletteFade.set_active(FALSE as u16);
-            gPaletteFade.set_softwareFadeFinishing(FALSE as u16);
-            gPaletteFade.set_softwareFadeFinishingCounter(0);
+    if (*gPaletteFade.as_ptr()).softwareFadeFinishing() != 0 {
+        if (*gPaletteFade.as_ptr()).softwareFadeFinishingCounter() == 4 {
+            (*gPaletteFade.as_ptr()).set_active(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_softwareFadeFinishing(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_softwareFadeFinishingCounter(0);
         } else {
-            gPaletteFade
-                .set_softwareFadeFinishingCounter(gPaletteFade.softwareFadeFinishingCounter() + 1);
+            (*gPaletteFade.as_ptr()).set_softwareFadeFinishingCounter(
+                (*gPaletteFade.as_ptr()).softwareFadeFinishingCounter() + 1,
+            );
         }
         return TRUE;
     } else {
@@ -977,8 +1034,8 @@ pub unsafe fn BlendPalettes(mut selectedPalettes: u32, coeff: u8, color: u16) {
 }
 pub unsafe fn BlendPalettesUnfaded(selectedPalettes: u32, coeff: u8, color: u16) {
     {
-        let mut _src: *mut c_void = gPlttBufferUnfaded.as_mut_ptr() as *mut c_void;
-        let mut _dest: *mut c_void = gPlttBufferFaded.as_mut_ptr() as *mut c_void;
+        let mut _src: *mut c_void = (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void;
+        let mut _dest: *mut c_void = (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void;
         let mut _size: u32 = PLTT_SIZE;
         {
             {

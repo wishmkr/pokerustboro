@@ -234,33 +234,37 @@ static GLYPH_WIDTH_FUNCS: [(u8, GlyphWidthFunction); 9] = [
 
 // ------------------------------------------------------------------ state
 
-#[unsafe(link_section = "ewram_data")]
-static mut TEMP_TEXT_PRINTER: Align4<[u8; PRINTER_SIZE]> = Align4([0; PRINTER_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static TEMP_TEXT_PRINTER: crate::global::Global<Align4<[u8; PRINTER_SIZE]>> =
+    crate::global::Global::new(Align4([0; PRINTER_SIZE]));
 
-#[unsafe(link_section = "ewram_data")]
-static mut TEXT_PRINTERS: Align4<[[u8; PRINTER_SIZE]; WINDOWS_MAX]> =
-    Align4([[0; PRINTER_SIZE]; WINDOWS_MAX]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static TEXT_PRINTERS: crate::global::Global<Align4<[[u8; PRINTER_SIZE]; WINDOWS_MAX]>> =
+    crate::global::Global::new(Align4([[0; PRINTER_SIZE]; WINDOWS_MAX]));
 
-static mut FONT_HALF_ROW_LOOKUP_TABLE: Align4<[u16; 0x51]> = Align4([0; 0x51]);
+static FONT_HALF_ROW_LOOKUP_TABLE: crate::global::Global<Align4<[u16; 0x51]>> =
+    crate::global::Global::new(Align4([0; 0x51]));
 static LAST_TEXT_BG_COLOR: crate::global::Global<u16> = crate::global::Global::new(0);
 static LAST_TEXT_FG_COLOR: crate::global::Global<u16> = crate::global::Global::new(0);
 static LAST_TEXT_SHADOW_COLOR: crate::global::Global<u16> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gFonts: *const FontInfo = core::ptr::null();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFonts: crate::global::Global<*const FontInfo> =
+    crate::global::Global::new(core::ptr::null());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gDisableTextPrinters: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gCurGlyph: Align4<[u8; GLYPH_SIZE]> = Align4([0; GLYPH_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gCurGlyph: crate::global::Global<Align4<[u8; GLYPH_SIZE]>> =
+    crate::global::Global::new(Align4([0; GLYPH_SIZE]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gTextFlags: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gTextFlags: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `GetPlayerTextSpeed` with this module's view of its types.
 #[inline]
@@ -298,14 +302,14 @@ unsafe fn m4aMPlayContinue(a0: *mut u8) {
 
 #[inline]
 pub(crate) fn text_flag(flag: u8) -> bool {
-    let flags = unsafe { (&raw const gTextFlags).read_volatile() };
+    let flags = unsafe { (crate::gl!(&raw gTextFlags).cast_const()).read_volatile() };
     flags & flag != 0
 }
 
 #[inline]
 unsafe fn printer_slot(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut TEXT_PRINTERS)
+        (crate::gl!(&raw TEXT_PRINTERS))
             .cast::<u8>()
             .add(index * PRINTER_SIZE)
     }
@@ -313,7 +317,7 @@ unsafe fn printer_slot(index: usize) -> *mut u8 {
 
 #[inline]
 unsafe fn temp_printer() -> *mut u8 {
-    (&raw mut TEMP_TEXT_PRINTER).cast()
+    (crate::gl!(&raw TEMP_TEXT_PRINTER)).cast()
 }
 
 #[inline]
@@ -429,12 +433,16 @@ pub(crate) unsafe fn set_auto_scroll_delay(p: *mut u8, value: u8) {
 
 #[inline]
 pub(crate) unsafe fn font_info(font_id: u8) -> *const FontInfo {
-    unsafe { (&raw const gFonts).read().add(usize::from(font_id)) }
+    unsafe {
+        (crate::gl!(&raw gFonts).cast_const())
+            .read()
+            .add(usize::from(font_id))
+    }
 }
 
 #[inline]
 pub(crate) unsafe fn glyph() -> *mut u8 {
-    (&raw mut gCurGlyph).cast()
+    (crate::gl!(&raw gCurGlyph)).cast()
 }
 
 #[inline]
@@ -461,7 +469,7 @@ pub(crate) unsafe fn glyph_width() -> u8 {
 #[inline]
 unsafe fn window_base(window_id: u8) -> *mut u8 {
     unsafe {
-        (&raw mut gWindows)
+        (crate::gl!(&raw gWindows))
             .cast::<u8>()
             .add(usize::from(window_id) * WINDOW_SIZE)
     }
@@ -512,7 +520,7 @@ pub unsafe fn AddTextPrinter(
     speed: u8,
     callback: Option<TextPrinterCallback>,
 ) -> u16 {
-    if unsafe { (&raw const gFonts).read() }.is_null() {
+    if unsafe { (crate::gl!(&raw gFonts).cast_const()).read() }.is_null() {
         return 0;
     }
 
@@ -619,7 +627,7 @@ pub unsafe fn GenerateFontHalfRowLookupTable(fg_color: u8, bg_color: u8, shadow_
         u32::from(shadow_color),
     );
     let colors = [bg, fg, shadow];
-    let table = (&raw mut FONT_HALF_ROW_LOOKUP_TABLE).cast::<u16>();
+    let table = (crate::gl!(&raw FONT_HALF_ROW_LOOKUP_TABLE)).cast::<u16>();
     // Every combination of four pixels, each bg/fg/shadow. The lowest
     // nibble varies slowest and the highest fastest, as in the unrolled C.
     let mut index = 0;
@@ -658,7 +666,7 @@ unsafe fn half_row(byte: u32) -> u32 {
             .add((byte & 0xff) as usize)
             .read()
     };
-    let table = (&raw const FONT_HALF_ROW_LOOKUP_TABLE).cast::<u16>();
+    let table = (crate::gl!(&raw FONT_HALF_ROW_LOOKUP_TABLE).cast_const()).cast::<u16>();
     u32::from(unsafe { table.add(usize::from(offset)).read() })
 }
 
@@ -1100,7 +1108,7 @@ unsafe fn render_ext_ctrl_code(printer: *mut u8, char_: &mut u16) -> Option<u16>
         EXT_CTRL_CODE_PAUSE_MUSIC => {
             unsafe {
                 m4aMPlayStop(
-                    &raw mut (*(&raw const crate::m4a::gMPlayInfo_BGM)
+                    &raw mut (*(crate::gl!(&raw @at crate::m4a::gMPlayInfo_BGM;).cast_const())
                         .cast::<u8>()
                         .cast_mut()),
                 )
@@ -1110,7 +1118,7 @@ unsafe fn render_ext_ctrl_code(printer: *mut u8, char_: &mut u16) -> Option<u16>
         EXT_CTRL_CODE_RESUME_MUSIC => {
             unsafe {
                 m4aMPlayContinue(
-                    &raw mut (*(&raw const crate::m4a::gMPlayInfo_BGM)
+                    &raw mut (*(crate::gl!(&raw @at crate::m4a::gMPlayInfo_BGM;).cast_const())
                         .cast::<u8>()
                         .cast_mut()),
                 )
@@ -1251,7 +1259,8 @@ unsafe fn render_handle_char(printer: *mut u8) -> u16 {
         return RENDER_UPDATE;
     }
 
-    let recorded = unsafe { (&raw const gBattleTypeFlags).read() } & BATTLE_TYPE_RECORDED != 0;
+    let recorded =
+        unsafe { (gBattleTypeFlags.as_ptr().cast_const()).read() } & BATTLE_TYPE_RECORDED != 0;
     if !recorded && text_flag(FLAG_AUTO_SCROLL) {
         unsafe { set(printer, P_DELAY_COUNTER, 3) };
     } else {
@@ -1417,8 +1426,12 @@ pub unsafe fn GetStringWidth(font_id: u8, mut string: *const u8, letter_spacing:
                     string = string.wrapping_add(1);
                     match unsafe { string.read() } {
                         PLACEHOLDER_ID_STRING_VAR_1 => (&raw const gStringVar1).cast(),
-                        PLACEHOLDER_ID_STRING_VAR_2 => (&raw const gStringVar2).cast(),
-                        PLACEHOLDER_ID_STRING_VAR_3 => (&raw const gStringVar3).cast(),
+                        PLACEHOLDER_ID_STRING_VAR_2 => {
+                            (crate::gl!(&raw gStringVar2).cast_const()).cast()
+                        }
+                        PLACEHOLDER_ID_STRING_VAR_3 => {
+                            (crate::gl!(&raw gStringVar3).cast_const()).cast()
+                        }
                         _ => return 0,
                     }
                 } else {
@@ -1667,7 +1680,7 @@ pub unsafe fn GetKeypadIconHeight(keypad_icon_id: u8) -> u8 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn SetDefaultFontsPointer() {
-    unsafe { (&raw mut gFonts).write(FONT_INFOS.as_ptr()) };
+    unsafe { (crate::gl!(&raw gFonts)).write(FONT_INFOS.as_ptr()) };
 }
 
 #[unsafe(no_mangle)]
@@ -1941,7 +1954,7 @@ mod tests {
     #[test]
     fn lookup_table_matches_the_unrolled_original() {
         unsafe { GenerateFontHalfRowLookupTable(2, 1, 3) };
-        let table = unsafe { (&raw const FONT_HALF_ROW_LOOKUP_TABLE).read() }.0;
+        let table = unsafe { (crate::gl!(&raw FONT_HALF_ROW_LOOKUP_TABLE).cast_const()).read() }.0;
         // First block: temp = bg<<8 | bg<<4 | bg, then bg12/fg12/shadow12.
         assert_eq!(table[0], 0x1111);
         assert_eq!(table[1], 0x2111);

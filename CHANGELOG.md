@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased (2026-11-25)
+
+**Safer globals**
+
+- Struct and array globals (`gMain`, `gSprites`, `gPlayerParty`, `gPaletteFade`, the battle state, ...) are
+  `Global<T>` cells, read and written through the `gl!` macro: `gl!(gMain.newKeys)`,
+  `gl!(gSprites[i].x2 += 1)`, `gl!(&raw gMain.state)`. The macro only accepts `.field` and `[local]` paths, so
+  no reference into a global outlives one load or store. `static mut`: 724 → 4.
+- 909 more functions are safe Rust (unsafe functions 18,947 → 18,040).
+- Behaviour unchanged: the intro, Birch's speech, the truck ride, save/load and 31 Pokémon/bag screens match
+  the previous build frame for frame.
+- Host unit tests build on macOS (link sections only apply to the GBA target).
+
 ## v0.5.0 (2026-10-02)
 
 The game code now follows Rust's rules instead of C's, and the C-style port from v0.3.0 is kept next to it.

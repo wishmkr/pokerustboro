@@ -514,7 +514,9 @@ pub const B_BUTTON: u16 = 0x0002;
 #[inline]
 pub unsafe fn main_state() -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_STATE_OFFSET)
     }
 }
@@ -523,7 +525,9 @@ pub unsafe fn main_state() -> *mut u8 {
 #[inline]
 pub unsafe fn joy_new(mask: u16) -> bool {
     let keys = unsafe {
-        (&raw const (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_NEW_KEYS_OFFSET)
             .cast::<u16>()
             .read_volatile()
@@ -535,7 +539,9 @@ pub unsafe fn joy_new(mask: u16) -> bool {
 #[inline]
 pub unsafe fn joy_held(mask: u16) -> bool {
     let keys = unsafe {
-        (&raw const (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_HELD_KEYS_OFFSET)
             .cast::<u16>()
             .read_volatile()
@@ -737,7 +743,7 @@ macro_rules! special_var {
     ($($name:ident),* $(,)?) => {
         $(
             #[unsafe(no_mangle)]
-            #[unsafe(link_section = "ewram_data")]
+            #[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
             pub static mut $name: u16 = 0;
         )*
     };
@@ -872,7 +878,7 @@ pub unsafe fn set_field_move_callback(task_id: u8, callback: MenuFieldCallback) 
 #[inline]
 pub unsafe fn party_mon(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+        (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(index * POKEMON_SIZE)
@@ -883,7 +889,7 @@ pub unsafe fn party_mon(index: usize) -> *mut u8 {
 #[inline]
 pub unsafe fn object_event(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
+        (&raw mut (*(crate::gl!(&raw @at crate::field_player_avatar::gObjectEvents;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(index * OBJECT_EVENT_SIZE)
@@ -905,7 +911,11 @@ pub unsafe fn object_event_active(index: usize) -> bool {
 /// `&gSprites[index]`
 #[inline]
 pub unsafe fn sprite(index: usize) -> *mut u8 {
-    unsafe { (&raw mut gSprites).cast::<u8>().add(index * SPRITE_SIZE) }
+    unsafe {
+        (crate::gl!(&raw gSprites))
+            .cast::<u8>()
+            .add(index * SPRITE_SIZE)
+    }
 }
 
 /// `sprite->data[index]`
@@ -942,7 +952,7 @@ pub unsafe fn sprite_palette_num(index: usize) -> u8 {
 #[inline]
 pub unsafe fn palette_fade_active() -> bool {
     unsafe {
-        (&raw const (*(&raw const crate::palette::gPaletteFade)
+        (&raw const (*(crate::gl!(&raw @at crate::palette::gPaletteFade;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(PALETTE_FADE_ACTIVE_OFFSET)
@@ -956,9 +966,10 @@ pub unsafe fn palette_fade_active() -> bool {
 #[inline]
 pub unsafe fn player_avatar_tile_transition_state() -> u8 {
     unsafe {
-        (&raw const (*(&raw const crate::field_player_avatar::gPlayerAvatar)
-            .cast::<u8>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::field_player_avatar::gPlayerAvatar;)
+            .cast_const())
+        .cast::<u8>()
+        .cast_mut()))
             .add(PLAYER_AVATAR_TILE_TRANSITION_OFFSET)
             .read_volatile()
     }

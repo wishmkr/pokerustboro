@@ -212,52 +212,56 @@ pub(crate) unsafe fn SetupRoomObjectEvents() {
     }
 }
 pub(crate) unsafe fn GetBattlePikeData() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
         .cast_mut()
     {
         PIKE_DATA_PRIZE => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pikePrize;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikePrize;
         }
         PIKE_DATA_WIN_STREAK => {
-            gSpecialVar_Result =
-                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()];
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()];
         }
         PIKE_DATA_RECORD_STREAK => {
-            gSpecialVar_Result =
-                (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()];
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()];
         }
         PIKE_DATA_TOTAL_STREAKS => {
-            gSpecialVar_Result =
-                (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()];
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeTotalStreaks
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()];
         }
         PIKE_DATA_WIN_STREAK_ACTIVE => {
             if lvlMode != FRONTIER_LVL_50 as u32 {
-                gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16
+                gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags
+                    as u16
                     & STREAK_PIKE_OPEN as u16;
             } else {
-                gSpecialVar_Result =
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16 & STREAK_PIKE_50 as u16;
+                gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags
+                    as u16
+                    & STREAK_PIKE_50 as u16;
             }
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn SetBattlePikeData() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
         .cast_mut()
     {
         PIKE_DATA_PRIZE => {
-            (*gSaveBlock2Ptr).frontier.pikePrize = *(&raw const crate::ffi::gSpecialVar_0x8006)
-                .cast::<u16>()
-                .cast_mut();
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pikePrize =
+                *(&raw const crate::ffi::gSpecialVar_0x8006)
+                    .cast::<u16>()
+                    .cast_mut();
         }
         PIKE_DATA_WIN_STREAK => {
             if gSpecialVar_0x8006 <= MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.pikeWinStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()] =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()] =
                     *(&raw const crate::ffi::gSpecialVar_0x8006)
                         .cast::<u16>()
                         .cast_mut();
@@ -265,12 +269,12 @@ pub(crate) unsafe fn SetBattlePikeData() {
         }
         PIKE_DATA_RECORD_STREAK => {
             if gSpecialVar_0x8006 <= MAX_STREAK
-                && (*gSaveBlock2Ptr).frontier.pikeRecordStreaks
-                    [(*gSaveBlock2Ptr).frontier.lvlMode()]
+                && (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
                     < gSpecialVar_0x8006
             {
-                (*gSaveBlock2Ptr).frontier.pikeRecordStreaks
-                    [(*gSaveBlock2Ptr).frontier.lvlMode()] =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()] =
                     *(&raw const crate::ffi::gSpecialVar_0x8006)
                         .cast::<u16>()
                         .cast_mut();
@@ -278,7 +282,8 @@ pub(crate) unsafe fn SetBattlePikeData() {
         }
         PIKE_DATA_TOTAL_STREAKS => {
             if gSpecialVar_0x8006 <= MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()] =
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeTotalStreaks
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()] =
                     *(&raw const crate::ffi::gSpecialVar_0x8006)
                         .cast::<u16>()
                         .cast_mut();
@@ -287,15 +292,15 @@ pub(crate) unsafe fn SetBattlePikeData() {
         PIKE_DATA_WIN_STREAK_ACTIVE => {
             if lvlMode != FRONTIER_LVL_50 as u32 {
                 if gSpecialVar_0x8006 != 0 {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |= STREAK_PIKE_OPEN;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags |= STREAK_PIKE_OPEN;
                 } else {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &= 0xfffff7ff;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags &= 0xfffff7ff;
                 }
             } else {
                 if gSpecialVar_0x8006 != 0 {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |= STREAK_PIKE_50;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags |= STREAK_PIKE_50;
                 } else {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &= 0xfffffbff;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags &= 0xfffffbff;
                 }
             }
         }
@@ -303,7 +308,7 @@ pub(crate) unsafe fn SetBattlePikeData() {
     }
 }
 pub(crate) unsafe fn IsNextRoomFinal() {
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum > NUM_PIKE_ROOMS {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum > NUM_PIKE_ROOMS {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -319,9 +324,11 @@ pub(crate) fn ClearInWildMonRoom() {
     sInWildMonRoom.set(FALSE);
 }
 pub(crate) unsafe fn SavePikeChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(TRUE);
     SaveMapView();
     TrySavingData(SAVE_LINK);
 }
@@ -357,9 +364,9 @@ pub(crate) unsafe fn HealOneOrTwoMons() {
 }
 pub(crate) unsafe fn BufferNPCMessage() {
     let mut speechId: i32 = 0;
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 4 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= 4 {
         speechId = sNPCTable[sNpcId.get()].speechId1 as i32;
-    } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 10 {
+    } else if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= 10 {
         speechId = sNPCTable[sNpcId.get()].speechId2 as i32;
     } else {
         speechId = sNPCTable[sNpcId.get()].speechId3 as i32;
@@ -523,9 +530,9 @@ unsafe fn TryInflictRandomStatus() -> u8 {
         indices[id] = temp;
         j += 1;
     }
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 4 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= 4 {
         count = 1;
-    } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 9 {
+    } else if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= 9 {
         count = 2;
     } else {
         count = 3;
@@ -549,7 +556,10 @@ unsafe fn TryInflictRandomStatus() -> u8 {
             status = sStatusFlags.get();
             j = 0;
             for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-                mon = &raw mut gPlayerParty[indices[i]];
+                mon = {
+                    let gl_i0 = indices[i];
+                    crate::gl!(&raw gPlayerParty[gl_i0])
+                };
                 if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE
                     && GetMonData2(mon, MON_DATA_HP) != 0
                 {
@@ -585,7 +595,10 @@ unsafe fn TryInflictRandomStatus() -> u8 {
     }
     j = 0;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        mon = &raw mut gPlayerParty[indices[i]];
+        mon = {
+            let gl_i1 = indices[i];
+            crate::gl!(&raw gPlayerParty[gl_i1])
+        };
         if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE
             && GetMonData2(mon, MON_DATA_HP) != 0
         {
@@ -605,16 +618,16 @@ unsafe fn TryInflictRandomStatus() -> u8 {
 }
 unsafe fn AtLeastOneHealthyMon() -> u8 {
     let mut count: u8 = 0;
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 4 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= 4 {
         count = 1;
-    } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= 9 {
+    } else if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= 9 {
         count = 2;
     } else {
         count = 3;
     }
     let mut healthyMonsCount: u8 = 0;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        let mon: *mut Pokemon = &raw mut gPlayerParty[i];
+        let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
         if GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE
             && GetMonData2(mon, MON_DATA_HP) != 0
         {
@@ -636,20 +649,20 @@ unsafe fn AtLeastOneHealthyMon() -> u8 {
 }
 unsafe fn GetNextRoomType() -> u8 {
     let mut roomTypesDisabled: CArray<u8, 8> = zeroed();
-    if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_BRAIN {
-        return (*gSaveBlock2Ptr).frontier.pikeHintedRoomType();
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType() == PIKE_ROOM_BRAIN {
+        return (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType();
     }
-    if gSpecialVar_0x8007 == (*gSaveBlock2Ptr).frontier.pikeHintedRoomIndex() as u16 {
-        if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_STATUS {
+    if gSpecialVar_0x8007 == (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomIndex() as u16 {
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType() == PIKE_ROOM_STATUS {
             TryInflictRandomStatus();
         }
-        return (*gSaveBlock2Ptr).frontier.pikeHintedRoomType();
+        return (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType();
     }
     for i in 0..8u8 {
         roomTypesDisabled[i] = FALSE;
     }
     let mut numRoomCandidates: u8 = 8;
-    let roomHint: u8 = sRoomTypeHints[(*gSaveBlock2Ptr).frontier.pikeHintedRoomType()];
+    let roomHint: u8 = sRoomTypeHints[(*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType()];
     let mut i: u8 = 0;
     while i < 8 {
         if sRoomTypeHints[i] == roomHint {
@@ -666,7 +679,11 @@ unsafe fn GetNextRoomType() -> u8 {
         roomTypesDisabled[3] = TRUE;
         numRoomCandidates -= 1;
     }
-    if (*gSaveBlock2Ptr).frontier.pikeHealingRoomsDisabled() != 0 {
+    if (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .pikeHealingRoomsDisabled()
+        != 0
+    {
         if roomTypesDisabled[1] != 1 {
             roomTypesDisabled[1] = 1;
             numRoomCandidates -= 1;
@@ -704,13 +721,16 @@ fn GetInWildMonRoom() -> u8 {
 pub unsafe fn TryGenerateBattlePikeWildMon(checkKeenEyeIntimidate: u8) -> u32 {
     let mut monLevel: i32 = 0;
     let headerId: u8 = GetBattlePikeWildMonHeaderId();
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let wildMons: *mut *mut PikeWildMon = sWildMons[lvlMode];
     let mut abilityNum: u32 = 0;
-    let mut pikeMonId: i32 =
-        GetMonData3(&raw mut gEnemyParty[0], MON_DATA_SPECIES, null_mut()) as i32;
+    let mut pikeMonId: i32 = GetMonData3(
+        crate::gl!(&raw gEnemyParty[0]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as i32;
     pikeMonId = SpeciesToPikeMonId(pikeMonId as u16) as i32;
-    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_50 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_50 {
         monLevel = GetHighestLevelInPlayerParty();
         if monLevel < FRONTIER_MIN_LEVEL_OPEN {
             monLevel = FRONTIER_MIN_LEVEL_OPEN;
@@ -728,7 +748,7 @@ pub unsafe fn TryGenerateBattlePikeWildMon(checkKeenEyeIntimidate: u8) -> u32 {
         return FALSE as u32;
     }
     SetMonData(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         MON_DATA_EXP,
         (&raw const (*(&raw const crate::data::pokemon::gExperienceTables)
             .cast::<CArray<CArray<u32, 101>, 0>>())
@@ -747,24 +767,24 @@ pub unsafe fn TryGenerateBattlePikeWildMon(checkKeenEyeIntimidate: u8) -> u32 {
         abilityNum = 0;
     }
     SetMonData(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         MON_DATA_ABILITY_NUM,
         &raw mut abilityNum as *mut c_void,
     );
     for i in 0..MAX_MON_MOVES {
         SetMonMoveSlot(
-            &raw mut gEnemyParty[0],
+            crate::gl!(&raw gEnemyParty[0]),
             (*(*wildMons.at(headerId)).at(pikeMonId)).moves[i],
             i as u8,
         );
     }
-    CalculateMonStats(&raw mut gEnemyParty[0]);
+    CalculateMonStats(crate::gl!(&raw gEnemyParty[0]));
     TRUE as u32
 }
 pub unsafe fn GetBattlePikeWildMonHeaderId() -> u8 {
     let mut headerId: u8 = 0;
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
-    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
+    let winStreak: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode];
     if winStreak <= 280 {
         headerId = 0;
     } else if winStreak <= 560 {
@@ -887,7 +907,10 @@ unsafe fn TryHealMons(mut healCount: u8) {
     }
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
         let mut canBeHealed: u32 = FALSE as u32;
-        let mon: *mut Pokemon = &raw mut gPlayerParty[indices[i]];
+        let mon: *mut Pokemon = {
+            let gl_i2 = indices[i];
+            crate::gl!(&raw gPlayerParty[gl_i2])
+        };
         let mut curr: u16 = GetMonData2(mon, MON_DATA_HP) as u16;
         let mut max: u16 = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
         if curr < max {
@@ -907,7 +930,10 @@ unsafe fn TryHealMons(mut healCount: u8) {
             }
         }
         if canBeHealed == TRUE as u32 {
-            HealMon(&raw mut gPlayerParty[indices[i]]);
+            HealMon({
+                let gl_i3 = indices[i];
+                crate::gl!(&raw gPlayerParty[gl_i3])
+            });
             if ({
                 healCount -= 1;
                 healCount
@@ -923,10 +949,11 @@ pub(crate) unsafe fn GetInBattlePike() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn InBattlePike() -> u8 {
-    (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_THREE_PATH_ROOM
-        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_NORMAL
-        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS
-        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_UNUSED) as u8
+    (crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_THREE_PATH_ROOM
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_NORMAL
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_UNUSED)
+        as u8
 }
 pub(crate) unsafe fn SetHintedRoom() {
     let mut count: u8 = 0;
@@ -935,17 +962,21 @@ pub(crate) unsafe fn SetHintedRoom() {
     gSpecialVar_Result = FALSE as u16;
     if GetPikeQueenFightType(1) != 0 {
         gSpecialVar_Result = TRUE as u16;
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .set_pikeHintedRoomIndex((Random() as i32 % 6) as u8);
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .set_pikeHintedRoomType(PIKE_ROOM_BRAIN);
     } else {
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .set_pikeHintedRoomIndex((Random() as i32 % 3) as u8);
-        if (*gSaveBlock2Ptr).frontier.pikeHealingRoomsDisabled() != 0 {
+        if (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .pikeHealingRoomsDisabled()
+            != 0
+        {
             count = 6;
         } else {
             count = 8;
@@ -953,7 +984,11 @@ pub(crate) unsafe fn SetHintedRoom() {
         roomCandidates = AllocZeroed(count as u32) as *mut u8;
         id = 0;
         for i in 0..count {
-            if (*gSaveBlock2Ptr).frontier.pikeHealingRoomsDisabled() != 0 {
+            if (*crate::gl!(gSaveBlock2Ptr))
+                .frontier
+                .pikeHealingRoomsDisabled()
+                != 0
+            {
                 if i != PIKE_ROOM_HEAL_FULL && i != PIKE_ROOM_HEAL_PART {
                     *roomCandidates.at({
                         let t1 = id;
@@ -965,31 +1000,32 @@ pub(crate) unsafe fn SetHintedRoom() {
                 *roomCandidates.at(i) = i;
             }
         }
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .set_pikeHintedRoomType(*roomCandidates.at(rem_i32(Random() as i32, count as i32)));
         Free(roomCandidates as *mut c_void);
-        if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_STATUS
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType() == PIKE_ROOM_STATUS
             && AtLeastOneHealthyMon() == 0
         {
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .set_pikeHintedRoomType(PIKE_ROOM_NPC);
         }
-        if (*gSaveBlock2Ptr).frontier.pikeHintedRoomType() == PIKE_ROOM_DOUBLE_BATTLE
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType() == PIKE_ROOM_DOUBLE_BATTLE
             && AtLeastTwoAliveMons() == 0
         {
-            (*gSaveBlock2Ptr)
+            (*crate::gl!(gSaveBlock2Ptr))
                 .frontier
                 .set_pikeHintedRoomType(PIKE_ROOM_NPC);
         }
     }
 }
 pub(crate) unsafe fn GetHintedRoomIndex() {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pikeHintedRoomIndex() as u16;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomIndex() as u16;
 }
 pub(crate) unsafe fn GetRoomTypeHint() {
-    gSpecialVar_Result = sRoomTypeHints[(*gSaveBlock2Ptr).frontier.pikeHintedRoomType()] as u16;
+    gSpecialVar_Result =
+        sRoomTypeHints[(*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomType()] as u16;
 }
 unsafe fn PrepareOneTrainer(difficult: u8) {
     let mut i: i32 = 0;
@@ -1001,107 +1037,113 @@ unsafe fn PrepareOneTrainer(difficult: u8) {
     } else {
         battleNum = 6;
     }
-    lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
-    let challengeNum: u16 = ((*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as i32 / 14) as u16;
+    lvlMode = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
+    let challengeNum: u16 =
+        ((*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] as i32 / 14) as u16;
     loop {
         trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, battleNum);
         i = 0;
-        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
-            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+        while i < (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 1 {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                 break;
             }
             i += 1;
         }
-        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
+        if i == (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 1 {
             break;
         }
     }
-    gTrainerBattleOpponent_A = trainerId;
-    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
-        .cast::<CArray<BattleFrontierTrainer, 0>>())
-    .as_ptr()
-    .cast_mut();
-    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum < NUM_PIKE_ROOMS {
-        (*gSaveBlock2Ptr).frontier.trainerIds
-            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1] =
-            gTrainerBattleOpponent_A;
+    gTrainerBattleOpponent_A.set(trainerId);
+    crate::gl!(
+        gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
+            .cast::<CArray<BattleFrontierTrainer, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum < NUM_PIKE_ROOMS {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 1] =
+            gTrainerBattleOpponent_A.get();
     }
 }
 unsafe fn PrepareTwoTrainers() {
     let mut i: i32 = 0;
     let mut trainerId: u16 = 0;
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
-    let challengeNum: u16 = ((*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] as i32 / 14) as u16;
-    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
-        .cast::<CArray<BattleFrontierTrainer, 0>>())
-    .as_ptr()
-    .cast_mut();
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
+    let challengeNum: u16 =
+        ((*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] as i32 / 14) as u16;
+    crate::gl!(
+        gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
+            .cast::<CArray<BattleFrontierTrainer, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
     loop {
         trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, 1);
         i = 0;
-        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
-            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+        while i < (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 1 {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                 break;
             }
             i += 1;
         }
-        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1 {
+        if i == (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 1 {
             break;
         }
     }
-    gTrainerBattleOpponent_A = trainerId;
-    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum <= NUM_PIKE_ROOMS {
-        (*gSaveBlock2Ptr).frontier.trainerIds
-            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1] =
-            gTrainerBattleOpponent_A;
+    gTrainerBattleOpponent_A.set(trainerId);
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum <= NUM_PIKE_ROOMS {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 1] =
+            gTrainerBattleOpponent_A.get();
     }
     loop {
         trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, 1);
         i = 0;
-        while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
-            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+        while i < (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                 break;
             }
             i += 1;
         }
-        if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
+        if i == (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
             break;
         }
     }
-    gTrainerBattleOpponent_B = trainerId;
-    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B, 1);
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum < NUM_PIKE_ROOMS {
-        (*gSaveBlock2Ptr).frontier.trainerIds
-            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 2] =
-            gTrainerBattleOpponent_B;
+    gTrainerBattleOpponent_B.set(trainerId);
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_B.get(), 1);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum < NUM_PIKE_ROOMS {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 - 2] =
+            gTrainerBattleOpponent_B.get();
     }
 }
 pub(crate) unsafe fn ClearPikeTrainerIds() {
     for i in 0..(NUM_PIKE_ROOMS as u8) {
-        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] = 0xFFFF;
     }
 }
 pub(crate) unsafe fn BufferTrainerIntro() {
     if gSpecialVar_0x8005 == 0 {
-        if gTrainerBattleOpponent_A < FRONTIER_TRAINERS_COUNT {
+        if gTrainerBattleOpponent_A.get() < FRONTIER_TRAINERS_COUNT {
             FrontierSpeechToString(
-                (*gFacilityTrainers.at(gTrainerBattleOpponent_A))
+                (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_A.get()))
                     .speechBefore
                     .as_mut_ptr(),
             );
         }
-    } else if gSpecialVar_0x8005 == 1 && gTrainerBattleOpponent_B < FRONTIER_TRAINERS_COUNT {
+    } else if gSpecialVar_0x8005 == 1 && gTrainerBattleOpponent_B.get() < FRONTIER_TRAINERS_COUNT {
         FrontierSpeechToString(
-            (*gFacilityTrainers.at(gTrainerBattleOpponent_B))
+            (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_B.get()))
                 .speechBefore
                 .as_mut_ptr(),
         );
     }
 }
 unsafe fn AtLeastTwoAliveMons() -> u8 {
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[0];
+    let mut mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[0]);
     let mut countDead: u8 = 0;
     let mut i: u8 = 0;
     while i < FRONTIER_PARTY_SIZE as u8 {
@@ -1124,8 +1166,8 @@ unsafe fn AtLeastTwoAliveMons() -> u8 {
 unsafe fn GetPikeQueenFightType(nextRoom: u8) -> u8 {
     let facility: u8 = FRONTIER_FACILITY_PIKE as u8;
     let mut ret: u8 = FRONTIER_BRAIN_NOT_READY;
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
+    let mut winStreak: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode];
     winStreak += nextRoom as u16;
     let numPikeSymbols: u8 = GetPlayerSymbolCountForFacility(FRONTIER_FACILITY_PIKE as u8);
     match numPikeSymbols {
@@ -1164,7 +1206,7 @@ pub(crate) unsafe fn GetCurrentRoomPikeQueenFightType() {
 }
 pub(crate) unsafe fn HealSomeMonsBeforePikeQueen() {
     let toHealCount: u8 = sNumMonsToHealBeforePikeQueen
-        [(*gSaveBlock2Ptr).frontier.pikeHintedRoomIndex()]
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHintedRoomIndex()]
         [*(&raw const crate::ffi::gSpecialVar_0x8007)
             .cast::<u16>()
             .cast_mut()];
@@ -1172,7 +1214,7 @@ pub(crate) unsafe fn HealSomeMonsBeforePikeQueen() {
     gSpecialVar_Result = toHealCount as u16;
 }
 pub(crate) unsafe fn SetHealingroomTypesDisabled() {
-    (*gSaveBlock2Ptr)
+    (*crate::gl!(gSaveBlock2Ptr))
         .frontier
         .set_pikeHealingRoomsDisabled(gSpecialVar_0x8005 as u8);
 }
@@ -1180,7 +1222,7 @@ pub(crate) unsafe fn IsPartyFullHealed() {
     gSpecialVar_Result = TRUE as u16;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
         let mut canBeHealed: u32 = FALSE as u32;
-        let mon: *mut Pokemon = &raw mut gPlayerParty[i];
+        let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
         let mut curr: u16 = GetMonData2(mon, MON_DATA_HP) as u16;
         let mut max: u16 = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
         if curr >= max && GetAilmentFromStatus(GetMonData2(mon, MON_DATA_STATUS)) == AILMENT_NONE {
@@ -1206,38 +1248,42 @@ pub(crate) unsafe fn IsPartyFullHealed() {
 pub(crate) unsafe fn SaveMonHeldItems() {
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
         let heldItem: i32 = GetMonData2(
-            &raw mut (*gSaveBlock1Ptr).playerParty
-                [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1],
             MON_DATA_HELD_ITEM,
         ) as i32;
-        (*gSaveBlock2Ptr).frontier.pikeHeldItemsBackup[i] = heldItem as u16;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHeldItemsBackup[i] = heldItem as u16;
     }
 }
 pub(crate) unsafe fn RestoreMonHeldItems() {
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
         SetMonData(
-            &raw mut gPlayerParty[(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
+            &raw mut (*gPlayerParty.as_ptr())
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1],
             MON_DATA_HELD_ITEM,
-            &raw mut (*gSaveBlock2Ptr).frontier.pikeHeldItemsBackup[i] as *mut c_void,
+            &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeHeldItemsBackup[i] as *mut c_void,
         );
     }
 }
 pub(crate) unsafe fn InitPikeChallenge() {
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
-    (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
-    if (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & sWinStreakFlags[lvlMode] == 0 {
-        (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] = 0;
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(FALSE);
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags & sWinStreakFlags[lvlMode] == 0 {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeWinStreaks[lvlMode] = 0;
     }
-    gTrainerBattleOpponent_A = 0;
-    gBattleOutcome = 0;
+    gTrainerBattleOpponent_A.set(0);
+    gBattleOutcome.set(0);
 }
 unsafe fn CanEncounterWildMon(enemyMonLevel: u8) -> u8 {
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0 {
-        let monAbility: u8 = GetMonAbility(&raw mut gPlayerParty[0]);
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) == 0 {
+        let monAbility: u8 = GetMonAbility(crate::gl!(&raw gPlayerParty[0]));
         if monAbility == ABILITY_KEEN_EYE || monAbility == ABILITY_INTIMIDATE {
-            let playerMonLevel: u8 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_LEVEL) as u8;
+            let playerMonLevel: u8 =
+                GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_LEVEL) as u8;
             if playerMonLevel > 5
                 && enemyMonLevel as i32 <= playerMonLevel as i32 - 5
                 && Random() as i32 % 2 == 0

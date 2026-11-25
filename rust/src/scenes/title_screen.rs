@@ -143,7 +143,7 @@ static sVersionBannerRightSpriteTemplate: Table<SpriteTemplate> =
 
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -211,8 +211,11 @@ unsafe fn CreatePressStartBanner(mut x: i16, y: i16) {
             y,
             0,
         );
-        StartSpriteAnim(&raw mut gSprites[spriteId], i);
-        gSprites[spriteId].data[sAnimate] = TRUE as i16;
+        StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), i);
+        {
+            let gl_i0 = sAnimate;
+            crate::gl!(gSprites[spriteId].data[gl_i0] = TRUE as i16)
+        };
         i += 1;
         x += 32;
     }
@@ -228,7 +231,10 @@ unsafe fn CreateCopyrightBanner(mut x: i16, y: i16) {
             y,
             0,
         );
-        StartSpriteAnim(&raw mut gSprites[spriteId], i + NUM_PRESS_START_FRAMES);
+        StartSpriteAnim(
+            crate::gl!(&raw gSprites[spriteId]),
+            i + NUM_PRESS_START_FRAMES,
+        );
         i += 1;
         x += 32;
     }
@@ -256,14 +262,14 @@ pub(crate) unsafe fn SpriteCB_PokemonLogoShine(sprite: *mut Sprite) {
                 + ((*sprite).data[sBgColor] as u16 & 0x1F);
             if (*sprite).x == 132 || (*sprite).x == 136 || (*sprite).x == 140 || (*sprite).x == 144
             {
-                gPlttBufferFaded[0] = 13304;
+                crate::gl!(gPlttBufferFaded[0] = 13304);
             } else {
-                gPlttBufferFaded[0] = backgroundColor;
+                crate::gl!(gPlttBufferFaded[0] = backgroundColor);
             }
         }
         (*sprite).x += SHINE_SPEED;
     } else {
-        gPlttBufferFaded[0] = 0;
+        crate::gl!(gPlttBufferFaded[0] = 0);
         DestroySprite(sprite);
     }
 }
@@ -284,8 +290,13 @@ unsafe fn StartPokemonLogoShine(mode: u8) {
                 68,
                 0,
             );
-            gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_WINDOW);
-            gSprites[spriteId].data[sMode] = mode as i16;
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_objMode(ST_OAM_OBJ_WINDOW);
+            {
+                let gl_i1 = sMode;
+                crate::gl!(gSprites[spriteId].data[gl_i1] = mode as i16)
+            };
         }
         SHINE_MODE_DOUBLE => {
             spriteId = CreateSprite(
@@ -294,25 +305,34 @@ unsafe fn StartPokemonLogoShine(mode: u8) {
                 68,
                 0,
             );
-            gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_WINDOW);
-            gSprites[spriteId].data[sMode] = mode as i16;
-            gSprites[spriteId].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_objMode(ST_OAM_OBJ_WINDOW);
+            {
+                let gl_i2 = sMode;
+                crate::gl!(gSprites[spriteId].data[gl_i2] = mode as i16)
+            };
+            (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             spriteId = CreateSprite(
                 (&raw const *sPokemonLogoShineSpriteTemplate).cast_mut(),
                 0,
                 68,
                 0,
             );
-            gSprites[spriteId].callback = Some(SpriteCB_PokemonLogoShine_Fast);
-            gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_WINDOW);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokemonLogoShine_Fast));
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_objMode(ST_OAM_OBJ_WINDOW);
             spriteId = CreateSprite(
                 (&raw const *sPokemonLogoShineSpriteTemplate).cast_mut(),
                 -80,
                 68,
                 0,
             );
-            gSprites[spriteId].callback = Some(SpriteCB_PokemonLogoShine_Fast);
-            gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_WINDOW);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokemonLogoShine_Fast));
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_objMode(ST_OAM_OBJ_WINDOW);
         }
         _ => {}
     }
@@ -322,11 +342,11 @@ pub(crate) unsafe fn VBlankCB() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
-    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y.get());
 }
 pub unsafe fn CB2_InitTitleScreen() {
     'l1: {
-        match gMain.state {
+        match crate::gl!(gMain.state) {
             1 => {
                 LZ77UnCompVram(
                     (*(&raw const crate::data::graphics::gTitleScreenPokemonLogoGfx)
@@ -373,7 +393,7 @@ pub unsafe fn CB2_InitTitleScreen() {
                 ResetTasks();
                 ResetSpriteData();
                 FreeAllSpritePalettes();
-                gReservedSpritePaletteCount = 9;
+                gReservedSpritePaletteCount.set(9);
                 LoadCompressedSpriteSheet((&raw const sSpriteSheet_EmeraldVersion[0]).cast_mut());
                 LoadCompressedSpriteSheet((&raw const sSpriteSheet_PressStart[0]).cast_mut());
                 LoadCompressedSpriteSheet((&raw const sPokemonLogoShineSpriteSheet[0]).cast_mut());
@@ -386,7 +406,7 @@ pub unsafe fn CB2_InitTitleScreen() {
                     32,
                 );
                 LoadSpritePalette((&raw const sSpritePalette_PressStart[0]).cast_mut());
-                gMain.state = 2;
+                crate::gl!(gMain.state = 2);
             }
             2 => {
                 let taskId: u8 = CreateTask(Some(Task_TitleScreenPhase1), 0);
@@ -394,13 +414,13 @@ pub unsafe fn CB2_InitTitleScreen() {
                 task_set(taskId, tSkipToNext, FALSE as i16);
                 task_set(taskId, tPointless, -16);
                 task_set(taskId, tBg2Y, -32);
-                gMain.state = 3;
+                crate::gl!(gMain.state = 3);
                 break 'l1;
             }
             3 => {
                 BeginNormalPaletteFade(PALETTES_ALL, 1, 16, 0, 65535);
                 SetVBlankCallback(Some(VBlankCB));
-                gMain.state = 4;
+                crate::gl!(gMain.state = 4);
             }
             4 => {
                 PanFadeAndZoomScreen(120, 80, 0x100, 0);
@@ -423,7 +443,7 @@ pub unsafe fn CB2_InitTitleScreen() {
                 EnableInterrupts(INTR_FLAG_VBLANK);
                 SetGpuReg(REG_OFFSET_DISPCNT, 46145);
                 m4aSongNumStart(MUS_TITLE);
-                gMain.state = 5;
+                crate::gl!(gMain.state = 5);
             }
             5 => {
                 if UpdatePaletteFade() == 0 {
@@ -503,7 +523,7 @@ pub unsafe fn CB2_InitTitleScreen() {
                     }
                 }
                 ResetPaletteFade();
-                gMain.state = 1;
+                crate::gl!(gMain.state = 1);
             }
         }
     }
@@ -515,7 +535,7 @@ pub(crate) unsafe fn MainCB2() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn Task_TitleScreenPhase1(taskId: u8) {
-    if gMain.newKeys as i32 & A_B_START_SELECT != 0 || task_get(taskId, 1) != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_B_START_SELECT != 0 || task_get(taskId, 1) != 0 {
         task_set(taskId, 1, TRUE as i16);
         task_set(taskId, 0, 0);
     }
@@ -540,21 +560,23 @@ pub(crate) unsafe fn Task_TitleScreenPhase1(taskId: u8) {
             VERSION_BANNER_Y,
             0,
         );
-        gSprites[spriteId].data[0] = 64;
-        gSprites[spriteId].data[1] = taskId as i16;
+        crate::gl!(gSprites[spriteId].data[0] = 64);
+        crate::gl!(gSprites[spriteId].data[1] = taskId as i16);
         spriteId = CreateSprite(
             (&raw const *sVersionBannerRightSpriteTemplate).cast_mut(),
             VERSION_BANNER_RIGHT_X,
             VERSION_BANNER_Y,
             0,
         );
-        gSprites[spriteId].data[1] = taskId as i16;
+        crate::gl!(gSprites[spriteId].data[1] = taskId as i16);
         task_set(taskId, 0, 144);
         task_set_func(taskId, Some(Task_TitleScreenPhase2));
     }
 }
 pub(crate) unsafe fn Task_TitleScreenPhase2(taskId: u8) {
-    if gMain.newKeys as i32 & A_B_START_SELECT != 0 || task_get(taskId, tSkipToNext) != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_B_START_SELECT != 0
+        || task_get(taskId, tSkipToNext) != 0
+    {
         task_set(taskId, tSkipToNext, TRUE as i16);
         task_set(taskId, tCounter, 0);
     }
@@ -584,19 +606,24 @@ pub(crate) unsafe fn Task_TitleScreenPhase2(taskId: u8) {
     task_set(taskId, 6, 6);
 }
 pub(crate) unsafe fn Task_TitleScreenPhase3(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & START_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0
+    {
         FadeOutBGM(4);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 65535);
         SetMainCallback2(Some(CB2_GoToMainMenu));
-    } else if gMain.heldKeys as i32 & CLEAR_SAVE_BUTTON_COMBO == CLEAR_SAVE_BUTTON_COMBO {
+    } else if crate::gl!(gMain.heldKeys) as i32 & CLEAR_SAVE_BUTTON_COMBO == CLEAR_SAVE_BUTTON_COMBO
+    {
         SetMainCallback2(Some(CB2_GoToClearSaveDataScreen));
-    } else if gMain.heldKeys as i32 & RESET_RTC_BUTTON_COMBO == RESET_RTC_BUTTON_COMBO
+    } else if crate::gl!(gMain.heldKeys) as i32 & RESET_RTC_BUTTON_COMBO == RESET_RTC_BUTTON_COMBO
         && CanResetRTC() == TRUE as u32
     {
         FadeOutBGM(4);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         SetMainCallback2(Some(CB2_GoToResetRtcScreen));
-    } else if gMain.heldKeys as i32 & BERRY_UPDATE_BUTTON_COMBO == BERRY_UPDATE_BUTTON_COMBO {
+    } else if crate::gl!(gMain.heldKeys) as i32 & BERRY_UPDATE_BUTTON_COMBO
+        == BERRY_UPDATE_BUTTON_COMBO
+    {
         FadeOutBGM(4);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         SetMainCallback2(Some(CB2_GoToBerryFixScreen));
@@ -611,11 +638,11 @@ pub(crate) unsafe fn Task_TitleScreenPhase3(taskId: u8) {
             != 0
         {
             task_set(taskId, tBg1Y, task_get(taskId, tBg1Y) + 1);
-            gBattle_BG1_Y = (task_get(taskId, tBg1Y) / 2) as u16;
-            gBattle_BG1_X = 0;
+            gBattle_BG1_Y.set((task_get(taskId, tBg1Y) / 2) as u16);
+            gBattle_BG1_X.set(0);
         }
         UpdateLegendaryMarkingColor(task_get(taskId, tCounter) as u8);
-        if gMPlayInfo_BGM.status & 0xFFFF == 0 {
+        if crate::gl!(gMPlayInfo_BGM.status) & 0xFFFF == 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 65535);
             SetMainCallback2(Some(CB2_GoToCopyrightScreen));
         }

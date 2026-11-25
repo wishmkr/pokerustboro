@@ -133,12 +133,15 @@ static sTrainerObjectEventTemplate: Table<ObjectEventTemplate> =
 static sTrainerPartySlots: Table<CArray<CArray<u8, 3>, 2>> =
     Table((&raw const crate::data::trainer_hill::sTrainerPartySlots).cast());
 
-pub(crate) static mut sHillData: *mut typeof___sHillData_0_t = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFloorTrainers: *mut FloorTrainers = null_mut();
+pub(crate) static sHillData: crate::global::Global<*mut typeof___sHillData_0_t> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sFloorTrainers: crate::global::Global<*mut FloorTrainers> =
+    crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gTrainerHillVBlankCounter: *mut u32 = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gTrainerHillVBlankCounter: crate::global::Global<*mut u32> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -147,7 +150,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -164,35 +167,36 @@ pub unsafe fn CallTrainerHillFunction() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ResetTrainerHillResults() {
-    (*gSaveBlock2Ptr).frontier.set_savedGame(0);
-    (*gSaveBlock2Ptr).frontier.set_unk_EF9(0);
-    (*gSaveBlock1Ptr).trainerHill.bestTime = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.set_savedGame(0);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.set_unk_EF9(0);
+    (*crate::gl!(gSaveBlock1Ptr)).trainerHill.bestTime = 0;
     for i in 0..NUM_TRAINER_HILL_MODES {
         SetTimerValue(
-            &raw mut (*gSaveBlock1Ptr).trainerHillTimes[i],
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHillTimes[i],
             HILL_MAX_TIME,
         );
     }
 }
-unsafe fn GetFloorId() -> u8 {
-    gMapHeader.mapLayoutId as u8 - LAYOUT_TRAINER_HILL_1F as u8
+fn GetFloorId() -> u8 {
+    crate::gl!(gMapHeader.mapLayoutId) as u8 - LAYOUT_TRAINER_HILL_1F as u8
 }
 pub unsafe fn GetTrainerHillOpponentClass(trainerId: u16) -> u8 {
     let id: u8 = trainerId as u8 - 1;
     (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass).cast::<CArray<u8, 0>>())
-        [(*sFloorTrainers).facilityClass[id]]
+        [(*crate::gl!(sFloorTrainers)).facilityClass[id]]
 }
 pub unsafe fn GetTrainerHillTrainerName(dst: *mut u8, trainerId: u16) {
     let id: u8 = trainerId as u8 - 1;
     for i in 0..11i32 {
-        *dst.at(i) = (*sFloorTrainers).name[id][i];
+        *dst.at(i) = (*crate::gl!(sFloorTrainers)).name[id][i];
     }
 }
 pub unsafe fn GetTrainerHillTrainerFrontSpriteId(trainerId: u16) -> u8 {
     let mut facilityClass: u8 = 0;
     SetUpDataStruct();
     let id: u8 = trainerId as u8 - 1;
-    facilityClass = (*sHillData).floors[(*sHillData).floorId].trainers[id].facilityClass;
+    facilityClass = (*crate::gl!(sHillData)).floors[(*crate::gl!(sHillData)).floorId].trainers[id]
+        .facilityClass;
     FreeDataStruct();
     (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex).cast::<CArray<u8, 0>>())
         [facilityClass]
@@ -200,41 +204,44 @@ pub unsafe fn GetTrainerHillTrainerFrontSpriteId(trainerId: u16) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn InitTrainerHillBattleStruct() {
     SetUpDataStruct();
-    sFloorTrainers = AllocZeroed(24) as *mut FloorTrainers;
+    crate::gl!(sFloorTrainers = AllocZeroed(24) as *mut FloorTrainers);
     for i in 0..(HILL_TRAINERS_PER_FLOOR as i32) {
         for j in 0..11i32 {
-            (*sFloorTrainers).name[i][j] =
-                (*sHillData).floors[(*sHillData).floorId].trainers[i].name[j];
+            (*crate::gl!(sFloorTrainers)).name[i][j] =
+                (*crate::gl!(sHillData)).floors[(*crate::gl!(sHillData)).floorId].trainers[i].name
+                    [j];
         }
-        (*sFloorTrainers).facilityClass[i] =
-            (*sHillData).floors[(*sHillData).floorId].trainers[i].facilityClass;
+        (*crate::gl!(sFloorTrainers)).facilityClass[i] =
+            (*crate::gl!(sHillData)).floors[(*crate::gl!(sHillData)).floorId].trainers[i]
+                .facilityClass;
     }
-    SetTrainerHillVBlankCounter(&raw mut (*gSaveBlock1Ptr).trainerHill.timer);
+    SetTrainerHillVBlankCounter(&raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer);
     FreeDataStruct();
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FreeTrainerHillBattleStruct() {
-    if !sFloorTrainers.is_null() {
-        Free(sFloorTrainers as *mut c_void);
-        sFloorTrainers = null_mut();
+    if !(*sFloorTrainers.as_ptr()).is_null() {
+        Free(crate::gl!(sFloorTrainers) as *mut c_void);
+        crate::gl!(sFloorTrainers = null_mut());
     }
 }
 unsafe fn SetUpDataStruct() {
-    if sHillData.is_null() {
-        sHillData = AllocZeroed(3820) as *mut typeof___sHillData_0_t;
-        (*sHillData).floorId = gMapHeader.mapLayoutId as u8 - LAYOUT_TRAINER_HILL_1F as u8;
+    if (*sHillData.as_ptr()).is_null() {
+        crate::gl!(sHillData = AllocZeroed(3820) as *mut typeof___sHillData_0_t);
+        (*crate::gl!(sHillData)).floorId =
+            crate::gl!(gMapHeader.mapLayoutId) as u8 - LAYOUT_TRAINER_HILL_1F as u8;
         CpuSet(
-            sChallengeData[(*gSaveBlock1Ptr).trainerHill.mode()] as *mut c_void,
-            &raw mut (*sHillData).challenge as *mut c_void,
+            sChallengeData[(*crate::gl!(gSaveBlock1Ptr)).trainerHill.mode()] as *mut c_void,
+            &raw mut (*crate::gl!(sHillData)).challenge as *mut c_void,
             0x40003ba,
         );
         TrainerHillDummy();
     }
 }
 unsafe fn FreeDataStruct() {
-    if !sHillData.is_null() {
-        Free(sHillData as *mut c_void);
-        sHillData = null_mut();
+    if !(*sHillData.as_ptr()).is_null() {
+        Free(crate::gl!(sHillData) as *mut c_void);
+        crate::gl!(sHillData = null_mut());
     }
 }
 pub unsafe fn CopyTrainerHillTrainerText(which: u8, localId: u16) {
@@ -244,28 +251,28 @@ pub unsafe fn CopyTrainerHillTrainerText(which: u8, localId: u16) {
     match which {
         TRAINER_HILL_TEXT_INTRO => {
             FrontierSpeechToString(
-                (*sHillData).floors[floorId].trainers[id]
+                (*crate::gl!(sHillData)).floors[floorId].trainers[id]
                     .speechBefore
                     .as_mut_ptr(),
             );
         }
         TRAINER_HILL_TEXT_PLAYER_LOST => {
             FrontierSpeechToString(
-                (*sHillData).floors[floorId].trainers[id]
+                (*crate::gl!(sHillData)).floors[floorId].trainers[id]
                     .speechWin
                     .as_mut_ptr(),
             );
         }
         TRAINER_HILL_TEXT_PLAYER_WON => {
             FrontierSpeechToString(
-                (*sHillData).floors[floorId].trainers[id]
+                (*crate::gl!(sHillData)).floors[floorId].trainers[id]
                     .speechLose
                     .as_mut_ptr(),
             );
         }
         TRAINER_HILL_TEXT_AFTER => {
             FrontierSpeechToString(
-                (*sHillData).floors[floorId].trainers[id]
+                (*crate::gl!(sHillData)).floors[floorId].trainers[id]
                     .speechAfter
                     .as_mut_ptr(),
             );
@@ -277,92 +284,111 @@ pub unsafe fn CopyTrainerHillTrainerText(which: u8, localId: u16) {
 pub(crate) unsafe fn TrainerHillStartChallenge() {
     TrainerHillDummy();
     if ReadTrainerHillAndValidate() == 0 {
-        (*gSaveBlock1Ptr).trainerHill.set_field_3D6E_0f(1);
+        (*crate::gl!(gSaveBlock1Ptr))
+            .trainerHill
+            .set_field_3D6E_0f(1);
     } else {
-        (*gSaveBlock1Ptr).trainerHill.set_field_3D6E_0f(0);
+        (*crate::gl!(gSaveBlock1Ptr))
+            .trainerHill
+            .set_field_3D6E_0f(0);
     }
-    (*gSaveBlock1Ptr).trainerHill.unk_3D6C = 0;
-    SetTrainerHillVBlankCounter(&raw mut (*gSaveBlock1Ptr).trainerHill.timer);
-    (*gSaveBlock1Ptr).trainerHill.timer = 0;
-    (*gSaveBlock1Ptr).trainerHill.set_spokeToOwner(0);
-    (*gSaveBlock1Ptr).trainerHill.set_checkedFinalTime(0);
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr)).trainerHill.unk_3D6C = 0;
+    SetTrainerHillVBlankCounter(&raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer);
+    (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer = 0;
+    (*crate::gl!(gSaveBlock1Ptr))
+        .trainerHill
+        .set_spokeToOwner(0);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .trainerHill
+        .set_checkedFinalTime(0);
+    (*crate::gl!(gSaveBlock1Ptr))
         .trainerHill
         .set_maybeECardScanDuringChallenge(0);
-    (*gSaveBlock2Ptr).frontier.trainerFlags = 0;
-    gBattleOutcome = 0;
-    (*gSaveBlock1Ptr).trainerHill.set_receivedPrize(0);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerFlags = 0;
+    gBattleOutcome.set(0);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .trainerHill
+        .set_receivedPrize(0);
 }
 pub(crate) unsafe fn GetOwnerState() {
     ClearTrainerHillVBlankCounter();
     gSpecialVar_Result = 0;
-    if (*gSaveBlock1Ptr).trainerHill.spokeToOwner() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.spokeToOwner() != 0 {
         gSpecialVar_Result += 1;
     }
-    if (*gSaveBlock1Ptr).trainerHill.receivedPrize() != 0
-        && (*gSaveBlock1Ptr).trainerHill.checkedFinalTime() != 0
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.receivedPrize() != 0
+        && (*crate::gl!(gSaveBlock1Ptr)).trainerHill.checkedFinalTime() != 0
     {
         gSpecialVar_Result += 1;
     }
-    (*gSaveBlock1Ptr).trainerHill.set_spokeToOwner(TRUE as u16);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .trainerHill
+        .set_spokeToOwner(TRUE as u16);
 }
 pub(crate) unsafe fn GiveChallengePrize() {
     let itemId: u16 = GetPrizeItemId();
-    if (*sHillData).challenge.numFloors != NUM_TRAINER_HILL_FLOORS
-        || (*gSaveBlock1Ptr).trainerHill.receivedPrize() != 0
+    if (*crate::gl!(sHillData)).challenge.numFloors != NUM_TRAINER_HILL_FLOORS
+        || (*crate::gl!(gSaveBlock1Ptr)).trainerHill.receivedPrize() != 0
     {
         gSpecialVar_Result = 2;
     } else if AddBagItem(itemId, 1) == 1 {
-        CopyItemName(itemId, gStringVar2.as_mut_ptr());
-        (*gSaveBlock1Ptr).trainerHill.set_receivedPrize(TRUE as u16);
-        (*gSaveBlock2Ptr).frontier.set_unk_EF9(0);
+        CopyItemName(itemId, (*gStringVar2.as_ptr()).as_mut_ptr());
+        (*crate::gl!(gSaveBlock1Ptr))
+            .trainerHill
+            .set_receivedPrize(TRUE as u16);
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.set_unk_EF9(0);
         gSpecialVar_Result = 0;
     } else {
         gSpecialVar_Result = 1;
     }
 }
 pub(crate) unsafe fn CheckFinalTime() {
-    if (*gSaveBlock1Ptr).trainerHill.checkedFinalTime() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.checkedFinalTime() != 0 {
         gSpecialVar_Result = 2;
-    } else if GetTimerValue(&raw mut (*gSaveBlock1Ptr).trainerHill.bestTime)
-        > (*gSaveBlock1Ptr).trainerHill.timer
+    } else if GetTimerValue(&raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHill.bestTime)
+        > (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer
     {
         SetTimerValue(
-            &raw mut (*gSaveBlock1Ptr).trainerHill.bestTime,
-            (*gSaveBlock1Ptr).trainerHill.timer,
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHill.bestTime,
+            (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer,
         );
-        (*gSaveBlock1Ptr).trainerHillTimes[(*gSaveBlock1Ptr).trainerHill.mode()] =
-            (*gSaveBlock1Ptr).trainerHill.bestTime;
+        (*crate::gl!(gSaveBlock1Ptr)).trainerHillTimes
+            [(*crate::gl!(gSaveBlock1Ptr)).trainerHill.mode()] =
+            (*crate::gl!(gSaveBlock1Ptr)).trainerHill.bestTime;
         gSpecialVar_Result = 0;
     } else {
         gSpecialVar_Result = 1;
     }
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
         .trainerHill
         .set_checkedFinalTime(TRUE as u16);
 }
 pub(crate) unsafe fn TrainerHillResumeTimer() {
-    if (*gSaveBlock1Ptr).trainerHill.spokeToOwner() == 0 {
-        if (*gSaveBlock1Ptr).trainerHill.timer >= HILL_MAX_TIME {
-            (*gSaveBlock1Ptr).trainerHill.timer = HILL_MAX_TIME;
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.spokeToOwner() == 0 {
+        if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer >= HILL_MAX_TIME {
+            (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer = HILL_MAX_TIME;
         } else {
-            SetTrainerHillVBlankCounter(&raw mut (*gSaveBlock1Ptr).trainerHill.timer);
+            SetTrainerHillVBlankCounter(&raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer);
         }
     }
 }
 pub(crate) unsafe fn TrainerHillSetPlayerLost() {
-    (*gSaveBlock1Ptr).trainerHill.set_hasLost(TRUE as u16);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .trainerHill
+        .set_hasLost(TRUE as u16);
 }
 pub(crate) unsafe fn TrainerHillGetChallengeStatus() {
-    if (*gSaveBlock1Ptr).trainerHill.hasLost() != 0 {
-        (*gSaveBlock1Ptr).trainerHill.set_hasLost(FALSE as u16);
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.hasLost() != 0 {
+        (*crate::gl!(gSaveBlock1Ptr))
+            .trainerHill
+            .set_hasLost(FALSE as u16);
         gSpecialVar_Result = TRAINER_HILL_PLAYER_STATUS_LOST;
-    } else if (*gSaveBlock1Ptr)
+    } else if (*crate::gl!(gSaveBlock1Ptr))
         .trainerHill
         .maybeECardScanDuringChallenge()
         != 0
     {
-        (*gSaveBlock1Ptr)
+        (*crate::gl!(gSaveBlock1Ptr))
             .trainerHill
             .set_maybeECardScanDuringChallenge(0);
         gSpecialVar_Result = TRAINER_HILL_PLAYER_STATUS_ECARD_SCANNED;
@@ -371,7 +397,7 @@ pub(crate) unsafe fn TrainerHillGetChallengeStatus() {
     }
 }
 pub(crate) unsafe fn BufferChallengeTime() {
-    let mut total: i32 = (*gSaveBlock1Ptr).trainerHill.timer as i32;
+    let mut total: i32 = (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer as i32;
     if total >= HILL_MAX_TIME as i32 {
         total = HILL_MAX_TIME as i32;
     }
@@ -387,13 +413,13 @@ pub(crate) unsafe fn BufferChallengeTime() {
         2,
     );
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         secondsWhole,
         STR_CONV_MODE_RIGHT_ALIGN,
         2,
     );
     ConvertIntToDecimalStringN(
-        gStringVar3.as_mut_ptr(),
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
         secondsFraction,
         STR_CONV_MODE_LEADING_ZEROS,
         2,
@@ -401,10 +427,10 @@ pub(crate) unsafe fn BufferChallengeTime() {
 }
 pub(crate) unsafe fn GetAllFloorsUsed() {
     SetUpDataStruct();
-    if (*sHillData).challenge.numFloors != NUM_TRAINER_HILL_FLOORS {
+    if (*crate::gl!(sHillData)).challenge.numFloors != NUM_TRAINER_HILL_FLOORS {
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
-            (*sHillData).challenge.numFloors as i32,
+            (*crate::gl!(sHillData)).challenge.numFloors as i32,
             STR_CONV_MODE_LEFT_ALIGN,
             1,
         );
@@ -423,7 +449,7 @@ pub(crate) unsafe fn GetInEReaderMode() {
 pub unsafe fn InTrainerHillChallenge() -> u8 {
     if VarGet(VAR_TRAINER_HILL_IS_ACTIVE) == 0 {
         return FALSE;
-    } else if (*gSaveBlock1Ptr).trainerHill.spokeToOwner() != 0 {
+    } else if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.spokeToOwner() != 0 {
         return FALSE;
     } else if GetCurrentTrainerHillMapId() != 0 {
         return TRUE;
@@ -481,7 +507,7 @@ pub unsafe fn PrintOnTrainerHillRecordsWindow() {
             sModeStrings[i],
         );
         y += 15;
-        total = GetTimerValue(&raw mut (*gSaveBlock1Ptr).trainerHillTimes[i]);
+        total = GetTimerValue(&raw mut (*crate::gl!(gSaveBlock1Ptr)).trainerHillTimes[i]);
         minutes = total / 3600;
         total %= 3600;
         ConvertIntToDecimalStringN(
@@ -493,14 +519,14 @@ pub unsafe fn PrintOnTrainerHillRecordsWindow() {
         secondsWhole = total / 60;
         total %= 60;
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             secondsWhole as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             2,
         );
         secondsFraction = total * 168 / 100;
         ConvertIntToDecimalStringN(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             secondsFraction as i32,
             STR_CONV_MODE_LEADING_ZEROS,
             2,
@@ -539,15 +565,16 @@ unsafe fn SetTimerValue(dst: *mut u32, val: u32) {
     *dst = val;
 }
 pub unsafe fn LoadTrainerHillObjectEventTemplates() {
-    let eventTemplates: *mut ObjectEventTemplate =
-        (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
+    let eventTemplates: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
     if LoadTrainerHillFloorObjectEventScripts() == 0 {
         return;
     }
     SetUpDataStruct();
     let mut i: u8 = 0;
     while i < HILL_TRAINERS_PER_FLOOR {
-        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] = 0xFFFF;
         i += 1;
     }
     {
@@ -556,7 +583,9 @@ pub unsafe fn LoadTrainerHillObjectEventTemplates() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gSaveBlock1Ptr))
+                    .objectEventTemplates
+                    .as_mut_ptr() as *mut c_void,
                 0x5000180,
             );
         }
@@ -565,21 +594,25 @@ pub unsafe fn LoadTrainerHillObjectEventTemplates() {
     for i in 0..HILL_TRAINERS_PER_FLOOR {
         *eventTemplates.at(i) = *sTrainerObjectEventTemplate;
         (*eventTemplates.at(i)).localId = i + 1;
-        (*eventTemplates.at(i)).graphicsId =
-            FacilityClassToGraphicsId((*sHillData).floors[floorId].trainers[i].facilityClass);
-        (*eventTemplates.at(i)).x = (*sHillData).floors[floorId].map.trainerCoords[i] as i16 & 0xF;
+        (*eventTemplates.at(i)).graphicsId = FacilityClassToGraphicsId(
+            (*crate::gl!(sHillData)).floors[floorId].trainers[i].facilityClass,
+        );
+        (*eventTemplates.at(i)).x =
+            (*crate::gl!(sHillData)).floors[floorId].map.trainerCoords[i] as i16 & 0xF;
         (*eventTemplates.at(i)).y =
-            (((*sHillData).floors[floorId].map.trainerCoords[i] >> 4) as i16 & 0xF)
+            (((*crate::gl!(sHillData)).floors[floorId].map.trainerCoords[i] >> 4) as i16 & 0xF)
                 + HILL_FLOOR_HEIGHT_MARGIN;
         let bits: u8 = i << 2;
         (*eventTemplates.at(i)).movementType = (shr_i32(
-            (*sHillData).floors[floorId].map.trainerDirections as i32,
+            (*crate::gl!(sHillData)).floors[floorId]
+                .map
+                .trainerDirections as i32,
             bits as u32,
         ) as u8
             & 0xF)
             + MOVEMENT_TYPE_FACE_UP;
         (*eventTemplates.at(i)).trainerRange_berryTreeId = shr_i32(
-            (*sHillData).floors[floorId].map.trainerRanges as i32,
+            (*crate::gl!(sHillData)).floors[floorId].map.trainerRanges as i32,
             bits as u32,
         ) as u16
             & 0xF;
@@ -587,7 +620,7 @@ pub unsafe fn LoadTrainerHillObjectEventTemplates() {
             .cast::<CArray<u8, 0>>())
         .as_ptr()
         .cast_mut();
-        (*gSaveBlock2Ptr).frontier.trainerIds[i] = i as u16 + 1;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] = i as u16 + 1;
     }
     FreeDataStruct();
 }
@@ -598,11 +631,12 @@ pub unsafe fn LoadTrainerHillFloorObjectEventScripts() -> u32 {
 }
 unsafe fn GetMapDataForFloor(floorId: u8, x: u32, y: u32, floorWidth: u32) -> u16 {
     let impassable: u8 = shr_i32(
-        (*sHillData).floors[floorId].map.collisionData[y] as i32,
+        (*crate::gl!(sHillData)).floors[floorId].map.collisionData[y] as i32,
         15 - x,
     ) as u8
         & 1;
-    let metatileId: u16 = (*sHillData).floors[floorId].map.metatileData[floorWidth * y + x] as u16
+    let metatileId: u16 = (*crate::gl!(sHillData)).floors[floorId].map.metatileData
+        [floorWidth * y + x] as u16
         + NUM_METATILES_IN_PRIMARY;
     let elevation: u16 = 12288;
     (impassable as u16) << 10 & 0x0C00 | elevation | metatileId & 0x03FF
@@ -620,10 +654,10 @@ pub unsafe fn GenerateTrainerHillFloorLayout(mapArg: *mut u16) {
         return;
     }
     mapId = GetFloorId();
-    let mut src: *mut u16 = (*gMapHeader.mapLayout).map;
-    gBackupMapLayout.map = mapArg;
-    gBackupMapLayout.width = 31;
-    gBackupMapLayout.height = 35;
+    let mut src: *mut u16 = (*crate::gl!(gMapHeader.mapLayout)).map;
+    crate::gl!(gBackupMapLayout.map = mapArg);
+    crate::gl!(gBackupMapLayout.width = 31);
+    crate::gl!(gBackupMapLayout.height = 35);
     let mut dst: *mut u16 = mapArg.at(224);
     let mut y: i32 = 0;
     while y < HILL_FLOOR_HEIGHT_MARGIN as i32 {
@@ -643,12 +677,12 @@ pub unsafe fn GenerateTrainerHillFloorLayout(mapArg: *mut u16) {
     RunOnLoadMapScript();
     FreeDataStruct();
 }
-pub unsafe fn InTrainerHill() -> u32 {
+pub fn InTrainerHill() -> u32 {
     let mut ret: u32 = 0;
-    if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_1F
-        || gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_2F
-        || gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_3F
-        || gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_4F
+    if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_1F
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_2F
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_3F
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_4F
     {
         ret = TRUE as u32;
     } else {
@@ -656,28 +690,28 @@ pub unsafe fn InTrainerHill() -> u32 {
     }
     ret
 }
-pub unsafe fn GetCurrentTrainerHillMapId() -> u8 {
+pub fn GetCurrentTrainerHillMapId() -> u8 {
     let mut mapId: u8 = 0;
-    if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_1F {
+    if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_1F {
         mapId = TRAINER_HILL_1F;
-    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_2F {
+    } else if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_2F {
         mapId = TRAINER_HILL_2F;
-    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_3F {
+    } else if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_3F {
         mapId = TRAINER_HILL_3F;
-    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_4F {
+    } else if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_4F {
         mapId = TRAINER_HILL_4F;
-    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_ROOF {
+    } else if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_ROOF {
         mapId = TRAINER_HILL_ROOF;
-    } else if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_ENTRANCE {
+    } else if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_ENTRANCE {
         mapId = TRAINER_HILL_ENTRANCE;
     } else {
         mapId = 0;
     }
     mapId
 }
-unsafe fn OnTrainerHillRoof() -> u32 {
+fn OnTrainerHillRoof() -> u32 {
     let mut onRoof: u32 = 0;
-    if gMapHeader.mapLayoutId == LAYOUT_TRAINER_HILL_ROOF {
+    if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_TRAINER_HILL_ROOF {
         onRoof = TRUE as u32;
     } else {
         onRoof = FALSE as u32;
@@ -690,7 +724,7 @@ pub unsafe fn SetWarpDestinationTrainerHill4F() -> *mut WarpEvent {
 }
 pub unsafe fn SetWarpDestinationTrainerHillFinalFloor(warpEventId: u8) -> *mut WarpEvent {
     if warpEventId == 1 {
-        return (*gMapHeader.events).warps.at(1);
+        return (*crate::gl!(gMapHeader.events)).warps.at(1);
     }
     let mut numFloors: u8 = GetNumFloorsInTrainerHillChallenge();
     if numFloors == 0 || numFloors > NUM_TRAINER_HILL_FLOORS {
@@ -701,29 +735,31 @@ pub unsafe fn SetWarpDestinationTrainerHillFinalFloor(warpEventId: u8) -> *mut W
     (*(*header).events).warps
 }
 pub unsafe fn LocalIdToHillTrainerId(localId: u8) -> u16 {
-    (*gSaveBlock2Ptr).frontier.trainerIds[localId as i32 - 1]
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[localId as i32 - 1]
 }
 pub unsafe fn GetHillTrainerFlag(objectEventId: u8) -> u8 {
     let trainerIndexStart: u32 = GetFloorId() as u32 * HILL_TRAINERS_PER_FLOOR as u32;
-    let bitId: u8 = gObjectEvents[objectEventId].localId - 1 + trainerIndexStart as u8;
-    (*gSaveBlock2Ptr).frontier.trainerFlags
+    let bitId: u8 = crate::gl!(gObjectEvents[objectEventId].localId) - 1 + trainerIndexStart as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerFlags
         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[bitId] as u8
 }
 pub unsafe fn SetHillTrainerFlag() {
     let trainerIndexStart: u8 = GetFloorId() * HILL_TRAINERS_PER_FLOOR;
     let mut i: u8 = 0;
     while i < HILL_TRAINERS_PER_FLOOR {
-        if (*gSaveBlock2Ptr).frontier.trainerIds[i] == gTrainerBattleOpponent_A {
-            (*gSaveBlock2Ptr).frontier.trainerFlags |=
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == gTrainerBattleOpponent_A.get() {
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerFlags |=
                 gBitTable[trainerIndexStart as i32 + i as i32] as u8;
             break;
         }
         i += 1;
     }
-    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0 {
         for i in 0..HILL_TRAINERS_PER_FLOOR {
-            if (*gSaveBlock2Ptr).frontier.trainerIds[i] == gTrainerBattleOpponent_B {
-                (*gSaveBlock2Ptr).frontier.trainerFlags |=
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i]
+                == gTrainerBattleOpponent_B.get()
+            {
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerFlags |=
                     gBitTable[trainerIndexStart as i32 + i as i32] as u8;
                 break;
             }
@@ -756,10 +792,10 @@ unsafe fn CreateNPCTrainerHillParty(trainerId: u16, firstMonId: u8) {
     let mut partySlot: i32 = 0;
     while i < firstMonId as i32 + 3 {
         let id: u8 = sTrainerPartySlots[trId][partySlot];
-        let mon: *mut Pokemon = &raw mut gEnemyParty[i];
+        let mon: *mut Pokemon = crate::gl!(&raw gEnemyParty[i]);
         CreateBattleTowerMon(
             mon,
-            &raw mut (*sHillData).floors[floorId].trainers[trId].mons[id],
+            &raw mut (*crate::gl!(sHillData)).floors[floorId].trainers[trId].mons[id],
         );
         SetTrainerHillMonLevel(mon, level);
         i += 1;
@@ -769,12 +805,12 @@ unsafe fn CreateNPCTrainerHillParty(trainerId: u16, firstMonId: u8) {
 }
 pub unsafe fn FillHillTrainerParty() {
     ZeroEnemyPartyMons();
-    CreateNPCTrainerHillParty(gTrainerBattleOpponent_A, 0);
+    CreateNPCTrainerHillParty(gTrainerBattleOpponent_A.get(), 0);
 }
 pub unsafe fn FillHillTrainersParties() {
     ZeroEnemyPartyMons();
-    CreateNPCTrainerHillParty(gTrainerBattleOpponent_A, 0);
-    CreateNPCTrainerHillParty(gTrainerBattleOpponent_B, 3);
+    CreateNPCTrainerHillParty(gTrainerBattleOpponent_A.get(), 0);
+    CreateNPCTrainerHillParty(gTrainerBattleOpponent_B.get(), 3);
 }
 pub fn GetTrainerHillAIFlags() -> u32 {
     7
@@ -783,7 +819,9 @@ pub unsafe fn GetTrainerEncounterMusicIdInTrainerHill(trainerId: u16) -> u8 {
     let mut facilityClass: u8 = 0;
     SetUpDataStruct();
     let trId: u8 = trainerId as u8 - 1;
-    facilityClass = (*sHillData).floors[(*sHillData).floorId].trainers[trId].facilityClass;
+    facilityClass = (*crate::gl!(sHillData)).floors[(*crate::gl!(sHillData)).floorId].trainers
+        [trId]
+        .facilityClass;
     FreeDataStruct();
     for i in 0..54i32 {
         if sTrainerClassesAndMusic[i].trainerClass
@@ -807,12 +845,12 @@ unsafe fn SetTrainerHillMonLevel(mon: *mut Pokemon, mut level: u8) {
 }
 pub unsafe fn GetNumFloorsInTrainerHillChallenge() -> u8 {
     SetUpDataStruct();
-    let floors: u8 = (*sHillData).challenge.numFloors;
+    let floors: u8 = (*crate::gl!(sHillData)).challenge.numFloors;
     FreeDataStruct();
     floors
 }
 pub(crate) unsafe fn SetAllTrainerFlags() {
-    (*gSaveBlock2Ptr).frontier.trainerFlags = 0xFF;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerFlags = 0xFF;
 }
 pub unsafe fn TryLoadTrainerHillEReaderPalette() {
     if OnTrainerHillEReaderChallengeFloor() == TRUE as u32 {
@@ -820,13 +858,13 @@ pub unsafe fn TryLoadTrainerHillEReaderPalette() {
     }
 }
 pub(crate) unsafe fn GetGameSaved() {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.savedGame() as u16;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.savedGame() as u16;
 }
 pub(crate) unsafe fn SetGameSaved() {
-    (*gSaveBlock2Ptr).frontier.set_savedGame(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.set_savedGame(TRUE);
 }
 pub(crate) unsafe fn ClearGameSaved() {
-    (*gSaveBlock2Ptr).frontier.set_savedGame(FALSE);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.set_savedGame(FALSE);
 }
 pub unsafe fn OnTrainerHillEReaderChallengeFloor() -> u32 {
     if InTrainerHillChallenge() == 0 || GetCurrentTrainerHillMapId() == TRAINER_HILL_ENTRANCE {
@@ -844,29 +882,29 @@ pub unsafe fn OnTrainerHillEReaderChallengeFloor() -> u32 {
     }
 }
 pub(crate) unsafe fn GetChallengeWon() {
-    if (*gSaveBlock1Ptr).trainerHill.hasLost() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.hasLost() != 0 {
         gSpecialVar_Result = FALSE as u16;
     } else {
         gSpecialVar_Result = TRUE as u16;
     }
 }
 pub(crate) unsafe fn TrainerHillSetMode() {
-    (*gSaveBlock1Ptr).trainerHill.set_mode(
+    (*crate::gl!(gSaveBlock1Ptr)).trainerHill.set_mode(
         *(&raw const crate::ffi::gSpecialVar_0x8005)
             .cast::<u16>()
             .cast_mut(),
     );
-    (*gSaveBlock1Ptr).trainerHill.bestTime = (*gSaveBlock1Ptr).trainerHillTimes
-        [*(&raw const crate::ffi::gSpecialVar_0x8005)
-            .cast::<u16>()
-            .cast_mut()];
+    (*crate::gl!(gSaveBlock1Ptr)).trainerHill.bestTime = (*crate::gl!(gSaveBlock1Ptr))
+        .trainerHillTimes[*(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()];
 }
 unsafe fn GetPrizeListId(allowTMs: u8) -> u8 {
     let mut modBy: u8 = 0;
     let mut prizeListId: u8 = 0;
     for i in 0..NUM_TRAINER_HILL_FLOORS {
-        prizeListId ^= (*sHillData).floors[i].trainerNum1 & 0x1F;
-        prizeListId ^= (*sHillData).floors[i].trainerNum2 & 0x1F;
+        prizeListId ^= (*crate::gl!(sHillData)).floors[i].trainerNum1 & 0x1F;
+        prizeListId ^= (*crate::gl!(sHillData)).floors[i].trainerNum2 & 0x1F;
     }
     if allowTMs != 0 {
         modBy = NUM_TRAINER_HILL_PRIZE_LISTS;
@@ -881,24 +919,24 @@ pub(crate) unsafe fn GetPrizeItemId() -> u16 {
     let mut id: i32 = 0;
     let mut i: u8 = 0;
     while i < NUM_TRAINER_HILL_FLOORS {
-        trainerNumSum += (*sHillData).floors[i].trainerNum1 as i32;
-        trainerNumSum += (*sHillData).floors[i].trainerNum2 as i32;
+        trainerNumSum += (*crate::gl!(sHillData)).floors[i].trainerNum1 as i32;
+        trainerNumSum += (*crate::gl!(sHillData)).floors[i].trainerNum2 as i32;
         i += 1;
     }
     let mut prizeListSetId: i32 = trainerNumSum / 256;
     prizeListSetId %= 2;
     if FlagGet(FLAG_SYS_GAME_CLEAR) != 0
-        && (*sHillData).challenge.numTrainers == NUM_TRAINER_HILL_TRAINERS as u8
+        && (*crate::gl!(sHillData)).challenge.numTrainers == NUM_TRAINER_HILL_TRAINERS as u8
     {
         i = GetPrizeListId(TRUE);
     } else {
         i = GetPrizeListId(FALSE);
     }
-    if (*gSaveBlock1Ptr).trainerHill.mode() == HILL_MODE_EXPERT {
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerHill.mode() == HILL_MODE_EXPERT {
         i = ((i as i32 + 1) % 10) as u8;
     }
     let prizeList: *mut u16 = *sPrizeListSets[prizeListSetId].at(i);
-    let minutes: i32 = (*gSaveBlock1Ptr).trainerHill.timer as i32 / 3600;
+    let minutes: i32 = (*crate::gl!(gSaveBlock1Ptr)).trainerHill.timer as i32 / 3600;
     if minutes < 12 {
         id = 0;
     } else if minutes < 13 {

@@ -171,44 +171,55 @@ static sTrainerBContinueScriptBattleParams: Table<CArray<TrainerBattleParameter,
 static sTrainerBOrdinaryBattleParams: Table<CArray<TrainerBattleParameter, 9>> =
     Table((&raw const crate::data::battle_setup::sTrainerBOrdinaryBattleParams).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sTrainerBattleMode: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gTrainerBattleOpponent_A: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gTrainerBattleOpponent_B: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPartnerTrainerId: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerObjectEventLocalId: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerAIntroSpeech: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerBIntroSpeech: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerADefeatSpeech: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerBDefeatSpeech: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerVictorySpeech: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerCannotBattleSpeech: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerBattleEndScript: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerABattleScriptRetAddr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTrainerBBattleScriptRetAddr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gTrainerBattleOpponent_A: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gTrainerBattleOpponent_B: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPartnerTrainerId: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerObjectEventLocalId: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerAIntroSpeech: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerBIntroSpeech: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerADefeatSpeech: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerBDefeatSpeech: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerVictorySpeech: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerCannotBattleSpeech: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerBattleEndScript: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerABattleScriptRetAddr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTrainerBBattleScriptRetAddr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sShouldCheckTrainerBScript: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sNoOfPossibleTrainerRetScripts: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sNoOfPossibleTrainerRetScripts: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -260,11 +271,11 @@ unsafe fn DoStandardWildBattle() {
     LockPlayerFieldControls();
     FreezeObjectEvents();
     StopPlayerAvatar();
-    gMain.savedCallback = Some(CB2_EndWildBattle);
-    gBattleTypeFlags = 0;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndWildBattle));
+    gBattleTypeFlags.set(0);
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
         VarSet(VAR_TEMP_PLAYING_PYRAMID_MUSIC, 0);
-        gBattleTypeFlags |= BATTLE_TYPE_PYRAMID;
+        gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_PYRAMID));
     }
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
@@ -276,8 +287,8 @@ pub unsafe fn BattleSetup_StartRoamerBattle() {
     LockPlayerFieldControls();
     FreezeObjectEvents();
     StopPlayerAvatar();
-    gMain.savedCallback = Some(CB2_EndWildBattle);
-    gBattleTypeFlags = BATTLE_TYPE_ROAMER;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndWildBattle));
+    gBattleTypeFlags.set(BATTLE_TYPE_ROAMER);
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -288,16 +299,16 @@ unsafe fn DoSafariBattle() {
     LockPlayerFieldControls();
     FreezeObjectEvents();
     StopPlayerAvatar();
-    gMain.savedCallback = Some(CB2_EndSafariBattle);
-    gBattleTypeFlags = BATTLE_TYPE_SAFARI;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndSafariBattle));
+    gBattleTypeFlags.set(BATTLE_TYPE_SAFARI);
     CreateBattleStartTask(GetWildBattleTransition(), 0);
 }
 unsafe fn DoBattlePikeWildBattle() {
     LockPlayerFieldControls();
     FreezeObjectEvents();
     StopPlayerAvatar();
-    gMain.savedCallback = Some(CB2_EndWildBattle);
-    gBattleTypeFlags = BATTLE_TYPE_PIKE;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndWildBattle));
+    gBattleTypeFlags.set(BATTLE_TYPE_PIKE);
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -325,16 +336,16 @@ unsafe fn DoBattlePyramidTrainerHillBattle() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn StartWallyTutorialBattle() {
-    CreateMaleMon(&raw mut gEnemyParty[0], SPECIES_RALTS, 5);
+    CreateMaleMon(crate::gl!(&raw gEnemyParty[0]), SPECIES_RALTS, 5);
     LockPlayerFieldControls();
-    gMain.savedCallback = Some(CB2_ReturnToFieldContinueScriptPlayMapMusic);
-    gBattleTypeFlags = BATTLE_TYPE_WALLY_TUTORIAL;
+    crate::gl!(gMain.savedCallback = Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
+    gBattleTypeFlags.set(BATTLE_TYPE_WALLY_TUTORIAL);
     CreateBattleStartTask(B_TRANSITION_SLICE, 0);
 }
 pub unsafe fn BattleSetup_StartScriptedWildBattle() {
     LockPlayerFieldControls();
-    gMain.savedCallback = Some(CB2_EndScriptedWildBattle);
-    gBattleTypeFlags = 0;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndScriptedWildBattle));
+    gBattleTypeFlags.set(0);
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -344,8 +355,8 @@ pub unsafe fn BattleSetup_StartScriptedWildBattle() {
 #[unsafe(no_mangle)]
 pub unsafe fn BattleSetup_StartLatiBattle() {
     LockPlayerFieldControls();
-    gMain.savedCallback = Some(CB2_EndScriptedWildBattle);
-    gBattleTypeFlags = BATTLE_TYPE_LEGENDARY;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndScriptedWildBattle));
+    gBattleTypeFlags.set(BATTLE_TYPE_LEGENDARY);
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -355,15 +366,19 @@ pub unsafe fn BattleSetup_StartLatiBattle() {
 #[unsafe(no_mangle)]
 pub unsafe fn BattleSetup_StartLegendaryBattle() {
     LockPlayerFieldControls();
-    gMain.savedCallback = Some(CB2_EndScriptedWildBattle);
-    gBattleTypeFlags = BATTLE_TYPE_LEGENDARY;
-    match GetMonData3(&raw mut gEnemyParty[0], MON_DATA_SPECIES, null_mut()) {
+    crate::gl!(gMain.savedCallback = Some(CB2_EndScriptedWildBattle));
+    gBattleTypeFlags.set(BATTLE_TYPE_LEGENDARY);
+    match GetMonData3(
+        crate::gl!(&raw gEnemyParty[0]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) {
         SPECIES_KYOGRE => {
-            gBattleTypeFlags |= BATTLE_TYPE_KYOGRE;
+            gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_KYOGRE));
             CreateBattleStartTask(B_TRANSITION_KYOGRE, MUS_VS_KYOGRE_GROUDON);
         }
         SPECIES_RAYQUAZA => {
-            gBattleTypeFlags |= BATTLE_TYPE_RAYQUAZA;
+            gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_RAYQUAZA));
             CreateBattleStartTask(B_TRANSITION_RAYQUAZA, MUS_VS_RAYQUAZA);
         }
         SPECIES_DEOXYS => {
@@ -376,7 +391,7 @@ pub unsafe fn BattleSetup_StartLegendaryBattle() {
             CreateBattleStartTask(B_TRANSITION_GRID_SQUARES, MUS_VS_MEW);
         }
         _ => {
-            gBattleTypeFlags |= BATTLE_TYPE_GROUDON;
+            gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_GROUDON));
             CreateBattleStartTask(B_TRANSITION_GROUDON, MUS_VS_KYOGRE_GROUDON);
         }
     }
@@ -388,8 +403,8 @@ pub unsafe fn BattleSetup_StartLegendaryBattle() {
 #[unsafe(no_mangle)]
 pub unsafe fn StartGroudonKyogreBattle() {
     LockPlayerFieldControls();
-    gMain.savedCallback = Some(CB2_EndScriptedWildBattle);
-    gBattleTypeFlags = 12288;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndScriptedWildBattle));
+    gBattleTypeFlags.set(12288);
     if gGameVersion == VERSION_RUBY as u8 {
         CreateBattleStartTask(B_TRANSITION_ANGLED_WIPES, MUS_VS_KYOGRE_GROUDON);
     } else {
@@ -404,9 +419,9 @@ pub unsafe fn StartGroudonKyogreBattle() {
 pub unsafe fn StartRegiBattle() {
     let mut transitionId: u8 = 0;
     LockPlayerFieldControls();
-    gMain.savedCallback = Some(CB2_EndScriptedWildBattle);
-    gBattleTypeFlags = 24576;
-    let species: u16 = GetMonData2(&raw mut gEnemyParty[0], MON_DATA_SPECIES) as u16;
+    crate::gl!(gMain.savedCallback = Some(CB2_EndScriptedWildBattle));
+    gBattleTypeFlags.set(24576);
+    let species: u16 = GetMonData2(crate::gl!(&raw gEnemyParty[0]), MON_DATA_SPECIES) as u16;
     match species {
         SPECIES_REGIROCK => {
             transitionId = B_TRANSITION_REGIROCK;
@@ -440,14 +455,14 @@ pub(crate) unsafe fn CB2_EndWildBattle() {
         }
     }
     ResetOamRange(0, 128);
-    if IsPlayerDefeated(gBattleOutcome as u32) == TRUE as u32
+    if IsPlayerDefeated(gBattleOutcome.get() as u32) == TRUE as u32
         && CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE
         && InBattlePike() == 0
     {
         SetMainCallback2(Some(CB2_WhiteOut));
     } else {
         SetMainCallback2(Some(CB2_ReturnToField));
-        gFieldCallback = Some(FieldCB_ReturnToFieldNoScriptCheckMusic);
+        crate::gl!(gFieldCallback = Some(FieldCB_ReturnToFieldNoScriptCheckMusic));
     }
 }
 pub(crate) unsafe fn CB2_EndScriptedWildBattle() {
@@ -463,7 +478,7 @@ pub(crate) unsafe fn CB2_EndScriptedWildBattle() {
         }
     }
     ResetOamRange(0, 128);
-    if IsPlayerDefeated(gBattleOutcome as u32) == TRUE as u32 {
+    if IsPlayerDefeated(gBattleOutcome.get() as u32) == TRUE as u32 {
         if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
             SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
         } else {
@@ -487,7 +502,7 @@ pub unsafe fn BattleSetup_GetEnvironmentId() -> u8 {
     if MetatileBehavior_IsSandOrDeepSand(tileBehavior as u8) != 0 {
         return BATTLE_ENVIRONMENT_SAND;
     }
-    match gMapHeader.mapType {
+    match crate::gl!(gMapHeader.mapType) {
         MAP_TYPE_TOWN | MAP_TYPE_CITY | MAP_TYPE_ROUTE => {}
         MAP_TYPE_UNDERGROUND => {
             if MetatileBehavior_IsIndoorEncounter(tileBehavior as u8) != 0 {
@@ -529,7 +544,9 @@ pub unsafe fn BattleSetup_GetEnvironmentId() -> u8 {
             return BATTLE_ENVIRONMENT_WATER;
         }
     }
-    if (*gSaveBlock1Ptr).location.mapGroup == 0 && (*gSaveBlock1Ptr).location.mapNum == 28 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 0
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 28
+    {
         return BATTLE_ENVIRONMENT_SAND;
     }
     if GetSavedWeather() == WEATHER_SANDSTORM {
@@ -548,7 +565,7 @@ unsafe fn GetBattleTransitionTypeByMap() -> u8 {
     if MetatileBehavior_IsSurfableWaterOrUnderwater(tileBehavior as u8) != 0 {
         return TRANSITION_TYPE_WATER;
     }
-    match gMapHeader.mapType {
+    match crate::gl!(gMapHeader.mapType) {
         MAP_TYPE_UNDERGROUND => {
             return TRANSITION_TYPE_CAVE;
         }
@@ -567,12 +584,12 @@ unsafe fn GetBattleTransitionTypeByMap() -> u8 {
 unsafe fn GetSumOfPlayerPartyLevel(mut numMons: u8) -> u16 {
     let mut sum: u8 = 0;
     for i in 0..PARTY_SIZE {
-        let species: u32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG);
+        let species: u32 = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES_OR_EGG);
         if species != SPECIES_EGG
             && species != 0
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) != 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP) != 0
         {
-            sum += GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) as u8;
+            sum += GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_LEVEL) as u8;
             if ({
                 numMons -= 1;
                 numMons
@@ -654,7 +671,7 @@ unsafe fn GetSumOfEnemyPartyLevel(opponentId: u16, numMons: u8) -> u8 {
 }
 unsafe fn GetWildBattleTransition() -> u8 {
     let transitionType: u8 = GetBattleTransitionTypeByMap();
-    let enemyLevel: u8 = GetMonData2(&raw mut gEnemyParty[0], MON_DATA_LEVEL) as u8;
+    let enemyLevel: u8 = GetMonData2(crate::gl!(&raw gEnemyParty[0]), MON_DATA_LEVEL) as u8;
     let playerLevel: u8 = GetSumOfPlayerPartyLevel(1) as u8;
     if enemyLevel < playerLevel {
         if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
@@ -676,68 +693,68 @@ unsafe fn GetWildBattleTransition() -> u8 {
 }
 unsafe fn GetTrainerBattleTransition() -> u8 {
     let mut minPartyCount: u8 = 0;
-    if gTrainerBattleOpponent_A == TRAINER_SECRET_BASE {
+    if gTrainerBattleOpponent_A.get() == TRAINER_SECRET_BASE {
         return B_TRANSITION_CHAMPION;
     }
     if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-        [gTrainerBattleOpponent_A]
-        .trainerClass
+        [gTrainerBattleOpponent_A.get()]
+    .trainerClass
         == TRAINER_CLASS_ELITE_FOUR
     {
-        if gTrainerBattleOpponent_A == TRAINER_SIDNEY {
+        if gTrainerBattleOpponent_A.get() == TRAINER_SIDNEY {
             return B_TRANSITION_SIDNEY;
         }
-        if gTrainerBattleOpponent_A == TRAINER_PHOEBE {
+        if gTrainerBattleOpponent_A.get() == TRAINER_PHOEBE {
             return B_TRANSITION_PHOEBE;
         }
-        if gTrainerBattleOpponent_A == TRAINER_GLACIA {
+        if gTrainerBattleOpponent_A.get() == TRAINER_GLACIA {
             return B_TRANSITION_GLACIA;
         }
-        if gTrainerBattleOpponent_A == TRAINER_DRAKE {
+        if gTrainerBattleOpponent_A.get() == TRAINER_DRAKE {
             return B_TRANSITION_DRAKE;
         }
         return B_TRANSITION_CHAMPION;
     }
     if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-        [gTrainerBattleOpponent_A]
-        .trainerClass
+        [gTrainerBattleOpponent_A.get()]
+    .trainerClass
         == TRAINER_CLASS_CHAMPION
     {
         return B_TRANSITION_CHAMPION;
     }
     if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-        [gTrainerBattleOpponent_A]
-        .trainerClass
+        [gTrainerBattleOpponent_A.get()]
+    .trainerClass
         == TRAINER_CLASS_TEAM_MAGMA
         || (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-            [gTrainerBattleOpponent_A]
-            .trainerClass
+            [gTrainerBattleOpponent_A.get()]
+        .trainerClass
             == TRAINER_CLASS_MAGMA_LEADER
         || (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-            [gTrainerBattleOpponent_A]
-            .trainerClass
+            [gTrainerBattleOpponent_A.get()]
+        .trainerClass
             == TRAINER_CLASS_MAGMA_ADMIN
     {
         return B_TRANSITION_MAGMA;
     }
     if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-        [gTrainerBattleOpponent_A]
-        .trainerClass
+        [gTrainerBattleOpponent_A.get()]
+    .trainerClass
         == TRAINER_CLASS_TEAM_AQUA
         || (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-            [gTrainerBattleOpponent_A]
-            .trainerClass
+            [gTrainerBattleOpponent_A.get()]
+        .trainerClass
             == TRAINER_CLASS_AQUA_LEADER
         || (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-            [gTrainerBattleOpponent_A]
-            .trainerClass
+            [gTrainerBattleOpponent_A.get()]
+        .trainerClass
             == TRAINER_CLASS_AQUA_ADMIN
     {
         return B_TRANSITION_AQUA;
     }
     if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-        [gTrainerBattleOpponent_A]
-        .doubleBattle
+        [gTrainerBattleOpponent_A.get()]
+    .doubleBattle
         == TRUE
     {
         minPartyCount = 2;
@@ -745,7 +762,7 @@ unsafe fn GetTrainerBattleTransition() -> u8 {
         minPartyCount = 1;
     }
     let transitionType: u8 = GetBattleTransitionTypeByMap();
-    let enemyLevel: u8 = GetSumOfEnemyPartyLevel(gTrainerBattleOpponent_A, minPartyCount);
+    let enemyLevel: u8 = GetSumOfEnemyPartyLevel(gTrainerBattleOpponent_A.get(), minPartyCount);
     let playerLevel: u8 = GetSumOfPlayerPartyLevel(minPartyCount) as u8;
     if enemyLevel < playerLevel {
         return sBattleTransitionTable_Trainer[transitionType][0];
@@ -758,7 +775,7 @@ unsafe fn GetTrainerBattleTransition() -> u8 {
     }
 }
 pub unsafe fn GetSpecialBattleTransition(id: i32) -> u8 {
-    let enemyLevel: u8 = GetMonData2(&raw mut gEnemyParty[0], MON_DATA_LEVEL) as u8;
+    let enemyLevel: u8 = GetMonData2(crate::gl!(&raw gEnemyParty[0]), MON_DATA_LEVEL) as u8;
     let playerLevel: u8 = GetSumOfPlayerPartyLevel(1) as u8;
     if enemyLevel < playerLevel {
         match id {
@@ -797,16 +814,16 @@ pub unsafe fn GetSpecialBattleTransition(id: i32) -> u8 {
             return sBattleTransitionTable_BattleFrontier[Random() % 12];
         }
     }
-    let var: u16 = (*gSaveBlock2Ptr).frontier.trainerIds
-        [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 * 2]
-        + (*gSaveBlock2Ptr).frontier.trainerIds
-            [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 * 2 + 1];
+    let var: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 * 2]
+        + (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 * 2 + 1];
     sBattleTransitionTable_BattleFrontier[var % 12]
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ChooseStarter() {
     SetMainCallback2(Some(CB2_ChooseStarter));
-    gMain.savedCallback = Some(CB2_GiveStarter);
+    crate::gl!(gMain.savedCallback = Some(CB2_GiveStarter));
 }
 pub(crate) unsafe fn CB2_GiveStarter() {
     *GetVarPointer(VAR_STARTER_MON) = *(&raw const crate::ffi::gSpecialVar_Result)
@@ -827,8 +844,8 @@ pub(crate) unsafe fn CB2_StartFirstBattle() {
     UpdatePaletteFade();
     RunTasks();
     if IsBattleTransitionDone() == TRUE {
-        gBattleTypeFlags = BATTLE_TYPE_FIRST_BATTLE;
-        gMain.savedCallback = Some(CB2_EndFirstBattle);
+        gBattleTypeFlags.set(BATTLE_TYPE_FIRST_BATTLE);
+        crate::gl!(gMain.savedCallback = Some(CB2_EndFirstBattle));
         FreeAllWindowBuffers();
         SetMainCallback2(Some(CB2_InitBattle));
         RestartWildEncounterImmunitySteps();
@@ -863,12 +880,12 @@ unsafe fn TrainerBattleLoadArg8(ptr: *mut u8) -> u8 {
     *ptr
 }
 unsafe fn GetTrainerAFlag() -> u16 {
-    TRAINER_FLAGS_START + gTrainerBattleOpponent_A
+    TRAINER_FLAGS_START + gTrainerBattleOpponent_A.get()
 }
 unsafe fn GetTrainerBFlag() -> u16 {
-    TRAINER_FLAGS_START + gTrainerBattleOpponent_B
+    TRAINER_FLAGS_START + gTrainerBattleOpponent_B.get()
 }
-unsafe fn IsPlayerDefeated(battleOutcome: u32) -> u32 {
+fn IsPlayerDefeated(battleOutcome: u32) -> u32 {
     match battleOutcome {
         2 | 3 => {
             return TRUE as u32;
@@ -885,25 +902,25 @@ unsafe fn IsPlayerDefeated(battleOutcome: u32) -> u32 {
         0
     }
 }
-pub unsafe fn ResetTrainerOpponentIds() {
-    gTrainerBattleOpponent_A = 0;
-    gTrainerBattleOpponent_B = 0;
+pub fn ResetTrainerOpponentIds() {
+    gTrainerBattleOpponent_A.set(0);
+    gTrainerBattleOpponent_B.set(0);
 }
-unsafe fn InitTrainerBattleVariables() {
+fn InitTrainerBattleVariables() {
     sTrainerBattleMode.set(0);
-    if gApproachingTrainerId == 0 {
-        sTrainerAIntroSpeech = null_mut();
-        sTrainerADefeatSpeech = null_mut();
-        sTrainerABattleScriptRetAddr = null_mut();
+    if gApproachingTrainerId.get() == 0 {
+        crate::gl!(sTrainerAIntroSpeech = null_mut());
+        crate::gl!(sTrainerADefeatSpeech = null_mut());
+        crate::gl!(sTrainerABattleScriptRetAddr = null_mut());
     } else {
-        sTrainerBIntroSpeech = null_mut();
-        sTrainerBDefeatSpeech = null_mut();
-        sTrainerBBattleScriptRetAddr = null_mut();
+        crate::gl!(sTrainerBIntroSpeech = null_mut());
+        crate::gl!(sTrainerBDefeatSpeech = null_mut());
+        crate::gl!(sTrainerBBattleScriptRetAddr = null_mut());
     }
-    sTrainerObjectEventLocalId = 0;
-    sTrainerVictorySpeech = null_mut();
-    sTrainerCannotBattleSpeech = null_mut();
-    sTrainerBattleEndScript = null_mut();
+    sTrainerObjectEventLocalId.set(0);
+    crate::gl!(sTrainerVictorySpeech = null_mut());
+    crate::gl!(sTrainerCannotBattleSpeech = null_mut());
+    crate::gl!(sTrainerBattleEndScript = null_mut());
 }
 unsafe fn SetU8(ptr: *mut c_void, value: u8) {
     *(ptr as *mut u8) = value;
@@ -951,12 +968,14 @@ unsafe fn TrainerBattleLoadArgs(mut specs: *mut TrainerBattleParameter, mut data
     }
 }
 pub unsafe fn SetMapVarsToTrainer() {
-    if sTrainerObjectEventLocalId != LOCALID_NONE as u16 {
-        gSpecialVar_LastTalked = sTrainerObjectEventLocalId;
-        gSelectedObjectEvent = GetObjectEventIdByLocalIdAndMap(
-            sTrainerObjectEventLocalId as u8,
-            (*gSaveBlock1Ptr).location.mapNum as u8,
-            (*gSaveBlock1Ptr).location.mapGroup as u8,
+    if sTrainerObjectEventLocalId.get() != LOCALID_NONE as u16 {
+        gSpecialVar_LastTalked = sTrainerObjectEventLocalId.get();
+        crate::gl!(
+            gSelectedObjectEvent = GetObjectEventIdByLocalIdAndMap(
+                sTrainerObjectEventLocalId.get() as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
+            )
         );
     }
 }
@@ -978,7 +997,7 @@ pub unsafe fn BattleSetup_ConfigureTrainerBattle(data: *mut u8) -> *mut u8 {
                 .cast_mut();
         }
         TRAINER_BATTLE_CONTINUE_SCRIPT => {
-            if gApproachingTrainerId == 0 {
+            if gApproachingTrainerId.get() == 0 {
                 TrainerBattleLoadArgs(sContinueScriptBattleParams.as_ptr().cast_mut(), data);
                 SetMapVarsToTrainer();
             } else {
@@ -1008,7 +1027,7 @@ pub unsafe fn BattleSetup_ConfigureTrainerBattle(data: *mut u8) -> *mut u8 {
         TRAINER_BATTLE_REMATCH_DOUBLE => {
             TrainerBattleLoadArgs(sDoubleBattleParams.as_ptr().cast_mut(), data);
             SetMapVarsToTrainer();
-            gTrainerBattleOpponent_A = GetRematchTrainerId(gTrainerBattleOpponent_A);
+            gTrainerBattleOpponent_A.set(GetRematchTrainerId(gTrainerBattleOpponent_A.get()));
             return (*crate::asmdata::EventScript_TryDoDoubleRematchBattle.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
@@ -1016,19 +1035,21 @@ pub unsafe fn BattleSetup_ConfigureTrainerBattle(data: *mut u8) -> *mut u8 {
         TRAINER_BATTLE_REMATCH => {
             TrainerBattleLoadArgs(sOrdinaryBattleParams.as_ptr().cast_mut(), data);
             SetMapVarsToTrainer();
-            gTrainerBattleOpponent_A = GetRematchTrainerId(gTrainerBattleOpponent_A);
+            gTrainerBattleOpponent_A.set(GetRematchTrainerId(gTrainerBattleOpponent_A.get()));
             return (*crate::asmdata::EventScript_TryDoRematchBattle.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
         }
         TRAINER_BATTLE_PYRAMID => {
-            if gApproachingTrainerId == 0 {
+            if gApproachingTrainerId.get() == 0 {
                 TrainerBattleLoadArgs(sOrdinaryBattleParams.as_ptr().cast_mut(), data);
                 SetMapVarsToTrainer();
-                gTrainerBattleOpponent_A = LocalIdToPyramidTrainerId(gSpecialVar_LastTalked as u8);
+                gTrainerBattleOpponent_A
+                    .set(LocalIdToPyramidTrainerId(gSpecialVar_LastTalked as u8));
             } else {
                 TrainerBattleLoadArgs(sTrainerBOrdinaryBattleParams.as_ptr().cast_mut(), data);
-                gTrainerBattleOpponent_B = LocalIdToPyramidTrainerId(gSpecialVar_LastTalked as u8);
+                gTrainerBattleOpponent_B
+                    .set(LocalIdToPyramidTrainerId(gSpecialVar_LastTalked as u8));
             }
             return (*crate::asmdata::EventScript_TryDoNormalTrainerBattle.cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -1043,20 +1064,20 @@ pub unsafe fn BattleSetup_ConfigureTrainerBattle(data: *mut u8) -> *mut u8 {
             return null_mut();
         }
         TRAINER_BATTLE_HILL => {
-            if gApproachingTrainerId == 0 {
+            if gApproachingTrainerId.get() == 0 {
                 TrainerBattleLoadArgs(sOrdinaryBattleParams.as_ptr().cast_mut(), data);
                 SetMapVarsToTrainer();
-                gTrainerBattleOpponent_A = LocalIdToHillTrainerId(gSpecialVar_LastTalked as u8);
+                gTrainerBattleOpponent_A.set(LocalIdToHillTrainerId(gSpecialVar_LastTalked as u8));
             } else {
                 TrainerBattleLoadArgs(sTrainerBOrdinaryBattleParams.as_ptr().cast_mut(), data);
-                gTrainerBattleOpponent_B = LocalIdToHillTrainerId(gSpecialVar_LastTalked as u8);
+                gTrainerBattleOpponent_B.set(LocalIdToHillTrainerId(gSpecialVar_LastTalked as u8));
             }
             return (*crate::asmdata::EventScript_TryDoNormalTrainerBattle.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
         }
         _ => {
-            if gApproachingTrainerId == 0 {
+            if gApproachingTrainerId.get() == 0 {
                 TrainerBattleLoadArgs(sOrdinaryBattleParams.as_ptr().cast_mut(), data);
                 SetMapVarsToTrainer();
             } else {
@@ -1073,8 +1094,8 @@ pub unsafe fn BattleSetup_ConfigureTrainerBattle(data: *mut u8) -> *mut u8 {
     }
 }
 pub unsafe fn ConfigureAndSetUpOneTrainerBattle(trainerObjEventId: u8, trainerScript: *mut u8) {
-    gSelectedObjectEvent = trainerObjEventId;
-    gSpecialVar_LastTalked = gObjectEvents[trainerObjEventId].localId as u16;
+    crate::gl!(gSelectedObjectEvent = trainerObjEventId);
+    gSpecialVar_LastTalked = crate::gl!(gObjectEvents[trainerObjEventId].localId) as u16;
     BattleSetup_ConfigureTrainerBattle(trainerScript.at(1));
     ScriptContext_SetupScript(
         (*crate::asmdata::EventScript_StartTrainerApproach.cast::<CArray<u8, 0>>())
@@ -1084,8 +1105,8 @@ pub unsafe fn ConfigureAndSetUpOneTrainerBattle(trainerObjEventId: u8, trainerSc
     LockPlayerFieldControls();
 }
 pub unsafe fn ConfigureTwoTrainersBattle(trainerObjEventId: u8, trainerScript: *mut u8) {
-    gSelectedObjectEvent = trainerObjEventId;
-    gSpecialVar_LastTalked = gObjectEvents[trainerObjEventId].localId as u16;
+    crate::gl!(gSelectedObjectEvent = trainerObjEventId);
+    gSpecialVar_LastTalked = crate::gl!(gObjectEvents[trainerObjEventId].localId) as u16;
     BattleSetup_ConfigureTrainerBattle(trainerScript.at(1));
 }
 pub unsafe fn SetUpTwoTrainersBattle() {
@@ -1102,7 +1123,10 @@ pub unsafe fn GetTrainerFlagFromScriptPointer(data: *mut u8) -> u32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetTrainerFacingDirection() {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gSelectedObjectEvent];
+    let objectEvent: *mut ObjectEvent = {
+        let gl_s0 = crate::gl!(gSelectedObjectEvent);
+        crate::gl!(&raw gObjectEvents[gl_s0])
+    };
     SetTrainerMovementType(
         objectEvent,
         GetTrainerFacingDirectionMovementType((*objectEvent).facingDirection() as u8),
@@ -1115,9 +1139,9 @@ pub fn GetTrainerBattleMode() -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn GetTrainerFlag() -> u8 {
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
-        return GetBattlePyramidTrainerFlag(gSelectedObjectEvent);
+        return GetBattlePyramidTrainerFlag(crate::gl!(gSelectedObjectEvent));
     } else if InTrainerHill() != 0 {
-        return GetHillTrainerFlag(gSelectedObjectEvent);
+        return GetHillTrainerFlag(crate::gl!(gSelectedObjectEvent));
     } else {
         return FlagGet(GetTrainerAFlag());
     }
@@ -1127,7 +1151,7 @@ pub unsafe fn GetTrainerFlag() -> u8 {
     }
 }
 unsafe fn SetBattledTrainersFlags() {
-    if gTrainerBattleOpponent_B != 0 {
+    if gTrainerBattleOpponent_B.get() != 0 {
         FlagSet(GetTrainerBFlag());
     }
     FlagSet(GetTrainerAFlag());
@@ -1146,40 +1170,40 @@ pub unsafe fn ClearTrainerFlag(trainerId: u16) {
     FlagClear(TRAINER_FLAGS_START + trainerId);
 }
 pub unsafe fn BattleSetup_StartTrainerBattle() {
-    if gNoOfApproachingTrainers == 2 {
-        gBattleTypeFlags = 32777;
+    if crate::gl!(gNoOfApproachingTrainers) == 2 {
+        gBattleTypeFlags.set(32777);
     } else {
-        gBattleTypeFlags = BATTLE_TYPE_TRAINER;
+        gBattleTypeFlags.set(BATTLE_TYPE_TRAINER);
     }
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
         VarSet(VAR_TEMP_PLAYING_PYRAMID_MUSIC, 0);
-        gBattleTypeFlags |= BATTLE_TYPE_PYRAMID;
-        if gNoOfApproachingTrainers == 2 {
+        gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_PYRAMID));
+        if crate::gl!(gNoOfApproachingTrainers) == 2 {
             FillFrontierTrainersParties(1);
-            ZeroMonData(&raw mut gEnemyParty[1]);
-            ZeroMonData(&raw mut gEnemyParty[2]);
-            ZeroMonData(&raw mut gEnemyParty[4]);
-            ZeroMonData(&raw mut gEnemyParty[5]);
+            ZeroMonData(crate::gl!(&raw gEnemyParty[1]));
+            ZeroMonData(crate::gl!(&raw gEnemyParty[2]));
+            ZeroMonData(crate::gl!(&raw gEnemyParty[4]));
+            ZeroMonData(crate::gl!(&raw gEnemyParty[5]));
         } else {
             FillFrontierTrainerParty(1);
-            ZeroMonData(&raw mut gEnemyParty[1]);
-            ZeroMonData(&raw mut gEnemyParty[2]);
+            ZeroMonData(crate::gl!(&raw gEnemyParty[1]));
+            ZeroMonData(crate::gl!(&raw gEnemyParty[2]));
         }
         MarkApproachingPyramidTrainersAsBattled();
     } else if InTrainerHillChallenge() != 0 {
-        gBattleTypeFlags |= BATTLE_TYPE_TRAINER_HILL;
-        if gNoOfApproachingTrainers == 2 {
+        gBattleTypeFlags.set(gBattleTypeFlags.get() | (BATTLE_TYPE_TRAINER_HILL));
+        if crate::gl!(gNoOfApproachingTrainers) == 2 {
             FillHillTrainersParties();
         } else {
             FillHillTrainerParty();
         }
         SetHillTrainerFlag();
     }
-    sNoOfPossibleTrainerRetScripts = gNoOfApproachingTrainers;
-    gNoOfApproachingTrainers = 0;
+    sNoOfPossibleTrainerRetScripts.set(crate::gl!(gNoOfApproachingTrainers));
+    crate::gl!(gNoOfApproachingTrainers = 0);
     sShouldCheckTrainerBScript.set(FALSE);
-    gWhichTrainerToFaceAfterBattle = 0;
-    gMain.savedCallback = Some(CB2_EndTrainerBattle);
+    gWhichTrainerToFaceAfterBattle.set(0);
+    crate::gl!(gMain.savedCallback = Some(CB2_EndTrainerBattle));
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() != 0 {
         DoBattlePyramidTrainerHillBattle();
     } else {
@@ -1188,9 +1212,9 @@ pub unsafe fn BattleSetup_StartTrainerBattle() {
     ScriptContext_Stop();
 }
 pub(crate) unsafe fn CB2_EndTrainerBattle() {
-    if gTrainerBattleOpponent_A == TRAINER_SECRET_BASE {
+    if gTrainerBattleOpponent_A.get() == TRAINER_SECRET_BASE {
         SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-    } else if IsPlayerDefeated(gBattleOutcome as u32) == TRUE as u32 {
+    } else if IsPlayerDefeated(gBattleOutcome.get() as u32) == TRUE as u32 {
         if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() != 0
         {
             SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
@@ -1207,9 +1231,9 @@ pub(crate) unsafe fn CB2_EndTrainerBattle() {
     }
 }
 pub(crate) unsafe fn CB2_EndRematchBattle() {
-    if gTrainerBattleOpponent_A == TRAINER_SECRET_BASE {
+    if gTrainerBattleOpponent_A.get() == TRAINER_SECRET_BASE {
         SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-    } else if IsPlayerDefeated(gBattleOutcome as u32) == TRUE as u32 {
+    } else if IsPlayerDefeated(gBattleOutcome.get() as u32) == TRUE as u32 {
         SetMainCallback2(Some(CB2_WhiteOut));
     } else {
         SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
@@ -1220,24 +1244,28 @@ pub(crate) unsafe fn CB2_EndRematchBattle() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn BattleSetup_StartRematchBattle() {
-    gBattleTypeFlags = BATTLE_TYPE_TRAINER;
-    gMain.savedCallback = Some(CB2_EndRematchBattle);
+    gBattleTypeFlags.set(BATTLE_TYPE_TRAINER);
+    crate::gl!(gMain.savedCallback = Some(CB2_EndRematchBattle));
     DoTrainerBattle();
     ScriptContext_Stop();
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ShowTrainerIntroSpeech() {
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
-        if gNoOfApproachingTrainers == 0 || gNoOfApproachingTrainers == 1 {
+        if crate::gl!(gNoOfApproachingTrainers) == 0 || crate::gl!(gNoOfApproachingTrainers) == 1 {
             CopyPyramidTrainerSpeechBefore(LocalIdToPyramidTrainerId(gSpecialVar_LastTalked as u8));
         } else {
             CopyPyramidTrainerSpeechBefore(LocalIdToPyramidTrainerId(
-                gObjectEvents[gApproachingTrainers[gApproachingTrainerId].objectEventId].localId,
+                (*gObjectEvents.as_ptr())[{
+                    let gl_i0 = gApproachingTrainerId.get();
+                    crate::gl!(gApproachingTrainers[gl_i0].objectEventId)
+                }]
+                .localId,
             ));
         }
         ShowFieldMessageFromBuffer();
     } else if InTrainerHillChallenge() != 0 {
-        if gNoOfApproachingTrainers == 0 || gNoOfApproachingTrainers == 1 {
+        if crate::gl!(gNoOfApproachingTrainers) == 0 || crate::gl!(gNoOfApproachingTrainers) == 1 {
             CopyTrainerHillTrainerText(
                 TRAINER_HILL_TEXT_INTRO,
                 LocalIdToHillTrainerId(gSpecialVar_LastTalked as u8),
@@ -1246,8 +1274,11 @@ pub unsafe fn ShowTrainerIntroSpeech() {
             CopyTrainerHillTrainerText(
                 TRAINER_HILL_TEXT_INTRO,
                 LocalIdToHillTrainerId(
-                    gObjectEvents[gApproachingTrainers[gApproachingTrainerId].objectEventId]
-                        .localId,
+                    (*gObjectEvents.as_ptr())[{
+                        let gl_i1 = gApproachingTrainerId.get();
+                        crate::gl!(gApproachingTrainers[gl_i1].objectEventId)
+                    }]
+                    .localId,
                 ),
             );
         }
@@ -1257,8 +1288,8 @@ pub unsafe fn ShowTrainerIntroSpeech() {
     }
 }
 pub unsafe fn BattleSetup_GetScriptAddrAfterBattle() -> *mut u8 {
-    if !sTrainerBattleEndScript.is_null() {
-        return sTrainerBattleEndScript;
+    if !(*sTrainerBattleEndScript.as_ptr()).is_null() {
+        return crate::gl!(sTrainerBattleEndScript);
     } else {
         return (*crate::asmdata::EventScript_TestSignpostMsg.cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1272,14 +1303,14 @@ pub unsafe fn BattleSetup_GetScriptAddrAfterBattle() -> *mut u8 {
 pub unsafe fn BattleSetup_GetTrainerPostBattleScript() -> *mut u8 {
     if sShouldCheckTrainerBScript.get() != 0 {
         sShouldCheckTrainerBScript.set(FALSE);
-        if !sTrainerBBattleScriptRetAddr.is_null() {
-            gWhichTrainerToFaceAfterBattle = 1;
-            return sTrainerBBattleScriptRetAddr;
+        if !(*sTrainerBBattleScriptRetAddr.as_ptr()).is_null() {
+            gWhichTrainerToFaceAfterBattle.set(1);
+            return crate::gl!(sTrainerBBattleScriptRetAddr);
         }
     } else {
-        if !sTrainerABattleScriptRetAddr.is_null() {
-            gWhichTrainerToFaceAfterBattle = 0;
-            return sTrainerABattleScriptRetAddr;
+        if !(*sTrainerABattleScriptRetAddr.as_ptr()).is_null() {
+            gWhichTrainerToFaceAfterBattle.set(0);
+            return crate::gl!(sTrainerABattleScriptRetAddr);
         }
     }
     (*crate::asmdata::EventScript_TryGetTrainerScript.cast::<CArray<u8, 0>>())
@@ -1294,10 +1325,10 @@ pub unsafe fn ShowTrainerCantBattleSpeech() {
 pub unsafe fn PlayTrainerEncounterMusic() {
     let mut trainerId: u16 = 0;
     let mut music: u16 = 0;
-    if gApproachingTrainerId == 0 {
-        trainerId = gTrainerBattleOpponent_A;
+    if gApproachingTrainerId.get() == 0 {
+        trainerId = gTrainerBattleOpponent_A.get();
     } else {
-        trainerId = gTrainerBattleOpponent_B;
+        trainerId = gTrainerBattleOpponent_B.get();
     }
     if sTrainerBattleMode.get() != TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC
         && sTrainerBattleMode.get() != TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE_NO_MUSIC
@@ -1363,10 +1394,10 @@ unsafe fn ReturnEmptyStringIfNull(string: *mut u8) -> *mut u8 {
     }
 }
 unsafe fn GetIntroSpeechOfApproachingTrainer() -> *mut u8 {
-    if gApproachingTrainerId == 0 {
-        return ReturnEmptyStringIfNull(sTrainerAIntroSpeech);
+    if gApproachingTrainerId.get() == 0 {
+        return ReturnEmptyStringIfNull(crate::gl!(sTrainerAIntroSpeech));
     } else {
-        return ReturnEmptyStringIfNull(sTrainerBIntroSpeech);
+        return ReturnEmptyStringIfNull(crate::gl!(sTrainerBIntroSpeech));
     }
     #[allow(unreachable_code)]
     {
@@ -1375,10 +1406,10 @@ unsafe fn GetIntroSpeechOfApproachingTrainer() -> *mut u8 {
 }
 pub unsafe fn GetTrainerALoseText() -> *mut u8 {
     let mut string: *mut u8 = null_mut();
-    if gTrainerBattleOpponent_A == TRAINER_SECRET_BASE {
+    if gTrainerBattleOpponent_A.get() == TRAINER_SECRET_BASE {
         string = GetSecretBaseTrainerLoseText();
     } else {
-        string = sTrainerADefeatSpeech;
+        string = crate::gl!(sTrainerADefeatSpeech);
     }
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), ReturnEmptyStringIfNull(string));
     gStringVar4.as_mut_ptr()
@@ -1386,15 +1417,15 @@ pub unsafe fn GetTrainerALoseText() -> *mut u8 {
 pub unsafe fn GetTrainerBLoseText() -> *mut u8 {
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        ReturnEmptyStringIfNull(sTrainerBDefeatSpeech),
+        ReturnEmptyStringIfNull(crate::gl!(sTrainerBDefeatSpeech)),
     );
     gStringVar4.as_mut_ptr()
 }
 pub unsafe fn GetTrainerWonSpeech() -> *mut u8 {
-    ReturnEmptyStringIfNull(sTrainerVictorySpeech)
+    ReturnEmptyStringIfNull(crate::gl!(sTrainerVictorySpeech))
 }
 unsafe fn GetTrainerCantBattleSpeech() -> *mut u8 {
-    ReturnEmptyStringIfNull(sTrainerCannotBattleSpeech)
+    ReturnEmptyStringIfNull(crate::gl!(sTrainerCannotBattleSpeech))
 }
 unsafe fn FirstBattleTrainerIdToRematchTableId(table: *mut RematchTrainer, trainerId: u16) -> i32 {
     for i in 0..REMATCH_TABLE_ENTRIES {
@@ -1442,7 +1473,7 @@ unsafe fn SetRematchIdForTrainer(table: *mut RematchTrainer, tableId: u32) {
         }
         i += 1;
     }
-    (*gSaveBlock1Ptr).trainerRematches[tableId] = i as u8;
+    (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[tableId] = i as u8;
 }
 unsafe fn UpdateRandomTrainerRematches(
     table: *mut RematchTrainer,
@@ -1456,7 +1487,7 @@ unsafe fn UpdateRandomTrainerRematches(
             && (*table.at(i)).mapNum == mapNum
             && IsRematchForbidden(i) == 0
         {
-            if (*gSaveBlock1Ptr).trainerRematches[i] != 0 {
+            if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[i] != 0 {
                 ret = TRUE as u32;
             } else if FlagGet(TRAINER_REGISTERED_FLAGS_START + i as u16) != 0
                 && Random() as i32 % 100 <= 30
@@ -1478,7 +1509,7 @@ unsafe fn DoesSomeoneWantRematchIn_(table: *mut RematchTrainer, mapGroup: u16, m
     for i in 0..REMATCH_TABLE_ENTRIES {
         if (*table.at(i)).mapGroup == mapGroup
             && (*table.at(i)).mapNum == mapNum
-            && (*gSaveBlock1Ptr).trainerRematches[i] != 0
+            && (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[i] != 0
         {
             return TRUE as u32;
         }
@@ -1504,7 +1535,7 @@ unsafe fn IsFirstTrainerIdReadyForRematch(
     if tableId >= MAX_REMATCH_ENTRIES {
         return FALSE;
     }
-    if (*gSaveBlock1Ptr).trainerRematches[tableId] == 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[tableId] == 0 {
         return FALSE;
     }
     TRUE
@@ -1517,7 +1548,7 @@ unsafe fn IsTrainerReadyForRematch_(table: *mut RematchTrainer, trainerId: u16) 
     if tableId >= MAX_REMATCH_ENTRIES {
         return FALSE;
     }
-    if (*gSaveBlock1Ptr).trainerRematches[tableId] == 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[tableId] == 0 {
         return FALSE;
     }
     TRUE
@@ -1563,10 +1594,10 @@ unsafe fn GetLastBeatenRematchTrainerIdFromTable(
 unsafe fn ClearTrainerWantRematchState(table: *mut RematchTrainer, firstBattleTrainerId: u16) {
     let tableId: i32 = TrainerIdToRematchTableId(table, firstBattleTrainerId);
     if tableId != -1 {
-        (*gSaveBlock1Ptr).trainerRematches[tableId] = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[tableId] = 0;
     }
 }
-unsafe fn GetTrainerMatchCallFlag(trainerId: u32) -> u32 {
+fn GetTrainerMatchCallFlag(trainerId: u32) -> u32 {
     for i in 0..REMATCH_TABLE_ENTRIES {
         if gRematchTable[i].trainerIds[0] as u32 == trainerId {
             return TRAINER_REGISTERED_FLAGS_START as u32 + i as u32;
@@ -1576,7 +1607,7 @@ unsafe fn GetTrainerMatchCallFlag(trainerId: u32) -> u32 {
 }
 unsafe fn RegisterTrainerInMatchCall() {
     if FlagGet(FLAG_HAS_MATCH_CALL) != 0 {
-        let matchCallFlagId: u32 = GetTrainerMatchCallFlag(gTrainerBattleOpponent_A as u32);
+        let matchCallFlagId: u32 = GetTrainerMatchCallFlag(gTrainerBattleOpponent_A.get() as u32);
         if matchCallFlagId != 0xFFFF {
             FlagSet(matchCallFlagId as u16);
         }
@@ -1608,16 +1639,16 @@ unsafe fn HasAtLeastFiveBadges() -> u32 {
 }
 pub unsafe fn IncrementRematchStepCounter() {
     if HasAtLeastFiveBadges() != 0 {
-        if (*gSaveBlock1Ptr).trainerRematchStepCounter >= STEP_COUNTER_MAX {
-            (*gSaveBlock1Ptr).trainerRematchStepCounter = STEP_COUNTER_MAX;
+        if (*crate::gl!(gSaveBlock1Ptr)).trainerRematchStepCounter >= STEP_COUNTER_MAX {
+            (*crate::gl!(gSaveBlock1Ptr)).trainerRematchStepCounter = STEP_COUNTER_MAX;
         } else {
-            (*gSaveBlock1Ptr).trainerRematchStepCounter += 1;
+            (*crate::gl!(gSaveBlock1Ptr)).trainerRematchStepCounter += 1;
         }
     }
 }
 unsafe fn IsRematchStepCounterMaxed() -> u32 {
     if HasAtLeastFiveBadges() != 0
-        && (*gSaveBlock1Ptr).trainerRematchStepCounter >= STEP_COUNTER_MAX
+        && (*crate::gl!(gSaveBlock1Ptr)).trainerRematchStepCounter >= STEP_COUNTER_MAX
     {
         return TRUE as u32;
     } else {
@@ -1633,7 +1664,7 @@ pub unsafe fn TryUpdateRandomTrainerRematches(mapGroup: u16, mapNum: u16) {
         && UpdateRandomTrainerRematches(gRematchTable.as_ptr().cast_mut(), mapGroup, mapNum)
             == TRUE as u32
     {
-        (*gSaveBlock1Ptr).trainerRematchStepCounter = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).trainerRematchStepCounter = 0;
     }
 }
 pub unsafe fn DoesSomeoneWantRematchIn(mapGroup: u16, mapNum: u16) -> u32 {
@@ -1650,25 +1681,36 @@ pub unsafe fn GetLastBeatenRematchTrainerId(trainerId: u16) -> u16 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldTryRematchBattle() -> u8 {
-    if IsFirstTrainerIdReadyForRematch(gRematchTable.as_ptr().cast_mut(), gTrainerBattleOpponent_A)
-        != 0
+    if IsFirstTrainerIdReadyForRematch(
+        gRematchTable.as_ptr().cast_mut(),
+        gTrainerBattleOpponent_A.get(),
+    ) != 0
     {
         return TRUE;
     }
-    WasSecondRematchWon(gRematchTable.as_ptr().cast_mut(), gTrainerBattleOpponent_A)
+    WasSecondRematchWon(
+        gRematchTable.as_ptr().cast_mut(),
+        gTrainerBattleOpponent_A.get(),
+    )
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsTrainerReadyForRematch() -> u8 {
-    IsTrainerReadyForRematch_(gRematchTable.as_ptr().cast_mut(), gTrainerBattleOpponent_A)
+    IsTrainerReadyForRematch_(
+        gRematchTable.as_ptr().cast_mut(),
+        gTrainerBattleOpponent_A.get(),
+    )
 }
 unsafe fn HandleRematchVarsOnBattleEnd() {
-    ClearTrainerWantRematchState(gRematchTable.as_ptr().cast_mut(), gTrainerBattleOpponent_A);
+    ClearTrainerWantRematchState(
+        gRematchTable.as_ptr().cast_mut(),
+        gTrainerBattleOpponent_A.get(),
+    );
     SetBattledTrainersFlags();
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldTryGetTrainerScript() {
-    if sNoOfPossibleTrainerRetScripts > 1 {
-        sNoOfPossibleTrainerRetScripts = 0;
+    if sNoOfPossibleTrainerRetScripts.get() > 1 {
+        sNoOfPossibleTrainerRetScripts.set(0);
         sShouldCheckTrainerBScript.set(TRUE);
         gSpecialVar_Result = TRUE as u16;
     } else {

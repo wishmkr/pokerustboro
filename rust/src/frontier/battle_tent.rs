@@ -68,53 +68,63 @@ pub unsafe fn CallVerdanturfTentFunction() {
     .unwrap_unchecked()();
 }
 pub(crate) unsafe fn InitVerdanturfTentChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(FALSE);
     SetDynamicWarp(
         0,
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
         WARP_ID_NONE,
     );
 }
 pub(crate) unsafe fn GetVerdanturfTentPrize() {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.verdanturfTentPrize;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.verdanturfTentPrize;
 }
 pub(crate) unsafe fn SetVerdanturfTentPrize() {
-    (*gSaveBlock2Ptr).frontier.verdanturfTentPrize = *(&raw const crate::ffi::gSpecialVar_0x8006)
-        .cast::<u16>()
-        .cast_mut();
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.verdanturfTentPrize =
+        *(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut();
 }
 pub(crate) unsafe fn SetVerdanturfTentTrainerGfx() {
-    gTrainerBattleOpponent_A = ((Random() as i32 % 255) as u32 * 5 / 64) as u16;
-    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
+    gTrainerBattleOpponent_A.set(((Random() as i32 % 255) as u32 * 5 / 64) as u16);
+    SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A.get(), 0);
 }
 pub(crate) unsafe fn BufferVerdanturfTentTrainerIntro() {
-    if gTrainerBattleOpponent_A < FRONTIER_TRAINERS_COUNT {
+    if gTrainerBattleOpponent_A.get() < FRONTIER_TRAINERS_COUNT {
         FrontierSpeechToString(
-            (*gFacilityTrainers.at(gTrainerBattleOpponent_A))
+            (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_A.get()))
                 .speechBefore
                 .as_mut_ptr(),
         );
     }
 }
 pub(crate) unsafe fn SaveVerdanturfTentChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(TRUE);
     SaveGameFrontier();
 }
 pub(crate) unsafe fn SetRandomVerdanturfTentPrize() {
-    (*gSaveBlock2Ptr).frontier.verdanturfTentPrize = sVerdanturfTentRewards[Random() % 1];
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.verdanturfTentPrize =
+        sVerdanturfTentRewards[Random() % 1];
 }
 pub(crate) unsafe fn GiveVerdanturfTentPrize() {
-    if AddBagItem((*gSaveBlock2Ptr).frontier.verdanturfTentPrize, 1) == 1 {
+    if AddBagItem(
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.verdanturfTentPrize,
+        1,
+    ) == 1
+    {
         CopyItemName(
-            (*gSaveBlock2Ptr).frontier.verdanturfTentPrize,
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.verdanturfTentPrize,
             gStringVar1.as_mut_ptr(),
         );
-        (*gSaveBlock2Ptr).frontier.verdanturfTentPrize = ITEM_NONE;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.verdanturfTentPrize = ITEM_NONE;
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -128,47 +138,52 @@ pub unsafe fn CallFallarborTentFunction() {
     .unwrap_unchecked()();
 }
 pub(crate) unsafe fn InitFallarborTentChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(FALSE);
     SetDynamicWarp(
         0,
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
         WARP_ID_NONE,
     );
 }
 pub(crate) unsafe fn GetFallarborTentPrize() {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.fallarborTentPrize;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.fallarborTentPrize;
 }
 pub(crate) unsafe fn SetFallarborTentPrize() {
-    (*gSaveBlock2Ptr).frontier.fallarborTentPrize = *(&raw const crate::ffi::gSpecialVar_0x8006)
-        .cast::<u16>()
-        .cast_mut();
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.fallarborTentPrize =
+        *(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut();
 }
 pub(crate) unsafe fn SaveFallarborTentChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(TRUE);
     SaveGameFrontier();
 }
 pub(crate) unsafe fn SetRandomFallarborTentPrize() {
-    (*gSaveBlock2Ptr).frontier.fallarborTentPrize = sFallarborTentRewards[Random() % 1];
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.fallarborTentPrize = sFallarborTentRewards[Random() % 1];
 }
 pub(crate) unsafe fn GiveFallarborTentPrize() {
-    if AddBagItem((*gSaveBlock2Ptr).frontier.fallarborTentPrize, 1) == 1 {
+    if AddBagItem((*crate::gl!(gSaveBlock2Ptr)).frontier.fallarborTentPrize, 1) == 1 {
         CopyItemName(
-            (*gSaveBlock2Ptr).frontier.fallarborTentPrize,
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.fallarborTentPrize,
             gStringVar1.as_mut_ptr(),
         );
-        (*gSaveBlock2Ptr).frontier.fallarborTentPrize = ITEM_NONE;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.fallarborTentPrize = ITEM_NONE;
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
     }
 }
 pub(crate) unsafe fn BufferFallarborTentTrainerName() {
-    GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gTrainerBattleOpponent_A);
+    GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gTrainerBattleOpponent_A.get());
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CallSlateportTentFunction() {
@@ -178,40 +193,45 @@ pub unsafe fn CallSlateportTentFunction() {
     .unwrap_unchecked()();
 }
 pub(crate) unsafe fn InitSlateportTentChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(FALSE);
     SetDynamicWarp(
         0,
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
         WARP_ID_NONE,
     );
 }
 pub(crate) unsafe fn GetSlateportTentPrize() {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.slateportTentPrize;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.slateportTentPrize;
 }
 pub(crate) unsafe fn SetSlateportTentPrize() {
-    (*gSaveBlock2Ptr).frontier.slateportTentPrize = *(&raw const crate::ffi::gSpecialVar_0x8006)
-        .cast::<u16>()
-        .cast_mut();
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.slateportTentPrize =
+        *(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut();
 }
 pub(crate) unsafe fn SaveSlateportTentChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(TRUE);
     SaveGameFrontier();
 }
 pub(crate) unsafe fn SetRandomSlateportTentPrize() {
-    (*gSaveBlock2Ptr).frontier.slateportTentPrize = sSlateportTentRewards[Random() % 1];
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.slateportTentPrize = sSlateportTentRewards[Random() % 1];
 }
 pub(crate) unsafe fn GiveSlateportTentPrize() {
-    if AddBagItem((*gSaveBlock2Ptr).frontier.slateportTentPrize, 1) == 1 {
+    if AddBagItem((*crate::gl!(gSaveBlock2Ptr)).frontier.slateportTentPrize, 1) == 1 {
         CopyItemName(
-            (*gSaveBlock2Ptr).frontier.slateportTentPrize,
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.slateportTentPrize,
             gStringVar1.as_mut_ptr(),
         );
-        (*gSaveBlock2Ptr).frontier.slateportTentPrize = ITEM_NONE;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.slateportTentPrize = ITEM_NONE;
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -224,10 +244,10 @@ pub(crate) unsafe fn SelectInitialRentalMons() {
 pub(crate) unsafe fn SwapRentalMons() {
     DoBattleFactorySwapScreen();
 }
-pub unsafe fn InSlateportBattleTent() -> u8 {
-    (gMapHeader.regionMapSectionId == MAPSEC_SLATEPORT_CITY as u8
-        && (gMapHeader.mapLayoutId == LAYOUT_BATTLE_TENT_CORRIDOR
-            || gMapHeader.mapLayoutId == LAYOUT_BATTLE_TENT_BATTLE_ROOM)) as u8
+pub fn InSlateportBattleTent() -> u8 {
+    (crate::gl!(gMapHeader.regionMapSectionId) == MAPSEC_SLATEPORT_CITY as u8
+        && (crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_TENT_CORRIDOR
+            || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_TENT_BATTLE_ROOM)) as u8
 }
 pub(crate) unsafe fn GenerateInitialRentalMons() {
     let mut j: i32 = 0;
@@ -236,19 +256,23 @@ pub(crate) unsafe fn GenerateInitialRentalMons() {
     let mut monIds: CArray<u16, 6> = zeroed();
     let mut heldItems: CArray<u16, 6> = zeroed();
     let firstMonId: u8 = 0;
-    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gSlateportBattleTentTrainers)
-        .cast::<CArray<BattleFrontierTrainer, 0>>())
-    .as_ptr()
-    .cast_mut();
+    crate::gl!(
+        gFacilityTrainers = (*(&raw const crate::data::battle_tower::gSlateportBattleTentTrainers)
+            .cast::<CArray<BattleFrontierTrainer, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
     for i in 0..PARTY_SIZE {
         species[i] = 0;
         monIds[i] = 0;
         heldItems[i] = 0;
     }
-    gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gSlateportBattleTentMons)
-        .cast::<CArray<FacilityMon, 0>>())
-    .as_ptr()
-    .cast_mut();
+    crate::gl!(
+        gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gSlateportBattleTentMons)
+            .cast::<CArray<FacilityMon, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
     let mut currSpecies: u16 = SPECIES_NONE;
     let mut i: i32 = 0;
     while i != PARTY_SIZE {
@@ -258,9 +282,9 @@ pub(crate) unsafe fn GenerateInitialRentalMons() {
             if monIds[j] == monSetId {
                 break;
             }
-            if species[j] == (*gFacilityTrainerMons.at(monSetId)).species {
+            if species[j] == (*(*gFacilityTrainerMons.as_ptr()).at(monSetId)).species {
                 if currSpecies == SPECIES_NONE {
-                    currSpecies = (*gFacilityTrainerMons.at(monSetId)).species;
+                    currSpecies = (*(*gFacilityTrainerMons.as_ptr()).at(monSetId)).species;
                 } else {
                     break;
                 }
@@ -275,9 +299,10 @@ pub(crate) unsafe fn GenerateInitialRentalMons() {
             if heldItems[j] != 0
                 && heldItems[j]
                     == (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
-                        .cast::<CArray<u16, 0>>())[(*gFacilityTrainerMons.at(monSetId)).itemTableId]
+                        .cast::<CArray<u16, 0>>())
+                        [(*(*gFacilityTrainerMons.as_ptr()).at(monSetId)).itemTableId]
             {
-                if (*gFacilityTrainerMons.at(monSetId)).species == currSpecies {
+                if (*(*gFacilityTrainerMons.as_ptr()).at(monSetId)).species == currSpecies {
                     currSpecies = SPECIES_NONE;
                 }
                 break;
@@ -287,10 +312,11 @@ pub(crate) unsafe fn GenerateInitialRentalMons() {
         if j != i + firstMonId as i32 {
             continue;
         }
-        (*gSaveBlock2Ptr).frontier.rentalMons[i].monId = monSetId;
-        species[i] = (*gFacilityTrainerMons.at(monSetId)).species;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].monId = monSetId;
+        species[i] = (*(*gFacilityTrainerMons.as_ptr()).at(monSetId)).species;
         heldItems[i] = (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
-            .cast::<CArray<u16, 0>>())[(*gFacilityTrainerMons.at(monSetId)).itemTableId];
+            .cast::<CArray<u16, 0>>())
+            [(*(*gFacilityTrainerMons.as_ptr()).at(monSetId)).itemTableId];
         monIds[i] = monSetId;
         i += 1;
     }
@@ -304,30 +330,34 @@ pub(crate) unsafe fn GenerateOpponentMons() {
     let mut species: CArray<u16, 3> = zeroed();
     let mut heldItems: CArray<u16, 3> = zeroed();
     let mut numMons: i32 = 0;
-    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gSlateportBattleTentTrainers)
-        .cast::<CArray<BattleFrontierTrainer, 0>>())
-    .as_ptr()
-    .cast_mut();
-    gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gSlateportBattleTentMons)
-        .cast::<CArray<FacilityMon, 0>>())
-    .as_ptr()
-    .cast_mut();
+    crate::gl!(
+        gFacilityTrainers = (*(&raw const crate::data::battle_tower::gSlateportBattleTentTrainers)
+            .cast::<CArray<BattleFrontierTrainer, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
+    crate::gl!(
+        gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gSlateportBattleTentMons)
+            .cast::<CArray<FacilityMon, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
     loop {
         loop {
             trainerId = (Random() as i32 % 30) as u16;
             i = 0;
-            while i < (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
-                if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+            while i < (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                     break;
                 }
                 i += 1;
             }
-            if i == (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 {
+            if i == (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32 {
                 break;
             }
         }
-        gTrainerBattleOpponent_A = trainerId;
-        monSet = (*gFacilityTrainers.at(gTrainerBattleOpponent_A)).monSet;
+        gTrainerBattleOpponent_A.set(trainerId);
+        monSet = (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_A.get())).monSet;
         while *monSet.at(numMons) != 0xFFFF {
             numMons += 1;
         }
@@ -336,19 +366,21 @@ pub(crate) unsafe fn GenerateOpponentMons() {
         }
         numMons = 0;
     }
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum < 2 {
-        (*gSaveBlock2Ptr).frontier.trainerIds[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum] =
-            gTrainerBattleOpponent_A;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum < 2 {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum] =
+            gTrainerBattleOpponent_A.get();
     }
-    monSet = (*gFacilityTrainers.at(gTrainerBattleOpponent_A)).monSet;
+    monSet = (*(*gFacilityTrainers.as_ptr()).at(gTrainerBattleOpponent_A.get())).monSet;
     i = 0;
     while i != FRONTIER_PARTY_SIZE {
         sRandMonId.set(*monSet.at(rem_i32(Random() as i32, numMons)));
         j = 0;
         while j < 6 {
-            if (*gFacilityTrainerMons.at(sRandMonId.get())).species
-                == (*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.rentalMons[j].monId))
-                    .species
+            if (*(*gFacilityTrainerMons.as_ptr()).at(sRandMonId.get())).species
+                == (*(*gFacilityTrainerMons.as_ptr())
+                    .at((*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[j].monId))
+                .species
             {
                 break;
             }
@@ -359,7 +391,7 @@ pub(crate) unsafe fn GenerateOpponentMons() {
         }
         k = 0;
         while k < i {
-            if species[k] == (*gFacilityTrainerMons.at(sRandMonId.get())).species {
+            if species[k] == (*(*gFacilityTrainerMons.as_ptr()).at(sRandMonId.get())).species {
                 break;
             }
             k += 1;
@@ -373,7 +405,7 @@ pub(crate) unsafe fn GenerateOpponentMons() {
                 && heldItems[k]
                     == (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
                         .cast::<CArray<u16, 0>>())
-                        [(*gFacilityTrainerMons.at(sRandMonId.get())).itemTableId]
+                        [(*(*gFacilityTrainerMons.as_ptr()).at(sRandMonId.get())).itemTableId]
             {
                 break;
             }
@@ -382,10 +414,11 @@ pub(crate) unsafe fn GenerateOpponentMons() {
         if k != i {
             continue;
         }
-        species[i] = (*gFacilityTrainerMons.at(sRandMonId.get())).species;
+        species[i] = (*(*gFacilityTrainerMons.as_ptr()).at(sRandMonId.get())).species;
         heldItems[i] = (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
-            .cast::<CArray<u16, 0>>())[(*gFacilityTrainerMons.at(sRandMonId.get())).itemTableId];
-        gFrontierTempParty[i] = sRandMonId.get();
+            .cast::<CArray<u16, 0>>())
+            [(*(*gFacilityTrainerMons.as_ptr()).at(sRandMonId.get())).itemTableId];
+        crate::gl!(gFrontierTempParty[i] = sRandMonId.get());
         i += 1;
     }
 }

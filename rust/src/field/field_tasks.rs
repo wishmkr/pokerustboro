@@ -126,12 +126,12 @@ pub(crate) unsafe fn Task_RunPerStepCallback(taskId: u8) {
 unsafe fn RunTimeBasedEvents(data: *mut i16) {
     match *data {
         0 => {
-            if gMain.vblankCounter1 & TIME_UPDATE_INTERVAL != 0 {
+            if crate::gl!(gMain.vblankCounter1) & TIME_UPDATE_INTERVAL != 0 {
                 DoTimeBasedEvents();
                 *data += 1;
             }
         }
-        1 if gMain.vblankCounter1 & TIME_UPDATE_INTERVAL == 0 => {
+        1 if crate::gl!(gMain.vblankCounter1) & TIME_UPDATE_INTERVAL == 0 => {
             *data -= 1;
         }
         _ => {}
@@ -544,8 +544,8 @@ unsafe fn IsIcePuzzleCoordVisited(x: i16, y: i16) -> u32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetSootopolisGymCrackedIceMetatiles() {
-    let width: i32 = (*gMapHeader.mapLayout).width;
-    let height: i32 = (*gMapHeader.mapLayout).height;
+    let width: i32 = (*crate::gl!(gMapHeader.mapLayout)).width;
+    let height: i32 = (*crate::gl!(gMapHeader.mapLayout)).height;
     for x in 0..width {
         for y in 0..height {
             if IsIcePuzzleCoordVisited(x as i16, y as i16) == TRUE as u32 {
@@ -725,8 +725,8 @@ pub(crate) unsafe fn Task_MuddySlope(taskId: u8) {
     let mut i: i32 = 0;
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     PlayerGetDestCoords(&raw mut x, &raw mut y);
-    let mapId: u16 = ((*gSaveBlock1Ptr).location.mapGroup as u16) << 8
-        | (*gSaveBlock1Ptr).location.mapNum as u16;
+    let mapId: u16 = ((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u16) << 8
+        | (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u16;
     'l1: {
         match *data.at(1) {
             0 => {
@@ -764,10 +764,10 @@ pub(crate) unsafe fn Task_MuddySlope(taskId: u8) {
             _ => {}
         }
     }
-    if gCamera.active() != 0 && mapId as i32 != *data as i32 {
+    if (*gCamera.as_ptr()).active() != 0 && mapId as i32 != *data as i32 {
         *data = mapId as i16;
-        cameraOffsetX = gCamera.x as i16;
-        cameraOffsetY = gCamera.y as i16;
+        cameraOffsetX = crate::gl!(gCamera.x) as i16;
+        cameraOffsetY = crate::gl!(gCamera.y) as i16;
     } else {
         cameraOffsetX = 0;
         cameraOffsetY = 0;

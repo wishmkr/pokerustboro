@@ -27,7 +27,7 @@ const ESCALATOR_2F_0: [i16; 3] = [0x2a0, 0x2a2, 0x2a4];
 const ESCALATOR_2F_1: [i16; 3] = [0x2a1, 0x2a3, 0x2a5];
 const ESCALATOR_2F_2: [i16; 3] = [0x2a8, 0x2aa, 0x2ac];
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static ESCALATOR_ANIM_TASK_ID: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `MapGridGetMetatileIdAt` with this module's view of its types.

@@ -258,14 +258,16 @@ static sText_WildPkmnPrefix: Table<CArray<u8, 6>> =
 static sText_YourFoesWeakGetEmPkmn: Table<CArray<u8, 30>> =
     Table((&raw const crate::data::battle_message::sText_YourFoesWeakGetEmPkmn).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlerAbilities: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gBattleMsgDataPtr: *mut BattleMsgData = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattlerAbilities: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gBattleMsgDataPtr: crate::global::Global<*mut BattleMsgData> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinter` with this module's view of its types.
 #[inline]
-unsafe fn AddTextPrinter(
+fn AddTextPrinter(
     a0: *mut TextPrinterTemplate,
     a1: u8,
     a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
@@ -274,7 +276,7 @@ unsafe fn AddTextPrinter(
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -282,16 +284,22 @@ unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 
 pub unsafe fn BufferStringBattle(stringID: u16) {
     let mut stringPtr: *mut u8 = null_mut();
-    gBattleMsgDataPtr = &raw mut gBattleBufferA[gActiveBattler][4] as *mut BattleMsgData;
-    gLastUsedItem = (*gBattleMsgDataPtr).lastItem;
-    gLastUsedAbility = (*gBattleMsgDataPtr).lastAbility;
-    gBattleScripting.battler = (*gBattleMsgDataPtr).scrActive;
-    (*gBattleStruct).scriptPartyIdx = (*gBattleMsgDataPtr).bakScriptPartyIdx;
-    (*gBattleStruct).hpScale = (*gBattleMsgDataPtr).hpScale;
-    gPotentialItemEffectBattler = (*gBattleMsgDataPtr).itemEffectBattler;
-    (*gBattleStruct).stringMoveType = (*gBattleMsgDataPtr).moveType;
+    crate::gl!(
+        gBattleMsgDataPtr = ({
+            let gl_i0 = gActiveBattler.get();
+            crate::gl!(&raw gBattleBufferA[gl_i0][4])
+        }) as *mut BattleMsgData
+    );
+    gLastUsedItem.set((*crate::gl!(gBattleMsgDataPtr)).lastItem);
+    gLastUsedAbility.set((*crate::gl!(gBattleMsgDataPtr)).lastAbility);
+    crate::gl!(gBattleScripting.battler = (*crate::gl!(gBattleMsgDataPtr)).scrActive);
+    (*crate::gl!(gBattleStruct)).scriptPartyIdx =
+        (*crate::gl!(gBattleMsgDataPtr)).bakScriptPartyIdx;
+    (*crate::gl!(gBattleStruct)).hpScale = (*crate::gl!(gBattleMsgDataPtr)).hpScale;
+    gPotentialItemEffectBattler.set((*crate::gl!(gBattleMsgDataPtr)).itemEffectBattler);
+    (*crate::gl!(gBattleStruct)).stringMoveType = (*crate::gl!(gBattleMsgDataPtr)).moveType;
     for i in 0..(MAX_BATTLERS_COUNT as i32) {
-        sBattlerAbilities[i] = (*gBattleMsgDataPtr).abilities[i];
+        crate::gl!(sBattlerAbilities[i] = (*crate::gl!(gBattleMsgDataPtr)).abilities[i]);
     }
     let mut i: i32 = 0;
     while i
@@ -301,47 +309,47 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
             if 14 >= 11 { 14 } else { 11 }
         })
     {
-        gBattleTextBuff1[i] = (*gBattleMsgDataPtr).textBuffs[0][i];
-        gBattleTextBuff2[i] = (*gBattleMsgDataPtr).textBuffs[1][i];
-        gBattleTextBuff3[i] = (*gBattleMsgDataPtr).textBuffs[2][i];
+        crate::gl!(gBattleTextBuff1[i] = (*crate::gl!(gBattleMsgDataPtr)).textBuffs[0][i]);
+        crate::gl!(gBattleTextBuff2[i] = (*crate::gl!(gBattleMsgDataPtr)).textBuffs[1][i]);
+        crate::gl!(gBattleTextBuff3[i] = (*crate::gl!(gBattleMsgDataPtr)).textBuffs[2][i]);
         i += 1;
     }
     match stringID {
         STRINGID_INTROMSG => {
-            if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-                if gBattleTypeFlags & 0x2000002 != 0 {
-                    if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
+                if gBattleTypeFlags.get() & 0x2000002 != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
                         stringPtr = sText_TwoTrainersWantToBattle.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-                        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
+                        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
                             stringPtr = sText_TwoLinkTrainersWantToBattlePause.as_ptr().cast_mut();
                         } else {
                             stringPtr = sText_TwoLinkTrainersWantToBattle.as_ptr().cast_mut();
                         }
                     } else {
-                        if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                        if gTrainerBattleOpponent_A.get() == TRAINER_UNION_ROOM {
                             stringPtr = sText_Trainer1WantsToBattle.as_ptr().cast_mut();
-                        } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+                        } else if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
                             stringPtr = sText_LinkTrainerWantsToBattlePause.as_ptr().cast_mut();
                         } else {
                             stringPtr = sText_LinkTrainerWantsToBattle.as_ptr().cast_mut();
                         }
                     }
                 } else {
-                    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0 {
                         stringPtr = sText_TwoTrainersWantToBattle.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0 {
                         stringPtr = sText_TwoTrainersWantToBattle.as_ptr().cast_mut();
                     } else {
                         stringPtr = sText_Trainer1WantsToBattle.as_ptr().cast_mut();
                     }
                 }
             } else {
-                if gBattleTypeFlags & BATTLE_TYPE_LEGENDARY != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_LEGENDARY != 0 {
                     stringPtr = sText_LegendaryPkmnAppeared.as_ptr().cast_mut();
-                } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+                } else if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 {
                     stringPtr = sText_TwoWildPkmnAppeared.as_ptr().cast_mut();
-                } else if gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
+                } else if gBattleTypeFlags.get() & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
                     stringPtr = sText_WildPkmnAppearedPause.as_ptr().cast_mut();
                 } else {
                     stringPtr = sText_WildPkmnAppeared.as_ptr().cast_mut();
@@ -349,13 +357,13 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
             }
         }
         STRINGID_INTROSENDOUT => {
-            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
-                if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
-                    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+            if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0 {
                         stringPtr = sText_InGamePartnerSentOutZGoN.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0 {
                         stringPtr = sText_GoTwoPkmn.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                         stringPtr = sText_LinkPartnerSentOutPkmnGoPkmn.as_ptr().cast_mut();
                     } else {
                         stringPtr = sText_GoTwoPkmn.as_ptr().cast_mut();
@@ -364,22 +372,22 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
                     stringPtr = sText_GoPkmn.as_ptr().cast_mut();
                 }
             } else {
-                if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
-                    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0 {
                         stringPtr = sText_TwoTrainersSentPkmn.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
                         stringPtr = sText_TwoTrainersSentPkmn.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                         stringPtr = sText_TwoLinkTrainersSentOutPkmn.as_ptr().cast_mut();
-                    } else if gBattleTypeFlags & 0x2000002 != 0 {
+                    } else if gBattleTypeFlags.get() & 0x2000002 != 0 {
                         stringPtr = sText_LinkTrainerSentOutTwoPkmn.as_ptr().cast_mut();
                     } else {
                         stringPtr = sText_Trainer1SentOutTwoPkmn.as_ptr().cast_mut();
                     }
                 } else {
-                    if gBattleTypeFlags & 0x2000002 == 0 {
+                    if gBattleTypeFlags.get() & 0x2000002 == 0 {
                         stringPtr = sText_Trainer1SentOutPkmn.as_ptr().cast_mut();
-                    } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                    } else if gTrainerBattleOpponent_A.get() == TRAINER_UNION_ROOM {
                         stringPtr = sText_Trainer1SentOutPkmn.as_ptr().cast_mut();
                     } else {
                         stringPtr = sText_LinkTrainerSentOutPkmn.as_ptr().cast_mut();
@@ -388,21 +396,23 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
             }
         }
         STRINGID_RETURNMON => {
-            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
-                if (*gBattleStruct).hpScale == 0 {
+            if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
+                if (*crate::gl!(gBattleStruct)).hpScale == 0 {
                     stringPtr = sText_PkmnThatsEnough.as_ptr().cast_mut();
-                } else if (*gBattleStruct).hpScale == 1 || gBattleTypeFlags & 1 != 0 {
+                } else if (*crate::gl!(gBattleStruct)).hpScale == 1
+                    || gBattleTypeFlags.get() & 1 != 0
+                {
                     stringPtr = sText_PkmnComeBack.as_ptr().cast_mut();
-                } else if (*gBattleStruct).hpScale == 2 {
+                } else if (*crate::gl!(gBattleStruct)).hpScale == 2 {
                     stringPtr = sText_PkmnOkComeBack.as_ptr().cast_mut();
                 } else {
                     stringPtr = sText_PkmnGoodComeBack.as_ptr().cast_mut();
                 }
             } else {
-                if gTrainerBattleOpponent_A == TRAINER_LINK_OPPONENT
-                    || gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0
+                if gTrainerBattleOpponent_A.get() == TRAINER_LINK_OPPONENT
+                    || gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED_LINK != 0
                 {
-                    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                         stringPtr = sText_LinkTrainer2WithdrewPkmn.as_ptr().cast_mut();
                     } else {
                         stringPtr = sText_LinkTrainer1WithdrewPkmn.as_ptr().cast_mut();
@@ -413,36 +423,38 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
             }
         }
         STRINGID_SWITCHINMON => {
-            if GetBattlerSide(gBattleScripting.battler) == B_SIDE_PLAYER {
-                if (*gBattleStruct).hpScale == 0 || gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+            if GetBattlerSide(crate::gl!(gBattleScripting.battler)) == B_SIDE_PLAYER {
+                if (*crate::gl!(gBattleStruct)).hpScale == 0
+                    || gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
+                {
                     stringPtr = sText_GoPkmn2.as_ptr().cast_mut();
-                } else if (*gBattleStruct).hpScale == 1 {
+                } else if (*crate::gl!(gBattleStruct)).hpScale == 1 {
                     stringPtr = sText_DoItPkmn.as_ptr().cast_mut();
-                } else if (*gBattleStruct).hpScale == 2 {
+                } else if (*crate::gl!(gBattleStruct)).hpScale == 2 {
                     stringPtr = sText_GoForItPkmn.as_ptr().cast_mut();
                 } else {
                     stringPtr = sText_YourFoesWeakGetEmPkmn.as_ptr().cast_mut();
                 }
             } else {
-                if gBattleTypeFlags & 0x2000002 != 0 {
-                    if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
-                        if gBattleScripting.battler == 1 {
+                if gBattleTypeFlags.get() & 0x2000002 != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                        if crate::gl!(gBattleScripting.battler) == 1 {
                             stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
                         } else {
                             stringPtr = sText_Trainer2SentOutPkmn.as_ptr().cast_mut();
                         }
                     } else {
-                        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                        if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                             stringPtr = sText_LinkTrainerMultiSentOutPkmn.as_ptr().cast_mut();
-                        } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                        } else if gTrainerBattleOpponent_A.get() == TRAINER_UNION_ROOM {
                             stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
                         } else {
                             stringPtr = sText_LinkTrainerSentOutPkmn2.as_ptr().cast_mut();
                         }
                     }
                 } else {
-                    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
-                        if gBattleScripting.battler == 1 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+                        if crate::gl!(gBattleScripting.battler) == 1 {
                             stringPtr = sText_Trainer1SentOutPkmn2.as_ptr().cast_mut();
                         } else {
                             stringPtr = sText_Trainer2SentOutPkmn.as_ptr().cast_mut();
@@ -454,51 +466,54 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
             }
         }
         STRINGID_USEDMOVE => {
-            ChooseMoveUsedParticle(gBattleTextBuff1.as_mut_ptr());
-            if (*gBattleMsgDataPtr).currentMove >= MOVES_COUNT {
+            ChooseMoveUsedParticle((*gBattleTextBuff1.as_ptr()).as_mut_ptr());
+            if (*crate::gl!(gBattleMsgDataPtr)).currentMove >= MOVES_COUNT {
                 StringCopy(
-                    gBattleTextBuff2.as_mut_ptr(),
-                    sATypeMove_Table[(*gBattleStruct).stringMoveType]
+                    (*gBattleTextBuff2.as_ptr()).as_mut_ptr(),
+                    sATypeMove_Table[(*crate::gl!(gBattleStruct)).stringMoveType]
                         .as_ptr()
                         .cast_mut(),
                 );
             } else {
                 StringCopy(
-                    gBattleTextBuff2.as_mut_ptr(),
+                    (*gBattleTextBuff2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::data_tables::gMoveNames)
-                        .cast::<CArray<CArray<u8, 13>, 355>>())[(*gBattleMsgDataPtr).currentMove]
+                        .cast::<CArray<CArray<u8, 13>, 355>>())
+                        [(*crate::gl!(gBattleMsgDataPtr)).currentMove]
                         .as_ptr()
                         .cast_mut(),
                 );
             }
-            ChooseTypeOfMoveUsedString(gBattleTextBuff2.as_mut_ptr());
+            ChooseTypeOfMoveUsedString((*gBattleTextBuff2.as_ptr()).as_mut_ptr());
             stringPtr = sText_AttackerUsedX.as_ptr().cast_mut();
         }
         STRINGID_BATTLEEND => {
-            if gBattleTextBuff1[0] as i32 & B_OUTCOME_LINK_BATTLE_RAN != 0 {
-                gBattleTextBuff1[0] &= 127;
-                if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT
-                    && gBattleTextBuff1[0] != B_OUTCOME_DREW
+            if crate::gl!(gBattleTextBuff1[0]) as i32 & B_OUTCOME_LINK_BATTLE_RAN != 0 {
+                crate::gl!(gBattleTextBuff1[0] &= 127);
+                if GetBattlerSide(gActiveBattler.get()) == B_SIDE_OPPONENT
+                    && crate::gl!(gBattleTextBuff1[0]) != B_OUTCOME_DREW
                 {
-                    gBattleTextBuff1[0] ^= 3;
+                    crate::gl!(gBattleTextBuff1[0] ^= 3);
                 }
-                if gBattleTextBuff1[0] == B_OUTCOME_LOST || gBattleTextBuff1[0] == B_OUTCOME_DREW {
+                if crate::gl!(gBattleTextBuff1[0]) == B_OUTCOME_LOST
+                    || crate::gl!(gBattleTextBuff1[0]) == B_OUTCOME_DREW
+                {
                     stringPtr = sText_GotAwaySafely.as_ptr().cast_mut();
-                } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+                } else if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                     stringPtr = sText_TwoWildFled.as_ptr().cast_mut();
                 } else {
                     stringPtr = sText_WildFled.as_ptr().cast_mut();
                 }
             } else {
-                if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT
-                    && gBattleTextBuff1[0] != B_OUTCOME_DREW
+                if GetBattlerSide(gActiveBattler.get()) == B_SIDE_OPPONENT
+                    && crate::gl!(gBattleTextBuff1[0]) != B_OUTCOME_DREW
                 {
-                    gBattleTextBuff1[0] ^= 3;
+                    crate::gl!(gBattleTextBuff1[0] ^= 3);
                 }
-                if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-                    match gBattleTextBuff1[0] {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
+                    match crate::gl!(gBattleTextBuff1[0]) {
                         B_OUTCOME_WON => {
-                            if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+                            if gBattleTypeFlags.get() & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
                                 stringPtr = sText_TwoInGameTrainersDefeated.as_ptr().cast_mut();
                             } else {
                                 stringPtr = sText_TwoLinkTrainersDefeated.as_ptr().cast_mut();
@@ -512,8 +527,8 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
                         }
                         _ => {}
                     }
-                } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
-                    match gBattleTextBuff1[0] {
+                } else if gTrainerBattleOpponent_A.get() == TRAINER_UNION_ROOM {
+                    match crate::gl!(gBattleTextBuff1[0]) {
                         B_OUTCOME_WON => {
                             stringPtr = sText_PlayerDefeatedLinkTrainerTrainer1.as_ptr().cast_mut();
                         }
@@ -526,7 +541,7 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
                         _ => {}
                     }
                 } else {
-                    match gBattleTextBuff1[0] {
+                    match crate::gl!(gBattleTextBuff1[0]) {
                         B_OUTCOME_WON => {
                             stringPtr = sText_PlayerDefeatedLinkTrainer.as_ptr().cast_mut();
                         }
@@ -543,7 +558,7 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
         }
         _ => {
             if stringID >= BATTLESTRINGS_COUNT {
-                gDisplayedStringBattle[0] = EOS;
+                crate::gl!(gDisplayedStringBattle[0] = EOS);
                 return;
             } else {
                 stringPtr = gBattleStringsTable[stringID as i32 - BATTLESTRINGS_TABLE_START];
@@ -553,7 +568,7 @@ pub unsafe fn BufferStringBattle(stringID: u16) {
     BattleStringExpandPlaceholdersToDisplayedString(stringPtr);
 }
 pub unsafe fn BattleStringExpandPlaceholdersToDisplayedString(src: *mut u8) -> u32 {
-    BattleStringExpandPlaceholders(src, gDisplayedStringBattle.as_mut_ptr())
+    BattleStringExpandPlaceholders(src, (*gDisplayedStringBattle.as_ptr()).as_mut_ptr())
 }
 unsafe fn TryGetStatusString(mut src: *mut u8) -> *mut u8 {
     let mut status: CArray<u8, 8> = zeroed();
@@ -594,8 +609,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
     let mut text: CArray<u8, 32> = zeroed();
     let mut multiplayerId: u8 = 0;
     let mut i: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
-        multiplayerId = gRecordedBattleMultiplayerId;
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED_LINK != 0 {
+        multiplayerId = gRecordedBattleMultiplayerId.get();
     } else {
         multiplayerId = GetMultiplayerId();
     }
@@ -604,54 +619,56 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
             src = src.at(1);
             match *src {
                 B_TXT_BUFF1 => {
-                    if gBattleTextBuff1[0] == B_BUFF_PLACEHOLDER_BEGIN {
+                    if crate::gl!(gBattleTextBuff1[0]) == B_BUFF_PLACEHOLDER_BEGIN {
                         ExpandBattleTextBuffPlaceholders(
-                            gBattleTextBuff1.as_mut_ptr(),
+                            (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                             gStringVar1.as_mut_ptr(),
                         );
                         toCpy = gStringVar1.as_mut_ptr();
                     } else {
-                        toCpy = TryGetStatusString(gBattleTextBuff1.as_mut_ptr());
+                        toCpy = TryGetStatusString((*gBattleTextBuff1.as_ptr()).as_mut_ptr());
                         if toCpy.is_null() {
-                            toCpy = gBattleTextBuff1.as_mut_ptr();
+                            toCpy = (*gBattleTextBuff1.as_ptr()).as_mut_ptr();
                         }
                     }
                 }
                 B_TXT_BUFF2 => {
-                    if gBattleTextBuff2[0] == B_BUFF_PLACEHOLDER_BEGIN {
+                    if crate::gl!(gBattleTextBuff2[0]) == B_BUFF_PLACEHOLDER_BEGIN {
                         ExpandBattleTextBuffPlaceholders(
-                            gBattleTextBuff2.as_mut_ptr(),
-                            gStringVar2.as_mut_ptr(),
+                            (*gBattleTextBuff2.as_ptr()).as_mut_ptr(),
+                            (*gStringVar2.as_ptr()).as_mut_ptr(),
                         );
-                        toCpy = gStringVar2.as_mut_ptr();
+                        toCpy = (*gStringVar2.as_ptr()).as_mut_ptr();
                     } else {
-                        toCpy = gBattleTextBuff2.as_mut_ptr();
+                        toCpy = (*gBattleTextBuff2.as_ptr()).as_mut_ptr();
                     }
                 }
                 B_TXT_BUFF3 => {
-                    if gBattleTextBuff3[0] == B_BUFF_PLACEHOLDER_BEGIN {
+                    if crate::gl!(gBattleTextBuff3[0]) == B_BUFF_PLACEHOLDER_BEGIN {
                         ExpandBattleTextBuffPlaceholders(
-                            gBattleTextBuff3.as_mut_ptr(),
-                            gStringVar3.as_mut_ptr(),
+                            (*gBattleTextBuff3.as_ptr()).as_mut_ptr(),
+                            (*gStringVar3.as_ptr()).as_mut_ptr(),
                         );
-                        toCpy = gStringVar3.as_mut_ptr();
+                        toCpy = (*gStringVar3.as_ptr()).as_mut_ptr();
                     } else {
-                        toCpy = gBattleTextBuff3.as_mut_ptr();
+                        toCpy = (*gBattleTextBuff3.as_ptr()).as_mut_ptr();
                     }
                 }
                 B_TXT_COPY_VAR_1 => {
                     toCpy = gStringVar1.as_mut_ptr();
                 }
                 B_TXT_COPY_VAR_2 => {
-                    toCpy = gStringVar2.as_mut_ptr();
+                    toCpy = (*gStringVar2.as_ptr()).as_mut_ptr();
                 }
                 B_TXT_COPY_VAR_3 => {
-                    toCpy = gStringVar3.as_mut_ptr();
+                    toCpy = (*gStringVar3.as_ptr()).as_mut_ptr();
                 }
                 B_TXT_PLAYER_MON1_NAME => {
                     GetMonData3(
-                        &raw mut gPlayerParty
-                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)]],
+                        &raw mut (*gPlayerParty.as_ptr())[{
+                            let gl_i1 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+                            crate::gl!(gBattlerPartyIndexes[gl_i1])
+                        }],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -660,8 +677,10 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_OPPONENT_MON1_NAME => {
                     GetMonData3(
-                        &raw mut gEnemyParty
-                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT)]],
+                        &raw mut (*gEnemyParty.as_ptr())[{
+                            let gl_i2 = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+                            crate::gl!(gBattlerPartyIndexes[gl_i2])
+                        }],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -670,8 +689,10 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_PLAYER_MON2_NAME => {
                     GetMonData3(
-                        &raw mut gPlayerParty
-                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)]],
+                        &raw mut (*gPlayerParty.as_ptr())[{
+                            let gl_i3 = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+                            crate::gl!(gBattlerPartyIndexes[gl_i3])
+                        }],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -680,8 +701,10 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_OPPONENT_MON2_NAME => {
                     GetMonData3(
-                        &raw mut gEnemyParty
-                            [gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT)]],
+                        &raw mut (*gEnemyParty.as_ptr())[{
+                            let gl_i4 = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+                            crate::gl!(gBattlerPartyIndexes[gl_i4])
+                        }],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -690,7 +713,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_LINK_PLAYER_MON1_NAME => {
                     GetMonData3(
-                        &raw mut gPlayerParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id]],
+                        &raw mut (*gPlayerParty.as_ptr())[(*gBattlerPartyIndexes.as_ptr())
+                            [crate::gl!(gLinkPlayers[multiplayerId].id)]],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -699,8 +723,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_LINK_OPPONENT_MON1_NAME => {
                     GetMonData3(
-                        &raw mut gEnemyParty
-                            [gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id as i32 ^ 1]],
+                        &raw mut (*gEnemyParty.as_ptr())[(*gBattlerPartyIndexes.as_ptr())
+                            [crate::gl!(gLinkPlayers[multiplayerId].id) as i32 ^ 1]],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -709,8 +733,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_LINK_PLAYER_MON2_NAME => {
                     GetMonData3(
-                        &raw mut gPlayerParty
-                            [gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id as i32 ^ 2]],
+                        &raw mut (*gPlayerParty.as_ptr())[(*gBattlerPartyIndexes.as_ptr())
+                            [crate::gl!(gLinkPlayers[multiplayerId].id) as i32 ^ 2]],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -719,8 +743,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 }
                 B_TXT_LINK_OPPONENT_MON2_NAME => {
                     GetMonData3(
-                        &raw mut gEnemyParty
-                            [gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id as i32 ^ 3]],
+                        &raw mut (*gEnemyParty.as_ptr())[(*gBattlerPartyIndexes.as_ptr())
+                            [crate::gl!(gLinkPlayers[multiplayerId].id) as i32 ^ 3]],
                         MON_DATA_NICKNAME,
                         text.as_mut_ptr(),
                     );
@@ -728,8 +752,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_ATK_NAME_WITH_PREFIX_MON1 => {
-                    if GetBattlerSide(gBattlerAttacker) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(gBattlerAttacker.get()) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -740,15 +764,23 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes
-                                [GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1)]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i5 = GetBattlerAtPosition(
+                                    GetBattlerPosition(gBattlerAttacker.get()) & 1,
+                                );
+                                crate::gl!(gBattlerPartyIndexes[gl_i5])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes
-                                [GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1)]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i6 = GetBattlerAtPosition(
+                                    GetBattlerPosition(gBattlerAttacker.get()) & 1,
+                                );
+                                crate::gl!(gBattlerPartyIndexes[gl_i6])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -757,23 +789,27 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_ATK_PARTNER_NAME => {
-                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[GetBattlerAtPosition(
-                                GetBattlerPosition(gBattlerAttacker) & 1,
-                            )
-                                as i32
-                                + 2]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i7 = GetBattlerAtPosition(
+                                    GetBattlerPosition(gBattlerAttacker.get()) & 1,
+                                ) as i32
+                                    + 2;
+                                crate::gl!(gBattlerPartyIndexes[gl_i7])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[GetBattlerAtPosition(
-                                GetBattlerPosition(gBattlerAttacker) & 1,
-                            )
-                                as i32
-                                + 2]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i8 = GetBattlerAtPosition(
+                                    GetBattlerPosition(gBattlerAttacker.get()) & 1,
+                                ) as i32
+                                    + 2;
+                                crate::gl!(gBattlerPartyIndexes[gl_i8])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -782,8 +818,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_ATK_NAME_WITH_PREFIX => {
-                    if GetBattlerSide(gBattlerAttacker) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(gBattlerAttacker.get()) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -794,13 +830,19 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i9 = gBattlerAttacker.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i9])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i10 = gBattlerAttacker.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i10])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -809,8 +851,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_DEF_NAME_WITH_PREFIX => {
-                    if GetBattlerSide(gBattlerTarget) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(gBattlerTarget.get()) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -821,13 +863,19 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i11 = gBattlerTarget.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i11])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerTarget]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i12 = gBattlerTarget.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i12])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -836,8 +884,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_EFF_NAME_WITH_PREFIX => {
-                    if GetBattlerSide(gEffectBattler) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(gEffectBattler.get()) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -848,13 +896,19 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[gEffectBattler]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i13 = gEffectBattler.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i13])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[gEffectBattler]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i14 = gEffectBattler.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i14])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -863,8 +917,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_ACTIVE_NAME_WITH_PREFIX => {
-                    if GetBattlerSide(gActiveBattler) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(gActiveBattler.get()) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -875,13 +929,19 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[gActiveBattler]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i15 = gActiveBattler.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i15])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i16 = gActiveBattler.get();
+                                crate::gl!(gBattlerPartyIndexes[gl_i16])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -890,8 +950,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_SCR_ACTIVE_NAME_WITH_PREFIX => {
-                    if GetBattlerSide(gBattleScripting.battler) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(crate::gl!(gBattleScripting.battler)) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -902,13 +962,19 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[gBattleScripting.battler]],
+                            &raw mut (*gEnemyParty.as_ptr())[{
+                                let gl_i17 = crate::gl!(gBattleScripting.battler);
+                                crate::gl!(gBattlerPartyIndexes[gl_i17])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[gBattleScripting.battler]],
+                            &raw mut (*gPlayerParty.as_ptr())[{
+                                let gl_i18 = crate::gl!(gBattleScripting.battler);
+                                crate::gl!(gBattlerPartyIndexes[gl_i18])
+                            }],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -917,8 +983,8 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     toCpy = text.as_mut_ptr();
                 }
                 B_TXT_CURRENT_MOVE => {
-                    if (*gBattleMsgDataPtr).currentMove >= MOVES_COUNT {
-                        toCpy = sATypeMove_Table[(*gBattleStruct).stringMoveType]
+                    if (*crate::gl!(gBattleMsgDataPtr)).currentMove >= MOVES_COUNT {
+                        toCpy = sATypeMove_Table[(*crate::gl!(gBattleStruct)).stringMoveType]
                             .as_ptr()
                             .cast_mut();
                     } else {
@@ -926,14 +992,14 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             CArray<u8, 13>,
                             355,
                         >>(
-                        ))[(*gBattleMsgDataPtr).currentMove]
+                        ))[(*crate::gl!(gBattleMsgDataPtr)).currentMove]
                             .as_ptr()
                             .cast_mut();
                     }
                 }
                 B_TXT_LAST_MOVE => {
-                    if (*gBattleMsgDataPtr).originallyUsedMove >= MOVES_COUNT {
-                        toCpy = sATypeMove_Table[(*gBattleStruct).stringMoveType]
+                    if (*crate::gl!(gBattleMsgDataPtr)).originallyUsedMove >= MOVES_COUNT {
+                        toCpy = sATypeMove_Table[(*crate::gl!(gBattleStruct)).stringMoveType]
                             .as_ptr()
                             .cast_mut();
                     } else {
@@ -941,25 +1007,29 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             CArray<u8, 13>,
                             355,
                         >>(
-                        ))[(*gBattleMsgDataPtr).originallyUsedMove]
+                        ))[(*crate::gl!(gBattleMsgDataPtr)).originallyUsedMove]
                             .as_ptr()
                             .cast_mut();
                     }
                 }
                 B_TXT_LAST_ITEM => {
-                    if gBattleTypeFlags & 0x2000002 != 0 {
-                        if gLastUsedItem == ITEM_ENIGMA_BERRY {
-                            if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
-                                if gBattleScripting.multiplayerId != 0
-                                    && gPotentialItemEffectBattler as i32 & BIT_SIDE as i32 != 0
-                                    || gBattleScripting.multiplayerId == 0
-                                        && gPotentialItemEffectBattler as i32 & BIT_SIDE as i32 == 0
+                    if gBattleTypeFlags.get() & 0x2000002 != 0 {
+                        if gLastUsedItem.get() == ITEM_ENIGMA_BERRY {
+                            if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI == 0 {
+                                if crate::gl!(gBattleScripting.multiplayerId) != 0
+                                    && gPotentialItemEffectBattler.get() as i32 & BIT_SIDE as i32
+                                        != 0
+                                    || crate::gl!(gBattleScripting.multiplayerId) == 0
+                                        && gPotentialItemEffectBattler.get() as i32
+                                            & BIT_SIDE as i32
+                                            == 0
                                 {
                                     StringCopy(
                                         text.as_mut_ptr(),
-                                        gEnigmaBerries[gPotentialItemEffectBattler]
-                                            .name
-                                            .as_mut_ptr(),
+                                        (*gEnigmaBerries.as_ptr())
+                                            [gPotentialItemEffectBattler.get()]
+                                        .name
+                                        .as_mut_ptr(),
                                     );
                                     StringAppend(
                                         text.as_mut_ptr(),
@@ -970,14 +1040,17 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                                     toCpy = sText_EnigmaBerry.as_ptr().cast_mut();
                                 }
                             } else {
-                                if gLinkPlayers[gBattleScripting.multiplayerId].id
-                                    == gPotentialItemEffectBattler as u16
+                                if ({
+                                    let gl_i19 = crate::gl!(gBattleScripting.multiplayerId);
+                                    crate::gl!(gLinkPlayers[gl_i19].id)
+                                }) == gPotentialItemEffectBattler.get() as u16
                                 {
                                     StringCopy(
                                         text.as_mut_ptr(),
-                                        gEnigmaBerries[gPotentialItemEffectBattler]
-                                            .name
-                                            .as_mut_ptr(),
+                                        (*gEnigmaBerries.as_ptr())
+                                            [gPotentialItemEffectBattler.get()]
+                                        .name
+                                        .as_mut_ptr(),
                                     );
                                     StringAppend(
                                         text.as_mut_ptr(),
@@ -989,11 +1062,11 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                                 }
                             }
                         } else {
-                            CopyItemName(gLastUsedItem, text.as_mut_ptr());
+                            CopyItemName(gLastUsedItem.get(), text.as_mut_ptr());
                             toCpy = text.as_mut_ptr();
                         }
                     } else {
-                        CopyItemName(gLastUsedItem, text.as_mut_ptr());
+                        CopyItemName(gLastUsedItem.get(), text.as_mut_ptr());
                         toCpy = text.as_mut_ptr();
                     }
                 }
@@ -1002,75 +1075,84 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                         CArray<u8, 13>,
                         0,
                     >>(
-                    ))[gLastUsedAbility]
-                        .as_ptr()
-                        .cast_mut();
+                    ))[gLastUsedAbility.get()]
+                    .as_ptr()
+                    .cast_mut();
                 }
                 B_TXT_ATK_ABILITY => {
                     toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
                         CArray<u8, 13>,
                         0,
                     >>(
-                    ))[sBattlerAbilities[gBattlerAttacker]]
-                        .as_ptr()
-                        .cast_mut();
+                    ))[{
+                        let gl_i0 = gBattlerAttacker.get();
+                        crate::gl!(sBattlerAbilities[gl_i0])
+                    }]
+                    .as_ptr()
+                    .cast_mut();
                 }
                 B_TXT_DEF_ABILITY => {
                     toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
                         CArray<u8, 13>,
                         0,
                     >>(
-                    ))[sBattlerAbilities[gBattlerTarget]]
-                        .as_ptr()
-                        .cast_mut();
+                    ))[{
+                        let gl_i1 = gBattlerTarget.get();
+                        crate::gl!(sBattlerAbilities[gl_i1])
+                    }]
+                    .as_ptr()
+                    .cast_mut();
                 }
                 B_TXT_SCR_ACTIVE_ABILITY => {
                     toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
                         CArray<u8, 13>,
                         0,
                     >>(
-                    ))[sBattlerAbilities[gBattleScripting.battler]]
-                        .as_ptr()
-                        .cast_mut();
+                    ))[(*sBattlerAbilities.as_ptr())[crate::gl!(gBattleScripting.battler)]]
+                    .as_ptr()
+                    .cast_mut();
                 }
                 B_TXT_EFF_ABILITY => {
                     toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
                         CArray<u8, 13>,
                         0,
                     >>(
-                    ))[sBattlerAbilities[gEffectBattler]]
-                        .as_ptr()
-                        .cast_mut();
+                    ))[{
+                        let gl_i2 = gEffectBattler.get();
+                        crate::gl!(sBattlerAbilities[gl_i2])
+                    }]
+                    .as_ptr()
+                    .cast_mut();
                 }
                 B_TXT_TRAINER1_CLASS => {
-                    if gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_SECRET_BASE != 0 {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())[GetSecretBaseTrainerClass()]
                         .as_ptr()
                         .cast_mut();
-                    } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
+                    } else if gTrainerBattleOpponent_A.get() == TRAINER_UNION_ROOM {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())[GetUnionRoomTrainerClass()]
                         .as_ptr()
                         .cast_mut();
-                    } else if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+                    } else if gTrainerBattleOpponent_A.get() == TRAINER_FRONTIER_BRAIN {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())[GetFrontierBrainTrainerClass()]
                         .as_ptr()
                         .cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())
-                            [GetFrontierOpponentClass(gTrainerBattleOpponent_A)]
+                            [GetFrontierOpponentClass(gTrainerBattleOpponent_A.get())]
                         .as_ptr()
                         .cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())
-                            [GetTrainerHillOpponentClass(gTrainerBattleOpponent_A)]
+                            [GetTrainerHillOpponentClass(gTrainerBattleOpponent_A.get())]
                         .as_ptr()
                         .cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_EREADER_TRAINER != 0 {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())[GetEreaderTrainerClassId()]
                         .as_ptr()
@@ -1079,91 +1161,99 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())
                             [(*(&raw const crate::data::data_tables::gTrainers)
-                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                                .trainerClass]
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+                            .trainerClass]
                             .as_ptr()
                             .cast_mut();
                     }
                 }
                 B_TXT_TRAINER1_NAME => {
-                    if gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_SECRET_BASE != 0 {
                         i = 0;
                         while i < 7 {
-                            text[i] = (*(*gBattleResources).secretBase).trainerName[i];
+                            text[i] = (*(*crate::gl!(gBattleResources)).secretBase).trainerName[i];
                             i += 1;
                         }
                         text[i] = EOS;
                         ConvertInternationalString(
                             text.as_mut_ptr(),
-                            (*(*gBattleResources).secretBase).language,
+                            (*(*crate::gl!(gBattleResources)).secretBase).language,
                         );
                         toCpy = text.as_mut_ptr();
-                    } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
-                        toCpy = gLinkPlayers[multiplayerId as i32 ^ BIT_SIDE as i32]
+                    } else if gTrainerBattleOpponent_A.get() == TRAINER_UNION_ROOM {
+                        toCpy = (*gLinkPlayers.as_ptr())[multiplayerId as i32 ^ BIT_SIDE as i32]
                             .name
                             .as_mut_ptr();
-                    } else if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
+                    } else if gTrainerBattleOpponent_A.get() == TRAINER_FRONTIER_BRAIN {
                         CopyFrontierBrainTrainerName(text.as_mut_ptr());
                         toCpy = text.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-                        GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A);
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
+                        GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A.get());
                         toCpy = text.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
-                        GetTrainerHillTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_A);
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        GetTrainerHillTrainerName(
+                            text.as_mut_ptr(),
+                            gTrainerBattleOpponent_A.get(),
+                        );
                         toCpy = text.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_EREADER_TRAINER != 0 {
                         GetEreaderTrainerName(text.as_mut_ptr());
                         toCpy = text.as_mut_ptr();
                     } else {
                         toCpy =
                             (*(&raw const crate::data::data_tables::gTrainers)
-                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                                .trainerName
-                                .as_ptr()
-                                .cast_mut();
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+                            .trainerName
+                            .as_ptr()
+                            .cast_mut();
                     }
                 }
                 B_TXT_LINK_PLAYER_NAME => {
-                    toCpy = gLinkPlayers[multiplayerId].name.as_mut_ptr();
+                    toCpy = (*gLinkPlayers.as_ptr())[multiplayerId].name.as_mut_ptr();
                 }
                 B_TXT_LINK_PARTNER_NAME => {
-                    toCpy = gLinkPlayers
-                        [GetBattlerMultiplayerId(gLinkPlayers[multiplayerId].id ^ 2)]
+                    toCpy = (*gLinkPlayers.as_ptr())
+                        [GetBattlerMultiplayerId(crate::gl!(gLinkPlayers[multiplayerId].id) ^ 2)]
                     .name
                     .as_mut_ptr();
                 }
                 B_TXT_LINK_OPPONENT1_NAME => {
-                    toCpy = gLinkPlayers
-                        [GetBattlerMultiplayerId(gLinkPlayers[multiplayerId].id ^ 1)]
+                    toCpy = (*gLinkPlayers.as_ptr())
+                        [GetBattlerMultiplayerId(crate::gl!(gLinkPlayers[multiplayerId].id) ^ 1)]
                     .name
                     .as_mut_ptr();
                 }
                 B_TXT_LINK_OPPONENT2_NAME => {
-                    toCpy = gLinkPlayers
-                        [GetBattlerMultiplayerId(gLinkPlayers[multiplayerId].id ^ 1 ^ 2)]
+                    toCpy = (*gLinkPlayers.as_ptr())[GetBattlerMultiplayerId(
+                        crate::gl!(gLinkPlayers[multiplayerId].id) ^ 1 ^ 2,
+                    )]
                     .name
                     .as_mut_ptr();
                 }
                 B_TXT_LINK_SCR_TRAINER_NAME => {
-                    toCpy = gLinkPlayers[GetBattlerMultiplayerId(gBattleScripting.battler as u16)]
-                        .name
-                        .as_mut_ptr();
+                    toCpy = (*gLinkPlayers.as_ptr())
+                        [GetBattlerMultiplayerId(crate::gl!(gBattleScripting.battler) as u16)]
+                    .name
+                    .as_mut_ptr();
                 }
                 B_TXT_PLAYER_NAME => {
-                    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
-                        toCpy = gLinkPlayers[0].name.as_mut_ptr();
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
+                        toCpy = (*gLinkPlayers.as_ptr())[0].name.as_mut_ptr();
                     } else {
-                        toCpy = (*gSaveBlock2Ptr).playerName.as_mut_ptr();
+                        toCpy = (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr();
                     }
                 }
                 B_TXT_TRAINER1_LOSE_TEXT => {
-                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-                        CopyFrontierTrainerText(FRONTIER_PLAYER_WON_TEXT, gTrainerBattleOpponent_A);
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
+                        CopyFrontierTrainerText(
+                            FRONTIER_PLAYER_WON_TEXT,
+                            gTrainerBattleOpponent_A.get(),
+                        );
                         toCpy = gStringVar4.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
                         CopyTrainerHillTrainerText(
                             TRAINER_HILL_TEXT_PLAYER_WON,
-                            gTrainerBattleOpponent_A,
+                            gTrainerBattleOpponent_A.get(),
                         );
                         toCpy = gStringVar4.as_mut_ptr();
                     } else {
@@ -1171,23 +1261,23 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     }
                 }
                 B_TXT_TRAINER1_WIN_TEXT => {
-                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
                         CopyFrontierTrainerText(
                             FRONTIER_PLAYER_LOST_TEXT,
-                            gTrainerBattleOpponent_A,
+                            gTrainerBattleOpponent_A.get(),
                         );
                         toCpy = gStringVar4.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
                         CopyTrainerHillTrainerText(
                             TRAINER_HILL_TEXT_PLAYER_LOST,
-                            gTrainerBattleOpponent_A,
+                            gTrainerBattleOpponent_A.get(),
                         );
                         toCpy = gStringVar4.as_mut_ptr();
                     }
                 }
                 B_TXT_26 => {
-                    if GetBattlerSide(gBattleScripting.battler) != 0 {
-                        if gBattleTypeFlags & 8 != 0 {
+                    if GetBattlerSide(crate::gl!(gBattleScripting.battler)) != 0 {
+                        if gBattleTypeFlags.get() & 8 != 0 {
                             toCpy = sText_FoePkmnPrefix.as_ptr().cast_mut();
                         } else {
                             toCpy = sText_WildPkmnPrefix.as_ptr().cast_mut();
@@ -1198,13 +1288,15 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[(*gBattleStruct).scriptPartyIdx],
+                            &raw mut (*gEnemyParty.as_ptr())
+                                [(*crate::gl!(gBattleStruct)).scriptPartyIdx],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[(*gBattleStruct).scriptPartyIdx],
+                            &raw mut (*gPlayerParty.as_ptr())
+                                [(*crate::gl!(gBattleStruct)).scriptPartyIdx],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -1220,94 +1312,100 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     }
                 }
                 B_TXT_ATK_PREFIX2 => {
-                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
                         toCpy = sText_AllyPkmnPrefix2.as_ptr().cast_mut();
                     } else {
                         toCpy = sText_FoePkmnPrefix3.as_ptr().cast_mut();
                     }
                 }
                 B_TXT_DEF_PREFIX2 => {
-                    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerTarget.get()) == B_SIDE_PLAYER {
                         toCpy = sText_AllyPkmnPrefix2.as_ptr().cast_mut();
                     } else {
                         toCpy = sText_FoePkmnPrefix3.as_ptr().cast_mut();
                     }
                 }
                 B_TXT_ATK_PREFIX1 => {
-                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
                         toCpy = sText_AllyPkmnPrefix.as_ptr().cast_mut();
                     } else {
                         toCpy = sText_FoePkmnPrefix2.as_ptr().cast_mut();
                     }
                 }
                 B_TXT_DEF_PREFIX1 => {
-                    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerTarget.get()) == B_SIDE_PLAYER {
                         toCpy = sText_AllyPkmnPrefix.as_ptr().cast_mut();
                     } else {
                         toCpy = sText_FoePkmnPrefix2.as_ptr().cast_mut();
                     }
                 }
                 B_TXT_ATK_PREFIX3 => {
-                    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
                         toCpy = sText_AllyPkmnPrefix3.as_ptr().cast_mut();
                     } else {
                         toCpy = sText_FoePkmnPrefix4.as_ptr().cast_mut();
                     }
                 }
                 B_TXT_DEF_PREFIX3 => {
-                    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
+                    if GetBattlerSide(gBattlerTarget.get()) == B_SIDE_PLAYER {
                         toCpy = sText_AllyPkmnPrefix3.as_ptr().cast_mut();
                     } else {
                         toCpy = sText_FoePkmnPrefix4.as_ptr().cast_mut();
                     }
                 }
                 B_TXT_TRAINER2_CLASS => {
-                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())
-                            [GetFrontierOpponentClass(gTrainerBattleOpponent_B)]
+                            [GetFrontierOpponentClass(gTrainerBattleOpponent_B.get())]
                         .as_ptr()
                         .cast_mut();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())
-                            [GetTrainerHillOpponentClass(gTrainerBattleOpponent_B)]
+                            [GetTrainerHillOpponentClass(gTrainerBattleOpponent_B.get())]
                         .as_ptr()
                         .cast_mut();
                     } else {
                         toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                             .cast::<CArray<CArray<u8, 13>, 0>>())
                             [(*(&raw const crate::data::data_tables::gTrainers)
-                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_B]
-                                .trainerClass]
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_B.get()]
+                            .trainerClass]
                             .as_ptr()
                             .cast_mut();
                     }
                 }
                 B_TXT_TRAINER2_NAME => {
-                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-                        GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_B);
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
+                        GetFrontierTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_B.get());
                         toCpy = text.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
-                        GetTrainerHillTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_B);
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
+                        GetTrainerHillTrainerName(
+                            text.as_mut_ptr(),
+                            gTrainerBattleOpponent_B.get(),
+                        );
                         toCpy = text.as_mut_ptr();
                     } else {
                         toCpy =
                             (*(&raw const crate::data::data_tables::gTrainers)
-                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_B]
-                                .trainerName
-                                .as_ptr()
-                                .cast_mut();
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_B.get()]
+                            .trainerName
+                            .as_ptr()
+                            .cast_mut();
                     }
                 }
                 B_TXT_TRAINER2_LOSE_TEXT => {
-                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-                        CopyFrontierTrainerText(FRONTIER_PLAYER_WON_TEXT, gTrainerBattleOpponent_B);
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
+                        CopyFrontierTrainerText(
+                            FRONTIER_PLAYER_WON_TEXT,
+                            gTrainerBattleOpponent_B.get(),
+                        );
                         toCpy = gStringVar4.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
                         CopyTrainerHillTrainerText(
                             TRAINER_HILL_TEXT_PLAYER_WON,
-                            gTrainerBattleOpponent_B,
+                            gTrainerBattleOpponent_B.get(),
                         );
                         toCpy = gStringVar4.as_mut_ptr();
                     } else {
@@ -1315,16 +1413,16 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                     }
                 }
                 B_TXT_TRAINER2_WIN_TEXT => {
-                    if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
                         CopyFrontierTrainerText(
                             FRONTIER_PLAYER_LOST_TEXT,
-                            gTrainerBattleOpponent_B,
+                            gTrainerBattleOpponent_B.get(),
                         );
                         toCpy = gStringVar4.as_mut_ptr();
-                    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
                         CopyTrainerHillTrainerText(
                             TRAINER_HILL_TEXT_PLAYER_LOST,
-                            gTrainerBattleOpponent_B,
+                            gTrainerBattleOpponent_B.get(),
                         );
                         toCpy = gStringVar4.as_mut_ptr();
                     }
@@ -1332,12 +1430,12 @@ pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> 
                 B_TXT_PARTNER_CLASS => {
                     toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
                         .cast::<CArray<CArray<u8, 13>, 0>>())
-                        [GetFrontierOpponentClass(gPartnerTrainerId)]
+                        [GetFrontierOpponentClass(gPartnerTrainerId.get())]
                     .as_ptr()
                     .cast_mut();
                 }
                 B_TXT_PARTNER_NAME => {
-                    GetFrontierTrainerName(text.as_mut_ptr(), gPartnerTrainerId);
+                    GetFrontierTrainerName(text.as_mut_ptr(), gPartnerTrainerId.get());
                     toCpy = text.as_mut_ptr();
                 }
                 _ => {}
@@ -1431,18 +1529,24 @@ unsafe fn ExpandBattleTextBuffPlaceholders(src: *mut u8, dst: *mut u8) {
             B_BUFF_MON_NICK_WITH_PREFIX => {
                 if GetBattlerSide(*src.at(srcID + 1)) == B_SIDE_PLAYER {
                     GetMonData3(
-                        &raw mut gPlayerParty[*src.at(srcID + 2)],
+                        {
+                            let gl_i20 = *src.at(srcID + 2);
+                            crate::gl!(&raw gPlayerParty[gl_i20])
+                        },
                         MON_DATA_NICKNAME,
                         nickname.as_mut_ptr(),
                     );
                 } else {
-                    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
                         StringAppend(dst, sText_FoePkmnPrefix.as_ptr().cast_mut());
                     } else {
                         StringAppend(dst, sText_WildPkmnPrefix.as_ptr().cast_mut());
                     }
                     GetMonData3(
-                        &raw mut gEnemyParty[*src.at(srcID + 2)],
+                        {
+                            let gl_i21 = *src.at(srcID + 2);
+                            crate::gl!(&raw gEnemyParty[gl_i21])
+                        },
                         MON_DATA_NICKNAME,
                         nickname.as_mut_ptr(),
                     );
@@ -1465,13 +1569,19 @@ unsafe fn ExpandBattleTextBuffPlaceholders(src: *mut u8, dst: *mut u8) {
             B_BUFF_MON_NICK => {
                 if GetBattlerSide(*src.at(srcID + 1)) == B_SIDE_PLAYER {
                     GetMonData3(
-                        &raw mut gPlayerParty[*src.at(srcID + 2)],
+                        {
+                            let gl_i22 = *src.at(srcID + 2);
+                            crate::gl!(&raw gPlayerParty[gl_i22])
+                        },
                         MON_DATA_NICKNAME,
                         dst,
                     );
                 } else {
                     GetMonData3(
-                        &raw mut gEnemyParty[*src.at(srcID + 2)],
+                        {
+                            let gl_i23 = *src.at(srcID + 2);
+                            crate::gl!(&raw gEnemyParty[gl_i23])
+                        },
                         MON_DATA_NICKNAME,
                         dst,
                     );
@@ -1495,14 +1605,16 @@ unsafe fn ExpandBattleTextBuffPlaceholders(src: *mut u8, dst: *mut u8) {
             }
             B_BUFF_ITEM => {
                 hword = *src.at(srcID + 1) as u16 | (*src.at(srcID + 1).at(1) as u16) << 8;
-                if gBattleTypeFlags & 0x2000002 != 0 {
+                if gBattleTypeFlags.get() & 0x2000002 != 0 {
                     if hword == ITEM_ENIGMA_BERRY {
-                        if gLinkPlayers[gBattleScripting.multiplayerId].id
-                            == gPotentialItemEffectBattler as u16
+                        if ({
+                            let gl_i24 = crate::gl!(gBattleScripting.multiplayerId);
+                            crate::gl!(gLinkPlayers[gl_i24].id)
+                        }) == gPotentialItemEffectBattler.get() as u16
                         {
                             StringCopy(
                                 dst,
-                                gEnigmaBerries[gPotentialItemEffectBattler]
+                                (*gEnigmaBerries.as_ptr())[gPotentialItemEffectBattler.get()]
                                     .name
                                     .as_mut_ptr(),
                             );
@@ -1533,7 +1645,7 @@ unsafe fn ChooseMoveUsedParticle(textBuff: *mut u8) {
             let t1 = i;
             i += 1;
             t1
-        }] == (*gBattleMsgDataPtr).currentMove
+        }] == (*crate::gl!(gBattleMsgDataPtr)).currentMove
         {
             break;
         }
@@ -1560,7 +1672,7 @@ unsafe fn ChooseTypeOfMoveUsedString(mut dst: *mut u8) {
             let t1 = i;
             i += 1;
             t1
-        }] == (*gBattleMsgDataPtr).currentMove
+        }] == (*crate::gl!(gBattleMsgDataPtr)).currentMove
         {
             break;
         }
@@ -1585,7 +1697,8 @@ unsafe fn ChooseTypeOfMoveUsedString(mut dst: *mut u8) {
     }
 }
 pub unsafe fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
-    let textInfo: *mut BattleWindowText = sBattleTextOnWindowsInfo[gBattleScripting.windowsType];
+    let textInfo: *mut BattleWindowText =
+        sBattleTextOnWindowsInfo[crate::gl!(gBattleScripting.windowsType)];
     let mut copyToVram: u32 = 0;
     let mut printerTemplate: TextPrinterTemplate = zeroed();
     let mut speed: u8 = 0;
@@ -1610,8 +1723,10 @@ pub unsafe fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
     printerTemplate.set_bgColor((*textInfo.at(windowId)).bgColor);
     printerTemplate.set_shadowColor((*textInfo.at(windowId)).shadowColor);
     if printerTemplate.x == 0xFF {
-        let width: u32 =
-            GetBattleWindowTemplatePixelWidth(gBattleScripting.windowsType as u32, windowId as u32);
+        let width: u32 = GetBattleWindowTemplatePixelWidth(
+            crate::gl!(gBattleScripting.windowsType) as u32,
+            windowId as u32,
+        );
         let alignX: i32 = GetStringCenterAlignXOffsetWithLetterSpacing(
             printerTemplate.fontId as i32,
             printerTemplate.currentChar,
@@ -1624,42 +1739,42 @@ pub unsafe fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
         };
     }
     if windowId == ARENA_WIN_JUDGMENT_TEXT {
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_useAlternateDownArrow(FALSE);
     } else {
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_useAlternateDownArrow(TRUE);
     }
-    if gBattleTypeFlags & 0x1000002 != 0 {
-        (*(&raw const crate::text::gTextFlags)
+    if gBattleTypeFlags.get() & 0x1000002 != 0 {
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_autoScroll(TRUE);
     } else {
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_autoScroll(FALSE);
     }
     if windowId == B_WIN_MSG || windowId == ARENA_WIN_JUDGMENT_TEXT {
-        if gBattleTypeFlags & 0x2000002 != 0 {
+        if gBattleTypeFlags.get() & 0x2000002 != 0 {
             speed = 1;
-        } else if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        } else if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             speed = sRecordedBattleTextSpeeds[GetTextSpeedInRecordedBattle()];
         } else {
             speed = GetPlayerTextSpeedDelay();
         }
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(1);
     } else {
         speed = (*textInfo.at(windowId)).speed;
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(0);
@@ -1671,26 +1786,34 @@ pub unsafe fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
     }
 }
 pub unsafe fn SetPPNumbersPaletteInMoveSelection() {
-    let chooseMoveStruct: *mut ChooseMoveStruct =
-        &raw mut gBattleBufferA[gActiveBattler][4] as *mut ChooseMoveStruct;
+    let chooseMoveStruct: *mut ChooseMoveStruct = ({
+        let gl_i25 = gActiveBattler.get();
+        crate::gl!(&raw gBattleBufferA[gl_i25][4])
+    }) as *mut ChooseMoveStruct;
     let palPtr: *mut u16 = (*(&raw const crate::data::graphics::gPPTextPalette)
         .cast::<CArray<u16, 0>>())
     .as_ptr()
     .cast_mut();
     let var: u8 = GetCurrentPPToMaxPPState(
-        (*chooseMoveStruct).currentPP[gMoveSelectionCursor[gActiveBattler]],
-        (*chooseMoveStruct).maxPP[gMoveSelectionCursor[gActiveBattler]],
+        (*chooseMoveStruct).currentPP[{
+            let gl_i26 = gActiveBattler.get();
+            crate::gl!(gMoveSelectionCursor[gl_i26])
+        }],
+        (*chooseMoveStruct).maxPP[{
+            let gl_i27 = gActiveBattler.get();
+            crate::gl!(gMoveSelectionCursor[gl_i27])
+        }],
     );
-    gPlttBufferUnfaded[92] = *palPtr.at(var as i32 * 2);
-    gPlttBufferUnfaded[91] = *palPtr.at(var as i32 * 2 + 1);
+    crate::gl!(gPlttBufferUnfaded[92] = *palPtr.at(var as i32 * 2));
+    crate::gl!(gPlttBufferUnfaded[91] = *palPtr.at(var as i32 * 2 + 1));
     CpuSet(
-        &raw mut gPlttBufferUnfaded[92] as *mut c_void,
-        &raw mut gPlttBufferFaded[92] as *mut c_void,
+        crate::gl!(&raw gPlttBufferUnfaded[92]) as *mut c_void,
+        crate::gl!(&raw gPlttBufferFaded[92]) as *mut c_void,
         1,
     );
     CpuSet(
-        &raw mut gPlttBufferUnfaded[91] as *mut c_void,
-        &raw mut gPlttBufferFaded[91] as *mut c_void,
+        crate::gl!(&raw gPlttBufferUnfaded[91]) as *mut c_void,
+        crate::gl!(&raw gPlttBufferFaded[91]) as *mut c_void,
         1,
     );
 }

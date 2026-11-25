@@ -104,7 +104,7 @@ unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *
 }
 /// `CopyItemIconPicTo4x4Buffer` with this module's view of its types.
 #[inline]
-unsafe fn CopyItemIconPicTo4x4Buffer(a0: *mut c_void, a1: *mut c_void) {
+fn CopyItemIconPicTo4x4Buffer(a0: *mut c_void, a1: *mut c_void) {
     unsafe {
         crate::item_icon::CopyItemIconPicTo4x4Buffer(a0 as _, a1 as _);
     }
@@ -135,7 +135,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `GetMaxWidthInMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
     unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
 }
 /// `GetStringRightAlignXOffset` with this module's view of its types.
@@ -145,14 +145,14 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -391,60 +391,68 @@ static sTossDecorationYesNoFunctions: Table<YesNoFuncTable> =
     Table((&raw const crate::data::decoration::sTossDecorationYesNoFunctions).cast());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gCurDecorationItems: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gCurDecorationItems: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDecorationActionsCursorPos: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sNumOwnedDecorationsInCurCategory: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSecretBaseItemsIndicesBuffer: Aligned<CArray<u8, 16>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlayerRoomItemsIndicesBuffer: Aligned<CArray<u8, 12>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSecretBaseItemsIndicesBuffer: crate::global::Global<Aligned<CArray<u8, 16>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPlayerRoomItemsIndicesBuffer: crate::global::Global<Aligned<CArray<u8, 12>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDecorationsCursorPos: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDecorationsScrollOffset: crate::global::Global<u16> =
     crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gCurDecorationIndex: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurDecorationCategory: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFiller: CArray<u32, 2> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDecorationContext: DecorationPCContext = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDecorMenuWindowIds: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDecorationItemsMenu: *mut DecorationItemsMenu = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlaceDecorationGraphicsDataBuffer: PlaceDecorationGraphicsDataBuffer =
-    unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sFiller: crate::global::Global<CArray<u32, 2>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDecorationContext: crate::global::Global<DecorationPCContext> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDecorMenuWindowIds: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDecorationItemsMenu: crate::global::Global<*mut DecorationItemsMenu> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPlaceDecorationGraphicsDataBuffer: crate::global::Global<
+    PlaceDecorationGraphicsDataBuffer,
+> = crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurDecorMapX: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurDecorMapY: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDecor_CameraSpriteObjectIdx1: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDecor_CameraSpriteObjectIdx2: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDecorationLastDirectionMoved: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDecorSelectorOam: OamData = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDecorRearrangementDataBuffer: CArray<DecorRearrangementDataBuffer, 16> =
-    unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDecorSelectorOam: crate::global::Global<OamData> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDecorRearrangementDataBuffer: crate::global::Global<
+    CArray<DecorRearrangementDataBuffer, 16>,
+> = crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurDecorSelectedInRearrangement: crate::global::Global<u8> =
     crate::global::Global::new(0);
 
@@ -490,7 +498,7 @@ unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -506,22 +514,41 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 #[unsafe(no_mangle)]
 pub unsafe fn InitDecorationContextItems() {
     if sCurDecorationCategory.get() < DECORCAT_COUNT {
-        gCurDecorationItems = gDecorationInventories[sCurDecorationCategory.get()].items;
+        crate::gl!(
+            gCurDecorationItems = {
+                let gl_i0 = sCurDecorationCategory.get();
+                crate::gl!(gDecorationInventories[gl_i0].items)
+            }
+        );
     }
-    if sDecorationContext.isPlayerRoom == FALSE {
-        sDecorationContext.items = (*gSaveBlock1Ptr).secretBases[0].decorations.as_mut_ptr();
-        sDecorationContext.pos = (*gSaveBlock1Ptr).secretBases[0]
-            .decorationPositions
-            .as_mut_ptr();
+    if crate::gl!(sDecorationContext.isPlayerRoom) == FALSE {
+        crate::gl!(
+            sDecorationContext.items = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]
+                .decorations
+                .as_mut_ptr()
+        );
+        crate::gl!(
+            sDecorationContext.pos = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]
+                .decorationPositions
+                .as_mut_ptr()
+        );
     }
-    if sDecorationContext.isPlayerRoom == TRUE {
-        sDecorationContext.items = (*gSaveBlock1Ptr).playerRoomDecorations.as_mut_ptr();
-        sDecorationContext.pos = (*gSaveBlock1Ptr).playerRoomDecorationPositions.as_mut_ptr();
+    if crate::gl!(sDecorationContext.isPlayerRoom) == TRUE {
+        crate::gl!(
+            sDecorationContext.items = (*crate::gl!(gSaveBlock1Ptr))
+                .playerRoomDecorations
+                .as_mut_ptr()
+        );
+        crate::gl!(
+            sDecorationContext.pos = (*crate::gl!(gSaveBlock1Ptr))
+                .playerRoomDecorationPositions
+                .as_mut_ptr()
+        );
     }
 }
 unsafe fn AddDecorationWindow(windowIndex: u8) -> u8 {
     let mut template: WindowTemplate = zeroed();
-    let windowId: *mut u8 = &raw mut sDecorMenuWindowIds[windowIndex];
+    let windowId: *mut u8 = crate::gl!(&raw sDecorMenuWindowIds[windowIndex]);
     if windowIndex == WINDOW_MAIN_MENU {
         template = sDecorationWindowTemplates[0];
         template.width =
@@ -539,9 +566,9 @@ unsafe fn AddDecorationWindow(windowIndex: u8) -> u8 {
     *windowId
 }
 unsafe fn RemoveDecorationWindow(windowIndex: u8) {
-    ClearStdWindowAndFrameToTransparent(sDecorMenuWindowIds[windowIndex], FALSE);
-    ClearWindowTilemap(sDecorMenuWindowIds[windowIndex]);
-    RemoveWindow(sDecorMenuWindowIds[windowIndex]);
+    ClearStdWindowAndFrameToTransparent(crate::gl!(sDecorMenuWindowIds[windowIndex]), FALSE);
+    ClearWindowTilemap(crate::gl!(sDecorMenuWindowIds[windowIndex]));
+    RemoveWindow(crate::gl!(sDecorMenuWindowIds[windowIndex]));
     ScheduleBgCopyTilemapToVram(0);
 }
 unsafe fn AddDecorationActionsWindow() {
@@ -557,24 +584,38 @@ unsafe fn InitDecorationActionsWindow() {
 }
 pub unsafe fn DoSecretBaseDecorationMenu(taskId: u8) {
     InitDecorationActionsWindow();
-    sDecorationContext.items = (*gSaveBlock1Ptr).secretBases[0].decorations.as_mut_ptr();
-    sDecorationContext.pos = (*gSaveBlock1Ptr).secretBases[0]
-        .decorationPositions
-        .as_mut_ptr();
-    sDecorationContext.size = DECOR_MAX_SECRET_BASE;
-    sDecorationContext.isPlayerRoom = FALSE;
+    crate::gl!(
+        sDecorationContext.items = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]
+            .decorations
+            .as_mut_ptr()
+    );
+    crate::gl!(
+        sDecorationContext.pos = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]
+            .decorationPositions
+            .as_mut_ptr()
+    );
+    crate::gl!(sDecorationContext.size = DECOR_MAX_SECRET_BASE);
+    crate::gl!(sDecorationContext.isPlayerRoom = FALSE);
     task_set_func(taskId, Some(HandleDecorationActionsMenuInput));
 }
 pub unsafe fn DoPlayerRoomDecorationMenu(taskId: u8) {
     InitDecorationActionsWindow();
-    sDecorationContext.items = (*gSaveBlock1Ptr).playerRoomDecorations.as_mut_ptr();
-    sDecorationContext.pos = (*gSaveBlock1Ptr).playerRoomDecorationPositions.as_mut_ptr();
-    sDecorationContext.size = DECOR_MAX_PLAYERS_HOUSE;
-    sDecorationContext.isPlayerRoom = TRUE;
+    crate::gl!(
+        sDecorationContext.items = (*crate::gl!(gSaveBlock1Ptr))
+            .playerRoomDecorations
+            .as_mut_ptr()
+    );
+    crate::gl!(
+        sDecorationContext.pos = (*crate::gl!(gSaveBlock1Ptr))
+            .playerRoomDecorationPositions
+            .as_mut_ptr()
+    );
+    crate::gl!(sDecorationContext.size = DECOR_MAX_PLAYERS_HOUSE);
+    crate::gl!(sDecorationContext.isPlayerRoom = TRUE);
     task_set_func(taskId, Some(HandleDecorationActionsMenuInput));
 }
 pub(crate) unsafe fn HandleDecorationActionsMenuInput(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let menuPos: i8 = Menu_GetCursorPos() as i8;
         match Menu_ProcessInput() {
             MENU_NOTHING_CHOSEN => {
@@ -671,7 +712,7 @@ pub(crate) unsafe fn DecorationMenuAction_Toss(taskId: u8) {
 }
 pub(crate) unsafe fn DecorationMenuAction_Cancel(taskId: u8) {
     RemoveDecorationWindow(WINDOW_MAIN_MENU);
-    if sDecorationContext.isPlayerRoom == 0 {
+    if crate::gl!(sDecorationContext.isPlayerRoom) == 0 {
         ScriptContext_SetupScript(
             (*crate::asmdata::SecretBase_EventScript_PCCancel.cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -703,15 +744,19 @@ unsafe fn InitDecorationCategoriesWindow(taskId: u8) {
     task_set_func(taskId, Some(HandleDecorationCategoriesMenuInput));
 }
 unsafe fn ReinitDecorationCategoriesWindow(taskId: u8) {
-    FillWindowPixelBuffer(sDecorMenuWindowIds[1], 17);
+    FillWindowPixelBuffer(crate::gl!(sDecorMenuWindowIds[1]), 17);
     PrintDecorationCategoryMenuItems(taskId);
-    InitMenuInUpperLeftCornerNormal(sDecorMenuWindowIds[1], 9, sCurDecorationCategory.get());
+    InitMenuInUpperLeftCornerNormal(
+        crate::gl!(sDecorMenuWindowIds[1]),
+        9,
+        sCurDecorationCategory.get(),
+    );
     task_set_func(taskId, Some(HandleDecorationCategoriesMenuInput));
 }
 unsafe fn PrintDecorationCategoryMenuItems(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let windowId: u8 = sDecorMenuWindowIds[1];
-    let isPlayerRoom: u8 = sDecorationContext.isPlayerRoom;
+    let windowId: u8 = crate::gl!(sDecorMenuWindowIds[1]);
+    let isPlayerRoom: u8 = crate::gl!(sDecorationContext.isPlayerRoom);
     let mut shouldDisable: u8 = FALSE;
     if isPlayerRoom == TRUE && *data.at(11) == DECOR_MENU_PLACE {
         shouldDisable = TRUE;
@@ -781,7 +826,7 @@ unsafe fn PrintDecorationCategoryMenuItem(
     }) = CHAR_SLASH;
     ConvertIntToDecimalStringN(
         str,
-        gDecorationInventories[category].size as i32,
+        crate::gl!(gDecorationInventories[category].size) as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         2,
     );
@@ -813,7 +858,7 @@ unsafe fn ColorMenuItemString(str: *mut u8, disabled: u8) {
     }
 }
 pub(crate) unsafe fn HandleDecorationCategoriesMenuInput(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let input: i8 = Menu_ProcessInput();
         match input {
             MENU_B_PRESSED | 8 => {
@@ -835,7 +880,12 @@ unsafe fn SelectDecorationCategory(taskId: u8) {
     ));
     if sNumOwnedDecorationsInCurCategory.get() != 0 {
         CondenseDecorationsInCategory(sCurDecorationCategory.get());
-        gCurDecorationItems = gDecorationInventories[sCurDecorationCategory.get()].items;
+        crate::gl!(
+            gCurDecorationItems = {
+                let gl_i1 = sCurDecorationCategory.get();
+                crate::gl!(gDecorationInventories[gl_i1].items)
+            }
+        );
         IdentifyOwnedDecorationsCurrentlyInUse(taskId);
         sDecorationsScrollOffset.set(0);
         sDecorationsCursorPos.set(0);
@@ -894,27 +944,28 @@ unsafe fn ExitTraderDecorationMenu(taskId: u8) {
     ExitTraderMenu(taskId);
 }
 unsafe fn InitDecorationItemsMenuLimits() {
-    (*sDecorationItemsMenu).numMenuItems = sNumOwnedDecorationsInCurCategory.get() + 1;
-    if (*sDecorationItemsMenu).numMenuItems > 8 {
-        (*sDecorationItemsMenu).maxShownItems = 8;
+    (*crate::gl!(sDecorationItemsMenu)).numMenuItems = sNumOwnedDecorationsInCurCategory.get() + 1;
+    if (*crate::gl!(sDecorationItemsMenu)).numMenuItems > 8 {
+        (*crate::gl!(sDecorationItemsMenu)).maxShownItems = 8;
     } else {
-        (*sDecorationItemsMenu).maxShownItems = (*sDecorationItemsMenu).numMenuItems;
+        (*crate::gl!(sDecorationItemsMenu)).maxShownItems =
+            (*crate::gl!(sDecorationItemsMenu)).numMenuItems;
     }
 }
 unsafe fn InitDecorationItemsMenuScrollAndCursor() {
     SetCursorWithinListBounds(
         sDecorationsScrollOffset.as_ptr(),
         sDecorationsCursorPos.as_ptr(),
-        (*sDecorationItemsMenu).maxShownItems,
-        (*sDecorationItemsMenu).numMenuItems,
+        (*crate::gl!(sDecorationItemsMenu)).maxShownItems,
+        (*crate::gl!(sDecorationItemsMenu)).numMenuItems,
     );
 }
 unsafe fn InitDecorationItemsMenuScrollAndCursor2() {
     SetCursorScrollWithinListBounds(
         sDecorationsScrollOffset.as_ptr(),
         sDecorationsCursorPos.as_ptr(),
-        (*sDecorationItemsMenu).maxShownItems,
-        (*sDecorationItemsMenu).numMenuItems,
+        (*crate::gl!(sDecorationItemsMenu)).maxShownItems,
+        (*crate::gl!(sDecorationItemsMenu)).numMenuItems,
         8,
     );
 }
@@ -923,7 +974,7 @@ unsafe fn PrintDecorationItemMenuItems(taskId: u8) {
     data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if (sCurDecorationCategory.get() < DECORCAT_DOLL
         || sCurDecorationCategory.get() > DECORCAT_CUSHION)
-        && sDecorationContext.isPlayerRoom == TRUE
+        && crate::gl!(sDecorationContext.isPlayerRoom) == TRUE
         && *data.at(11) == DECOR_MENU_PLACE
     {
         ColorMenuItemString(gStringVar1.as_mut_ptr(), TRUE);
@@ -931,28 +982,38 @@ unsafe fn PrintDecorationItemMenuItems(taskId: u8) {
         ColorMenuItemString(gStringVar1.as_mut_ptr(), FALSE);
     }
     let mut i: u16 = 0;
-    while (i as i32) < (*sDecorationItemsMenu).numMenuItems as i32 - 1 {
+    while (i as i32) < (*crate::gl!(sDecorationItemsMenu)).numMenuItems as i32 - 1 {
         CopyDecorationMenuItemName(
-            (*sDecorationItemsMenu).names[i].as_mut_ptr(),
-            *gCurDecorationItems.at(i) as u16,
+            (*crate::gl!(sDecorationItemsMenu)).names[i].as_mut_ptr(),
+            *(*gCurDecorationItems.as_ptr()).at(i) as u16,
         );
-        (*sDecorationItemsMenu).items[i].name = (*sDecorationItemsMenu).names[i].as_mut_ptr();
-        (*sDecorationItemsMenu).items[i].id = i as i32;
+        (*crate::gl!(sDecorationItemsMenu)).items[i].name =
+            (*crate::gl!(sDecorationItemsMenu)).names[i].as_mut_ptr();
+        (*crate::gl!(sDecorationItemsMenu)).items[i].id = i as i32;
         i += 1;
     }
     StringCopy(
-        (*sDecorationItemsMenu).names[i].as_mut_ptr(),
+        (*crate::gl!(sDecorationItemsMenu)).names[i].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*sDecorationItemsMenu).items[i].name = (*sDecorationItemsMenu).names[i].as_mut_ptr();
-    (*sDecorationItemsMenu).items[i].id = LIST_CANCEL;
-    gMultiuseListMenuTemplate = *sDecorationItemsListMenuTemplate;
-    gMultiuseListMenuTemplate.windowId = sDecorMenuWindowIds[1];
-    gMultiuseListMenuTemplate.totalItems = (*sDecorationItemsMenu).numMenuItems as u16;
-    gMultiuseListMenuTemplate.items = (*sDecorationItemsMenu).items.as_mut_ptr();
-    gMultiuseListMenuTemplate.maxShowed = (*sDecorationItemsMenu).maxShownItems as u16;
+    (*crate::gl!(sDecorationItemsMenu)).items[i].name =
+        (*crate::gl!(sDecorationItemsMenu)).names[i].as_mut_ptr();
+    (*crate::gl!(sDecorationItemsMenu)).items[i].id = LIST_CANCEL;
+    crate::gl!(gMultiuseListMenuTemplate = *sDecorationItemsListMenuTemplate);
+    crate::gl!(gMultiuseListMenuTemplate.windowId = crate::gl!(sDecorMenuWindowIds[1]));
+    crate::gl!(
+        gMultiuseListMenuTemplate.totalItems =
+            (*crate::gl!(sDecorationItemsMenu)).numMenuItems as u16
+    );
+    crate::gl!(
+        gMultiuseListMenuTemplate.items = (*crate::gl!(sDecorationItemsMenu)).items.as_mut_ptr()
+    );
+    crate::gl!(
+        gMultiuseListMenuTemplate.maxShowed =
+            (*crate::gl!(sDecorationItemsMenu)).maxShownItems as u16
+    );
 }
 unsafe fn CopyDecorationMenuItemName(dest: *mut u8, decoration: u16) {
     StringCopy(dest, gStringVar1.as_mut_ptr());
@@ -978,24 +1039,25 @@ pub(crate) unsafe fn DecorationItemsMenu_PrintDecorationInUse(windowId: u8, item
     }
 }
 unsafe fn AddDecorationItemsScrollIndicators() {
-    if (*sDecorationItemsMenu).scrollIndicatorsTaskId == TASK_NONE {
-        (*sDecorationItemsMenu).scrollIndicatorsTaskId = AddScrollIndicatorArrowPairParameterized(
-            SCROLL_ARROW_UP,
-            0x3c,
-            0x0c,
-            0x94,
-            (*sDecorationItemsMenu).numMenuItems as i32
-                - (*sDecorationItemsMenu).maxShownItems as i32,
-            0x6e,
-            0x6e,
-            sDecorationsScrollOffset.as_ptr(),
-        );
+    if (*crate::gl!(sDecorationItemsMenu)).scrollIndicatorsTaskId == TASK_NONE {
+        (*crate::gl!(sDecorationItemsMenu)).scrollIndicatorsTaskId =
+            AddScrollIndicatorArrowPairParameterized(
+                SCROLL_ARROW_UP,
+                0x3c,
+                0x0c,
+                0x94,
+                (*crate::gl!(sDecorationItemsMenu)).numMenuItems as i32
+                    - (*crate::gl!(sDecorationItemsMenu)).maxShownItems as i32,
+                0x6e,
+                0x6e,
+                sDecorationsScrollOffset.as_ptr(),
+            );
     }
 }
 unsafe fn RemoveDecorationItemsScrollIndicators() {
-    if (*sDecorationItemsMenu).scrollIndicatorsTaskId != TASK_NONE {
-        RemoveScrollIndicatorArrowPair((*sDecorationItemsMenu).scrollIndicatorsTaskId);
-        (*sDecorationItemsMenu).scrollIndicatorsTaskId = TASK_NONE;
+    if (*crate::gl!(sDecorationItemsMenu)).scrollIndicatorsTaskId != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*crate::gl!(sDecorationItemsMenu)).scrollIndicatorsTaskId);
+        (*crate::gl!(sDecorationItemsMenu)).scrollIndicatorsTaskId = TASK_NONE;
     }
 }
 unsafe fn AddDecorationItemsWindow(taskId: u8) {
@@ -1006,14 +1068,14 @@ unsafe fn InitDecorationItemsWindow(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     AddDecorationWindow(WINDOW_DECORATION_CATEGORY_ITEMS);
     ShowDecorationCategorySummaryWindow(sCurDecorationCategory.get());
-    sDecorationItemsMenu = AllocZeroed(1316) as *mut DecorationItemsMenu;
-    (*sDecorationItemsMenu).scrollIndicatorsTaskId = TASK_NONE;
+    crate::gl!(sDecorationItemsMenu = AllocZeroed(1316) as *mut DecorationItemsMenu);
+    (*crate::gl!(sDecorationItemsMenu)).scrollIndicatorsTaskId = TASK_NONE;
     InitDecorationItemsMenuLimits();
     InitDecorationItemsMenuScrollAndCursor();
     InitDecorationItemsMenuScrollAndCursor2();
     PrintDecorationItemMenuItems(taskId);
     *data.at(13) = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
         sDecorationsScrollOffset.get(),
         sDecorationsCursorPos.get(),
     ) as i16;
@@ -1027,7 +1089,7 @@ pub(crate) unsafe fn HandleDecorationItemsMenuInput(taskId: u8) {
     let mut data: *mut i16 = null_mut();
     let mut input: i32 = 0;
     data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         input = ListMenu_ProcessInput(*data.at(13) as u8);
         ListMenuGetScrollAndRow(
             *data.at(13) as u8,
@@ -1051,7 +1113,7 @@ pub(crate) unsafe fn HandleDecorationItemsMenuInput(taskId: u8) {
                 );
                 RemoveDecorationWindow(WINDOW_DECORATION_CATEGORIES);
                 RemoveDecorationItemsOtherWindows();
-                Free(sDecorationItemsMenu as *mut c_void);
+                Free(crate::gl!(sDecorationItemsMenu) as *mut c_void);
                 sSecretBasePC_SelectedDecorationActions[*data.at(11)][0].unwrap_unchecked()(taskId);
             }
         }
@@ -1069,14 +1131,14 @@ unsafe fn ShowDecorationCategorySummaryWindow(category: u8) {
 }
 unsafe fn PrintDecorationItemDescription(itemIndex: i32) {
     let mut str: *mut u8 = null_mut();
-    let windowId: u8 = sDecorMenuWindowIds[3];
+    let windowId: u8 = crate::gl!(sDecorMenuWindowIds[3]);
     FillWindowPixelBuffer(windowId, 17);
     if itemIndex as u32 >= sNumOwnedDecorationsInCurCategory.get() as u32 {
         str = (*(&raw const crate::data::strings::gText_GoBackPrevMenu).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
     } else {
-        str = gDecorations[*gCurDecorationItems.at(itemIndex)].description;
+        str = gDecorations[*(*gCurDecorationItems.as_ptr()).at(itemIndex)].description;
     }
     AddTextPrinterParameterized(windowId, FONT_NORMAL, str, 0, 1, 0, None);
 }
@@ -1084,17 +1146,17 @@ unsafe fn RemoveDecorationItemsOtherWindows() {
     RemoveDecorationWindow(WINDOW_DECORATION_CATEGORY_ITEMS);
     RemoveDecorationWindow(WINDOW_DECORATION_CATEGORY_SUMMARY);
 }
-unsafe fn IsDecorationIndexInSecretBase(idx: u8) -> u8 {
+fn IsDecorationIndexInSecretBase(idx: u8) -> u8 {
     for i in 0..16u8 {
-        if sSecretBaseItemsIndicesBuffer[i] == idx {
+        if crate::gl!(sSecretBaseItemsIndicesBuffer[i]) == idx {
             return TRUE;
         }
     }
     FALSE
 }
-unsafe fn IsDecorationIndexInPlayersRoom(idx: u8) -> u8 {
+fn IsDecorationIndexInPlayersRoom(idx: u8) -> u8 {
     for i in 0..12u8 {
-        if sPlayerRoomItemsIndicesBuffer[i] == idx {
+        if crate::gl!(sPlayerRoomItemsIndicesBuffer[i]) == idx {
             return TRUE;
         }
     }
@@ -1104,18 +1166,34 @@ unsafe fn IdentifyOwnedDecorationsCurrentlyInUseInternal(taskId: u8) {
     let mut j: u16 = 0;
     let mut k: u16 = 0;
     let mut count: u16 = 0;
-    memset(sSecretBaseItemsIndicesBuffer.as_mut_ptr(), 0, 16);
-    memset(sPlayerRoomItemsIndicesBuffer.as_mut_ptr(), 0, 12);
+    memset(
+        (*sSecretBaseItemsIndicesBuffer.as_ptr()).as_mut_ptr(),
+        0,
+        16,
+    );
+    memset(
+        (*sPlayerRoomItemsIndicesBuffer.as_ptr()).as_mut_ptr(),
+        0,
+        12,
+    );
     for i in 0..16u16 {
-        if (*gSaveBlock1Ptr).secretBases[0].decorations[i] != 0 {
-            for j in 0..(gDecorationInventories[sCurDecorationCategory.get()].size as u16) {
-                if *gCurDecorationItems.at(j) == (*gSaveBlock1Ptr).secretBases[0].decorations[i] {
+        if (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].decorations[i] != 0 {
+            for j in 0..({
+                let gl_i2 = sCurDecorationCategory.get();
+                crate::gl!(gDecorationInventories[gl_i2].size)
+            } as u16)
+            {
+                if *(*gCurDecorationItems.as_ptr()).at(j)
+                    == (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].decorations[i]
+                {
                     k = 0;
-                    while k < count && sSecretBaseItemsIndicesBuffer[k] as i32 != j as i32 + 1 {
+                    while k < count
+                        && crate::gl!(sSecretBaseItemsIndicesBuffer[k]) as i32 != j as i32 + 1
+                    {
                         k += 1;
                     }
                     if k == count {
-                        sSecretBaseItemsIndicesBuffer[count] = j as u8 + 1;
+                        crate::gl!(sSecretBaseItemsIndicesBuffer[count] = j as u8 + 1);
                         count += 1;
                         break;
                     }
@@ -1125,18 +1203,25 @@ unsafe fn IdentifyOwnedDecorationsCurrentlyInUseInternal(taskId: u8) {
     }
     count = 0;
     for i in 0..12u16 {
-        if (*gSaveBlock1Ptr).playerRoomDecorations[i] != DECOR_NONE {
+        if (*crate::gl!(gSaveBlock1Ptr)).playerRoomDecorations[i] != DECOR_NONE {
             j = 0;
-            while j < gDecorationInventories[sCurDecorationCategory.get()].size as u16 {
-                if *gCurDecorationItems.at(j) == (*gSaveBlock1Ptr).playerRoomDecorations[i]
+            while j < {
+                let gl_i3 = sCurDecorationCategory.get();
+                crate::gl!(gDecorationInventories[gl_i3].size)
+            } as u16
+            {
+                if *(*gCurDecorationItems.as_ptr()).at(j)
+                    == (*crate::gl!(gSaveBlock1Ptr)).playerRoomDecorations[i]
                     && IsDecorationIndexInSecretBase(j as u8 + 1) != 1
                 {
                     k = 0;
-                    while k < count && sPlayerRoomItemsIndicesBuffer[k] as i32 != j as i32 + 1 {
+                    while k < count
+                        && crate::gl!(sPlayerRoomItemsIndicesBuffer[k]) as i32 != j as i32 + 1
+                    {
                         k += 1;
                     }
                     if k == count {
-                        sPlayerRoomItemsIndicesBuffer[count] = j as u8 + 1;
+                        crate::gl!(sPlayerRoomItemsIndicesBuffer[count] = j as u8 + 1);
                         count += 1;
                         break;
                     }
@@ -1150,15 +1235,15 @@ unsafe fn IdentifyOwnedDecorationsCurrentlyInUse(taskId: u8) {
     IdentifyOwnedDecorationsCurrentlyInUseInternal(taskId);
 }
 #[unsafe(no_mangle)]
-pub unsafe fn IsSelectedDecorInThePC() -> u8 {
+pub fn IsSelectedDecorInThePC() -> u8 {
     for i in 0..16u16 {
-        if sSecretBaseItemsIndicesBuffer[i] as i32
+        if crate::gl!(sSecretBaseItemsIndicesBuffer[i]) as i32
             == sDecorationsScrollOffset.get() as i32 + sDecorationsCursorPos.get() as i32 + 1
         {
             return FALSE;
         }
         if i < 12
-            && sPlayerRoomItemsIndicesBuffer[i] as i32
+            && crate::gl!(sPlayerRoomItemsIndicesBuffer[i]) as i32
                 == sDecorationsScrollOffset.get() as i32 + sDecorationsCursorPos.get() as i32 + 1
         {
             return FALSE;
@@ -1175,7 +1260,7 @@ pub(crate) unsafe fn DontTossDecoration(taskId: u8) {
     task_set_func(taskId, Some(Task_ShowDecorationItemsWindow));
 }
 pub(crate) unsafe fn ReturnToDecorationItemsAfterInvalidSelection(taskId: u8) {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(0, 0);
         AddDecorationWindow(WINDOW_DECORATION_CATEGORIES);
         ShowDecorationItemsWindow(taskId);
@@ -1186,12 +1271,12 @@ pub(crate) unsafe fn DecorationItemsMenuAction_Cancel(taskId: u8) {
     RemoveDecorationItemsScrollIndicators();
     RemoveDecorationItemsOtherWindows();
     DestroyListMenuTask(*data.at(13) as u8, null_mut(), null_mut());
-    Free(sDecorationItemsMenu as *mut c_void);
+    Free(crate::gl!(sDecorationItemsMenu) as *mut c_void);
     ReinitDecorationCategoriesWindow(taskId);
 }
 unsafe fn SetInitialPositions(taskId: u8) {
-    task_set(taskId, tInitialX, (*gSaveBlock1Ptr).pos.x);
-    task_set(taskId, tInitialY, (*gSaveBlock1Ptr).pos.y);
+    task_set(taskId, tInitialX, (*crate::gl!(gSaveBlock1Ptr)).pos.x);
+    task_set(taskId, tInitialY, (*crate::gl!(gSaveBlock1Ptr)).pos.y);
     PlayerGetDestCoords(
         task_data_ptr(taskId, tCursorX),
         task_data_ptr(taskId, tCursorY),
@@ -1200,8 +1285,8 @@ unsafe fn SetInitialPositions(taskId: u8) {
 unsafe fn WarpToInitialPosition(taskId: u8) {
     DrawWholeMapView();
     SetWarpDestination(
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
         WARP_ID_NONE,
         task_get(taskId, tInitialX) as i8,
         task_get(taskId, tInitialY) as i8,
@@ -1332,8 +1417,8 @@ pub unsafe fn SetDecoration() {
         if FlagGet(FLAG_DECORATION_1 + i as u16) == TRUE {
             FlagClear(FLAG_DECORATION_1 + i as u16);
             j = 0;
-            while j < (*gMapHeader.events).objectEventCount {
-                if (*(*gMapHeader.events).objectEvents.at(j)).flagId as i32
+            while j < (*crate::gl!(gMapHeader.events)).objectEventCount {
+                if (*(*crate::gl!(gMapHeader.events)).objectEvents.at(j)).flagId as i32
                     == FLAG_DECORATION_1 as i32 + i as i32
                 {
                     break;
@@ -1342,44 +1427,45 @@ pub unsafe fn SetDecoration() {
             }
             VarSet(
                 VAR_OBJ_GFX_ID_0
-                    + ((*(*gMapHeader.events).objectEvents.at(j)).graphicsId as u16
+                    + ((*(*crate::gl!(gMapHeader.events)).objectEvents.at(j)).graphicsId as u16
                         - OBJ_EVENT_GFX_VAR_0),
-                *(*sPlaceDecorationGraphicsDataBuffer.decoration).tiles,
+                *(*crate::gl!(sPlaceDecorationGraphicsDataBuffer.decoration)).tiles,
             );
-            gSpecialVar_0x8005 = (*(*gMapHeader.events).objectEvents.at(j)).localId as u16;
+            gSpecialVar_0x8005 =
+                (*(*crate::gl!(gMapHeader.events)).objectEvents.at(j)).localId as u16;
             gSpecialVar_0x8006 = sCurDecorMapX.get();
             gSpecialVar_0x8007 = sCurDecorMapY.get();
             TrySpawnObjectEvent(
                 gSpecialVar_0x8005 as u8,
-                (*gSaveBlock1Ptr).location.mapNum as u8,
-                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
             );
             TryMoveObjectEventToMapCoords(
                 gSpecialVar_0x8005 as u8,
-                (*gSaveBlock1Ptr).location.mapNum as u8,
-                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                 gSpecialVar_0x8006 as i16,
                 gSpecialVar_0x8007 as i16,
             );
             TryOverrideObjectEventTemplateCoords(
                 gSpecialVar_0x8005 as u8,
-                (*gSaveBlock1Ptr).location.mapNum as u8,
-                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
             );
             break;
         }
     }
 }
 unsafe fn HasDecorationSpace() -> u8 {
-    for i in 0..(sDecorationContext.size as u16) {
-        if *sDecorationContext.items.at(i) == DECOR_NONE {
+    for i in 0..(crate::gl!(sDecorationContext.size) as u16) {
+        if *(*sDecorationContext.as_ptr()).items.at(i) == DECOR_NONE {
             return TRUE;
         }
     }
     FALSE
 }
 pub(crate) unsafe fn DecorationItemsMenuAction_AttemptPlace(taskId: u8) {
-    if sDecorationContext.isPlayerRoom == TRUE
+    if crate::gl!(sDecorationContext.isPlayerRoom) == TRUE
         && sCurDecorationCategory.get() != DECORCAT_DOLL
         && sCurDecorationCategory.get() != DECORCAT_CUSHION
     {
@@ -1402,11 +1488,11 @@ pub(crate) unsafe fn DecorationItemsMenuAction_AttemptPlace(taskId: u8) {
         } else {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
-                sDecorationContext.size as i32,
+                crate::gl!(sDecorationContext.size) as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 2,
             );
-            if sDecorationContext.isPlayerRoom == FALSE {
+            if crate::gl!(sDecorationContext.isPlayerRoom) == FALSE {
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_NoMoreDecorations)
@@ -1446,21 +1532,24 @@ pub(crate) unsafe fn DecorationItemsMenuAction_AttemptPlace(taskId: u8) {
 pub(crate) unsafe fn Task_PlaceDecoration(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetInitialPositions(taskId);
                 task_set(taskId, tState, 1);
             }
         }
         1 => {
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
             ConfigureCameraObjectForPlacingDecoration(
-                &raw mut sPlaceDecorationGraphicsDataBuffer,
-                *gCurDecorationItems.at(gCurDecorationIndex.get()),
+                crate::gl!(&raw sPlaceDecorationGraphicsDataBuffer),
+                *(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get()),
             );
             SetUpDecorationShape(taskId);
-            SetUpPlacingDecorationPlayerAvatar(taskId, &raw mut sPlaceDecorationGraphicsDataBuffer);
+            SetUpPlacingDecorationPlayerAvatar(
+                taskId,
+                crate::gl!(&raw sPlaceDecorationGraphicsDataBuffer),
+            );
             FadeInFromBlack();
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             task_set(taskId, tState, 2);
         }
         2 if IsWeatherNotFadingIn() == TRUE => {
@@ -1474,14 +1563,32 @@ unsafe fn ConfigureCameraObjectForPlacingDecoration(
     data: *mut PlaceDecorationGraphicsDataBuffer,
     decor: u8,
 ) {
-    sDecor_CameraSpriteObjectIdx1.set(gSprites[gFieldCamera.spriteId].data[0] as u8);
-    gFieldCamera.spriteId = gpu_pal_decompress_alloc_tag_and_upload(data, decor) as u32;
-    gSprites[gFieldCamera.spriteId].oam.set_priority(1);
-    gSprites[gFieldCamera.spriteId].callback = Some(InitializePuttingAwayCursorSprite);
-    gSprites[gFieldCamera.spriteId].x =
-        sDecorationMovementInfo[(*(*data).decoration).shape].cameraX as i16;
-    gSprites[gFieldCamera.spriteId].y =
-        sDecorationMovementInfo[(*(*data).decoration).shape].cameraY as i16;
+    sDecor_CameraSpriteObjectIdx1.set(
+        ({
+            let gl_i0 = crate::gl!(gFieldCamera.spriteId);
+            crate::gl!(gSprites[gl_i0].data[0])
+        }) as u8,
+    );
+    crate::gl!(gFieldCamera.spriteId = gpu_pal_decompress_alloc_tag_and_upload(data, decor) as u32);
+    (*gSprites.as_ptr())[crate::gl!(gFieldCamera.spriteId)]
+        .oam
+        .set_priority(1);
+    {
+        let gl_i1 = crate::gl!(gFieldCamera.spriteId);
+        crate::gl!(gSprites[gl_i1].callback = Some(InitializePuttingAwayCursorSprite))
+    };
+    {
+        let gl_i2 = crate::gl!(gFieldCamera.spriteId);
+        crate::gl!(
+            gSprites[gl_i2].x = sDecorationMovementInfo[(*(*data).decoration).shape].cameraX as i16
+        )
+    };
+    {
+        let gl_i3 = crate::gl!(gFieldCamera.spriteId);
+        crate::gl!(
+            gSprites[gl_i3].y = sDecorationMovementInfo[(*(*data).decoration).shape].cameraY as i16
+        )
+    };
 }
 unsafe fn SetUpPlacingDecorationPlayerAvatar(
     taskId: u8,
@@ -1496,7 +1603,7 @@ unsafe fn SetUpPlacingDecorationPlayerAvatar(
     {
         x -= 8;
     }
-    if (*gSaveBlock2Ptr).playerGender == MALE {
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
         sDecor_CameraSpriteObjectIdx2.set(CreateObjectGraphicsSprite(
             OBJ_EVENT_GFX_BRENDAN_DECORATING,
             Some(SpriteCallbackDummy),
@@ -1513,14 +1620,17 @@ unsafe fn SetUpPlacingDecorationPlayerAvatar(
             0,
         ));
     }
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()]
+    (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx2.get()]
         .oam
         .set_priority(1);
-    DestroySprite(&raw mut gSprites[sDecor_CameraSpriteObjectIdx1.get()]);
-    sDecor_CameraSpriteObjectIdx1.set(gFieldCamera.spriteId as u8);
+    DestroySprite({
+        let gl_i4 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(&raw gSprites[gl_i4])
+    });
+    sDecor_CameraSpriteObjectIdx1.set(crate::gl!(gFieldCamera.spriteId) as u8);
 }
 unsafe fn SetUpDecorationShape(taskId: u8) {
-    match gDecorations[*gCurDecorationItems.at(gCurDecorationIndex.get())].shape {
+    match gDecorations[*(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get())].shape {
         DECORSHAPE_1x1 => {
             task_set(taskId, tDecorWidth, 1);
             task_set(taskId, tDecorHeight, 1);
@@ -1567,15 +1677,27 @@ unsafe fn SetUpDecorationShape(taskId: u8) {
 }
 pub(crate) unsafe fn AttemptPlaceDecoration(taskId: u8) {
     task_set(taskId, tButton, 0);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[7] = 1;
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()].data[7] = 1;
+    {
+        let gl_i5 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i5].data[7] = 1)
+    };
+    {
+        let gl_i6 = sDecor_CameraSpriteObjectIdx2.get();
+        crate::gl!(gSprites[gl_i6].data[7] = 1)
+    };
     ResetCursorMovement();
     AttemptPlaceDecoration_(taskId);
 }
 pub(crate) unsafe fn AttemptCancelPlaceDecoration(taskId: u8) {
     task_set(taskId, tButton, 0);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[7] = 1;
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()].data[7] = 1;
+    {
+        let gl_i7 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i7].data[7] = 1)
+    };
+    {
+        let gl_i8 = sDecor_CameraSpriteObjectIdx2.get();
+        crate::gl!(gSprites[gl_i8].data[7] = 1)
+    };
     ResetCursorMovement();
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
@@ -1750,7 +1872,8 @@ unsafe fn CanPlaceDecoration(taskId: u8, decoration: *mut Decoration) -> u8 {
 unsafe fn AttemptPlaceDecoration_(taskId: u8) {
     if CanPlaceDecoration(
         taskId,
-        (&raw const gDecorations[*gCurDecorationItems.at(gCurDecorationIndex.get())]).cast_mut(),
+        (&raw const gDecorations[*(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get())])
+            .cast_mut(),
     ) == TRUE
     {
         StringExpandPlaceholders(
@@ -1789,13 +1912,13 @@ pub(crate) unsafe fn PlaceDecorationPrompt(taskId: u8) {
 pub(crate) unsafe fn PlaceDecoration(taskId: u8) {
     ClearDialogWindowAndFrame(0, 0);
     PlaceDecoration_(taskId);
-    if gDecorations[*gCurDecorationItems.at(gCurDecorationIndex.get())].permission
+    if gDecorations[*(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get())].permission
         != DECORPERM_SPRITE
     {
         ShowDecorationOnMap(
             task_get(taskId, tCursorX) as u16,
             task_get(taskId, tCursorY) as u16,
-            *gCurDecorationItems.at(gCurDecorationIndex.get()) as u16,
+            *(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get()) as u16,
         );
     } else {
         sCurDecorMapX.set(task_get(taskId, tCursorX) as u16 - MAP_OFFSET as u16);
@@ -1806,35 +1929,39 @@ pub(crate) unsafe fn PlaceDecoration(taskId: u8) {
                 .cast_mut(),
         );
     }
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].y += 2;
-    if gMapHeader.regionMapSectionId == MAPSEC_SECRET_BASE {
+    {
+        let gl_i9 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i9].y += 2)
+    };
+    if crate::gl!(gMapHeader.regionMapSectionId) == MAPSEC_SECRET_BASE {
         TryPutSecretBaseVisitOnAir();
     }
     CancelDecorating_(taskId);
 }
 unsafe fn PlaceDecoration_(taskId: u8) {
     let mut i: u16 = 0;
-    while i < sDecorationContext.size as u16 {
-        if *sDecorationContext.items.at(i) == DECOR_NONE {
-            *sDecorationContext.items.at(i) = *gCurDecorationItems.at(gCurDecorationIndex.get());
-            *sDecorationContext.pos.at(i) = ((task_get(taskId, tCursorX) as u8 - MAP_OFFSET as u8)
-                << 4)
-                + (task_get(taskId, tCursorY) as u8 - MAP_OFFSET as u8);
+    while i < crate::gl!(sDecorationContext.size) as u16 {
+        if *(*sDecorationContext.as_ptr()).items.at(i) == DECOR_NONE {
+            *(*sDecorationContext.as_ptr()).items.at(i) =
+                *(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get());
+            *(*sDecorationContext.as_ptr()).pos.at(i) =
+                ((task_get(taskId, tCursorX) as u8 - MAP_OFFSET as u8) << 4)
+                    + (task_get(taskId, tCursorY) as u8 - MAP_OFFSET as u8);
             break;
         }
         i += 1;
     }
-    if sDecorationContext.isPlayerRoom == 0 {
+    if crate::gl!(sDecorationContext.isPlayerRoom) == 0 {
         for i in 0..(DECOR_MAX_SECRET_BASE as u16) {
-            if sSecretBaseItemsIndicesBuffer[i] == DECOR_NONE {
-                sSecretBaseItemsIndicesBuffer[i] = gCurDecorationIndex.get() + 1;
+            if crate::gl!(sSecretBaseItemsIndicesBuffer[i]) == DECOR_NONE {
+                crate::gl!(sSecretBaseItemsIndicesBuffer[i] = gCurDecorationIndex.get() + 1);
                 break;
             }
         }
     } else {
         for i in 0..(DECOR_MAX_PLAYERS_HOUSE as u16) {
-            if sPlayerRoomItemsIndicesBuffer[i] == DECOR_NONE {
-                sPlayerRoomItemsIndicesBuffer[i] = gCurDecorationIndex.get() + 1;
+            if crate::gl!(sPlayerRoomItemsIndicesBuffer[i]) == DECOR_NONE {
+                crate::gl!(sPlayerRoomItemsIndicesBuffer[i] = gCurDecorationIndex.get() + 1);
                 break;
             }
         }
@@ -1860,7 +1987,7 @@ pub(crate) unsafe fn c1_overworld_prev_quest(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             LockPlayerFieldControls();
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 WarpToInitialPosition(taskId);
                 task_set(taskId, tState, 1);
             }
@@ -1868,7 +1995,7 @@ pub(crate) unsafe fn c1_overworld_prev_quest(taskId: u8) {
         1 => {
             FreePlayerSpritePalette();
             FreeSpritePaletteByTag(PLACE_DECORATION_SELECTOR_TAG);
-            gFieldCallback = Some(FieldCB_InitDecorationItemsWindow);
+            crate::gl!(gFieldCallback = Some(FieldCB_InitDecorationItemsWindow));
             SetMainCallback2(Some(CB2_ReturnToField));
             DestroyTask(taskId);
         }
@@ -1916,7 +2043,7 @@ unsafe fn ApplyCursorMovement_IsInvalid(taskId: u8) -> u8 {
         return FALSE;
     }
     if sDecorationLastDirectionMoved.get() == DIR_NORTH
-        && *data.at(1) as i32 - 7 >= (*gMapHeader.mapLayout).height
+        && *data.at(1) as i32 - 7 >= (*crate::gl!(gMapHeader.mapLayout)).height
     {
         *data.at(1) -= 1;
         return FALSE;
@@ -1926,15 +2053,15 @@ unsafe fn ApplyCursorMovement_IsInvalid(taskId: u8) -> u8 {
         return FALSE;
     }
     if sDecorationLastDirectionMoved.get() == DIR_EAST
-        && *data as i32 + *data.at(5) as i32 - 8 >= (*gMapHeader.mapLayout).width
+        && *data as i32 + *data.at(5) as i32 - 8 >= (*crate::gl!(gMapHeader.mapLayout)).width
     {
         *data -= 1;
         return FALSE;
     }
     TRUE
 }
-unsafe fn IsHoldingDirection() -> u8 {
-    let heldKeys: u16 = gMain.heldKeys & DPAD_ANY as u16;
+fn IsHoldingDirection() -> u8 {
+    let heldKeys: u16 = crate::gl!(gMain.heldKeys) & DPAD_ANY as u16;
     if heldKeys != DPAD_UP as u16
         && heldKeys != DPAD_DOWN as u16
         && heldKeys != DPAD_LEFT as u16
@@ -1944,14 +2071,24 @@ unsafe fn IsHoldingDirection() -> u8 {
     }
     TRUE
 }
-unsafe fn ResetCursorMovement() {
+fn ResetCursorMovement() {
     sDecorationLastDirectionMoved.set(0);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[2] = 0;
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[3] = 0;
+    {
+        let gl_i10 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i10].data[2] = 0)
+    };
+    {
+        let gl_i11 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i11].data[3] = 0)
+    };
 }
 pub(crate) unsafe fn Task_SelectLocation(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[4] == 0 {
+    if ({
+        let gl_i12 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i12].data[4])
+    }) == 0
+    {
         if *data.at(10) == A_BUTTON as i16 {
             sPlacePutAwayYesNoFunctions[*data.at(12)]
                 .yesFunc
@@ -1964,28 +2101,52 @@ pub(crate) unsafe fn Task_SelectLocation(taskId: u8) {
                 .unwrap_unchecked()(taskId);
             return;
         }
-        if gMain.heldKeys as i32 & DPAD_ANY == DPAD_UP {
+        if crate::gl!(gMain.heldKeys) as i32 & DPAD_ANY == DPAD_UP {
             sDecorationLastDirectionMoved.set(DIR_SOUTH);
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[2] = 0;
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[3] = -2;
+            {
+                let gl_i13 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i13].data[2] = 0)
+            };
+            {
+                let gl_i14 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i14].data[3] = -2)
+            };
             *data.at(1) -= 1;
         }
-        if gMain.heldKeys as i32 & DPAD_ANY == DPAD_DOWN {
+        if crate::gl!(gMain.heldKeys) as i32 & DPAD_ANY == DPAD_DOWN {
             sDecorationLastDirectionMoved.set(DIR_NORTH);
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[2] = 0;
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[3] = 2;
+            {
+                let gl_i15 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i15].data[2] = 0)
+            };
+            {
+                let gl_i16 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i16].data[3] = 2)
+            };
             *data.at(1) += 1;
         }
-        if gMain.heldKeys as i32 & DPAD_ANY == DPAD_LEFT {
+        if crate::gl!(gMain.heldKeys) as i32 & DPAD_ANY == DPAD_LEFT {
             sDecorationLastDirectionMoved.set(DIR_WEST);
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[2] = -2;
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[3] = 0;
+            {
+                let gl_i17 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i17].data[2] = -2)
+            };
+            {
+                let gl_i18 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i18].data[3] = 0)
+            };
             *data -= 1;
         }
-        if gMain.heldKeys as i32 & DPAD_ANY == DPAD_RIGHT {
+        if crate::gl!(gMain.heldKeys) as i32 & DPAD_ANY == DPAD_RIGHT {
             sDecorationLastDirectionMoved.set(DIR_EAST);
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[2] = 2;
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[3] = 0;
+            {
+                let gl_i19 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i19].data[2] = 2)
+            };
+            {
+                let gl_i20 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i20].data[3] = 0)
+            };
             *data += 1;
         }
         if IsHoldingDirection() == 0 || ApplyCursorMovement_IsInvalid(taskId) == 0 {
@@ -1993,26 +2154,37 @@ pub(crate) unsafe fn Task_SelectLocation(taskId: u8) {
         }
     }
     if sDecorationLastDirectionMoved.get() != 0 {
-        gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[4] += 1;
-        gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[4] &= 7;
+        {
+            let gl_i21 = sDecor_CameraSpriteObjectIdx1.get();
+            crate::gl!(gSprites[gl_i21].data[4] += 1)
+        };
+        {
+            let gl_i22 = sDecor_CameraSpriteObjectIdx1.get();
+            crate::gl!(gSprites[gl_i22].data[4] &= 7)
+        };
     }
     if *data.at(10) == 0 {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             *data.at(10) = A_BUTTON as i16;
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             *data.at(10) = B_BUTTON as i16;
         }
     }
 }
 pub(crate) unsafe fn ContinueDecorating(taskId: u8) {
     ClearDialogWindowAndFrame(0, TRUE);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[7] = 0;
+    {
+        let gl_i23 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i23].data[7] = 0)
+    };
     task_set(taskId, tButton, 0);
     task_set_func(taskId, Some(Task_SelectLocation));
 }
 pub(crate) unsafe fn CantPlaceDecorationPrompt(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         ContinueDecorating(taskId);
     }
 }
@@ -2107,18 +2279,18 @@ unsafe fn SetDecorSelectionMetatiles(data: *mut PlaceDecorationGraphicsDataBuffe
     }
 }
 unsafe fn SetDecorSelectionBoxOamAttributes(decorShape: u8) {
-    sDecorSelectorOam.set_y(0);
-    sDecorSelectorOam.set_affineMode(ST_OAM_AFFINE_OFF);
-    sDecorSelectorOam.set_objMode(ST_OAM_OBJ_NORMAL as u32);
-    sDecorSelectorOam.set_mosaic(FALSE as u32);
-    sDecorSelectorOam.set_bpp(ST_OAM_4BPP);
-    sDecorSelectorOam.set_shape(sDecorationMovementInfo[decorShape].shape as u32);
-    sDecorSelectorOam.set_x(0);
-    sDecorSelectorOam.set_matrixNum(0);
-    sDecorSelectorOam.set_size(sDecorationMovementInfo[decorShape].size as u32);
-    sDecorSelectorOam.set_tileNum(0);
-    sDecorSelectorOam.set_priority(0);
-    sDecorSelectorOam.set_paletteNum(0);
+    (*sDecorSelectorOam.as_ptr()).set_y(0);
+    (*sDecorSelectorOam.as_ptr()).set_affineMode(ST_OAM_AFFINE_OFF);
+    (*sDecorSelectorOam.as_ptr()).set_objMode(ST_OAM_OBJ_NORMAL as u32);
+    (*sDecorSelectorOam.as_ptr()).set_mosaic(FALSE as u32);
+    (*sDecorSelectorOam.as_ptr()).set_bpp(ST_OAM_4BPP);
+    (*sDecorSelectorOam.as_ptr()).set_shape(sDecorationMovementInfo[decorShape].shape as u32);
+    (*sDecorSelectorOam.as_ptr()).set_x(0);
+    (*sDecorSelectorOam.as_ptr()).set_matrixNum(0);
+    (*sDecorSelectorOam.as_ptr()).set_size(sDecorationMovementInfo[decorShape].size as u32);
+    (*sDecorSelectorOam.as_ptr()).set_tileNum(0);
+    (*sDecorSelectorOam.as_ptr()).set_priority(0);
+    (*sDecorSelectorOam.as_ptr()).set_paletteNum(0);
 }
 pub(crate) unsafe fn InitializePuttingAwayCursorSprite(sprite: *mut Sprite) {
     (*sprite).data[2] = 0;
@@ -2185,13 +2357,13 @@ unsafe fn AddDecorationIconObjectFromIconTable(tilesTag: u16, paletteTag: u16, d
     }
     LZDecompressWram(
         GetDecorationIconPicOrPalette(decor as u16, 0),
-        gItemIconDecompressionBuffer as *mut c_void,
+        crate::gl!(gItemIconDecompressionBuffer) as *mut c_void,
     );
     CopyItemIconPicTo4x4Buffer(
-        gItemIconDecompressionBuffer as *mut c_void,
-        gItemIcon4x4Buffer as *mut c_void,
+        crate::gl!(gItemIconDecompressionBuffer) as *mut c_void,
+        crate::gl!(gItemIcon4x4Buffer) as *mut c_void,
     );
-    sheet.data = gItemIcon4x4Buffer as *mut c_void;
+    sheet.data = crate::gl!(gItemIcon4x4Buffer) as *mut c_void;
     sheet.size = 0x200;
     sheet.tag = tilesTag;
     LoadSpriteSheet(&raw mut sheet);
@@ -2208,7 +2380,7 @@ unsafe fn AddDecorationIconObjectFromIconTable(tilesTag: u16, paletteTag: u16, d
     Free(template as *mut c_void);
     spriteId
 }
-unsafe fn GetDecorationIconPicOrPalette(mut decor: u16, mode: u8) -> *mut u32 {
+fn GetDecorationIconPicOrPalette(mut decor: u16, mode: u8) -> *mut u32 {
     if decor > NUM_DECORATIONS as u16 {
         decor = DECOR_NONE as u16;
     }
@@ -2219,28 +2391,40 @@ unsafe fn AddDecorationIconObjectFromObjectEvent(tilesTag: u16, paletteTag: u16,
     let mut sheet: SpriteSheet = zeroed();
     let mut palette: SpritePalette = zeroed();
     let mut template: *mut SpriteTemplate = null_mut();
-    ClearPlaceDecorationGraphicsDataBuffer(&raw mut sPlaceDecorationGraphicsDataBuffer);
-    sPlaceDecorationGraphicsDataBuffer.decoration = (&raw const gDecorations[decor]).cast_mut();
-    if (*sPlaceDecorationGraphicsDataBuffer.decoration).permission != DECORPERM_SPRITE {
-        SetDecorSelectionMetatiles(&raw mut sPlaceDecorationGraphicsDataBuffer);
-        SetDecorSelectionBoxOamAttributes((*sPlaceDecorationGraphicsDataBuffer.decoration).shape);
-        SetDecorSelectionBoxTiles(&raw mut sPlaceDecorationGraphicsDataBuffer);
+    ClearPlaceDecorationGraphicsDataBuffer(crate::gl!(&raw sPlaceDecorationGraphicsDataBuffer));
+    crate::gl!(
+        sPlaceDecorationGraphicsDataBuffer.decoration = (&raw const gDecorations[decor]).cast_mut()
+    );
+    if (*crate::gl!(sPlaceDecorationGraphicsDataBuffer.decoration)).permission != DECORPERM_SPRITE {
+        SetDecorSelectionMetatiles(crate::gl!(&raw sPlaceDecorationGraphicsDataBuffer));
+        SetDecorSelectionBoxOamAttributes(
+            (*crate::gl!(sPlaceDecorationGraphicsDataBuffer.decoration)).shape,
+        );
+        SetDecorSelectionBoxTiles(crate::gl!(&raw sPlaceDecorationGraphicsDataBuffer));
         CopyPalette(
-            sPlaceDecorationGraphicsDataBuffer.palette.as_mut_ptr(),
+            (*sPlaceDecorationGraphicsDataBuffer.as_ptr())
+                .palette
+                .as_mut_ptr(),
             *(*(*(&raw const crate::data::tilesets::gTilesetPointer_SecretBaseRedCave)
                 .cast::<*mut Tileset>()))
             .metatiles
             .at(
-                *(*sPlaceDecorationGraphicsDataBuffer.decoration).tiles as i32
+                *(*crate::gl!(sPlaceDecorationGraphicsDataBuffer.decoration)).tiles as i32
                     * NUM_TILES_PER_METATILE
                     + 7,
             ) >> 12,
         );
-        sheet.data = sPlaceDecorationGraphicsDataBuffer.image.as_mut_ptr() as *mut c_void;
-        sheet.size = sDecorShapeSizes[(*sPlaceDecorationGraphicsDataBuffer.decoration).shape] * 32;
+        sheet.data = (*sPlaceDecorationGraphicsDataBuffer.as_ptr())
+            .image
+            .as_mut_ptr() as *mut c_void;
+        sheet.size = sDecorShapeSizes
+            [(*crate::gl!(sPlaceDecorationGraphicsDataBuffer.decoration)).shape]
+            * 32;
         sheet.tag = tilesTag;
         LoadSpriteSheet(&raw mut sheet);
-        palette.data = sPlaceDecorationGraphicsDataBuffer.palette.as_mut_ptr();
+        palette.data = (*sPlaceDecorationGraphicsDataBuffer.as_ptr())
+            .palette
+            .as_mut_ptr();
         palette.tag = paletteTag;
         LoadSpritePalette(&raw mut palette);
         template = Alloc(24) as *mut SpriteTemplate;
@@ -2251,7 +2435,7 @@ unsafe fn AddDecorationIconObjectFromObjectEvent(tilesTag: u16, paletteTag: u16,
         Free(template as *mut c_void);
     } else {
         spriteId = CreateObjectGraphicsSprite(
-            *(*sPlaceDecorationGraphicsDataBuffer.decoration).tiles,
+            *(*crate::gl!(sPlaceDecorationGraphicsDataBuffer.decoration)).tiles,
             Some(SpriteCallbackDummy),
             0,
             0,
@@ -2274,33 +2458,35 @@ pub unsafe fn AddDecorationIconObject(
         if spriteId == MAX_SPRITES {
             return MAX_SPRITES;
         }
-        gSprites[spriteId].x2 = x + 4;
-        gSprites[spriteId].y2 = y + 4;
+        crate::gl!(gSprites[spriteId].x2 = x + 4);
+        crate::gl!(gSprites[spriteId].y2 = y + 4);
     } else if gDecorIconTable[decor][0].is_null() {
         spriteId = AddDecorationIconObjectFromObjectEvent(tilesTag, paletteTag, decor);
         if spriteId == MAX_SPRITES {
             return MAX_SPRITES;
         }
-        gSprites[spriteId].x2 = x;
+        crate::gl!(gSprites[spriteId].x2 = x);
         if decor == DECOR_SILVER_SHIELD || decor == DECOR_GOLD_SHIELD {
-            gSprites[spriteId].y2 = y - 4;
+            crate::gl!(gSprites[spriteId].y2 = y - 4);
         } else {
-            gSprites[spriteId].y2 = y;
+            crate::gl!(gSprites[spriteId].y2 = y);
         }
     } else {
         spriteId = AddDecorationIconObjectFromIconTable(tilesTag, paletteTag, decor);
         if spriteId == MAX_SPRITES {
             return MAX_SPRITES;
         }
-        gSprites[spriteId].x2 = x + 4;
-        gSprites[spriteId].y2 = y + 4;
+        crate::gl!(gSprites[spriteId].x2 = x + 4);
+        crate::gl!(gSprites[spriteId].y2 = y + 4);
     }
-    gSprites[spriteId].oam.set_priority(priority as u16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_priority(priority as u16);
     spriteId
 }
 unsafe fn ClearDecorationContextIndex(idx: u8) {
-    *sDecorationContext.items.at(idx) = DECOR_NONE;
-    *sDecorationContext.pos.at(idx) = 0;
+    *(*sDecorationContext.as_ptr()).items.at(idx) = DECOR_NONE;
+    *(*sDecorationContext.as_ptr()).pos.at(idx) = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn PutAwayDecorationIteration() {
@@ -2308,28 +2494,31 @@ pub unsafe fn PutAwayDecorationIteration() {
     gSpecialVar_Result = FALSE as u16;
     if gSpecialVar_0x8004 == sCurDecorSelectedInRearrangement.get() as u16 {
         gSpecialVar_Result = TRUE as u16;
-    } else if gDecorations[*sDecorationContext.items.at(sDecorRearrangementDataBuffer
-        [*(&raw const crate::ffi::gSpecialVar_0x8004)
+    } else if gDecorations[*(*sDecorationContext.as_ptr()).items.at({
+        let gl_i4 = *(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
-            .cast_mut()]
-    .idx)]
+            .cast_mut();
+        crate::gl!(sDecorRearrangementDataBuffer[gl_i4].idx)
+    })]
     .permission
         == DECORPERM_SPRITE
     {
-        gSpecialVar_0x8005 = sDecorRearrangementDataBuffer
-            [*(&raw const crate::ffi::gSpecialVar_0x8004)
+        gSpecialVar_0x8005 = {
+            let gl_i5 = *(&raw const crate::ffi::gSpecialVar_0x8004)
                 .cast::<u16>()
-                .cast_mut()]
-        .flagId;
-        ClearDecorationContextIndex(
-            sDecorRearrangementDataBuffer[*(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast_mut();
+            crate::gl!(sDecorRearrangementDataBuffer[gl_i5].flagId)
+        };
+        ClearDecorationContextIndex({
+            let gl_i6 = *(&raw const crate::ffi::gSpecialVar_0x8004)
                 .cast::<u16>()
-                .cast_mut()]
-            .idx,
-        );
-        for i in 0..((*gMapHeader.events).objectEventCount as u16) {
-            if (*(*gMapHeader.events).objectEvents.at(i)).flagId == gSpecialVar_0x8005 {
-                gSpecialVar_0x8006 = (*(*gMapHeader.events).objectEvents.at(i)).localId as u16;
+                .cast_mut();
+            crate::gl!(sDecorRearrangementDataBuffer[gl_i6].idx)
+        });
+        for i in 0..((*crate::gl!(gMapHeader.events)).objectEventCount as u16) {
+            if (*(*crate::gl!(gMapHeader.events)).objectEvents.at(i)).flagId == gSpecialVar_0x8005 {
+                gSpecialVar_0x8006 =
+                    (*(*crate::gl!(gMapHeader.events)).objectEvents.at(i)).localId as u16;
                 break;
             }
         }
@@ -2337,9 +2526,10 @@ pub unsafe fn PutAwayDecorationIteration() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetObjectEventLocalIdByFlag() {
-    for i in 0..(*gMapHeader.events).objectEventCount {
-        if (*(*gMapHeader.events).objectEvents.at(i)).flagId == gSpecialVar_0x8004 {
-            gSpecialVar_0x8005 = (*(*gMapHeader.events).objectEvents.at(i)).localId as u16;
+    for i in 0..(*crate::gl!(gMapHeader.events)).objectEventCount {
+        if (*(*crate::gl!(gMapHeader.events)).objectEvents.at(i)).flagId == gSpecialVar_0x8004 {
+            gSpecialVar_0x8005 =
+                (*(*crate::gl!(gMapHeader.events)).objectEvents.at(i)).localId as u16;
             break;
         }
     }
@@ -2352,36 +2542,36 @@ unsafe fn ClearRearrangementNonSprites() {
     let mut perm: u8 = 0;
     let mut i: u8 = 0;
     while i < sCurDecorSelectedInRearrangement.get() {
-        perm = gDecorations[*sDecorationContext
+        perm = gDecorations[*(*sDecorationContext.as_ptr())
             .items
-            .at(sDecorRearrangementDataBuffer[i].idx)]
+            .at(crate::gl!(sDecorRearrangementDataBuffer[i].idx))]
         .permission;
-        posX = (*sDecorationContext
+        posX = (*(*sDecorationContext.as_ptr())
             .pos
-            .at(sDecorRearrangementDataBuffer[i].idx)
+            .at(crate::gl!(sDecorRearrangementDataBuffer[i].idx))
             >> 4) as i32;
-        posY = *sDecorationContext
+        posY = *(*sDecorationContext.as_ptr())
             .pos
-            .at(sDecorRearrangementDataBuffer[i].idx) as i32
+            .at(crate::gl!(sDecorRearrangementDataBuffer[i].idx)) as i32
             & 0x0F;
         if perm != DECORPERM_SPRITE {
             y = 0;
-            while y < sDecorRearrangementDataBuffer[i].height {
+            while y < crate::gl!(sDecorRearrangementDataBuffer[i].height) {
                 x = 0;
-                while x < sDecorRearrangementDataBuffer[i].width {
+                while x < crate::gl!(sDecorRearrangementDataBuffer[i].width) {
                     MapGridSetMetatileEntryAt(
                         posX + MAP_OFFSET + x as i32,
                         posY + MAP_OFFSET - y as i32,
-                        *(*gMapHeader.mapLayout).map.at(posX
+                        *(*crate::gl!(gMapHeader.mapLayout)).map.at(posX
                             + x as i32
-                            + (*gMapHeader.mapLayout).width * (posY - y as i32))
+                            + (*crate::gl!(gMapHeader.mapLayout)).width * (posY - y as i32))
                             | 0x3000,
                     );
                     x += 1;
                 }
                 y += 1;
             }
-            ClearDecorationContextIndex(sDecorRearrangementDataBuffer[i].idx);
+            ClearDecorationContextIndex(crate::gl!(sDecorRearrangementDataBuffer[i].idx));
         }
         i += 1;
     }
@@ -2393,7 +2583,7 @@ pub(crate) unsafe fn Task_PutAwayDecoration(taskId: u8) {
             task_set(taskId, tState, 1);
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 DrawWholeMapView();
                 ScriptContext_SetupScript(
                     (*crate::asmdata::SecretBase_EventScript_PutAwayDecoration
@@ -2424,7 +2614,7 @@ pub(crate) unsafe fn Task_PutAwayDecoration(taskId: u8) {
                 gStringVar4.as_mut_ptr(),
                 Some(ContinuePuttingAwayDecorationsPrompt),
             );
-            if gMapHeader.regionMapSectionId == MAPSEC_SECRET_BASE {
+            if crate::gl!(gMapHeader.regionMapSectionId) == MAPSEC_SECRET_BASE {
                 TryPutSecretBaseVisitOnAir();
             }
         }
@@ -2432,8 +2622,8 @@ pub(crate) unsafe fn Task_PutAwayDecoration(taskId: u8) {
     }
 }
 unsafe fn HasDecorationsInUse(taskId: u8) -> u8 {
-    for i in 0..(sDecorationContext.size as u16) {
-        if *sDecorationContext.items.at(i) != DECOR_NONE {
+    for i in 0..(crate::gl!(sDecorationContext.size) as u16) {
+        if *(*sDecorationContext.as_ptr()).items.at(i) != DECOR_NONE {
             return TRUE;
         }
     }
@@ -2441,15 +2631,22 @@ unsafe fn HasDecorationsInUse(taskId: u8) -> u8 {
 }
 unsafe fn SetUpPuttingAwayDecorationPlayerAvatar() {
     GetPlayerFacingDirection();
-    sDecor_CameraSpriteObjectIdx1.set(gSprites[gFieldCamera.spriteId].data[0] as u8);
+    sDecor_CameraSpriteObjectIdx1.set(
+        ({
+            let gl_i24 = crate::gl!(gFieldCamera.spriteId);
+            crate::gl!(gSprites[gl_i24].data[0])
+        }) as u8,
+    );
     LoadPlayerSpritePalette();
-    gFieldCamera.spriteId = CreateSprite(
-        (&raw const *sPuttingAwayCursorSpriteTemplate).cast_mut(),
-        120,
-        80,
-        0,
-    ) as u32;
-    if (*gSaveBlock2Ptr).playerGender == MALE {
+    crate::gl!(
+        gFieldCamera.spriteId = CreateSprite(
+            (&raw const *sPuttingAwayCursorSpriteTemplate).cast_mut(),
+            120,
+            80,
+            0,
+        ) as u32
+    );
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
         sDecor_CameraSpriteObjectIdx2.set(CreateObjectGraphicsSprite(
             OBJ_EVENT_GFX_BRENDAN_DECORATING,
             Some(SpriteCallbackDummy),
@@ -2466,12 +2663,15 @@ unsafe fn SetUpPuttingAwayDecorationPlayerAvatar() {
             0,
         ));
     }
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()]
+    (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx2.get()]
         .oam
         .set_priority(1);
-    DestroySprite(&raw mut gSprites[sDecor_CameraSpriteObjectIdx1.get()]);
-    sDecor_CameraSpriteObjectIdx1.set(gFieldCamera.spriteId as u8);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()]
+    DestroySprite({
+        let gl_i25 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(&raw gSprites[gl_i25])
+    });
+    sDecor_CameraSpriteObjectIdx1.set(crate::gl!(gFieldCamera.spriteId) as u8);
+    (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx1.get()]
         .oam
         .set_priority(1);
 }
@@ -2480,7 +2680,7 @@ pub(crate) unsafe fn Task_ContinuePuttingAwayDecorations(taskId: u8) {
     data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data.at(2) {
         0 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetInitialPositions(taskId);
                 *data.at(2) = 1;
                 *data.at(6) = 1;
@@ -2501,11 +2701,23 @@ pub(crate) unsafe fn Task_ContinuePuttingAwayDecorations(taskId: u8) {
 }
 pub(crate) unsafe fn ContinuePuttingAwayDecorations(taskId: u8) {
     ClearDialogWindowAndFrame(0, TRUE);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].data[7] = 0;
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(FALSE as u16);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].callback = Some(InitializeCameraSprite1);
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()].x = 136;
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()].y = 72;
+    {
+        let gl_i26 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i26].data[7] = 0)
+    };
+    (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(FALSE as u16);
+    {
+        let gl_i27 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i27].callback = Some(InitializeCameraSprite1))
+    };
+    {
+        let gl_i28 = sDecor_CameraSpriteObjectIdx2.get();
+        crate::gl!(gSprites[gl_i28].x = 136)
+    };
+    {
+        let gl_i29 = sDecor_CameraSpriteObjectIdx2.get();
+        crate::gl!(gSprites[gl_i29].y = 72)
+    };
     task_set(taskId, tButton, 0);
     task_set_func(taskId, Some(Task_SelectLocation));
 }
@@ -2517,8 +2729,11 @@ pub(crate) unsafe fn AttemptPutAwayDecoration(taskId: u8) {
 pub(crate) unsafe fn AttemptCancelPutAwayDecoration(taskId: u8) {
     task_set(taskId, tButton, 0);
     ResetCursorMovement();
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(FALSE as u16);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].callback = Some(SpriteCallbackDummy);
+    (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(FALSE as u16);
+    {
+        let gl_i30 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i30].callback = Some(SpriteCallbackDummy))
+    };
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_StopPuttingAwayDecorations)
@@ -2555,8 +2770,11 @@ unsafe fn AttemptPutAwayDecoration_(taskId: u8) {
         if MetatileBehavior_IsSecretBasePC(behavior) == TRUE
             || MetatileBehavior_IsPlayerRoomPCOn(behavior) == TRUE
         {
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(FALSE as u16);
-            gSprites[sDecor_CameraSpriteObjectIdx1.get()].callback = Some(SpriteCallbackDummy);
+            (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(FALSE as u16);
+            {
+                let gl_i31 = sDecor_CameraSpriteObjectIdx1.get();
+                crate::gl!(gSprites[gl_i31].callback = Some(SpriteCallbackDummy))
+            };
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_StopPuttingAwayDecorations)
@@ -2586,7 +2804,9 @@ unsafe fn AttemptPutAwayDecoration_(taskId: u8) {
     }
 }
 pub(crate) unsafe fn ContinuePuttingAwayDecorationsPrompt(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         ContinuePuttingAwayDecorations(taskId);
     }
 }
@@ -2624,10 +2844,19 @@ unsafe fn SetDecorRearrangementShape(decor: u8, data: *mut DecorRearrangementDat
     }
 }
 unsafe fn SetCameraSpritePosition(x: u8, y: u8) {
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(TRUE as u16);
-    gSprites[sDecor_CameraSpriteObjectIdx1.get()].callback = Some(SpriteCallbackDummy);
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()].x = x as i16 * 16 + 136;
-    gSprites[sDecor_CameraSpriteObjectIdx2.get()].y = y as i16 * 16 + 72;
+    (*gSprites.as_ptr())[sDecor_CameraSpriteObjectIdx1.get()].set_invisible(TRUE as u16);
+    {
+        let gl_i32 = sDecor_CameraSpriteObjectIdx1.get();
+        crate::gl!(gSprites[gl_i32].callback = Some(SpriteCallbackDummy))
+    };
+    {
+        let gl_i33 = sDecor_CameraSpriteObjectIdx2.get();
+        crate::gl!(gSprites[gl_i33].x = x as i16 * 16 + 136)
+    };
+    {
+        let gl_i34 = sDecor_CameraSpriteObjectIdx2.get();
+        crate::gl!(gSprites[gl_i34].y = y as i16 * 16 + 72)
+    };
 }
 unsafe fn DecorationIsUnderCursor(
     taskId: u8,
@@ -2636,10 +2865,10 @@ unsafe fn DecorationIsUnderCursor(
 ) -> u8 {
     let x: u8 = task_get(taskId, tCursorX) as u8 - MAP_OFFSET as u8;
     let y: u8 = task_get(taskId, tCursorY) as u8 - MAP_OFFSET as u8;
-    let xOff: u8 = *sDecorationContext.pos.at(idx) >> 4;
-    let yOff: u8 = *sDecorationContext.pos.at(idx) & 0x0F;
+    let xOff: u8 = *(*sDecorationContext.as_ptr()).pos.at(idx) >> 4;
+    let yOff: u8 = *(*sDecorationContext.as_ptr()).pos.at(idx) & 0x0F;
     let mut ht: u8 = (*data).height;
-    if *sDecorationContext.items.at(idx) == DECOR_SAND_ORNAMENT
+    if *(*sDecorationContext.as_ptr()).items.at(idx) == DECOR_SAND_ORNAMENT
         && MapGridGetMetatileIdAt(xOff as i32 + MAP_OFFSET, yOff as i32 + MAP_OFFSET)
             == METATILE_SecretBase_SandOrnament_BrokenBase
     {
@@ -2656,39 +2885,46 @@ unsafe fn DecorationIsUnderCursor(
     FALSE
 }
 unsafe fn SetDecorRearrangementFlagIdIfFlagUnset() {
-    let xOff: u8 = *sDecorationContext
-        .pos
-        .at(sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement.get()].idx)
-        >> 4;
-    let yOff: u8 = *sDecorationContext
-        .pos
-        .at(sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement.get()].idx)
-        & 0x0F;
+    let xOff: u8 = *(*sDecorationContext.as_ptr()).pos.at({
+        let gl_i7 = sCurDecorSelectedInRearrangement.get();
+        crate::gl!(sDecorRearrangementDataBuffer[gl_i7].idx)
+    }) >> 4;
+    let yOff: u8 = *(*sDecorationContext.as_ptr()).pos.at({
+        let gl_i8 = sCurDecorSelectedInRearrangement.get();
+        crate::gl!(sDecorRearrangementDataBuffer[gl_i8].idx)
+    }) & 0x0F;
     for i in 0..(OBJECT_EVENT_TEMPLATES_COUNT as u16) {
-        if (*gSaveBlock1Ptr).objectEventTemplates[i].x == xOff as i16
-            && (*gSaveBlock1Ptr).objectEventTemplates[i].y == yOff as i16
-            && FlagGet((*gSaveBlock1Ptr).objectEventTemplates[i].flagId) == 0
+        if (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i].x == xOff as i16
+            && (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i].y == yOff as i16
+            && FlagGet((*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i].flagId) == 0
         {
-            sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement.get()].flagId =
-                (*gSaveBlock1Ptr).objectEventTemplates[i].flagId;
+            {
+                let gl_v = (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i].flagId;
+                let gl_i9 = sCurDecorSelectedInRearrangement.get();
+                crate::gl!(sDecorRearrangementDataBuffer[gl_i9].flagId = gl_v)
+            };
             break;
         }
     }
 }
 unsafe fn AttemptMarkSpriteDecorUnderCursorForRemoval(taskId: u8) -> u8 {
     let mut i: u16 = 0;
-    while i < sDecorationContext.size as u16 {
-        if *sDecorationContext.items.at(i) != DECOR_NONE
-            && gDecorations[*sDecorationContext.items.at(i)].permission == DECORPERM_SPRITE
+    while i < crate::gl!(sDecorationContext.size) as u16 {
+        if *(*sDecorationContext.as_ptr()).items.at(i) != DECOR_NONE
+            && gDecorations[*(*sDecorationContext.as_ptr()).items.at(i)].permission
+                == DECORPERM_SPRITE
         {
             SetDecorRearrangementShape(
-                *sDecorationContext.items.at(i),
-                sDecorRearrangementDataBuffer.as_mut_ptr(),
+                *(*sDecorationContext.as_ptr()).items.at(i),
+                (*sDecorRearrangementDataBuffer.as_ptr()).as_mut_ptr(),
             );
-            if DecorationIsUnderCursor(taskId, i as u8, sDecorRearrangementDataBuffer.as_mut_ptr())
-                == TRUE
+            if DecorationIsUnderCursor(
+                taskId,
+                i as u8,
+                (*sDecorRearrangementDataBuffer.as_ptr()).as_mut_ptr(),
+            ) == TRUE
             {
-                (*sDecorRearrangementDataBuffer.as_mut_ptr()).idx = i as u8;
+                (*(*sDecorRearrangementDataBuffer.as_ptr()).as_mut_ptr()).idx = i as u8;
                 SetDecorRearrangementFlagIdIfFlagUnset();
                 sCurDecorSelectedInRearrangement.set(1);
                 return TRUE;
@@ -2703,10 +2939,10 @@ unsafe fn MarkSpriteDecorsInBoundsForRemoval(left: u8, top: u8, right: u8, botto
     let mut yOff: u8 = 0;
     let mut decor: u8 = 0;
     let mut i: u8 = 0;
-    while i < sDecorationContext.size {
-        decor = *sDecorationContext.items.at(i);
-        xOff = *sDecorationContext.pos.at(i) >> 4;
-        yOff = *sDecorationContext.pos.at(i) & 0x0F;
+    while i < crate::gl!(sDecorationContext.size) {
+        decor = *(*sDecorationContext.as_ptr()).items.at(i);
+        xOff = *(*sDecorationContext.as_ptr()).pos.at(i) >> 4;
+        yOff = *(*sDecorationContext.as_ptr()).pos.at(i) & 0x0F;
         if decor != DECOR_NONE
             && gDecorations[decor].permission == DECORPERM_SPRITE
             && left <= xOff
@@ -2714,7 +2950,11 @@ unsafe fn MarkSpriteDecorsInBoundsForRemoval(left: u8, top: u8, right: u8, botto
             && right >= xOff
             && bottom >= yOff
         {
-            sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement.get()].idx = i;
+            {
+                let gl_v = i;
+                let gl_i10 = sCurDecorSelectedInRearrangement.get();
+                crate::gl!(sDecorRearrangementDataBuffer[gl_i10].idx = gl_v)
+            };
             SetDecorRearrangementFlagIdIfFlagUnset();
             sCurDecorSelectedInRearrangement.set(sCurDecorSelectedInRearrangement.get() + 1);
         }
@@ -2730,14 +2970,17 @@ unsafe fn AttemptMarkDecorUnderCursorForRemoval(taskId: u8) {
     sCurDecorSelectedInRearrangement.set(0);
     if AttemptMarkSpriteDecorUnderCursorForRemoval(taskId) != TRUE {
         i = 0;
-        while i < sDecorationContext.size {
-            var1 = *sDecorationContext.items.at(i);
+        while i < crate::gl!(sDecorationContext.size) {
+            var1 = *(*sDecorationContext.as_ptr()).items.at(i);
             if var1 != DECOR_NONE {
-                SetDecorRearrangementShape(var1, &raw mut sDecorRearrangementDataBuffer[0]);
-                if DecorationIsUnderCursor(taskId, i, &raw mut sDecorRearrangementDataBuffer[0])
-                    == TRUE
+                SetDecorRearrangementShape(var1, crate::gl!(&raw sDecorRearrangementDataBuffer[0]));
+                if DecorationIsUnderCursor(
+                    taskId,
+                    i,
+                    crate::gl!(&raw sDecorRearrangementDataBuffer[0]),
+                ) == TRUE
                 {
-                    sDecorRearrangementDataBuffer[0].idx = i;
+                    crate::gl!(sDecorRearrangementDataBuffer[0].idx = i);
                     sCurDecorSelectedInRearrangement
                         .set(sCurDecorSelectedInRearrangement.get() + 1);
                     break;
@@ -2746,16 +2989,16 @@ unsafe fn AttemptMarkDecorUnderCursorForRemoval(taskId: u8) {
             i += 1;
         }
         if sCurDecorSelectedInRearrangement.get() != 0 {
-            xOff = *sDecorationContext
+            xOff = *(*sDecorationContext.as_ptr())
                 .pos
-                .at(sDecorRearrangementDataBuffer[0].idx)
+                .at(crate::gl!(sDecorRearrangementDataBuffer[0].idx))
                 >> 4;
-            yOff = *sDecorationContext
+            yOff = *(*sDecorationContext.as_ptr())
                 .pos
-                .at(sDecorRearrangementDataBuffer[0].idx)
+                .at(crate::gl!(sDecorRearrangementDataBuffer[0].idx))
                 & 0x0F;
-            var1 = yOff - sDecorRearrangementDataBuffer[0].height + 1;
-            var2 = sDecorRearrangementDataBuffer[0].width as u32 + xOff as u32 - 1;
+            var1 = yOff - crate::gl!(sDecorRearrangementDataBuffer[0].height) + 1;
+            var2 = crate::gl!(sDecorRearrangementDataBuffer[0].width) as u32 + xOff as u32 - 1;
             MarkSpriteDecorsInBoundsForRemoval(xOff, var1, var2 as u8, yOff);
         }
     }
@@ -2791,14 +3034,14 @@ unsafe fn StopPuttingAwayDecorations_(taskId: u8) {
 pub(crate) unsafe fn Task_StopPuttingAwayDecorations(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 WarpToInitialPosition(taskId);
                 task_set(taskId, tState, 1);
             }
         }
         1 => {
             FreePlayerSpritePalette();
-            gFieldCallback = Some(FieldCB_StopPuttingAwayDecorations);
+            crate::gl!(gFieldCallback = Some(FieldCB_StopPuttingAwayDecorations));
             SetMainCallback2(Some(CB2_ReturnToField));
             DestroyTask(taskId);
         }
@@ -2847,7 +3090,7 @@ pub(crate) unsafe fn InitializeCameraSprite1(sprite: *mut Sprite) {
     }
 }
 unsafe fn LoadPlayerSpritePalette() {
-    if (*gSaveBlock2Ptr).playerGender == MALE {
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
         LoadSpritePalette((&raw const *sSpritePal_PuttingAwayCursorBrendan).cast_mut());
     } else {
         LoadSpritePalette((&raw const *sSpritePal_PuttingAwayCursorMay).cast_mut());
@@ -2860,7 +3103,7 @@ pub(crate) unsafe fn DecorationItemsMenuAction_AttemptToss(taskId: u8) {
     if IsSelectedDecorInThePC() == TRUE {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gDecorations[*gCurDecorationItems.at(gCurDecorationIndex.get())]
+            gDecorations[*(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get())]
                 .name
                 .as_ptr()
                 .cast_mut(),
@@ -2895,7 +3138,7 @@ pub(crate) unsafe fn TossDecorationPrompt(taskId: u8) {
     );
 }
 pub(crate) unsafe fn TossDecoration(taskId: u8) {
-    *gCurDecorationItems.at(gCurDecorationIndex.get()) = DECOR_NONE;
+    *(*gCurDecorationItems.as_ptr()).at(gCurDecorationIndex.get()) = DECOR_NONE;
     sNumOwnedDecorationsInCurCategory.set(GetNumOwnedDecorationsInCategory(
         sCurDecorationCategory.get(),
     ));

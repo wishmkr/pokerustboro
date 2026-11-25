@@ -88,14 +88,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -124,10 +124,11 @@ static sTrainerHillWindowTilemap: Table<CArray<u32, 512>> =
 static sTrainerHillWindowTileset: Table<CArray<u32, 48>> =
     Table((&raw const crate::data::battle_records::sTrainerHillWindowTileset).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gRecordsWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTilemapBuffer: *mut u8 = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTilemapBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -159,14 +160,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `SetMainCallback2` with this module's view of its types.
@@ -309,31 +310,36 @@ unsafe fn UpdateLinkBattleRecords(
             PLAYER_NAME_LENGTH as u8,
         );
         (*records).entries[index].trainerId = trainerId;
-        (*records).languages[index] = gLinkPlayers[battler].language as u8;
+        (*records).languages[index] = crate::gl!(gLinkPlayers[battler].language) as u8;
     }
     UpdateLinkBattleRecord(&raw mut (*records).entries[index], battleOutcome);
     SortLinkBattleRecords(records);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ClearPlayerLinkBattleRecords() {
-    ClearLinkBattleRecords((*gSaveBlock1Ptr).linkBattleRecords.entries.as_mut_ptr());
+    ClearLinkBattleRecords(
+        (*crate::gl!(gSaveBlock1Ptr))
+            .linkBattleRecords
+            .entries
+            .as_mut_ptr(),
+    );
 }
 unsafe fn IncTrainerCardWins(battler: i32) {
-    let wins: *mut u16 = &raw mut gTrainerCards[battler].linkBattleWins;
+    let wins: *mut u16 = crate::gl!(&raw gTrainerCards[battler].linkBattleWins);
     *wins += 1;
     if *wins > 9999 {
         *wins = 9999;
     }
 }
 unsafe fn IncTrainerCardLosses(battler: i32) {
-    let losses: *mut u16 = &raw mut gTrainerCards[battler].linkBattleLosses;
+    let losses: *mut u16 = crate::gl!(&raw gTrainerCards[battler].linkBattleLosses);
     *losses += 1;
     if *losses > 9999 {
         *losses = 9999;
     }
 }
 unsafe fn UpdateTrainerCardWinsLosses(battler: i32) {
-    match gBattleOutcome {
+    match gBattleOutcome.get() {
         B_OUTCOME_WON => {
             IncTrainerCardWins(battler ^ 1);
             IncTrainerCardLosses(battler);
@@ -349,10 +355,10 @@ pub unsafe fn UpdatePlayerLinkBattleRecords(battler: i32) {
     if InUnionRoom() != TRUE as u32 {
         UpdateTrainerCardWinsLosses(battler);
         UpdateLinkBattleRecords(
-            &raw mut (*gSaveBlock1Ptr).linkBattleRecords,
-            gTrainerCards[battler].playerName.as_mut_ptr(),
-            gTrainerCards[battler].trainerId,
-            gBattleOutcome as i32,
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).linkBattleRecords,
+            (*gTrainerCards.as_ptr())[battler].playerName.as_mut_ptr(),
+            crate::gl!(gTrainerCards[battler].trainerId),
+            gBattleOutcome.get() as i32,
             battler as u8,
         );
     }
@@ -365,13 +371,13 @@ unsafe fn PrintLinkBattleWinsLossesDraws(records: *mut LinkBattleRecord) {
         4,
     );
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         GetGameStat(GAME_STAT_LINK_BATTLE_LOSSES) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         4,
     );
     ConvertIntToDecimalStringN(
-        gStringVar3.as_mut_ptr(),
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
         GetGameStat(GAME_STAT_LINK_BATTLE_DRAWS) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         4,
@@ -512,7 +518,12 @@ pub unsafe fn ShowLinkBattleRecords() {
         0,
         None,
     );
-    PrintLinkBattleWinsLossesDraws((*gSaveBlock1Ptr).linkBattleRecords.entries.as_mut_ptr());
+    PrintLinkBattleWinsLossesDraws(
+        (*crate::gl!(gSaveBlock1Ptr))
+            .linkBattleRecords
+            .entries
+            .as_mut_ptr(),
+    );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_WinLoseDraw).cast::<CArray<u8, 0>>())
@@ -530,9 +541,9 @@ pub unsafe fn ShowLinkBattleRecords() {
     );
     for i in 0..LINK_B_RECORDS_COUNT {
         PrintLinkBattleRecord(
-            &raw mut (*gSaveBlock1Ptr).linkBattleRecords.entries[i],
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).linkBattleRecords.entries[i],
             7 + i as u8 * 2,
-            (*gSaveBlock1Ptr).linkBattleRecords.languages[i] as i32,
+            (*crate::gl!(gSaveBlock1Ptr)).linkBattleRecords.languages[i] as i32,
         );
     }
     PutWindowTilemap(gRecordsWindowId.get());
@@ -544,13 +555,15 @@ pub unsafe fn RemoveRecordsWindow() {
     RemoveWindow(gRecordsWindowId.get());
 }
 pub(crate) unsafe fn Task_TrainerHillWaitForPaletteFade(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set_func(taskId, Some(Task_CloseTrainerHillRecordsOnButton));
     }
 }
 pub(crate) unsafe fn Task_CloseTrainerHillRecordsOnButton(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         PlaySE(SE_SELECT);
         (*task).func = Some(Task_BeginPaletteFade);
     }
@@ -560,9 +573,9 @@ pub(crate) unsafe fn Task_BeginPaletteFade(taskId: u8) {
     task_set_func(taskId, Some(Task_ExitTrainerHillRecords));
 }
 pub(crate) unsafe fn Task_ExitTrainerHillRecords(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-        Free(sTilemapBuffer as *mut c_void);
+        Free(crate::gl!(sTilemapBuffer) as *mut c_void);
         RemoveTrainerHillRecordsWindow(0);
         FreeAllWindowBuffers();
         DestroyTask(taskId);
@@ -737,45 +750,45 @@ pub unsafe fn ShowTrainerHillRecords() {
     SetMainCallback2(Some(CB2_ShowTrainerHillRecords));
 }
 pub(crate) unsafe fn CB2_ShowTrainerHillRecords() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankCallback(None);
             ClearVramOamPlttRegs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             ClearTasksAndGraphicalStructs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
-            sTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+            crate::gl!(sTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8);
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(0, sTrainerHillRecordsBgTemplates.as_ptr().cast_mut(), 2);
-            SetBgTilemapBuffer(3, sTilemapBuffer as *mut c_void);
+            SetBgTilemapBuffer(3, crate::gl!(sTilemapBuffer) as *mut c_void);
             ResetBgCoordinates();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             LoadTrainerHillRecordsWindowGfx(3);
             LoadPalette(GetTextWindowPalette(0) as *mut c_void, 240, 32);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             if IsDma3ManagerBusyWithBgCopy() != TRUE {
                 ShowBg(0);
                 ShowBg(3);
                 CopyBgTilemapBufferToVram(3);
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         5 => {
             InitWindows(sTrainerHillRecordsWindowTemplates.as_ptr().cast_mut());
             DeactivateAllTextPrinters();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             SetDispcntReg();
@@ -783,7 +796,7 @@ pub(crate) unsafe fn CB2_ShowTrainerHillRecords() {
             PrintOnTrainerHillRecordsWindow();
             CreateTask(Some(Task_TrainerHillWaitForPaletteFade), 8);
             SetMainCallback2(Some(MainCB2_TrainerHillRecords));
-            gMain.state = 0;
+            crate::gl!(gMain.state = 0);
         }
         _ => {}
     }

@@ -298,7 +298,7 @@ pub unsafe fn BlendPalette(pal_offset: u16, num_entries: u16, coeff: u8, blend_c
     while i < num_entries {
         let index = (i + pal_offset) as usize;
         let color = unsafe {
-            (&raw const (*(&raw const crate::palette::gPlttBufferUnfaded)
+            (&raw const (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast::<u16>()
@@ -314,7 +314,7 @@ pub unsafe fn BlendPalette(pal_offset: u16, num_entries: u16, coeff: u8, blend_c
             b + (((target_b - b) * i32::from(coeff)) >> 4),
         );
         unsafe {
-            (&raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast::<u16>()

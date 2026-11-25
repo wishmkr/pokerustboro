@@ -59,7 +59,7 @@ static sBattleIntroSlideFuncs: Table<CArray<Option<unsafe fn(u8)>, 10>> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -67,15 +67,15 @@ unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 
 pub unsafe fn HandleIntroSlide(mut environment: u8) {
     let mut taskId: u8 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
-        && gPartnerTrainerId != TRAINER_STEVEN_PARTNER
+    if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0
+        && gPartnerTrainerId.get() != TRAINER_STEVEN_PARTNER
     {
         taskId = CreateTask(Some(BattleIntroSlidePartner), 0);
-    } else if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
         taskId = CreateTask(Some(BattleIntroSlideLink), 0);
-    } else if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
         taskId = CreateTask(Some(BattleIntroSlide3), 0);
-    } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_KYOGRE_GROUDON != 0
         && gGameVersion != VERSION_RUBY as u8
     {
         environment = BATTLE_ENVIRONMENT_UNDERWATER;
@@ -93,10 +93,10 @@ pub unsafe fn HandleIntroSlide(mut environment: u8) {
 }
 unsafe fn BattleIntroSlideEnd(taskId: u8) {
     DestroyTask(taskId);
-    gBattle_BG1_X = 0;
-    gBattle_BG1_Y = 0;
-    gBattle_BG2_X = 0;
-    gBattle_BG2_Y = 0;
+    gBattle_BG1_X.set(0);
+    gBattle_BG1_Y.set(0);
+    gBattle_BG2_X.set(0);
+    gBattle_BG2_Y.set(0);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
     SetGpuReg(REG_OFFSET_BLDY, 0);
@@ -105,10 +105,10 @@ unsafe fn BattleIntroSlideEnd(taskId: u8) {
 }
 pub(crate) unsafe fn BattleIntroSlide1(taskId: u8) {
     let mut i: i32 = 0;
-    gBattle_BG1_X += 6;
+    gBattle_BG1_X.set(gBattle_BG1_X.get() + (6));
     match task_get(taskId, tState) {
         0 => {
-            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
                 task_set(taskId, 2, 16);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             } else {
@@ -127,12 +127,12 @@ pub(crate) unsafe fn BattleIntroSlide1(taskId: u8) {
             }
         }
         2 => {
-            gBattle_WIN0V -= 0xFF;
-            if gBattle_WIN0V as i32 & 0xFF00 == 0x3000 {
+            gBattle_WIN0V.set(gBattle_WIN0V.get() - (0xFF));
+            if gBattle_WIN0V.get() as i32 & 0xFF00 == 0x3000 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
                 task_set(taskId, 2, DISPLAY_WIDTH as i16);
                 task_set(taskId, 3, 32);
-                gIntroSlideFlags &= 65534;
+                gIntroSlideFlags.set(gIntroSlideFlags.get() & (65534));
             }
         }
         3 => {
@@ -140,42 +140,46 @@ pub(crate) unsafe fn BattleIntroSlide1(taskId: u8) {
                 task_set(taskId, 3, task_get(taskId, 3) - 1);
             } else {
                 if task_get(taskId, tEnvironment) == BATTLE_ENVIRONMENT_LONG_GRASS as i16 {
-                    if gBattle_BG1_Y != 65456 {
-                        gBattle_BG1_Y -= 2;
+                    if gBattle_BG1_Y.get() != 65456 {
+                        gBattle_BG1_Y.set(gBattle_BG1_Y.get() - (2));
                     }
                 } else {
-                    if gBattle_BG1_Y != 65480 {
-                        gBattle_BG1_Y -= 1;
+                    if gBattle_BG1_Y.get() != 65480 {
+                        gBattle_BG1_Y.set(gBattle_BG1_Y.get() - (1));
                     }
                 }
             }
-            if gBattle_WIN0V as i32 & 0xFF00 != 0 {
-                gBattle_WIN0V -= 0x3FC;
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() - (0x3FC));
             }
             if task_get(taskId, 2) != 0 {
                 task_set(taskId, 2, task_get(taskId, 2) - 2);
             }
             i = 0;
             while i < 80 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = task_get(taskId, 2) as u16;
                 i += 1;
             }
             while i < DISPLAY_HEIGHT as i32 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = (task_get(taskId, 2) as u16).wrapping_neg();
                 i += 1;
             }
             if task_get(taskId, 2) == 0 {
-                (*(&raw const crate::scanline_effect::gScanlineEffect)
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                     .cast::<ScanlineEffect>()
                     .cast_mut())
                 .state = 3;
@@ -207,15 +211,15 @@ pub(crate) unsafe fn BattleIntroSlide2(taskId: u8) {
     let mut i: i32 = 0;
     match task_get(taskId, tEnvironment) {
         2 | 4 => {
-            gBattle_BG1_X += 8;
+            gBattle_BG1_X.set(gBattle_BG1_X.get() + (8));
         }
         3 => {
-            gBattle_BG1_X += 6;
+            gBattle_BG1_X.set(gBattle_BG1_X.get() + (6));
         }
         _ => {}
     }
     if task_get(taskId, tEnvironment) == BATTLE_ENVIRONMENT_WATER as i16 {
-        gBattle_BG1_Y = (Cos2(task_get(taskId, 6) as u16) / 512) as u16 - 8;
+        gBattle_BG1_Y.set((Cos2(task_get(taskId, 6) as u16) / 512) as u16 - 8);
         if task_get(taskId, 6) < 180 {
             task_set(taskId, 6, task_get(taskId, 6) + 4);
         } else {
@@ -228,7 +232,7 @@ pub(crate) unsafe fn BattleIntroSlide2(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             task_set(taskId, 4, 16);
-            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
                 task_set(taskId, 2, 16);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             } else {
@@ -247,13 +251,13 @@ pub(crate) unsafe fn BattleIntroSlide2(taskId: u8) {
             }
         }
         2 => {
-            gBattle_WIN0V -= 0xFF;
-            if gBattle_WIN0V as i32 & 0xFF00 == 0x3000 {
+            gBattle_WIN0V.set(gBattle_WIN0V.get() - (0xFF));
+            if gBattle_WIN0V.get() as i32 & 0xFF00 == 0x3000 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
                 task_set(taskId, 2, DISPLAY_WIDTH as i16);
                 task_set(taskId, 3, 32);
                 task_set(taskId, 5, 1);
-                gIntroSlideFlags &= 65534;
+                gIntroSlideFlags.set(gIntroSlideFlags.get() & (65534));
             }
         }
         3 => {
@@ -278,33 +282,37 @@ pub(crate) unsafe fn BattleIntroSlide2(taskId: u8) {
                     task_set(taskId, 5, 4);
                 }
             }
-            if gBattle_WIN0V as i32 & 0xFF00 != 0 {
-                gBattle_WIN0V -= 0x3FC;
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() - (0x3FC));
             }
             if task_get(taskId, 2) != 0 {
                 task_set(taskId, 2, task_get(taskId, 2) - 2);
             }
             i = 0;
             while i < 80 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = task_get(taskId, 2) as u16;
                 i += 1;
             }
             while i < DISPLAY_HEIGHT as i32 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = (task_get(taskId, 2) as u16).wrapping_neg();
                 i += 1;
             }
             if task_get(taskId, 2) == 0 {
-                (*(&raw const crate::scanline_effect::gScanlineEffect)
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                     .cast::<ScanlineEffect>()
                     .cast_mut())
                 .state = 3;
@@ -337,14 +345,14 @@ pub(crate) unsafe fn BattleIntroSlide2(taskId: u8) {
 }
 pub(crate) unsafe fn BattleIntroSlide3(taskId: u8) {
     let mut i: i32 = 0;
-    gBattle_BG1_X += 8;
+    gBattle_BG1_X.set(gBattle_BG1_X.get() + (8));
     match task_get(taskId, tState) {
         0 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 6210);
             SetGpuReg(REG_OFFSET_BLDALPHA, 2056);
             SetGpuReg(REG_OFFSET_BLDY, 0);
             task_set(taskId, 4, 2056);
-            if gBattleTypeFlags & 0x2000002 != 0 {
+            if gBattleTypeFlags.get() & 0x2000002 != 0 {
                 task_set(taskId, 2, 16);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             } else {
@@ -363,13 +371,13 @@ pub(crate) unsafe fn BattleIntroSlide3(taskId: u8) {
             }
         }
         2 => {
-            gBattle_WIN0V -= 0xFF;
-            if gBattle_WIN0V as i32 & 0xFF00 == 0x3000 {
+            gBattle_WIN0V.set(gBattle_WIN0V.get() - (0xFF));
+            if gBattle_WIN0V.get() as i32 & 0xFF00 == 0x3000 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
                 task_set(taskId, 2, DISPLAY_WIDTH as i16);
                 task_set(taskId, 3, 32);
                 task_set(taskId, 5, 1);
-                gIntroSlideFlags &= 65534;
+                gIntroSlideFlags.set(gIntroSlideFlags.get() & (65534));
             }
         }
         3 => {
@@ -386,33 +394,37 @@ pub(crate) unsafe fn BattleIntroSlide3(taskId: u8) {
                     task_set(taskId, 5, 6);
                 }
             }
-            if gBattle_WIN0V as i32 & 0xFF00 != 0 {
-                gBattle_WIN0V -= 0x3FC;
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() - (0x3FC));
             }
             if task_get(taskId, 2) != 0 {
                 task_set(taskId, 2, task_get(taskId, 2) - 2);
             }
             i = 0;
             while i < 80 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = task_get(taskId, 2) as u16;
                 i += 1;
             }
             while i < DISPLAY_HEIGHT as i32 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = (task_get(taskId, 2) as u16).wrapping_neg();
                 i += 1;
             }
             if task_get(taskId, 2) == 0 {
-                (*(&raw const crate::scanline_effect::gScanlineEffect)
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                     .cast::<ScanlineEffect>()
                     .cast_mut())
                 .state = 3;
@@ -446,10 +458,10 @@ pub(crate) unsafe fn BattleIntroSlide3(taskId: u8) {
 pub(crate) unsafe fn BattleIntroSlideLink(taskId: u8) {
     let mut i: i32 = 0;
     if task_get(taskId, tState) > 1 && task_get(taskId, 4) == 0 {
-        let var0: u16 = gBattle_BG1_X & 0x8000;
-        if var0 != 0 || gBattle_BG1_X < 80 {
-            gBattle_BG1_X += 3;
-            gBattle_BG2_X -= 3;
+        let var0: u16 = gBattle_BG1_X.get() & 0x8000;
+        if var0 != 0 || gBattle_BG1_X.get() < 80 {
+            gBattle_BG1_X.set(gBattle_BG1_X.get() + (3));
+            gBattle_BG2_X.set(gBattle_BG2_X.get() - (3));
         } else {
             {
                 {
@@ -488,57 +500,61 @@ pub(crate) unsafe fn BattleIntroSlideLink(taskId: u8) {
             }) == 0
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_V]
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V]
                     .oam
                     .set_objMode(ST_OAM_OBJ_WINDOW);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].callback =
-                    Some(SpriteCB_VsLetterInit);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S]
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_V]
+                    .callback = Some(SpriteCB_VsLetterInit);
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S]
                     .oam
                     .set_objMode(ST_OAM_OBJ_WINDOW);
-                gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].callback =
-                    Some(SpriteCB_VsLetterInit);
+                (*gSprites.as_ptr())[(*crate::gl!(gBattleStruct)).linkBattleVsSpriteId_S]
+                    .callback = Some(SpriteCB_VsLetterInit);
                 SetGpuReg(REG_OFFSET_WININ, 63);
                 SetGpuReg(REG_OFFSET_WINOUT, 16134);
             }
         }
         2 => {
-            gBattle_WIN0V -= 0xFF;
-            if gBattle_WIN0V as i32 & 0xFF00 == 0x3000 {
+            gBattle_WIN0V.set(gBattle_WIN0V.get() - (0xFF));
+            if gBattle_WIN0V.get() as i32 & 0xFF00 == 0x3000 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
                 task_set(taskId, 2, DISPLAY_WIDTH as i16);
                 task_set(taskId, 3, 32);
-                gIntroSlideFlags &= 65534;
+                gIntroSlideFlags.set(gIntroSlideFlags.get() & (65534));
             }
         }
         3 => {
-            if gBattle_WIN0V as i32 & 0xFF00 != 0 {
-                gBattle_WIN0V -= 0x3FC;
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() - (0x3FC));
             }
             if task_get(taskId, 2) != 0 {
                 task_set(taskId, 2, task_get(taskId, 2) - 2);
             }
             i = 0;
             while i < 80 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = task_get(taskId, 2) as u16;
                 i += 1;
             }
             while i < DISPLAY_HEIGHT as i32 {
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer][i] = (task_get(taskId, 2) as u16).wrapping_neg();
                 i += 1;
             }
             if task_get(taskId, 2) == 0 {
-                (*(&raw const crate::scanline_effect::gScanlineEffect)
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                     .cast::<ScanlineEffect>()
                     .cast_mut())
                 .state = 3;
@@ -581,42 +597,42 @@ pub(crate) unsafe fn BattleIntroSlidePartner(taskId: u8) {
                 );
                 SetGpuReg(REG_OFFSET_WININ, 15872);
                 SetGpuReg(REG_OFFSET_WINOUT, 16191);
-                gBattle_BG0_Y = 65488;
-                gBattle_BG1_X = DISPLAY_WIDTH;
-                gBattle_BG2_X = 65296;
+                gBattle_BG0_Y.set(65488);
+                gBattle_BG1_X.set(DISPLAY_WIDTH);
+                gBattle_BG2_X.set(65296);
             }
         }
         2 => {
-            gBattle_WIN0V += 0x100;
-            if gBattle_WIN0V as i32 & 0xFF00 != 0x100 {
-                gBattle_WIN0V -= 1;
+            gBattle_WIN0V.set(gBattle_WIN0V.get() + (0x100));
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0x100 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() - (1));
             }
-            if gBattle_WIN0V as i32 & 0xFF00 == 0x2000 {
+            if gBattle_WIN0V.get() as i32 & 0xFF00 == 0x2000 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
                 task_set(taskId, 2, DISPLAY_WIDTH as i16);
-                gIntroSlideFlags &= 65534;
+                gIntroSlideFlags.set(gIntroSlideFlags.get() & (65534));
             }
         }
         3 => {
-            if gBattle_WIN0V as i32 & 0xFF00 != 0x4C00 {
-                gBattle_WIN0V += 0x3FC;
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0x4C00 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() + (0x3FC));
             }
             if task_get(taskId, 2) != 0 {
                 task_set(taskId, 2, task_get(taskId, 2) - 2);
             }
-            gBattle_BG1_X = task_get(taskId, 2) as u16;
-            gBattle_BG2_X = (task_get(taskId, 2) as u16).wrapping_neg();
+            gBattle_BG1_X.set(task_get(taskId, 2) as u16);
+            gBattle_BG2_X.set((task_get(taskId, 2) as u16).wrapping_neg());
             if task_get(taskId, 2) == 0 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         4 => {
-            gBattle_BG0_Y += 2;
-            gBattle_BG2_Y += 2;
-            if gBattle_WIN0V as i32 & 0xFF00 != 0x5000 {
-                gBattle_WIN0V += 0xFF;
+            gBattle_BG0_Y.set(gBattle_BG0_Y.get() + (2));
+            gBattle_BG2_Y.set(gBattle_BG2_Y.get() + (2));
+            if gBattle_WIN0V.get() as i32 & 0xFF00 != 0x5000 {
+                gBattle_WIN0V.set(gBattle_WIN0V.get() + (0xFF));
             }
-            if gBattle_BG0_Y == 0 {
+            if gBattle_BG0_Y.get() == 0 {
                 {
                     {
                         let mut tmp: u32 = 0;
@@ -633,7 +649,7 @@ pub(crate) unsafe fn BattleIntroSlidePartner(taskId: u8) {
                 SetBgAttribute(2, BG_ATTR_CHARBASEINDEX, 0);
                 SetGpuReg(REG_OFFSET_BG1CNT, 39936);
                 SetGpuReg(REG_OFFSET_BG2CNT, 24064);
-                (*(&raw const crate::scanline_effect::gScanlineEffect)
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                     .cast::<ScanlineEffect>()
                     .cast_mut())
                 .state = 3;
@@ -659,8 +675,9 @@ pub unsafe fn DrawBattlerOnBg(
     let battler: u8 = GetBattlerAtPosition(battlerPosition);
     let mut offset: i32 = tilesOffset as i32;
     CpuSet(
-        ((*gMonSpritesGfxPtr).sprites.ptr[battlerPosition] as *mut u8)
-            .at(BG_SCREEN_SIZE as i32 * gBattleMonForms[battler] as i32) as *mut c_void,
+        ((*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[battlerPosition] as *mut u8)
+            .at(BG_SCREEN_SIZE as i32 * crate::gl!(gBattleMonForms[battler]) as i32)
+            as *mut c_void,
         tiles as *mut c_void,
         1024,
     );
@@ -689,7 +706,7 @@ unsafe fn DrawBattlerOnBgDMA(
                 let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                 volatile_write(
                     dmaRegs,
-                    ((*gMonSpritesGfxPtr).sprites.ptr[battlerPosition] as *mut u8)
+                    ((*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[battlerPosition] as *mut u8)
                         .at(BG_SCREEN_SIZE as i32 * arg3 as i32) as *mut c_void
                         as usize as u32,
                 );

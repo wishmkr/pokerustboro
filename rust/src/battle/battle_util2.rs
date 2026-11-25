@@ -113,7 +113,7 @@ unsafe fn GetPartyIdFromBattlePartyId(a0: u8) -> u8 {
 /// `UproarWakeUpCheck` with this module's view of its types.
 #[inline]
 unsafe fn UproarWakeUpCheck(a0: u8) -> u8 {
-    unsafe { crate::battle_script_commands::UproarWakeUpCheck(a0) }
+    crate::battle_script_commands::UproarWakeUpCheck(a0)
 }
 /// `BattleScriptPushCursor` with this module's view of its types.
 #[inline]
@@ -132,21 +132,19 @@ unsafe fn BtlController_EmitSetMonData(a0: u8, a1: u8, a2: u8, a3: u8, a4: *mut 
 /// `MarkBattlerForControllerExec` with this module's view of its types.
 #[inline]
 unsafe fn MarkBattlerForControllerExec(a0: u8) {
-    unsafe {
-        crate::battle_util::MarkBattlerForControllerExec(a0);
-    }
+    crate::battle_util::MarkBattlerForControllerExec(a0);
 }
 
 #[inline]
 fn battle_type_has(flag: u32) -> bool {
-    let flags = unsafe { (&raw const gBattleTypeFlags).read() };
+    let flags = unsafe { (gBattleTypeFlags.as_ptr().cast_const()).read() };
     flags & flag != 0
 }
 
 #[inline]
 unsafe fn battle_mon(battler: u8) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::battle_main::gBattleMons)
+        (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleMons;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(usize::from(battler) * BATTLE_MON_SIZE)
@@ -166,7 +164,7 @@ unsafe fn status(battler: u8, offset: usize) -> *mut u32 {
 #[inline]
 unsafe fn communication(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::battle_main::gBattleCommunication)
+        (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleCommunication;).cast_const())
             .cast::<[u8; 8]>()
             .cast_mut()))
             .cast::<u8>()
@@ -181,14 +179,14 @@ pub unsafe fn AllocateBattleResources() {
     }
 
     unsafe {
-        (&raw mut (*(&raw const crate::battle_main::gBattleStruct)
+        (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleStruct;).cast_const())
             .cast::<*mut u8>()
             .cast_mut()))
             .write(AllocZeroed(BATTLE_STRUCT_SIZE))
     };
     let resources = unsafe { AllocZeroed(RESOURCES_SIZE) }.cast::<*mut u8>();
     unsafe {
-        (&raw mut (*(&raw const crate::battle_main::gBattleResources)
+        (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleResources;).cast_const())
             .cast::<*mut *mut u8>()
             .cast_mut()))
             .write(resources)
@@ -197,15 +195,15 @@ pub unsafe fn AllocateBattleResources() {
         unsafe { resources.add(i).write(AllocZeroed(size)) };
     }
 
-    unsafe { (&raw mut gLinkBattleSendBuffer).write(AllocZeroed(BATTLE_BUFFER_LINK_SIZE)) };
-    unsafe { (&raw mut gLinkBattleRecvBuffer).write(AllocZeroed(BATTLE_BUFFER_LINK_SIZE)) };
-    unsafe { (&raw mut gBattleAnimBgTileBuffer).write(AllocZeroed(0x2000)) };
-    unsafe { (&raw mut gBattleAnimBgTilemapBuffer).write(AllocZeroed(0x1000)) };
+    unsafe { (crate::gl!(&raw gLinkBattleSendBuffer)).write(AllocZeroed(BATTLE_BUFFER_LINK_SIZE)) };
+    unsafe { (crate::gl!(&raw gLinkBattleRecvBuffer)).write(AllocZeroed(BATTLE_BUFFER_LINK_SIZE)) };
+    unsafe { (crate::gl!(&raw gBattleAnimBgTileBuffer)).write(AllocZeroed(0x2000)) };
+    unsafe { (crate::gl!(&raw gBattleAnimBgTilemapBuffer)).write(AllocZeroed(0x1000)) };
 
     if battle_type_has(BATTLE_TYPE_SECRET_BASE) {
         let id = usize::from(unsafe { VarGet(VAR_CURRENT_SECRET_BASE) });
         let sb1 = unsafe {
-            (&raw const (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            (&raw const (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut()))
                 .read()
@@ -226,7 +224,7 @@ pub unsafe fn FreeBattleResources() {
     }
 
     let resources = unsafe {
-        (&raw const (*(&raw const crate::battle_main::gBattleResources)
+        (&raw const (*(crate::gl!(&raw @at crate::battle_main::gBattleResources;).cast_const())
             .cast::<*mut *mut u8>()
             .cast_mut()))
             .read()
@@ -236,7 +234,7 @@ pub unsafe fn FreeBattleResources() {
     }
     unsafe {
         free_and_clear(
-            &raw mut (*(&raw const crate::battle_main::gBattleStruct)
+            &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleStruct;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut()),
         )
@@ -246,16 +244,16 @@ pub unsafe fn FreeBattleResources() {
     }
     unsafe {
         free_and_clear(
-            (&raw mut (*(&raw const crate::battle_main::gBattleResources)
+            (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleResources;).cast_const())
                 .cast::<*mut *mut u8>()
                 .cast_mut()))
                 .cast(),
         )
     };
-    unsafe { free_and_clear(&raw mut gLinkBattleSendBuffer) };
-    unsafe { free_and_clear(&raw mut gLinkBattleRecvBuffer) };
-    unsafe { free_and_clear(&raw mut gBattleAnimBgTileBuffer) };
-    unsafe { free_and_clear(&raw mut gBattleAnimBgTilemapBuffer) };
+    unsafe { free_and_clear(crate::gl!(&raw gLinkBattleSendBuffer)) };
+    unsafe { free_and_clear(crate::gl!(&raw gLinkBattleRecvBuffer)) };
+    unsafe { free_and_clear(crate::gl!(&raw gBattleAnimBgTileBuffer)) };
+    unsafe { free_and_clear(crate::gl!(&raw gBattleAnimBgTilemapBuffer)) };
 }
 
 #[unsafe(no_mangle)]
@@ -276,11 +274,11 @@ pub unsafe fn AdjustFriendshipOnBattleFaint(battler: u8) {
         FRIENDSHIP_EVENT_FAINT_SMALL
     };
     let party_index = usize::from(unsafe {
-        (*(&raw const crate::battle_main::gBattlerPartyIndexes).cast::<[u16; 4]>())
-            [usize::from(battler) % 4]
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerPartyIndexes;).cast_const())
+            .cast::<[u16; 4]>())[usize::from(battler) % 4]
     });
     let mon = unsafe {
-        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+        (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .cast::<u8>()
@@ -295,21 +293,22 @@ pub unsafe fn SwitchPartyOrderInGameMulti(battler: u8, arg1: u8) {
         return;
     }
     let orders = unsafe {
-        (&raw const (*(&raw const crate::battle_main::gBattleStruct)
+        (&raw const (*(crate::gl!(&raw @at crate::battle_main::gBattleStruct;).cast_const())
             .cast::<*mut u8>()
             .cast_mut()))
             .read()
             .add(BATTLE_STRUCT_PARTY_ORDERS)
     };
-    let current = (&raw mut (*(&raw const crate::party_menu::gBattlePartyCurrentOrder)
-        .cast::<[u8; PARTY_ORDER_SIZE]>()
-        .cast_mut()))
+    let current = (&raw mut (*(crate::gl!(&raw @at crate::party_menu::gBattlePartyCurrentOrder;)
+        .cast_const())
+    .cast::<[u8; PARTY_ORDER_SIZE]>()
+    .cast_mut()))
         .cast::<u8>();
     unsafe { core::ptr::copy_nonoverlapping(orders, current, PARTY_ORDER_SIZE) };
 
     let index = unsafe {
-        (*(&raw const crate::battle_main::gBattlerPartyIndexes).cast::<[u16; 4]>())
-            [usize::from(battler) % 4]
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerPartyIndexes;).cast_const())
+            .cast::<[u16; 4]>())[usize::from(battler) % 4]
     } as u8;
     let slot = unsafe { GetPartyIdFromBattlePartyId(index) };
     let slot2 = unsafe { GetPartyIdFromBattlePartyId(arg1) };
@@ -320,9 +319,10 @@ pub unsafe fn SwitchPartyOrderInGameMulti(battler: u8, arg1: u8) {
 
 unsafe fn set_script(script: *const u8) {
     unsafe {
-        (&raw mut (*(&raw const crate::battle_main::gBattlescriptCurrInstr)
-            .cast::<*const u8>()
-            .cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattlescriptCurrInstr;)
+            .cast_const())
+        .cast::<*const u8>()
+        .cast_mut()))
             .write(script)
     };
 }
@@ -416,7 +416,7 @@ pub unsafe fn BattlePalace_TryEscapeStatus(battler: u8) -> u32 {
     }
 
     if effect == 2 {
-        unsafe { (&raw mut gActiveBattler).write(battler) };
+        unsafe { (gActiveBattler.as_ptr()).write(battler) };
         unsafe {
             BtlController_EmitSetMonData(
                 B_COMM_TO_CONTROLLER,

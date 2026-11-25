@@ -57,21 +57,22 @@ const tNumShakes: usize = 6;
 static sRegicePathCoords: Table<CArray<CArray<u8, 2>, 36>> =
     Table((&raw const crate::data::braille_puzzles::sRegicePathCoords).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sIsRegisteelPuzzle: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldDoBrailleDigEffect() -> u8 {
     if FlagGet(FLAG_SYS_BRAILLE_DIG) == 0
-        && ((*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 71)
+        && ((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 24
+            && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 71)
     {
-        if (*gSaveBlock1Ptr).pos.x == 10 && (*gSaveBlock1Ptr).pos.y == 3 {
+        if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 10 && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 3 {
             return TRUE;
         }
-        if (*gSaveBlock1Ptr).pos.x == 9 && (*gSaveBlock1Ptr).pos.y == 3 {
+        if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 9 && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 3 {
             return TRUE;
         }
-        if (*gSaveBlock1Ptr).pos.x == 11 && (*gSaveBlock1Ptr).pos.y == 3 {
+        if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 11 && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 3 {
             return TRUE;
         }
     }
@@ -93,14 +94,17 @@ pub unsafe fn DoBrailleDigEffect() {
 #[unsafe(no_mangle)]
 pub unsafe fn CheckRelicanthWailord() -> u8 {
     if GetMonData3(
-        &raw mut gPlayerParty[0],
+        crate::gl!(&raw gPlayerParty[0]),
         MON_DATA_SPECIES_OR_EGG,
         null_mut(),
     ) == SPECIES_WAILORD
     {
         CalculatePlayerPartyCount();
         if GetMonData3(
-            &raw mut gPlayerParty[gPlayerPartyCount as i32 - 1],
+            {
+                let gl_i0 = gPlayerPartyCount.get() as i32 - 1;
+                crate::gl!(&raw gPlayerParty[gl_i0])
+            },
             MON_DATA_SPECIES_OR_EGG,
             null_mut(),
         ) == SPECIES_RELICANTH
@@ -154,16 +158,20 @@ pub(crate) unsafe fn Task_SealedChamberShakingEffect(taskId: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldDoBrailleRegirockEffect() -> u8 {
     if FlagGet(FLAG_SYS_REGIROCK_PUZZLE_COMPLETED) == 0
-        && (*gSaveBlock1Ptr).location.mapGroup == 24
-        && (*gSaveBlock1Ptr).location.mapNum == 6
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 24
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 6
     {
-        if (*gSaveBlock1Ptr).pos.x == 6 && (*gSaveBlock1Ptr).pos.y == 23 {
+        if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 6 && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 23 {
             sIsRegisteelPuzzle.set(FALSE);
             return TRUE;
-        } else if (*gSaveBlock1Ptr).pos.x == 5 && (*gSaveBlock1Ptr).pos.y == 23 {
+        } else if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 5
+            && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 23
+        {
             sIsRegisteelPuzzle.set(FALSE);
             return TRUE;
-        } else if (*gSaveBlock1Ptr).pos.x == 7 && (*gSaveBlock1Ptr).pos.y == 23 {
+        } else if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 7
+            && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 23
+        {
             sIsRegisteelPuzzle.set(FALSE);
             return TRUE;
         }
@@ -172,7 +180,7 @@ pub unsafe fn ShouldDoBrailleRegirockEffect() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetUpPuzzleEffectRegirock() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     FieldEffectStart(FLDEFF_USE_TOMB_PUZZLE_EFFECT);
 }
 pub unsafe fn UseRegirockHm_Callback() {
@@ -193,9 +201,10 @@ unsafe fn DoBrailleRegirockEffect() {
 }
 pub unsafe fn ShouldDoBrailleRegisteelEffect() -> u8 {
     if FlagGet(FLAG_SYS_REGISTEEL_PUZZLE_COMPLETED) == 0
-        && ((*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 68)
-        && (*gSaveBlock1Ptr).pos.x == 8
-        && (*gSaveBlock1Ptr).pos.y == 25
+        && ((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 24
+            && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 68)
+        && (*crate::gl!(gSaveBlock1Ptr)).pos.x == 8
+        && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 25
     {
         sIsRegisteelPuzzle.set(TRUE);
         return TRUE;
@@ -203,7 +212,7 @@ pub unsafe fn ShouldDoBrailleRegisteelEffect() -> u8 {
     FALSE
 }
 pub unsafe fn SetUpPuzzleEffectRegisteel() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     FieldEffectStart(FLDEFF_USE_TOMB_PUZZLE_EFFECT);
 }
 pub unsafe fn UseRegisteelHm_Callback() {
@@ -253,7 +262,9 @@ pub unsafe fn FldEff_UsePuzzleEffect() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldDoBrailleRegicePuzzle() -> u8 {
-    if (*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 67 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 24
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 67
+    {
         if FlagGet(FLAG_SYS_BRAILLE_REGICE_COMPLETED) != 0 {
             return FALSE;
         }
@@ -266,7 +277,9 @@ pub unsafe fn ShouldDoBrailleRegicePuzzle() -> u8 {
         for i in 0..36u8 {
             let xPos: u8 = sRegicePathCoords[i][0];
             let yPos: u8 = sRegicePathCoords[i][1];
-            if (*gSaveBlock1Ptr).pos.x == xPos as i16 && (*gSaveBlock1Ptr).pos.y == yPos as i16 {
+            if (*crate::gl!(gSaveBlock1Ptr)).pos.x == xPos as i16
+                && (*crate::gl!(gSaveBlock1Ptr)).pos.y == yPos as i16
+            {
                 if i < 16 {
                     let mut val: u16 = VarGet(VAR_REGICE_STEPS_1);
                     val |= shl_i32(1, i as u32) as u16;
@@ -286,7 +299,9 @@ pub unsafe fn ShouldDoBrailleRegicePuzzle() -> u8 {
                 {
                     return FALSE;
                 }
-                if (*gSaveBlock1Ptr).pos.x == 8 && (*gSaveBlock1Ptr).pos.y == 21 {
+                if (*crate::gl!(gSaveBlock1Ptr)).pos.x == 8
+                    && (*crate::gl!(gSaveBlock1Ptr)).pos.y == 21
+                {
                     return TRUE;
                 } else {
                     return FALSE;

@@ -49,7 +49,7 @@ static gBlankBerryTree: Table<BerryTree> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -69,7 +69,7 @@ pub unsafe fn ClearEnigmaBerries() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut (*gSaveBlock1Ptr).enigmaBerry as *mut c_void,
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry as *mut c_void,
                 0x100001a,
             );
         }
@@ -77,7 +77,7 @@ pub unsafe fn ClearEnigmaBerries() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetEnigmaBerry(src: *mut u8) {
-    let dest: *mut u8 = &raw mut (*gSaveBlock1Ptr).enigmaBerry as *mut u8;
+    let dest: *mut u8 = &raw mut (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry as *mut u8;
     for i in 0..52u32 {
         *dest.at(i) = *src.at(i);
     }
@@ -92,14 +92,19 @@ unsafe fn GetEnigmaBerryChecksum(enigmaBerry: *mut EnigmaBerry) -> u32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsEnigmaBerryValid() -> u32 {
-    if (*gSaveBlock1Ptr).enigmaBerry.berry.stageDuration == 0 {
+    if (*crate::gl!(gSaveBlock1Ptr))
+        .enigmaBerry
+        .berry
+        .stageDuration
+        == 0
+    {
         return FALSE as u32;
     }
-    if (*gSaveBlock1Ptr).enigmaBerry.berry.maxYield == 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.berry.maxYield == 0 {
         return FALSE as u32;
     }
-    if GetEnigmaBerryChecksum(&raw mut (*gSaveBlock1Ptr).enigmaBerry)
-        != (*gSaveBlock1Ptr).enigmaBerry.checksum
+    if GetEnigmaBerryChecksum(&raw mut (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry)
+        != (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.checksum
     {
         return FALSE as u32;
     }
@@ -107,7 +112,7 @@ pub unsafe fn IsEnigmaBerryValid() -> u32 {
 }
 pub unsafe fn GetBerryInfo(mut berry: u8) -> *mut Berry {
     if berry == 43 && IsEnigmaBerryValid() != 0 {
-        return &raw mut (*gSaveBlock1Ptr).enigmaBerry.berry as *mut Berry;
+        return &raw mut (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.berry as *mut Berry;
     } else {
         if berry == BERRY_NONE || berry > 43 {
             berry = 1;
@@ -120,11 +125,12 @@ pub unsafe fn GetBerryInfo(mut berry: u8) -> *mut Berry {
     }
 }
 pub unsafe fn GetBerryTreeInfo(id: u8) -> *mut BerryTree {
-    &raw mut (*gSaveBlock1Ptr).berryTrees[id]
+    &raw mut (*crate::gl!(gSaveBlock1Ptr)).berryTrees[id]
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionWaterBerryTree() -> u32 {
-    let tree: *mut BerryTree = GetBerryTreeInfo(GetObjectEventBerryTreeId(gSelectedObjectEvent));
+    let tree: *mut BerryTree =
+        GetBerryTreeInfo(GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent)));
     match (*tree).stage() {
         BERRY_STAGE_PLANTED => {
             (*tree).set_watered1(TRUE);
@@ -149,7 +155,7 @@ pub unsafe fn IsPlayerFacingEmptyBerryTreePatch() -> u8 {
         == (*crate::asmdata::BerryTreeScript.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
-        && GetStageByBerryTreeId(GetObjectEventBerryTreeId(gSelectedObjectEvent))
+        && GetStageByBerryTreeId(GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent)))
             == BERRY_STAGE_NO_BERRY
     {
         return TRUE;
@@ -179,7 +185,7 @@ pub unsafe fn TryToWaterBerryTree() -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn ClearBerryTrees() {
     for i in 0..BERRY_TREES_COUNT {
-        (*gSaveBlock1Ptr).berryTrees[i] = *gBlankBerryTree;
+        (*crate::gl!(gSaveBlock1Ptr)).berryTrees[i] = *gBlankBerryTree;
     }
 }
 unsafe fn BerryTreeGrow(tree: *mut BerryTree) -> u32 {
@@ -227,7 +233,7 @@ unsafe fn BerryTreeGrow(tree: *mut BerryTree) -> u32 {
 pub unsafe fn BerryTreeTimeUpdate(minutes: i32) {
     let mut tree: *mut BerryTree = null_mut();
     for i in 0..BERRY_TREES_COUNT {
-        tree = &raw mut (*gSaveBlock1Ptr).berryTrees[i];
+        tree = &raw mut (*crate::gl!(gSaveBlock1Ptr)).berryTrees[i];
         if (*tree).berry != 0 && (*tree).stage() != 0 && (*tree).stopGrowth() == 0 {
             if minutes >= GetStageDurationByBerryType((*tree).berry) as i32 * 71 {
                 *tree = *gBlankBerryTree;
@@ -266,13 +272,13 @@ pub unsafe fn PlantBerryTree(id: u8, berry: u8, stage: u8, allowGrowth: u8) {
     }
 }
 pub unsafe fn RemoveBerryTree(id: u8) {
-    (*gSaveBlock1Ptr).berryTrees[id] = *gBlankBerryTree;
+    (*crate::gl!(gSaveBlock1Ptr)).berryTrees[id] = *gBlankBerryTree;
 }
 pub unsafe fn GetBerryTypeByBerryTreeId(id: u8) -> u8 {
-    (*gSaveBlock1Ptr).berryTrees[id].berry
+    (*crate::gl!(gSaveBlock1Ptr)).berryTrees[id].berry
 }
 pub unsafe fn GetStageByBerryTreeId(id: u8) -> u8 {
-    (*gSaveBlock1Ptr).berryTrees[id].stage()
+    (*crate::gl!(gSaveBlock1Ptr)).berryTrees[id].stage()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ItemIdToBerryType(item: u16) -> u8 {
@@ -363,19 +369,19 @@ unsafe fn CalcBerryYield(tree: *mut BerryTree) -> u8 {
     CalcBerryYieldInternal(max as u16, min as u16, BerryTreeGetNumStagesWatered(tree))
 }
 unsafe fn GetBerryCountByBerryTreeId(id: u8) -> u8 {
-    (*gSaveBlock1Ptr).berryTrees[id].berryYield
+    (*crate::gl!(gSaveBlock1Ptr)).berryTrees[id].berryYield
 }
 unsafe fn GetStageDurationByBerryType(berry: u8) -> u16 {
     (*GetBerryInfo(berry)).stageDuration as u16 * 60
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionGetBerryTreeData() {
-    let id: u8 = GetObjectEventBerryTreeId(gSelectedObjectEvent);
+    let id: u8 = GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent));
     let berry: u8 = GetBerryTypeByBerryTreeId(id);
     AllowBerryTreeGrowth(id);
     let localId: u8 = gSpecialVar_LastTalked as u8;
-    let num: u8 = (*gSaveBlock1Ptr).location.mapNum as u8;
-    let group: u8 = (*gSaveBlock1Ptr).location.mapGroup as u8;
+    let num: u8 = (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8;
+    let group: u8 = (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8;
     if IsBerryTreeSparkling(localId, num, group) != 0 {
         gSpecialVar_0x8004 = BERRY_STAGE_SPARKLING;
     } else {
@@ -387,12 +393,13 @@ pub unsafe fn ObjectEventInteractionGetBerryTreeData() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionGetBerryName() {
-    let berryType: u8 = GetBerryTypeByBerryTreeId(GetObjectEventBerryTreeId(gSelectedObjectEvent));
+    let berryType: u8 =
+        GetBerryTypeByBerryTreeId(GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent)));
     GetBerryNameByBerryType(berryType, gStringVar1.as_mut_ptr());
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionGetBerryCountString() {
-    let treeId: u8 = GetObjectEventBerryTreeId(gSelectedObjectEvent);
+    let treeId: u8 = GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent));
     let berry: u8 = GetBerryTypeByBerryTreeId(treeId);
     let count: u8 = GetBerryCountByBerryTreeId(treeId);
     GetBerryCountStringByBerryType(berry, gStringVar1.as_mut_ptr(), count as u32);
@@ -403,13 +410,18 @@ pub unsafe fn Bag_ChooseBerry() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionPlantBerryTree() {
-    let berry: u8 = ItemIdToBerryType(gSpecialVar_ItemId);
-    PlantBerryTree(GetObjectEventBerryTreeId(gSelectedObjectEvent), berry, 1, 1);
+    let berry: u8 = ItemIdToBerryType(gSpecialVar_ItemId.get());
+    PlantBerryTree(
+        GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent)),
+        berry,
+        1,
+        1,
+    );
     ObjectEventInteractionGetBerryTreeData();
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionPickBerryTree() {
-    let id: u8 = GetObjectEventBerryTreeId(gSelectedObjectEvent);
+    let id: u8 = GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent));
     let berry: u8 = GetBerryTypeByBerryTreeId(id);
     gSpecialVar_0x8004 = AddBagItem(
         BerryTypeToItemId(berry as u16),
@@ -418,11 +430,11 @@ pub unsafe fn ObjectEventInteractionPickBerryTree() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventInteractionRemoveBerryTree() {
-    RemoveBerryTree(GetObjectEventBerryTreeId(gSelectedObjectEvent));
+    RemoveBerryTree(GetObjectEventBerryTreeId(crate::gl!(gSelectedObjectEvent)));
     SetBerryTreeJustPicked(
         gSpecialVar_LastTalked as u8,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
 }
 #[unsafe(no_mangle)]
@@ -438,13 +450,13 @@ pub unsafe fn SetBerryTreesSeen() {
     let right: i16 = cam_left + 14;
     let bottom: i16 = top + 8;
     for i in 0..(OBJECT_EVENTS_COUNT as i32) {
-        if gObjectEvents[i].active() != 0
-            && gObjectEvents[i].movementType == MOVEMENT_TYPE_BERRY_TREE_GROWTH
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && crate::gl!(gObjectEvents[i].movementType) == MOVEMENT_TYPE_BERRY_TREE_GROWTH
         {
-            cam_left = gObjectEvents[i].currentCoords.x;
-            cam_top = gObjectEvents[i].currentCoords.y;
+            cam_left = crate::gl!(gObjectEvents[i].currentCoords.x);
+            cam_top = crate::gl!(gObjectEvents[i].currentCoords.y);
             if left <= cam_left && cam_left <= right && top <= cam_top && cam_top <= bottom {
-                AllowBerryTreeGrowth(gObjectEvents[i].trainerRange_berryTreeId);
+                AllowBerryTreeGrowth(crate::gl!(gObjectEvents[i].trainerRange_berryTreeId));
             }
         }
     }

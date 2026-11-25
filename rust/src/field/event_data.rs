@@ -71,7 +71,7 @@ const DEX_MODE_NATIONAL: u8 = 1;
 const RESET_RTC_VAR_VALUE: u16 = 0x920;
 
 /// Flags 0x4000..0x4080, not saved.
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static SPECIAL_FLAGS: Global<CArray<u8, { NUM_SPECIAL_FLAGS as usize / 8 }>> =
     Global::new(CArray([0; NUM_SPECIAL_FLAGS as usize / 8]));
 

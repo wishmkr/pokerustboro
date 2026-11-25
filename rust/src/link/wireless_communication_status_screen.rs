@@ -75,14 +75,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -154,7 +154,8 @@ static sPalettes: Table<CArray<CArray<u16, 16>, 16>> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 4>> =
     Table((&raw const crate::data::wireless_communication_status_screen::sWindowTemplates).cast());
 
-pub(crate) static mut sStatusScreen: *mut WirelessCommunicationStatusScreen = null_mut();
+pub(crate) static sStatusScreen: crate::global::Global<*mut WirelessCommunicationStatusScreen> =
+    crate::global::Global::new(null_mut());
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -199,7 +200,7 @@ pub unsafe fn ShowWirelessCommunicationScreen() {
 }
 pub(crate) unsafe fn CB2_InitWirelessCommunicationScreen() {
     SetGpuReg(0x0, 0);
-    sStatusScreen = AllocZeroed(108) as *mut WirelessCommunicationStatusScreen;
+    crate::gl!(sStatusScreen = AllocZeroed(108) as *mut WirelessCommunicationStatusScreen);
     SetVBlankCallback(None);
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 2);
@@ -215,9 +216,9 @@ pub(crate) unsafe fn CB2_InitWirelessCommunicationScreen() {
     ScanlineEffect_Stop();
     m4aSoundVSyncOn();
     SetVBlankCallback(Some(VBlankCB_WirelessCommunicationScreen));
-    (*sStatusScreen).taskId = CreateTask(Some(Task_WirelessCommunicationScreen), 0);
-    (*sStatusScreen).rfuTaskId = CreateTask_ListenToWireless();
-    (*sStatusScreen).prevGroupCounts[3] = 1;
+    (*crate::gl!(sStatusScreen)).taskId = CreateTask(Some(Task_WirelessCommunicationScreen), 0);
+    (*crate::gl!(sStatusScreen)).rfuTaskId = CreateTask_ListenToWireless();
+    (*crate::gl!(sStatusScreen)).prevGroupCounts[3] = 1;
     ChangeBgX(0, 0, BG_COORD_SET);
     ChangeBgY(0, 0, BG_COORD_SET);
     ChangeBgX(1, 0, BG_COORD_SET);
@@ -239,7 +240,7 @@ pub(crate) unsafe fn CB2_ExitWirelessCommunicationStatusScreen() {
     for i in 0..2i32 {
         Free(GetBgTilemapBuffer(i as u8));
     }
-    Free(sStatusScreen as *mut c_void);
+    Free(crate::gl!(sStatusScreen) as *mut c_void);
     SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
 }
 unsafe fn CyclePalette(counter: *mut i16, palIdx: *mut i16) {
@@ -311,23 +312,23 @@ pub(crate) unsafe fn Task_WirelessCommunicationScreen(taskId: u8) {
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         2 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         3 => {
             if UpdateCommunicationCounts(
-                (*sStatusScreen).groupCounts.as_mut_ptr(),
-                (*sStatusScreen).prevGroupCounts.as_mut_ptr(),
-                (*sStatusScreen).activities.as_mut_ptr(),
-                (*sStatusScreen).rfuTaskId,
+                (*crate::gl!(sStatusScreen)).groupCounts.as_mut_ptr(),
+                (*crate::gl!(sStatusScreen)).prevGroupCounts.as_mut_ptr(),
+                (*crate::gl!(sStatusScreen)).activities.as_mut_ptr(),
+                (*crate::gl!(sStatusScreen)).rfuTaskId,
             ) != 0
             {
                 FillWindowPixelBuffer(WIN_GROUP_COUNTS, 0);
                 for i in 0..NUM_GROUPTYPES {
                     ConvertIntToDecimalStringN(
                         gStringVar4.as_mut_ptr(),
-                        (*sStatusScreen).groupCounts[i] as i32,
+                        (*crate::gl!(sStatusScreen)).groupCounts[i] as i32,
                         STR_CONV_MODE_RIGHT_ALIGN,
                         2,
                     );
@@ -354,9 +355,11 @@ pub(crate) unsafe fn Task_WirelessCommunicationScreen(taskId: u8) {
                 PutWindowTilemap(WIN_GROUP_COUNTS);
                 CopyWindowToVram(WIN_GROUP_COUNTS, COPYWIN_FULL);
             }
-            if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+                || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+            {
                 PlaySE(SE_SELECT);
-                task_set((*sStatusScreen).rfuTaskId, 15, 0xFF);
+                task_set((*crate::gl!(sStatusScreen)).rfuTaskId, 15, 0xFF);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             CyclePalette(task_data_ptr(taskId, 7), task_data_ptr(taskId, 8));
@@ -365,7 +368,7 @@ pub(crate) unsafe fn Task_WirelessCommunicationScreen(taskId: u8) {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        5 if gPaletteFade.active() == 0 => {
+        5 if (*gPaletteFade.as_ptr()).active() == 0 => {
             SetMainCallback2(Some(CB2_ExitWirelessCommunicationStatusScreen));
             DestroyTask(taskId);
         }

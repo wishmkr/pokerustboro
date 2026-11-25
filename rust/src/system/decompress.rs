@@ -14,8 +14,9 @@ const MON_PIC_SIZE: u32 = 0x800;
 const SHEET_SIZE: usize = 8;
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gDecompressionBuffer: Align4<[u8; 0x4000]> = Align4([0; 0x4000]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gDecompressionBuffer: crate::global::Global<Align4<[u8; 0x4000]>> =
+    crate::global::Global::new(Align4([0; 0x4000]));
 
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
@@ -56,7 +57,7 @@ struct SpritePalette {
 
 #[inline]
 fn buffer() -> *mut u8 {
-    (&raw mut gDecompressionBuffer).cast()
+    (crate::gl!(&raw gDecompressionBuffer)).cast()
 }
 
 #[inline]

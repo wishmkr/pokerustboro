@@ -104,21 +104,21 @@ unsafe fn GetStringCenterAlignXOffsetWithLetterSpacing(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitHeap` with this module's view of its types.
 #[inline]
-unsafe fn InitHeap(a0: *mut c_void, a1: u32) {
+fn InitHeap(a0: *mut c_void, a1: u32) {
     unsafe {
         crate::malloc::InitHeap(a0 as _, a1);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -133,7 +133,7 @@ unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -274,17 +274,18 @@ static sTheEnd_LetterMap_T: Table<CArray<u8, 15>> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 2>> =
     Table((&raw const crate::data::credits::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnkVar: i16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedTaskId: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sUnkVar: crate::global::Global<i16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSavedTaskId: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gHasHallOfFameRecords: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUsedSpeedUp: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCreditsData: *mut CreditsData = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gHasHallOfFameRecords: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sUsedSpeedUp: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCreditsData: crate::global::Global<*mut CreditsData> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -298,7 +299,7 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -312,7 +313,7 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 /// `SoftReset` with this module's view of its types.
 #[inline]
-unsafe fn SoftReset(a0: u32) {
+fn SoftReset(a0: u32) {
     unsafe {
         crate::syscall::SoftReset(a0);
     }
@@ -326,14 +327,14 @@ pub(crate) unsafe fn VBlankCB_Credits() {
 pub(crate) unsafe fn CB2_Credits() {
     RunTasks();
     AnimateSprites();
-    if gMain.heldKeys as i32 & B_BUTTON != 0
-        && gHasHallOfFameRecords != 0
-        && task_func(sSavedTaskId) == Some(Task_CreditsMain as unsafe fn(u8))
+    if crate::gl!(gMain.heldKeys) as i32 & B_BUTTON != 0
+        && gHasHallOfFameRecords.get() != 0
+        && task_func(sSavedTaskId.get()) == Some(Task_CreditsMain as unsafe fn(u8))
     {
         VBlankCB_Credits();
         RunTasks();
         AnimateSprites();
-        sUsedSpeedUp = TRUE;
+        sUsedSpeedUp.set(TRUE);
     }
     BuildOamBuffer();
     UpdatePaletteFade();
@@ -388,7 +389,7 @@ pub unsafe fn CB2_StartCreditsSequence() {
     ResetGpuAndVram();
     SetVBlankCallback(None);
     InitHeap(
-        (*(&raw const crate::malloc::gHeap)
+        (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -418,16 +419,16 @@ pub unsafe fn CB2_StartCreditsSequence() {
     SetVBlankCallback(Some(VBlankCB_Credits));
     m4aSongNumStart(MUS_CREDITS);
     SetMainCallback2(Some(CB2_Credits));
-    sUsedSpeedUp = FALSE;
-    sCreditsData = AllocZeroed(940) as *mut CreditsData;
+    sUsedSpeedUp.set(FALSE);
+    crate::gl!(sCreditsData = AllocZeroed(940) as *mut CreditsData);
     DeterminePokemonToShow();
-    (*sCreditsData).imgCounter = 0;
-    (*sCreditsData).nextImgPos = POS_LEFT;
-    (*sCreditsData).currShownMon = 0;
-    sSavedTaskId = taskId as u16;
+    (*crate::gl!(sCreditsData)).imgCounter = 0;
+    (*crate::gl!(sCreditsData)).nextImgPos = POS_LEFT;
+    (*crate::gl!(sCreditsData)).currShownMon = 0;
+    sSavedTaskId.set(taskId as u16);
 }
 pub(crate) unsafe fn Task_WaitPaletteFade(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set_func(taskId, Some(Task_CreditsMain));
     }
 }
@@ -439,7 +440,7 @@ pub(crate) unsafe fn Task_CreditsMain(taskId: u8) {
         task_set_func(taskId, Some(Task_CreditsTheEnd1));
         return;
     }
-    sUnkVar = 0;
+    sUnkVar.set(0);
     let mode: u16 = task_get(taskId, tNextMode) as u16;
     if task_get(taskId, tNextMode) == MODE_BIKE_SCENE {
         task_set(taskId, tCurrentMode, mode as i16);
@@ -454,7 +455,7 @@ pub(crate) unsafe fn Task_CreditsMain(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ReadyBikeScene(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetGpuReg(0x0, 0);
         ResetCreditsTasks(taskId);
         task_set_func(taskId, Some(Task_SetBikeScene));
@@ -470,7 +471,7 @@ pub(crate) unsafe fn Task_SetBikeScene(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ReadyShowMons(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetGpuReg(0x0, 0);
         ResetCreditsTasks(taskId);
         task_set_func(taskId, Some(Task_LoadShowMons));
@@ -478,7 +479,7 @@ pub(crate) unsafe fn Task_ReadyShowMons(taskId: u8) {
 }
 pub(crate) unsafe fn Task_LoadShowMons(taskId: u8) {
     'l1: {
-        match gMain.state {
+        match crate::gl!(gMain.state) {
             1 => {
                 task_set(
                     taskId,
@@ -495,15 +496,15 @@ pub(crate) unsafe fn Task_LoadShowMons(taskId: u8) {
                 SetGpuReg(REG_OFFSET_BG3VOFS, 32);
                 SetGpuReg(REG_OFFSET_BG3CNT, 1795);
                 SetGpuReg(0x0, 6464);
-                gMain.state = 0;
-                gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_NORMAL;
+                crate::gl!(gMain.state = 0);
+                gIntroCredits_MovingSceneryState.set(INTROCRED_SCENERY_NORMAL);
                 task_set_func(taskId, Some(Task_WaitPaletteFade));
             }
             _ => {
                 ResetSpriteData();
                 ResetAllPicSprites();
                 FreeAllSpritePalettes();
-                gReservedSpritePaletteCount = 8;
+                gReservedSpritePaletteCount.set(8);
                 LZ77UnCompVram(
                     (*(&raw const crate::data::starter_choose::gBirchBagGrass_Gfx)
                         .cast::<CArray<u32, 0>>())
@@ -528,39 +529,43 @@ pub(crate) unsafe fn Task_LoadShowMons(taskId: u8) {
                     62,
                 );
                 for i in 0..MON_PIC_SIZE {
-                    (*(&raw const crate::decompress::gDecompressionBuffer)
-                        .cast::<CArray<u8, 16384>>()
-                        .cast_mut())[i] = 0x11;
+                    (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;)
+                        .cast_const())
+                    .cast::<CArray<u8, 16384>>()
+                    .cast_mut())[i] = 0x11;
                 }
                 let mut i: u16 = 0;
                 while i < MON_PIC_SIZE {
-                    *(*(&raw const crate::decompress::gDecompressionBuffer)
-                        .cast::<CArray<u8, 16384>>()
-                        .cast_mut())
+                    *(*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;)
+                        .cast_const())
+                    .cast::<CArray<u8, 16384>>()
+                    .cast_mut())
                     .as_mut_ptr()
                     .at(2048)
                     .at(i) = 0x22;
                     i += 1;
                 }
                 for i in 0..MON_PIC_SIZE {
-                    *(*(&raw const crate::decompress::gDecompressionBuffer)
-                        .cast::<CArray<u8, 16384>>()
-                        .cast_mut())
+                    *(*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;)
+                        .cast_const())
+                    .cast::<CArray<u8, 16384>>()
+                    .cast_mut())
                     .as_mut_ptr()
                     .at(4096)
                     .at(i) = 0x33;
                 }
                 let temp: *mut u16 =
-                    &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
-                        .cast::<CArray<u8, 16384>>()
-                        .cast_mut())[6144] as *mut u16;
+                    &raw mut (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;)
+                        .cast_const())
+                    .cast::<CArray<u8, 16384>>()
+                    .cast_mut())[6144] as *mut u16;
                 *temp = 0;
                 *temp.at(1) = 21503;
                 *temp.at(2) = 21151;
                 *temp.at(3) = 32404;
                 LoadSpriteSheet(sSpriteSheet_MonBg.as_ptr().cast_mut());
                 LoadSpritePalette(sSpritePalette_MonBg.as_ptr().cast_mut());
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
                 break 'l1;
             }
         }
@@ -575,7 +580,7 @@ pub(crate) unsafe fn Task_CreditsTheEnd1(taskId: u8) {
     task_set_func(taskId, Some(Task_CreditsTheEnd2));
 }
 pub(crate) unsafe fn Task_CreditsTheEnd2(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         ResetCreditsTasks(taskId);
         task_set_func(taskId, Some(Task_CreditsTheEnd3));
     }
@@ -602,7 +607,7 @@ pub(crate) unsafe fn Task_CreditsTheEnd4(taskId: u8) {
     task_set_func(taskId, Some(Task_CreditsTheEnd5));
 }
 pub(crate) unsafe fn Task_CreditsTheEnd5(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DrawTheEnd(0x3800, 0);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0, 0);
         task_set(taskId, 0, 7200);
@@ -610,8 +615,8 @@ pub(crate) unsafe fn Task_CreditsTheEnd5(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_CreditsTheEnd6(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        if task_get(taskId, 0) == 0 || gMain.newKeys != 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if task_get(taskId, 0) == 0 || crate::gl!(gMain.newKeys) != 0 {
             FadeOutBGM(4);
             BeginNormalPaletteFade(PALETTES_ALL, 8, 0, 16, 65535);
             task_set_func(taskId, Some(Task_CreditsSoftReset));
@@ -627,7 +632,7 @@ pub(crate) unsafe fn Task_CreditsTheEnd6(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_CreditsSoftReset(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SoftReset(RESET_ALL);
     }
 }
@@ -734,7 +739,7 @@ pub(crate) unsafe fn Task_UpdatePage(taskId: u8) {
             (*gTasks.as_ptr())[task_get(taskId, tMainTaskId)].data[tPrintedPage] = FALSE as i16;
         }
         3 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set(taskId, 3, 115);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -762,7 +767,7 @@ pub(crate) unsafe fn Task_UpdatePage(taskId: u8) {
             }
         }
         5 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 FillWindowPixelBuffer(0, 0);
                 CopyWindowToVram(0, COPYWIN_GFX);
                 task_set(taskId, tState, 2);
@@ -772,15 +777,15 @@ pub(crate) unsafe fn Task_UpdatePage(taskId: u8) {
             (*gTasks.as_ptr())[task_get(taskId, tMainTaskId)].data[tEndCredits] = TRUE as i16;
             DestroyTask(taskId);
             FreeCreditsBgsAndWindows();
-            Free(sCreditsData as *mut c_void);
-            sCreditsData = null_mut();
+            Free(crate::gl!(sCreditsData) as *mut c_void);
+            crate::gl!(sCreditsData = null_mut());
         }
         _ => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set(taskId, tState, 1);
                 task_set(taskId, 3, 72);
                 (*gTasks.as_ptr())[task_get(taskId, tMainTaskId)].data[tPrintedPage] = FALSE as i16;
-                sUnkVar = 0;
+                sUnkVar.set(0);
             }
         }
     }
@@ -825,7 +830,7 @@ pub(crate) unsafe fn Task_ShowMons(taskId: u8) {
         match task_get(taskId, tState) {
             0 => {}
             1 => {
-                if (*sCreditsData).nextImgPos == POS_LEFT
+                if (*crate::gl!(sCreditsData)).nextImgPos == POS_LEFT
                     && (*gTasks.as_ptr())[task_get(taskId, tMainTaskId)].data[tPrintedPage]
                         == FALSE as i16
                 {
@@ -834,30 +839,32 @@ pub(crate) unsafe fn Task_ShowMons(taskId: u8) {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             2 => {
-                if (*sCreditsData).imgCounter == NUM_MON_SLIDES
+                if (*crate::gl!(sCreditsData)).imgCounter == NUM_MON_SLIDES
                     || (*gTasks.as_ptr())[task_get(taskId, tMainTaskId)].func
                         != Some(Task_CreditsMain as unsafe fn(u8))
                 {
                     break 'l1;
                 }
                 spriteId = CreateCreditsMonSprite(
-                    (*sCreditsData).monToShow[(*sCreditsData).currShownMon],
-                    sMonSpritePos[(*sCreditsData).nextImgPos][0] as i16,
-                    sMonSpritePos[(*sCreditsData).nextImgPos][1] as i16,
-                    (*sCreditsData).nextImgPos,
+                    (*crate::gl!(sCreditsData)).monToShow[(*crate::gl!(sCreditsData)).currShownMon],
+                    sMonSpritePos[(*crate::gl!(sCreditsData)).nextImgPos][0] as i16,
+                    sMonSpritePos[(*crate::gl!(sCreditsData)).nextImgPos][1] as i16,
+                    (*crate::gl!(sCreditsData)).nextImgPos,
                 );
-                if ((*sCreditsData).currShownMon as i32) < (*sCreditsData).numMonToShow as i32 - 1 {
-                    (*sCreditsData).currShownMon += 1;
-                    gSprites[spriteId].data[3] = 50;
+                if ((*crate::gl!(sCreditsData)).currShownMon as i32)
+                    < (*crate::gl!(sCreditsData)).numMonToShow as i32 - 1
+                {
+                    (*crate::gl!(sCreditsData)).currShownMon += 1;
+                    crate::gl!(gSprites[spriteId].data[3] = 50);
                 } else {
-                    (*sCreditsData).currShownMon = 0;
-                    gSprites[spriteId].data[3] = 512;
+                    (*crate::gl!(sCreditsData)).currShownMon = 0;
+                    crate::gl!(gSprites[spriteId].data[3] = 512);
                 }
-                (*sCreditsData).imgCounter += 1;
-                if (*sCreditsData).nextImgPos == POS_RIGHT {
-                    (*sCreditsData).nextImgPos = POS_LEFT;
+                (*crate::gl!(sCreditsData)).imgCounter += 1;
+                if (*crate::gl!(sCreditsData)).nextImgPos == POS_RIGHT {
+                    (*crate::gl!(sCreditsData)).nextImgPos = POS_LEFT;
                 } else {
-                    (*sCreditsData).nextImgPos += 1;
+                    (*crate::gl!(sCreditsData)).nextImgPos += 1;
                 }
                 task_set(taskId, 3, 50);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -876,15 +883,19 @@ pub(crate) unsafe fn Task_ShowMons(taskId: u8) {
 pub(crate) unsafe fn Task_BikeScene(taskId: u8) {
     match task_get(taskId, 0) {
         0 => {
-            gIntroCredits_MovingSceneryVOffset = Sin(task_get(taskId, tSinIdx) >> 1 & 0x7F, 12);
+            gIntroCredits_MovingSceneryVOffset.set(Sin(task_get(taskId, tSinIdx) >> 1 & 0x7F, 12));
             task_set(taskId, tSinIdx, task_get(taskId, tSinIdx) + 1);
         }
         1 => {
-            if gIntroCredits_MovingSceneryVOffset != 0 {
-                gIntroCredits_MovingSceneryVOffset = Sin(task_get(taskId, tSinIdx) >> 1 & 0x7F, 12);
+            if gIntroCredits_MovingSceneryVOffset.get() != 0 {
+                gIntroCredits_MovingSceneryVOffset
+                    .set(Sin(task_get(taskId, tSinIdx) >> 1 & 0x7F, 12));
                 task_set(taskId, tSinIdx, task_get(taskId, tSinIdx) + 1);
             } else {
-                gSprites[task_get(taskId, tPlayer)].data[0] = 2;
+                {
+                    let gl_i0 = task_get(taskId, tPlayer);
+                    crate::gl!(gSprites[gl_i0].data[0] = 2)
+                };
                 task_set(taskId, tSinIdx, 0);
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
@@ -892,14 +903,20 @@ pub(crate) unsafe fn Task_BikeScene(taskId: u8) {
         2 => {
             if task_get(taskId, tSinIdx) < 64 {
                 task_set(taskId, tSinIdx, task_get(taskId, tSinIdx) + 1);
-                gIntroCredits_MovingSceneryVOffset = Sin(task_get(taskId, tSinIdx) & 0x7F, 20);
+                gIntroCredits_MovingSceneryVOffset.set(Sin(task_get(taskId, tSinIdx) & 0x7F, 20));
             } else {
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
         3 => {
-            gSprites[task_get(taskId, tPlayer)].data[0] = 3;
-            gSprites[task_get(taskId, tRival)].data[0] = 1;
+            {
+                let gl_i1 = task_get(taskId, tPlayer);
+                crate::gl!(gSprites[gl_i1].data[0] = 3)
+            };
+            {
+                let gl_i2 = task_get(taskId, tRival);
+                crate::gl!(gSprites[gl_i2].data[0] = 1)
+            };
             task_set(taskId, 4, 120);
             task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
@@ -914,9 +931,12 @@ pub(crate) unsafe fn Task_BikeScene(taskId: u8) {
         5 => {
             if task_get(taskId, tSinIdx) > 0 {
                 task_set(taskId, tSinIdx, task_get(taskId, tSinIdx) - 1);
-                gIntroCredits_MovingSceneryVOffset = Sin(task_get(taskId, tSinIdx) & 0x7F, 20);
+                gIntroCredits_MovingSceneryVOffset.set(Sin(task_get(taskId, tSinIdx) & 0x7F, 20));
             } else {
-                gSprites[task_get(taskId, tPlayer)].data[0] = 1;
+                {
+                    let gl_i3 = task_get(taskId, tPlayer);
+                    crate::gl!(gSprites[gl_i3].data[0] = 1)
+                };
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
@@ -924,16 +944,28 @@ pub(crate) unsafe fn Task_BikeScene(taskId: u8) {
             task_set(taskId, 0, 50);
         }
         10 => {
-            gSprites[task_get(taskId, tRival)].data[0] = 2;
+            {
+                let gl_i4 = task_get(taskId, tRival);
+                crate::gl!(gSprites[gl_i4].data[0] = 2)
+            };
             task_set(taskId, 0, 50);
         }
         20 => {
-            gSprites[task_get(taskId, tPlayer)].data[0] = 4;
+            {
+                let gl_i5 = task_get(taskId, tPlayer);
+                crate::gl!(gSprites[gl_i5].data[0] = 4)
+            };
             task_set(taskId, 0, 50);
         }
         30 => {
-            gSprites[task_get(taskId, tPlayer)].data[0] = 5;
-            gSprites[task_get(taskId, tRival)].data[0] = 3;
+            {
+                let gl_i6 = task_get(taskId, tPlayer);
+                crate::gl!(gSprites[gl_i6].data[0] = 5)
+            };
+            {
+                let gl_i7 = task_get(taskId, tRival);
+                crate::gl!(gSprites[gl_i7].data[0] = 3)
+            };
             task_set(taskId, 0, 50);
         }
         50 => {
@@ -991,14 +1023,32 @@ pub(crate) unsafe fn Task_CycleSceneryPalette(taskId: u8) {
 unsafe fn SetBikeScene(scene: u8, taskId: u8) {
     match scene {
         SCENE_OCEAN_MORNING => {
-            gSprites[task_get(taskId, 5)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, 5)].x = 272;
-            gSprites[task_get(taskId, tRivalSpriteId)].x = 272;
-            gSprites[task_get(taskId, 5)].y = 46;
-            gSprites[task_get(taskId, tRivalSpriteId)].y = 46;
-            gSprites[task_get(taskId, 5)].data[0] = 0;
-            gSprites[task_get(taskId, tRivalSpriteId)].data[0] = 0;
+            (*gSprites.as_ptr())[task_get(taskId, 5)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
+            {
+                let gl_i8 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i8].x = 272)
+            };
+            {
+                let gl_i9 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i9].x = 272)
+            };
+            {
+                let gl_i10 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i10].y = 46)
+            };
+            {
+                let gl_i11 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i11].y = 46)
+            };
+            {
+                let gl_i12 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i12].data[0] = 0)
+            };
+            {
+                let gl_i13 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i13].data[0] = 0)
+            };
             task_set(
                 taskId,
                 0,
@@ -1006,14 +1056,32 @@ unsafe fn SetBikeScene(scene: u8, taskId: u8) {
             );
         }
         1 => {
-            gSprites[task_get(taskId, 5)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, 5)].x = 120;
-            gSprites[task_get(taskId, tRivalSpriteId)].x = 272;
-            gSprites[task_get(taskId, 5)].y = 46;
-            gSprites[task_get(taskId, tRivalSpriteId)].y = 46;
-            gSprites[task_get(taskId, 5)].data[0] = 0;
-            gSprites[task_get(taskId, tRivalSpriteId)].data[0] = 0;
+            (*gSprites.as_ptr())[task_get(taskId, 5)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
+            {
+                let gl_i14 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i14].x = 120)
+            };
+            {
+                let gl_i15 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i15].x = 272)
+            };
+            {
+                let gl_i16 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i16].y = 46)
+            };
+            {
+                let gl_i17 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i17].y = 46)
+            };
+            {
+                let gl_i18 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i18].data[0] = 0)
+            };
+            {
+                let gl_i19 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i19].data[0] = 0)
+            };
             task_set(
                 taskId,
                 0,
@@ -1021,14 +1089,32 @@ unsafe fn SetBikeScene(scene: u8, taskId: u8) {
             );
         }
         SCENE_FOREST_RIVAL_ARRIVE => {
-            gSprites[task_get(taskId, 5)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, 5)].x = 120;
-            gSprites[task_get(taskId, tRivalSpriteId)].x = 272;
-            gSprites[task_get(taskId, 5)].y = 46;
-            gSprites[task_get(taskId, tRivalSpriteId)].y = 46;
-            gSprites[task_get(taskId, 5)].data[0] = 0;
-            gSprites[task_get(taskId, tRivalSpriteId)].data[0] = 0;
+            (*gSprites.as_ptr())[task_get(taskId, 5)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
+            {
+                let gl_i20 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i20].x = 120)
+            };
+            {
+                let gl_i21 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i21].x = 272)
+            };
+            {
+                let gl_i22 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i22].y = 46)
+            };
+            {
+                let gl_i23 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i23].y = 46)
+            };
+            {
+                let gl_i24 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i24].data[0] = 0)
+            };
+            {
+                let gl_i25 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i25].data[0] = 0)
+            };
             task_set(
                 taskId,
                 0,
@@ -1036,14 +1122,32 @@ unsafe fn SetBikeScene(scene: u8, taskId: u8) {
             );
         }
         3 => {
-            gSprites[task_get(taskId, 5)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, 5)].x = 120;
-            gSprites[task_get(taskId, tRivalSpriteId)].x = -32;
-            gSprites[task_get(taskId, 5)].y = 46;
-            gSprites[task_get(taskId, tRivalSpriteId)].y = 46;
-            gSprites[task_get(taskId, 5)].data[0] = 0;
-            gSprites[task_get(taskId, tRivalSpriteId)].data[0] = 0;
+            (*gSprites.as_ptr())[task_get(taskId, 5)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
+            {
+                let gl_i26 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i26].x = 120)
+            };
+            {
+                let gl_i27 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i27].x = -32)
+            };
+            {
+                let gl_i28 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i28].y = 46)
+            };
+            {
+                let gl_i29 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i29].y = 46)
+            };
+            {
+                let gl_i30 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i30].data[0] = 0)
+            };
+            {
+                let gl_i31 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i31].data[0] = 0)
+            };
             task_set(
                 taskId,
                 0,
@@ -1051,14 +1155,32 @@ unsafe fn SetBikeScene(scene: u8, taskId: u8) {
             );
         }
         4 => {
-            gSprites[task_get(taskId, 5)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
-            gSprites[task_get(taskId, 5)].x = 88;
-            gSprites[task_get(taskId, tRivalSpriteId)].x = 152;
-            gSprites[task_get(taskId, 5)].y = 46;
-            gSprites[task_get(taskId, tRivalSpriteId)].y = 46;
-            gSprites[task_get(taskId, 5)].data[0] = 0;
-            gSprites[task_get(taskId, tRivalSpriteId)].data[0] = 0;
+            (*gSprites.as_ptr())[task_get(taskId, 5)].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[task_get(taskId, tRivalSpriteId)].set_invisible(FALSE as u16);
+            {
+                let gl_i32 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i32].x = 88)
+            };
+            {
+                let gl_i33 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i33].x = 152)
+            };
+            {
+                let gl_i34 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i34].y = 46)
+            };
+            {
+                let gl_i35 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i35].y = 46)
+            };
+            {
+                let gl_i36 = task_get(taskId, 5);
+                crate::gl!(gSprites[gl_i36].data[0] = 0)
+            };
+            {
+                let gl_i37 = task_get(taskId, tRivalSpriteId);
+                crate::gl!(gSprites[gl_i37].data[0] = 0)
+            };
             task_set(
                 taskId,
                 0,
@@ -1087,15 +1209,15 @@ unsafe fn SetBikeScene(scene: u8, taskId: u8) {
 }
 unsafe fn LoadBikeScene(scene: u8, taskId: u8) -> u8 {
     let mut spriteId: u8 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
-            gIntroCredits_MovingSceneryVBase = 34;
-            gIntroCredits_MovingSceneryVOffset = 0;
+            gIntroCredits_MovingSceneryVBase.set(34);
+            gIntroCredits_MovingSceneryVOffset.set(0);
             LoadCreditsSceneGraphics(scene);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
-            if (*gSaveBlock2Ptr).playerGender == MALE {
+            if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
                 LoadCompressedSpriteSheet((*(&raw const crate::data::intro_credits_graphics::gSpriteSheet_CreditsBrendan).cast::<CArray<CompressedSpriteSheet, 0>>()).as_ptr().cast_mut());
                 LoadCompressedSpriteSheet((*(&raw const crate::data::intro_credits_graphics::gSpriteSheet_CreditsRivalMay).cast::<CArray<CompressedSpriteSheet, 0>>()).as_ptr().cast_mut());
                 LoadCompressedSpriteSheet((*(&raw const crate::data::intro_credits_graphics::gSpriteSheet_CreditsBicycle).cast::<CArray<CompressedSpriteSheet, 0>>()).as_ptr().cast_mut());
@@ -1107,12 +1229,12 @@ unsafe fn LoadBikeScene(scene: u8, taskId: u8) -> u8 {
                 );
                 spriteId = CreateIntroBrendanSprite(120, 46);
                 task_set(taskId, tPlayerSpriteId, spriteId as i16);
-                gSprites[spriteId].callback = Some(SpriteCB_Player);
-                gSprites[spriteId].anims = sAnims_Player.as_ptr().cast_mut();
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Player));
+                crate::gl!(gSprites[spriteId].anims = sAnims_Player.as_ptr().cast_mut());
                 spriteId = CreateIntroMaySprite(272, 46);
                 task_set(taskId, tRivalSpriteId, spriteId as i16);
-                gSprites[spriteId].callback = Some(SpriteCB_Rival);
-                gSprites[spriteId].anims = sAnims_Rival.as_ptr().cast_mut();
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Rival));
+                crate::gl!(gSprites[spriteId].anims = sAnims_Rival.as_ptr().cast_mut());
             } else {
                 LoadCompressedSpriteSheet(
                     (*(&raw const crate::data::intro_credits_graphics::gSpriteSheet_CreditsMay)
@@ -1130,19 +1252,19 @@ unsafe fn LoadBikeScene(scene: u8, taskId: u8) -> u8 {
                 );
                 spriteId = CreateIntroMaySprite(120, 46);
                 task_set(taskId, tPlayerSpriteId, spriteId as i16);
-                gSprites[spriteId].callback = Some(SpriteCB_Player);
-                gSprites[spriteId].anims = sAnims_Player.as_ptr().cast_mut();
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Player));
+                crate::gl!(gSprites[spriteId].anims = sAnims_Player.as_ptr().cast_mut());
                 spriteId = CreateIntroBrendanSprite(272, 46);
                 task_set(taskId, tRivalSpriteId, spriteId as i16);
-                gSprites[spriteId].callback = Some(SpriteCB_Rival);
-                gSprites[spriteId].anims = sAnims_Rival.as_ptr().cast_mut();
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Rival));
+                crate::gl!(gSprites[spriteId].anims = sAnims_Rival.as_ptr().cast_mut());
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             SetBikeScene(scene, taskId);
             SetCreditsSceneBgCnt(scene);
-            gMain.state = 0;
+            crate::gl!(gMain.state = 0);
             return TRUE;
         }
         _ => {
@@ -1157,12 +1279,12 @@ unsafe fn LoadBikeScene(scene: u8, taskId: u8) -> u8 {
             SetGpuReg(REG_OFFSET_BLDALPHA, 0);
             ResetSpriteData();
             FreeAllSpritePalettes();
-            gMain.state = 1;
+            crate::gl!(gMain.state = 1);
         }
     }
     FALSE
 }
-unsafe fn ResetCreditsTasks(taskId: u8) {
+fn ResetCreditsTasks(taskId: u8) {
     if task_get(taskId, tTaskId_BgScenery) != 0 {
         DestroyTask(task_get(taskId, tTaskId_BgScenery) as u8);
         task_set(taskId, tTaskId_BgScenery, 0);
@@ -1179,7 +1301,7 @@ unsafe fn ResetCreditsTasks(taskId: u8) {
         DestroyTask(task_get(taskId, tTaskId_ShowMons) as u8);
         task_set(taskId, tTaskId_ShowMons, 0);
     }
-    gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_DESTROY;
+    gIntroCredits_MovingSceneryState.set(INTROCRED_SCENERY_DESTROY);
 }
 unsafe fn LoadTheEndScreen(tileOffsetLoad: u16, tileOffsetWrite: u16, palOffset: u16) {
     LZ77UnCompVram(
@@ -1270,7 +1392,7 @@ unsafe fn DrawTheEnd(offset: u16, palette: u16) {
     );
 }
 pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {
-    if gIntroCredits_MovingSceneryState != INTROCRED_SCENERY_NORMAL {
+    if gIntroCredits_MovingSceneryState.get() != INTROCRED_SCENERY_NORMAL {
         DestroySprite(sprite);
         return;
     }
@@ -1306,7 +1428,7 @@ pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_Rival(sprite: *mut Sprite) {
-    if gIntroCredits_MovingSceneryState != INTROCRED_SCENERY_NORMAL {
+    if gIntroCredits_MovingSceneryState.get() != INTROCRED_SCENERY_NORMAL {
         DestroySprite(sprite);
         return;
     }
@@ -1324,7 +1446,7 @@ pub(crate) unsafe fn SpriteCB_Rival(sprite: *mut Sprite) {
             if (*sprite).x > -32 {
                 (*sprite).x -= 2;
             }
-            (*sprite).y2 = -gIntroCredits_MovingSceneryVOffset;
+            (*sprite).y2 = -gIntroCredits_MovingSceneryVOffset.get();
         }
         2 => {
             (*sprite).data[7] += 1;
@@ -1343,7 +1465,7 @@ pub(crate) unsafe fn SpriteCB_Rival(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_CreditsMon(sprite: *mut Sprite) {
-    if gIntroCredits_MovingSceneryState != INTROCRED_SCENERY_NORMAL {
+    if gIntroCredits_MovingSceneryState.get() != INTROCRED_SCENERY_NORMAL {
         FreeAndDestroyMonPicSprite((*sprite).data[6] as u16);
         return;
     }
@@ -1432,40 +1554,58 @@ pub(crate) unsafe fn SpriteCB_CreditsMon(sprite: *mut Sprite) {
 unsafe fn CreateCreditsMonSprite(nationalDexNum: u16, x: i16, y: i16, position: u16) -> u8 {
     let monSpriteId: u8 =
         CreateMonSpriteFromNationalDexNumber(nationalDexNum, x, y, position) as u8;
-    gSprites[monSpriteId].oam.set_priority(1);
-    gSprites[monSpriteId].data[sPosition] = position as i16 + 1;
-    gSprites[monSpriteId].set_invisible(TRUE as u16);
-    gSprites[monSpriteId].callback = Some(SpriteCB_CreditsMon);
-    gSprites[monSpriteId].data[sSpriteId] = monSpriteId as i16;
+    (*gSprites.as_ptr())[monSpriteId].oam.set_priority(1);
+    {
+        let gl_i38 = sPosition;
+        crate::gl!(gSprites[monSpriteId].data[gl_i38] = position as i16 + 1)
+    };
+    (*gSprites.as_ptr())[monSpriteId].set_invisible(TRUE as u16);
+    crate::gl!(gSprites[monSpriteId].callback = Some(SpriteCB_CreditsMon));
+    {
+        let gl_i39 = sSpriteId;
+        crate::gl!(gSprites[monSpriteId].data[gl_i39] = monSpriteId as i16)
+    };
     let bgSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_CreditsMonBg).cast_mut(),
-        gSprites[monSpriteId].x,
-        gSprites[monSpriteId].y,
+        crate::gl!(gSprites[monSpriteId].x),
+        crate::gl!(gSprites[monSpriteId].y),
         1,
     );
-    gSprites[bgSpriteId].data[sMonSpriteId] = monSpriteId as i16;
-    StartSpriteAnimIfDifferent(&raw mut gSprites[bgSpriteId], position as u8);
+    {
+        let gl_i40 = sMonSpriteId;
+        crate::gl!(gSprites[bgSpriteId].data[gl_i40] = monSpriteId as i16)
+    };
+    StartSpriteAnimIfDifferent(crate::gl!(&raw gSprites[bgSpriteId]), position as u8);
     monSpriteId
 }
 pub(crate) unsafe fn SpriteCB_CreditsMonBg(sprite: *mut Sprite) {
-    if gSprites[(*sprite).data[0]].data[0] == 10
-        || gIntroCredits_MovingSceneryState != INTROCRED_SCENERY_NORMAL
+    if ({
+        let gl_i41 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i41].data[0])
+    }) == 10
+        || gIntroCredits_MovingSceneryState.get() != INTROCRED_SCENERY_NORMAL
     {
         DestroySprite(sprite);
         return;
     }
-    (*sprite).set_invisible(gSprites[(*sprite).data[0]].invisible());
+    (*sprite).set_invisible((*gSprites.as_ptr())[(*sprite).data[0]].invisible());
     (*sprite)
         .oam
-        .set_objMode(gSprites[(*sprite).data[0]].oam.objMode());
+        .set_objMode((*gSprites.as_ptr())[(*sprite).data[0]].oam.objMode());
     (*sprite)
         .oam
-        .set_affineMode(gSprites[(*sprite).data[0]].oam.affineMode());
+        .set_affineMode((*gSprites.as_ptr())[(*sprite).data[0]].oam.affineMode());
     (*sprite)
         .oam
-        .set_matrixNum(gSprites[(*sprite).data[0]].oam.matrixNum());
-    (*sprite).x = gSprites[(*sprite).data[0]].x;
-    (*sprite).y = gSprites[(*sprite).data[0]].y;
+        .set_matrixNum((*gSprites.as_ptr())[(*sprite).data[0]].oam.matrixNum());
+    (*sprite).x = {
+        let gl_i42 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i42].x)
+    };
+    (*sprite).y = {
+        let gl_i43 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i43].y)
+    };
 }
 unsafe fn DeterminePokemonToShow() {
     let starter: u16 = SpeciesToNationalPokedexNum(GetStarterPokemon(VarGet(VAR_STARTER_MON)));
@@ -1473,60 +1613,64 @@ unsafe fn DeterminePokemonToShow() {
     let mut j: u16 = 0;
     for dexNum in 1..NATIONAL_DEX_DEOXYS {
         if GetSetPokedexFlag(dexNum, FLAG_GET_CAUGHT) != 0 {
-            (*sCreditsData).caughtMonIds[j] = dexNum;
+            (*crate::gl!(sCreditsData)).caughtMonIds[j] = dexNum;
             j += 1;
         }
     }
     let mut dexNum: u16 = j;
     while dexNum < NATIONAL_DEX_DEOXYS {
-        (*sCreditsData).caughtMonIds[dexNum] = NATIONAL_DEX_NONE;
+        (*crate::gl!(sCreditsData)).caughtMonIds[dexNum] = NATIONAL_DEX_NONE;
         dexNum += 1;
     }
-    (*sCreditsData).numCaughtMon = j;
-    if (*sCreditsData).numCaughtMon < NUM_MON_SLIDES {
-        (*sCreditsData).numMonToShow = j;
+    (*crate::gl!(sCreditsData)).numCaughtMon = j;
+    if (*crate::gl!(sCreditsData)).numCaughtMon < NUM_MON_SLIDES {
+        (*crate::gl!(sCreditsData)).numMonToShow = j;
     } else {
-        (*sCreditsData).numMonToShow = NUM_MON_SLIDES;
+        (*crate::gl!(sCreditsData)).numMonToShow = NUM_MON_SLIDES;
     }
     j = 0;
     loop {
-        page = rem_i32(Random() as i32, (*sCreditsData).numCaughtMon as i32) as u16;
-        (*sCreditsData).monToShow[j] = (*sCreditsData).caughtMonIds[page];
+        page = rem_i32(
+            Random() as i32,
+            (*crate::gl!(sCreditsData)).numCaughtMon as i32,
+        ) as u16;
+        (*crate::gl!(sCreditsData)).monToShow[j] = (*crate::gl!(sCreditsData)).caughtMonIds[page];
         j += 1;
-        (*sCreditsData).caughtMonIds[page] = 0;
-        (*sCreditsData).numCaughtMon -= 1;
-        if page != (*sCreditsData).numCaughtMon {
-            (*sCreditsData).caughtMonIds[page] =
-                (*sCreditsData).caughtMonIds[(*sCreditsData).numCaughtMon];
-            (*sCreditsData).caughtMonIds[(*sCreditsData).numCaughtMon] = 0;
+        (*crate::gl!(sCreditsData)).caughtMonIds[page] = 0;
+        (*crate::gl!(sCreditsData)).numCaughtMon -= 1;
+        if page != (*crate::gl!(sCreditsData)).numCaughtMon {
+            (*crate::gl!(sCreditsData)).caughtMonIds[page] =
+                (*crate::gl!(sCreditsData)).caughtMonIds[(*crate::gl!(sCreditsData)).numCaughtMon];
+            (*crate::gl!(sCreditsData)).caughtMonIds[(*crate::gl!(sCreditsData)).numCaughtMon] = 0;
         }
-        if !((*sCreditsData).numCaughtMon != 0 && j < NUM_MON_SLIDES) {
+        if !((*crate::gl!(sCreditsData)).numCaughtMon != 0 && j < NUM_MON_SLIDES) {
             break;
         }
     }
-    if (*sCreditsData).numMonToShow < NUM_MON_SLIDES {
-        j = (*sCreditsData).numMonToShow;
+    if (*crate::gl!(sCreditsData)).numMonToShow < NUM_MON_SLIDES {
+        j = (*crate::gl!(sCreditsData)).numMonToShow;
         page = 0;
         while j < NUM_MON_SLIDES {
-            (*sCreditsData).monToShow[j] = (*sCreditsData).monToShow[page];
+            (*crate::gl!(sCreditsData)).monToShow[j] = (*crate::gl!(sCreditsData)).monToShow[page];
             page += 1;
-            if page == (*sCreditsData).numMonToShow {
+            if page == (*crate::gl!(sCreditsData)).numMonToShow {
                 page = 0;
             }
             j += 1;
         }
-        (*sCreditsData).monToShow[70] = starter;
+        (*crate::gl!(sCreditsData)).monToShow[70] = starter;
     } else {
         dexNum = 0;
-        while (*sCreditsData).monToShow[dexNum] != starter && dexNum < NUM_MON_SLIDES {
+        while (*crate::gl!(sCreditsData)).monToShow[dexNum] != starter && dexNum < NUM_MON_SLIDES {
             dexNum += 1;
         }
-        if (dexNum as i32) < (*sCreditsData).numMonToShow as i32 - 1 {
-            (*sCreditsData).monToShow[dexNum] = (*sCreditsData).monToShow[70];
-            (*sCreditsData).monToShow[70] = starter;
+        if (dexNum as i32) < (*crate::gl!(sCreditsData)).numMonToShow as i32 - 1 {
+            (*crate::gl!(sCreditsData)).monToShow[dexNum] =
+                (*crate::gl!(sCreditsData)).monToShow[70];
+            (*crate::gl!(sCreditsData)).monToShow[70] = starter;
         } else {
-            (*sCreditsData).monToShow[70] = starter;
+            (*crate::gl!(sCreditsData)).monToShow[70] = starter;
         }
     }
-    (*sCreditsData).numMonToShow = NUM_MON_SLIDES;
+    (*crate::gl!(sCreditsData)).numMonToShow = NUM_MON_SLIDES;
 }

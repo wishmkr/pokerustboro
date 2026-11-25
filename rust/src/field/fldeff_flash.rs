@@ -93,7 +93,7 @@ static sTransitionTypes: Table<CArray<FlashStruct, 17>> =
 
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -109,19 +109,19 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 pub unsafe fn SetUpFieldMove_Flash() -> u8 {
     if ShouldDoBrailleRegisteelEffect() != 0 {
         gSpecialVar_Result = GetCursorSelectionMonId() as u16;
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(SetUpPuzzleEffectRegisteel);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(SetUpPuzzleEffectRegisteel));
         return TRUE;
-    } else if gMapHeader.cave == TRUE && FlagGet(FLAG_SYS_USE_FLASH) == 0 {
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_Flash);
+    } else if crate::gl!(gMapHeader.cave) == TRUE && FlagGet(FLAG_SYS_USE_FLASH) == 0 {
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_Flash));
         return TRUE;
     }
     FALSE
 }
 pub(crate) unsafe fn FieldCallback_Flash() {
     let taskId: u8 = CreateFieldMoveTask();
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     task_set(
         taskId,
         8,
@@ -228,7 +228,7 @@ pub unsafe fn CB2_DoChangeMap() {
     SetVBlankCallback(Some(VBC_ChangeMapVBlank));
     SetMainCallback2(Some(CB2_ChangeMapMain));
     if TryDoMapTransition() == 0 {
-        SetMainCallback2(gMain.savedCallback);
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }
 unsafe fn TryDoMapTransition() -> u8 {
@@ -338,7 +338,7 @@ pub(crate) unsafe fn Task_ExitCaveTransition5(taskId: u8) {
     if task_get(taskId, 2) != 0 {
         task_set(taskId, 2, task_get(taskId, 2) - 1);
     } else {
-        SetMainCallback2(gMain.savedCallback);
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }
 pub(crate) unsafe fn DoEnterCaveTransition() {
@@ -405,6 +405,6 @@ pub(crate) unsafe fn Task_EnterCaveTransition4(taskId: u8) {
             0,
             32,
         );
-        SetMainCallback2(gMain.savedCallback);
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }

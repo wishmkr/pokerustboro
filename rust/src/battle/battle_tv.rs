@@ -98,28 +98,43 @@ static sVariableDmgMoves: Table<CArray<u16, 26>> =
 pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
     let mut atkMon: *mut Pokemon = null_mut();
     let mut defMon: *mut Pokemon = null_mut();
-    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0
         && stringId != STRINGID_ITDOESNTAFFECT as u16
         && stringId != STRINGID_NOTVERYEFFECTIVE
     {
         return;
     }
-    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
-    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
-    let effSide: u32 = GetBattlerSide(gEffectBattler) as u32;
-    let scriptingSide: u32 = GetBattlerSide((*gBattleMsgDataPtr).scrActive) as u32;
+    let tvPtr: *mut BattleTv = &raw mut (*crate::gl!(gBattleStruct)).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker.get()) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget.get()) as u32;
+    let effSide: u32 = GetBattlerSide(gEffectBattler.get()) as u32;
+    let scriptingSide: u32 = GetBattlerSide((*crate::gl!(gBattleMsgDataPtr)).scrActive) as u32;
     if atkSide == B_SIDE_PLAYER as u32 {
-        atkMon = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]];
+        atkMon = &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i0 = gBattlerAttacker.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i0])
+        }];
     } else {
-        atkMon = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker]];
+        atkMon = &raw mut (*gEnemyParty.as_ptr())[{
+            let gl_i1 = gBattlerAttacker.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i1])
+        }];
     }
     if defSide == B_SIDE_PLAYER as u32 {
-        defMon = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerTarget]];
+        defMon = &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i2 = gBattlerTarget.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i2])
+        }];
     } else {
-        defMon = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]];
+        defMon = &raw mut (*gEnemyParty.as_ptr())[{
+            let gl_i3 = gBattlerTarget.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i3])
+        }];
     }
-    let moveSlot: u8 = GetBattlerMoveSlotId(gBattlerAttacker, (*gBattleMsgDataPtr).currentMove);
+    let moveSlot: u8 = GetBattlerMoveSlotId(
+        gBattlerAttacker.get(),
+        (*crate::gl!(gBattleMsgDataPtr)).currentMove,
+    );
     if moveSlot >= MAX_MON_MOVES as u8
         && IsNotSpecialBattleString(stringId) != 0
         && stringId > BATTLESTRINGS_TABLE_START as u16
@@ -127,25 +142,25 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
         (*tvPtr).side[atkSide].set_faintCause(FNT_OTHER);
         return;
     }
-    let perishCount: *mut u8 = gBattleTextBuff1.as_mut_ptr().at(4);
-    let statStringId: *mut u16 = gBattleTextBuff2.as_mut_ptr().at(2) as *mut u16;
-    let finishedMoveId: *mut u16 = gBattleTextBuff1.as_mut_ptr().at(2) as *mut u16;
-    let atkFlank: u32 = (GetBattlerPosition(gBattlerAttacker) as i32 / 2) as u32;
-    let defFlank: u32 = (GetBattlerPosition(gBattlerTarget) as i32 / 2) as u32;
-    let effFlank: u32 = (GetBattlerPosition(gEffectBattler) as i32 / 2) as u32;
+    let perishCount: *mut u8 = (*gBattleTextBuff1.as_ptr()).as_mut_ptr().at(4);
+    let statStringId: *mut u16 = (*gBattleTextBuff2.as_ptr()).as_mut_ptr().at(2) as *mut u16;
+    let finishedMoveId: *mut u16 = (*gBattleTextBuff1.as_ptr()).as_mut_ptr().at(2) as *mut u16;
+    let atkFlank: u32 = (GetBattlerPosition(gBattlerAttacker.get()) as i32 / 2) as u32;
+    let defFlank: u32 = (GetBattlerPosition(gBattlerTarget.get()) as i32 / 2) as u32;
+    let effFlank: u32 = (GetBattlerPosition(gEffectBattler.get()) as i32 / 2) as u32;
     'l1: {
         let sw1: u16 = stringId;
         let mut fall = false;
         if sw1 == 27 {
             AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 2, 0);
-            if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0 {
                 TrySetBattleSeminarShow();
             }
             break 'l1;
         }
         if sw1 == STRINGID_NOTVERYEFFECTIVE {
             AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 1, 0);
-            if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
+            if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0
                 && GetMonData3(defMon, MON_DATA_HP, null_mut()) != 0
             {
                 TrySetBattleSeminarShow();
@@ -157,20 +172,35 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFORESAWATTACK {
-            (*tvPtr).side[atkSide]
-                .set_futureSightMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_futureSightMonId(
+                ({
+                    let gl_i4 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i4])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_futureSightMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNCHOSEXASDESTINY {
-            (*tvPtr).side[atkSide]
-                .set_doomDesireMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_doomDesireMonId(
+                ({
+                    let gl_i5 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i5])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_doomDesireMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_FAINTINTHREE {
-            (*tvPtr).side[atkSide]
-                .set_perishSongMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_perishSongMonId(
+                ({
+                    let gl_i6 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i6])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_perishSongMoveSlot(moveSlot as u32);
             (*tvPtr).side[atkSide].set_perishSong(1);
             break 'l1;
@@ -194,8 +224,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWANTSGRUDGE {
-            (*tvPtr).side[atkSide]
-                .set_grudgeMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_grudgeMonId(
+                ({
+                    let gl_i7 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i7])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_grudgeMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -212,8 +247,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNTRYINGTOTAKEFOE {
-            (*tvPtr).side[atkSide]
-                .set_destinyBondMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_destinyBondMonId(
+                ({
+                    let gl_i8 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i8])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_destinyBondMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -224,8 +264,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNPLANTEDROOTS {
-            (*tvPtr).pos[atkSide][atkFlank]
-                .set_ingrainMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[atkSide][atkFlank].set_ingrainMonId(
+                ({
+                    let gl_i9 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i9])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[atkSide][atkFlank].set_ingrainMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -254,7 +299,7 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNTRANSFORMEDINTO {
-            (*gBattleStruct).anyMonHasTransformed = TRUE;
+            (*crate::gl!(gBattleStruct)).anyMonHasTransformed = TRUE;
             break 'l1;
         }
         if sw1 == STRINGID_CRITICALHIT {
@@ -262,19 +307,19 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_ATTACKERSSTATROSE {
-            if gBattleTextBuff1[2] != 0 {
+            if crate::gl!(gBattleTextBuff1[2]) != 0 {
                 if *statStringId == STRINGID_STATSHARPLY as u16 {
                     AddMovePoints(
                         PTS_STAT_INCREASE_2,
                         moveSlot as u16,
-                        gBattleTextBuff1[2] - 1,
+                        crate::gl!(gBattleTextBuff1[2]) - 1,
                         0,
                     );
                 } else {
                     AddMovePoints(
                         PTS_STAT_INCREASE_1,
                         moveSlot as u16,
-                        gBattleTextBuff1[2] - 1,
+                        crate::gl!(gBattleTextBuff1[2]) - 1,
                         0,
                     );
                 }
@@ -282,20 +327,20 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_DEFENDERSSTATROSE {
-            if gBattleTextBuff1[2] != 0 {
-                if gBattlerAttacker == gBattlerTarget {
+            if crate::gl!(gBattleTextBuff1[2]) != 0 {
+                if gBattlerAttacker.get() == gBattlerTarget.get() {
                     if *statStringId == STRINGID_STATSHARPLY as u16 {
                         AddMovePoints(
                             PTS_STAT_INCREASE_2,
                             moveSlot as u16,
-                            gBattleTextBuff1[2] - 1,
+                            crate::gl!(gBattleTextBuff1[2]) - 1,
                             0,
                         );
                     } else {
                         AddMovePoints(
                             PTS_STAT_INCREASE_1,
                             moveSlot as u16,
-                            gBattleTextBuff1[2] - 1,
+                            crate::gl!(gBattleTextBuff1[2]) - 1,
                             0,
                         );
                     }
@@ -303,7 +348,7 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
                     AddMovePoints(
                         PTS_STAT_INCREASE_NOT_SELF,
                         moveSlot as u16,
-                        gBattleTextBuff1[2] - 1,
+                        crate::gl!(gBattleTextBuff1[2]) - 1,
                         0,
                     );
                 }
@@ -311,30 +356,30 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_ATTACKERSSTATFELL {
-            if gBattleTextBuff1[2] != 0 {
+            if crate::gl!(gBattleTextBuff1[2]) != 0 {
                 AddMovePoints(
                     PTS_STAT_DECREASE_SELF,
                     moveSlot as u16,
-                    gBattleTextBuff1[2] - 1,
+                    crate::gl!(gBattleTextBuff1[2]) - 1,
                     0,
                 );
             }
             break 'l1;
         }
         if sw1 == STRINGID_DEFENDERSSTATFELL {
-            if gBattleTextBuff1[2] != 0 {
+            if crate::gl!(gBattleTextBuff1[2]) != 0 {
                 if *statStringId == STRINGID_STATHARSHLY as u16 {
                     AddMovePoints(
                         PTS_STAT_DECREASE_2,
                         moveSlot as u16,
-                        gBattleTextBuff1[2] - 1,
+                        crate::gl!(gBattleTextBuff1[2]) - 1,
                         0,
                     );
                 } else {
                     AddMovePoints(
                         PTS_STAT_DECREASE_1,
                         moveSlot as u16,
-                        gBattleTextBuff1[2] - 1,
+                        crate::gl!(gBattleTextBuff1[2]) - 1,
                         0,
                     );
                 }
@@ -342,8 +387,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNLAIDCURSE {
-            (*tvPtr).pos[defSide][defFlank]
-                .set_curseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_curseMonId(
+                ({
+                    let gl_i10 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i10])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[defSide][defFlank].set_curseMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -363,8 +413,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSEEDED {
-            (*tvPtr).pos[defSide][defFlank]
-                .set_leechSeedMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_leechSeedMonId(
+                ({
+                    let gl_i11 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i11])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[defSide][defFlank].set_leechSeedMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -382,8 +437,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFELLINTONIGHTMARE {
-            (*tvPtr).pos[defSide][defFlank]
-                .set_nightmareMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_nightmareMonId(
+                ({
+                    let gl_i12 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i12])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[defSide][defFlank].set_nightmareMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -408,8 +468,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             || sw1 == STRINGID_PKMNCLAMPED
             || sw1 == STRINGID_PKMNTRAPPEDBYSANDTOMB
         {
-            (*tvPtr).pos[defSide][defFlank]
-                .set_wrapMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_wrapMonId(
+                ({
+                    let gl_i13 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i13])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[defSide][defFlank].set_wrapMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -429,79 +494,163 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASBURNED {
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_brnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_brnMoveSlot(moveSlot as u32);
+            (*tvPtr).mon[effSide][{
+                let gl_i14 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i14])
+            }]
+            .set_brnMonId(
+                ({
+                    let gl_i15 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i15])
+                }) as u32
+                    + 1,
+            );
+            (*tvPtr).mon[effSide][{
+                let gl_i16 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i16])
+            }]
+            .set_brnMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNHURTBYBURN {
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0 {
-                if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMonId() != 0 {
+                if (*tvPtr).mon[atkSide][{
+                    let gl_i17 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i17])
+                }]
+                .brnMonId()
+                    != 0
+                {
                     AddMovePoints(
                         PTS_STATUS_DMG,
                         4,
-                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMonId()
-                            as u8
+                        (*tvPtr).mon[atkSide][{
+                            let gl_i18 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i18])
+                        }]
+                        .brnMonId() as u8
                             - 1,
-                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMoveSlot()
-                            as u8,
+                        (*tvPtr).mon[atkSide][{
+                            let gl_i19 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i19])
+                        }]
+                        .brnMoveSlot() as u8,
                     );
                 }
                 (*tvPtr).side[atkSide].set_faintCause(FNT_BURN);
-                (*tvPtr).side[atkSide]
-                    .set_faintCauseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32);
+                (*tvPtr).side[atkSide].set_faintCauseMonId(
+                    ({
+                        let gl_i20 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i20])
+                    }) as u32,
+                );
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASPOISONED {
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_psnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_psnMoveSlot(moveSlot as u32);
+            (*tvPtr).mon[effSide][{
+                let gl_i21 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i21])
+            }]
+            .set_psnMonId(
+                ({
+                    let gl_i22 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i22])
+                }) as u32
+                    + 1,
+            );
+            (*tvPtr).mon[effSide][{
+                let gl_i23 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i23])
+            }]
+            .set_psnMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNBADLYPOISONED {
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_badPsnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_badPsnMoveSlot(moveSlot as u32);
+            (*tvPtr).mon[effSide][{
+                let gl_i24 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i24])
+            }]
+            .set_badPsnMonId(
+                ({
+                    let gl_i25 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i25])
+                }) as u32
+                    + 1,
+            );
+            (*tvPtr).mon[effSide][{
+                let gl_i26 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i26])
+            }]
+            .set_badPsnMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNHURTBYPOISON {
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0 {
-                if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMonId() != 0 {
+                if (*tvPtr).mon[atkSide][{
+                    let gl_i27 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i27])
+                }]
+                .psnMonId()
+                    != 0
+                {
                     AddMovePoints(
                         PTS_STATUS_DMG,
                         2,
-                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMonId()
-                            as u8
+                        (*tvPtr).mon[atkSide][{
+                            let gl_i28 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i28])
+                        }]
+                        .psnMonId() as u8
                             - 1,
-                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMoveSlot()
-                            as u8,
+                        (*tvPtr).mon[atkSide][{
+                            let gl_i29 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i29])
+                        }]
+                        .psnMoveSlot() as u8,
                     );
                 }
-                if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].badPsnMonId() != 0
+                if (*tvPtr).mon[atkSide][{
+                    let gl_i30 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i30])
+                }]
+                .badPsnMonId()
+                    != 0
                 {
                     AddMovePoints(
                         PTS_STATUS_DMG,
                         3,
-                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].badPsnMonId()
-                            as u8
+                        (*tvPtr).mon[atkSide][{
+                            let gl_i31 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i31])
+                        }]
+                        .badPsnMonId() as u8
                             - 1,
-                        (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]]
-                            .badPsnMoveSlot() as u8,
+                        (*tvPtr).mon[atkSide][{
+                            let gl_i32 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i32])
+                        }]
+                        .badPsnMoveSlot() as u8,
                     );
                 }
                 (*tvPtr).side[atkSide].set_faintCause(FNT_POISON);
-                (*tvPtr).side[atkSide]
-                    .set_faintCauseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32);
+                (*tvPtr).side[atkSide].set_faintCauseMonId(
+                    ({
+                        let gl_i33 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i33])
+                    }) as u32,
+                );
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFELLINLOVE {
-            (*tvPtr).pos[defSide][defFlank]
-                .set_attractMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[defSide][defFlank].set_attractMonId(
+                ({
+                    let gl_i34 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i34])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[defSide][defFlank].set_attractMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -517,71 +666,150 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASPARALYZED {
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_prlzMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_prlzMoveSlot(moveSlot as u32);
+            (*tvPtr).mon[effSide][{
+                let gl_i35 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i35])
+            }]
+            .set_prlzMonId(
+                ({
+                    let gl_i36 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i36])
+                }) as u32
+                    + 1,
+            );
+            (*tvPtr).mon[effSide][{
+                let gl_i37 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i37])
+            }]
+            .set_prlzMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNISPARALYZED {
-            if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMonId() != 0 {
+            if (*tvPtr).mon[atkSide][{
+                let gl_i38 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i38])
+            }]
+            .prlzMonId()
+                != 0
+            {
                 AddMovePoints(
                     PTS_STATUS,
                     2,
-                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMonId() as u8
+                    (*tvPtr).mon[atkSide][{
+                        let gl_i39 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i39])
+                    }]
+                    .prlzMonId() as u8
                         - 1,
-                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMoveSlot()
-                        as u8,
+                    (*tvPtr).mon[atkSide][{
+                        let gl_i40 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i40])
+                    }]
+                    .prlzMoveSlot() as u8,
                 );
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFELLASLEEP {
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_slpMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_slpMoveSlot(moveSlot as u32);
+            (*tvPtr).mon[effSide][{
+                let gl_i41 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i41])
+            }]
+            .set_slpMonId(
+                ({
+                    let gl_i42 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i42])
+                }) as u32
+                    + 1,
+            );
+            (*tvPtr).mon[effSide][{
+                let gl_i43 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i43])
+            }]
+            .set_slpMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFASTASLEEP {
-            if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMonId() != 0
-                && (*gBattleMsgDataPtr).currentMove != MOVE_SNORE
-                && (*gBattleMsgDataPtr).currentMove != MOVE_SLEEP_TALK
+            if (*tvPtr).mon[atkSide][{
+                let gl_i44 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i44])
+            }]
+            .slpMonId()
+                != 0
+                && (*crate::gl!(gBattleMsgDataPtr)).currentMove != MOVE_SNORE
+                && (*crate::gl!(gBattleMsgDataPtr)).currentMove != MOVE_SLEEP_TALK
             {
                 AddMovePoints(
                     PTS_STATUS,
                     3,
-                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMonId() as u8
+                    (*tvPtr).mon[atkSide][{
+                        let gl_i45 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i45])
+                    }]
+                    .slpMonId() as u8
                         - 1,
-                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMoveSlot()
-                        as u8,
+                    (*tvPtr).mon[atkSide][{
+                        let gl_i46 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i46])
+                    }]
+                    .slpMoveSlot() as u8,
                 );
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASFROZEN {
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_frzMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-            (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
-                .set_frzMoveSlot(moveSlot as u32);
+            (*tvPtr).mon[effSide][{
+                let gl_i47 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i47])
+            }]
+            .set_frzMonId(
+                ({
+                    let gl_i48 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i48])
+                }) as u32
+                    + 1,
+            );
+            (*tvPtr).mon[effSide][{
+                let gl_i49 = gEffectBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i49])
+            }]
+            .set_frzMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNISFROZEN {
-            if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMonId() != 0 {
+            if (*tvPtr).mon[atkSide][{
+                let gl_i50 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i50])
+            }]
+            .frzMonId()
+                != 0
+            {
                 AddMovePoints(
                     PTS_STATUS,
                     4,
-                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMonId() as u8
+                    (*tvPtr).mon[atkSide][{
+                        let gl_i51 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i51])
+                    }]
+                    .frzMonId() as u8
                         - 1,
-                    (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMoveSlot()
-                        as u8,
+                    (*tvPtr).mon[atkSide][{
+                        let gl_i52 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i52])
+                    }]
+                    .frzMoveSlot() as u8,
                 );
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASCONFUSED {
-            (*tvPtr).pos[effSide][effFlank]
-                .set_confusionMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[effSide][effFlank].set_confusionMonId(
+                ({
+                    let gl_i53 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i53])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[effSide][effFlank].set_confusionMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -598,8 +826,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_SPIKESSCATTERED {
-            (*tvPtr).side[defSide]
-                .set_spikesMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[defSide].set_spikesMonId(
+                ({
+                    let gl_i54 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i54])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[defSide].set_spikesMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -621,14 +854,24 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_FIREWEAKENED {
-            (*tvPtr).pos[atkSide][atkFlank]
-                .set_waterSportMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[atkSide][atkFlank].set_waterSportMonId(
+                ({
+                    let gl_i55 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i55])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[atkSide][atkFlank].set_waterSportMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_ELECTRICITYWEAKENED {
-            (*tvPtr).pos[atkSide][atkFlank]
-                .set_mudSportMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).pos[atkSide][atkFlank].set_mudSportMonId(
+                ({
+                    let gl_i56 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i56])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).pos[atkSide][atkFlank].set_mudSportMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -660,14 +903,24 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNRAISEDDEF || sw1 == STRINGID_PKMNRAISEDDEFALITTLE {
-            (*tvPtr).side[atkSide]
-                .set_reflectMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_reflectMonId(
+                ({
+                    let gl_i57 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i57])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_reflectMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNRAISEDSPDEF || sw1 == STRINGID_PKMNRAISEDSPDEFALITTLE {
-            (*tvPtr).side[atkSide]
-                .set_lightScreenMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_lightScreenMonId(
+                ({
+                    let gl_i58 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i58])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_lightScreenMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -687,8 +940,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNCOVEREDBYVEIL {
-            (*tvPtr).side[atkSide]
-                .set_safeguardMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_safeguardMonId(
+                ({
+                    let gl_i59 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i59])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_safeguardMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -709,7 +967,13 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSHROUDEDINMIST {
-            (*tvPtr).side[atkSide].set_mistMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+            (*tvPtr).side[atkSide].set_mistMonId(
+                ({
+                    let gl_i60 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i60])
+                }) as u32
+                    + 1,
+            );
             (*tvPtr).side[atkSide].set_mistMoveSlot(moveSlot as u32);
             break 'l1;
         }
@@ -732,7 +996,10 @@ pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
             AddMovePoints(
                 PTS_BREAK_WALL,
                 0,
-                gBattlerPartyIndexes[gBattlerAttacker] as u8,
+                ({
+                    let gl_i61 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i61])
+                }) as u8,
                 moveSlot,
             );
             break 'l1;
@@ -788,20 +1055,26 @@ pub unsafe fn BattleTv_SetDataBasedOnMove(
     weatherFlags: u16,
     disableStructPtr: *mut DisableStruct,
 ) {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0 {
         return;
     }
-    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
-    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
-    let moveSlot: u8 = GetBattlerMoveSlotId(gBattlerAttacker, r#move);
+    let tvPtr: *mut BattleTv = &raw mut (*crate::gl!(gBattleStruct)).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker.get()) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget.get()) as u32;
+    let moveSlot: u8 = GetBattlerMoveSlotId(gBattlerAttacker.get(), r#move);
     if moveSlot >= MAX_MON_MOVES as u8 {
         (*tvPtr).side[atkSide].set_faintCause(FNT_OTHER);
         return;
     }
-    (*tvPtr).pos[defSide][GetBattlerPosition(gBattlerAttacker) as i32 / 2]
-        .set_attackedByMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
-    (*tvPtr).pos[defSide][GetBattlerPosition(gBattlerAttacker) as i32 / 2]
+    (*tvPtr).pos[defSide][GetBattlerPosition(gBattlerAttacker.get()) as i32 / 2]
+        .set_attackedByMonId(
+            ({
+                let gl_i62 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i62])
+            }) as u32
+                + 1,
+        );
+    (*tvPtr).pos[defSide][GetBattlerPosition(gBattlerAttacker.get()) as i32 / 2]
         .set_attackedByMoveSlot(moveSlot as u32);
     (*tvPtr).side[atkSide].set_usedMoveSlot(moveSlot as u32);
     AddMovePoints(
@@ -816,12 +1089,23 @@ pub unsafe fn BattleTv_SetDataBasedOnMove(
         AddMovePoints(PTS_ELECTRIC, r#move, moveSlot, 0);
     }
     if r#move == MOVE_WISH {
-        (*tvPtr).side[atkSide].set_wishMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+        (*tvPtr).side[atkSide].set_wishMonId(
+            ({
+                let gl_i63 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i63])
+            }) as u32
+                + 1,
+        );
         (*tvPtr).side[atkSide].set_wishMoveSlot(moveSlot as u32);
     }
     if r#move == MOVE_SELF_DESTRUCT || r#move == MOVE_EXPLOSION {
-        (*tvPtr).side[atkSide ^ 1]
-            .set_explosionMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
+        (*tvPtr).side[atkSide ^ 1].set_explosionMonId(
+            ({
+                let gl_i64 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i64])
+            }) as u32
+                + 1,
+        );
         (*tvPtr).side[atkSide ^ BIT_SIDE as u32].set_explosionMoveSlot(moveSlot as u32);
         (*tvPtr).side[atkSide ^ BIT_SIDE as u32].set_faintCause(FNT_EXPLOSION);
         (*tvPtr).side[atkSide ^ 1].set_explosion(1);
@@ -858,11 +1142,11 @@ pub unsafe fn BattleTv_SetDataBasedOnMove(
     );
 }
 pub unsafe fn BattleTv_SetDataBasedOnAnimation(animationId: u8) {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0 {
         return;
     }
-    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let tvPtr: *mut BattleTv = &raw mut (*crate::gl!(gBattleStruct)).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker.get()) as u32;
     match animationId {
         B_ANIM_FUTURE_SIGHT_HIT => {
             if (*tvPtr).side[atkSide].futureSightMonId() != 0 {
@@ -903,28 +1187,43 @@ pub unsafe fn TryPutLinkBattleTvShowOnAir() {
     let mut j: i32 = 0;
     let zero: i32 = 0;
     let one: i32 = 1;
-    if (*gBattleStruct).anyMonHasTransformed != 0 {
+    if (*crate::gl!(gBattleStruct)).anyMonHasTransformed != 0 {
         return;
     }
-    let movePoints: *mut BattleTvMovePoints = &raw mut (*gBattleStruct).tvMovePoints;
+    let movePoints: *mut BattleTvMovePoints = &raw mut (*crate::gl!(gBattleStruct)).tvMovePoints;
     for i in 0..PARTY_SIZE {
-        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
-            != SPECIES_NONE as u32
+        if GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != SPECIES_NONE as u32
         {
             countPlayer += 1;
         }
-        if GetMonData3(&raw mut gEnemyParty[i], MON_DATA_SPECIES, null_mut()) != SPECIES_NONE as u32
+        if GetMonData3(
+            crate::gl!(&raw gEnemyParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != SPECIES_NONE as u32
         {
             countOpponent += 1;
         }
     }
-    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 || countPlayer != countOpponent {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0 || countPlayer != countOpponent {
         return;
     }
     for i in 0..PARTY_SIZE {
-        species = GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) as u16;
+        species = GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
         if species != SPECIES_NONE
-            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_IS_EGG, null_mut()) == 0
+            && GetMonData3(
+                crate::gl!(&raw gPlayerParty[i]),
+                MON_DATA_IS_EGG,
+                null_mut(),
+            ) == 0
         {
             sum = 0;
             for j in 0..MAX_MON_MOVES {
@@ -936,18 +1235,22 @@ pub unsafe fn TryPutLinkBattleTvShowOnAir() {
                 playerBestSpecies = species;
             }
         }
-        species = GetMonData3(&raw mut gEnemyParty[i], MON_DATA_SPECIES, null_mut()) as u16;
+        species = GetMonData3(
+            crate::gl!(&raw gEnemyParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
         if species != SPECIES_NONE
-            && GetMonData3(&raw mut gEnemyParty[i], MON_DATA_IS_EGG, null_mut()) == 0
+            && GetMonData3(crate::gl!(&raw gEnemyParty[i]), MON_DATA_IS_EGG, null_mut()) == 0
         {
             sum = 0;
             for j in 0..MAX_MON_MOVES {
                 sum += (*movePoints).points[one][i * 4 + j];
             }
             if opponentBestSum == sum {
-                if GetMonData3(&raw mut gEnemyParty[i], MON_DATA_EXP, null_mut())
+                if GetMonData3(crate::gl!(&raw gEnemyParty[i]), MON_DATA_EXP, null_mut())
                     > GetMonData3(
-                        &raw mut gEnemyParty[opponentBestMonId],
+                        crate::gl!(&raw gEnemyParty[opponentBestMonId]),
                         MON_DATA_EXP,
                         null_mut(),
                     )
@@ -974,18 +1277,18 @@ pub unsafe fn TryPutLinkBattleTvShowOnAir() {
         j += 1;
     }
     let r#move: u16 = GetMonData3(
-        &raw mut gPlayerParty[playerBestMonId],
+        crate::gl!(&raw gPlayerParty[playerBestMonId]),
         MON_DATA_MOVE1 + i,
         null_mut(),
     ) as u16;
     if playerBestSum == 0 || r#move == 0 {
         return;
     }
-    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
         if playerBestMonId < MULTI_PARTY_SIZE as u8
-            && GetLinkTrainerFlankId(gBattleScripting.multiplayerId) == 0
+            && GetLinkTrainerFlankId(crate::gl!(gBattleScripting.multiplayerId)) == 0
             || playerBestMonId >= MULTI_PARTY_SIZE as u8
-                && GetLinkTrainerFlankId(gBattleScripting.multiplayerId) != 0
+                && GetLinkTrainerFlankId(crate::gl!(gBattleScripting.multiplayerId)) != 0
         {
             j = if opponentBestMonId < MULTI_PARTY_SIZE as u8 {
                 FALSE as i32
@@ -993,7 +1296,7 @@ pub unsafe fn TryPutLinkBattleTvShowOnAir() {
                 TRUE as i32
             };
             PutBattleUpdateOnTheAir(
-                GetOpposingLinkMultiBattlerId(j as u8, gBattleScripting.multiplayerId),
+                GetOpposingLinkMultiBattlerId(j as u8, crate::gl!(gBattleScripting.multiplayerId)),
                 r#move,
                 playerBestSpecies,
                 opponentBestSpecies,
@@ -1001,7 +1304,7 @@ pub unsafe fn TryPutLinkBattleTvShowOnAir() {
         }
     } else {
         PutBattleUpdateOnTheAir(
-            gBattleScripting.multiplayerId ^ 1,
+            crate::gl!(gBattleScripting.multiplayerId) ^ 1,
             r#move,
             playerBestSpecies,
             opponentBestSpecies,
@@ -1009,10 +1312,10 @@ pub unsafe fn TryPutLinkBattleTvShowOnAir() {
     }
 }
 unsafe fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
-    let movePoints: *mut BattleTvMovePoints = &raw mut (*gBattleStruct).tvMovePoints;
-    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
-    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let movePoints: *mut BattleTvMovePoints = &raw mut (*crate::gl!(gBattleStruct)).tvMovePoints;
+    let tvPtr: *mut BattleTv = &raw mut (*crate::gl!(gBattleStruct)).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker.get()) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget.get()) as u32;
     let mut ptr: *mut u16 = null_mut();
     let mut i: i32 = 0;
     'l1: {
@@ -1028,9 +1331,12 @@ unsafe fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
             || sw1 == PTS_STAT_DECREASE_2
             || sw1 == PTS_STAT_INCREASE_NOT_SELF
         {
-            (*movePoints).points[atkSide]
-                [gBattlerPartyIndexes[gBattlerAttacker] as i32 * 4 + arg1 as i32] +=
-                *sPointsArray[caseId].at(arg2) as i16;
+            (*movePoints).points[atkSide][({
+                let gl_i65 = gBattlerAttacker.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i65])
+            }) as i32
+                * 4
+                + arg1 as i32] += *sPointsArray[caseId].at(arg2) as i16;
             break 'l1;
         }
         if sw1 == PTS_RAIN
@@ -1043,9 +1349,12 @@ unsafe fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
             ptr = sPointsArray[caseId];
             loop {
                 if arg1 == *ptr.at(i) {
-                    (*movePoints).points[atkSide]
-                        [gBattlerPartyIndexes[gBattlerAttacker] as i32 * 4 + arg2 as i32] +=
-                        *ptr.at(i + 1) as i16;
+                    (*movePoints).points[atkSide][({
+                        let gl_i66 = gBattlerAttacker.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i66])
+                    }) as i32
+                        * 4
+                        + arg2 as i32] += *ptr.at(i + 1) as i16;
                     break;
                 }
                 i += 2;
@@ -1147,9 +1456,9 @@ unsafe fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
     }
 }
 unsafe fn AddPointsOnFainting(targetFainted: u8) {
-    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
-    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let tvPtr: *mut BattleTv = &raw mut (*crate::gl!(gBattleStruct)).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker.get()) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget.get()) as u32;
     let atkArrId: u32 = (*tvPtr).side[atkSide].faintCauseMonId();
     if (*tvPtr).side[atkSide].faintCause() != FNT_NONE {
         match (*tvPtr).side[atkSide].faintCause() {
@@ -1264,7 +1573,10 @@ unsafe fn AddPointsOnFainting(targetFainted: u8) {
             FNT_PERISH_SONG => {
                 if (*tvPtr).side[atkSide].perishSong() != 0
                     && (*tvPtr).side[atkSide].perishSongMonId() - 1
-                        != gBattlerPartyIndexes[gBattlerAttacker] as u32
+                        != ({
+                            let gl_i67 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i67])
+                        }) as u32
                 {
                     AddMovePoints(
                         PTS_FAINT,
@@ -1334,7 +1646,11 @@ unsafe fn AddPointsOnFainting(targetFainted: u8) {
                         PTS_FAINT_SET_UP,
                         0,
                         atkSide as u8,
-                        gBattlerPartyIndexes[gBattlerAttacker] as u8 * 4
+                        ({
+                            let gl_i68 = gBattlerAttacker.get();
+                            crate::gl!(gBattlerPartyIndexes[gl_i68])
+                        }) as u8
+                            * 4
                             + (*tvPtr).side[atkSide].usedMoveSlot() as u8,
                     );
                 }
@@ -1358,7 +1674,11 @@ unsafe fn AddPointsOnFainting(targetFainted: u8) {
                 PTS_FAINT_SET_UP,
                 0,
                 atkSide as u8,
-                gBattlerPartyIndexes[gBattlerAttacker] as u8 * 4
+                ({
+                    let gl_i69 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i69])
+                }) as u8
+                    * 4
                     + (*tvPtr).side[atkSide].usedMoveSlot() as u8,
             );
         }
@@ -1367,28 +1687,41 @@ unsafe fn AddPointsOnFainting(targetFainted: u8) {
 unsafe fn TrySetBattleSeminarShow() {
     let mut dmgByMove: CArray<i32, 4> = zeroed();
     let mut powerOverride: u16 = 0;
-    if gBattleTypeFlags & 0x2000003 != 0 {
+    if gBattleTypeFlags.get() & 0x2000003 != 0 {
         return;
-    } else if GetBattlerSide(gBattlerAttacker) == B_SIDE_OPPONENT {
+    } else if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_OPPONENT {
         return;
-    } else if gBattleMons[gBattlerAttacker].statStages[6] < 6 {
+    } else if ({
+        let gl_i70 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i70].statStages[6])
+    }) < 6
+    {
         return;
-    } else if gBattleMons[gBattlerTarget].statStages[7] > DEFAULT_STAT_STAGE {
+    } else if ({
+        let gl_i71 = gBattlerTarget.get();
+        crate::gl!(gBattleMons[gl_i71].statStages[7])
+    }) > DEFAULT_STAT_STAGE
+    {
         return;
-    } else if gCurrentMove == MOVE_HIDDEN_POWER || gCurrentMove == MOVE_WEATHER_BALL {
+    } else if gCurrentMove.get() == MOVE_HIDDEN_POWER || gCurrentMove.get() == MOVE_WEATHER_BALL {
         return;
-    } else if gBattleTypeFlags & 0x320000 != 0 {
+    } else if gBattleTypeFlags.get() & 0x320000 != 0 {
         return;
     } else if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-        [gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]]]
-        .power
+        [(*gBattleMons.as_ptr())[gBattlerAttacker.get()].moves[{
+            let gl_i73 = gBattlerAttacker.get();
+            crate::gl!(gMoveSelectionCursor[gl_i73])
+        }]]
+    .power
         == 0
     {
         return;
     }
     let mut i: i32 = 0;
-    let mut currMoveSaved: u16 =
-        gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]];
+    let mut currMoveSaved: u16 = (*gBattleMons.as_ptr())[gBattlerAttacker.get()].moves[{
+        let gl_i75 = gBattlerAttacker.get();
+        crate::gl!(gMoveSelectionCursor[gl_i75])
+    }];
     loop {
         if currMoveSaved == sVariableDmgMoves[i] {
             break;
@@ -1401,37 +1734,65 @@ unsafe fn TrySetBattleSeminarShow() {
     if sVariableDmgMoves[i] != TABLE_END as u16 {
         return;
     }
-    dmgByMove[gMoveSelectionCursor[gBattlerAttacker]] = gBattleMoveDamage;
-    currMoveSaved = gCurrentMove;
+    dmgByMove[{
+        let gl_i76 = gBattlerAttacker.get();
+        crate::gl!(gMoveSelectionCursor[gl_i76])
+    }] = gBattleMoveDamage.get();
+    currMoveSaved = gCurrentMove.get();
     i = 0;
     while i < MAX_MON_MOVES {
-        gCurrentMove = gBattleMons[gBattlerAttacker].moves[i];
+        gCurrentMove.set({
+            let gl_i77 = gBattlerAttacker.get();
+            crate::gl!(gBattleMons[gl_i77].moves[i])
+        });
         powerOverride = 0;
-        if ShouldCalculateDamage(gCurrentMove, &raw mut dmgByMove[i], &raw mut powerOverride) != 0 {
-            let sideStatus: u16 = gSideStatuses[GetBattlerPosition(gBattlerTarget) as i32 & 1];
-            gBattleMoveDamage = CalculateBaseDamage(
-                &raw mut gBattleMons[gBattlerAttacker],
-                &raw mut gBattleMons[gBattlerTarget],
-                gCurrentMove as u32,
+        if ShouldCalculateDamage(
+            gCurrentMove.get(),
+            &raw mut dmgByMove[i],
+            &raw mut powerOverride,
+        ) != 0
+        {
+            let sideStatus: u16 = {
+                let gl_i0 = GetBattlerPosition(gBattlerTarget.get()) as i32 & 1;
+                crate::gl!(gSideStatuses[gl_i0])
+            };
+            gBattleMoveDamage.set(CalculateBaseDamage(
+                {
+                    let gl_i78 = gBattlerAttacker.get();
+                    crate::gl!(&raw gBattleMons[gl_i78])
+                },
+                {
+                    let gl_i79 = gBattlerTarget.get();
+                    crate::gl!(&raw gBattleMons[gl_i79])
+                },
+                gCurrentMove.get() as u32,
                 sideStatus,
                 powerOverride,
                 0,
-                gBattlerAttacker,
-                gBattlerTarget,
-            );
-            if gStatuses3[gBattlerAttacker] & STATUS3_CHARGED_UP != 0
+                gBattlerAttacker.get(),
+                gBattlerTarget.get(),
+            ));
+            if {
+                let gl_i1 = gBattlerAttacker.get();
+                crate::gl!(gStatuses3[gl_i1])
+            } & STATUS3_CHARGED_UP
+                != 0
                 && (*(&raw const crate::data::pokemon::gBattleMoves)
-                    .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
-                    .r#type
+                    .cast::<CArray<BattleMove, 0>>())[gCurrentMove.get()]
+                .r#type
                     == TYPE_ELECTRIC
             {
-                gBattleMoveDamage *= 2;
+                gBattleMoveDamage.set(gBattleMoveDamage.get() * (2));
             }
-            if gProtectStructs[gBattlerAttacker].helpingHand() != 0 {
-                gBattleMoveDamage = gBattleMoveDamage * 15 / 10;
+            if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].helpingHand() != 0 {
+                gBattleMoveDamage.set(gBattleMoveDamage.get() * 15 / 10);
             }
-            let moveResultFlags: u8 = TypeCalc(gCurrentMove, gBattlerAttacker, gBattlerTarget);
-            dmgByMove[i] = gBattleMoveDamage;
+            let moveResultFlags: u8 = TypeCalc(
+                gCurrentMove.get(),
+                gBattlerAttacker.get(),
+                gBattlerTarget.get(),
+            );
+            dmgByMove[i] = gBattleMoveDamage.get();
             if dmgByMove[i] == 0 && moveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0 {
                 dmgByMove[i] = 1;
             }
@@ -1439,44 +1800,77 @@ unsafe fn TrySetBattleSeminarShow() {
         i += 1;
     }
     for i in 0..MAX_MON_MOVES {
-        if i != gMoveSelectionCursor[gBattlerAttacker] as i32
-            && dmgByMove[i] > dmgByMove[gMoveSelectionCursor[gBattlerAttacker]]
+        if i != ({
+            let gl_i80 = gBattlerAttacker.get();
+            crate::gl!(gMoveSelectionCursor[gl_i80])
+        }) as i32
+            && dmgByMove[i]
+                > dmgByMove[{
+                    let gl_i81 = gBattlerAttacker.get();
+                    crate::gl!(gMoveSelectionCursor[gl_i81])
+                }]
         {
             let mut bestMoveId: i32 = 0;
-            if gMoveSelectionCursor[gBattlerAttacker] != 0 {
+            if ({
+                let gl_i82 = gBattlerAttacker.get();
+                crate::gl!(gMoveSelectionCursor[gl_i82])
+            }) != 0
+            {
                 bestMoveId = 0;
             } else {
                 bestMoveId = 1;
             }
             for i in 0..MAX_MON_MOVES {
-                if i != gMoveSelectionCursor[gBattlerAttacker] as i32
+                if i != ({
+                    let gl_i83 = gBattlerAttacker.get();
+                    crate::gl!(gMoveSelectionCursor[gl_i83])
+                }) as i32
                     && dmgByMove[i] > dmgByMove[bestMoveId]
                 {
                     bestMoveId = i;
                 }
             }
             let opponentSpecies: u16 = GetMonData3(
-                &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]],
+                &raw mut (*gEnemyParty.as_ptr())[{
+                    let gl_i84 = gBattlerTarget.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i84])
+                }],
                 MON_DATA_SPECIES,
                 null_mut(),
             ) as u16;
             let playerSpecies: u16 = GetMonData3(
-                &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]],
+                &raw mut (*gPlayerParty.as_ptr())[{
+                    let gl_i85 = gBattlerAttacker.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i85])
+                }],
                 MON_DATA_SPECIES,
                 null_mut(),
             ) as u16;
             TryPutBattleSeminarOnAir(
                 opponentSpecies,
                 playerSpecies,
-                gMoveSelectionCursor[gBattlerAttacker],
-                gBattleMons[gBattlerAttacker].moves.as_mut_ptr(),
-                gBattleMons[gBattlerAttacker].moves[bestMoveId],
+                {
+                    let gl_i86 = gBattlerAttacker.get();
+                    crate::gl!(gMoveSelectionCursor[gl_i86])
+                },
+                (*gBattleMons.as_ptr())[gBattlerAttacker.get()]
+                    .moves
+                    .as_mut_ptr(),
+                {
+                    let gl_i87 = gBattlerAttacker.get();
+                    crate::gl!(gBattleMons[gl_i87].moves[bestMoveId])
+                },
             );
             break;
         }
     }
-    gBattleMoveDamage = dmgByMove[gMoveSelectionCursor[gBattlerAttacker]];
-    gCurrentMove = currMoveSaved;
+    gBattleMoveDamage.set(
+        dmgByMove[{
+            let gl_i88 = gBattlerAttacker.get();
+            crate::gl!(gMoveSelectionCursor[gl_i88])
+        }],
+    );
+    gCurrentMove.set(currMoveSaved);
 }
 unsafe fn ShouldCalculateDamage(r#move: u16, dmg: *mut i32, powerOverride: *mut u16) -> u8 {
     if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
@@ -1500,7 +1894,10 @@ unsafe fn ShouldCalculateDamage(r#move: u16, dmg: *mut i32, powerOverride: *mut 
             *dmg = 0;
             return FALSE;
         } else if r#move == MOVE_PSYWAVE {
-            *dmg = gBattleMons[gBattlerAttacker].level as i32;
+            *dmg = ({
+                let gl_i89 = gBattlerAttacker.get();
+                crate::gl!(gBattleMons[gl_i89].level)
+            }) as i32;
             *dmg /= 2;
             return FALSE;
         } else if r#move == MOVE_MAGNITUDE {
@@ -1516,8 +1913,8 @@ unsafe fn ShouldCalculateDamage(r#move: u16, dmg: *mut i32, powerOverride: *mut 
     }
 }
 pub unsafe fn BattleTv_ClearExplosionFaintCause() {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-        let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
+        let tvPtr: *mut BattleTv = &raw mut (*crate::gl!(gBattleStruct)).tv;
         (*tvPtr).side[0].set_faintCause(FNT_NONE);
         (*tvPtr).side[1].set_faintCause(FNT_NONE);
         (*tvPtr).side[0].set_faintCauseMonId(0);
@@ -1533,9 +1930,9 @@ pub unsafe fn BattleTv_ClearExplosionFaintCause() {
 pub unsafe fn GetBattlerMoveSlotId(battler: u8, r#move: u16) -> u8 {
     let mut party: *mut Pokemon = null_mut();
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
-        party = gPlayerParty.as_mut_ptr();
+        party = (*gPlayerParty.as_ptr()).as_mut_ptr();
     } else {
-        party = gEnemyParty.as_mut_ptr();
+        party = (*gEnemyParty.as_ptr()).as_mut_ptr();
     }
     let mut i: i32 = 0;
     loop {
@@ -1543,7 +1940,7 @@ pub unsafe fn GetBattlerMoveSlotId(battler: u8, r#move: u16) -> u8 {
             break;
         }
         if GetMonData3(
-            party.at(gBattlerPartyIndexes[battler]),
+            party.at(crate::gl!(gBattlerPartyIndexes[battler])),
             MON_DATA_MOVE1 + i,
             null_mut(),
         ) == r#move as u32

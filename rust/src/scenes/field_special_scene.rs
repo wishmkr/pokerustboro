@@ -74,9 +74,7 @@ unsafe fn SetCameraPanning(a0: i16, a1: i16) {
 /// `SetCameraPanningCallback` with this module's view of its types.
 #[inline]
 unsafe fn SetCameraPanningCallback(a0: Option<unsafe fn()>) {
-    unsafe {
-        crate::field_camera::SetCameraPanningCallback(a0);
-    }
+    crate::field_camera::SetCameraPanningCallback(a0);
 }
 /// `FadeInFromBlack` with this module's view of its types.
 #[inline]
@@ -88,9 +86,7 @@ unsafe fn FadeInFromBlack() {
 /// `InstallCameraPanAheadCallback` with this module's view of its types.
 #[inline]
 unsafe fn InstallCameraPanAheadCallback() {
-    unsafe {
-        crate::field_camera::InstallCameraPanAheadCallback();
-    }
+    crate::field_camera::InstallCameraPanAheadCallback();
 }
 /// `MapGridSetMetatileIdAt` with this module's view of its types.
 #[inline]
@@ -204,7 +200,11 @@ unsafe fn CpuFastSet(a0: *const core::ffi::c_void, a1: *mut core::ffi::c_void, a
 
 #[inline]
 unsafe fn location() -> (u8, u8) {
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
+    let sb1 = unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     unsafe {
         (
             sb1.add(SB1_LOCATION_MAP_NUM).read(),
@@ -411,7 +411,7 @@ pub unsafe fn ExecuteTruckSequence() {
     unsafe {
         CpuFastSet(
             (&raw const zero).cast(),
-            (&raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast(),
@@ -528,14 +528,15 @@ unsafe fn show_ss_tidal_while_sailing() {
 pub unsafe fn FieldCB_ShowPortholeView() {
     unsafe { show_ss_tidal_while_sailing() };
     let id = usize::from(unsafe {
-        (&raw const (*(&raw const crate::field_player_avatar::gPlayerAvatar)
-            .cast::<u8>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::field_player_avatar::gPlayerAvatar;)
+            .cast_const())
+        .cast::<u8>()
+        .cast_mut()))
             .add(PLAYER_AVATAR_OBJECT_EVENT_ID)
             .read()
     });
     let object = unsafe {
-        (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
+        (&raw mut (*(crate::gl!(&raw @at crate::field_player_avatar::gObjectEvents;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(id * OBJECT_EVENT_SIZE + OBJECT_EVENT_INVISIBLE_BYTE)
@@ -551,7 +552,11 @@ pub unsafe fn LookThroughPorthole() {
     unsafe { FlagSet(FLAG_SYS_CRUISE_MODE) };
     unsafe { FlagSet(FLAG_DONT_TRANSITION_MUSIC) };
     unsafe { FlagSet(FLAG_HIDE_MAP_NAME_POPUP) };
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
+    let sb1 = unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     let group = unsafe { sb1.add(SB1_LOCATION_MAP_GROUP).read() } as i8;
     let num = unsafe { sb1.add(SB1_LOCATION_MAP_NUM).read() } as i8;
     unsafe { SetDynamicWarp(0, group, num, WARP_ID_NONE) };

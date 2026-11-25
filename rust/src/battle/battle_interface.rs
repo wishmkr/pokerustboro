@@ -69,7 +69,7 @@ unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -105,7 +105,7 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `LoadSpritePalette` with this module's view of its types.
@@ -120,7 +120,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `RenderTextHandleBold` with this module's view of its types.
 #[inline]
-unsafe fn RenderTextHandleBold(a0: *mut u8, a1: u8, a2: *mut u8) -> u8 {
+fn RenderTextHandleBold(a0: *mut u8, a1: u8, a2: *mut u8) -> u8 {
     unsafe { crate::text::RenderTextHandleBold(a0 as _, a1, a2 as _) }
 }
 /// `SetSubspriteTables` with this module's view of its types.
@@ -278,7 +278,7 @@ static sStatusSummaryBar_SubspriteTable_Exit: Table<CArray<SubspriteTable, 1>> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -366,13 +366,15 @@ pub unsafe fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
                 DISPLAY_HEIGHT as i16,
                 1,
             );
-            gSprites[healthboxLeftSpriteId].oam.set_shape(ST_OAM_SQUARE);
-            gSprites[healthboxRightSpriteId]
+            (*gSprites.as_ptr())[healthboxLeftSpriteId]
                 .oam
                 .set_shape(ST_OAM_SQUARE);
-            gSprites[healthboxRightSpriteId]
+            (*gSprites.as_ptr())[healthboxRightSpriteId]
                 .oam
-                .set_tileNum(gSprites[healthboxRightSpriteId].oam.tileNum() + 64);
+                .set_shape(ST_OAM_SQUARE);
+            (*gSprites.as_ptr())[healthboxRightSpriteId]
+                .oam
+                .set_tileNum((*gSprites.as_ptr())[healthboxRightSpriteId].oam.tileNum() + 64);
         } else {
             healthboxLeftSpriteId = CreateSprite(
                 (&raw const sHealthboxOpponentSpriteTemplates[0]).cast_mut(),
@@ -386,14 +388,14 @@ pub unsafe fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
                 DISPLAY_HEIGHT as i16,
                 1,
             );
-            gSprites[healthboxRightSpriteId]
+            (*gSprites.as_ptr())[healthboxRightSpriteId]
                 .oam
-                .set_tileNum(gSprites[healthboxRightSpriteId].oam.tileNum() + 32);
+                .set_tileNum((*gSprites.as_ptr())[healthboxRightSpriteId].oam.tileNum() + 32);
             data6 = 2;
         }
-        gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16;
-        gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16;
-        gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther);
+        crate::gl!(gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16);
+        crate::gl!(gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16);
+        crate::gl!(gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther));
     } else {
         if GetBattlerSide(battler) == B_SIDE_PLAYER {
             healthboxLeftSpriteId = CreateSprite(
@@ -412,12 +414,14 @@ pub unsafe fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
                 DISPLAY_HEIGHT as i16,
                 1,
             );
-            gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16;
-            gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16;
-            gSprites[healthboxRightSpriteId]
+            crate::gl!(
+                gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16
+            );
+            crate::gl!(gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16);
+            (*gSprites.as_ptr())[healthboxRightSpriteId]
                 .oam
-                .set_tileNum(gSprites[healthboxRightSpriteId].oam.tileNum() + 32);
-            gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther);
+                .set_tileNum((*gSprites.as_ptr())[healthboxRightSpriteId].oam.tileNum() + 32);
+            crate::gl!(gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther));
             data6 = 1;
         } else {
             healthboxLeftSpriteId = CreateSprite(
@@ -436,22 +440,24 @@ pub unsafe fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
                 DISPLAY_HEIGHT as i16,
                 1,
             );
-            gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16;
-            gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16;
-            gSprites[healthboxRightSpriteId]
+            crate::gl!(
+                gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16
+            );
+            crate::gl!(gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16);
+            (*gSprites.as_ptr())[healthboxRightSpriteId]
                 .oam
-                .set_tileNum(gSprites[healthboxRightSpriteId].oam.tileNum() + 32);
-            gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther);
+                .set_tileNum((*gSprites.as_ptr())[healthboxRightSpriteId].oam.tileNum() + 32);
+            crate::gl!(gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther));
             data6 = 2;
         }
     }
     let healthbarSpriteId: u8 = CreateSpriteAtEnd(
-        (&raw const sHealthbarSpriteTemplates[gBattlerPositions[battler]]).cast_mut(),
+        (&raw const sHealthbarSpriteTemplates[crate::gl!(gBattlerPositions[battler])]).cast_mut(),
         140,
         60,
         0,
     );
-    let healthBarSpritePtr: *mut Sprite = &raw mut gSprites[healthbarSpriteId];
+    let healthBarSpritePtr: *mut Sprite = crate::gl!(&raw gSprites[healthbarSpriteId]);
     SetSubspriteTables(
         healthBarSpritePtr,
         (&raw const sHealthBar_SubspriteTables[GetBattlerSide(battler)]).cast_mut(),
@@ -463,10 +469,10 @@ pub unsafe fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
         (OBJ_VRAM0 + (*healthBarSpritePtr).oam.tileNum() as i32 * 32) as usize as *mut c_void,
         0x4000010,
     );
-    gSprites[healthboxLeftSpriteId].data[5] = healthbarSpriteId as i16;
-    gSprites[healthboxLeftSpriteId].data[6] = battler as i16;
-    gSprites[healthboxLeftSpriteId].set_invisible(TRUE as u16);
-    gSprites[healthboxRightSpriteId].set_invisible(TRUE as u16);
+    crate::gl!(gSprites[healthboxLeftSpriteId].data[5] = healthbarSpriteId as i16);
+    crate::gl!(gSprites[healthboxLeftSpriteId].data[6] = battler as i16);
+    (*gSprites.as_ptr())[healthboxLeftSpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[healthboxRightSpriteId].set_invisible(TRUE as u16);
     (*healthBarSpritePtr).data[5] = healthboxLeftSpriteId as i16;
     (*healthBarSpritePtr).data[6] = data6;
     (*healthBarSpritePtr).set_invisible(TRUE as u16);
@@ -486,16 +492,21 @@ pub unsafe fn CreateSafariPlayerHealthboxSprites() -> u8 {
         DISPLAY_HEIGHT as i16,
         1,
     );
-    gSprites[healthboxLeftSpriteId].oam.set_shape(ST_OAM_SQUARE);
-    gSprites[healthboxRightSpriteId]
+    (*gSprites.as_ptr())[healthboxLeftSpriteId]
         .oam
         .set_shape(ST_OAM_SQUARE);
-    gSprites[healthboxRightSpriteId]
+    (*gSprites.as_ptr())[healthboxRightSpriteId]
         .oam
-        .set_tileNum(gSprites[healthboxRightSpriteId].oam.tileNum() + 64);
-    gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16;
-    gSprites[healthboxRightSpriteId].data[hOther_HealthBoxSpriteId] = healthboxLeftSpriteId as i16;
-    gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther);
+        .set_shape(ST_OAM_SQUARE);
+    (*gSprites.as_ptr())[healthboxRightSpriteId]
+        .oam
+        .set_tileNum((*gSprites.as_ptr())[healthboxRightSpriteId].oam.tileNum() + 64);
+    crate::gl!(gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16);
+    {
+        let gl_i0 = hOther_HealthBoxSpriteId;
+        crate::gl!(gSprites[healthboxRightSpriteId].data[gl_i0] = healthboxLeftSpriteId as i16)
+    };
+    crate::gl!(gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther));
     healthboxLeftSpriteId
 }
 unsafe fn GetHealthboxElementGfxPtr(elementId: u8) -> *mut u8 {
@@ -508,27 +519,27 @@ pub(crate) unsafe fn SpriteCB_HealthBar(sprite: *mut Sprite) {
     let healthboxSpriteId: u8 = (*sprite).data[hBar_HealthBoxSpriteId] as u8;
     match (*sprite).data[hBar_Data6] {
         0 => {
-            (*sprite).x = gSprites[healthboxSpriteId].x + 16;
-            (*sprite).y = gSprites[healthboxSpriteId].y;
+            (*sprite).x = crate::gl!(gSprites[healthboxSpriteId].x) + 16;
+            (*sprite).y = crate::gl!(gSprites[healthboxSpriteId].y);
         }
         1 => {
-            (*sprite).x = gSprites[healthboxSpriteId].x + 16;
-            (*sprite).y = gSprites[healthboxSpriteId].y;
+            (*sprite).x = crate::gl!(gSprites[healthboxSpriteId].x) + 16;
+            (*sprite).y = crate::gl!(gSprites[healthboxSpriteId].y);
         }
         _ => {
-            (*sprite).x = gSprites[healthboxSpriteId].x + 8;
-            (*sprite).y = gSprites[healthboxSpriteId].y;
+            (*sprite).x = crate::gl!(gSprites[healthboxSpriteId].x) + 8;
+            (*sprite).y = crate::gl!(gSprites[healthboxSpriteId].y);
         }
     }
-    (*sprite).x2 = gSprites[healthboxSpriteId].x2;
-    (*sprite).y2 = gSprites[healthboxSpriteId].y2;
+    (*sprite).x2 = crate::gl!(gSprites[healthboxSpriteId].x2);
+    (*sprite).y2 = crate::gl!(gSprites[healthboxSpriteId].y2);
 }
 pub(crate) unsafe fn SpriteCB_HealthBoxOther(sprite: *mut Sprite) {
     let healthboxMainSpriteId: u8 = (*sprite).data[hOther_HealthBoxSpriteId] as u8;
-    (*sprite).x = gSprites[healthboxMainSpriteId].x + 64;
-    (*sprite).y = gSprites[healthboxMainSpriteId].y;
-    (*sprite).x2 = gSprites[healthboxMainSpriteId].x2;
-    (*sprite).y2 = gSprites[healthboxMainSpriteId].y2;
+    (*sprite).x = crate::gl!(gSprites[healthboxMainSpriteId].x) + 64;
+    (*sprite).y = crate::gl!(gSprites[healthboxMainSpriteId].y);
+    (*sprite).x2 = crate::gl!(gSprites[healthboxMainSpriteId].x2);
+    (*sprite).y2 = crate::gl!(gSprites[healthboxMainSpriteId].y2);
 }
 pub unsafe fn SetBattleBarStruct(
     battler: u8,
@@ -537,49 +548,69 @@ pub unsafe fn SetBattleBarStruct(
     oldVal: i32,
     receivedValue: i32,
 ) {
-    (*(*gBattleSpritesDataPtr).battleBars.at(battler)).healthboxSpriteId = healthboxSpriteId;
-    (*(*gBattleSpritesDataPtr).battleBars.at(battler)).maxValue = maxVal;
-    (*(*gBattleSpritesDataPtr).battleBars.at(battler)).oldValue = oldVal;
-    (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue = receivedValue;
-    (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue = -32768;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).healthboxSpriteId =
+        healthboxSpriteId;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).maxValue = maxVal;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).oldValue = oldVal;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue = receivedValue;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).currValue = -32768;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetHealthboxSpriteInvisible(healthboxSpriteId: u8) {
-    gSprites[healthboxSpriteId].set_invisible(TRUE as u16);
-    gSprites[gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId]].set_invisible(TRUE as u16);
-    gSprites[gSprites[healthboxSpriteId].oam.affineParam].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[healthboxSpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[{
+        let gl_i1 = hMain_HealthBarSpriteId;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i1])
+    }]
+    .set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[crate::gl!(gSprites[healthboxSpriteId].oam.affineParam)]
+        .set_invisible(TRUE as u16);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetHealthboxSpriteVisible(healthboxSpriteId: u8) {
-    gSprites[healthboxSpriteId].set_invisible(FALSE as u16);
-    gSprites[gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId]].set_invisible(FALSE as u16);
-    gSprites[gSprites[healthboxSpriteId].oam.affineParam].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[healthboxSpriteId].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[{
+        let gl_i2 = hMain_HealthBarSpriteId;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i2])
+    }]
+    .set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[crate::gl!(gSprites[healthboxSpriteId].oam.affineParam)]
+        .set_invisible(FALSE as u16);
 }
-unsafe fn UpdateSpritePos(spriteId: u8, x: i16, y: i16) {
-    gSprites[spriteId].x = x;
-    gSprites[spriteId].y = y;
+fn UpdateSpritePos(spriteId: u8, x: i16, y: i16) {
+    crate::gl!(gSprites[spriteId].x = x);
+    crate::gl!(gSprites[spriteId].y = y);
 }
 pub unsafe fn DestoryHealthboxSprite(healthboxSpriteId: u8) {
-    DestroySprite(&raw mut gSprites[gSprites[healthboxSpriteId].oam.affineParam]);
-    DestroySprite(&raw mut gSprites[gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId]]);
-    DestroySprite(&raw mut gSprites[healthboxSpriteId]);
+    DestroySprite(
+        &raw mut (*gSprites.as_ptr())[crate::gl!(gSprites[healthboxSpriteId].oam.affineParam)],
+    );
+    DestroySprite(
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i3 = hMain_HealthBarSpriteId;
+            crate::gl!(gSprites[healthboxSpriteId].data[gl_i3])
+        }],
+    );
+    DestroySprite(crate::gl!(&raw gSprites[healthboxSpriteId]));
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DummyBattleInterfaceFunc(healthboxSpriteId: u8, isDoubleBattleBattlerOnly: u8) {}
 pub unsafe fn UpdateOamPriorityInAllHealthboxes(priority: u8) {
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
-        let healthboxLeftSpriteId: u8 = gHealthboxSpriteIds[i];
-        let healthboxRightSpriteId: u8 = gSprites[gHealthboxSpriteIds[i]].oam.affineParam as u8;
-        let healthbarSpriteId: u8 =
-            gSprites[gHealthboxSpriteIds[i]].data[hMain_HealthBarSpriteId] as u8;
-        gSprites[healthboxLeftSpriteId]
+    while i < gBattlersCount.get() as i32 {
+        let healthboxLeftSpriteId: u8 = crate::gl!(gHealthboxSpriteIds[i]);
+        let healthboxRightSpriteId: u8 = (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])]
+            .oam
+            .affineParam as u8;
+        let healthbarSpriteId: u8 = (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])].data
+            [hMain_HealthBarSpriteId] as u8;
+        (*gSprites.as_ptr())[healthboxLeftSpriteId]
             .oam
             .set_priority(priority as u16);
-        gSprites[healthboxRightSpriteId]
+        (*gSprites.as_ptr())[healthboxRightSpriteId]
             .oam
             .set_priority(priority as u16);
-        gSprites[healthbarSpriteId]
+        (*gSprites.as_ptr())[healthbarSpriteId]
             .oam
             .set_priority(priority as u16);
         i += 1;
@@ -618,7 +649,7 @@ pub unsafe fn InitBattlerHealthboxCoords(battler: u8) {
             _ => {}
         }
     }
-    UpdateSpritePos(gHealthboxSpriteIds[battler], x, y);
+    UpdateSpritePos(crate::gl!(gHealthboxSpriteIds[battler]), x, y);
 }
 unsafe fn UpdateLvlInHealthbox(healthboxSpriteId: u8, lvl: u8) {
     let mut windowId: u32 = 0;
@@ -635,8 +666,14 @@ unsafe fn UpdateLvlInHealthbox(healthboxSpriteId: u8, lvl: u8) {
         5 * (3 - (objVram as usize).wrapping_sub(text.as_mut_ptr().at(2) as usize) as i32 as u32);
     let windowTileData: *mut u8 =
         AddTextPrinterAndCreateWindowOnHealthbox(text.as_mut_ptr(), xPos, 3, 2, &raw mut windowId);
-    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[hMain_Battler] as u8) == B_SIDE_PLAYER {
+    let spriteTileNum: u32 = (*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    if GetBattlerSide(
+        ({
+            let gl_i4 = hMain_Battler;
+            crate::gl!(gSprites[healthboxSpriteId].data[gl_i4])
+        }) as u8,
+    ) == B_SIDE_PLAYER
+    {
         objVram = OBJ_VRAM0 as usize as *mut c_void as *mut u8;
         if IsDoubleBattle() == 0 {
             objVram = objVram.at(spriteTileNum + 0x820);
@@ -656,10 +693,10 @@ pub unsafe fn UpdateHpTextInHealthbox(healthboxSpriteId: u8, value: i16, maxOrCu
     let mut windowTileData: *mut u8 = null_mut();
     let mut text: CArray<u8, 32> = zeroed();
     let mut objVram: *mut c_void = null_mut();
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER
+    if GetBattlerSide(crate::gl!(gSprites[healthboxSpriteId].data[6]) as u8) == B_SIDE_PLAYER
         && IsDoubleBattle() == 0
     {
-        spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+        spriteTileNum = (*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as u32 * 32;
         if maxOrCurrent != HP_CURRENT {
             ConvertIntToDecimalStringN(
                 text.as_mut_ptr(),
@@ -708,12 +745,14 @@ pub unsafe fn UpdateHpTextInHealthbox(healthboxSpriteId: u8, value: i16, maxOrCu
             sEmptyWhiteText_GrayHighlight.as_ptr().cast_mut(),
             20,
         );
-        let battler: u8 = gSprites[healthboxSpriteId].data[6] as u8;
+        let battler: u8 = crate::gl!(gSprites[healthboxSpriteId].data[6]) as u8;
         if IsDoubleBattle() == 1 || GetBattlerSide(battler) == 1 {
             UpdateHpTextInHealthboxInDoubles(healthboxSpriteId, value, maxOrCurrent);
         } else {
             let mut var: u32 = 0;
-            if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
+            if GetBattlerSide(crate::gl!(gSprites[healthboxSpriteId].data[6]) as u8)
+                == B_SIDE_PLAYER
+            {
                 if maxOrCurrent == HP_CURRENT {
                     var = 29;
                 } else {
@@ -733,16 +772,19 @@ pub unsafe fn UpdateHpTextInHealthbox(healthboxSpriteId: u8, value: i16, maxOrCu
                 3,
             );
             RenderTextHandleBold(
-                (*gMonSpritesGfxPtr).barFontGfx,
+                (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx,
                 FONT_BOLD,
                 text.as_mut_ptr(),
             );
             for i in 0..3u8 {
                 CpuSet(
-                    (*gMonSpritesGfxPtr).barFontGfx.at(i as i32 * 64 + 32) as *mut c_void,
+                    (*crate::gl!(gMonSpritesGfxPtr))
+                        .barFontGfx
+                        .at(i as i32 * 64 + 32) as *mut c_void,
                     (0x6010000
-                        + 32 * (gSprites[healthboxSpriteId].oam.tileNum() as u32 + var + i as u32))
-                        as usize as *mut c_void,
+                        + 32 * ((*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as u32
+                            + var
+                            + i as u32)) as usize as *mut c_void,
                     0x4000008,
                 );
             }
@@ -755,14 +797,17 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
     let mut windowTileData: *mut u8 = null_mut();
     let mut text: CArray<u8, 32> = zeroed();
     let mut objVram: *mut c_void = null_mut();
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
-        if (*(*gBattleSpritesDataPtr)
+    if GetBattlerSide(crate::gl!(gSprites[healthboxSpriteId].data[6]) as u8) == B_SIDE_PLAYER {
+        if (*(*crate::gl!(gBattleSpritesDataPtr))
             .battlerData
-            .at(gSprites[healthboxSpriteId].data[6]))
+            .at(crate::gl!(gSprites[healthboxSpriteId].data[6])))
         .hpNumbersNoBars()
             != 0
         {
-            spriteTileNum = gSprites[gSprites[healthboxSpriteId].data[5]].oam.tileNum() as u32 * 32;
+            spriteTileNum = (*gSprites.as_ptr())[crate::gl!(gSprites[healthboxSpriteId].data[5])]
+                .oam
+                .tileNum() as u32
+                * 32;
             objVram =
                 (OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void;
             if maxOrCurrent != HP_CURRENT {
@@ -789,7 +834,8 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
                 RemoveWindowOnHealthbox(windowId);
                 CpuSet(
                     GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END) as *mut c_void,
-                    (100730496_usize as *mut c_void as *mut u8).at(gSprites[healthboxSpriteId]
+                    (100730496_usize as *mut c_void as *mut u8).at((*gSprites.as_ptr())
+                        [healthboxSpriteId]
                         .oam
                         .tileNum()
                         as i32
@@ -827,13 +873,13 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
             sEmptyWhiteText_TransparentHighlight.as_ptr().cast_mut(),
             20,
         );
-        let battler: u8 = gSprites[healthboxSpriteId].data[6] as u8;
-        if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() != 0 {
+        let battler: u8 = crate::gl!(gSprites[healthboxSpriteId].data[6]) as u8;
+        if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).hpNumbersNoBars() != 0 {
             let mut var: u8 = 4;
             if maxOrCurrent == HP_CURRENT {
                 var = 0;
             }
-            let r7: u8 = gSprites[healthboxSpriteId].data[5] as u8;
+            let r7: u8 = crate::gl!(gSprites[healthboxSpriteId].data[5]) as u8;
             let txtPtr: *mut u8 = ConvertIntToDecimalStringN(
                 text.as_mut_ptr().at(6),
                 value as i32,
@@ -849,7 +895,7 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
                 );
             }
             RenderTextHandleBold(
-                (*gMonSpritesGfxPtr).barFontGfx,
+                (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx,
                 FONT_BOLD,
                 text.as_mut_ptr(),
             );
@@ -857,22 +903,24 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
             while (i as i32) < var as i32 + 3 {
                 if i < 3 {
                     CpuSet(
-                        (*gMonSpritesGfxPtr)
+                        (*crate::gl!(gMonSpritesGfxPtr))
                             .barFontGfx
                             .at((i as i32 - var as i32) * 64 + 32)
                             as *mut c_void,
-                        (0x6010000 + 32 * (1 + gSprites[r7].oam.tileNum() as i32 + i as i32))
+                        (0x6010000
+                            + 32 * (1 + (*gSprites.as_ptr())[r7].oam.tileNum() as i32 + i as i32))
                             as usize as *mut c_void,
                         0x4000008,
                     );
                 } else {
                     CpuSet(
-                        (*gMonSpritesGfxPtr)
+                        (*crate::gl!(gMonSpritesGfxPtr))
                             .barFontGfx
                             .at((i as i32 - var as i32) * 64 + 32)
                             as *mut c_void,
-                        (100728864 + 32 * (i as i32 + gSprites[r7].oam.tileNum() as i32)) as usize
-                            as *mut c_void,
+                        (100728864
+                            + 32 * (i as i32 + (*gSprites.as_ptr())[r7].oam.tileNum() as i32))
+                            as usize as *mut c_void,
                         0x4000008,
                     );
                 }
@@ -880,8 +928,8 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
             }
             if maxOrCurrent == HP_CURRENT {
                 CpuSet(
-                    (*gMonSpritesGfxPtr).barFontGfx.at(224) as *mut c_void,
-                    (0x6010000 + (gSprites[r7].oam.tileNum() as i32 + 4) * 32) as usize
+                    (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx.at(224) as *mut c_void,
+                    (0x6010000 + ((*gSprites.as_ptr())[r7].oam.tileNum() as i32 + 4) * 32) as usize
                         as *mut c_void,
                     0x4000008,
                 );
@@ -891,8 +939,8 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
                         volatile_write(&raw mut tmp, 0);
                         CpuSet(
                             &raw mut tmp as *mut c_void,
-                            (OBJ_VRAM0 + gSprites[r7].oam.tileNum() as i32 * 32) as usize
-                                as *mut c_void,
+                            (OBJ_VRAM0 + (*gSprites.as_ptr())[r7].oam.tileNum() as i32 * 32)
+                                as usize as *mut c_void,
                             0x5000008,
                         );
                     }
@@ -901,7 +949,8 @@ unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, ma
                 if GetBattlerSide(battler) == B_SIDE_PLAYER {
                     CpuSet(
                         GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END) as *mut c_void,
-                        (0x6010000_usize as *mut c_void as *mut u8).at((gSprites[healthboxSpriteId]
+                        (0x6010000_usize as *mut c_void as *mut u8).at(((*gSprites.as_ptr())
+                            [healthboxSpriteId]
                             .oam
                             .tileNum()
                             as i32
@@ -923,8 +972,14 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
         sEmptyWhiteText_GrayHighlight.as_ptr().cast_mut(),
         20,
     );
-    barFontGfx = (*gMonSpritesGfxPtr).barFontGfx.at(0x520
-        + GetBattlerPosition(gSprites[healthboxSpriteId].data[hMain_Battler] as u8) as i32 * 384);
+    barFontGfx = (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx.at(0x520
+        + GetBattlerPosition(
+            ({
+                let gl_i5 = hMain_Battler;
+                crate::gl!(gSprites[healthboxSpriteId].data[gl_i5])
+            }) as u8,
+        ) as i32
+            * 384);
     let var: u8 = 5;
     let nature: u8 = GetNature(mon);
     StringCopy(
@@ -954,7 +1009,8 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
     }
     for j in 1..(var as i32 + 1) {
         spriteTileNum =
-            (gSprites[healthboxSpriteId].oam.tileNum() as i32 + j % 8 + j / 8 * 64) * 32;
+            ((*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as i32 + j % 8 + j / 8 * 64)
+                * 32;
         CpuSet(
             barFontGfx as *mut c_void,
             (OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
@@ -962,7 +1018,8 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
         );
         barFontGfx = barFontGfx.at(32);
         spriteTileNum =
-            (8 + gSprites[healthboxSpriteId].oam.tileNum() as i32 + j % 8 + j / 8 * 64) * 32;
+            (8 + (*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as i32 + j % 8 + j / 8 * 64)
+                * 32;
         CpuSet(
             barFontGfx as *mut c_void,
             (OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
@@ -970,23 +1027,26 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
         );
         barFontGfx = barFontGfx.at(32);
     }
-    let healthBarSpriteId: u8 = gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId] as u8;
+    let healthBarSpriteId: u8 = ({
+        let gl_i6 = hMain_HealthBarSpriteId;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i6])
+    }) as u8;
     ConvertIntToDecimalStringN(
         &raw mut text[6],
-        (*gBattleStruct).safariCatchFactor as i32,
+        (*crate::gl!(gBattleStruct)).safariCatchFactor as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         2,
     );
     ConvertIntToDecimalStringN(
         &raw mut text[9],
-        (*gBattleStruct).safariEscapeFactor as i32,
+        (*crate::gl!(gBattleStruct)).safariEscapeFactor as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         2,
     );
     text[5] = CHAR_SPACE;
     text[8] = CHAR_SLASH;
     RenderTextHandleBold(
-        (*gMonSpritesGfxPtr).barFontGfx,
+        (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx,
         FONT_BOLD,
         text.as_mut_ptr(),
     );
@@ -994,8 +1054,11 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
     for j in 0..5i32 {
         if j <= 1 {
             CpuSet(
-                (*gMonSpritesGfxPtr).barFontGfx.at(0x40 * j + 0x20) as *mut c_void,
-                (0x6010000_usize as *mut c_void as *mut u8).at((gSprites[healthBarSpriteId]
+                (*crate::gl!(gMonSpritesGfxPtr))
+                    .barFontGfx
+                    .at(0x40 * j + 0x20) as *mut c_void,
+                (0x6010000_usize as *mut c_void as *mut u8).at(((*gSprites.as_ptr())
+                    [healthBarSpriteId]
                     .oam
                     .tileNum()
                     as i32
@@ -1006,12 +1069,12 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
             );
         } else {
             CpuSet(
-                (*gMonSpritesGfxPtr).barFontGfx.at(0x40 * j + 0x20) as *mut c_void,
-                (100729024_usize as *mut c_void as *mut u8).at((j + gSprites[healthBarSpriteId]
-                    .oam
-                    .tileNum()
-                    as i32)
-                    * 32) as *mut c_void,
+                (*crate::gl!(gMonSpritesGfxPtr))
+                    .barFontGfx
+                    .at(0x40 * j + 0x20) as *mut c_void,
+                (100729024_usize as *mut c_void as *mut u8)
+                    .at((j + (*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum() as i32) * 32)
+                    as *mut c_void,
                 0x4000008,
             );
         }
@@ -1020,28 +1083,29 @@ unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
 pub unsafe fn SwapHpBarsWithHpText() {
     let mut healthBarSpriteId: u8 = 0;
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
+    while i < gBattlersCount.get() as i32 {
         'l1: {
-            if gSprites[gHealthboxSpriteIds[i]].callback
+            if (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])].callback
                 == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
                 && GetBattlerSide(i as u8) != B_SIDE_OPPONENT
                 && (IsDoubleBattle() != 0 || GetBattlerSide(i as u8) != B_SIDE_PLAYER)
             {
-                (*(*gBattleSpritesDataPtr).battlerData.at(i)).set_hpNumbersNoBars(
-                    (*(*gBattleSpritesDataPtr).battlerData.at(i)).hpNumbersNoBars() ^ 1,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(i)).set_hpNumbersNoBars(
+                    (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(i)).hpNumbersNoBars() ^ 1,
                 );
-                let noBars: u8 =
-                    (*(*gBattleSpritesDataPtr).battlerData.at(i)).hpNumbersNoBars() as u8;
+                let noBars: u8 = (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(i))
+                    .hpNumbersNoBars() as u8;
                 if GetBattlerSide(i as u8) == B_SIDE_PLAYER {
                     if IsDoubleBattle() == 0 {
                         break 'l1;
                     }
-                    if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+                    if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI != 0 {
                         break 'l1;
                     }
                     if noBars == TRUE {
-                        healthBarSpriteId =
-                            gSprites[gHealthboxSpriteIds[i]].data[hMain_HealthBarSpriteId] as u8;
+                        healthBarSpriteId = (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])]
+                            .data[hMain_HealthBarSpriteId]
+                            as u8;
                         {
                             {
                                 let mut tmp: u32 = 0;
@@ -1049,51 +1113,61 @@ pub unsafe fn SwapHpBarsWithHpText() {
                                 CpuSet(
                                     &raw mut tmp as *mut c_void,
                                     (OBJ_VRAM0
-                                        + gSprites[healthBarSpriteId].oam.tileNum() as i32 * 32)
-                                        as usize as *mut c_void,
+                                        + (*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum()
+                                            as i32
+                                            * 32) as usize
+                                        as *mut c_void,
                                     0x5000040,
                                 );
                             }
                         }
                         UpdateHpTextInHealthboxInDoubles(
-                            gHealthboxSpriteIds[i],
-                            GetMonData2(&raw mut gPlayerParty[gBattlerPartyIndexes[i]], MON_DATA_HP)
-                                as i16,
+                            crate::gl!(gHealthboxSpriteIds[i]),
+                            GetMonData2(
+                                &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[i])],
+                                MON_DATA_HP,
+                            ) as i16,
                             HP_CURRENT,
                         );
                         UpdateHpTextInHealthboxInDoubles(
-                            gHealthboxSpriteIds[i],
+                            crate::gl!(gHealthboxSpriteIds[i]),
                             GetMonData2(
-                                &raw mut gPlayerParty[gBattlerPartyIndexes[i]],
+                                &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[i])],
                                 MON_DATA_MAX_HP,
                             ) as i16,
                             HP_MAX,
                         );
                     } else {
-                        UpdateStatusIconInHealthbox(gHealthboxSpriteIds[i]);
+                        UpdateStatusIconInHealthbox(crate::gl!(gHealthboxSpriteIds[i]));
                         UpdateHealthboxAttribute(
-                            gHealthboxSpriteIds[i],
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[i]],
+                            crate::gl!(gHealthboxSpriteIds[i]),
+                            &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[i])],
                             HEALTHBOX_HEALTH_BAR,
                         );
                         CpuSet(
                             GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END_BAR) as *mut c_void,
-                            (100730496 + gSprites[gHealthboxSpriteIds[i]].oam.tileNum() as i32 * 32)
-                                as usize as *mut c_void,
+                            (100730496
+                                + (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])]
+                                    .oam
+                                    .tileNum() as i32
+                                    * 32) as usize as *mut c_void,
                             0x4000008,
                         );
                     }
                 } else {
                     if noBars == TRUE {
-                        if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+                        if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI != 0 {
                             PrintSafariMonInfo(
-                                gHealthboxSpriteIds[i],
-                                &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
+                                crate::gl!(gHealthboxSpriteIds[i]),
+                                &raw mut (*gEnemyParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[i])],
                             );
                         } else {
-                            healthBarSpriteId = gSprites[gHealthboxSpriteIds[i]].data
-                                [hMain_HealthBarSpriteId]
-                                as u8;
+                            healthBarSpriteId =
+                                (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])].data
+                                    [hMain_HealthBarSpriteId] as u8;
                             {
                                 {
                                     let mut tmp: u32 = 0;
@@ -1101,7 +1175,9 @@ pub unsafe fn SwapHpBarsWithHpText() {
                                     CpuSet(
                                         &raw mut tmp as *mut c_void,
                                         (OBJ_VRAM0
-                                            + gSprites[healthBarSpriteId].oam.tileNum() as i32 * 32)
+                                            + (*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum()
+                                                as i32
+                                                * 32)
                                             as usize
                                             as *mut c_void,
                                         0x5000040,
@@ -1109,39 +1185,42 @@ pub unsafe fn SwapHpBarsWithHpText() {
                                 }
                             }
                             UpdateHpTextInHealthboxInDoubles(
-                                gHealthboxSpriteIds[i],
+                                crate::gl!(gHealthboxSpriteIds[i]),
                                 GetMonData2(
-                                    &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
+                                    &raw mut (*gEnemyParty.as_ptr())
+                                        [crate::gl!(gBattlerPartyIndexes[i])],
                                     MON_DATA_HP,
                                 ) as i16,
                                 HP_CURRENT,
                             );
                             UpdateHpTextInHealthboxInDoubles(
-                                gHealthboxSpriteIds[i],
+                                crate::gl!(gHealthboxSpriteIds[i]),
                                 GetMonData2(
-                                    &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
+                                    &raw mut (*gEnemyParty.as_ptr())
+                                        [crate::gl!(gBattlerPartyIndexes[i])],
                                     MON_DATA_MAX_HP,
                                 ) as i16,
                                 HP_MAX,
                             );
                         }
                     } else {
-                        UpdateStatusIconInHealthbox(gHealthboxSpriteIds[i]);
+                        UpdateStatusIconInHealthbox(crate::gl!(gHealthboxSpriteIds[i]));
                         UpdateHealthboxAttribute(
-                            gHealthboxSpriteIds[i],
-                            &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
+                            crate::gl!(gHealthboxSpriteIds[i]),
+                            &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[i])],
                             HEALTHBOX_HEALTH_BAR,
                         );
-                        if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+                        if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI != 0 {
                             UpdateHealthboxAttribute(
-                                gHealthboxSpriteIds[i],
-                                &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
+                                crate::gl!(gHealthboxSpriteIds[i]),
+                                &raw mut (*gEnemyParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[i])],
                                 HEALTHBOX_NICK,
                             );
                         }
                     }
                 }
-                gSprites[gHealthboxSpriteIds[i]].data[hMain_Data7] ^= 1;
+                (*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[i])].data[hMain_Data7] ^= 1;
             }
         }
         i += 1;
@@ -1197,16 +1276,18 @@ pub unsafe fn CreatePartyStatusSummarySprites(
         10,
     );
     SetSubspriteTables(
-        &raw mut gSprites[summaryBarSpriteId],
+        crate::gl!(&raw gSprites[summaryBarSpriteId]),
         sStatusSummaryBar_SubspriteTable_Enter.as_ptr().cast_mut(),
     );
-    gSprites[summaryBarSpriteId].x2 = bar_pos2_X;
-    gSprites[summaryBarSpriteId].data[0] = bar_data0;
+    crate::gl!(gSprites[summaryBarSpriteId].x2 = bar_pos2_X);
+    crate::gl!(gSprites[summaryBarSpriteId].data[0] = bar_data0);
     if isOpponent != 0 {
-        gSprites[summaryBarSpriteId].x -= 96;
-        gSprites[summaryBarSpriteId].oam.set_matrixNum(ST_OAM_HFLIP);
+        crate::gl!(gSprites[summaryBarSpriteId].x -= 96);
+        (*gSprites.as_ptr())[summaryBarSpriteId]
+            .oam
+            .set_matrixNum(ST_OAM_HFLIP);
     } else {
-        gSprites[summaryBarSpriteId].x += 96;
+        crate::gl!(gSprites[summaryBarSpriteId].x += 96);
     }
     let mut i: i32 = 0;
     while i < PARTY_SIZE {
@@ -1217,42 +1298,77 @@ pub unsafe fn CreatePartyStatusSummarySprites(
             9,
         );
         if isBattleStart == 0 {
-            gSprites[ballIconSpritesIds[i]].callback =
-                Some(SpriteCB_StatusSummaryBalls_OnSwitchout);
+            {
+                let gl_i7 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i7].callback = Some(SpriteCB_StatusSummaryBalls_OnSwitchout))
+            };
         }
         if isOpponent == 0 {
-            gSprites[ballIconSpritesIds[i]].x2 = 0;
-            gSprites[ballIconSpritesIds[i]].y2 = 0;
+            {
+                let gl_i8 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i8].x2 = 0)
+            };
+            {
+                let gl_i9 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i9].y2 = 0)
+            };
         }
-        gSprites[ballIconSpritesIds[i]].data[0] = summaryBarSpriteId as i16;
+        {
+            let gl_i10 = ballIconSpritesIds[i];
+            crate::gl!(gSprites[gl_i10].data[0] = summaryBarSpriteId as i16)
+        };
         if isOpponent == 0 {
-            gSprites[ballIconSpritesIds[i]].x += 10 * i as i16 + 24;
-            gSprites[ballIconSpritesIds[i]].data[1] = i as i16 * 7 + 10;
-            gSprites[ballIconSpritesIds[i]].x2 = 120;
+            {
+                let gl_i11 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i11].x += 10 * i as i16 + 24)
+            };
+            {
+                let gl_i12 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i12].data[1] = i as i16 * 7 + 10)
+            };
+            {
+                let gl_i13 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i13].x2 = 120)
+            };
         } else {
-            gSprites[ballIconSpritesIds[i]].x -= 10 * (5 - i as i16) + 24;
-            gSprites[ballIconSpritesIds[i]].data[1] = (6 - i as i16) * 7 + 10;
-            gSprites[ballIconSpritesIds[i]].x2 = -120;
+            {
+                let gl_i14 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i14].x -= 10 * (5 - i as i16) + 24)
+            };
+            {
+                let gl_i15 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i15].data[1] = (6 - i as i16) * 7 + 10)
+            };
+            {
+                let gl_i16 = ballIconSpritesIds[i];
+                crate::gl!(gSprites[gl_i16].x2 = -120)
+            };
         }
-        gSprites[ballIconSpritesIds[i]].data[2] = isOpponent as i16;
+        {
+            let gl_i17 = ballIconSpritesIds[i];
+            crate::gl!(gSprites[gl_i17].data[2] = isOpponent as i16)
+        };
         i += 1;
     }
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
-        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
             for i in 0..PARTY_SIZE {
                 if (*partyInfo.at(i)).hp == HP_EMPTY_SLOT {
-                    gSprites[ballIconSpritesIds[i]]
+                    (*gSprites.as_ptr())[ballIconSpritesIds[i]]
                         .oam
-                        .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 1);
-                    gSprites[ballIconSpritesIds[i]].data[7] = 1;
+                        .set_tileNum((*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 1);
+                    {
+                        let gl_i18 = ballIconSpritesIds[i];
+                        crate::gl!(gSprites[gl_i18].data[7] = 1)
+                    };
                 } else if (*partyInfo.at(i)).hp == 0 {
-                    gSprites[ballIconSpritesIds[i]]
+                    (*gSprites.as_ptr())[ballIconSpritesIds[i]]
                         .oam
-                        .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 3);
+                        .set_tileNum((*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 3);
                 } else if (*partyInfo.at(i)).status != 0 {
-                    gSprites[ballIconSpritesIds[i]]
+                    (*gSprites.as_ptr())[ballIconSpritesIds[i]]
                         .oam
-                        .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 2);
+                        .set_tileNum((*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 2);
                 }
             }
         } else {
@@ -1261,50 +1377,64 @@ pub unsafe fn CreatePartyStatusSummarySprites(
             for j in 0..PARTY_SIZE {
                 'l3: {
                     if (*partyInfo.at(j)).hp == HP_EMPTY_SLOT {
-                        gSprites[ballIconSpritesIds[var]]
+                        (*gSprites.as_ptr())[ballIconSpritesIds[var]]
                             .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[var]].oam.tileNum() + 1);
-                        gSprites[ballIconSpritesIds[var]].data[7] = 1;
+                            .set_tileNum(
+                                (*gSprites.as_ptr())[ballIconSpritesIds[var]].oam.tileNum() + 1,
+                            );
+                        {
+                            let gl_i19 = ballIconSpritesIds[var];
+                            crate::gl!(gSprites[gl_i19].data[7] = 1)
+                        };
                         var -= 1;
                         break 'l3;
                     } else if (*partyInfo.at(j)).hp == 0 {
-                        gSprites[ballIconSpritesIds[i]]
-                            .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 3);
-                    } else if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
-                        && (*gBattleStruct).arenaLostPlayerMons as u32
+                        (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 3,
+                        );
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0
+                        && (*crate::gl!(gBattleStruct)).arenaLostPlayerMons as u32
                             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[j]
                             != 0
                     {
-                        gSprites[ballIconSpritesIds[i]]
-                            .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 3);
+                        (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 3,
+                        );
                     } else if (*partyInfo.at(j)).status != 0 {
-                        gSprites[ballIconSpritesIds[i]]
-                            .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 2);
+                        (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 2,
+                        );
                     }
                     i += 1;
                 }
             }
         }
     } else {
-        if gBattleTypeFlags & 32832 != 0 {
+        if gBattleTypeFlags.get() & 32832 != 0 {
             var = 5;
             for i in 0..PARTY_SIZE {
                 if (*partyInfo.at(i)).hp == HP_EMPTY_SLOT {
-                    gSprites[ballIconSpritesIds[var]]
+                    (*gSprites.as_ptr())[ballIconSpritesIds[var]]
                         .oam
-                        .set_tileNum(gSprites[ballIconSpritesIds[var]].oam.tileNum() + 1);
-                    gSprites[ballIconSpritesIds[var]].data[7] = 1;
+                        .set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[var]].oam.tileNum() + 1,
+                        );
+                    {
+                        let gl_i20 = ballIconSpritesIds[var];
+                        crate::gl!(gSprites[gl_i20].data[7] = 1)
+                    };
                 } else if (*partyInfo.at(i)).hp == 0 {
-                    gSprites[ballIconSpritesIds[var]]
+                    (*gSprites.as_ptr())[ballIconSpritesIds[var]]
                         .oam
-                        .set_tileNum(gSprites[ballIconSpritesIds[var]].oam.tileNum() + 3);
+                        .set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[var]].oam.tileNum() + 3,
+                        );
                 } else if (*partyInfo.at(i)).status != 0 {
-                    gSprites[ballIconSpritesIds[var]]
+                    (*gSprites.as_ptr())[ballIconSpritesIds[var]]
                         .oam
-                        .set_tileNum(gSprites[ballIconSpritesIds[var]].oam.tileNum() + 2);
+                        .set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[var]].oam.tileNum() + 2,
+                        );
                 }
                 var -= 1;
             }
@@ -1314,28 +1444,46 @@ pub unsafe fn CreatePartyStatusSummarySprites(
             for j in 0..PARTY_SIZE {
                 'l6: {
                     if (*partyInfo.at(j)).hp == HP_EMPTY_SLOT {
-                        gSprites[ballIconSpritesIds[i]]
-                            .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 1);
-                        gSprites[ballIconSpritesIds[i]].data[7] = 1;
+                        (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.set_tileNum(
+                            (*gSprites.as_ptr())[ballIconSpritesIds[i]].oam.tileNum() + 1,
+                        );
+                        {
+                            let gl_i21 = ballIconSpritesIds[i];
+                            crate::gl!(gSprites[gl_i21].data[7] = 1)
+                        };
                         i += 1;
                         break 'l6;
                     } else if (*partyInfo.at(j)).hp == 0 {
-                        gSprites[ballIconSpritesIds[5 - var]]
+                        (*gSprites.as_ptr())[ballIconSpritesIds[5 - var]]
                             .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[5 - var]].oam.tileNum() + 3);
-                    } else if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
-                        && (*gBattleStruct).arenaLostOpponentMons as u32
+                            .set_tileNum(
+                                (*gSprites.as_ptr())[ballIconSpritesIds[5 - var]]
+                                    .oam
+                                    .tileNum()
+                                    + 3,
+                            );
+                    } else if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0
+                        && (*crate::gl!(gBattleStruct)).arenaLostOpponentMons as u32
                             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[j]
                             != 0
                     {
-                        gSprites[ballIconSpritesIds[5 - var]]
+                        (*gSprites.as_ptr())[ballIconSpritesIds[5 - var]]
                             .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[5 - var]].oam.tileNum() + 3);
+                            .set_tileNum(
+                                (*gSprites.as_ptr())[ballIconSpritesIds[5 - var]]
+                                    .oam
+                                    .tileNum()
+                                    + 3,
+                            );
                     } else if (*partyInfo.at(j)).status != 0 {
-                        gSprites[ballIconSpritesIds[5 - var]]
+                        (*gSprites.as_ptr())[ballIconSpritesIds[5 - var]]
                             .oam
-                            .set_tileNum(gSprites[ballIconSpritesIds[5 - var]].oam.tileNum() + 2);
+                            .set_tileNum(
+                                (*gSprites.as_ptr())[ballIconSpritesIds[5 - var]]
+                                    .oam
+                                    .tileNum()
+                                    + 2,
+                            );
                     }
                     var += 1;
                 }
@@ -1350,8 +1498,9 @@ pub unsafe fn CreatePartyStatusSummarySprites(
     }
     task_set(taskId, tIsBattleStart, isBattleStart as i16);
     if isBattleStart != 0 {
-        (*(*gBattleSpritesDataPtr).animationData)
-            .set_field_9_x1C((*(*gBattleSpritesDataPtr).animationData).field_9_x1C() + 1);
+        (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).set_field_9_x1C(
+            (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).field_9_x1C() + 1,
+        );
     }
     PlaySE12WithPanning(SE_BALL_TRAY_ENTER, 0);
     taskId
@@ -1369,34 +1518,57 @@ pub unsafe fn Task_HidePartyStatusSummary(taskId: u8) {
     task_set(taskId, tBlend, 16);
     let mut i: i32 = 0;
     while i < PARTY_SIZE {
-        gSprites[ballIconSpriteIds[i]]
+        (*gSprites.as_ptr())[ballIconSpriteIds[i]]
             .oam
             .set_objMode(ST_OAM_OBJ_BLEND);
         i += 1;
     }
-    gSprites[summaryBarSpriteId]
+    (*gSprites.as_ptr())[summaryBarSpriteId]
         .oam
         .set_objMode(ST_OAM_OBJ_BLEND);
     if isBattleStart != 0 {
         for i in 0..PARTY_SIZE {
             if GetBattlerSide(battler) != B_SIDE_PLAYER {
-                gSprites[ballIconSpriteIds[5 - i]].data[1] = 7 * i as i16;
-                gSprites[ballIconSpriteIds[5 - i]].data[3] = 0;
-                gSprites[ballIconSpriteIds[5 - i]].data[4] = 0;
-                gSprites[ballIconSpriteIds[5 - i]].callback =
-                    Some(SpriteCB_StatusSummaryBalls_Exit);
+                {
+                    let gl_i22 = ballIconSpriteIds[5 - i];
+                    crate::gl!(gSprites[gl_i22].data[1] = 7 * i as i16)
+                };
+                {
+                    let gl_i23 = ballIconSpriteIds[5 - i];
+                    crate::gl!(gSprites[gl_i23].data[3] = 0)
+                };
+                {
+                    let gl_i24 = ballIconSpriteIds[5 - i];
+                    crate::gl!(gSprites[gl_i24].data[4] = 0)
+                };
+                {
+                    let gl_i25 = ballIconSpriteIds[5 - i];
+                    crate::gl!(gSprites[gl_i25].callback = Some(SpriteCB_StatusSummaryBalls_Exit))
+                };
             } else {
-                gSprites[ballIconSpriteIds[i]].data[1] = 7 * i as i16;
-                gSprites[ballIconSpriteIds[i]].data[3] = 0;
-                gSprites[ballIconSpriteIds[i]].data[4] = 0;
-                gSprites[ballIconSpriteIds[i]].callback = Some(SpriteCB_StatusSummaryBalls_Exit);
+                {
+                    let gl_i26 = ballIconSpriteIds[i];
+                    crate::gl!(gSprites[gl_i26].data[1] = 7 * i as i16)
+                };
+                {
+                    let gl_i27 = ballIconSpriteIds[i];
+                    crate::gl!(gSprites[gl_i27].data[3] = 0)
+                };
+                {
+                    let gl_i28 = ballIconSpriteIds[i];
+                    crate::gl!(gSprites[gl_i28].data[4] = 0)
+                };
+                {
+                    let gl_i29 = ballIconSpriteIds[i];
+                    crate::gl!(gSprites[gl_i29].callback = Some(SpriteCB_StatusSummaryBalls_Exit))
+                };
             }
         }
-        gSprites[summaryBarSpriteId].data[0] /= 2;
-        gSprites[summaryBarSpriteId].data[1] = 0;
-        gSprites[summaryBarSpriteId].callback = Some(SpriteCB_StatusSummaryBar_Exit);
+        crate::gl!(gSprites[summaryBarSpriteId].data[0] /= 2);
+        crate::gl!(gSprites[summaryBarSpriteId].data[1] = 0);
+        crate::gl!(gSprites[summaryBarSpriteId].callback = Some(SpriteCB_StatusSummaryBar_Exit));
         SetSubspriteTables(
-            &raw mut gSprites[summaryBarSpriteId],
+            crate::gl!(&raw gSprites[summaryBarSpriteId]),
             sStatusSummaryBar_SubspriteTable_Exit.as_ptr().cast_mut(),
         );
         task_set_func(taskId, Some(Task_HidePartyStatusSummary_BattleStart_1));
@@ -1443,22 +1615,38 @@ pub(crate) unsafe fn Task_HidePartyStatusSummary_BattleStart_2(taskId: u8) {
             ballIconSpriteIds[i] = task_get(taskId, 3 + i) as u8;
             i += 1;
         }
-        (*(*gBattleSpritesDataPtr).animationData)
-            .set_field_9_x1C((*(*gBattleSpritesDataPtr).animationData).field_9_x1C() - 1);
-        if (*(*gBattleSpritesDataPtr).animationData).field_9_x1C() == 0 {
-            DestroySpriteAndFreeResources(&raw mut gSprites[summaryBarSpriteId]);
-            DestroySpriteAndFreeResources(&raw mut gSprites[ballIconSpriteIds[0]]);
+        (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).set_field_9_x1C(
+            (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).field_9_x1C() - 1,
+        );
+        if (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).field_9_x1C() == 0 {
+            DestroySpriteAndFreeResources(crate::gl!(&raw gSprites[summaryBarSpriteId]));
+            DestroySpriteAndFreeResources({
+                let gl_i30 = ballIconSpriteIds[0];
+                crate::gl!(&raw gSprites[gl_i30])
+            });
         } else {
-            FreeSpriteOamMatrix(&raw mut gSprites[summaryBarSpriteId]);
-            DestroySprite(&raw mut gSprites[summaryBarSpriteId]);
-            FreeSpriteOamMatrix(&raw mut gSprites[ballIconSpriteIds[0]]);
-            DestroySprite(&raw mut gSprites[ballIconSpriteIds[0]]);
+            FreeSpriteOamMatrix(crate::gl!(&raw gSprites[summaryBarSpriteId]));
+            DestroySprite(crate::gl!(&raw gSprites[summaryBarSpriteId]));
+            FreeSpriteOamMatrix({
+                let gl_i31 = ballIconSpriteIds[0];
+                crate::gl!(&raw gSprites[gl_i31])
+            });
+            DestroySprite({
+                let gl_i32 = ballIconSpriteIds[0];
+                crate::gl!(&raw gSprites[gl_i32])
+            });
         }
         for i in 1..PARTY_SIZE {
-            DestroySprite(&raw mut gSprites[ballIconSpriteIds[i]]);
+            DestroySprite({
+                let gl_i33 = ballIconSpriteIds[i];
+                crate::gl!(&raw gSprites[gl_i33])
+            });
         }
     } else if task_get(taskId, tBlend) == -3 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_partyStatusSummaryShown(0);
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .set_partyStatusSummaryShown(0);
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         DestroyTask(taskId);
@@ -1484,13 +1672,22 @@ pub(crate) unsafe fn Task_HidePartyStatusSummary_DuringBattle(taskId: u8) {
             ballIconSpriteIds[i] = task_get(taskId, 3 + i) as u8;
             i += 1;
         }
-        DestroySpriteAndFreeResources(&raw mut gSprites[summaryBarSpriteId]);
-        DestroySpriteAndFreeResources(&raw mut gSprites[ballIconSpriteIds[0]]);
+        DestroySpriteAndFreeResources(crate::gl!(&raw gSprites[summaryBarSpriteId]));
+        DestroySpriteAndFreeResources({
+            let gl_i34 = ballIconSpriteIds[0];
+            crate::gl!(&raw gSprites[gl_i34])
+        });
         for i in 1..PARTY_SIZE {
-            DestroySprite(&raw mut gSprites[ballIconSpriteIds[i]]);
+            DestroySprite({
+                let gl_i35 = ballIconSpriteIds[i];
+                crate::gl!(&raw gSprites[gl_i35])
+            });
         }
     } else if task_get(taskId, tBlend) == -3 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_partyStatusSummaryShown(0);
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .set_partyStatusSummaryShown(0);
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         DestroyTask(taskId);
@@ -1567,23 +1764,25 @@ pub(crate) unsafe fn SpriteCB_StatusSummaryBalls_Exit(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn SpriteCB_StatusSummaryBalls_OnSwitchout(sprite: *mut Sprite) {
     let barSpriteId: u8 = (*sprite).data[0] as u8;
-    (*sprite).x2 = gSprites[barSpriteId].x2;
-    (*sprite).y2 = gSprites[barSpriteId].y2;
+    (*sprite).x2 = crate::gl!(gSprites[barSpriteId].x2);
+    (*sprite).y2 = crate::gl!(gSprites[barSpriteId].y2);
 }
 unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
     let mut nickname: CArray<u8, 11> = zeroed();
     let mut windowId: u32 = 0;
     let mut windowTileData: *mut u8 = null_mut();
     StringCopy(
-        gDisplayedStringBattle.as_mut_ptr(),
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_HealthboxNickname).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
     StringGet_Nickname(nickname.as_mut_ptr());
-    let mut ptr: *mut c_void =
-        StringAppend(gDisplayedStringBattle.as_mut_ptr(), nickname.as_mut_ptr()) as *mut c_void;
+    let mut ptr: *mut c_void = StringAppend(
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
+        nickname.as_mut_ptr(),
+    ) as *mut c_void;
     let mut gender: u8 = GetMonGender(mon);
     let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
     if (species == SPECIES_NIDORAN_F || species == SPECIES_NIDORAN_M)
@@ -1607,7 +1806,7 @@ unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
                 .cast_mut(),
             );
             windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
-                gDisplayedStringBattle.as_mut_ptr(),
+                (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                 0,
                 3,
                 2,
@@ -1623,7 +1822,7 @@ unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
                 .cast_mut(),
             );
             windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
-                gDisplayedStringBattle.as_mut_ptr(),
+                (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                 0,
                 3,
                 2,
@@ -1639,7 +1838,7 @@ unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
                 .cast_mut(),
             );
             windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
-                gDisplayedStringBattle.as_mut_ptr(),
+                (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                 0,
                 3,
                 2,
@@ -1647,8 +1846,8 @@ unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
             );
         }
     }
-    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
+    let spriteTileNum: u32 = (*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    if GetBattlerSide(crate::gl!(gSprites[healthboxSpriteId].data[6]) as u8) == B_SIDE_PLAYER {
         TextIntoHealthboxObject(
             (0x6010040 + spriteTileNum) as usize as *mut c_void,
             windowTileData,
@@ -1671,19 +1870,22 @@ unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
     RemoveWindowOnHealthbox(windowId);
 }
 unsafe fn TryAddPokeballIconToHealthbox(healthboxSpriteId: u8, noStatus: u8) {
-    if gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
         return;
     }
-    if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
         return;
     }
-    let battler: u8 = gSprites[healthboxSpriteId].data[hMain_Battler] as u8;
+    let battler: u8 = ({
+        let gl_i36 = hMain_Battler;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i36])
+    }) as u8;
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         return;
     }
     if GetSetPokedexFlag(
         SpeciesToNationalPokedexNum(GetMonData2(
-            &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+            &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
             MON_DATA_SPECIES,
         ) as u16),
         FLAG_GET_CAUGHT,
@@ -1691,12 +1893,15 @@ unsafe fn TryAddPokeballIconToHealthbox(healthboxSpriteId: u8, noStatus: u8) {
     {
         return;
     }
-    let healthBarSpriteId: u8 = gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId] as u8;
+    let healthBarSpriteId: u8 = ({
+        let gl_i37 = hMain_HealthBarSpriteId;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i37])
+    }) as u8;
     if noStatus != 0 {
         CpuSet(
             GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT) as *mut c_void,
-            (OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum() as i32 + 8) * 32) as usize
-                as *mut c_void,
+            (OBJ_VRAM0 + ((*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum() as i32 + 8) * 32)
+                as usize as *mut c_void,
             0x4000008,
         );
     } else {
@@ -1706,7 +1911,8 @@ unsafe fn TryAddPokeballIconToHealthbox(healthboxSpriteId: u8, noStatus: u8) {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    (OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum() as i32 + 8) * 32)
+                    (OBJ_VRAM0
+                        + ((*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum() as i32 + 8) * 32)
                         as usize as *mut c_void,
                     0x5000008,
                 );
@@ -1719,11 +1925,17 @@ unsafe fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
     let mut statusGfxPtr: *mut u8 = null_mut();
     let mut tileNumAdder: i16 = 0;
     let mut statusPalId: u8 = 0;
-    let battler: u8 = gSprites[healthboxSpriteId].data[hMain_Battler] as u8;
-    let healthBarSpriteId: u8 = gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId] as u8;
+    let battler: u8 = ({
+        let gl_i38 = hMain_Battler;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i38])
+    }) as u8;
+    let healthBarSpriteId: u8 = ({
+        let gl_i39 = hMain_HealthBarSpriteId;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i39])
+    }) as u8;
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         status = GetMonData2(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+            &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
             MON_DATA_STATUS,
         );
         if IsDoubleBattle() == 0 {
@@ -1733,7 +1945,7 @@ unsafe fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
         }
     } else {
         status = GetMonData2(
-            &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+            &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
             MON_DATA_STATUS,
         );
         tileNumAdder = 0x11;
@@ -1774,23 +1986,25 @@ unsafe fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
             CpuSet(
                 statusGfxPtr as *mut c_void,
                 (OBJ_VRAM0
-                    + (gSprites[healthboxSpriteId].oam.tileNum() as i32 + tileNumAdder as i32 + i)
+                    + ((*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as i32
+                        + tileNumAdder as i32
+                        + i)
                         * 32) as usize as *mut c_void,
                 0x4000008,
             );
         }
-        if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() == 0 {
+        if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).hpNumbersNoBars() == 0 {
             CpuSet(
                 GetHealthboxElementGfxPtr(HEALTHBOX_GFX_1) as *mut c_void,
-                (OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum() as i32 * 32) as usize
-                    as *mut c_void,
+                (OBJ_VRAM0 + (*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum() as i32 * 32)
+                    as usize as *mut c_void,
                 0x4000010,
             );
         }
         TryAddPokeballIconToHealthbox(healthboxSpriteId, TRUE);
         return;
     }
-    let mut pltAdder: u32 = gSprites[healthboxSpriteId].oam.paletteNum() as u32 * 16;
+    let mut pltAdder: u32 = (*gSprites.as_ptr())[healthboxSpriteId].oam.paletteNum() as u32 * 16;
     pltAdder += battler as u32 + 12;
     FillPalette(
         sStatusIconColors[statusPalId],
@@ -1798,7 +2012,7 @@ unsafe fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
         2,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[OBJ_PLTT_OFFSET as u32 + pltAdder] as *mut c_void,
         (OBJ_PLTT as usize as *mut u16).at(pltAdder) as *mut c_void,
@@ -1806,23 +2020,24 @@ unsafe fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
     );
     CpuSet(
         statusGfxPtr as *mut c_void,
-        (OBJ_VRAM0 + (gSprites[healthboxSpriteId].oam.tileNum() as i32 + tileNumAdder as i32) * 32)
-            as usize as *mut c_void,
+        (OBJ_VRAM0
+            + ((*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as i32 + tileNumAdder as i32)
+                * 32) as usize as *mut c_void,
         0x4000018,
     );
     if (IsDoubleBattle() == 1 || GetBattlerSide(battler) == 1)
-        && (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() == 0
+        && (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).hpNumbersNoBars() == 0
     {
         CpuSet(
             GetHealthboxElementGfxPtr(HEALTHBOX_GFX_0) as *mut c_void,
-            (OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum() as i32 * 32) as usize
+            (OBJ_VRAM0 + (*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum() as i32 * 32) as usize
                 as *mut c_void,
             0x4000008,
         );
         CpuSet(
             GetHealthboxElementGfxPtr(HEALTHBOX_GFX_65) as *mut c_void,
-            (OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum() as i32 + 1) * 32) as usize
-                as *mut c_void,
+            (OBJ_VRAM0 + ((*gSprites.as_ptr())[healthBarSpriteId].oam.tileNum() as i32 + 1) * 32)
+                as usize as *mut c_void,
             0x4000008,
         );
     }
@@ -1901,7 +2116,7 @@ unsafe fn UpdateSafariBallsTextOnHealthbox(healthboxSpriteId: u8) {
         2,
         &raw mut windowId,
     );
-    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    let spriteTileNum: u32 = (*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as u32 * 32;
     TextIntoHealthboxObject(
         (100728896_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
         windowTileData,
@@ -1923,7 +2138,12 @@ unsafe fn UpdateLeftNoOfBallsTextOnHealthbox(healthboxSpriteId: u8) {
             .as_ptr()
             .cast_mut(),
     );
-    ConvertIntToDecimalStringN(txtPtr, gNumSafariBalls as i32, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ConvertIntToDecimalStringN(
+        txtPtr,
+        gNumSafariBalls.get() as i32,
+        STR_CONV_MODE_LEFT_ALIGN,
+        2,
+    );
     let windowTileData: *mut u8 = AddTextPrinterAndCreateWindowOnHealthbox(
         text.as_mut_ptr(),
         GetStringRightAlignXOffset(FONT_SMALL as i32, text.as_mut_ptr(), 0x2F) as u32,
@@ -1931,7 +2151,7 @@ unsafe fn UpdateLeftNoOfBallsTextOnHealthbox(healthboxSpriteId: u8) {
         2,
         &raw mut windowId,
     );
-    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    let spriteTileNum: u32 = (*gSprites.as_ptr())[healthboxSpriteId].oam.tileNum() as u32 * 32;
     SafariTextIntoHealthboxObject(
         (100729536_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
         windowTileData,
@@ -1948,11 +2168,20 @@ unsafe fn UpdateLeftNoOfBallsTextOnHealthbox(healthboxSpriteId: u8) {
 pub unsafe fn UpdateHealthboxAttribute(healthboxSpriteId: u8, mon: *mut Pokemon, elementId: u8) {
     let mut maxHp: i32 = 0;
     let mut currHp: i32 = 0;
-    let battler: u8 = gSprites[healthboxSpriteId].data[hMain_Battler] as u8;
+    let battler: u8 = ({
+        let gl_i40 = hMain_Battler;
+        crate::gl!(gSprites[healthboxSpriteId].data[gl_i40])
+    }) as u8;
     if elementId == HEALTHBOX_ALL && IsDoubleBattle() == 0 {
         GetBattlerSide(battler);
     }
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[hMain_Battler] as u8) == B_SIDE_PLAYER {
+    if GetBattlerSide(
+        ({
+            let gl_i41 = hMain_Battler;
+            crate::gl!(gSprites[healthboxSpriteId].data[gl_i41])
+        }) as u8,
+    ) == B_SIDE_PLAYER
+    {
         if elementId == HEALTHBOX_LEVEL || elementId == HEALTHBOX_ALL {
             UpdateLvlInHealthbox(healthboxSpriteId, GetMonData2(mon, MON_DATA_LEVEL) as u8);
         }
@@ -2039,55 +2268,56 @@ pub unsafe fn MoveBattleBar(battler: u8, healthboxSpriteId: u8, whichBar: u8, un
     let mut currentBarValue: i32 = 0;
     if whichBar == HEALTH_BAR {
         currentBarValue = CalcNewBarValue(
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).maxValue,
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).oldValue,
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
-            &raw mut (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).maxValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).oldValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
+            &raw mut (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).currValue,
             6,
             1,
         );
     } else {
         let mut expFraction: u16 = GetScaledExpFraction(
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).oldValue,
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).maxValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).oldValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).maxValue,
             8,
         ) as u16;
         if expFraction == 0 {
             expFraction = 1;
         }
         expFraction = (if div_i32(
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
             expFraction as i32,
         ) < 0
         {
             -div_i32(
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
                 expFraction as i32,
             )
         } else {
             div_i32(
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
                 expFraction as i32,
             )
         }) as u16;
         currentBarValue = CalcNewBarValue(
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).maxValue,
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).oldValue,
-            (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
-            &raw mut (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).maxValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).oldValue,
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
+            &raw mut (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).currValue,
             8,
             expFraction,
         );
     }
     if whichBar == EXP_BAR
         || whichBar == HEALTH_BAR
-            && (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() == 0
+            && (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).hpNumbersNoBars()
+                == 0
     {
         MoveBattleBarGraphically(battler, whichBar);
     }
     if currentBarValue == -1 {
-        (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue = 0;
+        (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).currValue = 0;
     }
     currentBarValue
 }
@@ -2099,10 +2329,10 @@ unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
     match whichBar {
         HEALTH_BAR => {
             filledPixelsCount = CalcBarFilledPixels(
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).maxValue,
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).oldValue,
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
-                &raw mut (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).maxValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).oldValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
+                &raw mut (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).currValue,
                 array.as_mut_ptr(),
                 6,
             );
@@ -2115,14 +2345,19 @@ unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
             }
             for i in 0..6u8 {
                 let healthbarSpriteId: u8 =
-                    gSprites[(*(*gBattleSpritesDataPtr).battleBars.at(battler)).healthboxSpriteId]
+                    (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+                        .battleBars
+                        .at(battler))
+                    .healthboxSpriteId]
                         .data[hMain_HealthBarSpriteId] as u8;
                 if i < 2 {
                     CpuSet(
                         GetHealthboxElementGfxPtr(barElementId).at(array[i] as i32 * 32)
                             as *mut c_void,
                         (0x6010000
-                            + (gSprites[healthbarSpriteId].oam.tileNum() as i32 + 2 + i as i32)
+                            + ((*gSprites.as_ptr())[healthbarSpriteId].oam.tileNum() as i32
+                                + 2
+                                + i as i32)
                                 * 32) as usize as *mut c_void,
                         0x4000008,
                     );
@@ -2131,8 +2366,9 @@ unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
                         GetHealthboxElementGfxPtr(barElementId).at(array[i] as i32 * 32)
                             as *mut c_void,
                         (100728896
-                            + (i as i32 + gSprites[healthbarSpriteId].oam.tileNum() as i32) * 32)
-                            as usize as *mut c_void,
+                            + (i as i32
+                                + (*gSprites.as_ptr())[healthbarSpriteId].oam.tileNum() as i32)
+                                * 32) as usize as *mut c_void,
                         0x4000008,
                     );
                 }
@@ -2140,15 +2376,15 @@ unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
         }
         EXP_BAR => {
             CalcBarFilledPixels(
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).maxValue,
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).oldValue,
-                (*(*gBattleSpritesDataPtr).battleBars.at(battler)).receivedValue,
-                &raw mut (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).maxValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).oldValue,
+                (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).receivedValue,
+                &raw mut (*(*crate::gl!(gBattleSpritesDataPtr)).battleBars.at(battler)).currValue,
                 array.as_mut_ptr(),
                 8,
             );
             level = GetMonData2(
-                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                 MON_DATA_LEVEL,
             ) as u8;
             if level == MAX_LEVEL as u8 {
@@ -2162,8 +2398,10 @@ unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
                         GetHealthboxElementGfxPtr(HEALTHBOX_GFX_12).at(array[i] as i32 * 32)
                             as *mut c_void,
                         (0x6010000
-                            + (gSprites[(*(*gBattleSpritesDataPtr).battleBars.at(battler))
-                                .healthboxSpriteId]
+                            + ((*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+                                .battleBars
+                                .at(battler))
+                            .healthboxSpriteId]
                                 .oam
                                 .tileNum() as i32
                                 + 0x24
@@ -2177,8 +2415,10 @@ unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
                             as *mut c_void,
                         (100731776
                             + (i as i32
-                                + gSprites[(*(*gBattleSpritesDataPtr).battleBars.at(battler))
-                                    .healthboxSpriteId]
+                                + (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+                                    .battleBars
+                                    .at(battler))
+                                .healthboxSpriteId]
                                     .oam
                                     .tileNum() as i32)
                                 * 32) as usize as *mut c_void,
@@ -2367,7 +2607,7 @@ pub fn GetScaledHPFraction(hp: i16, maxhp: i16, scale: u8) -> u8 {
     }
     result
 }
-pub unsafe fn GetHPBarLevel(hp: i16, maxhp: i16) -> u8 {
+pub fn GetHPBarLevel(hp: i16, maxhp: i16) -> u8 {
     let mut result: u8 = 0;
     if hp == maxhp {
         result = HP_BAR_FULL;
@@ -2429,18 +2669,14 @@ unsafe fn FillHealthboxObject(dest: *mut c_void, valMult: u32, numTiles: u32) {
         }
     }
 }
-unsafe fn HpTextIntoHealthboxObject(dest: *mut c_void, windowTileData: *mut u8, windowWidth: u32) {
+fn HpTextIntoHealthboxObject(dest: *mut c_void, windowTileData: *mut u8, windowWidth: u32) {
     CpuSet(
         windowTileData.at(256) as *mut c_void,
         dest,
         0x04000000 | (windowWidth * 32 / 4) & 0x1FFFFF,
     );
 }
-unsafe fn TextIntoHealthboxObject(
-    mut dest: *mut c_void,
-    mut windowTileData: *mut u8,
-    windowWidth: i32,
-) {
+fn TextIntoHealthboxObject(mut dest: *mut c_void, mut windowTileData: *mut u8, windowWidth: i32) {
     CpuSet(
         windowTileData.at(256) as *mut c_void,
         (dest as *mut u8).at(256) as *mut c_void,
@@ -2456,11 +2692,7 @@ unsafe fn TextIntoHealthboxObject(
         windowTileData = windowTileData.at(32);
     }
 }
-unsafe fn SafariTextIntoHealthboxObject(
-    dest: *mut c_void,
-    windowTileData: *mut u8,
-    windowWidth: u32,
-) {
+fn SafariTextIntoHealthboxObject(dest: *mut c_void, windowTileData: *mut u8, windowWidth: u32) {
     CpuSet(
         windowTileData as *mut c_void,
         dest,

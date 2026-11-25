@@ -55,7 +55,7 @@ unsafe fn PadNameString(a0: *mut u8, a1: u8) {
 #[inline]
 unsafe fn mail_slot(index: usize) -> *mut u8 {
     unsafe {
-        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+        (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut())
         .add(SAVE1_MAIL_OFFSET + index * MAIL_SIZE)
@@ -172,7 +172,7 @@ pub unsafe fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8 {
         let mut i = 0usize;
         while i < PLAYER_NAME_LENGTH {
             let character = unsafe {
-                (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                (*(crate::gl!(&raw @at crate::load_save::gSaveBlock2Ptr;).cast_const())
                     .cast::<*mut u8>()
                     .cast_mut())
                 .add(SAVE2_PLAYER_NAME_OFFSET + i)
@@ -190,7 +190,7 @@ pub unsafe fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8 {
         let mut i = 0usize;
         while i < TRAINER_ID_LENGTH {
             let byte = unsafe {
-                (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                (*(crate::gl!(&raw @at crate::load_save::gSaveBlock2Ptr;).cast_const())
                     .cast::<*mut u8>()
                     .cast_mut())
                 .add(SAVE2_TRAINER_ID_OFFSET + i)

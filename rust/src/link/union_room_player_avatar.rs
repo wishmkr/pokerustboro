@@ -85,14 +85,15 @@ static sUnionRoomObjGfxIds: Table<CArray<CArray<u8, 10>, 2>> =
 static sUnionRoomPlayerCoords: Table<CArray<CArray<i16, 2>, 8>> =
     Table((&raw const crate::data::union_room_player_avatar::sUnionRoomPlayerCoords).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnionObjWork: *mut UnionRoomObject = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sUnionObjWork: crate::global::Global<*mut UnionRoomObject> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sUnionObjRefreshTimer: crate::global::Global<u32> = crate::global::Global::new(0);
 
 pub(crate) unsafe fn IsPlayerStandingStill() -> u32 {
-    if gPlayerAvatar.tileTransitionState == T_TILE_CENTER
-        || gPlayerAvatar.tileTransitionState == T_NOT_MOVING
+    if crate::gl!(gPlayerAvatar.tileTransitionState) == T_TILE_CENTER
+        || crate::gl!(gPlayerAvatar.tileTransitionState) == T_NOT_MOVING
     {
         return TRUE as u32;
     } else {
@@ -148,29 +149,29 @@ unsafe fn SetUnionRoomPlayerGfx(leaderId: u32, gfxId: u32) {
 unsafe fn CreateUnionRoomPlayerObjectEvent(leaderId: u32) {
     TrySpawnObjectEvent(
         sUnionRoomLocalIds[leaderId],
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
 }
 unsafe fn RemoveUnionRoomPlayerObjectEvent(leaderId: u32) {
     RemoveObjectEventByLocalIdAndMap(
         sUnionRoomLocalIds[leaderId],
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
 }
 unsafe fn SetUnionRoomPlayerEnterExitMovement(leaderId: u32, movement: *mut u8) -> u32 {
     let mut objectId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(
         sUnionRoomLocalIds[leaderId],
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
         &raw mut objectId,
     ) != 0
     {
         return FALSE as u32;
     }
-    let object: *mut ObjectEvent = &raw mut gObjectEvents[objectId];
+    let object: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectId]);
     if ObjectEventIsMovementOverridden(object) != 0 {
         return FALSE as u32;
     }
@@ -183,14 +184,14 @@ unsafe fn TryReleaseUnionRoomPlayerObjectEvent(leaderId: u32) -> u32 {
     let mut objectId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(
         sUnionRoomLocalIds[leaderId],
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
         &raw mut objectId,
     ) != 0
     {
         return TRUE as u32;
     }
-    let object: *mut ObjectEvent = &raw mut gObjectEvents[objectId];
+    let object: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectId]);
     if ObjectEventClearHeldMovementIfFinished(object) == 0 {
         return FALSE as u32;
     }
@@ -203,7 +204,7 @@ unsafe fn TryReleaseUnionRoomPlayerObjectEvent(leaderId: u32) -> u32 {
 }
 pub unsafe fn InitUnionRoomPlayerObjects(players: *mut UnionRoomObject) -> u8 {
     sUnionObjRefreshTimer.set(0);
-    sUnionObjWork = players;
+    crate::gl!(sUnionObjWork = players);
     for i in 0..MAX_UNION_ROOM_LEADERS {
         (*players.at(i)).state = 0;
         (*players.at(i)).gfxId = 0;
@@ -287,7 +288,7 @@ unsafe fn AnimateUnionRoomPlayerSpawn(
     FALSE as u32
 }
 unsafe fn SpawnGroupLeader(leaderId: u32, gender: u32, id: u32) -> u32 {
-    let object: *mut UnionRoomObject = sUnionObjWork.at(leaderId);
+    let object: *mut UnionRoomObject = (*sUnionObjWork.as_ptr()).at(leaderId);
     (*object).schedAnim = UNION_ROOM_SPAWN_IN;
     (*object).gfxId = GetUnionRoomPlayerGraphicsId(gender, id);
     if (*object).state == 0 {
@@ -301,7 +302,7 @@ unsafe fn SpawnGroupLeader(leaderId: u32, gender: u32, id: u32) -> u32 {
     }
 }
 unsafe fn DespawnGroupLeader(leaderId: u32) -> u32 {
-    let object: *mut UnionRoomObject = sUnionObjWork.at(leaderId);
+    let object: *mut UnionRoomObject = (*sUnionObjWork.as_ptr()).at(leaderId);
     (*object).schedAnim = UNION_ROOM_SPAWN_OUT;
     if (*object).state == 1 {
         return TRUE as u32;
@@ -360,7 +361,7 @@ unsafe fn AnimateUnionRoomPlayer(leaderId: u32, object: *mut UnionRoomObject) {
 }
 pub(crate) unsafe fn Task_AnimateUnionRoomPlayers(taskId: u8) {
     for i in 0..MAX_UNION_ROOM_LEADERS {
-        AnimateUnionRoomPlayer(i as u32, sUnionObjWork.at(i));
+        AnimateUnionRoomPlayer(i as u32, (*sUnionObjWork.as_ptr()).at(i));
     }
 }
 unsafe fn CreateTask_AnimateUnionRoomPlayers() -> u8 {
@@ -387,7 +388,7 @@ pub unsafe fn DestroyUnionRoomPlayerObjects() {
             HideUnionRoomPlayer(i as u32);
         }
     }
-    sUnionObjWork = null_mut();
+    crate::gl!(sUnionObjWork = null_mut());
     DestroyTask_AnimateUnionRoomPlayers();
 }
 pub unsafe fn CreateUnionRoomPlayerSprites(spriteIds: *mut u8, leaderId: i32) {
@@ -406,7 +407,10 @@ pub unsafe fn CreateUnionRoomPlayerSprites(spriteIds: *mut u8, leaderId: i32) {
 }
 pub unsafe fn DestroyUnionRoomPlayerSprites(spriteIds: *mut u8) {
     for i in 0..NUM_UNION_ROOM_SPRITES {
-        DestroySprite(&raw mut gSprites[*spriteIds.at(i)]);
+        DestroySprite({
+            let gl_i0 = *spriteIds.at(i);
+            crate::gl!(&raw gSprites[gl_i0])
+        });
     }
 }
 pub unsafe fn SetTilesAroundUnionRoomPlayersPassable() {

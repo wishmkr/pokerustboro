@@ -112,14 +112,14 @@ use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sWildEncounterImmunitySteps: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPrevMetatileBehavior: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gSelectedObjectEvent: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gSelectedObjectEvent: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `GetRamScript` with this module's view of its types.
 #[inline]
@@ -143,8 +143,8 @@ pub unsafe fn FieldClearPlayerInput(input: *mut FieldInput) {
     (*input).dpadDirection = 0;
 }
 pub unsafe fn FieldGetPlayerInput(input: *mut FieldInput, newKeys: u16, heldKeys: u16) {
-    let tileTransitionState: u8 = gPlayerAvatar.tileTransitionState;
-    let runningState: u8 = gPlayerAvatar.runningState;
+    let tileTransitionState: u8 = crate::gl!(gPlayerAvatar.tileTransitionState);
+    let runningState: u8 = crate::gl!(gPlayerAvatar.runningState);
     let forcedMove: u8 = MetatileBehavior_IsForcedMovementTile(GetPlayerCurMetatileBehavior(
         runningState as i32,
     ) as u8);
@@ -191,7 +191,7 @@ pub unsafe fn FieldGetPlayerInput(input: *mut FieldInput, newKeys: u16, heldKeys
 pub unsafe fn ProcessPlayerFieldInput(input: *mut FieldInput) -> i32 {
     let mut position: MapPosition = zeroed();
     gSpecialVar_LastTalked = LOCALID_NONE as u16;
-    gSelectedObjectEvent = 0;
+    crate::gl!(gSelectedObjectEvent = 0);
     let playerDirection: u8 = GetPlayerFacingDirection();
     GetPlayerPosition(&raw mut position);
     let mut metatileBehavior: u16 =
@@ -369,19 +369,19 @@ pub unsafe fn GetInteractedLinkPlayerScript(
         );
     }
     if objectEventId == OBJECT_EVENTS_COUNT
-        || gObjectEvents[objectEventId].localId == LOCALID_PLAYER
+        || crate::gl!(gObjectEvents[objectEventId].localId) == LOCALID_PLAYER
     {
         return null_mut();
     }
     for i in 0..4i32 {
-        if gLinkPlayerObjectEvents[i].active == TRUE
-            && gLinkPlayerObjectEvents[i].objEventId == objectEventId
+        if crate::gl!(gLinkPlayerObjectEvents[i].active) == TRUE
+            && crate::gl!(gLinkPlayerObjectEvents[i].objEventId) == objectEventId
         {
             return null_mut();
         }
     }
-    gSelectedObjectEvent = objectEventId;
-    gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId as u16;
+    crate::gl!(gSelectedObjectEvent = objectEventId);
+    gSpecialVar_LastTalked = crate::gl!(gObjectEvents[objectEventId].localId) as u16;
     gSpecialVar_Facing = direction as u16;
     GetObjectEventScriptPointerByObjectEventId(objectEventId)
 }
@@ -397,7 +397,7 @@ unsafe fn GetInteractedObjectEventScript(
         (*position).elevation as u8,
     );
     if objectEventId == OBJECT_EVENTS_COUNT
-        || gObjectEvents[objectEventId].localId == LOCALID_PLAYER
+        || crate::gl!(gObjectEvents[objectEventId].localId) == LOCALID_PLAYER
     {
         if MetatileBehavior_IsCounter(metatileBehavior) != TRUE {
             return null_mut();
@@ -414,13 +414,13 @@ unsafe fn GetInteractedObjectEventScript(
             (*position).elevation as u8,
         );
         if objectEventId == OBJECT_EVENTS_COUNT
-            || gObjectEvents[objectEventId].localId == LOCALID_PLAYER
+            || crate::gl!(gObjectEvents[objectEventId].localId) == LOCALID_PLAYER
         {
             return null_mut();
         }
     }
-    gSelectedObjectEvent = objectEventId;
-    gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId as u16;
+    crate::gl!(gSelectedObjectEvent = objectEventId);
+    gSpecialVar_LastTalked = crate::gl!(gObjectEvents[objectEventId].localId) as u16;
     gSpecialVar_Facing = direction as u16;
     if InTrainerHill() == TRUE as u32 {
         script = GetTrainerHillTrainerScript();
@@ -436,7 +436,7 @@ unsafe fn GetInteractedBackgroundEventScript(
     direction: u8,
 ) -> *mut u8 {
     let bgEvent: *mut BgEvent = GetBackgroundEventAtPosition(
-        &raw mut gMapHeader,
+        crate::gl!(&raw gMapHeader),
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
         (*position).elevation as u8,
@@ -692,7 +692,7 @@ unsafe fn TrySetupDiveDownScript() -> u32 {
 }
 unsafe fn TrySetupDiveEmergeScript() -> u32 {
     if FlagGet(FLAG_BADGE07_GET) != 0
-        && gMapHeader.mapType == MAP_TYPE_UNDERWATER
+        && crate::gl!(gMapHeader.mapType) == MAP_TYPE_UNDERWATER
         && TrySetDiveWarp() == 1
     {
         ScriptContext_SetupScript(
@@ -728,7 +728,7 @@ unsafe fn TryStartStepBasedScript(
 }
 unsafe fn TryStartCoordEventScript(position: *mut MapPosition) -> u8 {
     let script: *mut u8 = GetCoordEventScriptAtPosition(
-        &raw mut gMapHeader,
+        crate::gl!(&raw gMapHeader),
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
         (*position).elevation as u8,
@@ -773,7 +773,7 @@ unsafe fn TryStartStepCountScript(metatileBehavior: u16) -> u8 {
     IncrementRematchStepCounter();
     UpdateFriendshipStepCounter();
     UpdateFarawayIslandStepCounter();
-    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_FORCED_MOVE == 0
+    if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_FORCED_MOVE == 0
         && MetatileBehavior_IsForcedMovementTile(metatileBehavior as u8) == 0
     {
         if UpdatePoisonStepCounter() == TRUE {
@@ -879,7 +879,7 @@ unsafe fn UpdateFriendshipStepCounter() {
     *ptr += 1;
     *ptr = (*ptr as i32 % 128) as u16;
     if *ptr == 0 {
-        let mut mon: *mut Pokemon = gPlayerParty.as_mut_ptr();
+        let mut mon: *mut Pokemon = (*gPlayerParty.as_ptr()).as_mut_ptr();
         for i in 0..PARTY_SIZE {
             AdjustFriendship(mon, FRIENDSHIP_EVENT_WALKING);
             mon = mon.at(1);
@@ -891,7 +891,7 @@ pub unsafe fn ClearPoisonStepCounter() {
 }
 unsafe fn UpdatePoisonStepCounter() -> u8 {
     let mut ptr: *mut u16 = null_mut();
-    if gMapHeader.mapType != MAP_TYPE_SECRET_BASE {
+    if crate::gl!(gMapHeader.mapType) != MAP_TYPE_SECRET_BASE {
         ptr = GetVarPointer(VAR_POISON_STEP_COUNTER);
         *ptr += 1;
         *ptr = (*ptr as i32 % 4) as u16;
@@ -930,22 +930,22 @@ unsafe fn CheckStandardWildEncounter(metatileBehavior: u16) -> u8 {
     FALSE
 }
 unsafe fn TryArrowWarp(position: *mut MapPosition, metatileBehavior: u16, direction: u8) -> u8 {
-    let warpEventId: i8 = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
+    let warpEventId: i8 = GetWarpEventAtMapPosition(crate::gl!(&raw gMapHeader), position);
     if IsArrowWarpMetatileBehavior(metatileBehavior, direction) == TRUE
         && warpEventId != WARP_ID_NONE
     {
         StoreInitialPlayerAvatarState();
-        SetupWarp(&raw mut gMapHeader, warpEventId, position);
+        SetupWarp(crate::gl!(&raw gMapHeader), warpEventId, position);
         DoWarp();
         return TRUE;
     }
     FALSE
 }
 unsafe fn TryStartWarpEventScript(position: *mut MapPosition, metatileBehavior: u16) -> u8 {
-    let warpEventId: i8 = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
+    let warpEventId: i8 = GetWarpEventAtMapPosition(crate::gl!(&raw gMapHeader), position);
     if warpEventId != WARP_ID_NONE && IsWarpMetatileBehavior(metatileBehavior) == TRUE {
         StoreInitialPlayerAvatarState();
-        SetupWarp(&raw mut gMapHeader, warpEventId, position);
+        SetupWarp(crate::gl!(&raw gMapHeader), warpEventId, position);
         if MetatileBehavior_IsEscalator(metatileBehavior as u8) == TRUE {
             DoEscalatorWarp(metatileBehavior as u8);
             return TRUE;
@@ -1031,17 +1031,17 @@ unsafe fn SetupWarp(unused: *mut MapHeader, warpEventId: i8, position: *mut MapP
     if trainerHillMapId != 0 {
         if trainerHillMapId == GetNumFloorsInTrainerHillChallenge() {
             if warpEventId == 0 {
-                warpEvent = (*gMapHeader.events).warps;
+                warpEvent = (*crate::gl!(gMapHeader.events)).warps;
             } else {
                 warpEvent = SetWarpDestinationTrainerHill4F();
             }
         } else if trainerHillMapId == TRAINER_HILL_ROOF {
             warpEvent = SetWarpDestinationTrainerHillFinalFloor(warpEventId as u8);
         } else {
-            warpEvent = (*gMapHeader.events).warps.at(warpEventId);
+            warpEvent = (*crate::gl!(gMapHeader.events)).warps.at(warpEventId);
         }
     } else {
-        warpEvent = (*gMapHeader.events).warps.at(warpEventId);
+        warpEvent = (*crate::gl!(gMapHeader.events)).warps.at(warpEventId);
     }
     if (*warpEvent).mapNum == 127 {
         SetWarpDestinationToDynamicWarp((*warpEvent).warpId);
@@ -1059,8 +1059,8 @@ unsafe fn SetupWarp(unused: *mut MapHeader, warpEventId: i8, position: *mut MapP
         if (*(*(*mapHeader).events).warps.at((*warpEvent).warpId)).mapNum == 127 {
             SetDynamicWarp(
                 (*(*(*mapHeader).events).warps.at(warpEventId)).warpId as i32,
-                (*gSaveBlock1Ptr).location.mapGroup,
-                (*gSaveBlock1Ptr).location.mapNum,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
                 warpEventId,
             );
         }
@@ -1070,14 +1070,14 @@ unsafe fn TryDoorWarp(position: *mut MapPosition, metatileBehavior: u16, directi
     let mut warpEventId: i8 = 0;
     if direction == DIR_NORTH {
         if MetatileBehavior_IsOpenSecretBaseDoor(metatileBehavior as u8) == TRUE {
-            WarpIntoSecretBase(position, gMapHeader.events);
+            WarpIntoSecretBase(position, crate::gl!(gMapHeader.events));
             return TRUE;
         }
         if MetatileBehavior_IsWarpDoor(metatileBehavior as u8) == TRUE {
-            warpEventId = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
+            warpEventId = GetWarpEventAtMapPosition(crate::gl!(&raw gMapHeader), position);
             if warpEventId != WARP_ID_NONE && IsWarpMetatileBehavior(metatileBehavior) == TRUE {
                 StoreInitialPlayerAvatarState();
-                SetupWarp(&raw mut gMapHeader, warpEventId, position);
+                SetupWarp(crate::gl!(&raw gMapHeader), warpEventId, position);
                 DoDoorWarp();
                 return TRUE;
             }
@@ -1142,7 +1142,7 @@ unsafe fn GetCoordEventScriptAtPosition(
 }
 pub unsafe fn GetCoordEventScriptAtMapPosition(position: *mut MapPosition) -> *mut u8 {
     GetCoordEventScriptAtPosition(
-        &raw mut gMapHeader,
+        crate::gl!(&raw gMapHeader),
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
         (*position).elevation as u8,
@@ -1168,7 +1168,7 @@ unsafe fn GetBackgroundEventAtPosition(
     null_mut()
 }
 pub unsafe fn TryDoDiveWarp(position: *mut MapPosition, metatileBehavior: u16) -> u8 {
-    if gMapHeader.mapType == MAP_TYPE_UNDERWATER
+    if crate::gl!(gMapHeader.mapType) == MAP_TYPE_UNDERWATER
         && MetatileBehavior_IsUnableToEmerge(metatileBehavior as u8) == 0
     {
         if SetDiveWarpEmerge(
@@ -1199,7 +1199,7 @@ pub unsafe fn TrySetDiveWarp() -> u8 {
     let mut y: i16 = 0;
     PlayerGetDestCoords(&raw mut x, &raw mut y);
     let metatileBehavior: u8 = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
-    if gMapHeader.mapType == MAP_TYPE_UNDERWATER
+    if crate::gl!(gMapHeader.mapType) == MAP_TYPE_UNDERWATER
         && MetatileBehavior_IsUnableToEmerge(metatileBehavior) == 0
     {
         if SetDiveWarpEmerge(x as u16 - MAP_OFFSET as u16, y as u16 - MAP_OFFSET as u16) == TRUE {
@@ -1229,8 +1229,8 @@ pub unsafe fn SetCableClubWarp() -> i32 {
     GetPlayerPosition(&raw mut position);
     MapGridGetMetatileBehaviorAt(position.x as i32, position.y as i32);
     SetupWarp(
-        &raw mut gMapHeader,
-        GetWarpEventAtMapPosition(&raw mut gMapHeader, &raw mut position),
+        crate::gl!(&raw gMapHeader),
+        GetWarpEventAtMapPosition(crate::gl!(&raw gMapHeader), &raw mut position),
         &raw mut position,
     );
     0

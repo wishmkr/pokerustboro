@@ -47,12 +47,12 @@ const RGB_BLACK: u16 = 0;
 const DISPCNT_OBJ_ON_1D: u16 = 0x1040;
 const WINDOW_TILE_DATA: u8 = 7;
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static SAVE_FAILED_TYPE: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-static mut CLOCK_INFO: [u16; 2] = [0; 2];
-#[unsafe(link_section = "ewram_data")]
-static mut WINDOW_IDS: [u8; 2] = [0; 2];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static CLOCK_INFO: crate::global::Global<[u16; 2]> = crate::global::Global::new([0; 2]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static WINDOW_IDS: crate::global::Global<[u8; 2]> = crate::global::Global::new([0; 2]);
 
 static CLOCK_OAM: OamData = {
     let mut oam = OamData::simple(ST_OAM_SQUARE, 1, 0);
@@ -187,12 +187,22 @@ unsafe fn CpuFastSet(a0: *const core::ffi::c_void, a1: *mut core::ffi::c_void, a
 
 #[inline]
 fn window_id(index: usize) -> u8 {
-    unsafe { (&raw const WINDOW_IDS).cast::<u8>().add(index).read() }
+    unsafe {
+        (crate::gl!(&raw WINDOW_IDS).cast_const())
+            .cast::<u8>()
+            .add(index)
+            .read()
+    }
 }
 
 #[inline]
 unsafe fn set_clock_info(index: usize, value: u16) {
-    unsafe { (&raw mut CLOCK_INFO).cast::<u16>().add(index).write(value) };
+    unsafe {
+        (crate::gl!(&raw CLOCK_INFO))
+            .cast::<u16>()
+            .add(index)
+            .write(value)
+    };
 }
 
 unsafe fn print_text(text: *const u8, x: u8, y: u8) {
@@ -222,7 +232,7 @@ pub unsafe fn DoSaveFailedScreen(save_type: u8) {
     unsafe { (SAVE_FAILED_TYPE.as_ptr()).write(u16::from(save_type)) };
     unsafe { set_clock_info(CLOCK_RUNNING, 0) };
     unsafe { set_clock_info(DEBUG_TIMER, 0) };
-    unsafe { (&raw mut WINDOW_IDS).write([0, 0]) };
+    unsafe { (crate::gl!(&raw WINDOW_IDS)).write([0, 0]) };
 }
 
 unsafe fn vblank_cb() {
@@ -280,7 +290,7 @@ unsafe fn cb2_save_failed_screen() {
     };
     unsafe { ResetBgsAndClearDma3BusyFlags(0) };
     unsafe { InitBgsFromTemplates(0, BG_TEMPLATES.as_ptr().cast(), BG_TEMPLATES.len() as u8) };
-    let buffer = (&raw mut gDecompressionBuffer).cast::<u8>();
+    let buffer = (crate::gl!(&raw gDecompressionBuffer)).cast::<u8>();
     unsafe { SetBgTilemapBuffer(0, buffer.add(0x2000)) };
     unsafe { buffer.add(0x2000).write_bytes(0, 0x800) };
     unsafe { LoadBgTiles(0, gTextWindowFrame1_Gfx.as_ptr().cast(), 0x120, 0x214) };
@@ -301,7 +311,7 @@ unsafe fn cb2_save_failed_screen() {
             buffer.add(0x3d00) as usize as u32,
         )
     };
-    unsafe { (&raw mut WINDOW_IDS).write([text_window, clock_window]) };
+    unsafe { (crate::gl!(&raw WINDOW_IDS)).write([text_window, clock_window]) };
     unsafe { DeactivateAllTextPrinters() };
     unsafe { ResetSpriteData() };
     ResetTasks();
@@ -397,7 +407,7 @@ unsafe fn cb2_wipe_save() {
             )
         };
     } else if unsafe {
-        (&raw const (*(&raw const crate::save::gGameContinueCallback)
+        (&raw const (*(crate::gl!(&raw @at crate::save::gGameContinueCallback;).cast_const())
             .cast::<Option<MainCallback>>()
             .cast_mut()))
             .read()
@@ -446,7 +456,7 @@ unsafe fn cb2_return_to_title_screen() {
         return;
     }
     match unsafe {
-        (&raw const (*(&raw const crate::save::gGameContinueCallback)
+        (&raw const (*(crate::gl!(&raw @at crate::save::gGameContinueCallback;).cast_const())
             .cast::<Option<MainCallback>>()
             .cast_mut()))
             .read()
@@ -455,9 +465,10 @@ unsafe fn cb2_return_to_title_screen() {
         Some(callback) => {
             unsafe { SetMainCallback2(callback) };
             unsafe {
-                (&raw mut (*(&raw const crate::save::gGameContinueCallback)
-                    .cast::<Option<MainCallback>>()
-                    .cast_mut()))
+                (&raw mut (*(crate::gl!(&raw @at crate::save::gGameContinueCallback;)
+                    .cast_const())
+                .cast::<Option<MainCallback>>()
+                .cast_mut()))
                     .write(None)
             };
         }
@@ -465,14 +476,20 @@ unsafe fn cb2_return_to_title_screen() {
 }
 
 unsafe fn vblank_cb_update_clock_graphics() {
-    let main = &raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut());
+    let main = &raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+        .cast::<u8>()
+        .cast_mut());
     let counter = unsafe { main.add(MAIN_VBLANK_COUNTER2).cast::<u32>().read() };
     let n = ((counter >> 3) & 7) as usize;
     let oam = unsafe { main.add(MAIN_OAM_BUFFER) };
     unsafe { core::ptr::copy_nonoverlapping(CLOCK_OAM.0.as_ptr(), oam, 8) };
     unsafe { crate::ffi::set_oam_x(oam, 112) };
     unsafe { oam.write(((CLOCK_WIN_TOP + 1) * 8) as u8) };
-    let running = unsafe { (&raw const CLOCK_INFO).cast::<u16>().read() } != 0;
+    let running = unsafe {
+        (crate::gl!(&raw CLOCK_INFO).cast_const())
+            .cast::<u16>()
+            .read()
+    } != 0;
     let frame = unsafe { sClockFrames.as_ptr().add(n * 3) };
     let tile = if running { unsafe { frame.read() } } else { 1 };
     unsafe { crate::ffi::set_oam_tile_num(oam, u16::from(tile)) };
@@ -488,7 +505,7 @@ unsafe fn vblank_cb_update_clock_graphics() {
     // up to a block of eight, so the first four OAM entries are copied.
     unsafe { CpuFastSet(oam.cast(), OAM as *mut _, 4 / 4) };
     let timer = unsafe {
-        (&raw const CLOCK_INFO)
+        (crate::gl!(&raw CLOCK_INFO).cast_const())
             .cast::<u16>()
             .add(DEBUG_TIMER)
             .read()
@@ -499,7 +516,7 @@ unsafe fn vblank_cb_update_clock_graphics() {
 }
 
 unsafe fn verify_sector_wipe(sector: u16) -> bool {
-    let buffer = &raw mut (*(&raw const crate::save::gSaveDataBuffer)
+    let buffer = &raw mut (*(crate::gl!(&raw @at crate::save::gSaveDataBuffer;).cast_const())
         .cast::<u8>()
         .cast_mut());
     unsafe { ReadFlash(sector, 0, buffer, SECTOR_SIZE) };
@@ -512,7 +529,7 @@ unsafe fn wipe_sector(sector: u16) -> bool {
     let mut tries = 0u16;
     // An arbitrary limit of 130 attempts.
     while failed && tries < 130 {
-        if let Some(program) = unsafe { (&raw const ProgramFlashByte).read() } {
+        if let Some(program) = unsafe { (crate::gl!(&raw ProgramFlashByte).cast_const()).read() } {
             for offset in 0..SECTOR_SIZE {
                 unsafe { program(sector, offset, 0) };
             }

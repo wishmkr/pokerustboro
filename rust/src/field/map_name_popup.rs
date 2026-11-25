@@ -60,7 +60,7 @@ const T_Y_OFFSET: usize = 2;
 const T_INCOMING_POPUP: usize = 3;
 const T_PRINT_TIMER: usize = 4;
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static POPUP_TASK_ID: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `ClearStdWindowAndFrame` with this module's view of its types.
@@ -112,7 +112,11 @@ fn popup_task() -> u8 {
 
 #[inline]
 unsafe fn map_header(offset: usize) -> *const u8 {
-    unsafe { (&raw const (*(&raw const crate::fieldmap::gMapHeader).cast::<u8>())).add(offset) }
+    unsafe {
+        (&raw const (*(crate::gl!(&raw @at crate::fieldmap::gMapHeader;).cast_const())
+            .cast::<u8>()))
+            .add(offset)
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -215,7 +219,11 @@ unsafe fn show_map_name_popup_window() {
         let index = if layout == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP {
             FRONTIER_STAGES_PER_CHALLENGE
         } else {
-            let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
+            let sb2 = unsafe {
+                (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+                    .read()
+                    .cast::<u8>()
+            };
             usize::from(unsafe { sb2.add(SB2_CUR_CHALLENGE_BATTLE_NUM).cast::<u16>().read() })
         };
         let source = unsafe { sBattlePyramid_MapHeaderStrings.as_ptr().add(index).read() }.0;

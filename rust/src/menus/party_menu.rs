@@ -157,7 +157,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `BlitBitmapToWindow` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
     unsafe {
         crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
     }
@@ -176,7 +176,7 @@ unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *
 }
 /// `CopyRectToBgTilemapBufferRect` with this module's view of its types.
 #[inline]
-unsafe fn CopyRectToBgTilemapBufferRect(
+fn CopyRectToBgTilemapBufferRect(
     a0: u8,
     a1: *mut c_void,
     a2: u8,
@@ -241,7 +241,7 @@ unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `GiveMailToMon` with this module's view of its types.
 #[inline]
-unsafe fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
+fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
     unsafe { crate::mail_data::GiveMailToMon(a0 as _, a1 as _) }
 }
 /// `GiveMailToMonByItemId` with this module's view of its types.
@@ -251,19 +251,19 @@ unsafe fn GiveMailToMonByItemId(a0: *mut Pokemon, a1: u16) -> u8 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
@@ -275,7 +275,7 @@ unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -304,11 +304,7 @@ unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -346,14 +342,14 @@ unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
 }
 /// `TakeMailFromMon` with this module's view of its types.
 #[inline]
-unsafe fn TakeMailFromMon(a0: *mut Pokemon) {
+fn TakeMailFromMon(a0: *mut Pokemon) {
     unsafe {
         crate::mail_data::TakeMailFromMon(a0 as _);
     }
 }
 /// `TakeMailFromMonAndSave` with this module's view of its types.
 #[inline]
-unsafe fn TakeMailFromMonAndSave(a0: *mut Pokemon) -> u8 {
+fn TakeMailFromMonAndSave(a0: *mut Pokemon) -> u8 {
     unsafe { crate::mail_data::TakeMailFromMonAndSave(a0 as _) }
 }
 // The C's names for task and sprite data slots.
@@ -707,40 +703,51 @@ static sUnionRoomTradeMessages: Table<CArray<*mut u8, 9>> =
 static sWhichMoveMsgWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::party_menu::sWhichMoveMsgWindowTemplate).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPartyMenuInternal: *mut PartyMenuInternal = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPartyMenuInternal: crate::global::Global<*mut PartyMenuInternal> =
+    crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPartyMenu: PartyMenu = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPartyMenuBoxes: *mut PartyMenuBox = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPartyBgGfxTilemap: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPartyBgTilemapBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPartyMenuUseExitCallback: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSelectedMonPartyId: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPartyMenu: crate::global::Global<PartyMenu> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPartyMenuBoxes: crate::global::Global<*mut PartyMenuBox> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPartyBgGfxTilemap: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPartyBgTilemapBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPartyMenuUseExitCallback: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSelectedMonPartyId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPostMenuFieldCallback: Option<unsafe fn()> = None;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSlot1TilemapBuffer: *mut u16 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSlot2TilemapBuffer: *mut u16 = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPostMenuFieldCallback: crate::global::Global<Option<unsafe fn()>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSlot1TilemapBuffer: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSlot2TilemapBuffer: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSelectedOrderFromParty: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPartyMenuItemId: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnused: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSelectedOrderFromParty: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPartyMenuItemId: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sUnused: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gBattlePartyCurrentOrder: Aligned<CArray<u8, 3>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "common_data")]
-pub static mut gItemUseCB: Option<unsafe fn(u8, Option<unsafe fn(u8)>)> = None;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gBattlePartyCurrentOrder: crate::global::Global<Aligned<CArray<u8, 3>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gItemUseCB: crate::global::Global<Option<unsafe fn(u8, Option<unsafe fn(u8)>)>> =
+    crate::global::Global::new(None);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -777,14 +784,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `GetOverworldTextboxPalettePtr` with this module's view of its types.
 #[inline]
-unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+fn GetOverworldTextboxPalettePtr() -> *mut u16 {
     unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
 }
 /// `SetMainCallback2` with this module's view of its types.
@@ -805,42 +812,47 @@ unsafe fn InitPartyMenu(
     callback: Option<unsafe fn()>,
 ) {
     ResetPartyMenu();
-    sPartyMenuInternal = Alloc(568) as *mut PartyMenuInternal;
-    if sPartyMenuInternal.is_null() {
+    crate::gl!(sPartyMenuInternal = Alloc(568) as *mut PartyMenuInternal);
+    if (*sPartyMenuInternal.as_ptr()).is_null() {
         SetMainCallback2(callback);
     } else {
-        gPartyMenu.set_menuType(menuType);
-        gPartyMenu.exitCallback = callback;
-        gPartyMenu.action = partyAction;
-        (*sPartyMenuInternal).set_messageId(messageId as u32);
-        (*sPartyMenuInternal).task = task;
-        (*sPartyMenuInternal).exitCallback = None;
-        (*sPartyMenuInternal).set_lastSelectedSlot(0);
-        (*sPartyMenuInternal).set_spriteIdConfirmPokeball(0x7F);
-        (*sPartyMenuInternal).set_spriteIdCancelPokeball(0x7F);
+        (*gPartyMenu.as_ptr()).set_menuType(menuType);
+        crate::gl!(gPartyMenu.exitCallback = callback);
+        crate::gl!(gPartyMenu.action = partyAction);
+        (*crate::gl!(sPartyMenuInternal)).set_messageId(messageId as u32);
+        (*crate::gl!(sPartyMenuInternal)).task = task;
+        (*crate::gl!(sPartyMenuInternal)).exitCallback = None;
+        (*crate::gl!(sPartyMenuInternal)).set_lastSelectedSlot(0);
+        (*crate::gl!(sPartyMenuInternal)).set_spriteIdConfirmPokeball(0x7F);
+        (*crate::gl!(sPartyMenuInternal)).set_spriteIdCancelPokeball(0x7F);
         if menuType == PARTY_MENU_TYPE_CHOOSE_HALF {
-            (*sPartyMenuInternal).set_chooseHalf(TRUE as u32);
+            (*crate::gl!(sPartyMenuInternal)).set_chooseHalf(TRUE as u32);
         } else {
-            (*sPartyMenuInternal).set_chooseHalf(FALSE as u32);
+            (*crate::gl!(sPartyMenuInternal)).set_chooseHalf(FALSE as u32);
         }
         if layout != KEEP_PARTY_LAYOUT {
-            gPartyMenu.set_layout(layout);
+            (*gPartyMenu.as_ptr()).set_layout(layout);
         }
         for i in 0..16u16 {
-            (*sPartyMenuInternal).data[i] = 0;
+            (*crate::gl!(sPartyMenuInternal)).data[i] = 0;
         }
         for i in 0..3u16 {
-            (*sPartyMenuInternal).windowId[i] = WINDOW_NONE;
+            (*crate::gl!(sPartyMenuInternal)).windowId[i] = WINDOW_NONE;
         }
         if keepCursorPos == 0 {
-            gPartyMenu.slotId = 0;
-        } else if gPartyMenu.slotId > 5
-            || GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES)
-                == SPECIES_NONE as u32
+            crate::gl!(gPartyMenu.slotId = 0);
+        } else if crate::gl!(gPartyMenu.slotId) > 5
+            || GetMonData2(
+                {
+                    let gl_i0 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i0])
+                },
+                MON_DATA_SPECIES,
+            ) == SPECIES_NONE as u32
         {
-            gPartyMenu.slotId = 0;
+            crate::gl!(gPartyMenu.slotId = 0);
         }
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_autoScroll(0);
@@ -871,115 +883,115 @@ pub(crate) unsafe fn CB2_InitPartyMenu() {
     }
 }
 pub(crate) unsafe fn ShowPartyMenu() -> u8 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankHBlankCallbacksToNull();
             ResetVramOamAndBgCntRegs();
             ClearScheduledBgCopiesToVram();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             ScanlineEffect_Stop();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ResetPaletteFade();
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ResetSpriteData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             FreeAllSpritePalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             if MenuHelpers_IsLinkActive() == 0 {
                 ResetTasks();
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             SetPartyMonsAllowedInMinigame();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             if AllocPartyMenuBg() == 0 {
                 ExitPartyMenu();
                 return TRUE;
             } else {
-                (*sPartyMenuInternal).data[0] = 0;
-                gMain.state += 1;
+                (*crate::gl!(sPartyMenuInternal)).data[0] = 0;
+                crate::gl!(gMain.state += 1);
             }
         }
         8 => {
             if AllocPartyMenuBgGfx() != 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         9 => {
-            InitPartyMenuWindows(gPartyMenu.layout());
-            gMain.state += 1;
+            InitPartyMenuWindows((*gPartyMenu.as_ptr()).layout());
+            crate::gl!(gMain.state += 1);
         }
         10 => {
-            InitPartyMenuBoxes(gPartyMenu.layout());
-            (*sPartyMenuInternal).data[0] = 0;
-            gMain.state += 1;
+            InitPartyMenuBoxes((*gPartyMenu.as_ptr()).layout());
+            (*crate::gl!(sPartyMenuInternal)).data[0] = 0;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
             LoadHeldItemIcons();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         12 => {
             LoadPartyMenuPokeballGfx();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         13 => {
             LoadPartyMenuAilmentGfx();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         14 => {
             LoadMonIconPalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         15 => {
             if CreatePartyMonSpritesLoop() != 0 {
-                (*sPartyMenuInternal).data[0] = 0;
-                gMain.state += 1;
+                (*crate::gl!(sPartyMenuInternal)).data[0] = 0;
+                crate::gl!(gMain.state += 1);
             }
         }
         16 => {
             if RenderPartyMenuBoxes() != 0 {
-                (*sPartyMenuInternal).data[0] = 0;
-                gMain.state += 1;
+                (*crate::gl!(sPartyMenuInternal)).data[0] = 0;
+                crate::gl!(gMain.state += 1);
             }
         }
         17 => {
             CreateCancelConfirmPokeballSprites();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         18 => {
-            CreateCancelConfirmWindows((*sPartyMenuInternal).chooseHalf() as u8);
-            gMain.state += 1;
+            CreateCancelConfirmWindows((*crate::gl!(sPartyMenuInternal)).chooseHalf() as u8);
+            crate::gl!(gMain.state += 1);
         }
         19 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         20 => {
-            CreateTask((*sPartyMenuInternal).task, 0);
-            DisplayPartyMenuStdMessage((*sPartyMenuInternal).messageId());
-            gMain.state += 1;
+            CreateTask((*crate::gl!(sPartyMenuInternal)).task, 0);
+            DisplayPartyMenuStdMessage((*crate::gl!(sPartyMenuInternal)).messageId());
+            crate::gl!(gMain.state += 1);
         }
         21 => {
             BlendPalettes(PALETTES_ALL, 16, 0);
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+            crate::gl!(gMain.state += 1);
         }
         22 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         _ => {
             SetVBlankCallback(Some(VBlankCB_PartyMenu));
@@ -996,27 +1008,27 @@ unsafe fn ExitPartyMenu() {
     SetMainCallback2(Some(CB2_UpdatePartyMenu));
 }
 pub(crate) unsafe fn Task_ExitPartyMenu(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        SetMainCallback2(gPartyMenu.exitCallback);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        SetMainCallback2(crate::gl!(gPartyMenu.exitCallback));
         FreePartyPointers();
         DestroyTask(taskId);
     }
 }
-unsafe fn ResetPartyMenu() {
-    sPartyMenuInternal = null_mut();
-    sPartyBgTilemapBuffer = null_mut();
-    sPartyMenuBoxes = null_mut();
-    sPartyBgGfxTilemap = null_mut();
+fn ResetPartyMenu() {
+    crate::gl!(sPartyMenuInternal = null_mut());
+    crate::gl!(sPartyBgTilemapBuffer = null_mut());
+    crate::gl!(sPartyMenuBoxes = null_mut());
+    crate::gl!(sPartyBgGfxTilemap = null_mut());
 }
 unsafe fn AllocPartyMenuBg() -> u8 {
-    sPartyBgTilemapBuffer = Alloc(0x800) as *mut u8;
-    if sPartyBgTilemapBuffer.is_null() {
+    crate::gl!(sPartyBgTilemapBuffer = Alloc(0x800) as *mut u8);
+    if (*sPartyBgTilemapBuffer.as_ptr()).is_null() {
         return FALSE;
     }
-    memset(sPartyBgTilemapBuffer, 0, 0x800);
+    memset(crate::gl!(sPartyBgTilemapBuffer), 0, 0x800);
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sPartyMenuBgTemplates.as_ptr().cast_mut(), 3);
-    SetBgTilemapBuffer(1, sPartyBgTilemapBuffer as *mut c_void);
+    SetBgTilemapBuffer(1, crate::gl!(sPartyBgTilemapBuffer) as *mut c_void);
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(1);
     SetGpuReg(REG_OFFSET_DISPCNT, 4160);
@@ -1028,16 +1040,23 @@ unsafe fn AllocPartyMenuBg() -> u8 {
 }
 unsafe fn AllocPartyMenuBgGfx() -> u8 {
     let mut sizeout: u32 = 0;
-    match (*sPartyMenuInternal).data[0] {
+    match (*crate::gl!(sPartyMenuInternal)).data[0] {
         0 => {
-            sPartyBgGfxTilemap = malloc_and_decompress(
-                (*(&raw const crate::data::graphics::gPartyMenuBg_Gfx).cast::<CArray<u32, 0>>())
-                    .as_ptr()
-                    .cast_mut() as *mut c_void,
-                &raw mut sizeout,
-            ) as *mut u8;
-            LoadBgTiles(1, sPartyBgGfxTilemap as *mut c_void, sizeout as u16, 0);
-            (*sPartyMenuInternal).data[0] += 1;
+            crate::gl!(
+                sPartyBgGfxTilemap = malloc_and_decompress(
+                    (*(&raw const crate::data::graphics::gPartyMenuBg_Gfx).cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut() as *mut c_void,
+                    &raw mut sizeout,
+                ) as *mut u8
+            );
+            LoadBgTiles(
+                1,
+                crate::gl!(sPartyBgGfxTilemap) as *mut c_void,
+                sizeout as u16,
+                0,
+            );
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
@@ -1046,9 +1065,9 @@ unsafe fn AllocPartyMenuBgGfx() -> u8 {
                         .cast::<CArray<u32, 0>>())
                     .as_ptr()
                     .cast_mut(),
-                    sPartyBgTilemapBuffer as *mut c_void,
+                    crate::gl!(sPartyBgTilemapBuffer) as *mut c_void,
                 );
-                (*sPartyMenuInternal).data[0] += 1;
+                (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
             }
         }
         2 => {
@@ -1060,31 +1079,31 @@ unsafe fn AllocPartyMenuBgGfx() -> u8 {
                 352,
             );
             CpuSet(
-                gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
-                (*sPartyMenuInternal).palBuffer.as_mut_ptr() as *mut c_void,
+                (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sPartyMenuInternal)).palBuffer.as_mut_ptr() as *mut c_void,
                 176,
             );
-            (*sPartyMenuInternal).data[0] += 1;
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         3 => {
             PartyPaletteBufferCopy(4);
-            (*sPartyMenuInternal).data[0] += 1;
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         4 => {
             PartyPaletteBufferCopy(5);
-            (*sPartyMenuInternal).data[0] += 1;
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         5 => {
             PartyPaletteBufferCopy(6);
-            (*sPartyMenuInternal).data[0] += 1;
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         6 => {
             PartyPaletteBufferCopy(7);
-            (*sPartyMenuInternal).data[0] += 1;
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         7 => {
             PartyPaletteBufferCopy(8);
-            (*sPartyMenuInternal).data[0] += 1;
+            (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
         }
         _ => {
             return TRUE;
@@ -1095,138 +1114,199 @@ unsafe fn AllocPartyMenuBgGfx() -> u8 {
 unsafe fn PartyPaletteBufferCopy(palNum: u8) {
     let offset: u8 = palNum * 16;
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[48] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[offset] as *mut c_void,
         16,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[48] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[offset] as *mut c_void,
         16,
     );
 }
 unsafe fn FreePartyPointers() {
-    if !sPartyMenuInternal.is_null() {
-        Free(sPartyMenuInternal as *mut c_void);
+    if !(*sPartyMenuInternal.as_ptr()).is_null() {
+        Free(crate::gl!(sPartyMenuInternal) as *mut c_void);
     }
-    if !sPartyBgTilemapBuffer.is_null() {
-        Free(sPartyBgTilemapBuffer as *mut c_void);
+    if !(*sPartyBgTilemapBuffer.as_ptr()).is_null() {
+        Free(crate::gl!(sPartyBgTilemapBuffer) as *mut c_void);
     }
-    if !sPartyBgGfxTilemap.is_null() {
-        Free(sPartyBgGfxTilemap as *mut c_void);
+    if !(*sPartyBgGfxTilemap.as_ptr()).is_null() {
+        Free(crate::gl!(sPartyBgGfxTilemap) as *mut c_void);
     }
-    if !sPartyMenuBoxes.is_null() {
-        Free(sPartyMenuBoxes as *mut c_void);
+    if !(*sPartyMenuBoxes.as_ptr()).is_null() {
+        Free(crate::gl!(sPartyMenuBoxes) as *mut c_void);
     }
     FreeAllWindowBuffers();
 }
 unsafe fn InitPartyMenuBoxes(layout: u8) {
-    sPartyMenuBoxes = Alloc(96) as *mut PartyMenuBox;
+    crate::gl!(sPartyMenuBoxes = Alloc(96) as *mut PartyMenuBox);
     for i in 0..(PARTY_SIZE as u8) {
-        (*sPartyMenuBoxes.at(i)).infoRects = (&raw const sPartyBoxInfoRects[1]).cast_mut();
-        (*sPartyMenuBoxes.at(i)).spriteCoords =
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).infoRects =
+            (&raw const sPartyBoxInfoRects[1]).cast_mut();
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).spriteCoords =
             sPartyMenuSpriteCoords[layout][i].as_ptr().cast_mut();
-        (*sPartyMenuBoxes.at(i)).windowId = i;
-        (*sPartyMenuBoxes.at(i)).monSpriteId = SPRITE_NONE;
-        (*sPartyMenuBoxes.at(i)).itemSpriteId = SPRITE_NONE;
-        (*sPartyMenuBoxes.at(i)).pokeballSpriteId = SPRITE_NONE;
-        (*sPartyMenuBoxes.at(i)).statusSpriteId = SPRITE_NONE;
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).windowId = i;
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).monSpriteId = SPRITE_NONE;
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).itemSpriteId = SPRITE_NONE;
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).pokeballSpriteId = SPRITE_NONE;
+        (*(*sPartyMenuBoxes.as_ptr()).at(i)).statusSpriteId = SPRITE_NONE;
     }
-    (*sPartyMenuBoxes).infoRects = (&raw const sPartyBoxInfoRects[0]).cast_mut();
+    (*crate::gl!(sPartyMenuBoxes)).infoRects = (&raw const sPartyBoxInfoRects[0]).cast_mut();
     if layout == PARTY_LAYOUT_MULTI_SHOWCASE {
-        (*sPartyMenuBoxes.at(3)).infoRects = (&raw const sPartyBoxInfoRects[0]).cast_mut();
+        (*(*sPartyMenuBoxes.as_ptr()).at(3)).infoRects =
+            (&raw const sPartyBoxInfoRects[0]).cast_mut();
     } else if layout != PARTY_LAYOUT_SINGLE {
-        (*sPartyMenuBoxes.at(1)).infoRects = (&raw const sPartyBoxInfoRects[0]).cast_mut();
+        (*(*sPartyMenuBoxes.as_ptr()).at(1)).infoRects =
+            (&raw const sPartyBoxInfoRects[0]).cast_mut();
     }
 }
 unsafe fn RenderPartyMenuBox(slot: u8) {
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE && slot >= MULTI_PARTY_SIZE as u8 {
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE
+        && slot >= MULTI_PARTY_SIZE as u8
+    {
         DisplayPartyPokemonDataForMultiBattle(slot);
-        if gMultiPartnerParty[slot as i32 - MULTI_PARTY_SIZE].species == SPECIES_NONE {
-            LoadPartyBoxPalette(sPartyMenuBoxes.at(slot), PARTY_PAL_NO_MON);
+        if {
+            let gl_i0 = slot as i32 - MULTI_PARTY_SIZE;
+            crate::gl!(gMultiPartnerParty[gl_i0].species)
+        } == SPECIES_NONE
+        {
+            LoadPartyBoxPalette((*sPartyMenuBoxes.as_ptr()).at(slot), PARTY_PAL_NO_MON);
         } else {
-            LoadPartyBoxPalette(sPartyMenuBoxes.at(slot), PARTY_PAL_MULTI_ALT);
+            LoadPartyBoxPalette((*sPartyMenuBoxes.as_ptr()).at(slot), PARTY_PAL_MULTI_ALT);
         }
-        CopyWindowToVram((*sPartyMenuBoxes.at(slot)).windowId, COPYWIN_GFX);
-        PutWindowTilemap((*sPartyMenuBoxes.at(slot)).windowId);
+        CopyWindowToVram(
+            (*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId,
+            COPYWIN_GFX,
+        );
+        PutWindowTilemap((*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId);
         ScheduleBgCopyTilemapToVram(2);
     } else {
-        if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_SPECIES) == SPECIES_NONE as u32 {
-            DrawEmptySlot((*sPartyMenuBoxes.at(slot)).windowId);
-            LoadPartyBoxPalette(sPartyMenuBoxes.at(slot), PARTY_PAL_NO_MON);
-            CopyWindowToVram((*sPartyMenuBoxes.at(slot)).windowId, COPYWIN_GFX);
+        if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_SPECIES) == SPECIES_NONE as u32
+        {
+            DrawEmptySlot((*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId);
+            LoadPartyBoxPalette((*sPartyMenuBoxes.as_ptr()).at(slot), PARTY_PAL_NO_MON);
+            CopyWindowToVram(
+                (*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId,
+                COPYWIN_GFX,
+            );
         } else {
-            if gPartyMenu.menuType() == PARTY_MENU_TYPE_MOVE_RELEARNER {
+            if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MOVE_RELEARNER {
                 DisplayPartyPokemonDataForRelearner(slot);
-            } else if gPartyMenu.menuType() == PARTY_MENU_TYPE_CONTEST {
+            } else if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_CONTEST {
                 DisplayPartyPokemonDataForContest(slot);
-            } else if gPartyMenu.menuType() == PARTY_MENU_TYPE_CHOOSE_HALF {
+            } else if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_CHOOSE_HALF {
                 DisplayPartyPokemonDataForChooseHalf(slot);
-            } else if gPartyMenu.menuType() == PARTY_MENU_TYPE_MINIGAME {
+            } else if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MINIGAME {
                 DisplayPartyPokemonDataForWirelessMinigame(slot);
-            } else if gPartyMenu.menuType() == PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
+            } else if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS
+            {
                 DisplayPartyPokemonDataForBattlePyramidHeldItem(slot);
             } else if DisplayPartyPokemonDataForMoveTutorOrEvolutionItem(slot) == 0 {
                 DisplayPartyPokemonData(slot);
             }
-            if gPartyMenu.menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE {
+            if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE {
                 AnimatePartySlot(slot, 0);
-            } else if gPartyMenu.slotId as i32 == slot as i32 {
+            } else if crate::gl!(gPartyMenu.slotId) as i32 == slot as i32 {
                 AnimatePartySlot(slot, 1);
             } else {
                 AnimatePartySlot(slot, 0);
             }
         }
-        PutWindowTilemap((*sPartyMenuBoxes.at(slot)).windowId);
+        PutWindowTilemap((*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId);
         ScheduleBgCopyTilemapToVram(0);
     }
 }
 unsafe fn DisplayPartyPokemonData(slot: u8) {
-    if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_IS_EGG) != 0 {
-        (*(*sPartyMenuBoxes.at(slot)).infoRects)
+    if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_IS_EGG) != 0 {
+        (*(*(*sPartyMenuBoxes.as_ptr()).at(slot)).infoRects)
             .blitFunc
-            .unwrap_unchecked()((*sPartyMenuBoxes.at(slot)).windowId, 0, 0, 0, 0, TRUE);
-        DisplayPartyPokemonNickname(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot), 0);
-    } else {
-        (*(*sPartyMenuBoxes.at(slot)).infoRects)
-            .blitFunc
-            .unwrap_unchecked()((*sPartyMenuBoxes.at(slot)).windowId, 0, 0, 0, 0, 0);
-        DisplayPartyPokemonNickname(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot), 0);
-        DisplayPartyPokemonLevelCheck(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot), 0);
-        DisplayPartyPokemonGenderNidoranCheck(
-            &raw mut gPlayerParty[slot],
-            sPartyMenuBoxes.at(slot),
+            .unwrap_unchecked()(
+            (*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId,
+            0,
+            0,
+            0,
+            0,
+            TRUE,
+        );
+        DisplayPartyPokemonNickname(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
             0,
         );
-        DisplayPartyPokemonHPCheck(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot), 0);
-        DisplayPartyPokemonMaxHPCheck(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot), 0);
-        DisplayPartyPokemonHPBarCheck(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot));
+    } else {
+        (*(*(*sPartyMenuBoxes.as_ptr()).at(slot)).infoRects)
+            .blitFunc
+            .unwrap_unchecked()(
+            (*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId,
+            0,
+            0,
+            0,
+            0,
+            0,
+        );
+        DisplayPartyPokemonNickname(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+            0,
+        );
+        DisplayPartyPokemonLevelCheck(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+            0,
+        );
+        DisplayPartyPokemonGenderNidoranCheck(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+            0,
+        );
+        DisplayPartyPokemonHPCheck(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+            0,
+        );
+        DisplayPartyPokemonMaxHPCheck(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+            0,
+        );
+        DisplayPartyPokemonHPBarCheck(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+        );
     }
 }
 unsafe fn DisplayPartyPokemonDescriptionData(slot: u8, stringID: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[slot];
-    (*(*sPartyMenuBoxes.at(slot)).infoRects)
+    let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[slot]);
+    (*(*(*sPartyMenuBoxes.as_ptr()).at(slot)).infoRects)
         .blitFunc
-        .unwrap_unchecked()((*sPartyMenuBoxes.at(slot)).windowId, 0, 0, 0, 0, TRUE);
-    DisplayPartyPokemonNickname(mon, sPartyMenuBoxes.at(slot), 0);
+        .unwrap_unchecked()(
+        (*(*sPartyMenuBoxes.as_ptr()).at(slot)).windowId,
+        0,
+        0,
+        0,
+        0,
+        TRUE,
+    );
+    DisplayPartyPokemonNickname(mon, (*sPartyMenuBoxes.as_ptr()).at(slot), 0);
     if GetMonData2(mon, MON_DATA_IS_EGG) == 0 {
-        DisplayPartyPokemonLevelCheck(mon, sPartyMenuBoxes.at(slot), 0);
-        DisplayPartyPokemonGenderNidoranCheck(mon, sPartyMenuBoxes.at(slot), 0);
+        DisplayPartyPokemonLevelCheck(mon, (*sPartyMenuBoxes.as_ptr()).at(slot), 0);
+        DisplayPartyPokemonGenderNidoranCheck(mon, (*sPartyMenuBoxes.as_ptr()).at(slot), 0);
     }
-    DisplayPartyPokemonDescriptionText(stringID, sPartyMenuBoxes.at(slot), 0);
+    DisplayPartyPokemonDescriptionText(stringID, (*sPartyMenuBoxes.as_ptr()).at(slot), 0);
 }
 unsafe fn DisplayPartyPokemonDataForChooseHalf(slot: u8) {
     let mut i: u8 = 0;
-    let mon: *mut Pokemon = &raw mut gPlayerParty[slot];
-    let order: *mut u8 = gSelectedOrderFromParty.as_mut_ptr();
+    let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[slot]);
+    let order: *mut u8 = (*gSelectedOrderFromParty.as_ptr()).as_mut_ptr();
     if GetBattleEntryEligibility(mon) == 0 {
         DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_NOT_ABLE);
     } else {
@@ -1242,7 +1322,7 @@ unsafe fn DisplayPartyPokemonDataForChooseHalf(slot: u8) {
     }
 }
 unsafe fn DisplayPartyPokemonDataForContest(slot: u8) {
-    match GetContestEntryEligibility(&raw mut gPlayerParty[slot]) {
+    match GetContestEntryEligibility(crate::gl!(&raw gPlayerParty[slot])) {
         CANT_ENTER_CONTEST | CANT_ENTER_CONTEST_EGG | CANT_ENTER_CONTEST_FAINTED => {
             DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_NOT_ABLE);
         }
@@ -1253,7 +1333,7 @@ unsafe fn DisplayPartyPokemonDataForContest(slot: u8) {
     }
 }
 unsafe fn DisplayPartyPokemonDataForRelearner(slot: u8) {
-    if GetNumberOfRelearnableMoves(&raw mut gPlayerParty[slot]) == 0 {
+    if GetNumberOfRelearnableMoves(crate::gl!(&raw gPlayerParty[slot])) == 0 {
         DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_NOT_ABLE_2);
     } else {
         DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_ABLE_2);
@@ -1267,20 +1347,20 @@ unsafe fn DisplayPartyPokemonDataForWirelessMinigame(slot: u8) {
     }
 }
 unsafe fn DisplayPartyPokemonDataForBattlePyramidHeldItem(slot: u8) {
-    if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_HELD_ITEM) != 0 {
+    if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_HELD_ITEM) != 0 {
         DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_HAVE);
     } else {
         DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_DONT_HAVE);
     }
 }
 unsafe fn DisplayPartyPokemonDataForMoveTutorOrEvolutionItem(slot: u8) -> u8 {
-    let currentPokemon: *mut Pokemon = &raw mut gPlayerParty[slot];
-    let item: u16 = gSpecialVar_ItemId;
-    if gPartyMenu.action == PARTY_ACTION_MOVE_TUTOR {
+    let currentPokemon: *mut Pokemon = crate::gl!(&raw gPlayerParty[slot]);
+    let item: u16 = gSpecialVar_ItemId.get();
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_MOVE_TUTOR {
         gSpecialVar_Result = FALSE as u16;
         DisplayPartyPokemonDataToTeachMove(slot, 0, gSpecialVar_0x8005 as u8);
     } else {
-        if gPartyMenu.action != PARTY_ACTION_USE_ITEM {
+        if crate::gl!(gPartyMenu.action) != PARTY_ACTION_USE_ITEM {
             return FALSE;
         }
         match CheckIfItemIsTMHMOrEvolutionStone(item) {
@@ -1304,7 +1384,7 @@ unsafe fn DisplayPartyPokemonDataForMoveTutorOrEvolutionItem(slot: u8) -> u8 {
     TRUE
 }
 unsafe fn DisplayPartyPokemonDataToTeachMove(slot: u8, item: u16, tutor: u8) {
-    match CanMonLearnTMTutor(&raw mut gPlayerParty[slot], item, tutor) {
+    match CanMonLearnTMTutor(crate::gl!(&raw gPlayerParty[slot]), item, tutor) {
         CANNOT_LEARN_MOVE | CANNOT_LEARN_MOVE_IS_EGG => {
             DisplayPartyPokemonDescriptionData(slot, PARTYBOX_DESC_NOT_ABLE_2);
         }
@@ -1317,15 +1397,17 @@ unsafe fn DisplayPartyPokemonDataToTeachMove(slot: u8, item: u16, tutor: u8) {
     }
 }
 unsafe fn DisplayPartyPokemonDataForMultiBattle(slot: u8) {
-    let menuBox: *mut PartyMenuBox = sPartyMenuBoxes.at(slot);
+    let menuBox: *mut PartyMenuBox = (*sPartyMenuBoxes.as_ptr()).at(slot);
     let actualSlot: u8 = slot - MULTI_PARTY_SIZE as u8;
-    if gMultiPartnerParty[actualSlot].species == SPECIES_NONE {
+    if crate::gl!(gMultiPartnerParty[actualSlot].species) == SPECIES_NONE {
         DrawEmptySlot((*menuBox).windowId);
     } else {
         (*(*menuBox).infoRects).blitFunc.unwrap_unchecked()((*menuBox).windowId, 0, 0, 0, 0, 0);
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gMultiPartnerParty[actualSlot].nickname.as_mut_ptr(),
+            (*gMultiPartnerParty.as_ptr())[actualSlot]
+                .nickname
+                .as_mut_ptr(),
         );
         StringGet_Nickname(gStringVar1.as_mut_ptr());
         ConvertInternationalPlayerName(gStringVar1.as_mut_ptr());
@@ -1335,27 +1417,29 @@ unsafe fn DisplayPartyPokemonDataForMultiBattle(slot: u8) {
             0,
             (*(*menuBox).infoRects).dimensions.as_mut_ptr(),
         );
-        DisplayPartyPokemonLevel(gMultiPartnerParty[actualSlot].level, menuBox);
+        DisplayPartyPokemonLevel(crate::gl!(gMultiPartnerParty[actualSlot].level), menuBox);
         DisplayPartyPokemonGender(
-            gMultiPartnerParty[actualSlot].gender,
-            gMultiPartnerParty[actualSlot].species,
-            gMultiPartnerParty[actualSlot].nickname.as_mut_ptr(),
+            crate::gl!(gMultiPartnerParty[actualSlot].gender),
+            crate::gl!(gMultiPartnerParty[actualSlot].species),
+            (*gMultiPartnerParty.as_ptr())[actualSlot]
+                .nickname
+                .as_mut_ptr(),
             menuBox,
         );
-        DisplayPartyPokemonHP(gMultiPartnerParty[actualSlot].hp, menuBox);
-        DisplayPartyPokemonMaxHP(gMultiPartnerParty[actualSlot].maxhp, menuBox);
+        DisplayPartyPokemonHP(crate::gl!(gMultiPartnerParty[actualSlot].hp), menuBox);
+        DisplayPartyPokemonMaxHP(crate::gl!(gMultiPartnerParty[actualSlot].maxhp), menuBox);
         DisplayPartyPokemonHPBar(
-            gMultiPartnerParty[actualSlot].hp,
-            gMultiPartnerParty[actualSlot].maxhp,
+            crate::gl!(gMultiPartnerParty[actualSlot].hp),
+            crate::gl!(gMultiPartnerParty[actualSlot].maxhp),
             menuBox,
         );
     }
 }
 unsafe fn RenderPartyMenuBoxes() -> u8 {
-    RenderPartyMenuBox((*sPartyMenuInternal).data[0] as u8);
+    RenderPartyMenuBox((*crate::gl!(sPartyMenuInternal)).data[0] as u8);
     if ({
-        (*sPartyMenuInternal).data[0] += 1;
-        (*sPartyMenuInternal).data[0]
+        (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
+        (*crate::gl!(sPartyMenuInternal)).data[0]
     }) == PARTY_SIZE as i16
     {
         return TRUE;
@@ -1368,57 +1452,70 @@ unsafe fn RenderPartyMenuBoxes() -> u8 {
     }
 }
 unsafe fn GetPartyMenuBgTile(tileId: u16) -> *mut u8 {
-    sPartyBgGfxTilemap.at((tileId as i32) << 5)
+    (*sPartyBgGfxTilemap.as_ptr()).at((tileId as i32) << 5)
 }
 unsafe fn CreatePartyMonSprites(slot: u8) {
     let mut actualSlot: u8 = 0;
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE && slot >= MULTI_PARTY_SIZE as u8 {
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE
+        && slot >= MULTI_PARTY_SIZE as u8
+    {
         let mut status: u8 = 0;
         actualSlot = slot - MULTI_PARTY_SIZE as u8;
-        if gMultiPartnerParty[actualSlot].species != SPECIES_NONE {
+        if crate::gl!(gMultiPartnerParty[actualSlot].species) != SPECIES_NONE {
             CreatePartyMonIconSpriteParameterized(
-                gMultiPartnerParty[actualSlot].species,
-                gMultiPartnerParty[actualSlot].personality,
-                sPartyMenuBoxes.at(slot),
+                crate::gl!(gMultiPartnerParty[actualSlot].species),
+                crate::gl!(gMultiPartnerParty[actualSlot].personality),
+                (*sPartyMenuBoxes.as_ptr()).at(slot),
                 0,
                 0,
             );
             CreatePartyMonHeldItemSpriteParameterized(
-                gMultiPartnerParty[actualSlot].species,
-                gMultiPartnerParty[actualSlot].heldItem,
-                sPartyMenuBoxes.at(slot),
+                crate::gl!(gMultiPartnerParty[actualSlot].species),
+                crate::gl!(gMultiPartnerParty[actualSlot].heldItem),
+                (*sPartyMenuBoxes.as_ptr()).at(slot),
             );
             CreatePartyMonPokeballSpriteParameterized(
-                gMultiPartnerParty[actualSlot].species,
-                sPartyMenuBoxes.at(slot),
+                crate::gl!(gMultiPartnerParty[actualSlot].species),
+                (*sPartyMenuBoxes.as_ptr()).at(slot),
             );
-            if gMultiPartnerParty[actualSlot].hp == 0 {
+            if crate::gl!(gMultiPartnerParty[actualSlot].hp) == 0 {
                 status = AILMENT_FNT;
             } else {
-                status = GetAilmentFromStatus(gMultiPartnerParty[actualSlot].status);
+                status = GetAilmentFromStatus(crate::gl!(gMultiPartnerParty[actualSlot].status));
             }
             CreatePartyMonStatusSpriteParameterized(
-                gMultiPartnerParty[actualSlot].species,
+                crate::gl!(gMultiPartnerParty[actualSlot].species),
                 status,
-                sPartyMenuBoxes.at(slot),
+                (*sPartyMenuBoxes.as_ptr()).at(slot),
             );
         }
-    } else if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_SPECIES) != SPECIES_NONE as u32 {
+    } else if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_SPECIES)
+        != SPECIES_NONE as u32
+    {
         CreatePartyMonIconSprite(
-            &raw mut gPlayerParty[slot],
-            sPartyMenuBoxes.at(slot),
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
             slot as u32,
         );
-        CreatePartyMonHeldItemSprite(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot));
-        CreatePartyMonPokeballSprite(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot));
-        CreatePartyMonStatusSprite(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot));
+        CreatePartyMonHeldItemSprite(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+        );
+        CreatePartyMonPokeballSprite(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+        );
+        CreatePartyMonStatusSprite(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+        );
     }
 }
 unsafe fn CreatePartyMonSpritesLoop() -> u8 {
-    CreatePartyMonSprites((*sPartyMenuInternal).data[0] as u8);
+    CreatePartyMonSprites((*crate::gl!(sPartyMenuInternal)).data[0] as u8);
     if ({
-        (*sPartyMenuInternal).data[0] += 1;
-        (*sPartyMenuInternal).data[0]
+        (*crate::gl!(sPartyMenuInternal)).data[0] += 1;
+        (*crate::gl!(sPartyMenuInternal)).data[0]
     }) == PARTY_SIZE as i16
     {
         return TRUE;
@@ -1431,20 +1528,20 @@ unsafe fn CreatePartyMonSpritesLoop() -> u8 {
     }
 }
 unsafe fn CreateCancelConfirmPokeballSprites() {
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE {
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MULTI_SHOWCASE {
         FillBgTilemapBufferRect(1, 14, 23, 17, 7, 2, 1);
     } else {
-        if (*sPartyMenuInternal).chooseHalf() != 0 {
-            (*sPartyMenuInternal)
+        if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 {
+            (*crate::gl!(sPartyMenuInternal))
                 .set_spriteIdConfirmPokeball(CreateSmallPokeballButtonSprite(0xBF, 0x88) as u32);
             DrawCancelConfirmButtons();
-            (*sPartyMenuInternal)
+            (*crate::gl!(sPartyMenuInternal))
                 .set_spriteIdCancelPokeball(CreateSmallPokeballButtonSprite(0xBF, 0x98) as u32);
         } else {
-            (*sPartyMenuInternal)
+            (*crate::gl!(sPartyMenuInternal))
                 .set_spriteIdCancelPokeball(CreatePokeballButtonSprite(198, 148) as u32);
         }
-        AnimatePartySlot(gPartyMenu.slotId as u8, 1);
+        AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 1);
     }
 }
 #[unsafe(no_mangle)]
@@ -1457,10 +1554,10 @@ pub unsafe fn AnimatePartySlot(slot: u8, animNum: u8) {
             } else {
                 SetBgTilemapPalette(1, 23, 16, 7, 2, 2);
             }
-            spriteId = (*sPartyMenuInternal).spriteIdConfirmPokeball() as u8;
+            spriteId = (*crate::gl!(sPartyMenuInternal)).spriteIdConfirmPokeball() as u8;
         }
         7 => {
-            if (*sPartyMenuInternal).chooseHalf() == 0 {
+            if (*crate::gl!(sPartyMenuInternal)).chooseHalf() == 0 {
                 if animNum == 0 {
                     SetBgTilemapPalette(1, 23, 17, 7, 2, 1);
                 } else {
@@ -1471,16 +1568,24 @@ pub unsafe fn AnimatePartySlot(slot: u8, animNum: u8) {
             } else {
                 SetBgTilemapPalette(1, 23, 18, 7, 2, 2);
             }
-            spriteId = (*sPartyMenuInternal).spriteIdCancelPokeball() as u8;
+            spriteId = (*crate::gl!(sPartyMenuInternal)).spriteIdCancelPokeball() as u8;
         }
         _ => {
-            if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_SPECIES) != SPECIES_NONE as u32 {
+            if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_SPECIES)
+                != SPECIES_NONE as u32
+            {
                 LoadPartyBoxPalette(
-                    sPartyMenuBoxes.at(slot),
+                    (*sPartyMenuBoxes.as_ptr()).at(slot),
                     GetPartyBoxPaletteFlags(slot, animNum),
                 );
-                AnimateSelectedPartyIcon((*sPartyMenuBoxes.at(slot)).monSpriteId, animNum);
-                PartyMenuStartSpriteAnim((*sPartyMenuBoxes.at(slot)).pokeballSpriteId, animNum);
+                AnimateSelectedPartyIcon(
+                    (*(*sPartyMenuBoxes.as_ptr()).at(slot)).monSpriteId,
+                    animNum,
+                );
+                PartyMenuStartSpriteAnim(
+                    (*(*sPartyMenuBoxes.as_ptr()).at(slot)).pokeballSpriteId,
+                    animNum,
+                );
             }
             return;
         }
@@ -1493,34 +1598,39 @@ unsafe fn GetPartyBoxPaletteFlags(slot: u8, animNum: u8) -> u8 {
     if animNum == 1 {
         palFlags |= PARTY_PAL_SELECTED as u8;
     }
-    if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_HP) == 0 {
+    if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_HP) == 0 {
         palFlags |= PARTY_PAL_FAINTED;
     }
     if PartyBoxPal_ParnterOrDisqualifiedInArena(slot) == TRUE {
         palFlags |= PARTY_PAL_MULTI_ALT;
     }
-    if gPartyMenu.action == PARTY_ACTION_SWITCHING {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_SWITCHING {
         palFlags |= PARTY_PAL_SWITCHING;
     }
-    if gPartyMenu.action == PARTY_ACTION_SWITCH
-        && (slot as i32 == gPartyMenu.slotId as i32 || slot as i32 == gPartyMenu.slotId2 as i32)
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_SWITCH
+        && (slot as i32 == crate::gl!(gPartyMenu.slotId) as i32
+            || slot as i32 == crate::gl!(gPartyMenu.slotId2) as i32)
     {
         palFlags |= PARTY_PAL_TO_SWITCH;
     }
-    if gPartyMenu.action == PARTY_ACTION_SOFTBOILED && slot as i32 == gPartyMenu.slotId as i32 {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_SOFTBOILED
+        && slot as i32 == crate::gl!(gPartyMenu.slotId) as i32
+    {
         palFlags |= PARTY_PAL_TO_SOFTBOIL;
     }
     palFlags
 }
 unsafe fn PartyBoxPal_ParnterOrDisqualifiedInArena(slot: u8) -> u8 {
-    if gPartyMenu.layout() == PARTY_LAYOUT_MULTI && (slot == 1 || slot == 4 || slot == 5) {
+    if (*gPartyMenu.as_ptr()).layout() == PARTY_LAYOUT_MULTI
+        && (slot == 1 || slot == 4 || slot == 5)
+    {
         return TRUE;
     }
     if slot < MULTI_PARTY_SIZE as u8
-        && gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
-        && gMain.inBattle() != 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0
+        && (*gMain.as_ptr()).inBattle() != 0
         && shr_i32(
-            (*gBattleStruct).arenaLostPlayerMons as i32,
+            (*crate::gl!(gBattleStruct)).arenaLostPlayerMons as i32,
             GetPartyIdFromBattleSlot(slot) as u32,
         ) & 1
             != 0
@@ -1551,10 +1661,10 @@ unsafe fn DrawCancelConfirmButtons() {
     ScheduleBgCopyTilemapToVram(1);
 }
 pub unsafe fn IsMultiBattle() -> u8 {
-    if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
-        && gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
-        && gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0
-        && gMain.inBattle() != 0
+    if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0
+        && (*gMain.as_ptr()).inBattle() != 0
     {
         return TRUE;
     } else {
@@ -1577,14 +1687,14 @@ unsafe fn Task_ClosePartyMenu(taskId: u8) {
     task_set_func(taskId, Some(Task_ClosePartyMenuAndSetCB2));
 }
 pub(crate) unsafe fn Task_ClosePartyMenuAndSetCB2(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        if gPartyMenu.menuType() == PARTY_MENU_TYPE_IN_BATTLE {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_IN_BATTLE {
             UpdatePartyToFieldOrder();
         }
-        if (*sPartyMenuInternal).exitCallback.is_some() {
-            SetMainCallback2((*sPartyMenuInternal).exitCallback);
+        if (*crate::gl!(sPartyMenuInternal)).exitCallback.is_some() {
+            SetMainCallback2((*crate::gl!(sPartyMenuInternal)).exitCallback);
         } else {
-            SetMainCallback2(gPartyMenu.exitCallback);
+            SetMainCallback2(crate::gl!(gPartyMenu.exitCallback));
         }
         ResetSpriteData();
         FreePartyPointers();
@@ -1593,14 +1703,14 @@ pub(crate) unsafe fn Task_ClosePartyMenuAndSetCB2(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetCursorSelectionMonId() -> u8 {
-    gPartyMenu.slotId as u8
+    crate::gl!(gPartyMenu.slotId) as u8
 }
 pub unsafe fn GetPartyMenuType() -> u8 {
-    gPartyMenu.menuType()
+    (*gPartyMenu.as_ptr()).menuType()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn Task_HandleChooseMonInput(taskId: u8) {
-    if gPaletteFade.active() == 0 && MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+    if (*gPaletteFade.as_ptr()).active() == 0 && MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         let slotPtr: *mut i8 = GetCurrentPartySlotPtr();
         match PartyMenuButtonHandler(slotPtr) {
             1 => {
@@ -1609,7 +1719,7 @@ pub unsafe fn Task_HandleChooseMonInput(taskId: u8) {
             2 => {
                 HandleChooseMonCancel(taskId, slotPtr);
             }
-            8 if (*sPartyMenuInternal).chooseHalf() != 0 => {
+            8 if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 => {
                 PlaySE(SE_SELECT);
                 MoveCursorToConfirm();
             }
@@ -1617,11 +1727,13 @@ pub unsafe fn Task_HandleChooseMonInput(taskId: u8) {
         }
     }
 }
-unsafe fn GetCurrentPartySlotPtr() -> *mut i8 {
-    if gPartyMenu.action == PARTY_ACTION_SWITCH || gPartyMenu.action == PARTY_ACTION_SOFTBOILED {
-        return &raw mut gPartyMenu.slotId2;
+fn GetCurrentPartySlotPtr() -> *mut i8 {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_SWITCH
+        || crate::gl!(gPartyMenu.action) == PARTY_ACTION_SOFTBOILED
+    {
+        return crate::gl!(&raw gPartyMenu.slotId2);
     } else {
-        return &raw mut gPartyMenu.slotId;
+        return crate::gl!(&raw gPartyMenu.slotId);
     }
     #[allow(unreachable_code)]
     {
@@ -1630,42 +1742,46 @@ unsafe fn GetCurrentPartySlotPtr() -> *mut i8 {
 }
 unsafe fn HandleChooseMonSelection(taskId: u8, slotPtr: *mut i8) {
     if *slotPtr == PARTY_SIZE as i8 {
-        gPartyMenu.task.unwrap_unchecked()(taskId);
+        (*gPartyMenu.as_ptr()).task.unwrap_unchecked()(taskId);
     } else {
-        match gPartyMenu.action {
+        match crate::gl!(gPartyMenu.action) {
             PARTY_ACTION_SOFTBOILED => {
                 if IsSelectedMonNotEgg(slotPtr as *mut u8) != 0 {
-                    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+                    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
                     Task_TryUseSoftboiledOnPartyMon(taskId);
                 }
             }
             PARTY_ACTION_USE_ITEM => {
                 if IsSelectedMonNotEgg(slotPtr as *mut u8) != 0 {
-                    if gPartyMenu.menuType() == PARTY_MENU_TYPE_IN_BATTLE {
-                        (*sPartyMenuInternal).exitCallback = Some(CB2_SetUpExitToBattleScreen);
+                    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_IN_BATTLE {
+                        (*crate::gl!(sPartyMenuInternal)).exitCallback =
+                            Some(CB2_SetUpExitToBattleScreen);
                     }
-                    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-                    gItemUseCB.unwrap_unchecked()(taskId, Some(Task_ClosePartyMenuAfterText));
+                    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+                    (*gItemUseCB.as_ptr()).unwrap_unchecked()(
+                        taskId,
+                        Some(Task_ClosePartyMenuAfterText),
+                    );
                 }
             }
             PARTY_ACTION_MOVE_TUTOR => {
                 if IsSelectedMonNotEgg(slotPtr as *mut u8) != 0 {
                     PlaySE(SE_SELECT);
-                    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+                    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
                     TryTutorSelectedMon(taskId);
                 }
             }
             PARTY_ACTION_GIVE_MAILBOX_MAIL => {
                 if IsSelectedMonNotEgg(slotPtr as *mut u8) != 0 {
                     PlaySE(SE_SELECT);
-                    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+                    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
                     TryGiveMailToSelectedMon(taskId);
                 }
             }
             PARTY_ACTION_GIVE_ITEM | PARTY_ACTION_GIVE_PC_ITEM => {
                 if IsSelectedMonNotEgg(slotPtr as *mut u8) != 0 {
                     PlaySE(SE_SELECT);
-                    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+                    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
                     TryGiveItemOrMailToSelectedMon(taskId);
                 }
             }
@@ -1690,14 +1806,21 @@ unsafe fn HandleChooseMonSelection(taskId: u8, slotPtr: *mut i8) {
     }
 }
 unsafe fn IsSelectedMonNotEgg(slotPtr: *mut u8) -> u8 {
-    if GetMonData2(&raw mut gPlayerParty[*slotPtr], MON_DATA_IS_EGG) == TRUE as u32 {
+    if GetMonData2(
+        {
+            let gl_i1 = *slotPtr;
+            crate::gl!(&raw gPlayerParty[gl_i1])
+        },
+        MON_DATA_IS_EGG,
+    ) == TRUE as u32
+    {
         PlaySE(SE_FAILURE);
         return FALSE;
     }
     TRUE
 }
 unsafe fn HandleChooseMonCancel(taskId: u8, slotPtr: *mut i8) {
-    match gPartyMenu.action {
+    match crate::gl!(gPartyMenu.action) {
         PARTY_ACTION_SEND_OUT => {
             PlaySE(SE_FAILURE);
         }
@@ -1715,7 +1838,7 @@ unsafe fn HandleChooseMonCancel(taskId: u8, slotPtr: *mut i8) {
                 if MenuHelpers_IsLinkActive() == 0 {
                     gSpecialVar_0x8004 = 7;
                 }
-                gPartyMenuUseExitCallback = FALSE;
+                gPartyMenuUseExitCallback.set(FALSE);
                 *slotPtr = 7;
                 Task_ClosePartyMenu(taskId);
             }
@@ -1724,18 +1847,18 @@ unsafe fn HandleChooseMonCancel(taskId: u8, slotPtr: *mut i8) {
 }
 unsafe fn DisplayCancelChooseMonYesNo(taskId: u8) -> u8 {
     let mut stringPtr: *mut u8 = null_mut();
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_CONTEST {
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_CONTEST {
         stringPtr = (*(&raw const crate::data::strings::gText_CancelParticipation)
             .cast::<CArray<u8, 0>>())
         .as_ptr()
         .cast_mut();
-    } else if gPartyMenu.menuType() == PARTY_MENU_TYPE_CHOOSE_HALF {
+    } else if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_CHOOSE_HALF {
         stringPtr = GetFacilityCancelString();
     }
     if stringPtr.is_null() {
         return FALSE;
     }
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), stringPtr);
     DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), TRUE);
     task_set_func(taskId, Some(Task_CancelChooseMonYesNo));
@@ -1752,8 +1875,8 @@ pub(crate) unsafe fn Task_HandleCancelChooseMonYesNoInput(taskId: u8) {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
-            gPartyMenuUseExitCallback = FALSE;
-            gPartyMenu.slotId = 7;
+            gPartyMenuUseExitCallback.set(FALSE);
+            crate::gl!(gPartyMenu.slotId = 7);
             ClearSelectedPartyOrder();
             Task_ClosePartyMenu(taskId);
             break 'l1;
@@ -1770,7 +1893,7 @@ pub(crate) unsafe fn Task_HandleCancelChooseMonYesNoInput(taskId: u8) {
 }
 unsafe fn PartyMenuButtonHandler(slotPtr: *mut i8) -> u16 {
     let mut movementDir: i8 = 0;
-    match gMain.newAndRepeatedKeys {
+    match crate::gl!(gMain.newAndRepeatedKeys) {
         64 => {
             movementDir = MENU_DIR_UP;
         }
@@ -1795,21 +1918,21 @@ unsafe fn PartyMenuButtonHandler(slotPtr: *mut i8) -> u16 {
             }
         },
     }
-    if gMain.newKeys as i32 & START_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
         return START_BUTTON as u16;
     }
     if movementDir != 0 {
         UpdateCurrentPartySelection(slotPtr, movementDir);
         return 0;
     }
-    if gMain.newKeys as i32 & 0x0001 != 0 && *slotPtr == 7 {
+    if crate::gl!(gMain.newKeys) as i32 & 0x0001 != 0 && *slotPtr == 7 {
         return B_BUTTON as u16;
     }
-    gMain.newKeys & 3
+    crate::gl!(gMain.newKeys) & 3
 }
 unsafe fn UpdateCurrentPartySelection(slotPtr: *mut i8, movementDir: i8) {
     let newSlotId: i8 = *slotPtr;
-    let layout: u8 = gPartyMenu.layout();
+    let layout: u8 = (*gPartyMenu.as_ptr()).layout();
     if layout == PARTY_LAYOUT_SINGLE {
         UpdatePartySelectionSingleLayout(slotPtr, movementDir);
     } else {
@@ -1827,12 +1950,12 @@ unsafe fn UpdatePartySelectionSingleLayout(slotPtr: *mut i8, movementDir: i8) {
             if *slotPtr == 0 {
                 *slotPtr = 7;
             } else if *slotPtr == PARTY_SIZE as i8 {
-                *slotPtr = gPlayerPartyCount as i8 - 1;
+                *slotPtr = gPlayerPartyCount.get() as i8 - 1;
             } else if *slotPtr == 7 {
-                if (*sPartyMenuInternal).chooseHalf() != 0 {
+                if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 {
                     *slotPtr = PARTY_SIZE as i8;
                 } else {
-                    *slotPtr = gPlayerPartyCount as i8 - 1;
+                    *slotPtr = gPlayerPartyCount.get() as i8 - 1;
                 }
             } else {
                 *slotPtr -= 1;
@@ -1842,8 +1965,8 @@ unsafe fn UpdatePartySelectionSingleLayout(slotPtr: *mut i8, movementDir: i8) {
             if *slotPtr == 7 {
                 *slotPtr = 0;
             } else {
-                if *slotPtr as i32 == gPlayerPartyCount as i32 - 1 {
-                    if (*sPartyMenuInternal).chooseHalf() != 0 {
+                if *slotPtr as i32 == gPlayerPartyCount.get() as i32 - 1 {
+                    if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 {
                         *slotPtr = PARTY_SIZE as i8;
                     } else {
                         *slotPtr = 7;
@@ -1854,16 +1977,16 @@ unsafe fn UpdatePartySelectionSingleLayout(slotPtr: *mut i8, movementDir: i8) {
             }
         }
         MENU_DIR_RIGHT => {
-            if gPlayerPartyCount != 1 && *slotPtr == 0 {
-                if (*sPartyMenuInternal).lastSelectedSlot() == 0 {
+            if gPlayerPartyCount.get() != 1 && *slotPtr == 0 {
+                if (*crate::gl!(sPartyMenuInternal)).lastSelectedSlot() == 0 {
                     *slotPtr = 1;
                 } else {
-                    *slotPtr = (*sPartyMenuInternal).lastSelectedSlot() as i8;
+                    *slotPtr = (*crate::gl!(sPartyMenuInternal)).lastSelectedSlot() as i8;
                 }
             }
         }
         MENU_DIR_LEFT if *slotPtr != 0 && *slotPtr != PARTY_SIZE as i8 && *slotPtr != 7 => {
-            (*sPartyMenuInternal).set_lastSelectedSlot(*slotPtr as u32);
+            (*crate::gl!(sPartyMenuInternal)).set_lastSelectedSlot(*slotPtr as u32);
             *slotPtr = 0;
         }
         _ => {}
@@ -1878,10 +2001,10 @@ unsafe fn UpdatePartySelectionDoubleLayout(slotPtr: *mut i8, movementDir: i8) {
                     *slotPtr = 7;
                     break 'l1;
                 } else if *slotPtr == PARTY_SIZE as i8 {
-                    *slotPtr = gPlayerPartyCount as i8 - 1;
+                    *slotPtr = gPlayerPartyCount.get() as i8 - 1;
                     break 'l1;
                 } else if *slotPtr == 7 {
-                    if (*sPartyMenuInternal).chooseHalf() != 0 {
+                    if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 {
                         *slotPtr = PARTY_SIZE as i8;
                         break 'l1;
                     }
@@ -1900,7 +2023,7 @@ unsafe fn UpdatePartySelectionDoubleLayout(slotPtr: *mut i8, movementDir: i8) {
                 } else {
                     newSlot = GetNewSlotDoubleLayout(*slotPtr, MENU_DIR_DOWN);
                     if newSlot == -1 {
-                        if (*sPartyMenuInternal).chooseHalf() != 0 {
+                        if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 {
                             *slotPtr = PARTY_SIZE as i8;
                         } else {
                             *slotPtr = 7;
@@ -1912,25 +2035,25 @@ unsafe fn UpdatePartySelectionDoubleLayout(slotPtr: *mut i8, movementDir: i8) {
             }
             MENU_DIR_RIGHT => {
                 if *slotPtr == 0 {
-                    if (*sPartyMenuInternal).lastSelectedSlot() == 3 {
-                        if GetMonData2(&raw mut gPlayerParty[3], MON_DATA_SPECIES)
+                    if (*crate::gl!(sPartyMenuInternal)).lastSelectedSlot() == 3 {
+                        if GetMonData2(crate::gl!(&raw gPlayerParty[3]), MON_DATA_SPECIES)
                             != SPECIES_NONE as u32
                         {
                             *slotPtr = 3;
                         }
-                    } else if GetMonData2(&raw mut gPlayerParty[2], MON_DATA_SPECIES)
+                    } else if GetMonData2(crate::gl!(&raw gPlayerParty[2]), MON_DATA_SPECIES)
                         != SPECIES_NONE as u32
                     {
                         *slotPtr = 2;
                     }
                 } else if *slotPtr == 1 {
-                    if (*sPartyMenuInternal).lastSelectedSlot() == 5 {
-                        if GetMonData2(&raw mut gPlayerParty[5], MON_DATA_SPECIES)
+                    if (*crate::gl!(sPartyMenuInternal)).lastSelectedSlot() == 5 {
+                        if GetMonData2(crate::gl!(&raw gPlayerParty[5]), MON_DATA_SPECIES)
                             != SPECIES_NONE as u32
                         {
                             *slotPtr = 5;
                         }
-                    } else if GetMonData2(&raw mut gPlayerParty[4], MON_DATA_SPECIES)
+                    } else if GetMonData2(crate::gl!(&raw gPlayerParty[4]), MON_DATA_SPECIES)
                         != SPECIES_NONE as u32
                     {
                         *slotPtr = 4;
@@ -1939,10 +2062,10 @@ unsafe fn UpdatePartySelectionDoubleLayout(slotPtr: *mut i8, movementDir: i8) {
             }
             MENU_DIR_LEFT => {
                 if *slotPtr == 2 || *slotPtr == 3 {
-                    (*sPartyMenuInternal).set_lastSelectedSlot(*slotPtr as u32);
+                    (*crate::gl!(sPartyMenuInternal)).set_lastSelectedSlot(*slotPtr as u32);
                     *slotPtr = 0;
                 } else if *slotPtr == 4 || *slotPtr == 5 {
-                    (*sPartyMenuInternal).set_lastSelectedSlot(*slotPtr as u32);
+                    (*crate::gl!(sPartyMenuInternal)).set_lastSelectedSlot(*slotPtr as u32);
                     *slotPtr = 1;
                 }
             }
@@ -1956,7 +2079,9 @@ unsafe fn GetNewSlotDoubleLayout(mut slotId: i8, movementDir: i8) -> i8 {
         if slotId as u8 >= PARTY_SIZE as u8 {
             return -1;
         }
-        if GetMonData2(&raw mut gPlayerParty[slotId], MON_DATA_SPECIES) != SPECIES_NONE as u32 {
+        if GetMonData2(crate::gl!(&raw gPlayerParty[slotId]), MON_DATA_SPECIES)
+            != SPECIES_NONE as u32
+        {
             return slotId;
         }
     }
@@ -2010,7 +2135,7 @@ pub(crate) unsafe fn Task_ReturnToChooseMonAfterText(taskId: u8) {
 }
 unsafe fn DisplayGaveHeldItemMessage(mon: *mut Pokemon, item: u16, keepOpen: u8, unused: u8) {
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
-    CopyItemName(item, gStringVar2.as_mut_ptr());
+    CopyItemName(item, (*gStringVar2.as_ptr()).as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_PkmnWasGivenItem).cast::<CArray<u8, 0>>())
@@ -2022,7 +2147,7 @@ unsafe fn DisplayGaveHeldItemMessage(mon: *mut Pokemon, item: u16, keepOpen: u8,
 }
 unsafe fn DisplayTookHeldItemMessage(mon: *mut Pokemon, item: u16, keepOpen: u8) {
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
-    CopyItemName(item, gStringVar2.as_mut_ptr());
+    CopyItemName(item, (*gStringVar2.as_ptr()).as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_ReceivedItemFromPkmn).cast::<CArray<u8, 0>>())
@@ -2034,7 +2159,7 @@ unsafe fn DisplayTookHeldItemMessage(mon: *mut Pokemon, item: u16, keepOpen: u8)
 }
 unsafe fn DisplayAlreadyHoldingItemSwitchMessage(mon: *mut Pokemon, item: u16, keepOpen: u8) {
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
-    CopyItemName(item, gStringVar2.as_mut_ptr());
+    CopyItemName(item, (*gStringVar2.as_ptr()).as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_PkmnAlreadyHoldingItemSwitch)
@@ -2047,7 +2172,7 @@ unsafe fn DisplayAlreadyHoldingItemSwitchMessage(mon: *mut Pokemon, item: u16, k
 }
 unsafe fn DisplaySwitchedHeldItemMessage(item: u16, item2: u16, keepOpen: u8) {
     CopyItemName(item, gStringVar1.as_mut_ptr());
-    CopyItemName(item2, gStringVar2.as_mut_ptr());
+    CopyItemName(item2, (*gStringVar2.as_ptr()).as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_SwitchedPkmnItem).cast::<CArray<u8, 0>>())
@@ -2096,23 +2221,32 @@ pub(crate) unsafe fn Task_PartyMenuModifyHP(taskId: u8) {
     *data += *data.at(2);
     *data.at(3) -= 1;
     SetMonData(
-        &raw mut gPlayerParty[*data.at(4)],
+        {
+            let gl_i2 = *data.at(4);
+            crate::gl!(&raw gPlayerParty[gl_i2])
+        },
         MON_DATA_HP,
         data as *mut c_void,
     );
     DisplayPartyPokemonHPCheck(
-        &raw mut gPlayerParty[*data.at(4)],
-        sPartyMenuBoxes.at(*data.at(4)),
+        {
+            let gl_i3 = *data.at(4);
+            crate::gl!(&raw gPlayerParty[gl_i3])
+        },
+        (*sPartyMenuBoxes.as_ptr()).at(*data.at(4)),
         1,
     );
     DisplayPartyPokemonHPBarCheck(
-        &raw mut gPlayerParty[*data.at(4)],
-        sPartyMenuBoxes.at(*data.at(4)),
+        {
+            let gl_i4 = *data.at(4);
+            crate::gl!(&raw gPlayerParty[gl_i4])
+        },
+        (*sPartyMenuBoxes.as_ptr()).at(*data.at(4)),
     );
     if *data.at(3) == 0 || *data == 0 || *data == *data.at(1) {
         if *data > *data.at(5) {
             ConvertIntToDecimalStringN(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 *data as i32 - *data.at(5) as i32,
                 STR_CONV_MODE_LEFT_ALIGN,
                 3,
@@ -2129,7 +2263,7 @@ pub unsafe fn PartyMenuModifyHP(
     hpDifference: i16,
     task: Option<unsafe fn(u8)>,
 ) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[slot];
+    let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[slot]);
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data = GetMonData2(mon, MON_DATA_HP) as i16;
     *data.at(1) = GetMonData2(mon, MON_DATA_MAX_HP) as i16;
@@ -2169,7 +2303,7 @@ unsafe fn ResetHPTaskData(taskId: u8, caseId: u8, hp: u32) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn GetAilmentFromStatus(status: u32) -> u8 {
+pub fn GetAilmentFromStatus(status: u32) -> u8 {
     if status & STATUS1_PSN_ANY != 0 {
         return AILMENT_PSN;
     }
@@ -2202,24 +2336,24 @@ pub unsafe fn GetMonAilment(mon: *mut Pokemon) -> u8 {
 }
 unsafe fn SetPartyMonsAllowedInMinigame() {
     let mut ptr: *mut i16 = null_mut();
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_MINIGAME {
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_MINIGAME {
         let mut i: u8 = 0;
-        ptr = &raw mut gPartyMenu.data[0];
-        gPartyMenu.data[0] = 0;
+        ptr = crate::gl!(&raw gPartyMenu.data[0]);
+        crate::gl!(gPartyMenu.data[0] = 0);
         if gSpecialVar_0x8005 == 0 {
             i = 0;
-            while i < gPlayerPartyCount {
+            while i < gPlayerPartyCount.get() {
                 *ptr += shl_i32(
-                    IsMonAllowedInPokemonJump(&raw mut gPlayerParty[i]) as i32,
+                    IsMonAllowedInPokemonJump(crate::gl!(&raw gPlayerParty[i])) as i32,
                     i as u32,
                 ) as i16;
                 i += 1;
             }
         } else {
             i = 0;
-            while i < gPlayerPartyCount {
+            while i < gPlayerPartyCount.get() {
                 *ptr += shl_i32(
-                    IsMonAllowedInDodrioBerryPicking(&raw mut gPlayerParty[i]) as i32,
+                    IsMonAllowedInDodrioBerryPicking(crate::gl!(&raw gPlayerParty[i])) as i32,
                     i as u32,
                 ) as i16;
                 i += 1;
@@ -2243,8 +2377,8 @@ unsafe fn IsMonAllowedInDodrioBerryPicking(mon: *mut Pokemon) -> u16 {
     }
     FALSE as u16
 }
-unsafe fn IsMonAllowedInMinigame(slot: u8) -> u8 {
-    if shr_i32(gPartyMenu.data[0] as i32, slot as u32) & 1 == 0 {
+fn IsMonAllowedInMinigame(slot: u8) -> u8 {
+    if shr_i32(crate::gl!(gPartyMenu.data[0]) as i32, slot as u32) & 1 == 0 {
         return FALSE;
     }
     TRUE
@@ -2377,7 +2511,7 @@ unsafe fn CreateCancelConfirmWindows(chooseHalf: u8) {
     let mut cancelWindowId: u8 = 0;
     let mut offset: u8 = 0;
     let mut mainOffset: u8 = 0;
-    if gPartyMenu.menuType() != PARTY_MENU_TYPE_MULTI_SHOWCASE {
+    if (*gPartyMenu.as_ptr()).menuType() != PARTY_MENU_TYPE_MULTI_SHOWCASE {
         if chooseHalf == TRUE {
             confirmWindowId =
                 AddWindow((&raw const *sConfirmButtonWindowTemplate).cast_mut()) as u8;
@@ -2412,7 +2546,7 @@ unsafe fn CreateCancelConfirmWindows(chooseHalf: u8) {
             offset = 3;
         }
         FillWindowPixelBuffer(cancelWindowId, 0);
-        if gPartyMenu.menuType() != PARTY_MENU_TYPE_SPIN_TRADE {
+        if (*gPartyMenu.as_ptr()).menuType() != PARTY_MENU_TYPE_SPIN_TRADE {
             mainOffset = GetStringCenterAlignXOffset(
                 FONT_SMALL as i32,
                 (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
@@ -2457,7 +2591,7 @@ unsafe fn CreateCancelConfirmWindows(chooseHalf: u8) {
     }
 }
 unsafe fn GetPartyMenuPalBufferPtr(paletteId: u8) -> *mut u16 {
-    &raw mut (*sPartyMenuInternal).palBuffer[paletteId]
+    &raw mut (*crate::gl!(sPartyMenuInternal)).palBuffer[paletteId]
 }
 unsafe fn BlitBitmapToPartyWindow(
     windowId: u8,
@@ -2995,7 +3129,7 @@ unsafe fn DisplayPartyPokemonLevelCheck(mon: *mut Pokemon, menuBox: *mut PartyMe
 }
 unsafe fn DisplayPartyPokemonLevel(level: u8, menuBox: *mut PartyMenuBox) {
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         level as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         3,
@@ -3006,7 +3140,10 @@ unsafe fn DisplayPartyPokemonLevel(level: u8, menuBox: *mut PartyMenuBox) {
             .as_ptr()
             .cast_mut(),
     );
-    StringAppend(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr());
+    StringAppend(
+        gStringVar1.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+    );
     DisplayPartyPokemonBarDetail(
         (*menuBox).windowId,
         gStringVar1.as_mut_ptr(),
@@ -3155,7 +3292,7 @@ unsafe fn DisplayPartyPokemonMaxHPCheck(mon: *mut Pokemon, menuBox: *mut PartyMe
 }
 unsafe fn DisplayPartyPokemonMaxHP(maxhp: u16, menuBox: *mut PartyMenuBox) {
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         maxhp as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         3,
@@ -3166,7 +3303,10 @@ unsafe fn DisplayPartyPokemonMaxHP(maxhp: u16, menuBox: *mut PartyMenuBox) {
             .as_ptr()
             .cast_mut(),
     );
-    StringAppend(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr());
+    StringAppend(
+        gStringVar1.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+    );
     DisplayPartyPokemonBarDetail(
         (*menuBox).windowId,
         gStringVar1.as_mut_ptr(),
@@ -3305,7 +3445,7 @@ unsafe fn PartyMenuRemoveWindow(ptr: *mut u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DisplayPartyMenuStdMessage(mut stringId: u32) {
-    let windowPtr: *mut u8 = &raw mut (*sPartyMenuInternal).windowId[1];
+    let windowPtr: *mut u8 = &raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1];
     if *windowPtr != WINDOW_NONE {
         PartyMenuRemoveWindow(windowPtr);
     }
@@ -3336,7 +3476,7 @@ pub unsafe fn DisplayPartyMenuStdMessage(mut stringId: u32) {
             }
         }
         if stringId == PARTY_MSG_CHOOSE_MON {
-            if (*sPartyMenuInternal).chooseHalf() != 0 {
+            if (*crate::gl!(sPartyMenuInternal)).chooseHalf() != 0 {
                 stringId = PARTY_MSG_CHOOSE_MON_AND_CONFIRM;
             } else if ShouldUseChooseMonText() == 0 {
                 stringId = PARTY_MSG_CHOOSE_MON_OR_CANCEL;
@@ -3357,9 +3497,9 @@ pub unsafe fn DisplayPartyMenuStdMessage(mut stringId: u32) {
     }
 }
 unsafe fn ShouldUseChooseMonText() -> u8 {
-    let party: *mut Pokemon = gPlayerParty.as_mut_ptr();
+    let party: *mut Pokemon = (*gPlayerParty.as_ptr()).as_mut_ptr();
     let mut numAliveMons: u8 = 0;
-    if gPartyMenu.action == PARTY_ACTION_SEND_OUT {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_SEND_OUT {
         return TRUE;
     }
     for i in 0..(PARTY_SIZE as u8) {
@@ -3383,9 +3523,9 @@ unsafe fn DisplaySelectionWindow(windowType: u8) -> u8 {
                 &raw mut window,
                 2,
                 19,
-                19 - (*sPartyMenuInternal).numActions * 2,
+                19 - (*crate::gl!(sPartyMenuInternal)).numActions * 2,
                 10,
-                (*sPartyMenuInternal).numActions * 2,
+                (*crate::gl!(sPartyMenuInternal)).numActions * 2,
                 14,
                 0x2E9,
             );
@@ -3400,22 +3540,28 @@ unsafe fn DisplaySelectionWindow(windowType: u8) -> u8 {
             window = *sMoveSelectWindowTemplate;
         }
     }
-    (*sPartyMenuInternal).windowId[0] = AddWindow(&raw mut window) as u8;
-    DrawStdFrameWithCustomTileAndPalette((*sPartyMenuInternal).windowId[0], 0, 0x4F, 13);
+    (*crate::gl!(sPartyMenuInternal)).windowId[0] = AddWindow(&raw mut window) as u8;
+    DrawStdFrameWithCustomTileAndPalette(
+        (*crate::gl!(sPartyMenuInternal)).windowId[0],
+        0,
+        0x4F,
+        13,
+    );
     if windowType == SELECTWINDOW_MOVES {
-        return (*sPartyMenuInternal).windowId[0];
+        return (*crate::gl!(sPartyMenuInternal)).windowId[0];
     }
     let cursorDimension: u8 = GetMenuCursorDimensionByFont(FONT_NORMAL, 0);
     let letterSpacing: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING);
     let mut i: u8 = 0;
-    while i < (*sPartyMenuInternal).numActions {
-        let fontColorsId: u8 = (if (*sPartyMenuInternal).actions[i] >= MENU_FIELD_MOVES {
+    while i < (*crate::gl!(sPartyMenuInternal)).numActions {
+        let fontColorsId: u8 = (if (*crate::gl!(sPartyMenuInternal)).actions[i] >= MENU_FIELD_MOVES
+        {
             4
         } else {
             3
         }) as u8;
         AddTextPrinterParameterized4(
-            (*sPartyMenuInternal).windowId[0],
+            (*crate::gl!(sPartyMenuInternal)).windowId[0],
             FONT_NORMAL,
             cursorDimension,
             i * 16 + 1,
@@ -3423,22 +3569,22 @@ unsafe fn DisplaySelectionWindow(windowType: u8) -> u8 {
             0,
             sFontColorTable[fontColorsId].as_ptr().cast_mut(),
             0,
-            sCursorOptions[(*sPartyMenuInternal).actions[i]].text,
+            sCursorOptions[(*crate::gl!(sPartyMenuInternal)).actions[i]].text,
         );
         i += 1;
     }
     InitMenuInUpperLeftCorner(
-        (*sPartyMenuInternal).windowId[0],
-        (*sPartyMenuInternal).numActions,
+        (*crate::gl!(sPartyMenuInternal)).windowId[0],
+        (*crate::gl!(sPartyMenuInternal)).numActions,
         0,
         TRUE,
     );
     ScheduleBgCopyTilemapToVram(2);
-    (*sPartyMenuInternal).windowId[0]
+    (*crate::gl!(sPartyMenuInternal)).windowId[0]
 }
 pub(crate) unsafe fn PrintMessage(text: *mut u8) {
     DrawStdFrameWithCustomTileAndPalette(WIN_MSG, FALSE, 0x4F, 13);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(TRUE);
@@ -3462,34 +3608,39 @@ unsafe fn PartyMenuDisplayYesNoMenu() {
     );
 }
 unsafe fn CreateLevelUpStatsWindow() -> u8 {
-    (*sPartyMenuInternal).windowId[0] =
+    (*crate::gl!(sPartyMenuInternal)).windowId[0] =
         AddWindow((&raw const *sLevelUpStatsWindowTemplate).cast_mut()) as u8;
-    DrawStdFrameWithCustomTileAndPalette((*sPartyMenuInternal).windowId[0], 0, 0x4F, 13);
-    (*sPartyMenuInternal).windowId[0]
+    DrawStdFrameWithCustomTileAndPalette(
+        (*crate::gl!(sPartyMenuInternal)).windowId[0],
+        0,
+        0x4F,
+        13,
+    );
+    (*crate::gl!(sPartyMenuInternal)).windowId[0]
 }
 unsafe fn RemoveLevelUpStatsWindow() {
-    ClearWindowTilemap((*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
+    ClearWindowTilemap((*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
 }
 unsafe fn SetPartyMonSelectionActions(mons: *mut Pokemon, slotId: u8, action: u8) {
     let mut i: u8 = 0;
     if action == ACTIONS_NONE as u8 {
         SetPartyMonFieldSelectionActions(mons, slotId);
     } else {
-        (*sPartyMenuInternal).numActions = sPartyMenuActionCounts[action];
+        (*crate::gl!(sPartyMenuInternal)).numActions = sPartyMenuActionCounts[action];
         i = 0;
-        while i < (*sPartyMenuInternal).numActions {
-            (*sPartyMenuInternal).actions[i] = *sPartyMenuActions[action].at(i);
+        while i < (*crate::gl!(sPartyMenuInternal)).numActions {
+            (*crate::gl!(sPartyMenuInternal)).actions[i] = *sPartyMenuActions[action].at(i);
             i += 1;
         }
     }
 }
 unsafe fn SetPartyMonFieldSelectionActions(mons: *mut Pokemon, slotId: u8) {
     let mut j: u8 = 0;
-    (*sPartyMenuInternal).numActions = 0;
+    (*crate::gl!(sPartyMenuInternal)).numActions = 0;
     AppendToList(
-        (*sPartyMenuInternal).actions.as_mut_ptr(),
-        &raw mut (*sPartyMenuInternal).numActions,
+        (*crate::gl!(sPartyMenuInternal)).actions.as_mut_ptr(),
+        &raw mut (*crate::gl!(sPartyMenuInternal)).numActions,
         MENU_SUMMARY,
     );
     for i in 0..(MAX_MON_MOVES as u8) {
@@ -3497,8 +3648,8 @@ unsafe fn SetPartyMonFieldSelectionActions(mons: *mut Pokemon, slotId: u8) {
         while sFieldMoves[j] != FIELD_MOVES_COUNT {
             if GetMonData2(mons.at(slotId), i as i32 + MON_DATA_MOVE1) == sFieldMoves[j] as u32 {
                 AppendToList(
-                    (*sPartyMenuInternal).actions.as_mut_ptr(),
-                    &raw mut (*sPartyMenuInternal).numActions,
+                    (*crate::gl!(sPartyMenuInternal)).actions.as_mut_ptr(),
+                    &raw mut (*crate::gl!(sPartyMenuInternal)).numActions,
                     j + MENU_FIELD_MOVES,
                 );
                 break;
@@ -3509,34 +3660,34 @@ unsafe fn SetPartyMonFieldSelectionActions(mons: *mut Pokemon, slotId: u8) {
     if InBattlePike() == 0 {
         if GetMonData2(mons.at(1), MON_DATA_SPECIES) != SPECIES_NONE as u32 {
             AppendToList(
-                (*sPartyMenuInternal).actions.as_mut_ptr(),
-                &raw mut (*sPartyMenuInternal).numActions,
+                (*crate::gl!(sPartyMenuInternal)).actions.as_mut_ptr(),
+                &raw mut (*crate::gl!(sPartyMenuInternal)).numActions,
                 MENU_SWITCH,
             );
         }
         if ItemIsMail(GetMonData2(mons.at(slotId), MON_DATA_HELD_ITEM) as u16) != 0 {
             AppendToList(
-                (*sPartyMenuInternal).actions.as_mut_ptr(),
-                &raw mut (*sPartyMenuInternal).numActions,
+                (*crate::gl!(sPartyMenuInternal)).actions.as_mut_ptr(),
+                &raw mut (*crate::gl!(sPartyMenuInternal)).numActions,
                 MENU_MAIL,
             );
         } else {
             AppendToList(
-                (*sPartyMenuInternal).actions.as_mut_ptr(),
-                &raw mut (*sPartyMenuInternal).numActions,
+                (*crate::gl!(sPartyMenuInternal)).actions.as_mut_ptr(),
+                &raw mut (*crate::gl!(sPartyMenuInternal)).numActions,
                 MENU_ITEM,
             );
         }
     }
     AppendToList(
-        (*sPartyMenuInternal).actions.as_mut_ptr(),
-        &raw mut (*sPartyMenuInternal).numActions,
+        (*crate::gl!(sPartyMenuInternal)).actions.as_mut_ptr(),
+        &raw mut (*crate::gl!(sPartyMenuInternal)).numActions,
         MENU_CANCEL1,
     );
 }
 unsafe fn GetPartyMenuActionsType(mon: *mut Pokemon) -> u8 {
     let mut actionType: u32 = 0;
-    match gPartyMenu.menuType() {
+    match (*gPartyMenu.as_ptr()).menuType() {
         PARTY_MENU_TYPE_FIELD => {
             if InMultiPartnerRoom() == TRUE || GetMonData2(mon, MON_DATA_IS_EGG) != 0 {
                 actionType = ACTIONS_SWITCH;
@@ -3547,7 +3698,8 @@ unsafe fn GetPartyMenuActionsType(mon: *mut Pokemon) -> u8 {
         PARTY_MENU_TYPE_IN_BATTLE => {
             actionType = GetPartyMenuActionsTypeInBattle(mon) as u32;
         }
-        PARTY_MENU_TYPE_CHOOSE_HALF => match GetPartySlotEntryStatus(gPartyMenu.slotId) {
+        PARTY_MENU_TYPE_CHOOSE_HALF => match GetPartySlotEntryStatus(crate::gl!(gPartyMenu.slotId))
+        {
             0 => {
                 actionType = ACTIONS_ENTER;
             }
@@ -3584,14 +3736,17 @@ unsafe fn GetPartyMenuActionsType(mon: *mut Pokemon) -> u8 {
     actionType as u8
 }
 unsafe fn CreateSelectionWindow(taskId: u8) -> u8 {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i5 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i5])
+    };
     let mut item: u16 = 0;
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-    if gPartyMenu.menuType() != PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+    if (*gPartyMenu.as_ptr()).menuType() != PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
         SetPartyMonSelectionActions(
-            gPlayerParty.as_mut_ptr(),
-            gPartyMenu.slotId as u8,
+            (*gPlayerParty.as_ptr()).as_mut_ptr(),
+            crate::gl!(gPartyMenu.slotId) as u8,
             GetPartyMenuActionsType(mon),
         );
         DisplaySelectionWindow(SELECTWINDOW_ACTIONS);
@@ -3600,12 +3755,12 @@ unsafe fn CreateSelectionWindow(taskId: u8) -> u8 {
         item = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
         if item != ITEM_NONE {
             SetPartyMonSelectionActions(
-                gPlayerParty.as_mut_ptr(),
-                gPartyMenu.slotId as u8,
+                (*gPlayerParty.as_ptr()).as_mut_ptr(),
+                crate::gl!(gPartyMenu.slotId) as u8,
                 GetPartyMenuActionsType(mon),
             );
             DisplaySelectionWindow(SELECTWINDOW_ITEM);
-            CopyItemName(item, gStringVar2.as_mut_ptr());
+            CopyItemName(item, (*gStringVar2.as_ptr()).as_mut_ptr());
             DisplayPartyMenuStdMessage(PARTY_MSG_ALREADY_HOLDING_ONE);
         } else {
             StringExpandPlaceholders(
@@ -3629,10 +3784,10 @@ pub(crate) unsafe fn Task_TryCreateSelectionWindow(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleSelectionMenuInput(taskId: u8) {
-    if gPaletteFade.active() == 0 && MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
+    if (*gPaletteFade.as_ptr()).active() == 0 && MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         let mut input: i8 = 0;
         let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-        if (*sPartyMenuInternal).numActions <= 3 {
+        if (*crate::gl!(sPartyMenuInternal)).numActions <= 3 {
             input = Menu_ProcessInputNoWrapAround_other();
         } else {
             input = ProcessMenuInput_other();
@@ -3642,15 +3797,15 @@ pub(crate) unsafe fn Task_HandleSelectionMenuInput(taskId: u8) {
             MENU_NOTHING_CHOSEN => {}
             MENU_B_PRESSED => {
                 PlaySE(SE_SELECT);
-                PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[2]);
-                sCursorOptions
-                    [(*sPartyMenuInternal).actions[(*sPartyMenuInternal).numActions as i32 - 1]]
+                PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[2]);
+                sCursorOptions[(*crate::gl!(sPartyMenuInternal)).actions
+                    [(*crate::gl!(sPartyMenuInternal)).numActions as i32 - 1]]
                     .func
                     .unwrap_unchecked()(taskId);
             }
             _ => {
-                PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[2]);
-                sCursorOptions[(*sPartyMenuInternal).actions[input]]
+                PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[2]);
+                sCursorOptions[(*crate::gl!(sPartyMenuInternal)).actions[input]]
                     .func
                     .unwrap_unchecked()(taskId);
             }
@@ -3659,59 +3814,59 @@ pub(crate) unsafe fn Task_HandleSelectionMenuInput(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Summary(taskId: u8) {
     PlaySE(SE_SELECT);
-    (*sPartyMenuInternal).exitCallback = Some(CB2_ShowPokemonSummaryScreen);
+    (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_ShowPokemonSummaryScreen);
     Task_ClosePartyMenu(taskId);
 }
 pub(crate) unsafe fn CB2_ShowPokemonSummaryScreen() {
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_IN_BATTLE {
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_IN_BATTLE {
         UpdatePartyToBattleOrder();
         ShowPokemonSummaryScreen(
             SUMMARY_MODE_LOCK_MOVES,
-            gPlayerParty.as_mut_ptr() as *mut c_void,
-            gPartyMenu.slotId as u8,
-            gPlayerPartyCount - 1,
+            (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut c_void,
+            crate::gl!(gPartyMenu.slotId) as u8,
+            gPlayerPartyCount.get() - 1,
             Some(CB2_ReturnToPartyMenuFromSummaryScreen),
         );
     } else {
         ShowPokemonSummaryScreen(
             SUMMARY_MODE_NORMAL,
-            gPlayerParty.as_mut_ptr() as *mut c_void,
-            gPartyMenu.slotId as u8,
-            gPlayerPartyCount - 1,
+            (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut c_void,
+            crate::gl!(gPartyMenu.slotId) as u8,
+            gPlayerPartyCount.get() - 1,
             Some(CB2_ReturnToPartyMenuFromSummaryScreen),
         );
     }
 }
 pub(crate) unsafe fn CB2_ReturnToPartyMenuFromSummaryScreen() {
-    gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-    gPartyMenu.slotId = gLastViewedMonIndex as i8;
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+    crate::gl!(gPartyMenu.slotId = gLastViewedMonIndex.get() as i8);
     InitPartyMenu(
-        gPartyMenu.menuType(),
+        (*gPartyMenu.as_ptr()).menuType(),
         KEEP_PARTY_LAYOUT,
-        gPartyMenu.action,
+        crate::gl!(gPartyMenu.action),
         TRUE,
         PARTY_MSG_DO_WHAT_WITH_MON as u8,
         Some(Task_TryCreateSelectionWindow),
-        gPartyMenu.exitCallback,
+        crate::gl!(gPartyMenu.exitCallback),
     );
 }
 pub(crate) unsafe fn CursorCb_Switch(taskId: u8) {
     PlaySE(SE_SELECT);
-    gPartyMenu.action = PARTY_ACTION_SWITCH;
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
+    crate::gl!(gPartyMenu.action = PARTY_ACTION_SWITCH);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
     DisplayPartyMenuStdMessage(PARTY_MSG_MOVE_TO_WHERE);
-    AnimatePartySlot(gPartyMenu.slotId as u8, 1);
-    gPartyMenu.slotId2 = gPartyMenu.slotId;
+    AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 1);
+    crate::gl!(gPartyMenu.slotId2 = crate::gl!(gPartyMenu.slotId));
     task_set_func(taskId, Some(Task_HandleChooseMonInput));
 }
 unsafe fn SwitchSelectedMons(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     let mut windowIds: CArray<u8, 2> = zeroed();
-    if gPartyMenu.slotId2 == gPartyMenu.slotId {
+    if crate::gl!(gPartyMenu.slotId2) == crate::gl!(gPartyMenu.slotId) {
         FinishTwoMonAction(taskId);
     } else {
-        windowIds[0] = (*sPartyMenuBoxes.at(gPartyMenu.slotId)).windowId;
+        windowIds[0] = (*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId))).windowId;
         *data = GetWindowAttribute(windowIds[0], WINDOW_TILEMAP_LEFT) as i16;
         *data.at(1) = GetWindowAttribute(windowIds[0], WINDOW_TILEMAP_TOP) as i16;
         *data.at(2) = GetWindowAttribute(windowIds[0], WINDOW_WIDTH) as i16;
@@ -3722,7 +3877,7 @@ unsafe fn SwitchSelectedMons(taskId: u8) {
         } else {
             *data.at(10) = 1;
         }
-        windowIds[1] = (*sPartyMenuBoxes.at(gPartyMenu.slotId2)).windowId;
+        windowIds[1] = (*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId2))).windowId;
         *data.at(4) = GetWindowAttribute(windowIds[1], WINDOW_TILEMAP_LEFT) as i16;
         *data.at(5) = GetWindowAttribute(windowIds[1], WINDOW_TILEMAP_TOP) as i16;
         *data.at(6) = GetWindowAttribute(windowIds[1], WINDOW_WIDTH) as i16;
@@ -3733,11 +3888,17 @@ unsafe fn SwitchSelectedMons(taskId: u8) {
         } else {
             *data.at(11) = 1;
         }
-        sSlot1TilemapBuffer = Alloc(*data.at(2) as u32 * ((*data.at(3) as u32) << 1)) as *mut u16;
-        sSlot2TilemapBuffer = Alloc(*data.at(6) as u32 * ((*data.at(7) as u32) << 1)) as *mut u16;
+        crate::gl!(
+            sSlot1TilemapBuffer =
+                Alloc(*data.at(2) as u32 * ((*data.at(3) as u32) << 1)) as *mut u16
+        );
+        crate::gl!(
+            sSlot2TilemapBuffer =
+                Alloc(*data.at(6) as u32 * ((*data.at(7) as u32) << 1)) as *mut u16
+        );
         CopyToBufferFromBgTilemap(
             0,
-            sSlot1TilemapBuffer,
+            crate::gl!(sSlot1TilemapBuffer),
             *data as u8,
             *data.at(1) as u8,
             *data.at(2) as u8,
@@ -3745,7 +3906,7 @@ unsafe fn SwitchSelectedMons(taskId: u8) {
         );
         CopyToBufferFromBgTilemap(
             0,
-            sSlot2TilemapBuffer,
+            crate::gl!(sSlot2TilemapBuffer),
             *data.at(4) as u8,
             *data.at(5) as u8,
             *data.at(6) as u8,
@@ -3753,9 +3914,9 @@ unsafe fn SwitchSelectedMons(taskId: u8) {
         );
         ClearWindowTilemap(windowIds[0]);
         ClearWindowTilemap(windowIds[1]);
-        gPartyMenu.action = PARTY_ACTION_SWITCHING;
-        AnimatePartySlot(gPartyMenu.slotId as u8, 1);
-        AnimatePartySlot(gPartyMenu.slotId2 as u8, 1);
+        crate::gl!(gPartyMenu.action = PARTY_ACTION_SWITCHING);
+        AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 1);
+        AnimatePartySlot(crate::gl!(gPartyMenu.slotId2) as u8, 1);
         SlidePartyMenuBoxOneStep(taskId);
         task_set_func(taskId, Some(Task_SlideSelectedSlotsOffscreen));
     }
@@ -3828,25 +3989,43 @@ unsafe fn MoveAndBufferPartySlot(
     }
 }
 unsafe fn MovePartyMenuBoxSprites(menuBox: *mut PartyMenuBox, offset: i16) {
-    gSprites[(*menuBox).pokeballSpriteId].x2 += offset * 8;
-    gSprites[(*menuBox).itemSpriteId].x2 += offset * 8;
-    gSprites[(*menuBox).monSpriteId].x2 += offset * 8;
-    gSprites[(*menuBox).statusSpriteId].x2 += offset * 8;
+    {
+        let gl_i6 = (*menuBox).pokeballSpriteId;
+        crate::gl!(gSprites[gl_i6].x2 += offset * 8)
+    };
+    {
+        let gl_i7 = (*menuBox).itemSpriteId;
+        crate::gl!(gSprites[gl_i7].x2 += offset * 8)
+    };
+    {
+        let gl_i8 = (*menuBox).monSpriteId;
+        crate::gl!(gSprites[gl_i8].x2 += offset * 8)
+    };
+    {
+        let gl_i9 = (*menuBox).statusSpriteId;
+        crate::gl!(gSprites[gl_i9].x2 += offset * 8)
+    };
 }
 unsafe fn SlidePartyMenuBoxSpritesOneStep(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data.at(10) != 0 {
-        MovePartyMenuBoxSprites(sPartyMenuBoxes.at(gPartyMenu.slotId), *data.at(10));
+        MovePartyMenuBoxSprites(
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+            *data.at(10),
+        );
     }
     if *data.at(11) != 0 {
-        MovePartyMenuBoxSprites(sPartyMenuBoxes.at(gPartyMenu.slotId2), *data.at(11));
+        MovePartyMenuBoxSprites(
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId2)),
+            *data.at(11),
+        );
     }
 }
 unsafe fn SlidePartyMenuBoxOneStep(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data.at(10) != 0 {
         MoveAndBufferPartySlot(
-            sSlot1TilemapBuffer as *mut c_void,
+            crate::gl!(sSlot1TilemapBuffer) as *mut c_void,
             *data + *data.at(8),
             *data.at(1),
             *data.at(2),
@@ -3856,7 +4035,7 @@ unsafe fn SlidePartyMenuBoxOneStep(taskId: u8) {
     }
     if *data.at(11) != 0 {
         MoveAndBufferPartySlot(
-            sSlot2TilemapBuffer as *mut c_void,
+            crate::gl!(sSlot2TilemapBuffer) as *mut c_void,
             *data.at(4) + *data.at(9),
             *data.at(5),
             *data.at(6),
@@ -3879,13 +4058,15 @@ pub(crate) unsafe fn Task_SlideSelectedSlotsOffscreen(taskId: u8) {
         *data.at(10) *= -1;
         *data.at(11) *= -1;
         SwitchPartyMon();
-        DisplayPartyPokemonData(gPartyMenu.slotId as u8);
-        DisplayPartyPokemonData(gPartyMenu.slotId2 as u8);
-        PutWindowTilemap((*sPartyMenuBoxes.at(gPartyMenu.slotId)).windowId);
-        PutWindowTilemap((*sPartyMenuBoxes.at(gPartyMenu.slotId2)).windowId);
+        DisplayPartyPokemonData(crate::gl!(gPartyMenu.slotId) as u8);
+        DisplayPartyPokemonData(crate::gl!(gPartyMenu.slotId2) as u8);
+        PutWindowTilemap((*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId))).windowId);
+        PutWindowTilemap(
+            (*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId2))).windowId,
+        );
         CopyToBufferFromBgTilemap(
             0,
-            sSlot1TilemapBuffer,
+            crate::gl!(sSlot1TilemapBuffer),
             *data as u8,
             *data.at(1) as u8,
             *data.at(2) as u8,
@@ -3893,14 +4074,18 @@ pub(crate) unsafe fn Task_SlideSelectedSlotsOffscreen(taskId: u8) {
         );
         CopyToBufferFromBgTilemap(
             0,
-            sSlot2TilemapBuffer,
+            crate::gl!(sSlot2TilemapBuffer),
             *data.at(4) as u8,
             *data.at(5) as u8,
             *data.at(6) as u8,
             *data.at(7) as u8,
         );
-        ClearWindowTilemap((*sPartyMenuBoxes.at(gPartyMenu.slotId)).windowId);
-        ClearWindowTilemap((*sPartyMenuBoxes.at(gPartyMenu.slotId2)).windowId);
+        ClearWindowTilemap(
+            (*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId))).windowId,
+        );
+        ClearWindowTilemap(
+            (*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId2))).windowId,
+        );
         task_set_func(taskId, Some(Task_SlideSelectedSlotsOnscreen));
     }
 }
@@ -3909,11 +4094,13 @@ pub(crate) unsafe fn Task_SlideSelectedSlotsOnscreen(taskId: u8) {
     SlidePartyMenuBoxOneStep(taskId);
     SlidePartyMenuBoxSpritesOneStep(taskId);
     if *data.at(10) == 0 && *data.at(11) == 0 {
-        PutWindowTilemap((*sPartyMenuBoxes.at(gPartyMenu.slotId)).windowId);
-        PutWindowTilemap((*sPartyMenuBoxes.at(gPartyMenu.slotId2)).windowId);
+        PutWindowTilemap((*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId))).windowId);
+        PutWindowTilemap(
+            (*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId2))).windowId,
+        );
         ScheduleBgCopyTilemapToVram(0);
-        Free(sSlot1TilemapBuffer as *mut c_void);
-        Free(sSlot2TilemapBuffer as *mut c_void);
+        Free(crate::gl!(sSlot1TilemapBuffer) as *mut c_void);
+        Free(crate::gl!(sSlot2TilemapBuffer) as *mut c_void);
         FinishTwoMonAction(taskId);
     } else {
         *data.at(8) += *data.at(10);
@@ -3930,25 +4117,87 @@ unsafe fn SwitchMenuBoxSprites(spriteIdPtr1: *mut u8, spriteIdPtr2: *mut u8) {
     let spriteIdBuffer: u8 = *spriteIdPtr1;
     *spriteIdPtr1 = *spriteIdPtr2;
     *spriteIdPtr2 = spriteIdBuffer;
-    let xBuffer1: u16 = gSprites[*spriteIdPtr1].x as u16;
-    let yBuffer1: u16 = gSprites[*spriteIdPtr1].y as u16;
-    let xBuffer2: u16 = gSprites[*spriteIdPtr1].x2 as u16;
-    let yBuffer2: u16 = gSprites[*spriteIdPtr1].y2 as u16;
-    gSprites[*spriteIdPtr1].x = gSprites[*spriteIdPtr2].x;
-    gSprites[*spriteIdPtr1].y = gSprites[*spriteIdPtr2].y;
-    gSprites[*spriteIdPtr1].x2 = gSprites[*spriteIdPtr2].x2;
-    gSprites[*spriteIdPtr1].y2 = gSprites[*spriteIdPtr2].y2;
-    gSprites[*spriteIdPtr2].x = xBuffer1 as i16;
-    gSprites[*spriteIdPtr2].y = yBuffer1 as i16;
-    gSprites[*spriteIdPtr2].x2 = xBuffer2 as i16;
-    gSprites[*spriteIdPtr2].y2 = yBuffer2 as i16;
+    let xBuffer1: u16 = ({
+        let gl_i10 = *spriteIdPtr1;
+        crate::gl!(gSprites[gl_i10].x)
+    }) as u16;
+    let yBuffer1: u16 = ({
+        let gl_i11 = *spriteIdPtr1;
+        crate::gl!(gSprites[gl_i11].y)
+    }) as u16;
+    let xBuffer2: u16 = ({
+        let gl_i12 = *spriteIdPtr1;
+        crate::gl!(gSprites[gl_i12].x2)
+    }) as u16;
+    let yBuffer2: u16 = ({
+        let gl_i13 = *spriteIdPtr1;
+        crate::gl!(gSprites[gl_i13].y2)
+    }) as u16;
+    {
+        let gl_i14 = *spriteIdPtr1;
+        crate::gl!(
+            gSprites[gl_i14].x = ({
+                let gl_i15 = *spriteIdPtr2;
+                crate::gl!(gSprites[gl_i15].x)
+            })
+        )
+    };
+    {
+        let gl_i16 = *spriteIdPtr1;
+        crate::gl!(
+            gSprites[gl_i16].y = ({
+                let gl_i17 = *spriteIdPtr2;
+                crate::gl!(gSprites[gl_i17].y)
+            })
+        )
+    };
+    {
+        let gl_i18 = *spriteIdPtr1;
+        crate::gl!(
+            gSprites[gl_i18].x2 = ({
+                let gl_i19 = *spriteIdPtr2;
+                crate::gl!(gSprites[gl_i19].x2)
+            })
+        )
+    };
+    {
+        let gl_i20 = *spriteIdPtr1;
+        crate::gl!(
+            gSprites[gl_i20].y2 = ({
+                let gl_i21 = *spriteIdPtr2;
+                crate::gl!(gSprites[gl_i21].y2)
+            })
+        )
+    };
+    {
+        let gl_i22 = *spriteIdPtr2;
+        crate::gl!(gSprites[gl_i22].x = xBuffer1 as i16)
+    };
+    {
+        let gl_i23 = *spriteIdPtr2;
+        crate::gl!(gSprites[gl_i23].y = yBuffer1 as i16)
+    };
+    {
+        let gl_i24 = *spriteIdPtr2;
+        crate::gl!(gSprites[gl_i24].x2 = xBuffer2 as i16)
+    };
+    {
+        let gl_i25 = *spriteIdPtr2;
+        crate::gl!(gSprites[gl_i25].y2 = yBuffer2 as i16)
+    };
 }
 unsafe fn SwitchPartyMon() {
     let mut menuBoxes: CArray<*mut PartyMenuBox, 2> = zeroed();
-    menuBoxes[0] = sPartyMenuBoxes.at(gPartyMenu.slotId);
-    menuBoxes[1] = sPartyMenuBoxes.at(gPartyMenu.slotId2);
-    let mon1: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
-    let mon2: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId2];
+    menuBoxes[0] = (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId));
+    menuBoxes[1] = (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId2));
+    let mon1: *mut Pokemon = {
+        let gl_i26 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i26])
+    };
+    let mon2: *mut Pokemon = {
+        let gl_i27 = crate::gl!(gPartyMenu.slotId2);
+        crate::gl!(&raw gPlayerParty[gl_i27])
+    };
     let monBuffer: *mut Pokemon = Alloc(100) as *mut Pokemon;
     *monBuffer = *mon1;
     *mon1 = *mon2;
@@ -3972,19 +4221,19 @@ unsafe fn SwitchPartyMon() {
     );
 }
 unsafe fn FinishTwoMonAction(taskId: u8) {
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-    gPartyMenu.action = PARTY_ACTION_CHOOSE_MON;
-    AnimatePartySlot(gPartyMenu.slotId as u8, 0);
-    gPartyMenu.slotId = gPartyMenu.slotId2;
-    AnimatePartySlot(gPartyMenu.slotId2 as u8, 1);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+    crate::gl!(gPartyMenu.action = PARTY_ACTION_CHOOSE_MON);
+    AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 0);
+    crate::gl!(gPartyMenu.slotId = crate::gl!(gPartyMenu.slotId2));
+    AnimatePartySlot(crate::gl!(gPartyMenu.slotId2) as u8, 1);
     DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
     task_set_func(taskId, Some(Task_HandleChooseMonInput));
 }
 pub(crate) unsafe fn CursorCb_Cancel1(taskId: u8) {
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-    if gPartyMenu.menuType() == PARTY_MENU_TYPE_DAYCARE {
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+    if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_DAYCARE {
         DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON_2);
     } else {
         DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
@@ -3993,11 +4242,11 @@ pub(crate) unsafe fn CursorCb_Cancel1(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Item(taskId: u8) {
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     SetPartyMonSelectionActions(
-        gPlayerParty.as_mut_ptr(),
-        gPartyMenu.slotId as u8,
+        (*gPlayerParty.as_ptr()).as_mut_ptr(),
+        crate::gl!(gPartyMenu.slotId) as u8,
         ACTIONS_ITEM,
     );
     DisplaySelectionWindow(SELECTWINDOW_ITEM);
@@ -4007,7 +4256,7 @@ pub(crate) unsafe fn CursorCb_Item(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Give(taskId: u8) {
     PlaySE(SE_SELECT);
-    (*sPartyMenuInternal).exitCallback = Some(CB2_SelectBagItemToGive);
+    (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_SelectBagItemToGive);
     Task_ClosePartyMenu(taskId);
 }
 pub(crate) unsafe fn CB2_SelectBagItemToGive() {
@@ -4022,61 +4271,89 @@ pub(crate) unsafe fn CB2_SelectBagItemToGive() {
     }
 }
 pub(crate) unsafe fn CB2_GiveHoldItem() {
-    if gSpecialVar_ItemId == ITEM_NONE {
+    if gSpecialVar_ItemId.get() == ITEM_NONE {
         InitPartyMenu(
-            gPartyMenu.menuType(),
+            (*gPartyMenu.as_ptr()).menuType(),
             KEEP_PARTY_LAYOUT,
-            gPartyMenu.action,
+            crate::gl!(gPartyMenu.action),
             TRUE,
             PARTY_MSG_NONE,
             Some(Task_TryCreateSelectionWindow),
-            gPartyMenu.exitCallback,
+            crate::gl!(gPartyMenu.exitCallback),
         );
     } else {
-        sPartyMenuItemId =
-            GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_HELD_ITEM) as u16;
-        if sPartyMenuItemId != ITEM_NONE {
+        sPartyMenuItemId.set(GetMonData2(
+            {
+                let gl_i28 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i28])
+            },
+            MON_DATA_HELD_ITEM,
+        ) as u16);
+        if sPartyMenuItemId.get() != ITEM_NONE {
             InitPartyMenu(
-                gPartyMenu.menuType(),
+                (*gPartyMenu.as_ptr()).menuType(),
                 KEEP_PARTY_LAYOUT,
-                gPartyMenu.action,
+                crate::gl!(gPartyMenu.action),
                 TRUE,
                 PARTY_MSG_NONE,
                 Some(Task_SwitchHoldItemsPrompt),
-                gPartyMenu.exitCallback,
+                crate::gl!(gPartyMenu.exitCallback),
             );
-        } else if ItemIsMail(gSpecialVar_ItemId) != 0 {
-            RemoveBagItem(gSpecialVar_ItemId, 1);
-            GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], gSpecialVar_ItemId);
+        } else if ItemIsMail(gSpecialVar_ItemId.get()) != 0 {
+            RemoveBagItem(gSpecialVar_ItemId.get(), 1);
+            GiveItemToMon(
+                {
+                    let gl_i29 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i29])
+                },
+                gSpecialVar_ItemId.get(),
+            );
             CB2_WriteMailToGiveMon();
         } else {
             InitPartyMenu(
-                gPartyMenu.menuType(),
+                (*gPartyMenu.as_ptr()).menuType(),
                 KEEP_PARTY_LAYOUT,
-                gPartyMenu.action,
+                crate::gl!(gPartyMenu.action),
                 TRUE,
                 PARTY_MSG_NONE,
                 Some(Task_GiveHoldItem),
-                gPartyMenu.exitCallback,
+                crate::gl!(gPartyMenu.exitCallback),
             );
         }
     }
 }
 pub(crate) unsafe fn Task_GiveHoldItem(taskId: u8) {
     let mut item: u16 = 0;
-    if gPaletteFade.active() == 0 {
-        item = gSpecialVar_ItemId;
-        DisplayGaveHeldItemMessage(&raw mut gPlayerParty[gPartyMenu.slotId], item, 0, 0);
-        GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], item);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        item = gSpecialVar_ItemId.get();
+        DisplayGaveHeldItemMessage(
+            {
+                let gl_i30 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i30])
+            },
+            item,
+            0,
+            0,
+        );
+        GiveItemToMon(
+            {
+                let gl_i31 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i31])
+            },
+            item,
+        );
         RemoveBagItem(item, 1);
         task_set_func(taskId, Some(Task_UpdateHeldItemSprite));
     }
 }
 pub(crate) unsafe fn Task_SwitchHoldItemsPrompt(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DisplayAlreadyHoldingItemSwitchMessage(
-            &raw mut gPlayerParty[gPartyMenu.slotId],
-            sPartyMenuItemId,
+            {
+                let gl_i32 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i32])
+            },
+            sPartyMenuItemId.get(),
             TRUE,
         );
         task_set_func(taskId, Some(Task_SwitchItemsYesNo));
@@ -4093,18 +4370,34 @@ pub(crate) unsafe fn Task_HandleSwitchItemsYesNoInput(taskId: u8) {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
-            RemoveBagItem(gSpecialVar_ItemId, 1);
-            if AddBagItem(sPartyMenuItemId, 1) == FALSE {
-                AddBagItem(gSpecialVar_ItemId, 1);
-                BufferBagFullCantTakeItemMessage(sPartyMenuItemId);
+            RemoveBagItem(gSpecialVar_ItemId.get(), 1);
+            if AddBagItem(sPartyMenuItemId.get(), 1) == FALSE {
+                AddBagItem(gSpecialVar_ItemId.get(), 1);
+                BufferBagFullCantTakeItemMessage(sPartyMenuItemId.get());
                 DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), FALSE);
                 task_set_func(taskId, Some(Task_ReturnToChooseMonAfterText));
-            } else if ItemIsMail(gSpecialVar_ItemId) != 0 {
-                GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], gSpecialVar_ItemId);
+            } else if ItemIsMail(gSpecialVar_ItemId.get()) != 0 {
+                GiveItemToMon(
+                    {
+                        let gl_i33 = crate::gl!(gPartyMenu.slotId);
+                        crate::gl!(&raw gPlayerParty[gl_i33])
+                    },
+                    gSpecialVar_ItemId.get(),
+                );
                 task_set_func(taskId, Some(Task_WriteMailToGiveMonAfterText));
             } else {
-                GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], gSpecialVar_ItemId);
-                DisplaySwitchedHeldItemMessage(gSpecialVar_ItemId, sPartyMenuItemId, TRUE);
+                GiveItemToMon(
+                    {
+                        let gl_i34 = crate::gl!(gPartyMenu.slotId);
+                        crate::gl!(&raw gPlayerParty[gl_i34])
+                    },
+                    gSpecialVar_ItemId.get(),
+                );
+                DisplaySwitchedHeldItemMessage(
+                    gSpecialVar_ItemId.get(),
+                    sPartyMenuItemId.get(),
+                    TRUE,
+                );
                 task_set_func(taskId, Some(Task_UpdateHeldItemSprite));
             }
             break 'l1;
@@ -4121,82 +4414,100 @@ pub(crate) unsafe fn Task_HandleSwitchItemsYesNoInput(taskId: u8) {
 }
 pub(crate) unsafe fn Task_WriteMailToGiveMonAfterText(taskId: u8) {
     if IsPartyMenuTextPrinterActive() != TRUE {
-        (*sPartyMenuInternal).exitCallback = Some(CB2_WriteMailToGiveMon);
+        (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_WriteMailToGiveMon);
         Task_ClosePartyMenu(taskId);
     }
 }
 pub(crate) unsafe fn CB2_WriteMailToGiveMon() {
-    let mail: u8 = GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_MAIL) as u8;
+    let mail: u8 = GetMonData2(
+        {
+            let gl_i35 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i35])
+        },
+        MON_DATA_MAIL,
+    ) as u8;
     DoEasyChatScreen(
         EASY_CHAT_TYPE_MAIL,
-        (*gSaveBlock1Ptr).mail[mail].words.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).mail[mail].words.as_mut_ptr(),
         Some(CB2_ReturnToPartyMenuFromWritingMail),
         EASY_CHAT_PERSON_DISPLAY_NONE,
     );
 }
 pub(crate) unsafe fn CB2_ReturnToPartyMenuFromWritingMail() {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i36 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i36])
+    };
     let item: u16 = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
     if gSpecialVar_Result == FALSE as u16 {
         TakeMailFromMon(mon);
         SetMonData(
             mon,
             MON_DATA_HELD_ITEM,
-            &raw mut sPartyMenuItemId as *mut c_void,
+            sPartyMenuItemId.as_ptr() as *mut c_void,
         );
-        RemoveBagItem(sPartyMenuItemId, 1);
+        RemoveBagItem(sPartyMenuItemId.get(), 1);
         AddBagItem(item, 1);
         InitPartyMenu(
-            gPartyMenu.menuType(),
+            (*gPartyMenu.as_ptr()).menuType(),
             KEEP_PARTY_LAYOUT,
-            gPartyMenu.action,
+            crate::gl!(gPartyMenu.action),
             TRUE,
             PARTY_MSG_CHOOSE_MON as u8,
             Some(Task_TryCreateSelectionWindow),
-            gPartyMenu.exitCallback,
+            crate::gl!(gPartyMenu.exitCallback),
         );
     } else {
         InitPartyMenu(
-            gPartyMenu.menuType(),
+            (*gPartyMenu.as_ptr()).menuType(),
             KEEP_PARTY_LAYOUT,
-            gPartyMenu.action,
+            crate::gl!(gPartyMenu.action),
             TRUE,
             PARTY_MSG_NONE,
             Some(Task_DisplayGaveMailFromPartyMessage),
-            gPartyMenu.exitCallback,
+            crate::gl!(gPartyMenu.exitCallback),
         );
     }
 }
 pub(crate) unsafe fn Task_DisplayGaveMailFromPartyMessage(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        if sPartyMenuItemId == ITEM_NONE {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if sPartyMenuItemId.get() == ITEM_NONE {
             DisplayGaveHeldItemMessage(
-                &raw mut gPlayerParty[gPartyMenu.slotId],
-                gSpecialVar_ItemId,
+                {
+                    let gl_i37 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i37])
+                },
+                gSpecialVar_ItemId.get(),
                 0,
                 0,
             );
         } else {
-            DisplaySwitchedHeldItemMessage(gSpecialVar_ItemId, sPartyMenuItemId, FALSE);
+            DisplaySwitchedHeldItemMessage(gSpecialVar_ItemId.get(), sPartyMenuItemId.get(), FALSE);
         }
         task_set_func(taskId, Some(Task_UpdateHeldItemSprite));
     }
 }
 pub(crate) unsafe fn Task_UpdateHeldItemSprite(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i38 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i38])
+    };
     if IsPartyMenuTextPrinterActive() != TRUE {
-        UpdatePartyMonHeldItemSprite(mon, sPartyMenuBoxes.at(gPartyMenu.slotId));
-        if gPartyMenu.menuType() == PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
+        UpdatePartyMonHeldItemSprite(
+            mon,
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+        );
+        if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
             if GetMonData2(mon, MON_DATA_HELD_ITEM) != ITEM_NONE as u32 {
                 DisplayPartyPokemonDescriptionText(
                     PARTYBOX_DESC_HAVE,
-                    sPartyMenuBoxes.at(gPartyMenu.slotId),
+                    (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
                     1,
                 );
             } else {
                 DisplayPartyPokemonDescriptionText(
                     PARTYBOX_DESC_DONT_HAVE,
-                    sPartyMenuBoxes.at(gPartyMenu.slotId),
+                    (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
                     1,
                 );
             }
@@ -4205,11 +4516,14 @@ pub(crate) unsafe fn Task_UpdateHeldItemSprite(taskId: u8) {
     }
 }
 pub(crate) unsafe fn CursorCb_TakeItem(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i39 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i39])
+    };
     let item: u16 = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     match TryTakeMonItem(mon) {
         0 => {
             GetMonNickname(mon, gStringVar1.as_mut_ptr());
@@ -4233,11 +4547,14 @@ pub(crate) unsafe fn CursorCb_TakeItem(taskId: u8) {
     task_set_func(taskId, Some(Task_UpdateHeldItemSprite));
 }
 pub(crate) unsafe fn CursorCb_Toss(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i40 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i40])
+    };
     let item: u16 = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     if item == ITEM_NONE {
         GetMonNickname(mon, gStringVar1.as_mut_ptr());
         StringExpandPlaceholders(
@@ -4267,7 +4584,10 @@ pub(crate) unsafe fn Task_TossHeldItemYesNo(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleTossHeldItemYesNoInput(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i41 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i41])
+    };
     'l1: {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
@@ -4297,14 +4617,20 @@ pub(crate) unsafe fn Task_HandleTossHeldItemYesNoInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TossHeldItem(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i42 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i42])
+    };
     if IsPartyMenuTextPrinterActive() != TRUE {
         let mut item: u16 = ITEM_NONE;
         SetMonData(mon, MON_DATA_HELD_ITEM, &raw mut item as *mut c_void);
-        UpdatePartyMonHeldItemSprite(mon, sPartyMenuBoxes.at(gPartyMenu.slotId));
+        UpdatePartyMonHeldItemSprite(
+            mon,
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+        );
         DisplayPartyPokemonDescriptionText(
             PARTYBOX_DESC_DONT_HAVE,
-            sPartyMenuBoxes.at(gPartyMenu.slotId),
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
             1,
         );
         task_set_func(taskId, Some(Task_ReturnToChooseMonAfterText));
@@ -4312,11 +4638,11 @@ pub(crate) unsafe fn Task_TossHeldItem(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Mail(taskId: u8) {
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     SetPartyMonSelectionActions(
-        gPlayerParty.as_mut_ptr(),
-        gPartyMenu.slotId as u8,
+        (*gPlayerParty.as_ptr()).as_mut_ptr(),
+        crate::gl!(gPartyMenu.slotId) as u8,
         ACTIONS_MAIL,
     );
     DisplaySelectionWindow(SELECTWINDOW_MAIL);
@@ -4326,33 +4652,38 @@ pub(crate) unsafe fn CursorCb_Mail(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Read(taskId: u8) {
     PlaySE(SE_SELECT);
-    (*sPartyMenuInternal).exitCallback = Some(CB2_ReadHeldMail);
+    (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_ReadHeldMail);
     Task_ClosePartyMenu(taskId);
 }
 pub(crate) unsafe fn CB2_ReadHeldMail() {
     ReadMail(
-        &raw mut (*gSaveBlock1Ptr).mail
-            [GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_MAIL)],
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mail[GetMonData2(
+            {
+                let gl_i43 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i43])
+            },
+            MON_DATA_MAIL,
+        )],
         Some(CB2_ReturnToPartyMenuFromReadingMail),
         TRUE,
     );
 }
 pub(crate) unsafe fn CB2_ReturnToPartyMenuFromReadingMail() {
-    gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
     InitPartyMenu(
-        gPartyMenu.menuType(),
+        (*gPartyMenu.as_ptr()).menuType(),
         KEEP_PARTY_LAYOUT,
-        gPartyMenu.action,
+        crate::gl!(gPartyMenu.action),
         TRUE,
         PARTY_MSG_DO_WHAT_WITH_MON as u8,
         Some(Task_TryCreateSelectionWindow),
-        gPartyMenu.exitCallback,
+        crate::gl!(gPartyMenu.exitCallback),
     );
 }
 pub(crate) unsafe fn CursorCb_TakeMail(taskId: u8) {
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
     DisplayPartyMenuMessage(
         (*(&raw const crate::data::strings::gText_SendMailToPC).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -4372,7 +4703,11 @@ pub(crate) unsafe fn Task_HandleSendMailToPCYesNoInput(taskId: u8) {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
-            if TakeMailFromMonAndSave(&raw mut gPlayerParty[gPartyMenu.slotId]) != MAIL_NONE as u8 {
+            if TakeMailFromMonAndSave({
+                let gl_i44 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i44])
+            }) != MAIL_NONE as u8
+            {
                 DisplayPartyMenuMessage(
                     (*(&raw const crate::data::strings::gText_MailSentToPC)
                         .cast::<CArray<u8, 0>>())
@@ -4422,9 +4757,18 @@ pub(crate) unsafe fn Task_HandleLoseMailMessageYesNoInput(taskId: u8) {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
-            item = GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_HELD_ITEM) as u16;
+            item = GetMonData2(
+                {
+                    let gl_i45 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i45])
+                },
+                MON_DATA_HELD_ITEM,
+            ) as u16;
             if AddBagItem(item, 1) == 1 {
-                TakeMailFromMon(&raw mut gPlayerParty[gPartyMenu.slotId]);
+                TakeMailFromMon({
+                    let gl_i46 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i46])
+                });
                 DisplayPartyMenuMessage(
                     (*(&raw const crate::data::strings::gText_MailTakenFromPkmn)
                         .cast::<CArray<u8, 0>>())
@@ -4451,23 +4795,26 @@ pub(crate) unsafe fn Task_HandleLoseMailMessageYesNoInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn CursorCb_Cancel2(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i47 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i47])
+    };
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     SetPartyMonSelectionActions(
-        gPlayerParty.as_mut_ptr(),
-        gPartyMenu.slotId as u8,
+        (*gPlayerParty.as_ptr()).as_mut_ptr(),
+        crate::gl!(gPartyMenu.slotId) as u8,
         GetPartyMenuActionsType(mon),
     );
-    if gPartyMenu.menuType() != PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
+    if (*gPartyMenu.as_ptr()).menuType() != PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS {
         DisplaySelectionWindow(SELECTWINDOW_ACTIONS);
         DisplayPartyMenuStdMessage(PARTY_MSG_DO_WHAT_WITH_MON);
     } else {
         DisplaySelectionWindow(SELECTWINDOW_ITEM);
         CopyItemName(
             GetMonData2(mon, MON_DATA_HELD_ITEM) as u16,
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
         );
         DisplayPartyMenuStdMessage(PARTY_MSG_ALREADY_HOLDING_ONE);
     }
@@ -4476,26 +4823,26 @@ pub(crate) unsafe fn CursorCb_Cancel2(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_SendMon(taskId: u8) {
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
     if TrySwitchInPokemon() == TRUE {
         Task_ClosePartyMenu(taskId);
     } else {
-        PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+        PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
         DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), TRUE);
         task_set_func(taskId, Some(Task_ReturnToChooseMonAfterText));
     }
 }
 pub(crate) unsafe fn CursorCb_Enter(taskId: u8) {
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     let maxBattlers: u8 = GetMaxBattleEntries();
     for i in 0..maxBattlers {
-        if gSelectedOrderFromParty[i] == 0 {
+        if crate::gl!(gSelectedOrderFromParty[i]) == 0 {
             PlaySE(SE_SELECT);
-            gSelectedOrderFromParty[i] = gPartyMenu.slotId as u8 + 1;
+            crate::gl!(gSelectedOrderFromParty[i] = crate::gl!(gPartyMenu.slotId) as u8 + 1);
             DisplayPartyPokemonDescriptionText(
                 i + PARTYBOX_DESC_FIRST,
-                sPartyMenuBoxes.at(gPartyMenu.slotId),
+                (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
                 1,
             );
             if i as i32 == maxBattlers as i32 - 1 {
@@ -4523,34 +4870,44 @@ pub(crate) unsafe fn CursorCb_Enter(taskId: u8) {
     task_set_func(taskId, Some(Task_ReturnToChooseMonAfterText));
 }
 unsafe fn MoveCursorToConfirm() {
-    AnimatePartySlot(gPartyMenu.slotId as u8, 0);
-    gPartyMenu.slotId = PARTY_SIZE as i8;
-    AnimatePartySlot(gPartyMenu.slotId as u8, 1);
+    AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 0);
+    crate::gl!(gPartyMenu.slotId = PARTY_SIZE as i8);
+    AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 1);
 }
 pub(crate) unsafe fn CursorCb_NoEntry(taskId: u8) {
     let mut j: u8 = 0;
     PlaySE(SE_SELECT);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     let maxBattlers: u8 = GetMaxBattleEntries();
     for i in 0..maxBattlers {
-        if gSelectedOrderFromParty[i] as i32 == gPartyMenu.slotId as i32 + 1 {
+        if crate::gl!(gSelectedOrderFromParty[i]) as i32 == crate::gl!(gPartyMenu.slotId) as i32 + 1
+        {
             j = i;
             while (j as i32) < maxBattlers as i32 - 1 {
-                gSelectedOrderFromParty[j] = gSelectedOrderFromParty[j as i32 + 1];
+                crate::gl!(
+                    gSelectedOrderFromParty[j] = {
+                        let gl_i1 = j as i32 + 1;
+                        crate::gl!(gSelectedOrderFromParty[gl_i1])
+                    }
+                );
                 j += 1;
             }
-            gSelectedOrderFromParty[j] = 0;
+            crate::gl!(gSelectedOrderFromParty[j] = 0);
             break;
         }
     }
-    DisplayPartyPokemonDescriptionText(1, sPartyMenuBoxes.at(gPartyMenu.slotId), 1);
+    DisplayPartyPokemonDescriptionText(
+        1,
+        (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+        1,
+    );
     let mut i: u8 = 0;
     while (i as i32) < maxBattlers as i32 - 1 {
-        if gSelectedOrderFromParty[i] != 0 {
+        if crate::gl!(gSelectedOrderFromParty[i]) != 0 {
             DisplayPartyPokemonDescriptionText(
                 i + PARTYBOX_DESC_FIRST,
-                sPartyMenuBoxes.at(gSelectedOrderFromParty[i] as i32 - 1),
+                (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gSelectedOrderFromParty[i]) as i32 - 1),
                 1,
             );
         }
@@ -4565,13 +4922,24 @@ pub(crate) unsafe fn CursorCb_Store(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Register(taskId: u8) {
     let species2: u16 = GetMonData2(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i48 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i48])
+        },
         MON_DATA_SPECIES_OR_EGG,
     ) as u16;
-    let species: u16 =
-        GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES) as u16;
+    let species: u16 = GetMonData2(
+        {
+            let gl_i49 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i49])
+        },
+        MON_DATA_SPECIES,
+    ) as u16;
     let isModernFatefulEncounter: u8 = GetMonData2(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i50 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i50])
+        },
         MON_DATA_MODERN_FATEFUL_ENCOUNTER,
     ) as u8;
     match CanRegisterMonForTradingBoard(
@@ -4605,8 +4973,8 @@ pub(crate) unsafe fn CursorCb_Register(taskId: u8) {
         }
     }
     PlaySE(SE_FAILURE);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     StringAppend(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_PauseUntilPress).cast::<CArray<u8, 0>>())
@@ -4618,21 +4986,32 @@ pub(crate) unsafe fn CursorCb_Register(taskId: u8) {
 }
 pub(crate) unsafe fn CursorCb_Trade1(taskId: u8) {
     let species2: u16 = GetMonData2(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i51 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i51])
+        },
         MON_DATA_SPECIES_OR_EGG,
     ) as u16;
-    let species: u16 =
-        GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES) as u16;
+    let species: u16 = GetMonData2(
+        {
+            let gl_i52 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i52])
+        },
+        MON_DATA_SPECIES,
+    ) as u16;
     let isModernFatefulEncounter: u8 = GetMonData2(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i53 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i53])
+        },
         MON_DATA_MODERN_FATEFUL_ENCOUNTER,
     ) as u8;
     let stringId: u32 = GetUnionRoomTradeMessageId(
         *(GetHostRfuGameData() as *mut RfuGameCompatibilityData),
-        gRfuPartnerCompatibilityData,
+        crate::gl!(gRfuPartnerCompatibilityData),
         species2,
-        gUnionRoomOfferedSpecies,
-        gUnionRoomRequestedMonType,
+        gUnionRoomOfferedSpecies.get(),
+        gUnionRoomRequestedMonType.get(),
         species,
         isModernFatefulEncounter,
     ) as u32;
@@ -4642,8 +5021,8 @@ pub(crate) unsafe fn CursorCb_Trade1(taskId: u8) {
             sUnionRoomTradeMessages[stringId - 1],
         );
         PlaySE(SE_FAILURE);
-        PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-        PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+        PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+        PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
         StringAppend(
             gStringVar4.as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_PauseUntilPress).cast::<CArray<u8, 0>>())
@@ -4658,9 +5037,12 @@ pub(crate) unsafe fn CursorCb_Trade1(taskId: u8) {
     }
 }
 pub(crate) unsafe fn CursorCb_Trade2(taskId: u8) {
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
-    match CanSpinTradeMon(gPlayerParty.as_mut_ptr(), gPartyMenu.slotId as u16) {
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
+    match CanSpinTradeMon(
+        (*gPlayerParty.as_ptr()).as_mut_ptr(),
+        crate::gl!(gPartyMenu.slotId) as u16,
+    ) {
         CANT_TRADE_LAST_MON => {
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
@@ -4691,7 +5073,10 @@ pub(crate) unsafe fn CursorCb_Trade2(taskId: u8) {
         _ => {
             PlaySE(SE_SELECT);
             GetMonNickname(
-                &raw mut gPlayerParty[gPartyMenu.slotId],
+                {
+                    let gl_i54 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i54])
+                },
                 gStringVar1.as_mut_ptr(),
             );
             StringExpandPlaceholders(
@@ -4741,14 +5126,15 @@ pub(crate) unsafe fn Task_HandleSpinTradeYesNoInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn CursorCb_FieldMove(taskId: u8) {
-    let fieldMove: u8 = (*sPartyMenuInternal).actions[Menu_GetCursorPos()] - MENU_FIELD_MOVES;
+    let fieldMove: u8 =
+        (*crate::gl!(sPartyMenuInternal)).actions[Menu_GetCursorPos()] - MENU_FIELD_MOVES;
     let mut mapHeader: *mut MapHeader = null_mut();
     PlaySE(SE_SELECT);
     if sFieldMoveCursorCallbacks[fieldMove].fieldMoveFunc.is_none() {
         return;
     }
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
     if MenuHelpers_IsLinkActive() == TRUE || InUnionRoom() == TRUE as u32 {
         if fieldMove == FIELD_MOVE_MILK_DRINK || fieldMove == FIELD_MOVE_SOFT_BOILED {
             DisplayPartyMenuStdMessage(PARTY_MSG_CANT_USE_HERE);
@@ -4779,8 +5165,8 @@ pub(crate) unsafe fn CursorCb_FieldMove(taskId: u8) {
                 }
                 FIELD_MOVE_TELEPORT => {
                     mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                        (*gSaveBlock1Ptr).lastHealLocation.mapGroup as u16,
-                        (*gSaveBlock1Ptr).lastHealLocation.mapNum as u16,
+                        (*crate::gl!(gSaveBlock1Ptr)).lastHealLocation.mapGroup as u16,
+                        (*crate::gl!(gSaveBlock1Ptr)).lastHealLocation.mapNum as u16,
                     );
                     GetMapNameGeneric(
                         gStringVar1.as_mut_ptr(),
@@ -4794,12 +5180,12 @@ pub(crate) unsafe fn CursorCb_FieldMove(taskId: u8) {
                         .cast_mut(),
                     );
                     DisplayFieldMoveExitAreaMessage(taskId);
-                    (*sPartyMenuInternal).data[0] = fieldMove as i16;
+                    (*crate::gl!(sPartyMenuInternal)).data[0] = fieldMove as i16;
                 }
                 FIELD_MOVE_DIG => {
                     mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                        (*gSaveBlock1Ptr).escapeWarp.mapGroup as u16,
-                        (*gSaveBlock1Ptr).escapeWarp.mapNum as u16,
+                        (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.mapGroup as u16,
+                        (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.mapNum as u16,
                     );
                     GetMapNameGeneric(
                         gStringVar1.as_mut_ptr(),
@@ -4813,14 +5199,14 @@ pub(crate) unsafe fn CursorCb_FieldMove(taskId: u8) {
                         .cast_mut(),
                     );
                     DisplayFieldMoveExitAreaMessage(taskId);
-                    (*sPartyMenuInternal).data[0] = fieldMove as i16;
+                    (*crate::gl!(sPartyMenuInternal)).data[0] = fieldMove as i16;
                 }
                 FIELD_MOVE_FLY => {
-                    gPartyMenu.exitCallback = Some(CB2_OpenFlyMap);
+                    crate::gl!(gPartyMenu.exitCallback = Some(CB2_OpenFlyMap));
                     Task_ClosePartyMenu(taskId);
                 }
                 _ => {
-                    gPartyMenu.exitCallback = Some(CB2_ReturnToField);
+                    crate::gl!(gPartyMenu.exitCallback = Some(CB2_ReturnToField));
                     Task_ClosePartyMenu(taskId);
                 }
             }
@@ -4855,7 +5241,7 @@ pub(crate) unsafe fn Task_HandleFieldMoveExitAreaYesNoInput(taskId: u8) {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
-            gPartyMenu.exitCallback = Some(CB2_ReturnToField);
+            crate::gl!(gPartyMenu.exitCallback = Some(CB2_ReturnToField));
             Task_ClosePartyMenu(taskId);
             break 'l1;
         }
@@ -4864,8 +5250,8 @@ pub(crate) unsafe fn Task_HandleFieldMoveExitAreaYesNoInput(taskId: u8) {
             PlaySE(SE_SELECT);
         }
         if fall || sw1 == 1 {
-            gFieldCallback2 = None;
-            gPostMenuFieldCallback = None;
+            crate::gl!(gFieldCallback2 = None);
+            crate::gl!(gPostMenuFieldCallback = None);
             Task_ReturnToChooseMonAfterText(taskId);
             break 'l1;
         }
@@ -4879,16 +5265,24 @@ pub unsafe fn FieldCallback_PrepareFadeInFromMenu() -> u8 {
 }
 pub(crate) unsafe fn Task_FieldMoveWaitForFade(taskId: u8) {
     if IsWeatherNotFadingIn() == TRUE {
-        gFieldEffectArguments[0] = GetFieldMoveMonSpecies() as i32;
-        gPostMenuFieldCallback.unwrap_unchecked()();
+        crate::gl!(gFieldEffectArguments[0] = GetFieldMoveMonSpecies() as i32);
+        (*gPostMenuFieldCallback.as_ptr()).unwrap_unchecked()();
         DestroyTask(taskId);
     }
 }
 unsafe fn GetFieldMoveMonSpecies() -> u16 {
-    GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES) as u16
+    GetMonData2(
+        {
+            let gl_i55 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i55])
+        },
+        MON_DATA_SPECIES,
+    ) as u16
 }
 pub(crate) unsafe fn Task_CancelAfterAorBPress(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         CursorCb_Cancel1(taskId);
     }
 }
@@ -4900,13 +5294,13 @@ unsafe fn DisplayCantUseFlashMessage() {
     }
 }
 pub(crate) unsafe fn FieldCallback_Surf() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     FieldEffectStart(FLDEFF_USE_SURF);
 }
 pub(crate) unsafe fn SetUpFieldMove_Surf() -> u8 {
     if PartyHasMonWithSurf() == TRUE && IsPlayerFacingSurfableFishableWater() == TRUE {
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_Surf);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_Surf));
         return TRUE;
     }
     FALSE
@@ -4918,8 +5312,8 @@ unsafe fn DisplayCantUseSurfMessage() {
         DisplayPartyMenuStdMessage(PARTY_MSG_CANT_SURF_HERE);
     }
 }
-pub(crate) unsafe fn SetUpFieldMove_Fly() -> u8 {
-    if Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == TRUE {
+pub(crate) fn SetUpFieldMove_Fly() -> u8 {
+    if Overworld_MapTypeAllowsTeleportAndFly(crate::gl!(gMapHeader.mapType)) == TRUE {
         return TRUE;
     } else {
         return FALSE;
@@ -4941,7 +5335,7 @@ pub unsafe fn CB2_ReturnToPartyMenuFromFlyMap() {
     );
 }
 pub(crate) unsafe fn FieldCallback_Waterfall() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     FieldEffectStart(FLDEFF_USE_WATERFALL);
 }
 pub(crate) unsafe fn SetUpFieldMove_Waterfall() -> u8 {
@@ -4951,28 +5345,28 @@ pub(crate) unsafe fn SetUpFieldMove_Waterfall() -> u8 {
     if MetatileBehavior_IsWaterfall(MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8) == TRUE
         && IsPlayerSurfingNorth() == TRUE
     {
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_Waterfall);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_Waterfall));
         return TRUE;
     }
     FALSE
 }
 pub(crate) unsafe fn FieldCallback_Dive() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     FieldEffectStart(FLDEFF_USE_DIVE);
 }
 pub(crate) unsafe fn SetUpFieldMove_Dive() -> u8 {
-    gFieldEffectArguments[1] = TrySetDiveWarp() as i32;
-    if gFieldEffectArguments[1] != 0 {
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_Dive);
+    crate::gl!(gFieldEffectArguments[1] = TrySetDiveWarp() as i32);
+    if crate::gl!(gFieldEffectArguments[1]) != 0 {
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_Dive));
         return TRUE;
     }
     FALSE
 }
 unsafe fn CreatePartyMonIconSprite(mon: *mut Pokemon, menuBox: *mut PartyMenuBox, slot: u32) {
     let mut handleDeoxys: u32 = TRUE as u32;
-    if IsMultiBattle() == TRUE && gMain.inBattle() != 0 {
+    if IsMultiBattle() == TRUE && (*gMain.as_ptr()).inBattle() != 0 {
         handleDeoxys = (if sMultiBattlePartnersPartyMask[slot] as u32 ^ handleDeoxys != 0 {
             TRUE as i32
         } else {
@@ -5006,7 +5400,7 @@ unsafe fn CreatePartyMonIconSpriteParameterized(
             pid,
             handleDeoxys,
         );
-        gSprites[(*menuBox).monSpriteId]
+        (*gSprites.as_ptr())[(*menuBox).monSpriteId]
             .oam
             .set_priority(priority as u16);
     }
@@ -5014,19 +5408,19 @@ unsafe fn CreatePartyMonIconSpriteParameterized(
 unsafe fn UpdateHPBar(spriteId: u8, hp: u16, maxhp: u16) {
     match GetHPBarLevel(hp as i16, maxhp as i16) {
         HP_BAR_FULL => {
-            SetPartyHPBarSprite(&raw mut gSprites[spriteId], 0);
+            SetPartyHPBarSprite(crate::gl!(&raw gSprites[spriteId]), 0);
         }
         HP_BAR_GREEN => {
-            SetPartyHPBarSprite(&raw mut gSprites[spriteId], 1);
+            SetPartyHPBarSprite(crate::gl!(&raw gSprites[spriteId]), 1);
         }
         HP_BAR_YELLOW => {
-            SetPartyHPBarSprite(&raw mut gSprites[spriteId], 2);
+            SetPartyHPBarSprite(crate::gl!(&raw gSprites[spriteId]), 2);
         }
         HP_BAR_RED => {
-            SetPartyHPBarSprite(&raw mut gSprites[spriteId], 3);
+            SetPartyHPBarSprite(crate::gl!(&raw gSprites[spriteId]), 3);
         }
         _ => {
-            SetPartyHPBarSprite(&raw mut gSprites[spriteId], 4);
+            SetPartyHPBarSprite(crate::gl!(&raw gSprites[spriteId]), 4);
         }
     }
 }
@@ -5038,20 +5432,20 @@ unsafe fn UpdatePartyMonHPBar(spriteId: u8, mon: *mut Pokemon) {
     );
 }
 unsafe fn AnimateSelectedPartyIcon(spriteId: u8, animNum: u8) {
-    gSprites[spriteId].data[0] = 0;
+    crate::gl!(gSprites[spriteId].data[0] = 0);
     if animNum == 0 {
-        if gSprites[spriteId].x == 16 {
-            gSprites[spriteId].x2 = 0;
-            gSprites[spriteId].y2 = -4;
+        if crate::gl!(gSprites[spriteId].x) == 16 {
+            crate::gl!(gSprites[spriteId].x2 = 0);
+            crate::gl!(gSprites[spriteId].y2 = -4);
         } else {
-            gSprites[spriteId].x2 = -4;
-            gSprites[spriteId].y2 = 0;
+            crate::gl!(gSprites[spriteId].x2 = -4);
+            crate::gl!(gSprites[spriteId].y2 = 0);
         }
-        gSprites[spriteId].callback = Some(SpriteCB_UpdatePartyMonIcon);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_UpdatePartyMonIcon));
     } else {
-        gSprites[spriteId].x2 = 0;
-        gSprites[spriteId].y2 = 0;
-        gSprites[spriteId].callback = Some(SpriteCB_BouncePartyMonIcon);
+        crate::gl!(gSprites[spriteId].x2 = 0);
+        crate::gl!(gSprites[spriteId].y2 = 0);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_BouncePartyMonIcon));
     }
 }
 pub(crate) unsafe fn SpriteCB_BouncePartyMonIcon(sprite: *mut Sprite) {
@@ -5090,7 +5484,9 @@ unsafe fn CreatePartyMonHeldItemSpriteParameterized(
             *(*menuBox).spriteCoords.at(3) as i16,
             0,
         );
-        gSprites[(*menuBox).itemSpriteId].oam.set_priority(0);
+        (*gSprites.as_ptr())[(*menuBox).itemSpriteId]
+            .oam
+            .set_priority(0);
         ShowOrHideHeldItemSprite(item, menuBox);
     }
 }
@@ -5099,14 +5495,26 @@ unsafe fn UpdatePartyMonHeldItemSprite(mon: *mut Pokemon, menuBox: *mut PartyMen
 }
 unsafe fn ShowOrHideHeldItemSprite(item: u16, menuBox: *mut PartyMenuBox) {
     if item == ITEM_NONE {
-        gSprites[(*menuBox).itemSpriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*menuBox).itemSpriteId].set_invisible(TRUE as u16);
     } else {
         if ItemIsMail(item) != 0 {
-            StartSpriteAnim(&raw mut gSprites[(*menuBox).itemSpriteId], 1);
+            StartSpriteAnim(
+                {
+                    let gl_i56 = (*menuBox).itemSpriteId;
+                    crate::gl!(&raw gSprites[gl_i56])
+                },
+                1,
+            );
         } else {
-            StartSpriteAnim(&raw mut gSprites[(*menuBox).itemSpriteId], 0);
+            StartSpriteAnim(
+                {
+                    let gl_i57 = (*menuBox).itemSpriteId;
+                    crate::gl!(&raw gSprites[gl_i57])
+                },
+                0,
+            );
         }
-        gSprites[(*menuBox).itemSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*menuBox).itemSpriteId].set_invisible(FALSE as u16);
     }
 }
 pub unsafe fn LoadHeldItemIcons() {
@@ -5124,7 +5532,7 @@ pub unsafe fn DrawHeldItemIconsForTrade(
         TRADE_PLAYER => {
             i = 0;
             while i < *partyCounts as u16 {
-                item = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HELD_ITEM) as u16;
+                item = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HELD_ITEM) as u16;
                 if item != ITEM_NONE {
                     CreateHeldItemSpriteForTrade(*partySpriteIds.at(i), ItemIsMail(item));
                 }
@@ -5134,7 +5542,7 @@ pub unsafe fn DrawHeldItemIconsForTrade(
         TRADE_PARTNER => {
             i = 0;
             while i < *partyCounts.at(1) as u16 {
-                item = GetMonData2(&raw mut gEnemyParty[i], MON_DATA_HELD_ITEM) as u16;
+                item = GetMonData2(crate::gl!(&raw gEnemyParty[i]), MON_DATA_HELD_ITEM) as u16;
                 if item != ITEM_NONE {
                     CreateHeldItemSpriteForTrade(
                         *partySpriteIds.at(i as i32 + PARTY_SIZE),
@@ -5148,28 +5556,32 @@ pub unsafe fn DrawHeldItemIconsForTrade(
     }
 }
 unsafe fn CreateHeldItemSpriteForTrade(spriteId: u8, isMail: u8) {
-    let subpriority: u8 = gSprites[spriteId].subpriority;
+    let subpriority: u8 = crate::gl!(gSprites[spriteId].subpriority);
     let newSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_HeldItem).cast_mut(),
         250,
         170,
         subpriority - 1,
     );
-    gSprites[newSpriteId].x2 = 4;
-    gSprites[newSpriteId].y2 = 10;
-    gSprites[newSpriteId].callback = Some(SpriteCB_HeldItem);
-    gSprites[newSpriteId].data[7] = spriteId as i16;
-    StartSpriteAnim(&raw mut gSprites[newSpriteId], isMail);
-    gSprites[newSpriteId].callback.unwrap_unchecked()(&raw mut gSprites[newSpriteId]);
+    crate::gl!(gSprites[newSpriteId].x2 = 4);
+    crate::gl!(gSprites[newSpriteId].y2 = 10);
+    crate::gl!(gSprites[newSpriteId].callback = Some(SpriteCB_HeldItem));
+    crate::gl!(gSprites[newSpriteId].data[7] = spriteId as i16);
+    StartSpriteAnim(crate::gl!(&raw gSprites[newSpriteId]), isMail);
+    (*gSprites.as_ptr())[newSpriteId]
+        .callback
+        .unwrap_unchecked()(crate::gl!(&raw gSprites[newSpriteId]));
 }
 pub(crate) unsafe fn SpriteCB_HeldItem(sprite: *mut Sprite) {
     let otherSpriteId: u8 = (*sprite).data[7] as u8;
-    if gSprites[otherSpriteId].invisible() != 0 {
+    if (*gSprites.as_ptr())[otherSpriteId].invisible() != 0 {
         (*sprite).set_invisible(TRUE as u16);
     } else {
         (*sprite).set_invisible(FALSE as u16);
-        (*sprite).x = gSprites[otherSpriteId].x + gSprites[otherSpriteId].x2;
-        (*sprite).y = gSprites[otherSpriteId].y + gSprites[otherSpriteId].y2;
+        (*sprite).x =
+            crate::gl!(gSprites[otherSpriteId].x) + crate::gl!(gSprites[otherSpriteId].x2);
+        (*sprite).y =
+            crate::gl!(gSprites[otherSpriteId].y) + crate::gl!(gSprites[otherSpriteId].y2);
     }
 }
 unsafe fn CreatePartyMonPokeballSprite(mon: *mut Pokemon, menuBox: *mut PartyMenuBox) {
@@ -5190,7 +5602,9 @@ unsafe fn CreatePartyMonPokeballSpriteParameterized(species: u16, menuBox: *mut 
             *(*menuBox).spriteCoords.at(7) as i16,
             8,
         );
-        gSprites[(*menuBox).pokeballSpriteId].oam.set_priority(0);
+        (*gSprites.as_ptr())[(*menuBox).pokeballSpriteId]
+            .oam
+            .set_priority(0);
     }
 }
 unsafe fn CreatePokeballButtonSprite(x: u8, y: u8) -> u8 {
@@ -5200,7 +5614,7 @@ unsafe fn CreatePokeballButtonSprite(x: u8, y: u8) -> u8 {
         y as i16,
         8,
     );
-    gSprites[spriteId].oam.set_priority(2);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
     spriteId
 }
 unsafe fn CreateSmallPokeballButtonSprite(x: u8, y: u8) -> u8 {
@@ -5212,19 +5626,19 @@ unsafe fn CreateSmallPokeballButtonSprite(x: u8, y: u8) -> u8 {
     )
 }
 unsafe fn PartyMenuStartSpriteAnim(spriteId: u8, animNum: u8) {
-    StartSpriteAnim(&raw mut gSprites[spriteId], animNum);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), animNum);
 }
 unsafe fn SpriteCB_BounceConfirmCancelButton(spriteId: u8, spriteId2: u8, animNum: u8) {
     if animNum == 0 {
-        StartSpriteAnim(&raw mut gSprites[spriteId], 2);
-        StartSpriteAnim(&raw mut gSprites[spriteId2], 4);
-        gSprites[spriteId].y2 = 0;
-        gSprites[spriteId2].y2 = 0;
+        StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 2);
+        StartSpriteAnim(crate::gl!(&raw gSprites[spriteId2]), 4);
+        crate::gl!(gSprites[spriteId].y2 = 0);
+        crate::gl!(gSprites[spriteId2].y2 = 0);
     } else {
-        StartSpriteAnim(&raw mut gSprites[spriteId], 3);
-        StartSpriteAnim(&raw mut gSprites[spriteId2], 5);
-        gSprites[spriteId].y2 = -4;
-        gSprites[spriteId2].y2 = 4;
+        StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 3);
+        StartSpriteAnim(crate::gl!(&raw gSprites[spriteId2]), 5);
+        crate::gl!(gSprites[spriteId].y2 = -4);
+        crate::gl!(gSprites[spriteId2].y2 = 4);
     }
 }
 unsafe fn LoadPartyMenuPokeballGfx() {
@@ -5256,7 +5670,9 @@ unsafe fn CreatePartyMonStatusSpriteParameterized(
             0,
         );
         UpdatePartyMonAilmentGfx(status, menuBox);
-        gSprites[(*menuBox).statusSpriteId].oam.set_priority(0);
+        (*gSprites.as_ptr())[(*menuBox).statusSpriteId]
+            .oam
+            .set_priority(0);
     }
 }
 unsafe fn SetPartyMonAilmentGfx(mon: *mut Pokemon, menuBox: *mut PartyMenuBox) {
@@ -5265,11 +5681,17 @@ unsafe fn SetPartyMonAilmentGfx(mon: *mut Pokemon, menuBox: *mut PartyMenuBox) {
 unsafe fn UpdatePartyMonAilmentGfx(status: u8, menuBox: *mut PartyMenuBox) {
     match status {
         AILMENT_NONE | AILMENT_PKRS => {
-            gSprites[(*menuBox).statusSpriteId].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[(*menuBox).statusSpriteId].set_invisible(TRUE as u16);
         }
         _ => {
-            StartSpriteAnim(&raw mut gSprites[(*menuBox).statusSpriteId], status - 1);
-            gSprites[(*menuBox).statusSpriteId].set_invisible(FALSE as u16);
+            StartSpriteAnim(
+                {
+                    let gl_i58 = (*menuBox).statusSpriteId;
+                    crate::gl!(&raw gSprites[gl_i58])
+                },
+                status - 1,
+            );
+            (*gSprites.as_ptr())[(*menuBox).statusSpriteId].set_invisible(FALSE as u16);
         }
     }
 }
@@ -5283,27 +5705,27 @@ pub unsafe fn CB2_ShowPartyMenuForItemUse() {
     let mut menuType: u8 = 0;
     let mut msgId: u8 = 0;
     let mut task: Option<unsafe fn(u8)> = None;
-    if gMain.inBattle() != 0 {
+    if (*gMain.as_ptr()).inBattle() != 0 {
         menuType = PARTY_MENU_TYPE_IN_BATTLE;
         partyLayout = GetPartyLayoutFromBattleType();
     } else {
         menuType = PARTY_MENU_TYPE_FIELD;
         partyLayout = PARTY_LAYOUT_SINGLE;
     }
-    if GetItemEffectType(gSpecialVar_ItemId) == ITEM_EFFECT_SACRED_ASH {
-        gPartyMenu.slotId = 0;
+    if GetItemEffectType(gSpecialVar_ItemId.get()) == ITEM_EFFECT_SACRED_ASH {
+        crate::gl!(gPartyMenu.slotId = 0);
         for i in 0..(PARTY_SIZE as u8) {
-            if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != 0
-                && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) == 0
+            if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) != 0
+                && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP) == 0
             {
-                gPartyMenu.slotId = i as i8;
+                crate::gl!(gPartyMenu.slotId = i as i8);
                 break;
             }
         }
         task = Some(Task_SetSacredAshCB);
         msgId = PARTY_MSG_NONE;
     } else {
-        if GetPocketByItemId(gSpecialVar_ItemId) == POCKET_TM_HM {
+        if GetPocketByItemId(gSpecialVar_ItemId.get()) == POCKET_TM_HM {
             msgId = PARTY_MSG_TEACH_WHICH_MON;
         } else {
             msgId = PARTY_MSG_USE_ON_WHICH_MON;
@@ -5324,21 +5746,27 @@ pub(crate) unsafe fn CB2_ReturnToBagMenu() {
     if (CurrentBattlePyramidLocation() != 0) as i32 == 0 {
         GoToBagMenu(ITEMMENULOCATION_LAST, POCKETS_COUNT, None);
     } else {
-        GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_PREV, gPyramidBagMenuState.exitCallback);
+        GoToBattlePyramidBagMenu(
+            PYRAMIDBAG_LOC_PREV,
+            crate::gl!(gPyramidBagMenuState.exitCallback),
+        );
     }
 }
 pub(crate) unsafe fn Task_SetSacredAshCB(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        if gPartyMenu.menuType() == PARTY_MENU_TYPE_IN_BATTLE {
-            (*sPartyMenuInternal).exitCallback = Some(CB2_SetUpExitToBattleScreen);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if (*gPartyMenu.as_ptr()).menuType() == PARTY_MENU_TYPE_IN_BATTLE {
+            (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_SetUpExitToBattleScreen);
         }
-        gItemUseCB.unwrap_unchecked()(taskId, Some(Task_ClosePartyMenuAfterText));
+        (*gItemUseCB.as_ptr()).unwrap_unchecked()(taskId, Some(Task_ClosePartyMenuAfterText));
     }
 }
 unsafe fn IsHPRecoveryItem(item: u16) -> u8 {
     let mut effect: *mut u8 = null_mut();
     if item == ITEM_ENIGMA_BERRY {
-        effect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
+        effect = (*crate::gl!(gSaveBlock1Ptr))
+            .enigmaBerry
+            .itemEffect
+            .as_mut_ptr();
     } else {
         effect = (*(&raw const crate::data::pokemon::gItemEffectTable)
             .cast::<CArray<*mut u8, 0>>())[item as i32 - ITEM_POTION];
@@ -5426,7 +5854,7 @@ unsafe fn GetMedicineItemEffectMessage(item: u16) {
         }
         ITEM_EFFECT_HP_EV => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_HP3).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -5441,7 +5869,7 @@ unsafe fn GetMedicineItemEffectMessage(item: u16) {
         }
         ITEM_EFFECT_ATK_EV => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_Attack3).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -5456,7 +5884,7 @@ unsafe fn GetMedicineItemEffectMessage(item: u16) {
         }
         ITEM_EFFECT_DEF_EV => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_Defense3).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -5471,7 +5899,7 @@ unsafe fn GetMedicineItemEffectMessage(item: u16) {
         }
         ITEM_EFFECT_SPEED_EV => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_Speed2).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -5486,7 +5914,7 @@ unsafe fn GetMedicineItemEffectMessage(item: u16) {
         }
         ITEM_EFFECT_SPATK_EV => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_SpAtk3).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -5501,7 +5929,7 @@ unsafe fn GetMedicineItemEffectMessage(item: u16) {
         }
         ITEM_EFFECT_SPDEF_EV => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_SpDef3).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -5556,16 +5984,16 @@ fn IsItemFlute(item: u16) -> u8 {
     FALSE
 }
 unsafe fn ExecuteTableBasedItemEffect_(partyMonIndex: u8, item: u16, monMoveIndex: u8) -> u8 {
-    if gMain.inBattle() != 0 {
+    if (*gMain.as_ptr()).inBattle() != 0 {
         return ExecuteTableBasedItemEffect(
-            &raw mut gPlayerParty[partyMonIndex],
+            crate::gl!(&raw gPlayerParty[partyMonIndex]),
             item,
             GetPartyIdFromBattleSlot(partyMonIndex),
             monMoveIndex,
         );
     } else {
         return ExecuteTableBasedItemEffect(
-            &raw mut gPlayerParty[partyMonIndex],
+            crate::gl!(&raw gPlayerParty[partyMonIndex]),
             item,
             partyMonIndex,
             monMoveIndex,
@@ -5578,8 +6006,11 @@ unsafe fn ExecuteTableBasedItemEffect_(partyMonIndex: u8, item: u16, monMoveInde
 }
 pub unsafe fn ItemUseCB_Medicine(taskId: u8, task: Option<unsafe fn(u8)>) {
     let mut hp: u16 = 0;
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
-    let item: u16 = gSpecialVar_ItemId;
+    let mon: *mut Pokemon = {
+        let gl_i59 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i59])
+    };
+    let item: u16 = gSpecialVar_ItemId.get();
     let mut canHeal: u8 = 0;
     let mut cannotUse: u8 = 0;
     if NotUsingHPEVItemOnShedinja(mon, item) == FALSE {
@@ -5592,10 +6023,10 @@ pub unsafe fn ItemUseCB_Medicine(taskId: u8, task: Option<unsafe fn(u8)>) {
                 canHeal = FALSE;
             }
         }
-        cannotUse = ExecuteTableBasedItemEffect_(gPartyMenu.slotId as u8, item, 0);
+        cannotUse = ExecuteTableBasedItemEffect_(crate::gl!(gPartyMenu.slotId) as u8, item, 0);
     }
     if cannotUse != FALSE {
-        gPartyMenuUseExitCallback = FALSE;
+        gPartyMenuUseExitCallback.set(FALSE);
         PlaySE(SE_SELECT);
         DisplayPartyMenuMessage(
             (*(&raw const crate::data::strings::gText_WontHaveEffect).cast::<CArray<u8, 0>>())
@@ -5606,26 +6037,37 @@ pub unsafe fn ItemUseCB_Medicine(taskId: u8, task: Option<unsafe fn(u8)>) {
         ScheduleBgCopyTilemapToVram(2);
         task_set_func(taskId, task);
     } else {
-        gPartyMenuUseExitCallback = TRUE;
+        gPartyMenuUseExitCallback.set(TRUE);
         if IsItemFlute(item) == 0 {
             PlaySE(SE_USE_ITEM);
-            if gPartyMenu.action != PARTY_ACTION_REUSABLE_ITEM {
+            if crate::gl!(gPartyMenu.action) != PARTY_ACTION_REUSABLE_ITEM {
                 RemoveBagItem(item, 1);
             }
         } else {
             PlaySE(SE_GLASS_FLUTE);
         }
-        SetPartyMonAilmentGfx(mon, sPartyMenuBoxes.at(gPartyMenu.slotId));
-        if gSprites[(*sPartyMenuBoxes.at(gPartyMenu.slotId)).statusSpriteId].invisible() != 0 {
-            DisplayPartyPokemonLevelCheck(mon, sPartyMenuBoxes.at(gPartyMenu.slotId), 1);
+        SetPartyMonAilmentGfx(
+            mon,
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+        );
+        if (*gSprites.as_ptr())
+            [(*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId))).statusSpriteId]
+            .invisible()
+            != 0
+        {
+            DisplayPartyPokemonLevelCheck(
+                mon,
+                (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+                1,
+            );
         }
         if canHeal == TRUE {
             if hp == 0 {
-                AnimatePartySlot(gPartyMenu.slotId as u8, 1);
+                AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 1);
             }
             PartyMenuModifyHP(
                 taskId,
-                gPartyMenu.slotId as u8,
+                crate::gl!(gPartyMenu.slotId) as u8,
                 1,
                 GetMonData2(mon, MON_DATA_HP) as i16 - hp as i16,
                 Some(Task_DisplayHPRestoredMessage),
@@ -5642,7 +6084,10 @@ pub unsafe fn ItemUseCB_Medicine(taskId: u8, task: Option<unsafe fn(u8)>) {
 }
 pub(crate) unsafe fn Task_DisplayHPRestoredMessage(taskId: u8) {
     GetMonNickname(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i60 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i60])
+        },
         gStringVar1.as_mut_ptr(),
     );
     StringExpandPlaceholders(
@@ -5658,23 +6103,27 @@ pub(crate) unsafe fn Task_DisplayHPRestoredMessage(taskId: u8) {
 }
 pub(crate) unsafe fn Task_ClosePartyMenuAfterText(taskId: u8) {
     if IsPartyMenuTextPrinterActive() != TRUE {
-        if gPartyMenuUseExitCallback == FALSE {
-            (*sPartyMenuInternal).exitCallback = None;
+        if gPartyMenuUseExitCallback.get() == FALSE {
+            (*crate::gl!(sPartyMenuInternal)).exitCallback = None;
         }
         Task_ClosePartyMenu(taskId);
     }
 }
 pub unsafe fn ItemUseCB_ReduceEV(taskId: u8, task: Option<unsafe fn(u8)>) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
-    let item: u16 = gSpecialVar_ItemId;
+    let mon: *mut Pokemon = {
+        let gl_i61 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i61])
+    };
+    let item: u16 = gSpecialVar_ItemId.get();
     let effectType: u8 = GetItemEffectType(item);
     let friendship: u16 = GetMonData2(mon, MON_DATA_FRIENDSHIP) as u16;
     let ev: u16 = ItemEffectToMonEv(mon, effectType);
-    let cannotUseEffect: u8 = ExecuteTableBasedItemEffect_(gPartyMenu.slotId as u8, item, 0);
+    let cannotUseEffect: u8 =
+        ExecuteTableBasedItemEffect_(crate::gl!(gPartyMenu.slotId) as u8, item, 0);
     let newFriendship: u16 = GetMonData2(mon, MON_DATA_FRIENDSHIP) as u16;
     let newEv: u16 = ItemEffectToMonEv(mon, effectType);
     if cannotUseEffect != 0 || friendship == newFriendship && ev == newEv {
-        gPartyMenuUseExitCallback = FALSE;
+        gPartyMenuUseExitCallback.set(FALSE);
         PlaySE(SE_SELECT);
         DisplayPartyMenuMessage(
             (*(&raw const crate::data::strings::gText_WontHaveEffect).cast::<CArray<u8, 0>>())
@@ -5685,11 +6134,11 @@ pub unsafe fn ItemUseCB_ReduceEV(taskId: u8, task: Option<unsafe fn(u8)>) {
         ScheduleBgCopyTilemapToVram(2);
         task_set_func(taskId, task);
     } else {
-        gPartyMenuUseExitCallback = TRUE;
+        gPartyMenuUseExitCallback.set(TRUE);
         PlaySE(SE_USE_ITEM);
         RemoveBagItem(item, 1);
         GetMonNickname(mon, gStringVar1.as_mut_ptr());
-        ItemEffectToStatString(effectType, gStringVar2.as_mut_ptr());
+        ItemEffectToStatString(effectType, (*gStringVar2.as_ptr()).as_mut_ptr());
         if friendship != newFriendship {
             if ev != newEv {
                 StringExpandPlaceholders(
@@ -5807,7 +6256,10 @@ unsafe fn ShowMoveSelectWindow(slot: u8) {
     let windowId: u8 = DisplaySelectionWindow(SELECTWINDOW_MOVES);
     let mut r#move: u16 = 0;
     for i in 0..(MAX_MON_MOVES as u8) {
-        r#move = GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_MOVE1 + i as i32) as u16;
+        r#move = GetMonData2(
+            crate::gl!(&raw gPlayerParty[slot]),
+            MON_DATA_MOVE1 + i as i32,
+        ) as u16;
         AddTextPrinterParameterized(
             windowId,
             fontId,
@@ -5834,49 +6286,52 @@ pub(crate) unsafe fn Task_HandleWhichMoveInput(taskId: u8) {
             PlaySE(SE_SELECT);
             ReturnToUseOnWhichMon(taskId);
         } else {
-            PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[1]);
+            PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[1]);
             SetSelectedMoveForPPItem(taskId);
         }
     }
 }
 pub unsafe fn ItemUseCB_PPRecovery(taskId: u8, task: Option<unsafe fn(u8)>) {
     let mut effect: *mut u8 = null_mut();
-    let item: u16 = gSpecialVar_ItemId;
+    let item: u16 = gSpecialVar_ItemId.get();
     if item == ITEM_ENIGMA_BERRY {
-        effect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
+        effect = (*crate::gl!(gSaveBlock1Ptr))
+            .enigmaBerry
+            .itemEffect
+            .as_mut_ptr();
     } else {
         effect = (*(&raw const crate::data::pokemon::gItemEffectTable)
             .cast::<CArray<*mut u8, 0>>())[item as i32 - ITEM_POTION];
     }
     if *effect.at(4) as i32 & ITEM4_HEAL_PP_ONE == 0 {
-        gPartyMenu.data[0] = 0;
+        crate::gl!(gPartyMenu.data[0] = 0);
         TryUsePPItem(taskId);
     } else {
         PlaySE(SE_SELECT);
         DisplayPartyMenuStdMessage(PARTY_MSG_RESTORE_WHICH_MOVE);
-        ShowMoveSelectWindow(gPartyMenu.slotId as u8);
+        ShowMoveSelectWindow(crate::gl!(gPartyMenu.slotId) as u8);
         task_set_func(taskId, Some(Task_HandleWhichMoveInput));
     }
 }
 unsafe fn SetSelectedMoveForPPItem(taskId: u8) {
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
-    gPartyMenu.data[0] = Menu_GetCursorPos() as i16;
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
+    crate::gl!(gPartyMenu.data[0] = Menu_GetCursorPos() as i16);
     TryUsePPItem(taskId);
 }
 unsafe fn ReturnToUseOnWhichMon(taskId: u8) {
     task_set_func(taskId, Some(Task_HandleChooseMonInput));
-    (*sPartyMenuInternal).exitCallback = None;
-    PartyMenuRemoveWindow(&raw mut (*sPartyMenuInternal).windowId[0]);
+    (*crate::gl!(sPartyMenuInternal)).exitCallback = None;
+    PartyMenuRemoveWindow(&raw mut (*crate::gl!(sPartyMenuInternal)).windowId[0]);
     DisplayPartyMenuStdMessage(PARTY_MSG_USE_ON_WHICH_MON as u32);
 }
 unsafe fn TryUsePPItem(taskId: u8) {
     let mut r#move: u16 = MOVE_NONE;
-    let moveSlot: *mut i16 = &raw mut gPartyMenu.data[0];
-    let item: u16 = gSpecialVar_ItemId;
-    let ptr: *mut PartyMenu = &raw mut gPartyMenu;
+    let moveSlot: *mut i16 = crate::gl!(&raw gPartyMenu.data[0]);
+    let item: u16 = gSpecialVar_ItemId.get();
+    let ptr: *mut PartyMenu = crate::gl!(&raw gPartyMenu);
     let mut mon: *mut Pokemon = null_mut();
     if ExecuteTableBasedItemEffect_((*ptr).slotId as u8, item, *moveSlot as u8) != 0 {
-        gPartyMenuUseExitCallback = FALSE;
+        gPartyMenuUseExitCallback.set(FALSE);
         PlaySE(SE_SELECT);
         DisplayPartyMenuMessage(
             (*(&raw const crate::data::strings::gText_WontHaveEffect).cast::<CArray<u8, 0>>())
@@ -5887,8 +6342,11 @@ unsafe fn TryUsePPItem(taskId: u8) {
         ScheduleBgCopyTilemapToVram(2);
         task_set_func(taskId, Some(Task_ClosePartyMenuAfterText));
     } else {
-        gPartyMenuUseExitCallback = TRUE;
-        mon = &raw mut gPlayerParty[(*ptr).slotId];
+        gPartyMenuUseExitCallback.set(TRUE);
+        mon = {
+            let gl_i62 = (*ptr).slotId;
+            crate::gl!(&raw gPlayerParty[gl_i62])
+        };
         PlaySE(SE_USE_ITEM);
         RemoveBagItem(item, 1);
         r#move = GetMonData2(mon, MON_DATA_MOVE1 + *moveSlot as i32) as u16;
@@ -5908,14 +6366,14 @@ unsafe fn TryUsePPItem(taskId: u8) {
 pub unsafe fn ItemUseCB_PPUp(taskId: u8, task: Option<unsafe fn(u8)>) {
     PlaySE(SE_SELECT);
     DisplayPartyMenuStdMessage(PARTY_MSG_BOOST_PP_WHICH_MOVE);
-    ShowMoveSelectWindow(gPartyMenu.slotId as u8);
+    ShowMoveSelectWindow(crate::gl!(gPartyMenu.slotId) as u8);
     task_set_func(taskId, Some(Task_HandleWhichMoveInput));
 }
 pub unsafe fn ItemIdToBattleMoveId(item: u16) -> u16 {
     let tmNumber: u16 = item - ITEM_TM01;
     sTMHMMoves[tmNumber]
 }
-pub unsafe fn IsMoveHm(r#move: u16) -> u8 {
+pub fn IsMoveHm(r#move: u16) -> u8 {
     for i in 0..NUM_HIDDEN_MACHINES {
         if sTMHMMoves[i as i32 + NUM_TECHNICAL_MACHINES] == r#move {
             return TRUE;
@@ -5942,13 +6400,16 @@ unsafe fn DisplayLearnMoveMessageAndClose(taskId: u8, str: *mut u8) {
 }
 pub unsafe fn ItemUseCB_TMHM(taskId: u8, task: Option<unsafe fn(u8)>) {
     PlaySE(SE_SELECT);
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
-    let r#move: *mut i16 = gPartyMenu.data.as_mut_ptr();
-    let item: u16 = gSpecialVar_ItemId;
+    let mon: *mut Pokemon = {
+        let gl_i63 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i63])
+    };
+    let r#move: *mut i16 = (*gPartyMenu.as_ptr()).data.as_mut_ptr();
+    let item: u16 = gSpecialVar_ItemId.get();
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
     *r#move = ItemIdToBattleMoveId(item) as i16;
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
             [*r#move]
             .as_ptr()
@@ -5991,9 +6452,12 @@ pub unsafe fn ItemUseCB_TMHM(taskId: u8, task: Option<unsafe fn(u8)>) {
     }
 }
 pub(crate) unsafe fn Task_LearnedMove(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
-    let r#move: *mut i16 = &raw mut gPartyMenu.data[0];
-    let item: u16 = gSpecialVar_ItemId;
+    let mon: *mut Pokemon = {
+        let gl_i64 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i64])
+    };
+    let r#move: *mut i16 = crate::gl!(&raw gPartyMenu.data[0]);
+    let item: u16 = gSpecialVar_ItemId.get();
     if *r#move.at(1) == 0 {
         AdjustFriendship(mon, FRIENDSHIP_EVENT_LEARN_TMHM);
         if item < ITEM_HM01 {
@@ -6002,7 +6466,7 @@ pub(crate) unsafe fn Task_LearnedMove(taskId: u8) {
     }
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
             [*r#move]
             .as_ptr()
@@ -6026,12 +6490,13 @@ pub(crate) unsafe fn Task_DoLearnedMoveFanfareAfterText(taskId: u8) {
 }
 pub(crate) unsafe fn Task_LearnNextMoveOrClosePartyMenu(taskId: u8) {
     if IsFanfareTaskInactive() != 0
-        && (gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0)
+        && (crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+            || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0)
     {
-        if gPartyMenu.data[1] == 1 {
+        if crate::gl!(gPartyMenu.data[1]) == 1 {
             Task_TryLearningNextMove(taskId);
         } else {
-            if gPartyMenu.data[1] == 2 {
+            if crate::gl!(gPartyMenu.data[1]) == 2 {
                 gSpecialVar_Result = TRUE as u16;
             }
             Task_ClosePartyMenu(taskId);
@@ -6071,17 +6536,17 @@ pub(crate) unsafe fn Task_HandleReplaceMoveYesNoInput(taskId: u8) {
 }
 pub(crate) unsafe fn Task_ShowSummaryScreenToForgetMove(taskId: u8) {
     if IsPartyMenuTextPrinterActive() != TRUE {
-        (*sPartyMenuInternal).exitCallback = Some(CB2_ShowSummaryScreenToForgetMove);
+        (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_ShowSummaryScreenToForgetMove);
         Task_ClosePartyMenu(taskId);
     }
 }
 pub(crate) unsafe fn CB2_ShowSummaryScreenToForgetMove() {
     ShowSelectMovePokemonSummaryScreen(
-        gPlayerParty.as_mut_ptr(),
-        gPartyMenu.slotId as u8,
-        gPlayerPartyCount - 1,
+        (*gPlayerParty.as_ptr()).as_mut_ptr(),
+        crate::gl!(gPartyMenu.slotId) as u8,
+        gPlayerPartyCount.get() - 1,
         Some(CB2_ReturnToPartyMenuWhileLearningMove),
-        gPartyMenu.data[0] as u16,
+        crate::gl!(gPartyMenu.data[0]) as u16,
     );
 }
 pub(crate) unsafe fn CB2_ReturnToPartyMenuWhileLearningMove() {
@@ -6092,11 +6557,11 @@ pub(crate) unsafe fn CB2_ReturnToPartyMenuWhileLearningMove() {
         TRUE,
         PARTY_MSG_NONE,
         Some(Task_ReturnToPartyMenuWhileLearningMove),
-        gPartyMenu.exitCallback,
+        crate::gl!(gPartyMenu.exitCallback),
     );
 }
 pub(crate) unsafe fn Task_ReturnToPartyMenuWhileLearningMove(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if GetMoveSlotToReplace() != MAX_MON_MOVES as u8 {
             DisplayPartyMenuForgotMoveMessage(taskId);
         } else {
@@ -6105,11 +6570,14 @@ pub(crate) unsafe fn Task_ReturnToPartyMenuWhileLearningMove(taskId: u8) {
     }
 }
 unsafe fn DisplayPartyMenuForgotMoveMessage(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i65 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i65])
+    };
     let r#move: u16 = GetMonData2(mon, MON_DATA_MOVE1 + GetMoveSlotToReplace() as i32) as u16;
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
             [r#move]
             .as_ptr()
@@ -6126,20 +6594,23 @@ pub(crate) unsafe fn Task_PartyMenuReplaceMove(taskId: u8) {
     let mut mon: *mut Pokemon = null_mut();
     let mut r#move: u16 = 0;
     if IsPartyMenuTextPrinterActive() != TRUE {
-        mon = &raw mut gPlayerParty[gPartyMenu.slotId];
+        mon = {
+            let gl_i66 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i66])
+        };
         RemoveMonPPBonus(mon, GetMoveSlotToReplace());
-        r#move = gPartyMenu.data[0] as u16;
+        r#move = crate::gl!(gPartyMenu.data[0]) as u16;
         SetMonMoveSlot(mon, r#move, GetMoveSlotToReplace());
         Task_LearnedMove(taskId);
     }
 }
 unsafe fn StopLearningMovePrompt(taskId: u8) {
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
-            [gPartyMenu.data[0]]
-            .as_ptr()
-            .cast_mut(),
+            [crate::gl!(gPartyMenu.data[0])]
+        .as_ptr()
+        .cast_mut(),
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
@@ -6158,18 +6629,21 @@ pub(crate) unsafe fn Task_StopLearningMoveYesNo(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleStopLearningMoveYesNoInput(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i67 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i67])
+    };
     'l1: {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
             GetMonNickname(mon, gStringVar1.as_mut_ptr());
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
-                    .cast::<CArray<CArray<u8, 13>, 355>>())[gPartyMenu.data[0]]
-                    .as_ptr()
-                    .cast_mut(),
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[crate::gl!(gPartyMenu.data[0])]
+                .as_ptr()
+                .cast_mut(),
             );
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
@@ -6178,10 +6652,10 @@ pub(crate) unsafe fn Task_HandleStopLearningMoveYesNoInput(taskId: u8) {
                     .cast_mut(),
             );
             DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), TRUE);
-            if gPartyMenu.data[1] == 1 {
+            if crate::gl!(gPartyMenu.data[1]) == 1 {
                 task_set_func(taskId, Some(Task_TryLearningNextMoveAfterText));
             } else {
-                if gPartyMenu.data[1] == 2 {
+                if crate::gl!(gPartyMenu.data[1]) == 2 {
                     gSpecialVar_Result = FALSE as u16;
                 }
                 task_set_func(taskId, Some(Task_ClosePartyMenuAfterText));
@@ -6195,11 +6669,11 @@ pub(crate) unsafe fn Task_HandleStopLearningMoveYesNoInput(taskId: u8) {
         if fall || sw1 == 1 {
             GetMonNickname(mon, gStringVar1.as_mut_ptr());
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
-                    .cast::<CArray<CArray<u8, 13>, 355>>())[gPartyMenu.data[0]]
-                    .as_ptr()
-                    .cast_mut(),
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[crate::gl!(gPartyMenu.data[0])]
+                .as_ptr()
+                .cast_mut(),
             );
             DisplayLearnMoveMessage(
                 (*(&raw const crate::data::strings::gText_PkmnNeedsToReplaceMove)
@@ -6218,21 +6692,25 @@ pub(crate) unsafe fn Task_TryLearningNextMoveAfterText(taskId: u8) {
     }
 }
 pub unsafe fn ItemUseCB_RareCandy(taskId: u8, task: Option<unsafe fn(u8)>) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
-    let ptr: *mut PartyMenuInternal = sPartyMenuInternal;
+    let mon: *mut Pokemon = {
+        let gl_i68 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i68])
+    };
+    let ptr: *mut PartyMenuInternal = crate::gl!(sPartyMenuInternal);
     let arrayPtr: *mut i16 = (*ptr).data.as_mut_ptr();
-    let itemPtr: *mut u16 = &raw mut gSpecialVar_ItemId;
+    let itemPtr: *mut u16 = gSpecialVar_ItemId.as_ptr();
     let mut cannotUseEffect: u8 = 0;
     if GetMonData2(mon, MON_DATA_LEVEL) != MAX_LEVEL {
         BufferMonStatsToTaskData(mon, arrayPtr);
-        cannotUseEffect = ExecuteTableBasedItemEffect_(gPartyMenu.slotId as u8, *itemPtr, 0);
+        cannotUseEffect =
+            ExecuteTableBasedItemEffect_(crate::gl!(gPartyMenu.slotId) as u8, *itemPtr, 0);
         BufferMonStatsToTaskData(mon, &raw mut (*ptr).data[6]);
     } else {
         cannotUseEffect = TRUE;
     }
     PlaySE(SE_SELECT);
     if cannotUseEffect != 0 {
-        gPartyMenuUseExitCallback = FALSE;
+        gPartyMenuUseExitCallback.set(FALSE);
         DisplayPartyMenuMessage(
             (*(&raw const crate::data::strings::gText_WontHaveEffect).cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -6242,13 +6720,13 @@ pub unsafe fn ItemUseCB_RareCandy(taskId: u8, task: Option<unsafe fn(u8)>) {
         ScheduleBgCopyTilemapToVram(2);
         task_set_func(taskId, task);
     } else {
-        gPartyMenuUseExitCallback = TRUE;
+        gPartyMenuUseExitCallback.set(TRUE);
         PlayFanfareByFanfareNum(FANFARE_LEVEL_UP);
-        UpdateMonDisplayInfoAfterRareCandy(gPartyMenu.slotId as u8, mon);
-        RemoveBagItem(gSpecialVar_ItemId, 1);
+        UpdateMonDisplayInfoAfterRareCandy(crate::gl!(gPartyMenu.slotId) as u8, mon);
+        RemoveBagItem(gSpecialVar_ItemId.get(), 1);
         GetMonNickname(mon, gStringVar1.as_mut_ptr());
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             GetMonData2(mon, MON_DATA_LEVEL) as i32,
             STR_CONV_MODE_LEFT_ALIGN,
             3,
@@ -6266,21 +6744,23 @@ pub unsafe fn ItemUseCB_RareCandy(taskId: u8, task: Option<unsafe fn(u8)>) {
     }
 }
 unsafe fn UpdateMonDisplayInfoAfterRareCandy(slot: u8, mon: *mut Pokemon) {
-    SetPartyMonAilmentGfx(mon, sPartyMenuBoxes.at(slot));
-    if gSprites[(*sPartyMenuBoxes.at(slot)).statusSpriteId].invisible() != 0 {
-        DisplayPartyPokemonLevelCheck(mon, sPartyMenuBoxes.at(slot), 1);
+    SetPartyMonAilmentGfx(mon, (*sPartyMenuBoxes.as_ptr()).at(slot));
+    if (*gSprites.as_ptr())[(*(*sPartyMenuBoxes.as_ptr()).at(slot)).statusSpriteId].invisible() != 0
+    {
+        DisplayPartyPokemonLevelCheck(mon, (*sPartyMenuBoxes.as_ptr()).at(slot), 1);
     }
-    DisplayPartyPokemonHPCheck(mon, sPartyMenuBoxes.at(slot), 1);
-    DisplayPartyPokemonMaxHPCheck(mon, sPartyMenuBoxes.at(slot), 1);
-    DisplayPartyPokemonHPBarCheck(mon, sPartyMenuBoxes.at(slot));
-    UpdatePartyMonHPBar((*sPartyMenuBoxes.at(slot)).monSpriteId, mon);
+    DisplayPartyPokemonHPCheck(mon, (*sPartyMenuBoxes.as_ptr()).at(slot), 1);
+    DisplayPartyPokemonMaxHPCheck(mon, (*sPartyMenuBoxes.as_ptr()).at(slot), 1);
+    DisplayPartyPokemonHPBarCheck(mon, (*sPartyMenuBoxes.as_ptr()).at(slot));
+    UpdatePartyMonHPBar((*(*sPartyMenuBoxes.as_ptr()).at(slot)).monSpriteId, mon);
     AnimatePartySlot(slot, 1);
     ScheduleBgCopyTilemapToVram(0);
 }
 pub(crate) unsafe fn Task_DisplayLevelUpStatsPg1(taskId: u8) {
     if WaitFanfare(FALSE) != 0
         && IsPartyMenuTextPrinterActive() != 1
-        && (gMain.newKeys as i32 & 0x0001 != 0 || gMain.newKeys as i32 & B_BUTTON != 0)
+        && (crate::gl!(gMain.newKeys) as i32 & 0x0001 != 0
+            || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0)
     {
         PlaySE(SE_SELECT);
         DisplayLevelUpStatsPg1(taskId);
@@ -6288,14 +6768,16 @@ pub(crate) unsafe fn Task_DisplayLevelUpStatsPg1(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_DisplayLevelUpStatsPg2(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         PlaySE(SE_SELECT);
         DisplayLevelUpStatsPg2(taskId);
         task_set_func(taskId, Some(Task_TryLearnNewMoves));
     }
 }
 unsafe fn DisplayLevelUpStatsPg1(taskId: u8) {
-    let arrayPtr: *mut i16 = (*sPartyMenuInternal).data.as_mut_ptr();
+    let arrayPtr: *mut i16 = (*crate::gl!(sPartyMenuInternal)).data.as_mut_ptr();
     *arrayPtr.at(12) = CreateLevelUpStatsWindow() as i16;
     DrawLevelUpWindowPg1(
         *arrayPtr.at(12) as u16,
@@ -6309,7 +6791,7 @@ unsafe fn DisplayLevelUpStatsPg1(taskId: u8) {
     ScheduleBgCopyTilemapToVram(2);
 }
 unsafe fn DisplayLevelUpStatsPg2(taskId: u8) {
-    let arrayPtr: *mut i16 = (*sPartyMenuInternal).data.as_mut_ptr();
+    let arrayPtr: *mut i16 = (*crate::gl!(sPartyMenuInternal)).data.as_mut_ptr();
     DrawLevelUpWindowPg2(
         *arrayPtr.at(12) as u16,
         arrayPtr.at(6) as *mut u16,
@@ -6323,11 +6805,18 @@ unsafe fn DisplayLevelUpStatsPg2(taskId: u8) {
 pub(crate) unsafe fn Task_TryLearnNewMoves(taskId: u8) {
     let mut learnMove: u16 = 0;
     if WaitFanfare(FALSE) != 0
-        && (gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0)
+        && (crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+            || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0)
     {
         RemoveLevelUpStatsWindow();
-        learnMove = MonTryLearningNewMove(&raw mut gPlayerParty[gPartyMenu.slotId], TRUE);
-        gPartyMenu.data[1] = 1;
+        learnMove = MonTryLearningNewMove(
+            {
+                let gl_i69 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i69])
+            },
+            TRUE,
+        );
+        crate::gl!(gPartyMenu.data[1] = 1);
         match learnMove {
             0 => {
                 PartyMenuTryEvolution(taskId);
@@ -6345,7 +6834,13 @@ pub(crate) unsafe fn Task_TryLearnNewMoves(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TryLearningNextMove(taskId: u8) {
-    let result: u16 = MonTryLearningNewMove(&raw mut gPlayerParty[gPartyMenu.slotId], FALSE);
+    let result: u16 = MonTryLearningNewMove(
+        {
+            let gl_i70 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i70])
+        },
+        FALSE,
+    );
     match result {
         0 => {
             PartyMenuTryEvolution(taskId);
@@ -6360,12 +6855,20 @@ pub(crate) unsafe fn Task_TryLearningNextMove(taskId: u8) {
     }
 }
 unsafe fn PartyMenuTryEvolution(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i71 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i71])
+    };
     let targetSpecies: u16 = GetEvolutionTargetSpecies(mon, EVO_MODE_NORMAL, ITEM_NONE);
     if targetSpecies != SPECIES_NONE {
         FreePartyPointers();
-        gCB2_AfterEvolution = gPartyMenu.exitCallback;
-        BeginEvolutionScene(mon, targetSpecies, TRUE, gPartyMenu.slotId as u8);
+        crate::gl!(gCB2_AfterEvolution = crate::gl!(gPartyMenu.exitCallback));
+        BeginEvolutionScene(
+            mon,
+            targetSpecies,
+            TRUE,
+            crate::gl!(gPartyMenu.slotId) as u8,
+        );
         DestroyTask(taskId);
     } else {
         task_set_func(taskId, Some(Task_ClosePartyMenuAfterText));
@@ -6373,15 +6876,18 @@ unsafe fn PartyMenuTryEvolution(taskId: u8) {
 }
 unsafe fn DisplayMonNeedsToReplaceMove(taskId: u8) {
     GetMonNickname(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i72 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i72])
+        },
         gStringVar1.as_mut_ptr(),
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
-            [gMoveToLearn]
-            .as_ptr()
-            .cast_mut(),
+            [gMoveToLearn.get()]
+        .as_ptr()
+        .cast_mut(),
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
@@ -6391,16 +6897,19 @@ unsafe fn DisplayMonNeedsToReplaceMove(taskId: u8) {
     );
     DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), TRUE);
     ScheduleBgCopyTilemapToVram(2);
-    gPartyMenu.data[0] = gMoveToLearn as i16;
+    crate::gl!(gPartyMenu.data[0] = gMoveToLearn.get() as i16);
     task_set_func(taskId, Some(Task_ReplaceMoveYesNo));
 }
 unsafe fn DisplayMonLearnedMove(taskId: u8, r#move: u16) {
     GetMonNickname(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i73 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i73])
+        },
         gStringVar1.as_mut_ptr(),
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
             [r#move]
             .as_ptr()
@@ -6414,7 +6923,7 @@ unsafe fn DisplayMonLearnedMove(taskId: u8, r#move: u16) {
     );
     DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), TRUE);
     ScheduleBgCopyTilemapToVram(2);
-    gPartyMenu.data[0] = r#move as i16;
+    crate::gl!(gPartyMenu.data[0] = r#move as i16);
     task_set_func(taskId, Some(Task_DoLearnedMoveFanfareAfterText));
 }
 unsafe fn BufferMonStatsToTaskData(mon: *mut Pokemon, data: *mut i16) {
@@ -6426,53 +6935,76 @@ unsafe fn BufferMonStatsToTaskData(mon: *mut Pokemon, data: *mut i16) {
     *data.at(3) = GetMonData2(mon, MON_DATA_SPEED) as i16;
 }
 pub unsafe fn ItemUseCB_SacredAsh(taskId: u8, task: Option<unsafe fn(u8)>) {
-    (*sPartyMenuInternal).data[tUsedOnSlot] = FALSE as i16;
-    (*sPartyMenuInternal).data[tHadEffect] = FALSE as i16;
-    (*sPartyMenuInternal).data[tLastSlotUsed] = gPartyMenu.slotId as i16;
+    (*crate::gl!(sPartyMenuInternal)).data[tUsedOnSlot] = FALSE as i16;
+    (*crate::gl!(sPartyMenuInternal)).data[tHadEffect] = FALSE as i16;
+    (*crate::gl!(sPartyMenuInternal)).data[tLastSlotUsed] = crate::gl!(gPartyMenu.slotId) as i16;
     UseSacredAsh(taskId);
 }
 unsafe fn UseSacredAsh(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i74 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i74])
+    };
     if GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_NONE as u32 {
         task_set_func(taskId, Some(Task_SacredAshLoop));
         return;
     }
     let hp: u16 = GetMonData2(mon, MON_DATA_HP) as u16;
-    if ExecuteTableBasedItemEffect_(gPartyMenu.slotId as u8, gSpecialVar_ItemId, 0) != 0 {
+    if ExecuteTableBasedItemEffect_(
+        crate::gl!(gPartyMenu.slotId) as u8,
+        gSpecialVar_ItemId.get(),
+        0,
+    ) != 0
+    {
         task_set_func(taskId, Some(Task_SacredAshLoop));
         return;
     }
     PlaySE(SE_USE_ITEM);
-    SetPartyMonAilmentGfx(mon, sPartyMenuBoxes.at(gPartyMenu.slotId));
-    if gSprites[(*sPartyMenuBoxes.at(gPartyMenu.slotId)).statusSpriteId].invisible() != 0 {
-        DisplayPartyPokemonLevelCheck(mon, sPartyMenuBoxes.at(gPartyMenu.slotId), 1);
+    SetPartyMonAilmentGfx(
+        mon,
+        (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+    );
+    if (*gSprites.as_ptr())
+        [(*(*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId))).statusSpriteId]
+        .invisible()
+        != 0
+    {
+        DisplayPartyPokemonLevelCheck(
+            mon,
+            (*sPartyMenuBoxes.as_ptr()).at(crate::gl!(gPartyMenu.slotId)),
+            1,
+        );
     }
-    AnimatePartySlot((*sPartyMenuInternal).data[tLastSlotUsed] as u8, 0);
-    AnimatePartySlot(gPartyMenu.slotId as u8, 1);
+    AnimatePartySlot(
+        (*crate::gl!(sPartyMenuInternal)).data[tLastSlotUsed] as u8,
+        0,
+    );
+    AnimatePartySlot(crate::gl!(gPartyMenu.slotId) as u8, 1);
     PartyMenuModifyHP(
         taskId,
-        gPartyMenu.slotId as u8,
+        crate::gl!(gPartyMenu.slotId) as u8,
         1,
         GetMonData2(mon, MON_DATA_HP) as i16 - hp as i16,
         Some(Task_SacredAshDisplayHPRestored),
     );
     ResetHPTaskData(taskId, 0, hp as u32);
-    (*sPartyMenuInternal).data[tUsedOnSlot] = TRUE as i16;
-    (*sPartyMenuInternal).data[tHadEffect] = TRUE as i16;
+    (*crate::gl!(sPartyMenuInternal)).data[tUsedOnSlot] = TRUE as i16;
+    (*crate::gl!(sPartyMenuInternal)).data[tHadEffect] = TRUE as i16;
 }
 pub(crate) unsafe fn Task_SacredAshLoop(taskId: u8) {
     if IsPartyMenuTextPrinterActive() != TRUE {
-        if (*sPartyMenuInternal).data[tUsedOnSlot] == TRUE as i16 {
-            (*sPartyMenuInternal).data[tUsedOnSlot] = FALSE as i16;
-            (*sPartyMenuInternal).data[tLastSlotUsed] = gPartyMenu.slotId as i16;
+        if (*crate::gl!(sPartyMenuInternal)).data[tUsedOnSlot] == TRUE as i16 {
+            (*crate::gl!(sPartyMenuInternal)).data[tUsedOnSlot] = FALSE as i16;
+            (*crate::gl!(sPartyMenuInternal)).data[tLastSlotUsed] =
+                crate::gl!(gPartyMenu.slotId) as i16;
         }
         if ({
-            gPartyMenu.slotId += 1;
-            gPartyMenu.slotId
+            crate::gl!(gPartyMenu.slotId += 1);
+            crate::gl!(gPartyMenu.slotId)
         }) == PARTY_SIZE as i8
         {
-            if (*sPartyMenuInternal).data[tHadEffect] == FALSE as i16 {
-                gPartyMenuUseExitCallback = FALSE;
+            if (*crate::gl!(sPartyMenuInternal)).data[tHadEffect] == FALSE as i16 {
+                gPartyMenuUseExitCallback.set(FALSE);
                 DisplayPartyMenuMessage(
                     (*(&raw const crate::data::strings::gText_WontHaveEffect)
                         .cast::<CArray<u8, 0>>())
@@ -6482,11 +7014,11 @@ pub(crate) unsafe fn Task_SacredAshLoop(taskId: u8) {
                 );
                 ScheduleBgCopyTilemapToVram(2);
             } else {
-                gPartyMenuUseExitCallback = TRUE;
-                RemoveBagItem(gSpecialVar_ItemId, 1);
+                gPartyMenuUseExitCallback.set(TRUE);
+                RemoveBagItem(gSpecialVar_ItemId.get(), 1);
             }
             task_set_func(taskId, Some(Task_ClosePartyMenuAfterText));
-            gPartyMenu.slotId = 0;
+            crate::gl!(gPartyMenu.slotId = 0);
         } else {
             UseSacredAsh(taskId);
         }
@@ -6494,7 +7026,10 @@ pub(crate) unsafe fn Task_SacredAshLoop(taskId: u8) {
 }
 pub(crate) unsafe fn Task_SacredAshDisplayHPRestored(taskId: u8) {
     GetMonNickname(
-        &raw mut gPlayerParty[gPartyMenu.slotId],
+        {
+            let gl_i75 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i75])
+        },
         gStringVar1.as_mut_ptr(),
     );
     StringExpandPlaceholders(
@@ -6509,9 +7044,14 @@ pub(crate) unsafe fn Task_SacredAshDisplayHPRestored(taskId: u8) {
 }
 pub unsafe fn ItemUseCB_EvolutionStone(taskId: u8, task: Option<unsafe fn(u8)>) {
     PlaySE(SE_SELECT);
-    gCB2_AfterEvolution = gPartyMenu.exitCallback;
-    if ExecuteTableBasedItemEffect_(gPartyMenu.slotId as u8, gSpecialVar_ItemId, 0) != 0 {
-        gPartyMenuUseExitCallback = FALSE;
+    crate::gl!(gCB2_AfterEvolution = crate::gl!(gPartyMenu.exitCallback));
+    if ExecuteTableBasedItemEffect_(
+        crate::gl!(gPartyMenu.slotId) as u8,
+        gSpecialVar_ItemId.get(),
+        0,
+    ) != 0
+    {
+        gPartyMenuUseExitCallback.set(FALSE);
         DisplayPartyMenuMessage(
             (*(&raw const crate::data::strings::gText_WontHaveEffect).cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -6521,7 +7061,7 @@ pub unsafe fn ItemUseCB_EvolutionStone(taskId: u8, task: Option<unsafe fn(u8)>) 
         ScheduleBgCopyTilemapToVram(2);
         task_set_func(taskId, task);
     } else {
-        RemoveBagItem(gSpecialVar_ItemId, 1);
+        RemoveBagItem(gSpecialVar_ItemId.get(), 1);
         FreePartyPointers();
     }
 }
@@ -6531,7 +7071,10 @@ pub unsafe fn GetItemEffectType(item: u16) -> u8 {
         return ITEM_EFFECT_NONE;
     }
     if item == ITEM_ENIGMA_BERRY {
-        itemEffect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
+        itemEffect = (*crate::gl!(gSaveBlock1Ptr))
+            .enigmaBerry
+            .itemEffect
+            .as_mut_ptr();
     } else {
         itemEffect = (*(&raw const crate::data::pokemon::gItemEffectTable)
             .cast::<CArray<*mut u8, 0>>())[item as i32 - ITEM_POTION];
@@ -6600,17 +7143,20 @@ pub unsafe fn GetItemEffectType(item: u16) -> u8 {
 unsafe fn TryTutorSelectedMon(taskId: u8) {
     let mut mon: *mut Pokemon = null_mut();
     let mut r#move: *mut i16 = null_mut();
-    if gPaletteFade.active() == 0 {
-        mon = &raw mut gPlayerParty[gPartyMenu.slotId];
-        r#move = &raw mut gPartyMenu.data[0];
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        mon = {
+            let gl_i76 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i76])
+        };
+        r#move = crate::gl!(&raw gPartyMenu.data[0]);
         GetMonNickname(mon, gStringVar1.as_mut_ptr());
-        gPartyMenu.data[0] = GetTutorMove(gSpecialVar_0x8005 as u8) as i16;
+        crate::gl!(gPartyMenu.data[0] = GetTutorMove(gSpecialVar_0x8005 as u8) as i16);
         StringCopy(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             (*(&raw const crate::data::data_tables::gMoveNames)
-                .cast::<CArray<CArray<u8, 13>, 355>>())[gPartyMenu.data[0]]
-                .as_ptr()
-                .cast_mut(),
+                .cast::<CArray<CArray<u8, 13>, 355>>())[crate::gl!(gPartyMenu.data[0])]
+            .as_ptr()
+            .cast_mut(),
         );
         *r#move.at(1) = 2;
         match CanMonLearnTMTutor(mon, 0, gSpecialVar_0x8005 as u8) {
@@ -6635,7 +7181,7 @@ unsafe fn TryTutorSelectedMon(taskId: u8) {
                 return;
             }
             _ => {
-                if GiveMoveToMon(mon, gPartyMenu.data[0] as u16) != MON_HAS_MAX_MOVES {
+                if GiveMoveToMon(mon, crate::gl!(gPartyMenu.data[0]) as u16) != MON_HAS_MAX_MOVES {
                     Task_LearnedMove(taskId);
                     return;
                 }
@@ -6676,28 +7222,36 @@ pub unsafe fn CB2_ChooseMonToGiveItem() {
         Some(Task_HandleChooseMonInput),
         callback,
     );
-    gPartyMenu.bagItem = gSpecialVar_ItemId;
+    crate::gl!(gPartyMenu.bagItem = gSpecialVar_ItemId.get());
 }
 unsafe fn TryGiveItemOrMailToSelectedMon(taskId: u8) {
-    sPartyMenuItemId =
-        GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_HELD_ITEM) as u16;
-    if sPartyMenuItemId == ITEM_NONE {
+    sPartyMenuItemId.set(GetMonData2(
+        {
+            let gl_i77 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i77])
+        },
+        MON_DATA_HELD_ITEM,
+    ) as u16);
+    if sPartyMenuItemId.get() == ITEM_NONE {
         GiveItemOrMailToSelectedMon(taskId);
-    } else if ItemIsMail(sPartyMenuItemId) != 0 {
+    } else if ItemIsMail(sPartyMenuItemId.get()) != 0 {
         DisplayItemMustBeRemovedFirstMessage(taskId);
     } else {
         DisplayAlreadyHoldingItemSwitchMessage(
-            &raw mut gPlayerParty[gPartyMenu.slotId],
-            sPartyMenuItemId,
+            {
+                let gl_i78 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i78])
+            },
+            sPartyMenuItemId.get(),
             TRUE,
         );
         task_set_func(taskId, Some(Task_SwitchItemsFromBagYesNo));
     }
 }
 unsafe fn GiveItemOrMailToSelectedMon(taskId: u8) {
-    if ItemIsMail(gPartyMenu.bagItem) != 0 {
-        RemoveItemToGiveFromBag(gPartyMenu.bagItem);
-        (*sPartyMenuInternal).exitCallback = Some(CB2_WriteMailToGiveMonFromBag);
+    if ItemIsMail(crate::gl!(gPartyMenu.bagItem)) != 0 {
+        RemoveItemToGiveFromBag(crate::gl!(gPartyMenu.bagItem));
+        (*crate::gl!(sPartyMenuInternal)).exitCallback = Some(CB2_WriteMailToGiveMonFromBag);
         Task_ClosePartyMenu(taskId);
     } else {
         GiveItemToSelectedMon(taskId);
@@ -6705,64 +7259,103 @@ unsafe fn GiveItemOrMailToSelectedMon(taskId: u8) {
 }
 unsafe fn GiveItemToSelectedMon(taskId: u8) {
     let mut item: u16 = 0;
-    if gPaletteFade.active() == 0 {
-        item = gPartyMenu.bagItem;
-        DisplayGaveHeldItemMessage(&raw mut gPlayerParty[gPartyMenu.slotId], item, FALSE, 1);
-        GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], item);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        item = crate::gl!(gPartyMenu.bagItem);
+        DisplayGaveHeldItemMessage(
+            {
+                let gl_i79 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i79])
+            },
+            item,
+            FALSE,
+            1,
+        );
+        GiveItemToMon(
+            {
+                let gl_i80 = crate::gl!(gPartyMenu.slotId);
+                crate::gl!(&raw gPlayerParty[gl_i80])
+            },
+            item,
+        );
         RemoveItemToGiveFromBag(item);
         task_set_func(taskId, Some(Task_UpdateHeldItemSpriteAndClosePartyMenu));
     }
 }
 pub(crate) unsafe fn Task_UpdateHeldItemSpriteAndClosePartyMenu(taskId: u8) {
-    let slot: i8 = gPartyMenu.slotId;
+    let slot: i8 = crate::gl!(gPartyMenu.slotId);
     if IsPartyMenuTextPrinterActive() != TRUE {
-        UpdatePartyMonHeldItemSprite(&raw mut gPlayerParty[slot], sPartyMenuBoxes.at(slot));
+        UpdatePartyMonHeldItemSprite(
+            crate::gl!(&raw gPlayerParty[slot]),
+            (*sPartyMenuBoxes.as_ptr()).at(slot),
+        );
         Task_ClosePartyMenu(taskId);
     }
 }
 pub(crate) unsafe fn CB2_WriteMailToGiveMonFromBag() {
-    GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], gPartyMenu.bagItem);
-    let mail: u8 = GetMonData2(&raw mut gPlayerParty[gPartyMenu.slotId], MON_DATA_MAIL) as u8;
+    GiveItemToMon(
+        {
+            let gl_i81 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i81])
+        },
+        crate::gl!(gPartyMenu.bagItem),
+    );
+    let mail: u8 = GetMonData2(
+        {
+            let gl_i82 = crate::gl!(gPartyMenu.slotId);
+            crate::gl!(&raw gPlayerParty[gl_i82])
+        },
+        MON_DATA_MAIL,
+    ) as u8;
     DoEasyChatScreen(
         EASY_CHAT_TYPE_MAIL,
-        (*gSaveBlock1Ptr).mail[mail].words.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).mail[mail].words.as_mut_ptr(),
         Some(CB2_ReturnToPartyOrBagMenuFromWritingMail),
         EASY_CHAT_PERSON_DISPLAY_NONE,
     );
 }
 pub(crate) unsafe fn CB2_ReturnToPartyOrBagMenuFromWritingMail() {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i83 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i83])
+    };
     let item: u16 = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
     if gSpecialVar_Result == FALSE as u16 {
         TakeMailFromMon(mon);
         SetMonData(
             mon,
             MON_DATA_HELD_ITEM,
-            &raw mut sPartyMenuItemId as *mut c_void,
+            sPartyMenuItemId.as_ptr() as *mut c_void,
         );
-        RemoveBagItem(sPartyMenuItemId, 1);
+        RemoveBagItem(sPartyMenuItemId.get(), 1);
         ReturnGiveItemToBagOrPC(item);
-        SetMainCallback2(gPartyMenu.exitCallback);
+        SetMainCallback2(crate::gl!(gPartyMenu.exitCallback));
     } else {
         InitPartyMenu(
-            gPartyMenu.menuType(),
+            (*gPartyMenu.as_ptr()).menuType(),
             KEEP_PARTY_LAYOUT,
-            gPartyMenu.action,
+            crate::gl!(gPartyMenu.action),
             TRUE,
             PARTY_MSG_NONE,
             Some(Task_DisplayGaveMailFromBagMessage),
-            gPartyMenu.exitCallback,
+            crate::gl!(gPartyMenu.exitCallback),
         );
     }
 }
 pub(crate) unsafe fn Task_DisplayGaveMailFromBagMessage(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        if sPartyMenuItemId != ITEM_NONE {
-            DisplaySwitchedHeldItemMessage(gPartyMenu.bagItem, sPartyMenuItemId, FALSE);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if sPartyMenuItemId.get() != ITEM_NONE {
+            DisplaySwitchedHeldItemMessage(
+                crate::gl!(gPartyMenu.bagItem),
+                sPartyMenuItemId.get(),
+                FALSE,
+            );
         } else {
             DisplayGaveHeldItemMessage(
-                &raw mut gPlayerParty[gPartyMenu.slotId],
-                gPartyMenu.bagItem,
+                {
+                    let gl_i84 = crate::gl!(gPartyMenu.slotId);
+                    crate::gl!(&raw gPlayerParty[gl_i84])
+                },
+                crate::gl!(gPartyMenu.bagItem),
                 FALSE,
                 1,
             );
@@ -6782,19 +7375,26 @@ pub(crate) unsafe fn Task_HandleSwitchItemsFromBagYesNoInput(taskId: u8) {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let mut fall = false;
         if sw1 == 0 {
-            item = gPartyMenu.bagItem;
+            item = crate::gl!(gPartyMenu.bagItem);
             RemoveItemToGiveFromBag(item);
-            if AddBagItem(sPartyMenuItemId, 1) == FALSE {
+            if AddBagItem(sPartyMenuItemId.get(), 1) == FALSE {
                 ReturnGiveItemToBagOrPC(item);
-                BufferBagFullCantTakeItemMessage(sPartyMenuItemId);
+                BufferBagFullCantTakeItemMessage(sPartyMenuItemId.get());
                 DisplayPartyMenuMessage(gStringVar4.as_mut_ptr(), FALSE);
                 task_set_func(taskId, Some(Task_UpdateHeldItemSpriteAndClosePartyMenu));
             } else if ItemIsMail(item) != 0 {
-                (*sPartyMenuInternal).exitCallback = Some(CB2_WriteMailToGiveMonFromBag);
+                (*crate::gl!(sPartyMenuInternal)).exitCallback =
+                    Some(CB2_WriteMailToGiveMonFromBag);
                 Task_ClosePartyMenu(taskId);
             } else {
-                GiveItemToMon(&raw mut gPlayerParty[gPartyMenu.slotId], item);
-                DisplaySwitchedHeldItemMessage(item, sPartyMenuItemId, TRUE);
+                GiveItemToMon(
+                    {
+                        let gl_i85 = crate::gl!(gPartyMenu.slotId);
+                        crate::gl!(&raw gPlayerParty[gl_i85])
+                    },
+                    item,
+                );
+                DisplaySwitchedHeldItemMessage(item, sPartyMenuItemId.get(), TRUE);
                 task_set_func(taskId, Some(Task_UpdateHeldItemSpriteAndClosePartyMenu));
             }
             break 'l1;
@@ -6819,15 +7419,15 @@ unsafe fn DisplayItemMustBeRemovedFirstMessage(taskId: u8) {
     ScheduleBgCopyTilemapToVram(2);
     task_set_func(taskId, Some(Task_UpdateHeldItemSpriteAndClosePartyMenu));
 }
-unsafe fn RemoveItemToGiveFromBag(item: u16) {
-    if gPartyMenu.action == PARTY_ACTION_GIVE_PC_ITEM {
+fn RemoveItemToGiveFromBag(item: u16) {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_GIVE_PC_ITEM {
         RemovePCItem(item as u8, 1);
     } else {
         RemoveBagItem(item, 1);
     }
 }
-unsafe fn ReturnGiveItemToBagOrPC(item: u16) -> u8 {
-    if gPartyMenu.action == PARTY_ACTION_GIVE_ITEM {
+fn ReturnGiveItemToBagOrPC(item: u16) -> u8 {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_GIVE_ITEM {
         return AddBagItem(item, 1);
     } else {
         return AddPCItem(item, 1);
@@ -6849,12 +7449,16 @@ pub unsafe fn ChooseMonToGiveMailFromMailbox() {
     );
 }
 unsafe fn TryGiveMailToSelectedMon(taskId: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gPartyMenu.slotId];
+    let mon: *mut Pokemon = {
+        let gl_i86 = crate::gl!(gPartyMenu.slotId);
+        crate::gl!(&raw gPlayerParty[gl_i86])
+    };
     let mut mail: *mut Mail = null_mut();
-    gPartyMenuUseExitCallback = FALSE;
-    mail = &raw mut (*gSaveBlock1Ptr).mail[gPlayerPCItemPageInfo.itemsAbove as i32
+    gPartyMenuUseExitCallback.set(FALSE);
+    mail = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mail[crate::gl!(gPlayerPCItemPageInfo.itemsAbove)
+        as i32
         + PARTY_SIZE
-        + gPlayerPCItemPageInfo.cursorPos as i32];
+        + crate::gl!(gPlayerPCItemPageInfo.cursorPos) as i32];
     if GetMonData2(mon, MON_DATA_HELD_ITEM) != ITEM_NONE as u32 {
         DisplayPartyMenuMessage(
             (*(&raw const crate::data::strings::gText_PkmnHoldingItemCantHoldMail)
@@ -6887,15 +7491,15 @@ pub unsafe fn InitChooseHalfPartyForBattle(unused: u8) {
         0,
         0,
         Some(Task_HandleChooseMonInput),
-        gMain.savedCallback,
+        crate::gl!(gMain.savedCallback),
     );
-    gPartyMenu.task = Some(Task_ValidateChosenHalfParty);
+    crate::gl!(gPartyMenu.task = Some(Task_ValidateChosenHalfParty));
 }
 pub unsafe fn ClearSelectedPartyOrder() {
-    memset(gSelectedOrderFromParty.as_mut_ptr(), 0, 4);
+    memset((*gSelectedOrderFromParty.as_ptr()).as_mut_ptr(), 0, 4);
 }
 unsafe fn GetPartySlotEntryStatus(slot: i8) -> u8 {
-    if GetBattleEntryEligibility(&raw mut gPlayerParty[slot]) == FALSE {
+    if GetBattleEntryEligibility(crate::gl!(&raw gPlayerParty[slot])) == FALSE {
         return 2;
     }
     if HasPartySlotAlreadyBeenSelected(slot as u8 + 1) == 1 {
@@ -6908,8 +7512,8 @@ unsafe fn GetBattleEntryEligibility(mon: *mut Pokemon) -> u8 {
     let mut species: u16 = 0;
     if GetMonData2(mon, MON_DATA_IS_EGG) != 0
         || GetMonData2(mon, MON_DATA_LEVEL) > GetBattleEntryLevelCap() as u32
-        || (*gSaveBlock1Ptr).location.mapGroup == 26
-            && (*gSaveBlock1Ptr).location.mapNum == 25
+        || (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 26
+            && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 25
             && GetMonData2(mon, MON_DATA_HELD_ITEM) != ITEM_NONE as u32
     {
         return FALSE;
@@ -6947,9 +7551,9 @@ unsafe fn GetBattleEntryEligibility(mon: *mut Pokemon) -> u8 {
     }
 }
 unsafe fn CheckBattleEntriesAndGetMessage() -> u8 {
-    let party: *mut Pokemon = gPlayerParty.as_mut_ptr();
+    let party: *mut Pokemon = (*gPlayerParty.as_ptr()).as_mut_ptr();
     let minBattlers: u8 = GetMinBattleEntries();
-    let order: *mut u8 = gSelectedOrderFromParty.as_mut_ptr();
+    let order: *mut u8 = (*gSelectedOrderFromParty.as_ptr()).as_mut_ptr();
     if *order.at(minBattlers as i32 - 1) == 0 {
         if minBattlers == 1 {
             return PARTY_MSG_NO_MON_FOR_BATTLE;
@@ -6985,9 +7589,9 @@ unsafe fn CheckBattleEntriesAndGetMessage() -> u8 {
     }
     0xFF
 }
-unsafe fn HasPartySlotAlreadyBeenSelected(slot: u8) -> u8 {
+fn HasPartySlotAlreadyBeenSelected(slot: u8) -> u8 {
     for i in 0..4u8 {
-        if gSelectedOrderFromParty[i] == slot {
+        if crate::gl!(gSelectedOrderFromParty[i]) == slot {
             return TRUE;
         }
     }
@@ -7005,7 +7609,9 @@ pub(crate) unsafe fn Task_ValidateChosenHalfParty(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ContinueChoosingHalfParty(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         PlaySE(SE_SELECT);
         DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
         task_set_func(taskId, Some(Task_HandleChooseMonInput));
@@ -7158,13 +7764,13 @@ pub unsafe fn ChooseMonForInBattleItem() {
     UpdatePartyToBattleOrder();
 }
 unsafe fn GetPartyMenuActionsTypeInBattle(mon: *mut Pokemon) -> u8 {
-    if GetMonData2(&raw mut gPlayerParty[1], MON_DATA_SPECIES) != 0
+    if GetMonData2(crate::gl!(&raw gPlayerParty[1]), MON_DATA_SPECIES) != 0
         && GetMonData2(mon, MON_DATA_IS_EGG) == 0
     {
-        if gPartyMenu.action == PARTY_ACTION_SEND_OUT {
+        if crate::gl!(gPartyMenu.action) == PARTY_ACTION_SEND_OUT {
             return ACTIONS_SEND_OUT;
         }
-        if gBattleTypeFlags & BATTLE_TYPE_ARENA == 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA == 0 {
             return ACTIONS_SHIFT;
         }
     }
@@ -7182,8 +7788,11 @@ unsafe fn TrySwitchInPokemon() -> u8 {
         );
         return FALSE;
     }
-    if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_HP) == 0 {
-        GetMonNickname(&raw mut gPlayerParty[slot], gStringVar1.as_mut_ptr());
+    if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_HP) == 0 {
+        GetMonNickname(
+            crate::gl!(&raw gPlayerParty[slot]),
+            gStringVar1.as_mut_ptr(),
+        );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_PkmnHasNoEnergy).cast::<CArray<u8, 0>>())
@@ -7193,11 +7802,14 @@ unsafe fn TrySwitchInPokemon() -> u8 {
         return FALSE;
     }
     let mut i: u8 = 0;
-    while i < gBattlersCount {
+    while i < gBattlersCount.get() {
         if GetBattlerSide(i) == B_SIDE_PLAYER
-            && GetPartyIdFromBattleSlot(slot) as u16 == gBattlerPartyIndexes[i]
+            && GetPartyIdFromBattleSlot(slot) as u16 == crate::gl!(gBattlerPartyIndexes[i])
         {
-            GetMonNickname(&raw mut gPlayerParty[slot], gStringVar1.as_mut_ptr());
+            GetMonNickname(
+                crate::gl!(&raw gPlayerParty[slot]),
+                gStringVar1.as_mut_ptr(),
+            );
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_PkmnAlreadyInBattle)
@@ -7209,7 +7821,7 @@ unsafe fn TrySwitchInPokemon() -> u8 {
         }
         i += 1;
     }
-    if GetMonData2(&raw mut gPlayerParty[slot], MON_DATA_IS_EGG) != 0 {
+    if GetMonData2(crate::gl!(&raw gPlayerParty[slot]), MON_DATA_IS_EGG) != 0 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_EggCantBattle).cast::<CArray<u8, 0>>())
@@ -7218,8 +7830,11 @@ unsafe fn TrySwitchInPokemon() -> u8 {
         );
         return FALSE;
     }
-    if GetPartyIdFromBattleSlot(slot) == (*gBattleStruct).prevSelectedPartySlot {
-        GetMonNickname(&raw mut gPlayerParty[slot], gStringVar1.as_mut_ptr());
+    if GetPartyIdFromBattleSlot(slot) == (*crate::gl!(gBattleStruct)).prevSelectedPartySlot {
+        GetMonNickname(
+            crate::gl!(&raw gPlayerParty[slot]),
+            gStringVar1.as_mut_ptr(),
+        );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_PkmnAlreadySelected).cast::<CArray<u8, 0>>())
@@ -7228,15 +7843,15 @@ unsafe fn TrySwitchInPokemon() -> u8 {
         );
         return FALSE;
     }
-    if gPartyMenu.action == PARTY_ACTION_ABILITY_PREVENTS {
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_ABILITY_PREVENTS {
         SetMonPreventsSwitchingString();
         return FALSE;
     }
-    if gPartyMenu.action == PARTY_ACTION_CANT_SWITCH {
-        let currBattler: u8 = gBattlerInMenuId;
+    if crate::gl!(gPartyMenu.action) == PARTY_ACTION_CANT_SWITCH {
+        let currBattler: u8 = gBattlerInMenuId.get();
         GetMonNickname(
-            &raw mut gPlayerParty
-                [GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[currBattler] as u8)],
+            &raw mut (*gPlayerParty.as_ptr())
+                [GetPartyIdFromBattlePartyId(crate::gl!(gBattlerPartyIndexes[currBattler]) as u8)],
             gStringVar1.as_mut_ptr(),
         );
         StringExpandPlaceholders(
@@ -7247,15 +7862,26 @@ unsafe fn TrySwitchInPokemon() -> u8 {
         );
         return FALSE;
     }
-    gSelectedMonPartyId = GetPartyIdFromBattleSlot(slot);
-    gPartyMenuUseExitCallback = TRUE;
-    let newSlot: u8 = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[gBattlerInMenuId] as u8);
+    gSelectedMonPartyId.set(GetPartyIdFromBattleSlot(slot));
+    gPartyMenuUseExitCallback.set(TRUE);
+    let newSlot: u8 = GetPartyIdFromBattlePartyId(
+        ({
+            let gl_i87 = gBattlerInMenuId.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i87])
+        }) as u8,
+    );
     SwitchPartyMonSlots(newSlot, slot);
-    SwapPartyPokemon(&raw mut gPlayerParty[newSlot], &raw mut gPlayerParty[slot]);
+    SwapPartyPokemon(
+        crate::gl!(&raw gPlayerParty[newSlot]),
+        crate::gl!(&raw gPlayerParty[slot]),
+    );
     TRUE
 }
 pub unsafe fn BufferBattlePartyCurrentOrder() {
-    BufferBattlePartyOrder(gBattlePartyCurrentOrder.as_mut_ptr(), GetPlayerFlankId());
+    BufferBattlePartyOrder(
+        (*gBattlePartyCurrentOrder.as_ptr()).as_mut_ptr(),
+        GetPlayerFlankId(),
+    );
 }
 unsafe fn BufferBattlePartyOrder(partyBattleOrder: *mut u8, flankId: u8) {
     let mut partyIds: CArray<u8, 6> = zeroed();
@@ -7273,7 +7899,10 @@ unsafe fn BufferBattlePartyOrder(partyBattleOrder: *mut u8, flankId: u8) {
         return;
     } else if IsDoubleBattle() == FALSE {
         j = 1;
-        partyIds[0] = gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)] as u8;
+        partyIds[0] = ({
+            let gl_i88 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+            crate::gl!(gBattlerPartyIndexes[gl_i88])
+        }) as u8;
         for i in 0..PARTY_SIZE {
             if i != partyIds[0] as i32 {
                 partyIds[j] = i as u8;
@@ -7282,8 +7911,14 @@ unsafe fn BufferBattlePartyOrder(partyBattleOrder: *mut u8, flankId: u8) {
         }
     } else {
         j = 2;
-        partyIds[0] = gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)] as u8;
-        partyIds[1] = gBattlerPartyIndexes[GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)] as u8;
+        partyIds[0] = ({
+            let gl_i89 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+            crate::gl!(gBattlerPartyIndexes[gl_i89])
+        }) as u8;
+        partyIds[1] = ({
+            let gl_i90 = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+            crate::gl!(gBattlerPartyIndexes[gl_i90])
+        }) as u8;
         for i in 0..PARTY_SIZE {
             if i != partyIds[0] as i32 && i != partyIds[1] as i32 {
                 partyIds[j] = i as u8;
@@ -7297,7 +7932,7 @@ unsafe fn BufferBattlePartyOrder(partyBattleOrder: *mut u8, flankId: u8) {
 }
 pub unsafe fn BufferBattlePartyCurrentOrderBySide(battler: u8, flankId: u8) {
     BufferBattlePartyOrderBySide(
-        (*gBattleStruct).battlerPartyOrders[battler].as_mut_ptr(),
+        (*crate::gl!(gBattleStruct)).battlerPartyOrders[battler].as_mut_ptr(),
         flankId,
         battler,
     );
@@ -7327,7 +7962,7 @@ unsafe fn BufferBattlePartyOrderBySide(partyBattleOrder: *mut u8, flankId: u8, b
         return;
     } else if IsDoubleBattle() == FALSE {
         j = 1;
-        partyIndexes[0] = gBattlerPartyIndexes[leftBattler] as u8;
+        partyIndexes[0] = crate::gl!(gBattlerPartyIndexes[leftBattler]) as u8;
         for i in 0..PARTY_SIZE {
             if i != partyIndexes[0] as i32 {
                 partyIndexes[j] = i as u8;
@@ -7336,8 +7971,8 @@ unsafe fn BufferBattlePartyOrderBySide(partyBattleOrder: *mut u8, flankId: u8, b
         }
     } else {
         j = 2;
-        partyIndexes[0] = gBattlerPartyIndexes[leftBattler] as u8;
-        partyIndexes[1] = gBattlerPartyIndexes[rightBattler] as u8;
+        partyIndexes[0] = crate::gl!(gBattlerPartyIndexes[leftBattler]) as u8;
+        partyIndexes[1] = crate::gl!(gBattlerPartyIndexes[rightBattler]) as u8;
         for i in 0..PARTY_SIZE {
             if i != partyIndexes[0] as i32 && i != partyIndexes[1] as i32 {
                 partyIndexes[j] = i as u8;
@@ -7357,7 +7992,7 @@ pub unsafe fn SwitchPartyOrderLinkMulti(battler: u8, slot: u8, slot2: u8) {
     let mut partyBattleOrder: *mut u8 = null_mut();
     let mut partyIdBuffer: u8 = 0;
     if IsMultiBattle() != 0 {
-        partyBattleOrder = (*gBattleStruct).battlerPartyOrders[battler].as_mut_ptr();
+        partyBattleOrder = (*crate::gl!(gBattleStruct)).battlerPartyOrders[battler].as_mut_ptr();
         for i in {
             j = 0;
             j
@@ -7391,9 +8026,9 @@ unsafe fn GetPartyIdFromBattleSlot(mut slot: u8) -> u8 {
     let mut retVal: u8 = 0;
     slot = (slot as i32 / 2) as u8;
     if modResult != 0 {
-        retVal = gBattlePartyCurrentOrder[slot] & 0xF;
+        retVal = crate::gl!(gBattlePartyCurrentOrder[slot]) & 0xF;
     } else {
-        retVal = gBattlePartyCurrentOrder[slot] >> 4;
+        retVal = crate::gl!(gBattlePartyCurrentOrder[slot]) >> 4;
     }
     retVal
 }
@@ -7401,9 +8036,15 @@ unsafe fn SetPartyIdAtBattleSlot(mut slot: u8, setVal: u8) {
     let modResult: u32 = slot as u32 & 1;
     slot = (slot as i32 / 2) as u8;
     if modResult != 0 {
-        gBattlePartyCurrentOrder[slot] = gBattlePartyCurrentOrder[slot] & 0xF0 | setVal;
+        crate::gl!(
+            gBattlePartyCurrentOrder[slot] =
+                crate::gl!(gBattlePartyCurrentOrder[slot]) & 0xF0 | setVal
+        );
     } else {
-        gBattlePartyCurrentOrder[slot] = gBattlePartyCurrentOrder[slot] & 0xF | setVal << 4;
+        crate::gl!(
+            gBattlePartyCurrentOrder[slot] =
+                crate::gl!(gBattlePartyCurrentOrder[slot]) & 0xF | setVal << 4
+        );
     }
 }
 #[unsafe(no_mangle)]
@@ -7420,9 +8061,9 @@ pub unsafe fn GetPartyIdFromBattlePartyId(battlePartyId: u8) -> u8 {
         i
     };
     while i < 3 {
-        if gBattlePartyCurrentOrder[i] >> 4 != battlePartyId {
+        if crate::gl!(gBattlePartyCurrentOrder[i]) >> 4 != battlePartyId {
             j += 1;
-            if gBattlePartyCurrentOrder[i] as i32 & 0xF == battlePartyId as i32 {
+            if crate::gl!(gBattlePartyCurrentOrder[i]) as i32 & 0xF == battlePartyId as i32 {
                 return j;
             }
         } else {
@@ -7437,12 +8078,15 @@ unsafe fn UpdatePartyToBattleOrder() {
     let partyBuffer: *mut Pokemon = Alloc(600) as *mut Pokemon;
     memcpy(
         partyBuffer as *mut u8,
-        gPlayerParty.as_mut_ptr() as *mut u8,
+        (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut u8,
         600,
     );
     for i in 0..(PARTY_SIZE as u8) {
         memcpy(
-            &raw mut gPlayerParty[GetPartyIdFromBattlePartyId(i)] as *mut u8,
+            ({
+                let gl_i91 = GetPartyIdFromBattlePartyId(i);
+                crate::gl!(&raw gPlayerParty[gl_i91])
+            }) as *mut u8,
             partyBuffer.at(i) as *mut u8,
             100,
         );
@@ -7453,12 +8097,15 @@ unsafe fn UpdatePartyToFieldOrder() {
     let partyBuffer: *mut Pokemon = Alloc(600) as *mut Pokemon;
     memcpy(
         partyBuffer as *mut u8,
-        gPlayerParty.as_mut_ptr() as *mut u8,
+        (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut u8,
         600,
     );
     for i in 0..(PARTY_SIZE as u8) {
         memcpy(
-            &raw mut gPlayerParty[GetPartyIdFromBattleSlot(i)] as *mut u8,
+            ({
+                let gl_i92 = GetPartyIdFromBattleSlot(i);
+                crate::gl!(&raw gPlayerParty[gl_i92])
+            }) as *mut u8,
             partyBuffer.at(i) as *mut u8,
             100,
         );
@@ -7469,11 +8116,14 @@ unsafe fn SwitchAliveMonIntoLeadSlot() {
     let mut mon: *mut Pokemon = null_mut();
     let mut partyId: u8 = 0;
     for i in 1..(PARTY_SIZE as u8) {
-        mon = &raw mut gPlayerParty[GetPartyIdFromBattleSlot(i)];
+        mon = {
+            let gl_i93 = GetPartyIdFromBattleSlot(i);
+            crate::gl!(&raw gPlayerParty[gl_i93])
+        };
         if GetMonData2(mon, MON_DATA_SPECIES) != 0 && GetMonData2(mon, MON_DATA_HP) != 0 {
             partyId = GetPartyIdFromBattleSlot(0);
             SwitchPartyMonSlots(0, i);
-            SwapPartyPokemon(&raw mut gPlayerParty[partyId], mon);
+            SwapPartyPokemon(crate::gl!(&raw gPlayerParty[partyId]), mon);
             break;
         }
     }
@@ -7489,7 +8139,7 @@ pub unsafe fn ShowPartyMenuToShowcaseMultiBattleParty() {
         0,
         PARTY_MSG_NONE,
         Some(Task_InitMultiPartnerPartySlideIn),
-        gMain.savedCallback,
+        crate::gl!(gMain.savedCallback),
     );
 }
 pub(crate) unsafe fn Task_InitMultiPartnerPartySlideIn(taskId: u8) {
@@ -7500,13 +8150,17 @@ pub(crate) unsafe fn Task_InitMultiPartnerPartySlideIn(taskId: u8) {
 }
 pub(crate) unsafe fn Task_MultiPartnerPartySlideIn(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         *data -= 8;
         SlideMultiPartyMenuBoxSpritesOneStep(taskId);
         if *data == 0 {
             for i in (MULTI_PARTY_SIZE as u8)..(PARTY_SIZE as u8) {
-                if gMultiPartnerParty[i as i32 - MULTI_PARTY_SIZE].species != SPECIES_NONE {
-                    AnimateSelectedPartyIcon((*sPartyMenuBoxes.at(i)).monSpriteId, 0);
+                if {
+                    let gl_i2 = i as i32 - MULTI_PARTY_SIZE;
+                    crate::gl!(gMultiPartnerParty[gl_i2].species)
+                } != SPECIES_NONE
+                {
+                    AnimateSelectedPartyIcon((*(*sPartyMenuBoxes.as_ptr()).at(i)).monSpriteId, 0);
                 }
             }
             PlaySE(SE_M_HARDEN);
@@ -7524,19 +8178,35 @@ pub(crate) unsafe fn Task_WaitAfterMultiPartnerPartySlideIn(taskId: u8) {
         Task_ClosePartyMenu(taskId);
     }
 }
-unsafe fn MoveMultiPartyMenuBoxSprite(spriteId: u8, x: i16) {
+fn MoveMultiPartyMenuBoxSprite(spriteId: u8, x: i16) {
     if x >= 0 {
-        gSprites[spriteId].x2 = x;
+        crate::gl!(gSprites[spriteId].x2 = x);
     }
 }
 unsafe fn SlideMultiPartyMenuBoxSpritesOneStep(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     for i in (MULTI_PARTY_SIZE as u8)..(PARTY_SIZE as u8) {
-        if gMultiPartnerParty[i as i32 - MULTI_PARTY_SIZE].species != SPECIES_NONE {
-            MoveMultiPartyMenuBoxSprite((*sPartyMenuBoxes.at(i)).monSpriteId, *data - 8);
-            MoveMultiPartyMenuBoxSprite((*sPartyMenuBoxes.at(i)).itemSpriteId, *data - 8);
-            MoveMultiPartyMenuBoxSprite((*sPartyMenuBoxes.at(i)).pokeballSpriteId, *data - 8);
-            MoveMultiPartyMenuBoxSprite((*sPartyMenuBoxes.at(i)).statusSpriteId, *data - 8);
+        if {
+            let gl_i3 = i as i32 - MULTI_PARTY_SIZE;
+            crate::gl!(gMultiPartnerParty[gl_i3].species)
+        } != SPECIES_NONE
+        {
+            MoveMultiPartyMenuBoxSprite(
+                (*(*sPartyMenuBoxes.as_ptr()).at(i)).monSpriteId,
+                *data - 8,
+            );
+            MoveMultiPartyMenuBoxSprite(
+                (*(*sPartyMenuBoxes.as_ptr()).at(i)).itemSpriteId,
+                *data - 8,
+            );
+            MoveMultiPartyMenuBoxSprite(
+                (*(*sPartyMenuBoxes.as_ptr()).at(i)).pokeballSpriteId,
+                *data - 8,
+            );
+            MoveMultiPartyMenuBoxSprite(
+                (*(*sPartyMenuBoxes.as_ptr()).at(i)).statusSpriteId,
+                *data - 8,
+            );
         }
     }
     ChangeBgX(2, 0x800, BG_COORD_ADD);
@@ -7553,7 +8223,7 @@ pub unsafe fn ChooseMonForDaycare() {
     );
 }
 unsafe fn ChoosePartyMonByMenuType(menuType: u8) {
-    gFieldCallback2 = Some(CB2_FadeFromPartyMenu);
+    crate::gl!(gFieldCallback2 = Some(CB2_FadeFromPartyMenu));
     InitPartyMenu(
         menuType,
         0,
@@ -7569,7 +8239,7 @@ pub(crate) unsafe fn BufferMonSelection() {
     if gSpecialVar_0x8004 >= PARTY_SIZE as u16 {
         gSpecialVar_0x8004 = PARTY_NOTHING_CHOSEN;
     }
-    gFieldCallback2 = Some(CB2_FadeFromPartyMenu);
+    crate::gl!(gFieldCallback2 = Some(CB2_FadeFromPartyMenu));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 pub unsafe fn CB2_FadeFromPartyMenu() -> u8 {
@@ -7590,7 +8260,7 @@ pub unsafe fn ChooseContestMon() {
     CreateTask(Some(Task_ChooseContestMon), 10);
 }
 pub(crate) unsafe fn Task_ChooseContestMon(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         InitPartyMenu(
             PARTY_MENU_TYPE_CONTEST,
@@ -7605,12 +8275,12 @@ pub(crate) unsafe fn Task_ChooseContestMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn CB2_ChooseContestMon() {
-    gContestMonPartyIndex = GetCursorSelectionMonId();
-    if gContestMonPartyIndex >= PARTY_SIZE as u8 {
-        gContestMonPartyIndex = PARTY_NOTHING_CHOSEN as u8;
+    gContestMonPartyIndex.set(GetCursorSelectionMonId());
+    if gContestMonPartyIndex.get() >= PARTY_SIZE as u8 {
+        gContestMonPartyIndex.set(PARTY_NOTHING_CHOSEN as u8);
     }
-    gSpecialVar_0x8004 = gContestMonPartyIndex as u16;
-    gFieldCallback2 = Some(CB2_FadeFromPartyMenu);
+    gSpecialVar_0x8004 = gContestMonPartyIndex.get() as u16;
+    crate::gl!(gFieldCallback2 = Some(CB2_FadeFromPartyMenu));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 #[unsafe(no_mangle)]
@@ -7620,7 +8290,7 @@ pub unsafe fn ChoosePartyMon() {
     CreateTask(Some(Task_ChoosePartyMon), 10);
 }
 pub(crate) unsafe fn Task_ChoosePartyMon(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         InitPartyMenu(
             PARTY_MENU_TYPE_CHOOSE_MON,
@@ -7641,7 +8311,7 @@ pub unsafe fn ChooseMonForMoveRelearner() {
     CreateTask(Some(Task_ChooseMonForMoveRelearner), 10);
 }
 pub(crate) unsafe fn Task_ChooseMonForMoveRelearner(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         InitPartyMenu(
             PARTY_MENU_TYPE_MOVE_RELEARNER,
@@ -7660,20 +8330,21 @@ pub(crate) unsafe fn CB2_ChooseMonForMoveRelearner() {
     if gSpecialVar_0x8004 >= PARTY_SIZE as u16 {
         gSpecialVar_0x8004 = PARTY_NOTHING_CHOSEN;
     } else {
-        gSpecialVar_0x8005 = GetNumberOfRelearnableMoves(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+        gSpecialVar_0x8005 = GetNumberOfRelearnableMoves({
+            let gl_i94 = *(&raw const crate::ffi::gSpecialVar_0x8004)
                 .cast::<u16>()
-                .cast_mut()],
-        ) as u16;
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i94])
+        }) as u16;
     }
-    gFieldCallback2 = Some(CB2_FadeFromPartyMenu);
+    crate::gl!(gFieldCallback2 = Some(CB2_FadeFromPartyMenu));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoBattlePyramidMonsHaveHeldItem() {
     gSpecialVar_Result = FALSE as u16;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HELD_ITEM) != ITEM_NONE as u32 {
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HELD_ITEM) != ITEM_NONE as u32 {
             gSpecialVar_Result = TRUE as u16;
             break;
         }
@@ -7686,7 +8357,7 @@ pub unsafe fn BattlePyramidChooseMonHeldItems() {
     CreateTask(Some(Task_BattlePyramidChooseMonHeldItems), 10);
 }
 pub(crate) unsafe fn Task_BattlePyramidChooseMonHeldItems(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         InitPartyMenu(
             PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS,
@@ -7704,21 +8375,24 @@ pub(crate) unsafe fn Task_BattlePyramidChooseMonHeldItems(taskId: u8) {
 pub unsafe fn MoveDeleterChooseMoveToForget() {
     ShowPokemonSummaryScreen(
         SUMMARY_MODE_SELECT_MOVE,
-        gPlayerParty.as_mut_ptr() as *mut c_void,
+        (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut c_void,
         gSpecialVar_0x8004 as u8,
-        gPlayerPartyCount - 1,
+        gPlayerPartyCount.get() - 1,
         Some(CB2_ReturnToField),
     );
-    gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
+    crate::gl!(gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic));
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetNumMovesSelectedMonHas() {
     gSpecialVar_Result = 0;
     for i in 0..(MAX_MON_MOVES as u8) {
         if GetMonData2(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i95 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i95])
+            },
             MON_DATA_MOVE1 + i as i32,
         ) != MOVE_NONE as u32
         {
@@ -7728,13 +8402,16 @@ pub unsafe fn GetNumMovesSelectedMonHas() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn BufferMoveDeleterNicknameAndMove() {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-        .cast::<u16>()
-        .cast_mut()];
+    let mon: *mut Pokemon = {
+        let gl_i96 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut();
+        crate::gl!(&raw gPlayerParty[gl_i96])
+    };
     let r#move: u16 = GetMonData2(mon, MON_DATA_MOVE1 + gSpecialVar_0x8005 as i32) as u16;
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
             [r#move]
             .as_ptr()
@@ -7744,23 +8421,32 @@ pub unsafe fn BufferMoveDeleterNicknameAndMove() {
 #[unsafe(no_mangle)]
 pub unsafe fn MoveDeleterForgetMove() {
     SetMonMoveSlot(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i97 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i97])
+        },
         MOVE_NONE,
         gSpecialVar_0x8005 as u8,
     );
     RemoveMonPPBonus(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i98 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i98])
+        },
         gSpecialVar_0x8005 as u8,
     );
     for i in gSpecialVar_0x8005..3 {
         ShiftMoveSlot(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i99 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i99])
+            },
             i as u8,
             i as u8 + 1,
         );
@@ -7808,9 +8494,12 @@ unsafe fn ShiftMoveSlot(mon: *mut Pokemon, slotTo: u8, slotFrom: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn IsSelectedMonEgg() {
     if GetMonData2(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i100 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i100])
+        },
         MON_DATA_IS_EGG,
     ) != 0
     {
@@ -7824,9 +8513,12 @@ pub unsafe fn IsLastMonThatKnowsSurf() {
     let mut i: u32 = 0;
     gSpecialVar_Result = FALSE as u16;
     let r#move: u16 = GetMonData2(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i101 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i101])
+        },
         MON_DATA_MOVE1 + gSpecialVar_0x8005 as i32,
     ) as u16;
     if r#move == MOVE_SURF {
@@ -7834,7 +8526,7 @@ pub unsafe fn IsLastMonThatKnowsSurf() {
         while i < CalculatePlayerPartyCount() as u32 {
             if i != gSpecialVar_0x8004 as u32 {
                 for j in 0..(MAX_MON_MOVES as u32) {
-                    if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MOVE1 + j as i32)
+                    if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_MOVE1 + j as i32)
                         == MOVE_SURF as u32
                     {
                         return;

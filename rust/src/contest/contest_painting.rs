@@ -69,7 +69,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -81,14 +81,14 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
@@ -141,14 +141,18 @@ static sPictureFrameTiles_Tough: Table<CArray<u32, 1100>> =
 static sWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::contest_painting::sWindowTemplate).cast());
 
-#[unsafe(link_section = "common_data")]
-pub static mut gContestMonPixels: *mut CArray<CArray<u16, 32>, 0> = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gImageProcessingContext: ImageProcessingContext = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gContestPaintingWinner: *mut ContestWinner = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gContestPaintingMonPalette: *mut u16 = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gContestMonPixels: crate::global::Global<*mut CArray<CArray<u16, 32>, 0>> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gImageProcessingContext: crate::global::Global<ImageProcessingContext> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gContestPaintingWinner: crate::global::Global<*mut ContestWinner> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gContestPaintingMonPalette: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
 pub(crate) static sHoldState: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sMosaicVal: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sFadeCounter: crate::global::Global<u16> = crate::global::Global::new(0);
@@ -190,14 +194,14 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `RLUnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn RLUnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn RLUnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::RLUnCompVram(a0 as _, a1 as _);
     }
 }
 /// `RLUnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn RLUnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn RLUnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::RLUnCompWram(a0 as _, a1 as _);
     }
@@ -211,9 +215,11 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 pub unsafe fn SetContestWinnerForPainting(contestWinnerId: i32) {
-    let saveIdx: *mut u8 = &raw mut gCurContestWinnerSaveIdx;
-    let isForArtist: *mut u8 = &raw mut gCurContestWinnerIsForArtist;
-    gCurContestWinner = (*gSaveBlock1Ptr).contestWinners[contestWinnerId - 1];
+    let saveIdx: *mut u8 = gCurContestWinnerSaveIdx.as_ptr();
+    let isForArtist: *mut u8 = gCurContestWinnerIsForArtist.as_ptr();
+    crate::gl!(
+        gCurContestWinner = (*crate::gl!(gSaveBlock1Ptr)).contestWinners[contestWinnerId - 1]
+    );
     *saveIdx = contestWinnerId as u8 - 1;
     *isForArtist = FALSE;
 }
@@ -226,25 +232,25 @@ pub(crate) unsafe fn CB2_HoldContestPainting() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn CB2_QuitContestPainting() {
-    SetMainCallback2(gMain.savedCallback);
-    Free(gContestPaintingMonPalette as *mut c_void);
-    gContestPaintingMonPalette = null_mut();
-    Free(gContestMonPixels as *mut c_void);
-    gContestMonPixels = null_mut();
+    SetMainCallback2(crate::gl!(gMain.savedCallback));
+    Free(crate::gl!(gContestPaintingMonPalette) as *mut c_void);
+    crate::gl!(gContestPaintingMonPalette = null_mut());
+    Free(crate::gl!(gContestMonPixels) as *mut c_void);
+    crate::gl!(gContestMonPixels = null_mut());
     RemoveWindow(sWindowId.get());
     Free(GetBgTilemapBuffer(1));
     FreeMonSpritesGfx();
 }
 pub(crate) unsafe fn ShowContestPainting() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             ScanlineEffect_Stop();
             SetVBlankCallback(None);
             AllocateMonSpritesGfx();
-            gContestPaintingWinner = &raw mut gCurContestWinner;
+            crate::gl!(gContestPaintingWinner = crate::gl!(&raw gCurContestWinner));
             InitContestPaintingVars(TRUE);
             InitContestPaintingBg();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             ResetPaletteFade();
@@ -290,20 +296,26 @@ pub(crate) unsafe fn ShowContestPainting() {
                 }
             }
             ResetSpriteData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
-            SeedRng(gMain.vblankCounter1 as u16);
+            SeedRng(crate::gl!(gMain.vblankCounter1) as u16);
             InitKeys();
             InitContestPaintingWindow();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
-            CreateContestPaintingPicture(gCurContestWinnerSaveIdx, gCurContestWinnerIsForArtist);
-            gMain.state += 1;
+            CreateContestPaintingPicture(
+                gCurContestWinnerSaveIdx.get(),
+                gCurContestWinnerIsForArtist.get(),
+            );
+            crate::gl!(gMain.state += 1);
         }
         4 => {
-            PrintContestPaintingCaption(gCurContestWinnerSaveIdx, gCurContestWinnerIsForArtist);
+            PrintContestPaintingCaption(
+                gCurContestWinnerSaveIdx.get(),
+                gCurContestWinnerIsForArtist.get(),
+            );
             SetBackdropFromPalette(sBgPalette.as_ptr().cast_mut());
             {
                 {
@@ -338,7 +350,7 @@ pub(crate) unsafe fn ShowContestPainting() {
 unsafe fn HoldContestPainting() {
     match sHoldState.get() {
         0 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 sHoldState.set(1);
             }
             if sVarsInitialized.get() != 0 && sFadeCounter.get() != 0 {
@@ -346,7 +358,9 @@ unsafe fn HoldContestPainting() {
             }
         }
         1 => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+                || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+            {
                 sHoldState.set(sHoldState.get() + 1);
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             }
@@ -355,7 +369,7 @@ unsafe fn HoldContestPainting() {
             }
         }
         2 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetMainCallback2(Some(CB2_QuitContestPainting));
             }
             if sVarsInitialized.get() != 0 && sFadeCounter.get() < 30 {
@@ -382,7 +396,7 @@ unsafe fn PrintContestPaintingCaption(contestType: u8, isForArtist: u8) {
     if isForArtist == TRUE {
         return;
     }
-    let category: u8 = (*gContestPaintingWinner).contestCategory;
+    let category: u8 = (*crate::gl!(gContestPaintingWinner)).contestCategory;
     if contestType < MUSEUM_CONTEST_WINNERS_START {
         BufferContestName(gStringVar1.as_mut_ptr(), category);
         StringAppend(
@@ -393,16 +407,18 @@ unsafe fn PrintContestPaintingCaption(contestType: u8, isForArtist: u8) {
         );
         StringAppend(
             gStringVar1.as_mut_ptr(),
-            sContestRankNames[(*gContestPaintingWinner).contestRank],
+            sContestRankNames[(*crate::gl!(gContestPaintingWinner)).contestRank],
         );
         StringCopy(
-            gStringVar2.as_mut_ptr(),
-            (*gContestPaintingWinner).trainerName.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
+            (*crate::gl!(gContestPaintingWinner))
+                .trainerName
+                .as_mut_ptr(),
         );
-        ConvertInternationalContestantName(gStringVar2.as_mut_ptr());
+        ConvertInternationalContestantName((*gStringVar2.as_ptr()).as_mut_ptr());
         StringCopy(
-            gStringVar3.as_mut_ptr(),
-            (*gContestPaintingWinner).monName.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
+            (*crate::gl!(gContestPaintingWinner)).monName.as_mut_ptr(),
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
@@ -413,7 +429,7 @@ unsafe fn PrintContestPaintingCaption(contestType: u8, isForArtist: u8) {
     } else {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            (*gContestPaintingWinner).monName.as_mut_ptr(),
+            (*crate::gl!(gContestPaintingWinner)).monName.as_mut_ptr(),
         );
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sMuseumCaptions[category]);
     }
@@ -476,10 +492,13 @@ pub(crate) unsafe fn VBlankCB_ContestPainting() {
 unsafe fn InitContestMonPixels(species: u16, backPic: u8) {
     let pal: *mut c_void = GetMonSpritePalFromSpeciesAndPersonality(
         species,
-        (*gContestPaintingWinner).trainerId,
-        (*gContestPaintingWinner).personality,
+        (*crate::gl!(gContestPaintingWinner)).trainerId,
+        (*crate::gl!(gContestPaintingWinner)).personality,
     ) as *mut c_void;
-    LZDecompressVram(pal as *mut u32, gContestPaintingMonPalette as *mut c_void);
+    LZDecompressVram(
+        pal as *mut u32,
+        crate::gl!(gContestPaintingMonPalette) as *mut c_void,
+    );
     if backPic == 0 {
         HandleLoadSpecialPokePic_DontHandleDeoxys(
             (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<
@@ -488,28 +507,28 @@ unsafe fn InitContestMonPixels(species: u16, backPic: u8) {
             >>(
             ))[species])
                 .cast_mut(),
-            (*gMonSpritesGfxPtr).sprites.ptr[1],
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
             species as i32,
-            (*gContestPaintingWinner).personality,
+            (*crate::gl!(gContestPaintingWinner)).personality,
         );
         _InitContestMonPixels(
-            (*gMonSpritesGfxPtr).sprites.ptr[1] as *mut u8,
-            gContestPaintingMonPalette,
-            gContestMonPixels as *mut c_void as *mut CArray<CArray<u16, 64>, 64>,
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1] as *mut u8,
+            crate::gl!(gContestPaintingMonPalette),
+            crate::gl!(gContestMonPixels) as *mut c_void as *mut CArray<CArray<u16, 64>, 64>,
         );
     } else {
         HandleLoadSpecialPokePic_DontHandleDeoxys(
             (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                 .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                 .cast_mut(),
-            (*gMonSpritesGfxPtr).sprites.ptr[0],
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[0],
             species as i32,
-            (*gContestPaintingWinner).personality,
+            (*crate::gl!(gContestPaintingWinner)).personality,
         );
         _InitContestMonPixels(
-            (*gMonSpritesGfxPtr).sprites.ptr[0] as *mut u8,
-            gContestPaintingMonPalette,
-            gContestMonPixels as *mut c_void as *mut CArray<CArray<u16, 64>, 64>,
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[0] as *mut u8,
+            crate::gl!(gContestPaintingMonPalette),
+            crate::gl!(gContestMonPixels) as *mut c_void as *mut CArray<CArray<u16, 64>, 64>,
         );
     }
 }
@@ -550,7 +569,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
         256,
     );
     if isForArtist == TRUE {
-        match (*gContestPaintingWinner).contestCategory as i32 / 3 {
+        match (*crate::gl!(gContestPaintingWinner)).contestCategory as i32 / 3 {
             0 => {
                 RLUnCompVram(
                     sPictureFrameTiles_Cool.as_ptr().cast_mut(),
@@ -558,7 +577,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
                 );
                 RLUnCompWram(
                     sPictureFrameTilemap_Cool.as_ptr().cast_mut(),
-                    gContestMonPixels as *mut c_void,
+                    crate::gl!(gContestMonPixels) as *mut c_void,
                 );
             }
             1 => {
@@ -568,7 +587,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
                 );
                 RLUnCompWram(
                     sPictureFrameTilemap_Beauty.as_ptr().cast_mut(),
-                    gContestMonPixels as *mut c_void,
+                    crate::gl!(gContestMonPixels) as *mut c_void,
                 );
             }
             2 => {
@@ -578,7 +597,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
                 );
                 RLUnCompWram(
                     sPictureFrameTilemap_Cute.as_ptr().cast_mut(),
-                    gContestMonPixels as *mut c_void,
+                    crate::gl!(gContestMonPixels) as *mut c_void,
                 );
             }
             3 => {
@@ -588,7 +607,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
                 );
                 RLUnCompWram(
                     sPictureFrameTilemap_Smart.as_ptr().cast_mut(),
-                    gContestMonPixels as *mut c_void,
+                    crate::gl!(gContestMonPixels) as *mut c_void,
                 );
             }
             4 => {
@@ -598,7 +617,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
                 );
                 RLUnCompWram(
                     sPictureFrameTilemap_Tough.as_ptr().cast_mut(),
-                    gContestMonPixels as *mut c_void,
+                    crate::gl!(gContestMonPixels) as *mut c_void,
                 );
             }
             _ => {}
@@ -611,11 +630,12 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
         for y in 0..10u8 {
             for x in 0..18u8 {
                 *(0x6006000_usize as *mut u16).at((y as i32 + 2) * 32 + (x as i32 + 6)) =
-                    (*gContestMonPixels)[y as i32 + 2][x as i32 + 6];
+                    (*crate::gl!(gContestMonPixels))[y as i32 + 2][x as i32 + 6];
             }
         }
         for x in 0..16u8 {
-            *(0x6006000_usize as *mut u16).at(64 + (x as i32 + 7)) = (*gContestMonPixels)[2][7];
+            *(0x6006000_usize as *mut u16).at(64 + (x as i32 + 7)) =
+                (*crate::gl!(gContestMonPixels))[2][7];
         }
     } else if contestWinnerId < MUSEUM_CONTEST_WINNERS_START {
         RLUnCompVram(
@@ -627,7 +647,7 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
             0x6006000_usize as *mut c_void,
         );
     } else {
-        match (*gContestPaintingWinner).contestCategory as i32 / 3 {
+        match (*crate::gl!(gContestPaintingWinner)).contestCategory as i32 / 3 {
             0 => {
                 RLUnCompVram(
                     sPictureFrameTiles_Cool.as_ptr().cast_mut(),
@@ -683,22 +703,22 @@ unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
     }
 }
 unsafe fn InitPaintingMonOamData(contestWinnerId: u8) {
-    gMain.oamBuffer[0] = *sContestPaintingMonOamData;
-    gMain.oamBuffer[0].set_tileNum(0);
+    crate::gl!(gMain.oamBuffer[0] = *sContestPaintingMonOamData);
+    (*gMain.as_ptr()).oamBuffer[0].set_tileNum(0);
     if contestWinnerId > 1 {
-        gMain.oamBuffer[0].set_x(88);
-        gMain.oamBuffer[0].set_y(24);
+        (*gMain.as_ptr()).oamBuffer[0].set_x(88);
+        (*gMain.as_ptr()).oamBuffer[0].set_y(24);
     } else {
-        gMain.oamBuffer[0].set_x(88);
-        gMain.oamBuffer[0].set_y(24);
+        (*gMain.as_ptr()).oamBuffer[0].set_x(88);
+        (*gMain.as_ptr()).oamBuffer[0].set_y(24);
     }
 }
 unsafe fn GetImageEffectForContestWinner(contestWinnerId: u8) -> u8 {
     let mut contestCategory: u8 = 0;
     if contestWinnerId < MUSEUM_CONTEST_WINNERS_START {
-        contestCategory = (*gContestPaintingWinner).contestCategory;
+        contestCategory = (*crate::gl!(gContestPaintingWinner)).contestCategory;
     } else {
-        contestCategory = ((*gContestPaintingWinner).contestCategory as i32 / 3) as u8;
+        contestCategory = ((*crate::gl!(gContestPaintingWinner)).contestCategory as i32 / 3) as u8;
     }
     match contestCategory {
         CONTEST_CATEGORY_COOL => {
@@ -721,39 +741,48 @@ unsafe fn GetImageEffectForContestWinner(contestWinnerId: u8) -> u8 {
     contestCategory
 }
 unsafe fn AllocPaintingResources() {
-    gContestPaintingMonPalette = AllocZeroed(OBJ_PLTT_SIZE as u32) as *mut u16;
-    gContestMonPixels = AllocZeroed(0x2000) as *mut CArray<CArray<u16, 32>, 0>;
+    crate::gl!(gContestPaintingMonPalette = AllocZeroed(OBJ_PLTT_SIZE as u32) as *mut u16);
+    crate::gl!(gContestMonPixels = AllocZeroed(0x2000) as *mut CArray<CArray<u16, 32>, 0>);
 }
 unsafe fn DoContestPaintingImageProcessing(imageEffect: u8) {
-    gImageProcessingContext.canvasPixels = gContestMonPixels as *mut c_void;
-    gImageProcessingContext.canvasPalette = gContestPaintingMonPalette;
-    gImageProcessingContext.paletteStart = 0;
-    gImageProcessingContext.personality = ((*gContestPaintingWinner).personality % 256) as u8;
-    gImageProcessingContext.columnStart = 0;
-    gImageProcessingContext.rowStart = 0;
-    gImageProcessingContext.columnEnd = 64;
-    gImageProcessingContext.rowEnd = 64;
-    gImageProcessingContext.canvasWidth = 64;
-    gImageProcessingContext.canvasHeight = 64;
+    crate::gl!(gImageProcessingContext.canvasPixels = crate::gl!(gContestMonPixels) as *mut c_void);
+    crate::gl!(gImageProcessingContext.canvasPalette = crate::gl!(gContestPaintingMonPalette));
+    crate::gl!(gImageProcessingContext.paletteStart = 0);
+    crate::gl!(
+        gImageProcessingContext.personality =
+            ((*crate::gl!(gContestPaintingWinner)).personality % 256) as u8
+    );
+    crate::gl!(gImageProcessingContext.columnStart = 0);
+    crate::gl!(gImageProcessingContext.rowStart = 0);
+    crate::gl!(gImageProcessingContext.columnEnd = 64);
+    crate::gl!(gImageProcessingContext.rowEnd = 64);
+    crate::gl!(gImageProcessingContext.canvasWidth = 64);
+    crate::gl!(gImageProcessingContext.canvasHeight = 64);
     match imageEffect {
         IMAGE_EFFECT_CHARCOAL | IMAGE_EFFECT_GRAYSCALE_LIGHT => {
-            gImageProcessingContext.quantizeEffect = QUANTIZE_EFFECT_GRAYSCALE;
+            crate::gl!(gImageProcessingContext.quantizeEffect = QUANTIZE_EFFECT_GRAYSCALE);
         }
         _ => {
-            gImageProcessingContext.quantizeEffect = QUANTIZE_EFFECT_STANDARD_LIMITED_COLORS;
+            crate::gl!(
+                gImageProcessingContext.quantizeEffect = QUANTIZE_EFFECT_STANDARD_LIMITED_COLORS
+            );
         }
     }
-    gImageProcessingContext.var_16 = 2;
-    gImageProcessingContext.effect = imageEffect;
-    gImageProcessingContext.dest = OBJ_VRAM0 as usize as *mut c_void;
-    ApplyImageProcessingEffects(&raw mut gImageProcessingContext);
-    ApplyImageProcessingQuantization(&raw mut gImageProcessingContext);
-    ConvertImageProcessingToGBA(&raw mut gImageProcessingContext);
-    LoadPalette(gContestPaintingMonPalette as *mut c_void, 256, 512);
+    crate::gl!(gImageProcessingContext.var_16 = 2);
+    crate::gl!(gImageProcessingContext.effect = imageEffect);
+    crate::gl!(gImageProcessingContext.dest = OBJ_VRAM0 as usize as *mut c_void);
+    ApplyImageProcessingEffects(crate::gl!(&raw gImageProcessingContext));
+    ApplyImageProcessingQuantization(crate::gl!(&raw gImageProcessingContext));
+    ConvertImageProcessingToGBA(crate::gl!(&raw gImageProcessingContext));
+    LoadPalette(
+        crate::gl!(gContestPaintingMonPalette) as *mut c_void,
+        256,
+        512,
+    );
 }
 unsafe fn CreateContestPaintingPicture(contestWinnerId: u8, isForArtist: u8) {
     AllocPaintingResources();
-    InitContestMonPixels((*gContestPaintingWinner).species, FALSE);
+    InitContestMonPixels((*crate::gl!(gContestPaintingWinner)).species, FALSE);
     DoContestPaintingImageProcessing(GetImageEffectForContestWinner(contestWinnerId));
     InitPaintingMonOamData(contestWinnerId);
     LoadContestPaintingFrame(contestWinnerId, isForArtist);

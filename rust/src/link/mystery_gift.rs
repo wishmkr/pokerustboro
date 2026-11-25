@@ -43,7 +43,7 @@ const GAME_DATA_VALID_VAR: u32 = 257;
 static sReceivedGiftFlags: Table<CArray<u16, 20>> =
     Table((&raw const crate::data::mystery_gift::sReceivedGiftFlags).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sStatsEnabled: crate::global::Global<u32> = crate::global::Global::new(0);
 
 unsafe extern "C" {
@@ -52,7 +52,7 @@ unsafe extern "C" {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -66,7 +66,7 @@ pub unsafe fn ClearMysteryGift() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut (*gSaveBlock1Ptr).mysteryGift as *mut c_void,
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift as *mut c_void,
                 0x50000db,
             );
         }
@@ -76,21 +76,21 @@ pub unsafe fn ClearMysteryGift() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetSavedWonderNews() -> *mut WonderNews {
-    &raw mut (*gSaveBlock1Ptr).mysteryGift.news
+    &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetSavedWonderCard() -> *mut WonderCard {
-    &raw mut (*gSaveBlock1Ptr).mysteryGift.card
+    &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card
 }
 pub unsafe fn GetSavedWonderCardMetadata() -> *mut WonderCardMetadata {
-    &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata
+    &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetSavedWonderNewsMetadata() -> *mut WonderNewsMetadata {
-    &raw mut (*gSaveBlock1Ptr).mysteryGift.newsMetadata
+    &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.newsMetadata
 }
 pub unsafe fn GetQuestionnaireWordsPtr() -> *mut u16 {
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
         .mysteryGift
         .questionnaireWords
         .as_mut_ptr()
@@ -104,9 +104,9 @@ pub unsafe fn SaveWonderNews(news: *mut WonderNews) -> u32 {
         return FALSE as u32;
     }
     ClearSavedWonderNews();
-    (*gSaveBlock1Ptr).mysteryGift.news = *news;
-    (*gSaveBlock1Ptr).mysteryGift.newsCrc = CalcCRC16WithTable(
-        &raw mut (*gSaveBlock1Ptr).mysteryGift.news as *mut c_void as *mut u8,
+    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news = *news;
+    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.newsCrc = CalcCRC16WithTable(
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news as *mut c_void as *mut u8,
         444,
     ) as u32;
     TRUE as u32
@@ -114,14 +114,14 @@ pub unsafe fn SaveWonderNews(news: *mut WonderNews) -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn ValidateSavedWonderNews() -> u32 {
     if CalcCRC16WithTable(
-        &raw mut (*gSaveBlock1Ptr).mysteryGift.news as *mut c_void as *mut u8,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news as *mut c_void as *mut u8,
         444,
     ) as u32
-        != (*gSaveBlock1Ptr).mysteryGift.newsCrc
+        != (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.newsCrc
     {
         return FALSE as u32;
     }
-    if ValidateWonderNews(&raw mut (*gSaveBlock1Ptr).mysteryGift.news) == 0 {
+    if ValidateWonderNews(&raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news) == 0 {
         return FALSE as u32;
     }
     TRUE as u32
@@ -133,7 +133,7 @@ unsafe fn ValidateWonderNews(news: *mut WonderNews) -> u32 {
     TRUE as u32
 }
 pub unsafe fn IsSendingSavedWonderNewsAllowed() -> u32 {
-    let news: *mut WonderNews = &raw mut (*gSaveBlock1Ptr).mysteryGift.news;
+    let news: *mut WonderNews = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news;
     if (*news).sendType == SEND_TYPE_DISALLOWED {
         return FALSE as u32;
     }
@@ -151,7 +151,7 @@ unsafe fn ClearSavedWonderNews() {
             );
         }
     }
-    (*gSaveBlock1Ptr).mysteryGift.newsCrc = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.newsCrc = 0;
 }
 unsafe fn ClearSavedWonderNewsMetadata() {
     {
@@ -169,7 +169,7 @@ unsafe fn ClearSavedWonderNewsMetadata() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsWonderNewsSameAsSaved(news: *mut u8) -> u32 {
-    let savedNews: *mut u8 = &raw mut (*gSaveBlock1Ptr).mysteryGift.news as *mut u8;
+    let savedNews: *mut u8 = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.news as *mut u8;
     if ValidateSavedWonderNews() == 0 {
         return FALSE as u32;
     }
@@ -187,7 +187,7 @@ pub unsafe fn ClearSavedWonderCardAndRelated() {
     ClearRamScript();
     ClearMysteryGiftFlags();
     ClearMysteryGiftVars();
-    ClearEReaderTrainer(&raw mut (*gSaveBlock2Ptr).frontier.ereaderTrainer);
+    ClearEReaderTrainer(&raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.ereaderTrainer);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SaveWonderCard(card: *mut WonderCard) -> u32 {
@@ -196,29 +196,30 @@ pub unsafe fn SaveWonderCard(card: *mut WonderCard) -> u32 {
     }
     ClearSavedWonderCardAndRelated();
     memcpy(
-        &raw mut (*gSaveBlock1Ptr).mysteryGift.card as *mut u8,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card as *mut u8,
         card as *mut u8,
         332,
     );
-    (*gSaveBlock1Ptr).mysteryGift.cardCrc = CalcCRC16WithTable(
-        &raw mut (*gSaveBlock1Ptr).mysteryGift.card as *mut c_void as *mut u8,
+    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardCrc = CalcCRC16WithTable(
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card as *mut c_void as *mut u8,
         332,
     ) as u32;
-    let metadata: *mut WonderCardMetadata = &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata;
-    (*metadata).iconSpecies = (*gSaveBlock1Ptr).mysteryGift.card.iconSpecies;
+    let metadata: *mut WonderCardMetadata =
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata;
+    (*metadata).iconSpecies = (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card.iconSpecies;
     TRUE as u32
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ValidateSavedWonderCard() -> u32 {
-    if (*gSaveBlock1Ptr).mysteryGift.cardCrc
+    if (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardCrc
         != CalcCRC16WithTable(
-            &raw mut (*gSaveBlock1Ptr).mysteryGift.card as *mut c_void as *mut u8,
+            &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card as *mut c_void as *mut u8,
             332,
         ) as u32
     {
         return FALSE as u32;
     }
-    if ValidateWonderCard(&raw mut (*gSaveBlock1Ptr).mysteryGift.card) == 0 {
+    if ValidateWonderCard(&raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card) == 0 {
         return FALSE as u32;
     }
     if ValidateSavedRamScript() == 0 {
@@ -248,7 +249,7 @@ unsafe fn ValidateWonderCard(card: *mut WonderCard) -> u32 {
     TRUE as u32
 }
 pub unsafe fn IsSendingSavedWonderCardAllowed() -> u32 {
-    let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+    let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
     if (*card).sendType() == SEND_TYPE_DISALLOWED {
         return FALSE as u32;
     }
@@ -261,12 +262,12 @@ unsafe fn ClearSavedWonderCard() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut (*gSaveBlock1Ptr).mysteryGift.card as *mut c_void,
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card as *mut c_void,
                 0x5000053,
             );
         }
     }
-    (*gSaveBlock1Ptr).mysteryGift.cardCrc = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardCrc = 0;
 }
 unsafe fn ClearSavedWonderCardMetadata() {
     {
@@ -280,11 +281,11 @@ unsafe fn ClearSavedWonderCardMetadata() {
             );
         }
     }
-    (*gSaveBlock1Ptr).mysteryGift.cardMetadataCrc = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadataCrc = 0;
 }
 pub unsafe fn GetWonderCardFlagID() -> u16 {
     if ValidateSavedWonderCard() != 0 {
-        return (*gSaveBlock1Ptr).mysteryGift.card.flagId;
+        return (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card.flagId;
     }
     0
 }
@@ -351,24 +352,24 @@ unsafe fn GetNumStampsInSavedCard() -> i32 {
     if ValidateSavedWonderCard() == 0 {
         return 0;
     }
-    card = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+    card = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
     if (*card).r#type() != CARD_TYPE_STAMP {
         return 0;
     }
     GetNumStampsInMetadata(
-        &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata,
         (*card).maxStamps as i32,
     )
 }
 #[unsafe(no_mangle)]
 pub unsafe fn MysteryGift_TrySaveStamp(stamp: *mut u16) -> u32 {
-    let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+    let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
     let maxStamps: i32 = (*card).maxStamps as i32;
     if ValidateStamp(stamp) == 0 {
         return FALSE as u32;
     }
     if IsStampInMetadata(
-        &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata,
         stamp,
         maxStamps,
     ) != 0
@@ -376,11 +377,25 @@ pub unsafe fn MysteryGift_TrySaveStamp(stamp: *mut u16) -> u32 {
         return FALSE as u32;
     }
     for i in 0..maxStamps {
-        if (*gSaveBlock1Ptr).mysteryGift.cardMetadata.stampData[1][i] == 0
-            && (*gSaveBlock1Ptr).mysteryGift.cardMetadata.stampData[0][i] == 0
+        if (*crate::gl!(gSaveBlock1Ptr))
+            .mysteryGift
+            .cardMetadata
+            .stampData[1][i]
+            == 0
+            && (*crate::gl!(gSaveBlock1Ptr))
+                .mysteryGift
+                .cardMetadata
+                .stampData[0][i]
+                == 0
         {
-            (*gSaveBlock1Ptr).mysteryGift.cardMetadata.stampData[1][i] = *stamp.at(1);
-            (*gSaveBlock1Ptr).mysteryGift.cardMetadata.stampData[0][i] = *stamp;
+            (*crate::gl!(gSaveBlock1Ptr))
+                .mysteryGift
+                .cardMetadata
+                .stampData[1][i] = *stamp.at(1);
+            (*crate::gl!(gSaveBlock1Ptr))
+                .mysteryGift
+                .cardMetadata
+                .stampData[0][i] = *stamp;
             return TRUE as u32;
         }
     }
@@ -414,19 +429,20 @@ pub unsafe fn MysteryGift_LoadLinkGameData(data: *mut MysteryGiftLinkGameData, i
     }
     let mut i: i32 = 0;
     while i < NUM_QUESTIONNAIRE_WORDS {
-        (*data).questionnaireWords[i] = (*gSaveBlock1Ptr).mysteryGift.questionnaireWords[i];
+        (*data).questionnaireWords[i] =
+            (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.questionnaireWords[i];
         i += 1;
     }
     CopyTrainerId(
         (*data).playerTrainerId.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr(),
     );
     StringCopy(
         (*data).playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-        (*data).easyChatProfile[i] = (*gSaveBlock1Ptr).easyChatProfile[i];
+        (*data).easyChatProfile[i] = (*crate::gl!(gSaveBlock1Ptr)).easyChatProfile[i];
     }
     memcpy(
         (*data).romHeaderGameCode.as_mut_ptr(),
@@ -543,18 +559,27 @@ pub unsafe fn MysteryGift_GetCardStatFromLinkData(
     }
 }
 unsafe fn IncrementCardStat(statType: u32) {
-    let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+    let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
     if (*card).r#type() == CARD_TYPE_LINK_STAT {
         let mut stat: *mut u16 = null_mut();
         match statType {
             CARD_STAT_BATTLES_WON => {
-                stat = &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata.battlesWon;
+                stat = &raw mut (*crate::gl!(gSaveBlock1Ptr))
+                    .mysteryGift
+                    .cardMetadata
+                    .battlesWon;
             }
             CARD_STAT_BATTLES_LOST => {
-                stat = &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata.battlesLost;
+                stat = &raw mut (*crate::gl!(gSaveBlock1Ptr))
+                    .mysteryGift
+                    .cardMetadata
+                    .battlesLost;
             }
             CARD_STAT_NUM_TRADES => {
-                stat = &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata.numTrades;
+                stat = &raw mut (*crate::gl!(gSaveBlock1Ptr))
+                    .mysteryGift
+                    .cardMetadata
+                    .numTrades;
             }
             CARD_STAT_NUM_STAMPS | CARD_STAT_MAX_STAMPS => {}
             _ => {}
@@ -573,41 +598,41 @@ pub unsafe fn MysteryGift_GetCardStat(stat: u32) -> u16 {
     'l1: {
         match stat {
             CARD_STAT_BATTLES_WON => {
-                let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+                let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
                 if (*card).r#type() == CARD_TYPE_LINK_STAT {
                     let metadata: *mut WonderCardMetadata =
-                        &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata;
+                        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata;
                     return (*metadata).battlesWon;
                 }
                 break 'l1;
             }
             CARD_STAT_BATTLES_LOST => {
-                let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+                let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
                 if (*card).r#type() == CARD_TYPE_LINK_STAT {
                     let metadata: *mut WonderCardMetadata =
-                        &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata;
+                        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata;
                     return (*metadata).battlesLost;
                 }
                 break 'l1;
             }
             CARD_STAT_NUM_TRADES => {
-                let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+                let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
                 if (*card).r#type() == CARD_TYPE_LINK_STAT {
                     let metadata: *mut WonderCardMetadata =
-                        &raw mut (*gSaveBlock1Ptr).mysteryGift.cardMetadata;
+                        &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.cardMetadata;
                     return (*metadata).numTrades;
                 }
                 break 'l1;
             }
             CARD_STAT_NUM_STAMPS => {
-                let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+                let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
                 if (*card).r#type() == CARD_TYPE_STAMP {
                     return GetNumStampsInSavedCard() as u16;
                 }
                 break 'l1;
             }
             CARD_STAT_MAX_STAMPS => {
-                let card: *mut WonderCard = &raw mut (*gSaveBlock1Ptr).mysteryGift.card;
+                let card: *mut WonderCard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card;
                 if (*card).r#type() == CARD_TYPE_STAMP {
                     return (*card).maxStamps as u16;
                 }
@@ -629,7 +654,7 @@ pub unsafe fn MysteryGift_TryEnableStatsByFlagId(flagId: u16) -> u32 {
     if ValidateSavedWonderCard() == 0 {
         return FALSE as u32;
     }
-    if (*gSaveBlock1Ptr).mysteryGift.card.flagId != flagId {
+    if (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.card.flagId != flagId {
         return FALSE as u32;
     }
     sStatsEnabled.set(TRUE as u32);
@@ -642,7 +667,7 @@ pub unsafe fn MysteryGift_TryIncrementStat(stat: u32, trainerId: u32) {
                 IncrementCardStatForNewTrainer(
                     CARD_STAT_NUM_TRADES,
                     trainerId,
-                    (*gSaveBlock1Ptr).mysteryGift.trainerIds[1].as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.trainerIds[1].as_mut_ptr(),
                     5,
                 );
             }
@@ -650,7 +675,7 @@ pub unsafe fn MysteryGift_TryIncrementStat(stat: u32, trainerId: u32) {
                 IncrementCardStatForNewTrainer(
                     CARD_STAT_BATTLES_WON,
                     trainerId,
-                    (*gSaveBlock1Ptr).mysteryGift.trainerIds[0].as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.trainerIds[0].as_mut_ptr(),
                     5,
                 );
             }
@@ -658,7 +683,7 @@ pub unsafe fn MysteryGift_TryIncrementStat(stat: u32, trainerId: u32) {
                 IncrementCardStatForNewTrainer(
                     CARD_STAT_BATTLES_LOST,
                     trainerId,
-                    (*gSaveBlock1Ptr).mysteryGift.trainerIds[0].as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).mysteryGift.trainerIds[0].as_mut_ptr(),
                     5,
                 );
             }
@@ -673,7 +698,10 @@ unsafe fn ClearSavedTrainerIds() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gSaveBlock1Ptr).mysteryGift.trainerIds.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gSaveBlock1Ptr))
+                    .mysteryGift
+                    .trainerIds
+                    .as_mut_ptr() as *mut c_void,
                 0x500000a,
             );
         }

@@ -329,7 +329,7 @@ pub(crate) unsafe fn MatchCall_GetEnabled_Wally(matchCall: match_call_t) -> u32 
     FlagGet((*matchCall.wally).flag) as u32
 }
 pub(crate) unsafe fn MatchCall_GetEnabled_Rival(matchCall: match_call_t) -> u32 {
-    if (*matchCall.rival).playerGender != (*gSaveBlock2Ptr).playerGender {
+    if (*matchCall.rival).playerGender != (*crate::gl!(gSaveBlock2Ptr)).playerGender {
         return FALSE as u32;
     }
     if (*matchCall.rival).flag == 0xFFFF {
@@ -385,14 +385,14 @@ pub(crate) unsafe fn MatchCall_IsRematchable_Trainer(matchCall: match_call_t) ->
     if (*matchCall.trainer).rematchTableIdx >= REMATCH_SIDNEY as u16 {
         return FALSE as u32;
     }
-    (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.trainer).rematchTableIdx] != 0 {
+    (if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[(*matchCall.trainer).rematchTableIdx] != 0 {
         TRUE as i32
     } else {
         FALSE as i32
     }) as u32
 }
 pub(crate) unsafe fn MatchCall_IsRematchable_Wally(matchCall: match_call_t) -> u32 {
-    (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.wally).rematchTableIdx] != 0 {
+    (if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[(*matchCall.wally).rematchTableIdx] != 0 {
         TRUE as i32
     } else {
         FALSE as i32
@@ -533,7 +533,7 @@ unsafe fn MatchCall_BufferCallMessageTextByRematchTeam(
         StringExpandPlaceholders(dest, (*textData.at(i)).text);
     } else {
         if FlagGet(FLAG_SYS_GAME_CLEAR) != 0 {
-            if (*gSaveBlock1Ptr).trainerRematches[idx] != 0 {
+            if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[idx] != 0 {
                 i += 2;
             } else if CountBattledRematchTeams(idx) >= 2 {
                 i += 3;

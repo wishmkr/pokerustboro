@@ -129,14 +129,16 @@ static sStorytellerStories: Table<CArray<Story, 36>> =
     Table((&raw const crate::data::mauville_old_man::sStorytellerStories).cast());
 
 pub(crate) static sSelectedStory: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut gBardSong: BardSong = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gBardSong: crate::global::Global<BardSong> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sUnusedPitchTableIndex: crate::global::Global<u16> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStorytellerPtr: *mut MauvilleManStoryteller = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sStorytellerPtr: crate::global::Global<*mut MauvilleManStoryteller> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sStorytellerWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
@@ -169,7 +171,7 @@ unsafe fn GetWordSoundTemplates(a0: u16) -> *mut BardSoundTemplate {
 }
 
 unsafe fn SetupBard() {
-    let bard: *mut MauvilleManBard = &raw mut (*gSaveBlock1Ptr).oldMan.bard;
+    let bard: *mut MauvilleManBard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard;
     (*bard).id = MAUVILLE_MAN_BARD;
     (*bard).hasChangedSong = FALSE;
     (*bard).language = gGameLanguage;
@@ -178,7 +180,7 @@ unsafe fn SetupBard() {
     }
 }
 unsafe fn SetupHipster() {
-    let hipster: *mut MauvilleManHipster = &raw mut (*gSaveBlock1Ptr).oldMan.hipster;
+    let hipster: *mut MauvilleManHipster = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.hipster;
     (*hipster).id = MAUVILLE_MAN_HIPSTER;
     (*hipster).taughtWord = FALSE;
     (*hipster).language = gGameLanguage;
@@ -187,7 +189,7 @@ unsafe fn SetupStoryteller() {
     StorytellerSetup();
 }
 unsafe fn SetupGiddy() {
-    let giddy: *mut MauvilleManGiddy = &raw mut (*gSaveBlock1Ptr).oldMan.giddy;
+    let giddy: *mut MauvilleManGiddy = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.giddy;
     (*giddy).id = MAUVILLE_MAN_GIDDY;
     (*giddy).taleCounter = 0;
     (*giddy).language = gGameLanguage;
@@ -197,8 +199,8 @@ unsafe fn SetupTrader() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetMauvilleOldMan() {
-    let trainerId: u16 = ((*gSaveBlock2Ptr).playerTrainerId[1] as u16) << 8
-        | (*gSaveBlock2Ptr).playerTrainerId[0] as u16;
+    let trainerId: u16 = ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u16) << 8
+        | (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u16;
     match trainerId as i32 % 10 / 2 {
         0 => {
             SetupBard();
@@ -220,7 +222,7 @@ pub unsafe fn SetMauvilleOldMan() {
     SetMauvilleOldManObjEventGfx();
 }
 pub unsafe fn GetCurrentMauvilleOldMan() -> u8 {
-    (*gSaveBlock1Ptr).oldMan.common.id
+    (*crate::gl!(gSaveBlock1Ptr)).oldMan.common.id
 }
 #[unsafe(no_mangle)]
 pub unsafe fn Script_GetCurrentMauvilleMan() {
@@ -228,18 +230,18 @@ pub unsafe fn Script_GetCurrentMauvilleMan() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn HasBardSongBeenChanged() {
-    gSpecialVar_Result = (*gSaveBlock1Ptr).oldMan.bard.hasChangedSong as u16;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard.hasChangedSong as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SaveBardSongLyrics() {
-    let bard: *mut MauvilleManBard = &raw mut (*gSaveBlock1Ptr).oldMan.bard;
+    let bard: *mut MauvilleManBard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard;
     StringCopy(
         (*bard).playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     let mut i: u16 = 0;
     while i < TRAINER_ID_LENGTH as u16 {
-        (*bard).playerTrainerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i];
+        (*bard).playerTrainerId[i] = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[i];
         i += 1;
     }
     for i in 0..(NUM_BARD_SONG_WORDS as u16) {
@@ -248,7 +250,7 @@ pub unsafe fn SaveBardSongLyrics() {
     (*bard).hasChangedSong = TRUE;
 }
 unsafe fn PrepareSongText() {
-    let bard: *mut MauvilleManBard = &raw mut (*gSaveBlock1Ptr).oldMan.bard;
+    let bard: *mut MauvilleManBard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard;
     let mut lyrics: *mut u16 = if gSpecialVar_0x8004 == 0 {
         (*bard).songLyrics.as_mut_ptr()
     } else {
@@ -332,11 +334,11 @@ pub unsafe fn PlayBardSong() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn HasHipsterTaughtWord() {
-    gSpecialVar_Result = (*gSaveBlock1Ptr).oldMan.hipster.taughtWord as u16;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock1Ptr)).oldMan.hipster.taughtWord as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetHipsterTaughtWord() {
-    (*gSaveBlock1Ptr).oldMan.hipster.taughtWord = TRUE;
+    (*crate::gl!(gSaveBlock1Ptr)).oldMan.hipster.taughtWord = TRUE;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn HipsterTryTeachWord() {
@@ -350,7 +352,7 @@ pub unsafe fn HipsterTryTeachWord() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GiddyShouldTellAnotherTale() {
-    let giddy: *mut MauvilleManGiddy = &raw mut (*gSaveBlock1Ptr).oldMan.giddy;
+    let giddy: *mut MauvilleManGiddy = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.giddy;
     if (*giddy).taleCounter == GIDDY_MAX_TALES {
         gSpecialVar_Result = FALSE as u16;
         (*giddy).taleCounter = 0;
@@ -360,7 +362,7 @@ pub unsafe fn GiddyShouldTellAnotherTale() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GenerateGiddyLine() {
-    let giddy: *mut MauvilleManGiddy = &raw mut (*gSaveBlock1Ptr).oldMan.giddy;
+    let giddy: *mut MauvilleManGiddy = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.giddy;
     if (*giddy).taleCounter == 0 {
         InitGiddyTaleList();
     }
@@ -402,7 +404,7 @@ pub unsafe fn GenerateGiddyLine() {
     gSpecialVar_Result = TRUE as u16;
 }
 unsafe fn InitGiddyTaleList() {
-    let giddy: *mut MauvilleManGiddy = &raw mut (*gSaveBlock1Ptr).oldMan.giddy;
+    let giddy: *mut MauvilleManGiddy = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.giddy;
     let mut wordGroupsAndCount: CArray<CArray<u16, 2>, 6> = zeroed();
     wordGroupsAndCount[0][0] = 0;
     wordGroupsAndCount[0][1] = 0;
@@ -463,10 +465,10 @@ unsafe fn InitGiddyTaleList() {
     }
 }
 unsafe fn ResetBardFlag() {
-    (*gSaveBlock1Ptr).oldMan.bard.hasChangedSong = FALSE;
+    (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard.hasChangedSong = FALSE;
 }
 unsafe fn ResetHipsterFlag() {
-    (*gSaveBlock1Ptr).oldMan.hipster.taughtWord = FALSE;
+    (*crate::gl!(gSaveBlock1Ptr)).oldMan.hipster.taughtWord = FALSE;
 }
 unsafe fn ResetTraderFlag() {
     Trader_ResetFlag();
@@ -500,7 +502,7 @@ unsafe fn StartBardSong(useNewSongLyrics: u8) {
 fn EnableTextPrinters() {
     gDisableTextPrinters.set(FALSE);
 }
-pub(crate) unsafe fn DisableTextPrinters(printer: *mut TextPrinterTemplate, renderCmd: u16) {
+pub(crate) fn DisableTextPrinters(printer: *mut TextPrinterTemplate, renderCmd: u16) {
     gDisableTextPrinters.set(TRUE);
 }
 unsafe fn DrawSongTextWindow(str: *mut u8) {
@@ -513,7 +515,7 @@ unsafe fn BardSing(task: *mut Task, song: *mut BardSong) {
     'l1: {
         match (*task).data[tState] {
             BARD_STATE_INIT => {
-                let bard: *mut MauvilleManBard = &raw mut (*gSaveBlock1Ptr).oldMan.bard;
+                let bard: *mut MauvilleManBard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard;
                 let mut lyrics: *mut u16 = null_mut();
                 if gSpecialVar_0x8004 == 0 {
                     lyrics = (*bard).songLyrics.as_mut_ptr();
@@ -565,14 +567,14 @@ unsafe fn BardSing(task: *mut Task, song: *mut BardSong) {
                         if (*template).songId < NUM_PHONEME_SONGS {
                             (*song).volume = BARD_SONG_BASE_VOLUME + (*template).volume as u16 * 16;
                             m4aMPlayVolumeControl(
-                                &raw mut gMPlayInfo_SE2,
+                                crate::gl!(&raw gMPlayInfo_SE2),
                                 TRACKS_ALL,
                                 (*song).volume,
                             );
                             (*song).pitch = BARD_SONG_BASE_PITCH
                                 + (*song).sounds[(*song).soundIndex].pitch as i16;
                             m4aMPlayPitchControl(
-                                &raw mut gMPlayInfo_SE2,
+                                crate::gl!(&raw gMPlayInfo_SE2),
                                 TRACKS_ALL,
                                 (*song).pitch,
                             );
@@ -587,8 +589,16 @@ unsafe fn BardSing(task: *mut Task, song: *mut BardSong) {
                         } else {
                             (*song).pitch -= 64;
                         }
-                        m4aMPlayVolumeControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, (*song).volume);
-                        m4aMPlayPitchControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, (*song).pitch);
+                        m4aMPlayVolumeControl(
+                            crate::gl!(&raw gMPlayInfo_SE2),
+                            TRACKS_ALL,
+                            (*song).volume,
+                        );
+                        m4aMPlayPitchControl(
+                            crate::gl!(&raw gMPlayInfo_SE2),
+                            TRACKS_ALL,
+                            (*song).pitch,
+                        );
                         (*song).voiceInflection += 1;
                         (*song).timer -= 1;
                         if (*song).timer == 0 {
@@ -612,7 +622,7 @@ unsafe fn BardSing(task: *mut Task, song: *mut BardSong) {
                             (*song).timer
                         }) == 0 =>
                     {
-                        m4aMPlayStop(&raw mut gMPlayInfo_SE2);
+                        m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE2));
                         (*song).state = SOUND_STATE_WAIT;
                     }
                     _ => {}
@@ -626,7 +636,7 @@ unsafe fn BardSing(task: *mut Task, song: *mut BardSong) {
 }
 pub(crate) unsafe fn Task_BardSong(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
-    BardSing(task, &raw mut gBardSong);
+    BardSing(task, crate::gl!(&raw gBardSong));
     match (*task).data[tState] {
         BARD_STATE_INIT => {
             PrepareSongText();
@@ -644,7 +654,7 @@ pub(crate) unsafe fn Task_BardSong(taskId: u8) {
             }
         }
         BARD_STATE_GET_WORD => {
-            let bard: *mut MauvilleManBard = &raw mut (*gSaveBlock1Ptr).oldMan.bard;
+            let bard: *mut MauvilleManBard = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.bard;
             let mut str: *mut u8 = &raw mut (*(&raw const crate::string_util::gStringVar4)
                 .cast::<CArray<u8, 1000>>()
                 .cast_mut())[(*task).data[tCharIndex]];
@@ -676,9 +686,12 @@ pub(crate) unsafe fn Task_BardSong(taskId: u8) {
                         + ((*bard).newSongLyrics[(*task).data[tLyricsIndex]] >> 3 & 1),
                 );
             }
-            gBardSong.length = div_i32(gBardSong.length as i32, wordLen as i32) as i16;
-            if gBardSong.length <= 0 {
-                gBardSong.length = 1;
+            crate::gl!(
+                gBardSong.length =
+                    div_i32(crate::gl!(gBardSong.length) as i32, wordLen as i32) as i16
+            );
+            if crate::gl!(gBardSong.length) <= 0 {
+                crate::gl!(gBardSong.length = 1);
             }
             (*task).data[tLyricsIndex] += 1;
             if (*task).data[tDelay] == 0 {
@@ -699,7 +712,7 @@ pub(crate) unsafe fn Task_BardSong(taskId: u8) {
         BARD_STATE_HANDLE_WORD => {
             if gStringVar4[(*task).data[tCharIndex]] == EOS {
                 FadeInBGM(6);
-                m4aMPlayFadeOutTemporarily(&raw mut gMPlayInfo_SE2, 2);
+                m4aMPlayFadeOutTemporarily(crate::gl!(&raw gMPlayInfo_SE2), 2);
                 ScriptContext_Enable();
                 DestroyTask(taskId);
             } else if gStringVar4[(*task).data[tCharIndex]] == CHAR_SPACE {
@@ -732,7 +745,7 @@ pub(crate) unsafe fn Task_BardSong(taskId: u8) {
                     2 => {
                         (*task).data[tCharIndex] += 1;
                         (*task).data[tWordState] = 0;
-                        (*task).data[tDelay] = gBardSong.length;
+                        (*task).data[tDelay] = crate::gl!(gBardSong.length);
                         (*task).data[tState] = BARD_STATE_WAIT_WORD;
                     }
                     _ => {}
@@ -933,18 +946,18 @@ pub unsafe fn SanitizeReceivedRubyOldMan(oldMan: *mut OldMan, version: u32, lang
     }
 }
 unsafe fn StorytellerSetup() {
-    sStorytellerPtr = &raw mut (*gSaveBlock1Ptr).oldMan.storyteller;
-    (*sStorytellerPtr).id = MAUVILLE_MAN_STORYTELLER;
-    (*sStorytellerPtr).alreadyRecorded = FALSE;
+    crate::gl!(sStorytellerPtr = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.storyteller);
+    (*crate::gl!(sStorytellerPtr)).id = MAUVILLE_MAN_STORYTELLER;
+    (*crate::gl!(sStorytellerPtr)).alreadyRecorded = FALSE;
     for i in 0..NUM_STORYTELLER_TALES {
-        (*sStorytellerPtr).gameStatIDs[i] = 0;
-        (*sStorytellerPtr).trainerNames[0][i] = EOS;
+        (*crate::gl!(sStorytellerPtr)).gameStatIDs[i] = 0;
+        (*crate::gl!(sStorytellerPtr)).trainerNames[0][i] = EOS;
     }
 }
 unsafe fn Storyteller_ResetFlag() {
-    sStorytellerPtr = &raw mut (*gSaveBlock1Ptr).oldMan.storyteller;
-    (*sStorytellerPtr).id = MAUVILLE_MAN_STORYTELLER;
-    (*sStorytellerPtr).alreadyRecorded = FALSE;
+    crate::gl!(sStorytellerPtr = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.storyteller);
+    (*crate::gl!(sStorytellerPtr)).id = MAUVILLE_MAN_STORYTELLER;
+    (*crate::gl!(sStorytellerPtr)).alreadyRecorded = FALSE;
 }
 unsafe fn StorytellerGetGameStat(mut stat: u8) -> u32 {
     if stat == 50 {
@@ -974,7 +987,7 @@ unsafe fn GetStoryActionByStat(stat: u32) -> *mut u8 {
 unsafe fn GetFreeStorySlot() -> u8 {
     let mut i: u8 = 0;
     while i < NUM_STORYTELLER_TALES as u8 {
-        if (*sStorytellerPtr).gameStatIDs[i] == 0 {
+        if (*crate::gl!(sStorytellerPtr)).gameStatIDs[i] == 0 {
             break;
         }
         i += 1;
@@ -982,18 +995,18 @@ unsafe fn GetFreeStorySlot() -> u8 {
     i
 }
 unsafe fn StorytellerGetRecordedTrainerStat(trainer: u32) -> u32 {
-    let ptr: *mut u8 = (*sStorytellerPtr).statValues[trainer].as_mut_ptr();
+    let ptr: *mut u8 = (*crate::gl!(sStorytellerPtr)).statValues[trainer].as_mut_ptr();
     *ptr as u32 | (*ptr.at(1) as u32) << 8 | (*ptr.at(2) as u32) << 16 | (*ptr.at(3) as u32) << 24
 }
 unsafe fn StorytellerSetRecordedTrainerStat(trainer: u32, val: u32) {
-    let ptr: *mut u8 = (*sStorytellerPtr).statValues[trainer].as_mut_ptr();
+    let ptr: *mut u8 = (*crate::gl!(sStorytellerPtr)).statValues[trainer].as_mut_ptr();
     *ptr = val as u8;
     *ptr.at(1) = (val >> 8) as u8;
     *ptr.at(2) = (val >> 16) as u8;
     *ptr.at(3) = (val >> 24) as u8;
 }
 unsafe fn HasTrainerStatIncreased(trainer: u32) -> u32 {
-    if StorytellerGetGameStat((*sStorytellerPtr).gameStatIDs[trainer])
+    if StorytellerGetGameStat((*crate::gl!(sStorytellerPtr)).gameStatIDs[trainer])
         > StorytellerGetRecordedTrainerStat(trainer)
     {
         return TRUE as u32;
@@ -1006,18 +1019,21 @@ unsafe fn HasTrainerStatIncreased(trainer: u32) -> u32 {
     }
 }
 unsafe fn GetStoryByStattellerPlayerName(player: u32, dst: *mut c_void) {
-    let name: *mut u8 = (*sStorytellerPtr).trainerNames[player].as_mut_ptr();
+    let name: *mut u8 = (*crate::gl!(sStorytellerPtr)).trainerNames[player].as_mut_ptr();
     memset(dst as *mut u8, EOS as i32, 8);
     memcpy(dst as *mut u8, name, PLAYER_NAME_LENGTH as u32);
 }
 unsafe fn StorytellerSetPlayerName(player: u32, src: *mut u8) {
-    let name: *mut u8 = (*sStorytellerPtr).trainerNames[player].as_mut_ptr();
+    let name: *mut u8 = (*crate::gl!(sStorytellerPtr)).trainerNames[player].as_mut_ptr();
     memset(name, EOS as i32, PLAYER_NAME_LENGTH as u32);
     memcpy(name, src, PLAYER_NAME_LENGTH as u32);
 }
 unsafe fn StorytellerRecordNewStat(player: u32, stat: u32) {
-    (*sStorytellerPtr).gameStatIDs[player] = stat as u8;
-    StorytellerSetPlayerName(player, (*gSaveBlock2Ptr).playerName.as_mut_ptr());
+    (*crate::gl!(sStorytellerPtr)).gameStatIDs[player] = stat as u8;
+    StorytellerSetPlayerName(
+        player,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
     StorytellerSetRecordedTrainerStat(player, StorytellerGetGameStat(stat as u8));
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -1025,8 +1041,11 @@ unsafe fn StorytellerRecordNewStat(player: u32, stat: u32) {
         STR_CONV_MODE_LEFT_ALIGN,
         10,
     );
-    StringCopy(gStringVar2.as_mut_ptr(), GetStoryActionByStat(stat));
-    (*sStorytellerPtr).language[player] = gGameLanguage;
+    StringCopy(
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+        GetStoryActionByStat(stat),
+    );
+    (*crate::gl!(sStorytellerPtr)).language[player] = gGameLanguage;
 }
 unsafe fn ScrambleStatList(arr: *mut u8, count: i32) {
     let mut i: i32 = 0;
@@ -1052,13 +1071,13 @@ unsafe fn StorytellerInitializeRandomStat() -> u8 {
         let minVal: u8 = sStorytellerStories[storyIds[i]].minVal;
         j = 0;
         while j < NUM_STORYTELLER_TALES {
-            if (*sStorytellerPtr).gameStatIDs[j] == stat {
+            if (*crate::gl!(sStorytellerPtr)).gameStatIDs[j] == stat {
                 break;
             }
             j += 1;
         }
         if j == NUM_STORYTELLER_TALES && StorytellerGetGameStat(stat) >= minVal as u32 {
-            (*sStorytellerPtr).alreadyRecorded = TRUE;
+            (*crate::gl!(sStorytellerPtr)).alreadyRecorded = TRUE;
             if GetFreeStorySlot() == NUM_STORYTELLER_TALES as u8 {
                 StorytellerRecordNewStat(sSelectedStory.get() as u32, stat as u32);
             } else {
@@ -1071,18 +1090,21 @@ unsafe fn StorytellerInitializeRandomStat() -> u8 {
     FALSE
 }
 unsafe fn StorytellerDisplayStory(player: u32) {
-    let stat: u8 = (*sStorytellerPtr).gameStatIDs[player];
+    let stat: u8 = (*crate::gl!(sStorytellerPtr)).gameStatIDs[player];
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
         StorytellerGetRecordedTrainerStat(player) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         10,
     );
-    StringCopy(gStringVar2.as_mut_ptr(), GetStoryActionByStat(stat as u32));
-    GetStoryByStattellerPlayerName(player, gStringVar3.as_mut_ptr() as *mut c_void);
+    StringCopy(
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+        GetStoryActionByStat(stat as u32),
+    );
+    GetStoryByStattellerPlayerName(player, (*gStringVar3.as_ptr()).as_mut_ptr() as *mut c_void);
     ConvertInternationalString(
-        gStringVar3.as_mut_ptr(),
-        (*sStorytellerPtr).language[player],
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        (*crate::gl!(sStorytellerPtr)).language[player],
     );
     ShowFieldMessage(GetStoryTextByStat(stat as u32));
 }
@@ -1095,7 +1117,7 @@ unsafe fn PrintStoryList() {
         0,
     );
     for i in 0..NUM_STORYTELLER_TALES {
-        let gameStatID: u16 = (*sStorytellerPtr).gameStatIDs[i] as u16;
+        let gameStatID: u16 = (*crate::gl!(sStorytellerPtr)).gameStatIDs[i] as u16;
         if gameStatID == 0 {
             break;
         }
@@ -1113,7 +1135,7 @@ unsafe fn PrintStoryList() {
     SetStandardWindowBorderStyle(sStorytellerWindowId.get(), FALSE);
     let mut i: i32 = 0;
     while i < NUM_STORYTELLER_TALES {
-        let gameStatID: u16 = (*sStorytellerPtr).gameStatIDs[i] as u16;
+        let gameStatID: u16 = (*crate::gl!(sStorytellerPtr)).gameStatIDs[i] as u16;
         if gameStatID == 0 {
             break;
         }
@@ -1180,13 +1202,13 @@ pub unsafe fn Script_StorytellerDisplayStory() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn StorytellerGetFreeStorySlot() -> u8 {
-    sStorytellerPtr = &raw mut (*gSaveBlock1Ptr).oldMan.storyteller;
+    crate::gl!(sStorytellerPtr = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.storyteller);
     GetFreeStorySlot()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn StorytellerUpdateStat() -> u8 {
-    sStorytellerPtr = &raw mut (*gSaveBlock1Ptr).oldMan.storyteller;
-    let stat: u8 = (*sStorytellerPtr).gameStatIDs[sSelectedStory.get()];
+    crate::gl!(sStorytellerPtr = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.storyteller);
+    let stat: u8 = (*crate::gl!(sStorytellerPtr)).gameStatIDs[sSelectedStory.get()];
     if HasTrainerStatIncreased(sSelectedStory.get() as u32) == TRUE as u32 {
         StorytellerRecordNewStat(sSelectedStory.get() as u32, stat as u32);
         return TRUE;
@@ -1195,8 +1217,8 @@ pub unsafe fn StorytellerUpdateStat() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn HasStorytellerAlreadyRecorded() -> u8 {
-    sStorytellerPtr = &raw mut (*gSaveBlock1Ptr).oldMan.storyteller;
-    if (*sStorytellerPtr).alreadyRecorded == FALSE {
+    crate::gl!(sStorytellerPtr = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.storyteller);
+    if (*crate::gl!(sStorytellerPtr)).alreadyRecorded == FALSE {
         return FALSE;
     } else {
         return TRUE;
@@ -1208,6 +1230,6 @@ pub unsafe fn HasStorytellerAlreadyRecorded() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn Script_StorytellerInitializeRandomStat() -> u8 {
-    sStorytellerPtr = &raw mut (*gSaveBlock1Ptr).oldMan.storyteller;
+    crate::gl!(sStorytellerPtr = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan.storyteller);
     StorytellerInitializeRandomStat()
 }

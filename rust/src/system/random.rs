@@ -21,21 +21,21 @@ fn step(state: &Global<u32>) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gRngValue: Global<u32> = Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gRng2Value: Global<u32> = Global::new(0);
 
 /// How many values `Random` has produced (kept from C; nothing reads it).
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static sRandCount: Global<u32> = Global::new(0);
 
 /// Reset by `SeedRng` (kept from C; nothing reads it).
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static sUnknown: Global<u8> = Global::new(0);
 
 /// A random number from the main generator.

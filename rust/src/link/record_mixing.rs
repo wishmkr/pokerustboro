@@ -214,25 +214,39 @@ static sPlayerIdxOrders_4Player: Table<CArray<CArray<u8, 4>, 9>> =
     Table((&raw const crate::data::record_mixing::sPlayerIdxOrders_4Player).cast());
 
 pub(crate) static sReadyToReceive: crate::global::Global<u8> = crate::global::Global::new(0);
-pub(crate) static mut sSecretBasesSave: *mut SecretBase = null_mut();
-pub(crate) static mut sTvShowsSave: *mut TVShow = null_mut();
-pub(crate) static mut sPokeNewsSave: *mut PokeNews = null_mut();
-pub(crate) static mut sOldManSave: *mut OldMan = null_mut();
-pub(crate) static mut sDewfordTrendsSave: *mut DewfordTrend = null_mut();
-pub(crate) static mut sRecordMixMailSave: *mut RecordMixingDaycareMail = null_mut();
-pub(crate) static mut sBattleTowerSave: *mut c_void = null_mut();
-pub(crate) static mut sLilycoveLadySave: *mut LilycoveLady = null_mut();
-pub(crate) static mut sApprenticesSave: *mut c_void = null_mut();
-pub(crate) static mut sBattleTowerSave_Duplicate: *mut c_void = null_mut();
+pub(crate) static sSecretBasesSave: crate::global::Global<*mut SecretBase> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sTvShowsSave: crate::global::Global<*mut TVShow> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sPokeNewsSave: crate::global::Global<*mut PokeNews> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sOldManSave: crate::global::Global<*mut OldMan> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sDewfordTrendsSave: crate::global::Global<*mut DewfordTrend> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sRecordMixMailSave: crate::global::Global<*mut RecordMixingDaycareMail> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sBattleTowerSave: crate::global::Global<*mut c_void> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sLilycoveLadySave: crate::global::Global<*mut LilycoveLady> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sApprenticesSave: crate::global::Global<*mut c_void> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sBattleTowerSave_Duplicate: crate::global::Global<*mut c_void> =
+    crate::global::Global::new(null_mut());
 pub(crate) static sRecordStructSize: crate::global::Global<u32> = crate::global::Global::new(0);
 pub(crate) static sDaycareMailRandSum: crate::global::Global<u8> = crate::global::Global::new(0);
-pub(crate) static mut sPartnerHallRecords: CArray<*mut PlayerHallRecords, 3> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRecordMixMail: RecordMixingDaycareMail = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReceivedRecords: *mut PlayerRecord = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSentRecord: *mut PlayerRecord = null_mut();
+pub(crate) static sPartnerHallRecords: crate::global::Global<CArray<*mut PlayerHallRecords, 3>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRecordMixMail: crate::global::Global<RecordMixingDaycareMail> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sReceivedRecords: crate::global::Global<*mut PlayerRecord> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSentRecord: crate::global::Global<*mut PlayerRecord> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -269,7 +283,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `ReceiveDewfordTrendData` with this module's view of its types.
 #[inline]
-unsafe fn ReceiveDewfordTrendData(a0: *mut DewfordTrend, a1: u32, a2: u8) {
+fn ReceiveDewfordTrendData(a0: *mut DewfordTrend, a1: u32, a2: u8) {
     unsafe {
         crate::dewford_trend::ReceiveDewfordTrendData(a0 as _, a1 as _, a2);
     }
@@ -280,47 +294,55 @@ pub unsafe fn RecordMixingPlayerSpotTriggered() {
     CreateTask_EnterCableClubSeat(Some(Task_RecordMixing_Main));
 }
 unsafe fn SetSrcLookupPointers() {
-    sSecretBasesSave = (*gSaveBlock1Ptr).secretBases.as_mut_ptr();
-    sTvShowsSave = (*gSaveBlock1Ptr).tvShows.as_mut_ptr();
-    sPokeNewsSave = (*gSaveBlock1Ptr).pokeNews.as_mut_ptr();
-    sOldManSave = &raw mut (*gSaveBlock1Ptr).oldMan;
-    sDewfordTrendsSave = (*gSaveBlock1Ptr).dewfordTrends.as_mut_ptr();
-    sRecordMixMailSave = &raw mut sRecordMixMail;
-    sBattleTowerSave = &raw mut (*gSaveBlock2Ptr).frontier.towerPlayer as *mut c_void;
-    sLilycoveLadySave = &raw mut (*gSaveBlock1Ptr).lilycoveLady;
-    sApprenticesSave = (*gSaveBlock2Ptr).apprentices.as_mut_ptr() as *mut c_void;
-    sBattleTowerSave_Duplicate = &raw mut (*gSaveBlock2Ptr).frontier.towerPlayer as *mut c_void;
+    crate::gl!(sSecretBasesSave = (*crate::gl!(gSaveBlock1Ptr)).secretBases.as_mut_ptr());
+    crate::gl!(sTvShowsSave = (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr());
+    crate::gl!(sPokeNewsSave = (*crate::gl!(gSaveBlock1Ptr)).pokeNews.as_mut_ptr());
+    crate::gl!(sOldManSave = &raw mut (*crate::gl!(gSaveBlock1Ptr)).oldMan);
+    crate::gl!(sDewfordTrendsSave = (*crate::gl!(gSaveBlock1Ptr)).dewfordTrends.as_mut_ptr());
+    crate::gl!(sRecordMixMailSave = crate::gl!(&raw sRecordMixMail));
+    crate::gl!(
+        sBattleTowerSave =
+            &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer as *mut c_void
+    );
+    crate::gl!(sLilycoveLadySave = &raw mut (*crate::gl!(gSaveBlock1Ptr)).lilycoveLady);
+    crate::gl!(
+        sApprenticesSave = (*crate::gl!(gSaveBlock2Ptr)).apprentices.as_mut_ptr() as *mut c_void
+    );
+    crate::gl!(
+        sBattleTowerSave_Duplicate =
+            &raw mut (*crate::gl!(gSaveBlock2Ptr)).frontier.towerPlayer as *mut c_void
+    );
 }
 unsafe fn PrepareUnknownExchangePacket(dest: *mut PlayerRecordRS) {
     memcpy(
         (*dest).secretBases.as_mut_ptr() as *mut u8,
-        sSecretBasesSave as *mut u8,
+        crate::gl!(sSecretBasesSave) as *mut u8,
         3200,
     );
     memcpy(
         (*dest).tvShows.as_mut_ptr() as *mut u8,
-        sTvShowsSave as *mut u8,
+        crate::gl!(sTvShowsSave) as *mut u8,
         900,
     );
     SanitizeTVShowLocationsForRuby((*dest).tvShows.as_mut_ptr());
     memcpy(
         (*dest).pokeNews.as_mut_ptr() as *mut u8,
-        sPokeNewsSave as *mut u8,
+        crate::gl!(sPokeNewsSave) as *mut u8,
         64,
     );
     memcpy(
         &raw mut (*dest).oldMan as *mut u8,
-        sOldManSave as *mut u8,
+        crate::gl!(sOldManSave) as *mut u8,
         64,
     );
     memcpy(
         (*dest).dewfordTrends.as_mut_ptr() as *mut u8,
-        sDewfordTrendsSave as *mut u8,
+        crate::gl!(sDewfordTrendsSave) as *mut u8,
         40,
     );
     GetRecordMixingDaycareMail(&raw mut (*dest).daycareMail);
     EmeraldBattleTowerRecordToRuby(
-        sBattleTowerSave as *mut EmeraldBattleTowerRecord,
+        crate::gl!(sBattleTowerSave) as *mut EmeraldBattleTowerRecord,
         &raw mut (*dest).battleTowerRecord,
     );
     if GetMultiplayerId() == 0 {
@@ -330,36 +352,36 @@ unsafe fn PrepareUnknownExchangePacket(dest: *mut PlayerRecordRS) {
 unsafe fn PrepareExchangePacketForRubySapphire(dest: *mut PlayerRecordRS) {
     memcpy(
         (*dest).secretBases.as_mut_ptr() as *mut u8,
-        sSecretBasesSave as *mut u8,
+        crate::gl!(sSecretBasesSave) as *mut u8,
         3200,
     );
     ClearJapaneseSecretBases((*dest).secretBases.as_mut_ptr());
     memcpy(
         (*dest).tvShows.as_mut_ptr() as *mut u8,
-        sTvShowsSave as *mut u8,
+        crate::gl!(sTvShowsSave) as *mut u8,
         900,
     );
     SanitizeTVShowsForRuby((*dest).tvShows.as_mut_ptr());
     memcpy(
         (*dest).pokeNews.as_mut_ptr() as *mut u8,
-        sPokeNewsSave as *mut u8,
+        crate::gl!(sPokeNewsSave) as *mut u8,
         64,
     );
     memcpy(
         &raw mut (*dest).oldMan as *mut u8,
-        sOldManSave as *mut u8,
+        crate::gl!(sOldManSave) as *mut u8,
         64,
     );
     SanitizeMauvilleOldManForRuby(&raw mut (*dest).oldMan);
     memcpy(
         (*dest).dewfordTrends.as_mut_ptr() as *mut u8,
-        sDewfordTrendsSave as *mut u8,
+        crate::gl!(sDewfordTrendsSave) as *mut u8,
         40,
     );
     GetRecordMixingDaycareMail(&raw mut (*dest).daycareMail);
     SanitizeDaycareMailForRuby(&raw mut (*dest).daycareMail);
     EmeraldBattleTowerRecordToRuby(
-        sBattleTowerSave as *mut EmeraldBattleTowerRecord,
+        crate::gl!(sBattleTowerSave) as *mut EmeraldBattleTowerRecord,
         &raw mut (*dest).battleTowerRecord,
     );
     SanitizeRubyBattleTowerRecord(&raw mut (*dest).battleTowerRecord);
@@ -373,159 +395,182 @@ unsafe fn PrepareExchangePacket() {
     SetSrcLookupPointers();
     if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
         if LinkDummy_Return2() == 0 {
-            PrepareUnknownExchangePacket(&raw mut (*sSentRecord).ruby);
+            PrepareUnknownExchangePacket(&raw mut (*crate::gl!(sSentRecord)).ruby);
         } else {
-            PrepareExchangePacketForRubySapphire(&raw mut (*sSentRecord).ruby);
+            PrepareExchangePacketForRubySapphire(&raw mut (*crate::gl!(sSentRecord)).ruby);
         }
     } else {
         memcpy(
-            (*sSentRecord).emerald.secretBases.as_mut_ptr() as *mut u8,
-            sSecretBasesSave as *mut u8,
+            (*crate::gl!(sSentRecord)).emerald.secretBases.as_mut_ptr() as *mut u8,
+            crate::gl!(sSecretBasesSave) as *mut u8,
             3200,
         );
         memcpy(
-            (*sSentRecord).emerald.tvShows.as_mut_ptr() as *mut u8,
-            sTvShowsSave as *mut u8,
+            (*crate::gl!(sSentRecord)).emerald.tvShows.as_mut_ptr() as *mut u8,
+            crate::gl!(sTvShowsSave) as *mut u8,
             900,
         );
         memcpy(
-            (*sSentRecord).emerald.pokeNews.as_mut_ptr() as *mut u8,
-            sPokeNewsSave as *mut u8,
+            (*crate::gl!(sSentRecord)).emerald.pokeNews.as_mut_ptr() as *mut u8,
+            crate::gl!(sPokeNewsSave) as *mut u8,
             64,
         );
         memcpy(
-            &raw mut (*sSentRecord).emerald.oldMan as *mut u8,
-            sOldManSave as *mut u8,
+            &raw mut (*crate::gl!(sSentRecord)).emerald.oldMan as *mut u8,
+            crate::gl!(sOldManSave) as *mut u8,
             64,
         );
         memcpy(
-            &raw mut (*sSentRecord).emerald.lilycoveLady as *mut u8,
-            sLilycoveLadySave as *mut u8,
+            &raw mut (*crate::gl!(sSentRecord)).emerald.lilycoveLady as *mut u8,
+            crate::gl!(sLilycoveLadySave) as *mut u8,
             64,
         );
         memcpy(
-            (*sSentRecord).emerald.dewfordTrends.as_mut_ptr() as *mut u8,
-            sDewfordTrendsSave as *mut u8,
+            (*crate::gl!(sSentRecord))
+                .emerald
+                .dewfordTrends
+                .as_mut_ptr() as *mut u8,
+            crate::gl!(sDewfordTrendsSave) as *mut u8,
             40,
         );
-        GetRecordMixingDaycareMail(&raw mut (*sSentRecord).emerald.daycareMail);
+        GetRecordMixingDaycareMail(&raw mut (*crate::gl!(sSentRecord)).emerald.daycareMail);
         memcpy(
-            &raw mut (*sSentRecord).emerald.battleTowerRecord as *mut u8,
-            sBattleTowerSave as *mut u8,
+            &raw mut (*crate::gl!(sSentRecord)).emerald.battleTowerRecord as *mut u8,
+            crate::gl!(sBattleTowerSave) as *mut u8,
             236,
         );
-        SanitizeEmeraldBattleTowerRecord(&raw mut (*sSentRecord).emerald.battleTowerRecord);
+        SanitizeEmeraldBattleTowerRecord(
+            &raw mut (*crate::gl!(sSentRecord)).emerald.battleTowerRecord,
+        );
         if GetMultiplayerId() == 0 {
-            (*sSentRecord).emerald.giftItem = GetRecordMixingGift();
+            (*crate::gl!(sSentRecord)).emerald.giftItem = GetRecordMixingGift();
         }
         GetSavedApprentices(
-            (*sSentRecord).emerald.apprentices.as_mut_ptr(),
-            sApprenticesSave as *mut Apprentice,
+            (*crate::gl!(sSentRecord)).emerald.apprentices.as_mut_ptr(),
+            crate::gl!(sApprenticesSave) as *mut Apprentice,
         );
-        GetPlayerHallRecords(&raw mut (*sSentRecord).emerald.hallRecords);
+        GetPlayerHallRecords(&raw mut (*crate::gl!(sSentRecord)).emerald.hallRecords);
     }
 }
 unsafe fn ReceiveExchangePacket(multiplayerId: u32) {
     if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
         CalculateDaycareMailRandSum(
-            (*sReceivedRecords).ruby.tvShows.as_mut_ptr() as *mut c_void as *mut u8
+            (*crate::gl!(sReceivedRecords)).ruby.tvShows.as_mut_ptr() as *mut c_void as *mut u8
         );
         ReceiveSecretBasesData(
-            (*sReceivedRecords).ruby.secretBases.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sReceivedRecords))
+                .ruby
+                .secretBases
+                .as_mut_ptr() as *mut c_void,
             4656,
             multiplayerId as u8,
         );
         ReceiveDaycareMailData(
-            &raw mut (*sReceivedRecords).ruby.daycareMail,
+            &raw mut (*crate::gl!(sReceivedRecords)).ruby.daycareMail,
             4656,
             multiplayerId as u8,
-            (*sReceivedRecords).ruby.tvShows.as_mut_ptr(),
+            (*crate::gl!(sReceivedRecords)).ruby.tvShows.as_mut_ptr(),
         );
         ReceiveBattleTowerData(
-            &raw mut (*sReceivedRecords).ruby.battleTowerRecord as *mut c_void,
+            &raw mut (*crate::gl!(sReceivedRecords)).ruby.battleTowerRecord as *mut c_void,
             4656,
             multiplayerId as u8,
         );
         ReceiveTvShowsData(
-            (*sReceivedRecords).ruby.tvShows.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sReceivedRecords)).ruby.tvShows.as_mut_ptr() as *mut c_void,
             4656,
             multiplayerId as u8,
         );
         ReceivePokeNewsData(
-            (*sReceivedRecords).ruby.pokeNews.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sReceivedRecords)).ruby.pokeNews.as_mut_ptr() as *mut c_void,
             4656,
             multiplayerId as u8,
         );
         ReceiveOldManData(
-            &raw mut (*sReceivedRecords).ruby.oldMan,
+            &raw mut (*crate::gl!(sReceivedRecords)).ruby.oldMan,
             4656,
             multiplayerId as u8,
         );
         ReceiveDewfordTrendData(
-            (*sReceivedRecords).ruby.dewfordTrends.as_mut_ptr(),
+            (*crate::gl!(sReceivedRecords))
+                .ruby
+                .dewfordTrends
+                .as_mut_ptr(),
             4656,
             multiplayerId as u8,
         );
         ReceiveGiftItem(
-            &raw mut (*sReceivedRecords).ruby.giftItem,
+            &raw mut (*crate::gl!(sReceivedRecords)).ruby.giftItem,
             multiplayerId as u8,
         );
     } else {
         CalculateDaycareMailRandSum(
-            (*sReceivedRecords).emerald.tvShows.as_mut_ptr() as *mut c_void as *mut u8,
+            (*crate::gl!(sReceivedRecords)).emerald.tvShows.as_mut_ptr() as *mut c_void as *mut u8
         );
         ReceiveSecretBasesData(
-            (*sReceivedRecords).emerald.secretBases.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sReceivedRecords))
+                .emerald
+                .secretBases
+                .as_mut_ptr() as *mut c_void,
             5188,
             multiplayerId as u8,
         );
         ReceiveTvShowsData(
-            (*sReceivedRecords).emerald.tvShows.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sReceivedRecords)).emerald.tvShows.as_mut_ptr() as *mut c_void,
             5188,
             multiplayerId as u8,
         );
         ReceivePokeNewsData(
-            (*sReceivedRecords).emerald.pokeNews.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sReceivedRecords))
+                .emerald
+                .pokeNews
+                .as_mut_ptr() as *mut c_void,
             5188,
             multiplayerId as u8,
         );
         ReceiveOldManData(
-            &raw mut (*sReceivedRecords).emerald.oldMan,
+            &raw mut (*crate::gl!(sReceivedRecords)).emerald.oldMan,
             5188,
             multiplayerId as u8,
         );
         ReceiveDewfordTrendData(
-            (*sReceivedRecords).emerald.dewfordTrends.as_mut_ptr(),
+            (*crate::gl!(sReceivedRecords))
+                .emerald
+                .dewfordTrends
+                .as_mut_ptr(),
             5188,
             multiplayerId as u8,
         );
         ReceiveDaycareMailData(
-            &raw mut (*sReceivedRecords).emerald.daycareMail,
+            &raw mut (*crate::gl!(sReceivedRecords)).emerald.daycareMail,
             5188,
             multiplayerId as u8,
-            (*sReceivedRecords).emerald.tvShows.as_mut_ptr(),
+            (*crate::gl!(sReceivedRecords)).emerald.tvShows.as_mut_ptr(),
         );
         ReceiveBattleTowerData(
-            &raw mut (*sReceivedRecords).emerald.battleTowerRecord as *mut c_void,
+            &raw mut (*crate::gl!(sReceivedRecords)).emerald.battleTowerRecord as *mut c_void,
             5188,
             multiplayerId as u8,
         );
         ReceiveGiftItem(
-            &raw mut (*sReceivedRecords).emerald.giftItem,
+            &raw mut (*crate::gl!(sReceivedRecords)).emerald.giftItem,
             multiplayerId as u8,
         );
         ReceiveLilycoveLadyData(
-            &raw mut (*sReceivedRecords).emerald.lilycoveLady,
+            &raw mut (*crate::gl!(sReceivedRecords)).emerald.lilycoveLady,
             5188,
             multiplayerId as u8,
         );
         ReceiveApprenticeData(
-            (*sReceivedRecords).emerald.apprentices.as_mut_ptr(),
+            (*crate::gl!(sReceivedRecords))
+                .emerald
+                .apprentices
+                .as_mut_ptr(),
             5188,
             multiplayerId as u8 as u32,
         );
         ReceiveRankingHallRecords(
-            &raw mut (*sReceivedRecords).emerald.hallRecords,
+            &raw mut (*crate::gl!(sReceivedRecords)).emerald.hallRecords,
             5188,
             multiplayerId as u8 as u32,
         );
@@ -550,8 +595,8 @@ pub(crate) unsafe fn Task_RecordMixing_Main(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
-            sSentRecord = Alloc(5188) as *mut PlayerRecord;
-            sReceivedRecords = Alloc(20752) as *mut PlayerRecord;
+            crate::gl!(sSentRecord = Alloc(5188) as *mut PlayerRecord);
+            crate::gl!(sReceivedRecords = Alloc(20752) as *mut PlayerRecord);
             SetLocalLinkPlayerId(gSpecialVar_0x8005 as u8);
             VarSet(VAR_TEMP_MIXED_RECORDS, 1);
             sReadyToReceive.set(FALSE);
@@ -577,7 +622,7 @@ pub(crate) unsafe fn Task_RecordMixing_Main(taskId: u8) {
         3 => {
             if (*gTasks.as_ptr())[*data.at(10)].isActive == 0 {
                 *data = 4;
-                if gWirelessCommType == 0 {
+                if gWirelessCommType.get() == 0 {
                     *data.at(10) = CreateTask_ReestablishCableClubLink() as i16;
                 }
                 PrintTextOnRecordMixing(
@@ -599,10 +644,10 @@ pub(crate) unsafe fn Task_RecordMixing_Main(taskId: u8) {
             }
         }
         5 if (*gTasks.as_ptr())[*data.at(10)].isActive == 0 => {
-            Free(sReceivedRecords as *mut c_void);
-            Free(sSentRecord as *mut c_void);
+            Free(crate::gl!(sReceivedRecords) as *mut c_void);
+            Free(crate::gl!(sSentRecord) as *mut c_void);
             SetLinkWaitingForScript();
-            if gWirelessCommType != 0 {
+            if gWirelessCommType.get() != 0 {
                 CreateTask(Some(Task_ReturnToFieldRecordMixing), 10);
             }
             ClearDialogWindowAndFrame(0, TRUE);
@@ -676,7 +721,7 @@ pub(crate) unsafe fn Task_MixingRecordsRecv(taskId: u8) {
             }
         }
         1 => {
-            if gReceivedRemoteLinkPlayers != 0 {
+            if gReceivedRemoteLinkPlayers.get() != 0 {
                 ConvertIntToDecimalStringN(
                     gStringVar1.as_mut_ptr(),
                     GetMultiplayerId_() as i32,
@@ -694,27 +739,27 @@ pub(crate) unsafe fn Task_MixingRecordsRecv(taskId: u8) {
             (*task).func = Some(Task_SendPacket);
             if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
                 StorePtrInTaskData(
-                    sSentRecord as *mut c_void,
+                    crate::gl!(sSentRecord) as *mut c_void,
                     &raw mut (*task).data[tSentRecord] as *mut u16,
                 );
                 subTaskId = CreateTask(Some(Task_CopyReceiveBuffer), 80);
                 (*task).data[10] = subTaskId as i16;
                 task_set(subTaskId, 0, taskId as i16);
                 StorePtrInTaskData(
-                    sReceivedRecords as *mut c_void,
+                    crate::gl!(sReceivedRecords) as *mut c_void,
                     task_data_ptr(subTaskId, 5) as *mut u16,
                 );
                 sRecordStructSize.set(4656);
             } else {
                 StorePtrInTaskData(
-                    sSentRecord as *mut c_void,
+                    crate::gl!(sSentRecord) as *mut c_void,
                     &raw mut (*task).data[tSentRecord] as *mut u16,
                 );
                 subTaskId = CreateTask(Some(Task_CopyReceiveBuffer), 80);
                 (*task).data[10] = subTaskId as i16;
                 task_set(subTaskId, 0, taskId as i16);
                 StorePtrInTaskData(
-                    sReceivedRecords as *mut c_void,
+                    crate::gl!(sReceivedRecords) as *mut c_void,
                     task_data_ptr(subTaskId, 5) as *mut u16,
                 );
                 sRecordStructSize.set(5188);
@@ -740,7 +785,7 @@ pub(crate) unsafe fn Task_SendPacket(taskId: u8) {
                     .at((*task).data[tNumChunksSent] as i32 * BUFFER_CHUNK_SIZE as i32)
                     as *mut c_void;
             memcpy(
-                gBlockSendBuffer.as_mut_ptr(),
+                (*gBlockSendBuffer.as_ptr()).as_mut_ptr(),
                 recordData as *mut u8,
                 BUFFER_CHUNK_SIZE,
             );
@@ -836,7 +881,7 @@ unsafe fn GetMultiplayerId_() -> u8 {
     GetMultiplayerId()
 }
 unsafe fn GetPlayerRecvBuffer(id: u8) -> *mut c_void {
-    gBlockRecvBuffer[id].as_mut_ptr() as *mut c_void
+    (*gBlockRecvBuffer.as_ptr())[id].as_mut_ptr() as *mut c_void
 }
 unsafe fn ShufflePlayerIndices(data: *mut u32) {
     let mut linkTrainerId: u32 = 0;
@@ -870,15 +915,21 @@ unsafe fn ReceiveOldManData(records: *mut OldMan, recordSize: u32, multiplayerId
     let oldMan: *mut OldMan = (records as *mut c_void as *mut u8)
         .at(recordSize * mixIndices[multiplayerId]) as *mut c_void
         as *mut OldMan;
-    version = gLinkPlayers[mixIndices[multiplayerId]].version as u8;
-    language = gLinkPlayers[mixIndices[multiplayerId]].language;
+    version = ({
+        let gl_i0 = mixIndices[multiplayerId];
+        crate::gl!(gLinkPlayers[gl_i0].version)
+    }) as u8;
+    language = {
+        let gl_i1 = mixIndices[multiplayerId];
+        crate::gl!(gLinkPlayers[gl_i1].language)
+    };
     if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
         SanitizeReceivedRubyOldMan(oldMan, version as u32, language as u32);
     } else {
         SanitizeReceivedEmeraldOldMan(oldMan, version as u32, language as u32);
     }
     memcpy(
-        sOldManSave as *mut u8,
+        crate::gl!(sOldManSave) as *mut u8,
         (records as *mut c_void as *mut u8).at(recordSize * mixIndices[multiplayerId])
             as *mut c_void as *mut u8,
         64,
@@ -901,7 +952,10 @@ unsafe fn ReceiveBattleTowerData(records: *mut c_void, recordSize: u32, multipla
         {
             battleTowerRecord = (records as *mut u8).at(recordSize * multiplayerId as u32)
                 as *mut c_void as *mut EmeraldBattleTowerRecord;
-            (*battleTowerRecord).language = gLinkPlayers[mixIndices[multiplayerId]].language as u8;
+            (*battleTowerRecord).language = ({
+                let gl_i2 = mixIndices[multiplayerId];
+                crate::gl!(gLinkPlayers[gl_i2].language)
+            }) as u8;
             CalcEmeraldBattleTowerChecksum(battleTowerRecord);
         }
     } else {
@@ -941,7 +995,7 @@ unsafe fn ReceiveLilycoveLadyData(records: *mut LilycoveLady, recordSize: u32, m
     memcpy(
         (records as *mut c_void as *mut u8).at(recordSize * multiplayerId as u32) as *mut c_void
             as *mut u8,
-        sLilycoveLadySave as *mut u8,
+        crate::gl!(sLilycoveLadySave) as *mut u8,
         64,
     );
     if GetLilycoveLadyId() == 0 {
@@ -949,12 +1003,16 @@ unsafe fn ReceiveLilycoveLadyData(records: *mut LilycoveLady, recordSize: u32, m
         if lilycoveLady.is_null() {
             return;
         }
-        memcpy(lilycoveLady as *mut u8, sLilycoveLadySave as *mut u8, 64);
+        memcpy(
+            lilycoveLady as *mut u8,
+            crate::gl!(sLilycoveLadySave) as *mut u8,
+            64,
+        );
     } else {
         lilycoveLady = null_mut();
     }
     memcpy(
-        sLilycoveLadySave as *mut u8,
+        crate::gl!(sLilycoveLadySave) as *mut u8,
         (records as *mut c_void as *mut u8).at(recordSize * mixIndices[multiplayerId])
             as *mut c_void as *mut u8,
         64,
@@ -1025,7 +1083,7 @@ unsafe fn ReceiveDaycareMailData(
     let mut canHoldItem: CArray<CArray<u8, 2>, 4> = zeroed();
     let mut idxs: CArray<CArray<u8, 2>, 4> = zeroed();
     let oldSeed: u16 = Random2();
-    SeedRng2(gLinkPlayers[0].trainerId as u16);
+    SeedRng2(crate::gl!(gLinkPlayers[0].trainerId) as u16);
     let linkPlayerCount: u8 = GetLinkPlayerCount();
     for i in 0..(MAX_LINK_PLAYERS as u16) {
         unusedArr1[i] = 0xFF;
@@ -1040,8 +1098,8 @@ unsafe fn ReceiveDaycareMailData(
         let mut version: u32 = 0;
         mixMail = (records as *mut c_void as *mut u8).at(i as u32 * recordSize) as *mut c_void
             as *mut RecordMixingDaycareMail;
-        language = gLinkPlayers[i].language as u32;
-        version = gLinkPlayers[i].version as u32 & 0xFF;
+        language = crate::gl!(gLinkPlayers[i].language) as u32;
+        version = crate::gl!(gLinkPlayers[i].version) as u32 & 0xFF;
         j = 0;
         while (j as u32) < (*mixMail).numDaycareMons {
             'l3: {
@@ -1181,12 +1239,12 @@ unsafe fn ReceiveDaycareMailData(
     mixMail = (records as *mut c_void as *mut u8).at(multiplayerId as u32 * recordSize)
         as *mut c_void as *mut RecordMixingDaycareMail;
     memcpy(
-        &raw mut (*gSaveBlock1Ptr).daycare.mons[0].mail as *mut u8,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare.mons[0].mail as *mut u8,
         &raw mut (*mixMail).mail[0] as *mut u8,
         56,
     );
     memcpy(
-        &raw mut (*gSaveBlock1Ptr).daycare.mons[1].mail as *mut u8,
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare.mons[1].mail as *mut u8,
         &raw mut (*mixMail).mail[1] as *mut u8,
         56,
     );
@@ -1199,7 +1257,10 @@ unsafe fn ReceiveGiftItem(item: *mut u16, multiplayerId: u8) {
             && AddBagItem(*item, 1) != 0
         {
             VarSet(VAR_TEMP_RECORD_MIX_GIFT_ITEM, *item);
-            StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[0].name.as_mut_ptr());
+            StringCopy(
+                gStringVar1.as_mut_ptr(),
+                (*gLinkPlayers.as_ptr())[0].name.as_mut_ptr(),
+            );
             if *item == ITEM_EON_TICKET {
                 FlagSet(FLAG_ENABLE_SHIP_SOUTHERN_ISLAND);
             }
@@ -1244,7 +1305,7 @@ pub(crate) unsafe fn Task_DoRecordMixing(taskId: u8) {
             }
         }
         5 => {
-            if gReceivedRemoteLinkPlayers == FALSE {
+            if gReceivedRemoteLinkPlayers.get() == FALSE {
                 DestroyTask(taskId);
             }
         }
@@ -1256,7 +1317,7 @@ pub(crate) unsafe fn Task_DoRecordMixing(taskId: u8) {
         }
         7 => {
             if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
-                if gWirelessCommType != 0 {
+                if gWirelessCommType.get() != 0 {
                     Rfu_SetLinkRecovery(TRUE as u32);
                     (*task).data[tState] = 8;
                 } else {
@@ -1284,16 +1345,16 @@ unsafe fn GetSavedApprentices(dst: *mut Apprentice, src: *mut Apprentice) {
     let mut apprenticeSaveId: i32 = 0;
     let mut numMixApprentices: i32 = 0;
     for i in 0..2i32 {
-        id = (i + (*gSaveBlock2Ptr).playerApprentice.saveId() as i32) % 3 + 1;
+        id = (i + (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId() as i32) % 3 + 1;
         if (*src.at(id)).playerName[0] != EOS {
             if GetTrainerId((*src.at(id)).playerId.as_mut_ptr())
-                != GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr())
+                != GetTrainerId((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr())
             {
                 numMixApprentices += 1;
                 apprenticeSaveId = id;
             }
             if GetTrainerId((*src.at(id)).playerId.as_mut_ptr())
-                == GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr())
+                == GetTrainerId((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr())
             {
                 numOldPlayerApprentices += 1;
                 oldPlayerApprenticeSaveId = id;
@@ -1310,10 +1371,14 @@ unsafe fn GetSavedApprentices(dst: *mut Apprentice, src: *mut Apprentice) {
         }
         2 => {
             if Random2() > 0x3333 {
-                *dst.at(1) = *src.at((*gSaveBlock2Ptr).playerApprentice.saveId() as i32 + 1);
-            } else {
                 *dst.at(1) =
-                    *src.at(((*gSaveBlock2Ptr).playerApprentice.saveId() as i32 + 1) % 3 + 1);
+                    *src.at((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId() as i32 + 1);
+            } else {
+                *dst.at(1) = *src.at(((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId()
+                    as i32
+                    + 1)
+                    % 3
+                    + 1);
             }
         }
         _ => {}
@@ -1325,12 +1390,12 @@ pub unsafe fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
         for j in 0..FRONTIER_LVL_MODE_COUNT {
             CopyTrainerId(
                 (*dst).onePlayer[i][j].id.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr(),
             );
             (*dst).onePlayer[i][j].language = GAME_LANGUAGE;
             StringCopy(
                 (*dst).onePlayer[i][j].name.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
         }
         i += 1;
@@ -1339,32 +1404,44 @@ pub unsafe fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
         (*dst).twoPlayers[j].language = GAME_LANGUAGE;
         CopyTrainerId(
             (*dst).twoPlayers[j].id1.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr(),
         );
         CopyTrainerId(
             (*dst).twoPlayers[j].id2.as_mut_ptr(),
-            (*gSaveBlock2Ptr).frontier.opponentTrainerIds[j].as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.opponentTrainerIds[j].as_mut_ptr(),
         );
         StringCopy(
             (*dst).twoPlayers[j].name1.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StringCopy(
             (*dst).twoPlayers[j].name2.as_mut_ptr(),
-            (*gSaveBlock2Ptr).frontier.opponentNames[j].as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.opponentNames[j].as_mut_ptr(),
         );
     }
     for i in 0..FRONTIER_LVL_MODE_COUNT {
-        (*dst).onePlayer[0][i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[0][i];
-        (*dst).onePlayer[1][i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[1][i];
-        (*dst).onePlayer[2][i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[2][i];
-        (*dst).onePlayer[3][i].winStreak = (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[0][i];
-        (*dst).onePlayer[4][i].winStreak = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[0][i];
-        (*dst).onePlayer[5][i].winStreak = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[i];
-        (*dst).onePlayer[6][i].winStreak = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[0][i];
-        (*dst).onePlayer[7][i].winStreak = (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[i];
-        (*dst).onePlayer[8][i].winStreak = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[i];
-        (*dst).twoPlayers[i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[3][i];
+        (*dst).onePlayer[0][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[0][i];
+        (*dst).onePlayer[1][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[1][i];
+        (*dst).onePlayer[2][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[2][i];
+        (*dst).onePlayer[3][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[0][i];
+        (*dst).onePlayer[4][i].winStreak = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .palaceRecordWinStreaks[0][i];
+        (*dst).onePlayer[5][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaRecordStreaks[i];
+        (*dst).onePlayer[6][i].winStreak = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .factoryRecordWinStreaks[0][i];
+        (*dst).onePlayer[7][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[i];
+        (*dst).onePlayer[8][i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[i];
+        (*dst).twoPlayers[i].winStreak =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[3][i];
     }
 }
 unsafe fn IsApprenticeAlreadySaved(
@@ -1395,7 +1472,7 @@ unsafe fn ReceiveApprenticeData(records: *mut Apprentice, recordSize: u32, multi
         if (*mixApprentice.at(i)).playerName[0] != EOS
             && IsApprenticeAlreadySaved(
                 mixApprentice.at(i),
-                &raw mut (*gSaveBlock2Ptr).apprentices[0],
+                &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[0],
             ) == 0
         {
             numApprentices += 1;
@@ -1405,21 +1482,24 @@ unsafe fn ReceiveApprenticeData(records: *mut Apprentice, recordSize: u32, multi
     }
     match numApprentices {
         1 => {
-            apprenticeSaveId = (*gSaveBlock2Ptr).playerApprentice.saveId() as u32 + 1;
-            (*gSaveBlock2Ptr).apprentices[apprenticeSaveId] = *mixApprentice.at(apprenticeId);
-            (*gSaveBlock2Ptr)
-                .playerApprentice
-                .set_saveId((((*gSaveBlock2Ptr).playerApprentice.saveId() as i32 + 1) % 3) as u8);
+            apprenticeSaveId = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId() as u32 + 1;
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[apprenticeSaveId] =
+                *mixApprentice.at(apprenticeId);
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.set_saveId(
+                (((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId() as i32 + 1) % 3) as u8,
+            );
         }
         2 => {
             for i in 0..2i32 {
-                apprenticeSaveId =
-                    (((i ^ 1) + (*gSaveBlock2Ptr).playerApprentice.saveId() as i32) % 3) as u32 + 1;
-                (*gSaveBlock2Ptr).apprentices[apprenticeSaveId] = *mixApprentice.at(i);
+                apprenticeSaveId = (((i ^ 1)
+                    + (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId() as i32)
+                    % 3) as u32
+                    + 1;
+                (*crate::gl!(gSaveBlock2Ptr)).apprentices[apprenticeSaveId] = *mixApprentice.at(i);
             }
-            (*gSaveBlock2Ptr)
-                .playerApprentice
-                .set_saveId((((*gSaveBlock2Ptr).playerApprentice.saveId() as i32 + 2) % 3) as u8);
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.set_saveId(
+                (((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.saveId() as i32 + 2) % 3) as u8,
+            );
         }
         _ => {}
     }
@@ -1436,11 +1516,15 @@ unsafe fn GetNewHallRecords(
     let mut i: i32 = 0;
     while i < linkPlayerCount {
         if i as u32 != multiplayerId {
-            sPartnerHallRecords[{
-                let t1 = k;
-                k += 1;
-                t1
-            }] = records as *mut PlayerHallRecords;
+            {
+                let gl_v = records as *mut PlayerHallRecords;
+                let gl_i0 = {
+                    let t1 = k;
+                    k += 1;
+                    t1
+                };
+                crate::gl!(sPartnerHallRecords[gl_i0] = gl_v)
+            };
         }
         if k == HALL_RECORDS_COUNT {
             break;
@@ -1452,27 +1536,32 @@ unsafe fn GetNewHallRecords(
         for j in 0..FRONTIER_LVL_MODE_COUNT {
             k = 0;
             while k < HALL_RECORDS_COUNT {
-                (*dst).hallRecords1P[i][j][k] = (*gSaveBlock2Ptr).hallRecords1P[i][j][k];
+                (*dst).hallRecords1P[i][j][k] =
+                    (*crate::gl!(gSaveBlock2Ptr)).hallRecords1P[i][j][k];
                 k += 1;
             }
             for k in 0..(linkPlayerCount - 1) {
                 repeatTrainers = 0;
                 for l in 0..HALL_RECORDS_COUNT {
                     if GetTrainerId((*dst).hallRecords1P[i][j][l].id.as_mut_ptr())
-                        == GetTrainerId((*sPartnerHallRecords[k]).onePlayer[i][j].id.as_mut_ptr())
+                        == GetTrainerId(
+                            (*crate::gl!(sPartnerHallRecords[k])).onePlayer[i][j]
+                                .id
+                                .as_mut_ptr(),
+                        )
                     {
                         repeatTrainers += 1;
                         if (*dst).hallRecords1P[i][j][l].winStreak
-                            < (*sPartnerHallRecords[k]).onePlayer[i][j].winStreak
+                            < (*crate::gl!(sPartnerHallRecords[k])).onePlayer[i][j].winStreak
                         {
                             (*dst).hallRecords1P[i][j][l] =
-                                (*sPartnerHallRecords[k]).onePlayer[i][j];
+                                (*crate::gl!(sPartnerHallRecords[k])).onePlayer[i][j];
                         }
                     }
                 }
                 if repeatTrainers == 0 {
                     (*dst).hallRecords1P[i][j][k + HALL_RECORDS_COUNT] =
-                        (*sPartnerHallRecords[k]).onePlayer[i][j];
+                        (*crate::gl!(sPartnerHallRecords[k])).onePlayer[i][j];
                 }
             }
         }
@@ -1480,28 +1569,37 @@ unsafe fn GetNewHallRecords(
     for j in 0..FRONTIER_LVL_MODE_COUNT {
         k = 0;
         while k < HALL_RECORDS_COUNT {
-            (*dst).hallRecords2P[j][k] = (*gSaveBlock2Ptr).hallRecords2P[j][k];
+            (*dst).hallRecords2P[j][k] = (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j][k];
             k += 1;
         }
         for k in 0..(linkPlayerCount - 1) {
             repeatTrainers = 0;
             for l in 0..HALL_RECORDS_COUNT {
                 if GetTrainerId((*dst).hallRecords2P[j][l].id1.as_mut_ptr())
-                    == GetTrainerId((*sPartnerHallRecords[k]).twoPlayers[j].id1.as_mut_ptr())
+                    == GetTrainerId(
+                        (*crate::gl!(sPartnerHallRecords[k])).twoPlayers[j]
+                            .id1
+                            .as_mut_ptr(),
+                    )
                     && GetTrainerId((*dst).hallRecords2P[j][l].id2.as_mut_ptr())
-                        == GetTrainerId((*sPartnerHallRecords[k]).twoPlayers[j].id2.as_mut_ptr())
+                        == GetTrainerId(
+                            (*crate::gl!(sPartnerHallRecords[k])).twoPlayers[j]
+                                .id2
+                                .as_mut_ptr(),
+                        )
                 {
                     repeatTrainers += 1;
                     if (*dst).hallRecords2P[j][l].winStreak
-                        < (*sPartnerHallRecords[k]).twoPlayers[j].winStreak
+                        < (*crate::gl!(sPartnerHallRecords[k])).twoPlayers[j].winStreak
                     {
-                        (*dst).hallRecords2P[j][l] = (*sPartnerHallRecords[k]).twoPlayers[j];
+                        (*dst).hallRecords2P[j][l] =
+                            (*crate::gl!(sPartnerHallRecords[k])).twoPlayers[j];
                     }
                 }
             }
             if repeatTrainers == 0 {
                 (*dst).hallRecords2P[j][k + HALL_RECORDS_COUNT] =
-                    (*sPartnerHallRecords[k]).twoPlayers[j];
+                    (*crate::gl!(sPartnerHallRecords[k])).twoPlayers[j];
             }
         }
     }
@@ -1548,14 +1646,14 @@ unsafe fn SaveHighestWinStreakRecords(mixHallRecords: *mut RecordMixingHallRecor
     for i in 0..HALL_FACILITIES_COUNT {
         for j in 0..FRONTIER_LVL_MODE_COUNT {
             FillWinStreakRecords1P(
-                (*gSaveBlock2Ptr).hallRecords1P[i][j].as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).hallRecords1P[i][j].as_mut_ptr(),
                 (*mixHallRecords).hallRecords1P[i][j].as_mut_ptr(),
             );
         }
     }
     for j in 0..FRONTIER_LVL_MODE_COUNT {
         FillWinStreakRecords2P(
-            (*gSaveBlock2Ptr).hallRecords2P[j].as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).hallRecords2P[j].as_mut_ptr(),
             (*mixHallRecords).hallRecords2P[j].as_mut_ptr(),
         );
     }
@@ -1579,10 +1677,13 @@ unsafe fn ReceiveRankingHallRecords(
     Free(mixHallRecords as *mut c_void);
 }
 unsafe fn GetRecordMixingDaycareMail(dst: *mut RecordMixingDaycareMail) {
-    sRecordMixMail.mail[0] = (*gSaveBlock1Ptr).daycare.mons[0].mail;
-    sRecordMixMail.mail[1] = (*gSaveBlock1Ptr).daycare.mons[1].mail;
-    InitDaycareMailRecordMixing(&raw mut (*gSaveBlock1Ptr).daycare, &raw mut sRecordMixMail);
-    *dst = *sRecordMixMailSave;
+    crate::gl!(sRecordMixMail.mail[0] = (*crate::gl!(gSaveBlock1Ptr)).daycare.mons[0].mail);
+    crate::gl!(sRecordMixMail.mail[1] = (*crate::gl!(gSaveBlock1Ptr)).daycare.mons[1].mail);
+    InitDaycareMailRecordMixing(
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
+        crate::gl!(&raw sRecordMixMail),
+    );
+    *dst = *crate::gl!(sRecordMixMailSave);
 }
 unsafe fn SanitizeDaycareMailForRuby(src: *mut RecordMixingDaycareMail) {
     let mut i: i32 = 0;

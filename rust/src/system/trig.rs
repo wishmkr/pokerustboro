@@ -48,11 +48,11 @@ const fn build_sine_degree_table() -> [i16; 180] {
 }
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = ".rodata")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".rodata"))]
 pub static gSineTable: [i16; 320] = build_sine_table();
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = ".rodata")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".rodata"))]
 pub static gSineDegreeTable: [i16; 180] = build_sine_degree_table();
 
 #[unsafe(no_mangle)]

@@ -87,7 +87,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -222,8 +222,11 @@ static sMoveRelearnerPalette: Table<SpritePalette> =
 static sMoveRelearnerSpriteSheet: Table<SpriteSheet> =
     Table((&raw const crate::data::move_relearner::sMoveRelearnerSpriteSheet).cast());
 
-pub(crate) static mut sMoveRelearnerStruct: *mut typeof___sMoveRelearnerStruct_0_t = null_mut();
-pub(crate) static mut sMoveRelearnerMenuState: sMoveRelearnerMenuState_t = unsafe { zeroed() };
+pub(crate) static sMoveRelearnerStruct: crate::global::Global<
+    *mut typeof___sMoveRelearnerStruct_0_t,
+> = crate::global::Global::new(null_mut());
+pub(crate) static sMoveRelearnerMenuState: crate::global::Global<sMoveRelearnerMenuState_t> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -273,9 +276,9 @@ pub unsafe fn TeachMoveRelearnerMove() {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
 }
 pub(crate) unsafe fn Task_WaitForFadeOut(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetMainCallback2(Some(CB2_InitLearnMove));
-        gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
+        crate::gl!(gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic));
         DestroyTask(taskId);
     }
 }
@@ -284,22 +287,22 @@ pub(crate) unsafe fn CB2_InitLearnMove() {
     FreeAllSpritePalettes();
     ResetTasks();
     ClearScheduledBgCopiesToVram();
-    sMoveRelearnerStruct = AllocZeroed(280) as *mut typeof___sMoveRelearnerStruct_0_t;
-    (*sMoveRelearnerStruct).partyMon = gSpecialVar_0x8004 as u8;
+    crate::gl!(sMoveRelearnerStruct = AllocZeroed(280) as *mut typeof___sMoveRelearnerStruct_0_t);
+    (*crate::gl!(sMoveRelearnerStruct)).partyMon = gSpecialVar_0x8004 as u8;
     SetVBlankCallback(Some(VBlankCB_MoveRelearner));
     InitMoveRelearnerBackgroundLayers();
     InitMoveRelearnerWindows(FALSE);
-    sMoveRelearnerMenuState.listOffset = 0;
-    sMoveRelearnerMenuState.listRow = 0;
-    sMoveRelearnerMenuState.showContestInfo = FALSE;
+    crate::gl!(sMoveRelearnerMenuState.listOffset = 0);
+    crate::gl!(sMoveRelearnerMenuState.listRow = 0);
+    crate::gl!(sMoveRelearnerMenuState.showContestInfo = FALSE);
     CreateLearnableMovesList();
     LoadSpriteSheet((&raw const *sMoveRelearnerSpriteSheet).cast_mut());
     LoadSpritePalette((&raw const *sMoveRelearnerPalette).cast_mut());
     CreateUISprites();
-    (*sMoveRelearnerStruct).moveListMenuTask = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
-        sMoveRelearnerMenuState.listOffset,
-        sMoveRelearnerMenuState.listRow,
+    (*crate::gl!(sMoveRelearnerStruct)).moveListMenuTask = ListMenuInit(
+        crate::gl!(&raw gMultiuseListMenuTemplate),
+        crate::gl!(sMoveRelearnerMenuState.listOffset),
+        crate::gl!(sMoveRelearnerMenuState.listRow),
     );
     SetBackdropFromColor(0);
     SetMainCallback2(Some(CB2_MoveRelearnerMain));
@@ -309,21 +312,21 @@ pub(crate) unsafe fn CB2_InitLearnMoveReturnFromSelectMove() {
     FreeAllSpritePalettes();
     ResetTasks();
     ClearScheduledBgCopiesToVram();
-    sMoveRelearnerStruct = AllocZeroed(280) as *mut typeof___sMoveRelearnerStruct_0_t;
-    (*sMoveRelearnerStruct).state = MENU_STATE_FADE_FROM_SUMMARY_SCREEN;
-    (*sMoveRelearnerStruct).partyMon = gSpecialVar_0x8004 as u8;
-    (*sMoveRelearnerStruct).moveSlot = gSpecialVar_0x8005 as u8;
+    crate::gl!(sMoveRelearnerStruct = AllocZeroed(280) as *mut typeof___sMoveRelearnerStruct_0_t);
+    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_FADE_FROM_SUMMARY_SCREEN;
+    (*crate::gl!(sMoveRelearnerStruct)).partyMon = gSpecialVar_0x8004 as u8;
+    (*crate::gl!(sMoveRelearnerStruct)).moveSlot = gSpecialVar_0x8005 as u8;
     SetVBlankCallback(Some(VBlankCB_MoveRelearner));
     InitMoveRelearnerBackgroundLayers();
-    InitMoveRelearnerWindows(sMoveRelearnerMenuState.showContestInfo);
+    InitMoveRelearnerWindows(crate::gl!(sMoveRelearnerMenuState.showContestInfo));
     CreateLearnableMovesList();
     LoadSpriteSheet((&raw const *sMoveRelearnerSpriteSheet).cast_mut());
     LoadSpritePalette((&raw const *sMoveRelearnerPalette).cast_mut());
     CreateUISprites();
-    (*sMoveRelearnerStruct).moveListMenuTask = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
-        sMoveRelearnerMenuState.listOffset,
-        sMoveRelearnerMenuState.listRow,
+    (*crate::gl!(sMoveRelearnerStruct)).moveListMenuTask = ListMenuInit(
+        crate::gl!(&raw gMultiuseListMenuTemplate),
+        crate::gl!(sMoveRelearnerMenuState.listOffset),
+        crate::gl!(sMoveRelearnerMenuState.listRow),
     );
     SetBackdropFromColor(0);
     SetMainCallback2(Some(CB2_MoveRelearnerMain));
@@ -355,23 +358,23 @@ unsafe fn PrintMessageWithPlaceholders(src: *mut u8) {
     MoveRelearnerPrintMessage(gStringVar4.as_mut_ptr());
 }
 unsafe fn DoMoveRelearnerMain() {
-    match (*sMoveRelearnerStruct).state {
+    match (*crate::gl!(sMoveRelearnerStruct)).state {
         MENU_STATE_FADE_TO_BLACK => {
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
             HideHeartSpritesAndShowTeachMoveText(FALSE);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
         }
         MENU_STATE_WAIT_FOR_FADE => {
-            if gPaletteFade.active() == 0 {
-                (*sMoveRelearnerStruct).state = MENU_STATE_IDLE_BATTLE_MODE;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_IDLE_BATTLE_MODE;
             }
         }
         MENU_STATE_UNREACHABLE => {
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
         }
         MENU_STATE_SETUP_BATTLE_MODE => {
             HideHeartSpritesAndShowTeachMoveText(FALSE);
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
             AddScrollArrows();
         }
         MENU_STATE_IDLE_BATTLE_MODE => {
@@ -379,7 +382,7 @@ unsafe fn DoMoveRelearnerMain() {
         }
         MENU_STATE_SETUP_CONTEST_MODE => {
             ShowTeachMoveText(FALSE);
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
             AddScrollArrows();
         }
         MENU_STATE_IDLE_CONTEST_MODE => {
@@ -388,14 +391,17 @@ unsafe fn DoMoveRelearnerMain() {
         MENU_STATE_PRINT_TEACH_MOVE_PROMPT => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 MoveRelearnerCreateYesNoMenu();
-                (*sMoveRelearnerStruct).state += 1;
+                (*crate::gl!(sMoveRelearnerStruct)).state += 1;
             }
         }
         MENU_STATE_TEACH_MOVE_CONFIRM => {
             let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
                 if GiveMoveToMon(
-                    &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
+                    {
+                        let gl_i0 = (*crate::gl!(sMoveRelearnerStruct)).partyMon;
+                        crate::gl!(&raw gPlayerParty[gl_i0])
+                    },
                     GetCurrentSelectedMove() as u16,
                 ) != MON_HAS_MAX_MOVES
                 {
@@ -406,34 +412,35 @@ unsafe fn DoMoveRelearnerMain() {
                         .cast_mut(),
                     );
                     gSpecialVar_0x8004 = TRUE as u16;
-                    (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TEXT_THEN_FANFARE;
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_TEXT_THEN_FANFARE;
                 } else {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TRYING_TO_LEARN_PROMPT;
+                    (*crate::gl!(sMoveRelearnerStruct)).state =
+                        MENU_STATE_PRINT_TRYING_TO_LEARN_PROMPT;
                 }
             } else if selection == MENU_B_PRESSED || selection == 1 {
-                if sMoveRelearnerMenuState.showContestInfo == FALSE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_BATTLE_MODE;
-                } else if sMoveRelearnerMenuState.showContestInfo == TRUE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_CONTEST_MODE;
+                if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == FALSE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_BATTLE_MODE;
+                } else if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == TRUE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_CONTEST_MODE;
                 }
             }
         }
         MENU_STATE_PRINT_GIVE_UP_PROMPT => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 MoveRelearnerCreateYesNoMenu();
-                (*sMoveRelearnerStruct).state += 1;
+                (*crate::gl!(sMoveRelearnerStruct)).state += 1;
             }
         }
         MENU_STATE_GIVE_UP_CONFIRM => {
             let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
                 gSpecialVar_0x8004 = FALSE as u16;
-                (*sMoveRelearnerStruct).state = MENU_STATE_FADE_AND_RETURN;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_FADE_AND_RETURN;
             } else if selection == MENU_B_PRESSED || selection == 1 {
-                if sMoveRelearnerMenuState.showContestInfo == FALSE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_BATTLE_MODE;
-                } else if sMoveRelearnerMenuState.showContestInfo == TRUE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_CONTEST_MODE;
+                if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == FALSE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_BATTLE_MODE;
+                } else if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == TRUE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_CONTEST_MODE;
                 }
             }
         }
@@ -444,12 +451,12 @@ unsafe fn DoMoveRelearnerMain() {
                 .as_ptr()
                 .cast_mut(),
             );
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
         }
         MENU_STATE_WAIT_FOR_TRYING_TO_LEARN => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 MoveRelearnerCreateYesNoMenu();
-                (*sMoveRelearnerStruct).state = MENU_STATE_CONFIRM_DELETE_OLD_MOVE;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_CONFIRM_DELETE_OLD_MOVE;
             }
         }
         MENU_STATE_CONFIRM_DELETE_OLD_MOVE => {
@@ -461,14 +468,14 @@ unsafe fn DoMoveRelearnerMain() {
                     .as_ptr()
                     .cast_mut(),
                 );
-                (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_WHICH_MOVE_PROMPT;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_WHICH_MOVE_PROMPT;
             } else if selection == MENU_B_PRESSED || selection == 1 {
-                (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_STOP_TEACHING;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_STOP_TEACHING;
             }
         }
         MENU_STATE_PRINT_STOP_TEACHING => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[GetCurrentSelectedMove()]
                 .as_ptr()
@@ -480,49 +487,49 @@ unsafe fn DoMoveRelearnerMain() {
                 .as_ptr()
                 .cast_mut(),
             );
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
         }
         MENU_STATE_WAIT_FOR_STOP_TEACHING => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 MoveRelearnerCreateYesNoMenu();
-                (*sMoveRelearnerStruct).state += 1;
+                (*crate::gl!(sMoveRelearnerStruct)).state += 1;
             }
         }
         MENU_STATE_CONFIRM_STOP_TEACHING => {
             let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
-                (*sMoveRelearnerStruct).state = MENU_STATE_CHOOSE_SETUP_STATE;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_CHOOSE_SETUP_STATE;
             } else if selection == MENU_B_PRESSED || selection == 1 {
-                if sMoveRelearnerMenuState.showContestInfo == FALSE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_BATTLE_MODE;
-                } else if sMoveRelearnerMenuState.showContestInfo == TRUE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_CONTEST_MODE;
+                if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == FALSE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_BATTLE_MODE;
+                } else if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == TRUE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_CONTEST_MODE;
                 }
-                (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TRYING_TO_LEARN_PROMPT;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_TRYING_TO_LEARN_PROMPT;
             }
         }
         MENU_STATE_CHOOSE_SETUP_STATE => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 FillWindowPixelBuffer(RELEARNERWIN_MSG, 0x11);
-                if sMoveRelearnerMenuState.showContestInfo == FALSE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_BATTLE_MODE;
-                } else if sMoveRelearnerMenuState.showContestInfo == TRUE {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_CONTEST_MODE;
+                if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == FALSE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_BATTLE_MODE;
+                } else if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == TRUE {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_CONTEST_MODE;
                 }
             }
         }
         MENU_STATE_PRINT_WHICH_MOVE_PROMPT => {
             if MoveRelearnerRunTextPrinters() == 0 {
-                (*sMoveRelearnerStruct).state = MENU_STATE_SHOW_MOVE_SUMMARY_SCREEN;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SHOW_MOVE_SUMMARY_SCREEN;
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             }
         }
         MENU_STATE_SHOW_MOVE_SUMMARY_SCREEN => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 ShowSelectMovePokemonSummaryScreen(
-                    gPlayerParty.as_mut_ptr(),
-                    (*sMoveRelearnerStruct).partyMon,
-                    gPlayerPartyCount - 1,
+                    (*gPlayerParty.as_ptr()).as_mut_ptr(),
+                    (*crate::gl!(sMoveRelearnerStruct)).partyMon,
+                    gPlayerPartyCount.get() - 1,
                     Some(CB2_InitLearnMoveReturnFromSelectMove),
                     GetCurrentSelectedMove() as u16,
                 );
@@ -531,7 +538,7 @@ unsafe fn DoMoveRelearnerMain() {
         }
         21 => {
             if MoveRelearnerRunTextPrinters() == 0 {
-                (*sMoveRelearnerStruct).state = MENU_STATE_FADE_AND_RETURN;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_FADE_AND_RETURN;
             }
         }
         22 => {
@@ -539,36 +546,39 @@ unsafe fn DoMoveRelearnerMain() {
         }
         MENU_STATE_FADE_AND_RETURN => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sMoveRelearnerStruct).state += 1;
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
         }
         MENU_STATE_RETURN_TO_FIELD => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 FreeMoveRelearnerResources();
                 SetMainCallback2(Some(CB2_ReturnToField));
             }
         }
         MENU_STATE_FADE_FROM_SUMMARY_SCREEN => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sMoveRelearnerStruct).state += 1;
-            if sMoveRelearnerMenuState.showContestInfo == FALSE {
+            (*crate::gl!(sMoveRelearnerStruct)).state += 1;
+            if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == FALSE {
                 HideHeartSpritesAndShowTeachMoveText(TRUE);
-            } else if sMoveRelearnerMenuState.showContestInfo == TRUE {
+            } else if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == TRUE {
                 ShowTeachMoveText(TRUE);
             }
             RemoveScrollArrows();
             CopyWindowToVram(RELEARNERWIN_MSG, COPYWIN_GFX);
         }
         MENU_STATE_TRY_OVERWRITE_MOVE => {
-            if gPaletteFade.active() == 0 {
-                if (*sMoveRelearnerStruct).moveSlot == MAX_MON_MOVES as u8 {
-                    (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_STOP_TEACHING;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                if (*crate::gl!(sMoveRelearnerStruct)).moveSlot == MAX_MON_MOVES as u8 {
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_STOP_TEACHING;
                 } else {
                     let r#move: u16 = GetMonData2(
-                        &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
-                        MON_DATA_MOVE1 + (*sMoveRelearnerStruct).moveSlot as i32,
+                        {
+                            let gl_i1 = (*crate::gl!(sMoveRelearnerStruct)).partyMon;
+                            crate::gl!(&raw gPlayerParty[gl_i1])
+                        },
+                        MON_DATA_MOVE1 + (*crate::gl!(sMoveRelearnerStruct)).moveSlot as i32,
                     ) as u16;
                     StringCopy(
-                        gStringVar3.as_mut_ptr(),
+                        (*gStringVar3.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
                             CArray<u8, 13>,
                             355,
@@ -578,16 +588,22 @@ unsafe fn DoMoveRelearnerMain() {
                             .cast_mut(),
                     );
                     RemoveMonPPBonus(
-                        &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
-                        (*sMoveRelearnerStruct).moveSlot,
+                        {
+                            let gl_i2 = (*crate::gl!(sMoveRelearnerStruct)).partyMon;
+                            crate::gl!(&raw gPlayerParty[gl_i2])
+                        },
+                        (*crate::gl!(sMoveRelearnerStruct)).moveSlot,
                     );
                     SetMonMoveSlot(
-                        &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
+                        {
+                            let gl_i3 = (*crate::gl!(sMoveRelearnerStruct)).partyMon;
+                            crate::gl!(&raw gPlayerParty[gl_i3])
+                        },
                         GetCurrentSelectedMove() as u16,
-                        (*sMoveRelearnerStruct).moveSlot,
+                        (*crate::gl!(sMoveRelearnerStruct)).moveSlot,
                     );
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
                             CArray<u8, 13>,
                             355,
@@ -602,7 +618,8 @@ unsafe fn DoMoveRelearnerMain() {
                         .as_ptr()
                         .cast_mut(),
                     );
-                    (*sMoveRelearnerStruct).state = MENU_STATE_DOUBLE_FANFARE_FORGOT_MOVE;
+                    (*crate::gl!(sMoveRelearnerStruct)).state =
+                        MENU_STATE_DOUBLE_FANFARE_FORGOT_MOVE;
                     gSpecialVar_0x8004 = TRUE as u16;
                 }
             }
@@ -614,24 +631,24 @@ unsafe fn DoMoveRelearnerMain() {
                         .as_ptr()
                         .cast_mut(),
                 );
-                (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TEXT_THEN_FANFARE;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_TEXT_THEN_FANFARE;
                 PlayFanfare(MUS_LEVEL_UP);
             }
         }
         MENU_STATE_PRINT_TEXT_THEN_FANFARE => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 PlayFanfare(MUS_LEVEL_UP);
-                (*sMoveRelearnerStruct).state = MENU_STATE_WAIT_FOR_FANFARE;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_WAIT_FOR_FANFARE;
             }
         }
         MENU_STATE_WAIT_FOR_FANFARE => {
             if IsFanfareTaskInactive() != 0 {
-                (*sMoveRelearnerStruct).state = MENU_STATE_WAIT_FOR_A_BUTTON;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_WAIT_FOR_A_BUTTON;
             }
         }
-        MENU_STATE_WAIT_FOR_A_BUTTON if gMain.newKeys as i32 & A_BUTTON != 0 => {
+        MENU_STATE_WAIT_FOR_A_BUTTON if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 => {
             PlaySE(SE_SELECT);
-            (*sMoveRelearnerStruct).state = MENU_STATE_FADE_AND_RETURN;
+            (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_FADE_AND_RETURN;
         }
         _ => {}
     }
@@ -639,19 +656,20 @@ unsafe fn DoMoveRelearnerMain() {
 unsafe fn FreeMoveRelearnerResources() {
     RemoveScrollArrows();
     DestroyListMenuTask(
-        (*sMoveRelearnerStruct).moveListMenuTask,
-        &raw mut sMoveRelearnerMenuState.listOffset,
-        &raw mut sMoveRelearnerMenuState.listRow,
+        (*crate::gl!(sMoveRelearnerStruct)).moveListMenuTask,
+        crate::gl!(&raw sMoveRelearnerMenuState.listOffset),
+        crate::gl!(&raw sMoveRelearnerMenuState.listRow),
     );
     FreeAllWindowBuffers();
-    Free(sMoveRelearnerStruct as *mut c_void);
-    sMoveRelearnerStruct = null_mut();
+    Free(crate::gl!(sMoveRelearnerStruct) as *mut c_void);
+    crate::gl!(sMoveRelearnerStruct = null_mut());
     ResetSpriteData();
     FreeAllSpritePalettes();
 }
 unsafe fn HideHeartSpritesAndShowTeachMoveText(onlyHideSprites: u8) {
     for i in 0..16i32 {
-        gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i]]
+            .set_invisible(TRUE as u16);
     }
     if onlyHideSprites == 0 {
         StringExpandPlaceholders(
@@ -674,27 +692,27 @@ unsafe fn HideHeartSpritesAndShowTeachMoveText(onlyHideSprites: u8) {
     }
 }
 pub(crate) unsafe fn HandleInput(showContest: u8) {
-    let itemId: i32 = ListMenu_ProcessInput((*sMoveRelearnerStruct).moveListMenuTask);
+    let itemId: i32 = ListMenu_ProcessInput((*crate::gl!(sMoveRelearnerStruct)).moveListMenuTask);
     ListMenuGetScrollAndRow(
-        (*sMoveRelearnerStruct).moveListMenuTask,
-        &raw mut sMoveRelearnerMenuState.listOffset,
-        &raw mut sMoveRelearnerMenuState.listRow,
+        (*crate::gl!(sMoveRelearnerStruct)).moveListMenuTask,
+        crate::gl!(&raw sMoveRelearnerMenuState.listOffset),
+        crate::gl!(&raw sMoveRelearnerMenuState.listRow),
     );
     'l1: {
         match itemId {
             LIST_NOTHING_CHOSEN => {
-                if gMain.newKeys as i32 & 48 == 0 && GetLRKeysPressed() == 0 {
+                if crate::gl!(gMain.newKeys) as i32 & 48 == 0 && GetLRKeysPressed() == 0 {
                     break 'l1;
                 }
                 PlaySE(SE_SELECT);
                 if showContest == FALSE {
                     PutWindowTilemap(RELEARNERWIN_DESC_CONTEST);
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_CONTEST_MODE;
-                    sMoveRelearnerMenuState.showContestInfo = TRUE;
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_CONTEST_MODE;
+                    crate::gl!(sMoveRelearnerMenuState.showContestInfo = TRUE);
                 } else {
                     PutWindowTilemap(RELEARNERWIN_DESC_BATTLE);
-                    (*sMoveRelearnerStruct).state = MENU_STATE_SETUP_BATTLE_MODE;
-                    sMoveRelearnerMenuState.showContestInfo = FALSE;
+                    (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_SETUP_BATTLE_MODE;
+                    crate::gl!(sMoveRelearnerMenuState.showContestInfo = FALSE);
                 }
                 ScheduleBgCopyTilemapToVram(1);
                 MoveRelearnerShowHideHearts(GetCurrentSelectedMove());
@@ -702,7 +720,7 @@ pub(crate) unsafe fn HandleInput(showContest: u8) {
             LIST_CANCEL => {
                 PlaySE(SE_SELECT);
                 RemoveScrollArrows();
-                (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_GIVE_UP_PROMPT;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_GIVE_UP_PROMPT;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_MoveRelearnerGiveUp)
@@ -715,9 +733,9 @@ pub(crate) unsafe fn HandleInput(showContest: u8) {
             _ => {
                 PlaySE(SE_SELECT);
                 RemoveScrollArrows();
-                (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TEACH_MOVE_PROMPT;
+                (*crate::gl!(sMoveRelearnerStruct)).state = MENU_STATE_PRINT_TEACH_MOVE_PROMPT;
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::data_tables::gMoveNames)
                         .cast::<CArray<CArray<u8, 13>, 355>>())[itemId]
                         .as_ptr()
@@ -736,8 +754,9 @@ pub(crate) unsafe fn HandleInput(showContest: u8) {
     }
 }
 unsafe fn GetCurrentSelectedMove() -> i32 {
-    (*sMoveRelearnerStruct).menuItems
-        [sMoveRelearnerMenuState.listRow as i32 + sMoveRelearnerMenuState.listOffset as i32]
+    (*crate::gl!(sMoveRelearnerStruct)).menuItems[crate::gl!(sMoveRelearnerMenuState.listRow)
+        as i32
+        + crate::gl!(sMoveRelearnerMenuState.listOffset) as i32]
         .id
 }
 unsafe fn ShowTeachMoveText(shouldDoNothingInstead: u8) {
@@ -762,11 +781,11 @@ unsafe fn ShowTeachMoveText(shouldDoNothingInstead: u8) {
     }
 }
 unsafe fn CreateUISprites() {
-    (*sMoveRelearnerStruct).moveDisplayArrowTask = TASK_NONE;
-    (*sMoveRelearnerStruct).moveListScrollArrowTask = TASK_NONE;
+    (*crate::gl!(sMoveRelearnerStruct)).moveDisplayArrowTask = TASK_NONE;
+    (*crate::gl!(sMoveRelearnerStruct)).moveListScrollArrowTask = TASK_NONE;
     AddScrollArrows();
     for i in 0..8i32 {
-        (*sMoveRelearnerStruct).heartSpriteIds[i] = CreateSprite(
+        (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i] = CreateSprite(
             (&raw const *sConstestMoveHeartSprite).cast_mut(),
             (i as i16 - (i / 4) as i16 * 4) * 8 + 104,
             (i / 4) as i16 * 8 + 36,
@@ -775,87 +794,108 @@ unsafe fn CreateUISprites() {
     }
     let mut i: i32 = 0;
     while i < 8 {
-        (*sMoveRelearnerStruct).heartSpriteIds[i + 8] = CreateSprite(
+        (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i + 8] = CreateSprite(
             (&raw const *sConstestMoveHeartSprite).cast_mut(),
             (i as i16 - (i / 4) as i16 * 4) * 8 + 104,
             (i / 4) as i16 * 8 + 52,
             0,
         );
         StartSpriteAnim(
-            &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i + 8]],
+            {
+                let gl_i4 = (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i + 8];
+                crate::gl!(&raw gSprites[gl_i4])
+            },
             2,
         );
         i += 1;
     }
     for i in 0..16i32 {
-        gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i]]
+            .set_invisible(TRUE as u16);
     }
 }
 pub(crate) unsafe fn AddScrollArrows() {
-    if (*sMoveRelearnerStruct).moveDisplayArrowTask == TASK_NONE {
-        (*sMoveRelearnerStruct).moveDisplayArrowTask = AddScrollIndicatorArrowPair(
+    if (*crate::gl!(sMoveRelearnerStruct)).moveDisplayArrowTask == TASK_NONE {
+        (*crate::gl!(sMoveRelearnerStruct)).moveDisplayArrowTask = AddScrollIndicatorArrowPair(
             (&raw const *sDisplayModeArrowsTemplate).cast_mut(),
-            &raw mut (*sMoveRelearnerStruct).scrollOffset,
+            &raw mut (*crate::gl!(sMoveRelearnerStruct)).scrollOffset,
         );
     }
-    if (*sMoveRelearnerStruct).moveListScrollArrowTask == TASK_NONE {
-        gTempScrollArrowTemplate = *sMoveListScrollArrowsTemplate;
-        gTempScrollArrowTemplate.fullyDownThreshold = (*sMoveRelearnerStruct).numMenuChoices as u16
-            - (*sMoveRelearnerStruct).numToShowAtOnce as u16;
-        (*sMoveRelearnerStruct).moveListScrollArrowTask = AddScrollIndicatorArrowPair(
-            &raw mut gTempScrollArrowTemplate,
-            &raw mut sMoveRelearnerMenuState.listOffset,
+    if (*crate::gl!(sMoveRelearnerStruct)).moveListScrollArrowTask == TASK_NONE {
+        crate::gl!(gTempScrollArrowTemplate = *sMoveListScrollArrowsTemplate);
+        crate::gl!(
+            gTempScrollArrowTemplate.fullyDownThreshold = (*crate::gl!(sMoveRelearnerStruct))
+                .numMenuChoices as u16
+                - (*crate::gl!(sMoveRelearnerStruct)).numToShowAtOnce as u16
+        );
+        (*crate::gl!(sMoveRelearnerStruct)).moveListScrollArrowTask = AddScrollIndicatorArrowPair(
+            crate::gl!(&raw gTempScrollArrowTemplate),
+            crate::gl!(&raw sMoveRelearnerMenuState.listOffset),
         );
     }
 }
 unsafe fn RemoveScrollArrows() {
-    if (*sMoveRelearnerStruct).moveDisplayArrowTask != TASK_NONE {
-        RemoveScrollIndicatorArrowPair((*sMoveRelearnerStruct).moveDisplayArrowTask);
-        (*sMoveRelearnerStruct).moveDisplayArrowTask = TASK_NONE;
+    if (*crate::gl!(sMoveRelearnerStruct)).moveDisplayArrowTask != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*crate::gl!(sMoveRelearnerStruct)).moveDisplayArrowTask);
+        (*crate::gl!(sMoveRelearnerStruct)).moveDisplayArrowTask = TASK_NONE;
     }
-    if (*sMoveRelearnerStruct).moveListScrollArrowTask != TASK_NONE {
-        RemoveScrollIndicatorArrowPair((*sMoveRelearnerStruct).moveListScrollArrowTask);
-        (*sMoveRelearnerStruct).moveListScrollArrowTask = TASK_NONE;
+    if (*crate::gl!(sMoveRelearnerStruct)).moveListScrollArrowTask != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*crate::gl!(sMoveRelearnerStruct)).moveListScrollArrowTask);
+        (*crate::gl!(sMoveRelearnerStruct)).moveListScrollArrowTask = TASK_NONE;
     }
 }
 unsafe fn CreateLearnableMovesList() {
     let mut nickname: CArray<u8, 11> = zeroed();
-    (*sMoveRelearnerStruct).numMenuChoices = GetMoveRelearnerMoves(
-        &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
-        (*sMoveRelearnerStruct).movesToLearn.as_mut_ptr(),
+    (*crate::gl!(sMoveRelearnerStruct)).numMenuChoices = GetMoveRelearnerMoves(
+        {
+            let gl_i5 = (*crate::gl!(sMoveRelearnerStruct)).partyMon;
+            crate::gl!(&raw gPlayerParty[gl_i5])
+        },
+        (*crate::gl!(sMoveRelearnerStruct))
+            .movesToLearn
+            .as_mut_ptr(),
     );
     let mut i: i32 = 0;
-    while i < (*sMoveRelearnerStruct).numMenuChoices as i32 {
-        (*sMoveRelearnerStruct).menuItems[i].name =
+    while i < (*crate::gl!(sMoveRelearnerStruct)).numMenuChoices as i32 {
+        (*crate::gl!(sMoveRelearnerStruct)).menuItems[i].name =
             (*(&raw const crate::data::data_tables::gMoveNames)
-                .cast::<CArray<CArray<u8, 13>, 355>>())[(*sMoveRelearnerStruct).movesToLearn[i]]
+                .cast::<CArray<CArray<u8, 13>, 355>>())
+                [(*crate::gl!(sMoveRelearnerStruct)).movesToLearn[i]]
                 .as_ptr()
                 .cast_mut();
-        (*sMoveRelearnerStruct).menuItems[i].id = (*sMoveRelearnerStruct).movesToLearn[i] as i32;
+        (*crate::gl!(sMoveRelearnerStruct)).menuItems[i].id =
+            (*crate::gl!(sMoveRelearnerStruct)).movesToLearn[i] as i32;
         i += 1;
     }
     GetMonData3(
-        &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
+        {
+            let gl_i6 = (*crate::gl!(sMoveRelearnerStruct)).partyMon;
+            crate::gl!(&raw gPlayerParty[gl_i6])
+        },
         MON_DATA_NICKNAME,
         nickname.as_mut_ptr(),
     );
     StringCopy_Nickname(gStringVar1.as_mut_ptr(), nickname.as_mut_ptr());
-    (*sMoveRelearnerStruct).menuItems[(*sMoveRelearnerStruct).numMenuChoices].name =
-        (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
-            .as_ptr()
-            .cast_mut();
-    (*sMoveRelearnerStruct).menuItems[(*sMoveRelearnerStruct).numMenuChoices].id = LIST_CANCEL;
-    (*sMoveRelearnerStruct).numMenuChoices += 1;
-    (*sMoveRelearnerStruct).numToShowAtOnce = LoadMoveRelearnerMovesList(
-        (*sMoveRelearnerStruct).menuItems.as_mut_ptr(),
-        (*sMoveRelearnerStruct).numMenuChoices as u16,
+    (*crate::gl!(sMoveRelearnerStruct)).menuItems
+        [(*crate::gl!(sMoveRelearnerStruct)).numMenuChoices]
+        .name = (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
+    (*crate::gl!(sMoveRelearnerStruct)).menuItems
+        [(*crate::gl!(sMoveRelearnerStruct)).numMenuChoices]
+        .id = LIST_CANCEL;
+    (*crate::gl!(sMoveRelearnerStruct)).numMenuChoices += 1;
+    (*crate::gl!(sMoveRelearnerStruct)).numToShowAtOnce = LoadMoveRelearnerMovesList(
+        (*crate::gl!(sMoveRelearnerStruct)).menuItems.as_mut_ptr(),
+        (*crate::gl!(sMoveRelearnerStruct)).numMenuChoices as u16,
     );
 }
 pub unsafe fn MoveRelearnerShowHideHearts(r#move: i32) {
     let mut numHearts: u16 = 0;
-    if sMoveRelearnerMenuState.showContestInfo == 0 || r#move == LIST_CANCEL {
+    if crate::gl!(sMoveRelearnerMenuState.showContestInfo) == 0 || r#move == LIST_CANCEL {
         for i in 0..16u16 {
-            gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[(*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i]]
+                .set_invisible(TRUE as u16);
         }
     } else {
         numHearts = ((*(&raw const crate::data::contest_effect::gContestEffects)
@@ -871,16 +911,23 @@ pub unsafe fn MoveRelearnerShowHideHearts(r#move: i32) {
         for i in 0..8u16 {
             if i < numHearts {
                 StartSpriteAnim(
-                    &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]],
+                    {
+                        let gl_i7 = (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i];
+                        crate::gl!(&raw gSprites[gl_i7])
+                    },
                     1,
                 );
             } else {
                 StartSpriteAnim(
-                    &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]],
+                    {
+                        let gl_i8 = (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i];
+                        crate::gl!(&raw gSprites[gl_i8])
+                    },
                     0,
                 );
             }
-            gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[(*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i]]
+                .set_invisible(FALSE as u16);
         }
         numHearts = ((*(&raw const crate::data::contest_effect::gContestEffects)
             .cast::<CArray<ContestEffect, 0>>())
@@ -895,16 +942,24 @@ pub unsafe fn MoveRelearnerShowHideHearts(r#move: i32) {
         for i in 0..8u16 {
             if i < numHearts {
                 StartSpriteAnim(
-                    &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i as i32 + 8]],
+                    {
+                        let gl_i9 =
+                            (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i as i32 + 8];
+                        crate::gl!(&raw gSprites[gl_i9])
+                    },
                     3,
                 );
             } else {
                 StartSpriteAnim(
-                    &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i as i32 + 8]],
+                    {
+                        let gl_i10 =
+                            (*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i as i32 + 8];
+                        crate::gl!(&raw gSprites[gl_i10])
+                    },
                     2,
                 );
             }
-            gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i as i32 + 8]]
+            (*gSprites.as_ptr())[(*crate::gl!(sMoveRelearnerStruct)).heartSpriteIds[i as i32 + 8]]
                 .set_invisible(FALSE as u16);
         }
     }

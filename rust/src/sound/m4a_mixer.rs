@@ -83,40 +83,41 @@ const TONEDATA_TYPE_CMP: u8 = 0x20;
 /// buffer for all channels, as in the original (each channel remembers
 /// which block it last decoded, in `xpi`).
 #[unsafe(no_mangle)]
-static mut sDecodingBuffer: crate::ffi::Align4<[i8; 0x40]> = crate::ffi::Align4([0; 0x40]);
+static sDecodingBuffer: crate::global::Global<crate::ffi::Align4<[i8; 0x40]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; 0x40]));
 
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn r8(p: Ptr, off: usize) -> u8 {
     unsafe { read_volatile(p.add(off)) }
 }
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn w8(p: Ptr, off: usize, v: u8) {
     unsafe { write_volatile(p.add(off), v) }
 }
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn r32(p: Ptr, off: usize) -> u32 {
     unsafe { read_volatile(p.add(off).cast::<u32>()) }
 }
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn w32(p: Ptr, off: usize, v: u32) {
     unsafe { write_volatile(p.add(off).cast::<u32>(), v) }
 }
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn rp(p: Ptr, off: usize) -> Ptr {
     unsafe { read_volatile(p.add(off).cast::<Ptr>()) }
 }
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn wp(p: Ptr, off: usize, v: Ptr) {
     unsafe { write_volatile(p.add(off).cast::<Ptr>(), v) }
@@ -124,7 +125,7 @@ unsafe fn wp(p: Ptr, off: usize, v: Ptr) {
 
 /// The scanline, counting the vblank lines as after the visible ones.
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn scanline() -> u32 {
     let v = u32::from(unsafe { read_volatile(REG_VCOUNT) });
@@ -190,7 +191,7 @@ static MIXER: unsafe fn(Ptr, Ptr, u32, u32) = SoundMainRAM;
 /// `SoundMainRAM`: reverb (or clear) this frame's buffer, then mix every
 /// Direct Sound channel into it.
 #[unsafe(no_mangle)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 #[inline(never)]
 pub unsafe fn SoundMainRAM(si: Ptr, buf: Ptr, samples: u32, limit: u32) {
@@ -253,22 +254,22 @@ pub unsafe fn SoundMainRAM(si: Ptr, buf: Ptr, samples: u32, limit: u32) {
 /// The channel being mixed. The mixing loops read it from here when they
 /// need it (rarely) instead of keeping it in a register, which the volumes
 /// need more.
-static mut MIX_CHANNEL: Ptr = core::ptr::null_mut();
+static MIX_CHANNEL: crate::global::Global<Ptr> = crate::global::Global::new(core::ptr::null_mut());
 
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn chan() -> Ptr {
-    unsafe { read_volatile(&raw const MIX_CHANNEL) }
+    unsafe { read_volatile(crate::gl!(&raw MIX_CHANNEL).cast_const()) }
 }
 
 /// Envelope, then mixing, for one channel.
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn mix_channel(c: Ptr, buf: Ptr, n: usize, div_freq: u32, master: u32) {
     unsafe {
-        write_volatile(&raw mut MIX_CHANNEL, c);
+        write_volatile(crate::gl!(&raw MIX_CHANNEL), c);
         let wav = rp(c, C_WAV);
         let mut sf = r8(c, C_STATUS);
         if sf & SF_ON == 0 {
@@ -387,7 +388,7 @@ struct Out {
 /// `x` rotated right by `s` bits (0..32). `u32::rotate_right` is Thumb code
 /// in ROM, which ARM code in IWRAM cannot inline.
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 fn ror(x: u32, s: u32) -> u32 {
     (x >> s) | (x << (32u32.wrapping_sub(s) & 31))
@@ -454,7 +455,7 @@ macro_rules! mix_words {
 /// does not loop. Read from memory (volatile) where needed rather than kept
 /// in a register through the mixing loops, which are short of registers.
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn loop_info() -> (Ptr, i32) {
     unsafe {
@@ -472,7 +473,7 @@ unsafe fn loop_info() -> (Ptr, i32) {
 }
 
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn s8(p: Ptr) -> i32 {
     i32::from(unsafe { read_volatile(p) } as i8)
@@ -480,7 +481,7 @@ unsafe fn s8(p: Ptr) -> i32 {
 
 /// TONEDATA_TYPE_FIX: one sample per output sample.
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn mix_fixed(c: Ptr, out: Out, n: usize) {
     unsafe {
@@ -511,7 +512,7 @@ unsafe fn mix_fixed(c: Ptr, out: Out, n: usize) {
 /// Resampled by frequency with linear interpolation (`fw` is the 23-bit
 /// fraction of the position).
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn mix_resampled(c: Ptr, out: Out, n: usize, div_freq: u32) {
     unsafe {
@@ -573,7 +574,7 @@ unsafe fn mix_resampled(c: Ptr, out: Out, n: usize, div_freq: u32) {
 /// `SoundMainRAM_Unk2`: sample `index` of a compressed wave, decoding its
 /// 64-sample block into sDecodingBuffer unless this channel already did.
 #[inline(never)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn decode(index: u32) -> i32 {
     unsafe {
@@ -585,7 +586,7 @@ unsafe fn decode(index: u32) -> i32 {
             let table = (&raw const (*(&raw const crate::data::m4a_tables::gDeltaEncodingTable)
                 .cast::<u8>()))
                 .cast::<i8>();
-            let dst = (&raw mut sDecodingBuffer).cast::<u8>();
+            let dst = (crate::gl!(&raw sDecodingBuffer)).cast::<u8>();
             // the first byte is a sample; nibbles of the rest are deltas
             // (the second byte's high nibble is unused)
             let mut acc = read_volatile(src);
@@ -607,7 +608,7 @@ unsafe fn decode(index: u32) -> i32 {
             }
         }
         i32::from(read_volatile(
-            (&raw const sDecodingBuffer)
+            (crate::gl!(&raw sDecodingBuffer).cast_const())
                 .cast::<i8>()
                 .add((index & 0x3F) as usize),
         ))
@@ -617,7 +618,7 @@ unsafe fn decode(index: u32) -> i32 {
 /// Compressed and/or reversed waves (`SoundMainRAM_Unk1`). For compressed
 /// waves the channel's pointer holds a sample index instead of an address.
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn mix_special(c: Ptr, out: Out, n: usize, div_freq: u32, kind: u8) {
     unsafe {
@@ -770,7 +771,7 @@ unsafe fn mix_special(c: Ptr, out: Out, n: usize, div_freq: u32, kind: u8) {
 }
 
 #[inline(always)]
-#[unsafe(link_section = ".iwram_code")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".iwram_code"))]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn stop_special(c: Ptr) {
     unsafe { w8(c, C_STATUS, 0) }

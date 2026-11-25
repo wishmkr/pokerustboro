@@ -58,9 +58,10 @@ const MAP_HEADER_MAP_SCRIPTS: usize = 8;
 type ScrCmdFunc = unsafe fn(*mut u8) -> u8;
 
 static GLOBAL_STATUS: crate::global::Global<u8> = crate::global::Global::new(0);
-static mut GLOBAL_CONTEXT: crate::ffi::Align4<[u8; CTX_SIZE]> = crate::ffi::Align4([0; CTX_SIZE]);
-static mut IMMEDIATE_CONTEXT: crate::ffi::Align4<[u8; CTX_SIZE]> =
-    crate::ffi::Align4([0; CTX_SIZE]);
+static GLOBAL_CONTEXT: crate::global::Global<crate::ffi::Align4<[u8; CTX_SIZE]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; CTX_SIZE]));
+static IMMEDIATE_CONTEXT: crate::global::Global<crate::ffi::Align4<[u8; CTX_SIZE]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; CTX_SIZE]));
 static LOCK_FIELD_CONTROLS: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `ValidateSavedWonderCard` with this module's view of its types.
@@ -71,12 +72,12 @@ unsafe fn ValidateSavedWonderCard() -> u32 {
 
 #[inline]
 fn global_context() -> *mut u8 {
-    (&raw mut GLOBAL_CONTEXT).cast()
+    (crate::gl!(&raw GLOBAL_CONTEXT)).cast()
 }
 
 #[inline]
 fn immediate_context() -> *mut u8 {
-    (&raw mut IMMEDIATE_CONTEXT).cast()
+    (crate::gl!(&raw IMMEDIATE_CONTEXT)).cast()
 }
 
 #[inline]
@@ -369,7 +370,8 @@ unsafe fn read_unaligned_ptr(ptr: *const u8) -> *mut u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn MapHeaderGetScriptTable(tag: u8) -> *mut u8 {
     let mut scripts = unsafe {
-        (&raw const (*(&raw const crate::fieldmap::gMapHeader).cast::<u8>()))
+        (&raw const (*(crate::gl!(&raw @at crate::fieldmap::gMapHeader;).cast_const())
+            .cast::<u8>()))
             .add(MAP_HEADER_MAP_SCRIPTS)
             .cast::<*const u8>()
             .read()
@@ -463,7 +465,7 @@ pub unsafe fn TryRunOnWarpIntoMapScript() {
 #[inline]
 unsafe fn ram_script() -> *mut u8 {
     unsafe {
-        (&raw const gSaveBlock1Ptr)
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB1_RAM_SCRIPT)
@@ -521,13 +523,17 @@ pub unsafe fn InitRamScript(
 #[unsafe(no_mangle)]
 pub unsafe fn GetRamScript(local_id: u8, script: *const u8) -> *const u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::scrcmd::gRamScriptRetAddr)
+        (&raw mut (*(crate::gl!(&raw @at crate::scrcmd::gRamScriptRetAddr;).cast_const())
             .cast::<*const u8>()
             .cast_mut()))
             .write(core::ptr::null())
     };
     let data = unsafe { ram_script_data() };
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
+    let sb1 = unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     let matches = unsafe {
         data.add(DATA_MAGIC).read() == RAM_SCRIPT_MAGIC
             && data.add(DATA_MAP_GROUP).read() == sb1.add(SB1_LOCATION_MAP_GROUP).read()
@@ -542,7 +548,7 @@ pub unsafe fn GetRamScript(local_id: u8, script: *const u8) -> *const u8 {
         return script;
     }
     unsafe {
-        (&raw mut (*(&raw const crate::scrcmd::gRamScriptRetAddr)
+        (&raw mut (*(crate::gl!(&raw @at crate::scrcmd::gRamScriptRetAddr;).cast_const())
             .cast::<*const u8>()
             .cast_mut()))
             .write(script)

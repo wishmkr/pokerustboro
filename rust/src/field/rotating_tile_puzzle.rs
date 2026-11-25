@@ -53,8 +53,8 @@ const PUZZLE_SIZE: u32 = 36;
 const PUZZLE_NUM_OBJECTS: usize = 32;
 const PUZZLE_IS_TRICK_HOUSE: usize = 33;
 
-#[unsafe(link_section = "ewram_data")]
-static mut PUZZLE: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static PUZZLE: crate::global::Global<*mut u8> = crate::global::Global::new(core::ptr::null_mut());
 
 /// `MapGridGetMetatileIdAt` with this module's view of its types.
 #[inline]
@@ -74,18 +74,26 @@ unsafe fn ObjectEventClearHeldMovementIfFinished(a0: *mut u8) -> u8 {
 
 #[inline]
 fn puzzle() -> *mut u8 {
-    unsafe { (&raw const PUZZLE).read() }
+    unsafe { (crate::gl!(&raw PUZZLE).cast_const()).read() }
 }
 
 #[inline]
 unsafe fn template(index: usize) -> *mut u8 {
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
+    let sb1 = unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     unsafe { sb1.add(SB1_OBJECT_EVENT_TEMPLATES + index * TEMPLATE_SIZE) }
 }
 
 #[inline]
 unsafe fn location() -> (u8, u8) {
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
+    let sb1 = unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     unsafe {
         (
             sb1.add(SB1_LOCATION_MAP_NUM).read(),
@@ -112,7 +120,7 @@ unsafe fn metatile_under(t: *mut u8) -> i32 {
 #[unsafe(no_mangle)]
 pub unsafe fn InitRotatingTilePuzzle(is_trick_house: u8) {
     if puzzle().is_null() {
-        unsafe { (&raw mut PUZZLE).write(AllocZeroed(PUZZLE_SIZE)) };
+        unsafe { (crate::gl!(&raw PUZZLE)).write(AllocZeroed(PUZZLE_SIZE)) };
     }
     unsafe { puzzle().add(PUZZLE_IS_TRICK_HOUSE).write(is_trick_house) };
 }
@@ -121,11 +129,11 @@ pub unsafe fn InitRotatingTilePuzzle(is_trick_house: u8) {
 pub unsafe fn FreeRotatingTilePuzzle() {
     if !puzzle().is_null() {
         unsafe { Free(puzzle()) };
-        unsafe { (&raw mut PUZZLE).write(core::ptr::null_mut()) };
+        unsafe { (crate::gl!(&raw PUZZLE)).write(core::ptr::null_mut()) };
     }
     let id = unsafe { GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0) };
     let object = unsafe {
-        (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
+        (&raw mut (*(crate::gl!(&raw @at crate::field_player_avatar::gObjectEvents;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .cast::<u8>()
@@ -222,9 +230,10 @@ pub unsafe fn TurnRotatingTileObjects() {
             continue;
         }
         let object = unsafe {
-            (&raw const (*(&raw const crate::field_player_avatar::gObjectEvents)
-                .cast::<u8>()
-                .cast_mut()))
+            (&raw const (*(crate::gl!(&raw @at crate::field_player_avatar::gObjectEvents;)
+                .cast_const())
+            .cast::<u8>()
+            .cast_mut()))
                 .cast::<u8>()
                 .add(usize::from(object_id) * OBJECT_EVENT_SIZE)
         };

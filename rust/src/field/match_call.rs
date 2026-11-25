@@ -230,14 +230,16 @@ static sPopulateMatchCallStringVarFuncs: Table<CArray<Option<unsafe fn(i32, *mut
 static sText_PokenavCallEllipsis: Table<CArray<u8, 8>> =
     Table((&raw const crate::data::match_call::sText_PokenavCallEllipsis).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMatchCallState: MatchCallState = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleFrontierStreakInfo: BattleFrontierStreakInfo = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMatchCallState: crate::global::Global<MatchCallState> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattleFrontierStreakInfo: crate::global::Global<BattleFrontierStreakInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `AddTextPrinter` with this module's view of its types.
 #[inline]
-unsafe fn AddTextPrinter(
+fn AddTextPrinter(
     a0: *mut TextPrinterTemplate,
     a1: u8,
     a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
@@ -253,27 +255,27 @@ unsafe fn Alloc(a0: u32) -> *mut c_void {
 #[unsafe(no_mangle)]
 pub unsafe fn InitMatchCallCounters() {
     RtcCalcLocalTime();
-    sMatchCallState.minutes = GetCurrentTotalMinutes(&raw mut gLocalTime) + 10;
-    sMatchCallState.stepCounter = 0;
+    crate::gl!(sMatchCallState.minutes = GetCurrentTotalMinutes(crate::gl!(&raw gLocalTime)) + 10);
+    crate::gl!(sMatchCallState.stepCounter = 0);
 }
 unsafe fn GetCurrentTotalMinutes(time: *mut Time) -> u32 {
     (*time).days as u32 * 24 * 60 + (*time).hours as u32 * 60 + (*time).minutes as u32
 }
 unsafe fn UpdateMatchCallMinutesCounter() -> u32 {
     RtcCalcLocalTime();
-    let curMinutes: i32 = GetCurrentTotalMinutes(&raw mut gLocalTime) as i32;
-    if sMatchCallState.minutes > curMinutes as u32
-        || curMinutes as u32 - sMatchCallState.minutes > 9
+    let curMinutes: i32 = GetCurrentTotalMinutes(crate::gl!(&raw gLocalTime)) as i32;
+    if crate::gl!(sMatchCallState.minutes) > curMinutes as u32
+        || curMinutes as u32 - crate::gl!(sMatchCallState.minutes) > 9
     {
-        sMatchCallState.minutes = curMinutes as u32;
+        crate::gl!(sMatchCallState.minutes = curMinutes as u32);
         return TRUE as u32;
     }
     FALSE as u32
 }
 unsafe fn CheckMatchCallChance() -> u32 {
     let mut callChance: i32 = 1;
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0
-        && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_LIGHTNING_ROD
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) == 0
+        && GetMonAbility(crate::gl!(&raw gPlayerParty[0])) == ABILITY_LIGHTNING_ROD
     {
         callChance = 2;
     }
@@ -288,18 +290,18 @@ unsafe fn CheckMatchCallChance() -> u32 {
     }
 }
 unsafe fn MapAllowsMatchCall() -> u32 {
-    if Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == 0
-        || gMapHeader.regionMapSectionId == MAPSEC_SAFARI_ZONE
+    if Overworld_MapTypeAllowsTeleportAndFly(crate::gl!(gMapHeader.mapType)) == 0
+        || crate::gl!(gMapHeader.regionMapSectionId) == MAPSEC_SAFARI_ZONE
     {
         return FALSE as u32;
     }
-    if gMapHeader.regionMapSectionId == MAPSEC_SOOTOPOLIS_CITY
+    if crate::gl!(gMapHeader.regionMapSectionId) == MAPSEC_SOOTOPOLIS_CITY
         && FlagGet(FLAG_HIDE_SOOTOPOLIS_CITY_RAYQUAZA) == TRUE
         && FlagGet(FLAG_NEVER_SET_0x0DC) == FALSE
     {
         return FALSE as u32;
     }
-    if gMapHeader.regionMapSectionId == MAPSEC_MT_CHIMNEY
+    if crate::gl!(gMapHeader.regionMapSectionId) == MAPSEC_MT_CHIMNEY
         && FlagGet(FLAG_MET_ARCHIE_METEOR_FALLS) == TRUE
         && FlagGet(FLAG_DEFEATED_EVIL_TEAM_MT_CHIMNEY) == FALSE
     {
@@ -307,13 +309,13 @@ unsafe fn MapAllowsMatchCall() -> u32 {
     }
     TRUE as u32
 }
-unsafe fn UpdateMatchCallStepCounter() -> u32 {
+fn UpdateMatchCallStepCounter() -> u32 {
     if ({
-        sMatchCallState.stepCounter += 1;
-        sMatchCallState.stepCounter
+        crate::gl!(sMatchCallState.stepCounter += 1);
+        crate::gl!(sMatchCallState.stepCounter)
     }) >= 10
     {
-        sMatchCallState.stepCounter = 0;
+        crate::gl!(sMatchCallState.stepCounter = 0);
         return TRUE as u32;
     } else {
         return FALSE as u32;
@@ -328,14 +330,18 @@ unsafe fn SelectMatchCallTrainer() -> u32 {
     if numRegistered == 0 {
         return FALSE as u32;
     }
-    sMatchCallState.trainerId =
-        GetActiveMatchCallTrainerId(rem_u32(Random() as u32, numRegistered)) as u16;
-    sMatchCallState.triggeredFromScript = FALSE;
-    if sMatchCallState.trainerId == REMATCH_TABLE_ENTRIES as u16 {
+    crate::gl!(
+        sMatchCallState.trainerId =
+            GetActiveMatchCallTrainerId(rem_u32(Random() as u32, numRegistered)) as u16
+    );
+    crate::gl!(sMatchCallState.triggeredFromScript = FALSE);
+    if crate::gl!(sMatchCallState.trainerId) == REMATCH_TABLE_ENTRIES as u16 {
         return FALSE as u32;
     }
-    let matchCallId: u32 = GetTrainerMatchCallId(sMatchCallState.trainerId as i32) as u32;
-    if GetRematchTrainerLocation(matchCallId as i32) == gMapHeader.regionMapSectionId as u16
+    let matchCallId: u32 =
+        GetTrainerMatchCallId(crate::gl!(sMatchCallState.trainerId) as i32) as u32;
+    if GetRematchTrainerLocation(matchCallId as i32)
+        == crate::gl!(gMapHeader.regionMapSectionId) as u16
         && TrainerIsEligibleForRematch(matchCallId as i32) == 0
     {
         return FALSE as u32;
@@ -379,7 +385,7 @@ pub unsafe fn TryStartMatchCall() -> u32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn StartMatchCallFromScript(message: *mut u8) {
-    sMatchCallState.triggeredFromScript = TRUE;
+    crate::gl!(sMatchCallState.triggeredFromScript = TRUE);
     StartMatchCall();
 }
 #[unsafe(no_mangle)]
@@ -387,7 +393,7 @@ pub unsafe fn IsMatchCallTaskActive() -> u32 {
     FuncIsActiveTask(Some(ExecuteMatchCall)) as u32
 }
 unsafe fn StartMatchCall() {
-    if sMatchCallState.triggeredFromScript == 0 {
+    if crate::gl!(sMatchCallState.triggeredFromScript) == 0 {
         LockPlayerFieldControls();
         FreezeObjectEvents();
         PlayerFreeze();
@@ -482,8 +488,11 @@ pub(crate) unsafe fn MatchCall_PrintIntro(taskId: u8) -> u32 {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if RunMatchCallTextPrinter(*data.at(2) as i32) == 0 {
         FillWindowPixelBuffer(*data.at(2) as u8, 136);
-        if sMatchCallState.triggeredFromScript == 0 {
-            SelectMatchCallMessage(sMatchCallState.trainerId as i32, gStringVar4.as_mut_ptr());
+        if crate::gl!(sMatchCallState.triggeredFromScript) == 0 {
+            SelectMatchCallMessage(
+                crate::gl!(sMatchCallState.trainerId) as i32,
+                gStringVar4.as_mut_ptr(),
+            );
         }
         InitMatchCallTextPrinter(*data.at(2) as i32, gStringVar4.as_mut_ptr());
         return TRUE as u32;
@@ -494,7 +503,7 @@ pub(crate) unsafe fn MatchCall_PrintMessage(taskId: u8) -> u32 {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if RunMatchCallTextPrinter(*data.at(2) as i32) == 0
         && IsSEPlaying() == 0
-        && gMain.newKeys as i32 & 3 != 0
+        && crate::gl!(gMain.newKeys) as i32 & 3 != 0
     {
         FillWindowPixelBuffer(*data.at(2) as u8, 136);
         CopyWindowToVram(*data.at(2) as u8, COPYWIN_GFX);
@@ -518,10 +527,10 @@ pub(crate) unsafe fn MatchCall_EndCall(taskId: u8) -> u32 {
     let mut playerObjectId: u8 = 0;
     if IsDma3ManagerBusyWithBgCopy() == 0 && IsSEPlaying() == 0 {
         ChangeBgY(0, 0, BG_COORD_SET);
-        if sMatchCallState.triggeredFromScript == 0 {
+        if crate::gl!(sMatchCallState.triggeredFromScript) == 0 {
             LoadMessageBoxAndBorderGfx();
             playerObjectId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
-            ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[playerObjectId]);
+            ObjectEventClearHeldMovementIfFinished(crate::gl!(&raw gObjectEvents[playerObjectId]));
             ScriptMovement_UnfreezeObjectEvents();
             UnfreezeObjectEvents();
             UnlockPlayerFieldControls();
@@ -617,20 +626,20 @@ unsafe fn InitMatchCallTextPrinter(windowId: i32, str: *mut u8) {
     printerTemplate.set_fgColor(TEXT_DYNAMIC_COLOR_1);
     printerTemplate.set_bgColor(TEXT_COLOR_BLUE);
     printerTemplate.set_shadowColor(TEXT_DYNAMIC_COLOR_5);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_useAlternateDownArrow(FALSE);
     AddTextPrinter(&raw mut printerTemplate, GetPlayerTextSpeedDelay(), None);
 }
 unsafe fn RunMatchCallTextPrinter(windowId: i32) -> u32 {
-    if gMain.heldKeys as i32 & A_BUTTON != 0 {
-        (*(&raw const crate::text::gTextFlags)
+    if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(TRUE);
     } else {
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(FALSE);
@@ -659,7 +668,7 @@ pub(crate) unsafe fn Task_SpinPokenavIcon(taskId: u8) {
     }
 }
 unsafe fn TrainerIsEligibleForRematch(matchCallId: i32) -> u32 {
-    ((*gSaveBlock1Ptr).trainerRematches[matchCallId] > 0) as u32
+    ((*crate::gl!(gSaveBlock1Ptr)).trainerRematches[matchCallId] > 0) as u32
 }
 unsafe fn GetRematchTrainerLocation(matchCallId: i32) -> u16 {
     let mapHeader: *mut MapHeader = Overworld_GetMapHeaderByGroupAndId(
@@ -707,9 +716,10 @@ pub unsafe fn SelectMatchCallMessage(trainerId: i32, str: *mut u8) -> u32 {
     let mut matchCallText: *mut MatchCallText = null_mut();
     let mut newRematchRequest: u32 = FALSE as u32;
     let matchCallId: u32 = GetTrainerMatchCallId(trainerId) as u32;
-    sBattleFrontierStreakInfo.facilityId = 0;
+    crate::gl!(sBattleFrontierStreakInfo.facilityId = 0);
     if TrainerIsEligibleForRematch(matchCallId as i32) != 0
-        && GetRematchTrainerLocation(matchCallId as i32) == gMapHeader.regionMapSectionId as u16
+        && GetRematchTrainerLocation(matchCallId as i32)
+            == crate::gl!(gMapHeader.regionMapSectionId) as u16
     {
         matchCallText = GetSameRouteMatchCallText(matchCallId as i32, str);
     } else if ShouldTrainerRequestBattle(matchCallId as i32) != 0 {
@@ -724,7 +734,7 @@ pub unsafe fn SelectMatchCallMessage(trainerId: i32, str: *mut u8) -> u32 {
     BuildMatchCallString(matchCallId as i32, matchCallText, str);
     newRematchRequest
 }
-unsafe fn GetTrainerMatchCallId(trainerId: i32) -> i32 {
+fn GetTrainerMatchCallId(trainerId: i32) -> i32 {
     let mut i: i32 = 0;
     loop {
         if sMatchCallTrainers[i].trainerId as i32 == trainerId {
@@ -783,9 +793,11 @@ unsafe fn GetGeneralMatchCallText(matchCallId: i32, str: *mut u8) -> *mut MatchC
             i = 0;
             'l3: while i < NUM_FRONTIER_FACILITIES as i32 {
                 'l2: {
-                    sBattleFrontierStreakInfo.streak =
-                        GetFrontierStreakInfo(i as u16, &raw mut topic);
-                    if sBattleFrontierStreakInfo.streak < 2 {
+                    crate::gl!(
+                        sBattleFrontierStreakInfo.streak =
+                            GetFrontierStreakInfo(i as u16, &raw mut topic)
+                    );
+                    if crate::gl!(sBattleFrontierStreakInfo.streak) < 2 {
                         break 'l2;
                     }
                     if count == 0 {
@@ -795,7 +807,7 @@ unsafe fn GetGeneralMatchCallText(matchCallId: i32, str: *mut u8) -> *mut MatchC
                 }
                 i += 1;
             }
-            sBattleFrontierStreakInfo.facilityId = i as u16;
+            crate::gl!(sBattleFrontierStreakInfo.facilityId = i as u16);
             id = sMatchCallTrainers[matchCallId].battleFrontierRecordStreakTextIndex as u32 - 1;
             return sMatchCallGeneralTopics[topic].at(id);
         }
@@ -1042,19 +1054,19 @@ pub(crate) unsafe fn PopulateSpeciesFromTrainerParty(matchCallId: i32, destStr: 
 pub(crate) unsafe fn PopulateBattleFrontierFacilityName(matchCallId: i32, destStr: *mut u8) {
     StringCopy(
         destStr,
-        sBattleFrontierFacilityNames[sBattleFrontierStreakInfo.facilityId],
+        sBattleFrontierFacilityNames[crate::gl!(sBattleFrontierStreakInfo.facilityId)],
     );
 }
 pub(crate) unsafe fn PopulateBattleFrontierStreak(matchCallId: i32, destStr: *mut u8) {
     let mut i: i32 = 0;
-    let mut streak: i32 = sBattleFrontierStreakInfo.streak as i32;
+    let mut streak: i32 = crate::gl!(sBattleFrontierStreakInfo.streak) as i32;
     while streak != 0 {
         streak /= 10;
         i += 1;
     }
     ConvertIntToDecimalStringN(
         destStr,
-        sBattleFrontierStreakInfo.streak as i32,
+        crate::gl!(sBattleFrontierStreakInfo.streak) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         i as u8,
     );
@@ -1075,8 +1087,9 @@ unsafe fn ShouldTrainerRequestBattle(matchCallId: i32) -> u32 {
         return FALSE as u32;
     }
     let dayCount: i32 = RtcGetLocalDayCount() as i32;
-    let otId: i32 = GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr()) as i32 & 0xFFFF;
-    let dewfordRand: u16 = (*gSaveBlock1Ptr).dewfordTrends[0].rand;
+    let otId: i32 =
+        GetTrainerId((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr()) as i32 & 0xFFFF;
+    let dewfordRand: u16 = (*crate::gl!(gSaveBlock1Ptr)).dewfordTrends[0].rand;
     let numRematchTrainersFought: i32 = GetNumRematchTrainersFought() as i32;
     let max: i32 = numRematchTrainersFought * 13 / 10;
     rand = ((dayCount ^ dewfordRand as i32)
@@ -1094,8 +1107,8 @@ unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
         1 => {
             for i in 0..2i32 {
                 for j in 0..FRONTIER_LVL_MODE_COUNT {
-                    if streak < (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[i][j] {
-                        streak = (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[i][j];
+                    if streak < (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[i][j] {
+                        streak = (*crate::gl!(gSaveBlock2Ptr)).frontier.domeRecordWinStreaks[i][j];
                     }
                 }
             }
@@ -1103,8 +1116,8 @@ unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
         }
         MATCH_CALL_PIKE => {
             for i in 0..FRONTIER_LVL_MODE_COUNT {
-                if streak < (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[i] {
-                    streak = (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[i];
+                if streak < (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[i] {
+                    streak = (*crate::gl!(gSaveBlock2Ptr)).frontier.pikeRecordStreaks[i];
                 }
             }
             *topicTextId = 4;
@@ -1112,8 +1125,8 @@ unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
         FRONTIER_FACILITY_TOWER => {
             for i in 0..4i32 {
                 for j in 0..FRONTIER_LVL_MODE_COUNT {
-                    if streak < (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[i][j] {
-                        streak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[i][j];
+                    if streak < (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[i][j] {
+                        streak = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecordWinStreaks[i][j];
                     }
                 }
             }
@@ -1122,8 +1135,14 @@ unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
         2 => {
             for i in 0..2i32 {
                 for j in 0..FRONTIER_LVL_MODE_COUNT {
-                    if streak < (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[i][j] {
-                        streak = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[i][j];
+                    if streak
+                        < (*crate::gl!(gSaveBlock2Ptr))
+                            .frontier
+                            .palaceRecordWinStreaks[i][j]
+                    {
+                        streak = (*crate::gl!(gSaveBlock2Ptr))
+                            .frontier
+                            .palaceRecordWinStreaks[i][j];
                     }
                 }
             }
@@ -1132,8 +1151,14 @@ unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
         MATCH_CALL_FACTORY => {
             for i in 0..2i32 {
                 for j in 0..FRONTIER_LVL_MODE_COUNT {
-                    if streak < (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[i][j] {
-                        streak = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[i][j];
+                    if streak
+                        < (*crate::gl!(gSaveBlock2Ptr))
+                            .frontier
+                            .factoryRecordWinStreaks[i][j]
+                    {
+                        streak = (*crate::gl!(gSaveBlock2Ptr))
+                            .frontier
+                            .factoryRecordWinStreaks[i][j];
                     }
                 }
             }
@@ -1141,16 +1166,16 @@ unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
         }
         3 => {
             for i in 0..FRONTIER_LVL_MODE_COUNT {
-                if streak < (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[i] {
-                    streak = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[i];
+                if streak < (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaRecordStreaks[i] {
+                    streak = (*crate::gl!(gSaveBlock2Ptr)).frontier.arenaRecordStreaks[i];
                 }
             }
             *topicTextId = 2;
         }
         6 => {
             for i in 0..FRONTIER_LVL_MODE_COUNT {
-                if streak < (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[i] {
-                    streak = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[i];
+                if streak < (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[i] {
+                    streak = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[i];
                 }
             }
             *topicTextId = 5;
@@ -1259,7 +1284,7 @@ pub unsafe fn BufferPokedexRatingForMatchCall(destStr: *mut u8) {
         3,
     );
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         numCaught,
         STR_CONV_MODE_LEFT_ALIGN,
         3,
@@ -1304,7 +1329,7 @@ pub unsafe fn BufferPokedexRatingForMatchCall(destStr: *mut u8) {
             3,
         );
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             numCaught,
             STR_CONV_MODE_LEFT_ALIGN,
             3,

@@ -79,11 +79,13 @@ static OAM_AFFINE: OamData = OamData::new(
 
 /// `sCreatingSpriteTemplate`: zero-initialised storage like the original
 /// (EWRAM is not loaded from ROM), filled in before each use.
-#[unsafe(link_section = "ewram_data")]
-static mut CREATING_TEMPLATE: crate::ffi::Align4<[u8; 24]> = crate::ffi::Align4([0; 24]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static CREATING_TEMPLATE: crate::global::Global<crate::ffi::Align4<[u8; 24]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; 24]));
 
-#[unsafe(link_section = "ewram_data")]
-static mut SPRITE_PICS: [PicData; PICS_COUNT] = [DUMMY_PIC; PICS_COUNT];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static SPRITE_PICS: crate::global::Global<[PicData; PICS_COUNT]> =
+    crate::global::Global::new([DUMMY_PIC; PICS_COUNT]);
 
 /// `GetMonSpritePalFromSpeciesAndPersonality` with this module's view of its types.
 #[inline]
@@ -114,12 +116,12 @@ unsafe fn dummy_pic_sprite_callback(_sprite: *mut u8) {}
 
 #[inline]
 fn template() -> *mut SpriteTemplate {
-    (&raw mut CREATING_TEMPLATE).cast()
+    (crate::gl!(&raw CREATING_TEMPLATE)).cast()
 }
 
 #[inline]
 fn pics() -> *mut PicData {
-    (&raw mut SPRITE_PICS).cast()
+    (crate::gl!(&raw SPRITE_PICS)).cast()
 }
 
 #[inline]

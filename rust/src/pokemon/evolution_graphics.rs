@@ -52,12 +52,12 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -95,7 +95,7 @@ static sEvoSparkleSpriteTemplate: Table<SpriteTemplate> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -152,12 +152,23 @@ unsafe fn CreateSparkle_SpiralUpward(trigIdx: u8) {
         0,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[sAmplitude] = 48;
-        gSprites[spriteId].data[sTrigIdx] = trigIdx as i16;
-        gSprites[spriteId].data[sTimer] = 0;
-        gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-        gSprites[spriteId].oam.set_matrixNum(31);
-        gSprites[spriteId].callback = Some(SpriteCB_Sparkle_SpiralUpward);
+        {
+            let gl_i0 = sAmplitude;
+            crate::gl!(gSprites[spriteId].data[gl_i0] = 48)
+        };
+        {
+            let gl_i1 = sTrigIdx;
+            crate::gl!(gSprites[spriteId].data[gl_i1] = trigIdx as i16)
+        };
+        {
+            let gl_i2 = sTimer;
+            crate::gl!(gSprites[spriteId].data[gl_i2] = 0)
+        };
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_affineMode(ST_OAM_AFFINE_NORMAL);
+        (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(31);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Sparkle_SpiralUpward));
     }
 }
 pub(crate) unsafe fn SpriteCB_Sparkle_ArcDown(sprite: *mut Sprite) {
@@ -186,13 +197,24 @@ unsafe fn CreateSparkle_ArcDown(trigIdx: u8) {
         0,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[sAmplitude] = 8;
-        gSprites[spriteId].data[sTrigIdx] = trigIdx as i16;
-        gSprites[spriteId].data[sTimer] = 0;
-        gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-        gSprites[spriteId].oam.set_matrixNum(25);
-        gSprites[spriteId].subpriority = 1;
-        gSprites[spriteId].callback = Some(SpriteCB_Sparkle_ArcDown);
+        {
+            let gl_i3 = sAmplitude;
+            crate::gl!(gSprites[spriteId].data[gl_i3] = 8)
+        };
+        {
+            let gl_i4 = sTrigIdx;
+            crate::gl!(gSprites[spriteId].data[gl_i4] = trigIdx as i16)
+        };
+        {
+            let gl_i5 = sTimer;
+            crate::gl!(gSprites[spriteId].data[gl_i5] = 0)
+        };
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_affineMode(ST_OAM_AFFINE_NORMAL);
+        (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(25);
+        crate::gl!(gSprites[spriteId].subpriority = 1);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Sparkle_ArcDown));
     }
 }
 pub(crate) unsafe fn SpriteCB_Sparkle_CircleInward(sprite: *mut Sprite) {
@@ -219,14 +241,28 @@ unsafe fn CreateSparkle_CircleInward(trigIdx: u8, speed: u8) {
         0,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[sSpeed] = speed as i16;
-        gSprites[spriteId].data[sAmplitude] = 120;
-        gSprites[spriteId].data[sTrigIdx] = trigIdx as i16;
-        gSprites[spriteId].data[sTimer] = 0;
-        gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-        gSprites[spriteId].oam.set_matrixNum(31);
-        gSprites[spriteId].subpriority = 1;
-        gSprites[spriteId].callback = Some(SpriteCB_Sparkle_CircleInward);
+        {
+            let gl_i6 = sSpeed;
+            crate::gl!(gSprites[spriteId].data[gl_i6] = speed as i16)
+        };
+        {
+            let gl_i7 = sAmplitude;
+            crate::gl!(gSprites[spriteId].data[gl_i7] = 120)
+        };
+        {
+            let gl_i8 = sTrigIdx;
+            crate::gl!(gSprites[spriteId].data[gl_i8] = trigIdx as i16)
+        };
+        {
+            let gl_i9 = sTimer;
+            crate::gl!(gSprites[spriteId].data[gl_i9] = 0)
+        };
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_affineMode(ST_OAM_AFFINE_NORMAL);
+        (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(31);
+        crate::gl!(gSprites[spriteId].subpriority = 1);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Sparkle_CircleInward));
     }
 }
 pub(crate) unsafe fn SpriteCB_Sparkle_Spray(sprite: *mut Sprite) {
@@ -268,16 +304,29 @@ unsafe fn CreateSparkle_Spray(id: u8) {
         0,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[sSpeed] = 3 - (Random() as i32 % 7) as i16;
-        gSprites[spriteId].data[sAmplitude] = 48 + (Random() as i16 & 0x3F);
-        gSprites[spriteId].data[sTimer] = 0;
-        gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-        gSprites[spriteId].oam.set_matrixNum(31);
-        gSprites[spriteId].subpriority = 20;
-        gSprites[spriteId].callback = Some(SpriteCB_Sparkle_Spray);
+        {
+            let gl_v = 3 - (Random() as i32 % 7) as i16;
+            let gl_i10 = sSpeed;
+            crate::gl!(gSprites[spriteId].data[gl_i10] = gl_v)
+        };
+        {
+            let gl_v = 48 + (Random() as i16 & 0x3F);
+            let gl_i11 = sAmplitude;
+            crate::gl!(gSprites[spriteId].data[gl_i11] = gl_v)
+        };
+        {
+            let gl_i12 = sTimer;
+            crate::gl!(gSprites[spriteId].data[gl_i12] = 0)
+        };
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_affineMode(ST_OAM_AFFINE_NORMAL);
+        (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(31);
+        crate::gl!(gSprites[spriteId].subpriority = 20);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Sparkle_Spray));
     }
 }
-pub unsafe fn LoadEvoSparkleSpriteAndPal() {
+pub fn LoadEvoSparkleSpriteAndPal() {
     LoadCompressedSpriteSheetUsingHeap((&raw const sEvoSparkleSpriteSheets[0]).cast_mut());
     LoadSpritePalettes(sEvoSparkleSpritePals.as_ptr().cast_mut());
 }
@@ -381,10 +430,10 @@ pub(crate) unsafe fn Task_Sparkles_SprayAndFlash_Init(taskId: u8) {
     SetEvoSparklesMatrices();
     task_set(taskId, tTimer, 0);
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[32] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[32] as *mut c_void,
         48,
@@ -416,7 +465,7 @@ pub(crate) unsafe fn Task_Sparkles_SprayAndFlash(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_Sparkles_SprayAndFlash_End(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(taskId);
     }
 }
@@ -429,10 +478,10 @@ pub(crate) unsafe fn Task_Sparkles_SprayAndFlashTrade_Init(taskId: u8) {
     SetEvoSparklesMatrices();
     task_set(taskId, tTimer, 0);
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[32] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[32] as *mut c_void,
         48,
@@ -463,7 +512,7 @@ pub(crate) unsafe fn Task_Sparkles_SprayAndFlashTrade(taskId: u8) {
         task_set_func(taskId, Some(Task_Sparkles_SprayAndFlash_End));
     }
 }
-pub(crate) unsafe fn SpriteCB_EvolutionMonSprite(sprite: *mut Sprite) {}
+pub(crate) fn SpriteCB_EvolutionMonSprite(sprite: *mut Sprite) {}
 pub unsafe fn CycleEvolutionMonSprite(preEvoSpriteId: u8, postEvoSpriteId: u8) -> u8 {
     let mut monPalette: CArray<u16, 16> = zeroed();
     for i in 0..16u16 {
@@ -489,42 +538,42 @@ pub unsafe fn CycleEvolutionMonSprite(preEvoSpriteId: u8, postEvoSpriteId: u8) -
         0,
         div_i32(toDiv, task_get(taskId, tPostEvoScale) as i32) as u16,
     );
-    gSprites[preEvoSpriteId].callback = Some(SpriteCB_EvolutionMonSprite);
-    gSprites[preEvoSpriteId]
+    crate::gl!(gSprites[preEvoSpriteId].callback = Some(SpriteCB_EvolutionMonSprite));
+    (*gSprites.as_ptr())[preEvoSpriteId]
         .oam
         .set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[preEvoSpriteId]
+    (*gSprites.as_ptr())[preEvoSpriteId]
         .oam
         .set_matrixNum(MATRIX_PRE_EVO as u32);
-    gSprites[preEvoSpriteId].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[preEvoSpriteId].set_invisible(FALSE as u16);
     CpuSet(
         monPalette.as_mut_ptr() as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
             .cast::<CArray<u16, 512>>()
-            .cast_mut())[0x100 + gSprites[preEvoSpriteId].oam.paletteNum() as i32 * 16]
+            .cast_mut())[0x100 + (*gSprites.as_ptr())[preEvoSpriteId].oam.paletteNum() as i32 * 16]
             as *mut c_void,
         16,
     );
-    gSprites[postEvoSpriteId].callback = Some(SpriteCB_EvolutionMonSprite);
-    gSprites[postEvoSpriteId]
+    crate::gl!(gSprites[postEvoSpriteId].callback = Some(SpriteCB_EvolutionMonSprite));
+    (*gSprites.as_ptr())[postEvoSpriteId]
         .oam
         .set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[postEvoSpriteId]
+    (*gSprites.as_ptr())[postEvoSpriteId]
         .oam
         .set_matrixNum(MATRIX_POST_EVO as u32);
-    gSprites[postEvoSpriteId].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[postEvoSpriteId].set_invisible(FALSE as u16);
     CpuSet(
         monPalette.as_mut_ptr() as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
             .cast::<CArray<u16, 512>>()
-            .cast_mut())[0x100 + gSprites[postEvoSpriteId].oam.paletteNum() as i32 * 16]
+            .cast_mut())[0x100 + (*gSprites.as_ptr())[postEvoSpriteId].oam.paletteNum() as i32 * 16]
             as *mut c_void,
         16,
     );
     task_set(taskId, tEvoStopped, FALSE as i16);
     taskId
 }
-pub(crate) unsafe fn Task_CycleEvolutionMonSprite_Init(taskId: u8) {
+pub(crate) fn Task_CycleEvolutionMonSprite_Init(taskId: u8) {
     task_set(taskId, tShowingPostEvo, FALSE as i16);
     task_set(taskId, tScaleSpeed, 8);
     task_set_func(taskId, Some(Task_CycleEvolutionMonSprite_TryEnd));
@@ -610,36 +659,36 @@ pub(crate) unsafe fn Task_CycleEvolutionMonSprite_UpdateSize(taskId: u8) {
     }
 }
 unsafe fn EndOnPostEvoMon(taskId: u8) {
-    gSprites[task_get(taskId, tPreEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPreEvoSpriteId)]
         .oam
         .set_affineMode(ST_OAM_AFFINE_OFF);
-    gSprites[task_get(taskId, tPreEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPreEvoSpriteId)]
         .oam
         .set_matrixNum(0);
-    gSprites[task_get(taskId, tPreEvoSpriteId)].set_invisible(TRUE as u16);
-    gSprites[task_get(taskId, tPostEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPreEvoSpriteId)].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[task_get(taskId, tPostEvoSpriteId)]
         .oam
         .set_affineMode(ST_OAM_AFFINE_OFF);
-    gSprites[task_get(taskId, tPostEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPostEvoSpriteId)]
         .oam
         .set_matrixNum(0);
-    gSprites[task_get(taskId, tPostEvoSpriteId)].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[task_get(taskId, tPostEvoSpriteId)].set_invisible(FALSE as u16);
     DestroyTask(taskId);
 }
 pub(crate) unsafe fn EndOnPreEvoMon(taskId: u8) {
-    gSprites[task_get(taskId, tPreEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPreEvoSpriteId)]
         .oam
         .set_affineMode(ST_OAM_AFFINE_OFF);
-    gSprites[task_get(taskId, tPreEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPreEvoSpriteId)]
         .oam
         .set_matrixNum(0);
-    gSprites[task_get(taskId, tPreEvoSpriteId)].set_invisible(FALSE as u16);
-    gSprites[task_get(taskId, tPostEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPreEvoSpriteId)].set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[task_get(taskId, tPostEvoSpriteId)]
         .oam
         .set_affineMode(ST_OAM_AFFINE_OFF);
-    gSprites[task_get(taskId, tPostEvoSpriteId)]
+    (*gSprites.as_ptr())[task_get(taskId, tPostEvoSpriteId)]
         .oam
         .set_matrixNum(0);
-    gSprites[task_get(taskId, tPostEvoSpriteId)].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[task_get(taskId, tPostEvoSpriteId)].set_invisible(TRUE as u16);
     DestroyTask(taskId);
 }

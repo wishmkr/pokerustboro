@@ -7,12 +7,13 @@ const EOS: u8 = 0xff;
 
 unsafe extern "C" {}
 
-#[unsafe(link_section = "ewram_data")]
-static mut STRING_POINTERS: [*const u8; PLACEHOLDER_COUNT] = [ptr::null(); PLACEHOLDER_COUNT];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static STRING_POINTERS: crate::global::Global<[*const u8; PLACEHOLDER_COUNT]> =
+    crate::global::Global::new([ptr::null(); PLACEHOLDER_COUNT]);
 
 #[unsafe(no_mangle)]
 pub unsafe fn DynamicPlaceholderTextUtil_Reset() {
-    let base = (&raw mut STRING_POINTERS).cast::<*const u8>();
+    let base = (crate::gl!(&raw STRING_POINTERS)).cast::<*const u8>();
     let mut index = 0;
     while index < PLACEHOLDER_COUNT {
         unsafe { base.add(index).write(ptr::null()) };
@@ -24,7 +25,7 @@ pub unsafe fn DynamicPlaceholderTextUtil_Reset() {
 pub unsafe fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(index: u8, value: *const u8) {
     if usize::from(index) < PLACEHOLDER_COUNT {
         unsafe {
-            (&raw mut STRING_POINTERS)
+            (crate::gl!(&raw STRING_POINTERS))
                 .cast::<*const u8>()
                 .add(usize::from(index))
                 .write(value)
@@ -46,7 +47,7 @@ pub unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(
             source = unsafe { source.add(1) };
             let index = usize::from(unsafe { source.read() });
             let placeholder = unsafe {
-                (&raw const STRING_POINTERS)
+                (crate::gl!(&raw STRING_POINTERS).cast_const())
                     .cast::<*const u8>()
                     .add(index)
                     .read()
@@ -64,7 +65,7 @@ pub unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(
 #[unsafe(no_mangle)]
 pub unsafe fn DynamicPlaceholderTextUtil_GetPlaceholderPtr(index: u8) -> *const u8 {
     unsafe {
-        (&raw const STRING_POINTERS)
+        (crate::gl!(&raw STRING_POINTERS).cast_const())
             .cast::<*const u8>()
             .add(usize::from(index))
             .read()

@@ -116,7 +116,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -128,14 +128,14 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadBgTiles` with this module's view of its types.
@@ -145,7 +145,7 @@ unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -289,7 +289,8 @@ static sWinTemplates_EggHatch: Table<CArray<WindowTemplate, 2>> =
 static sYesNoWinTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::egg_hatch::sYesNoWinTemplate).cast());
 
-pub(crate) static mut sEggHatchData: *mut EggHatchData = null_mut();
+pub(crate) static sEggHatchData: crate::global::Global<*mut EggHatchData> =
+    crate::global::Global::new(null_mut());
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -368,8 +369,8 @@ unsafe fn CreateHatchedMon(egg: *mut Pokemon, temp: *mut Pokemon) {
 unsafe fn AddHatchedMonToParty(id: u8) {
     let mut isEgg: u8 = 0x46;
     let mut name: CArray<u8, 11> = zeroed();
-    let mon: *mut Pokemon = &raw mut gPlayerParty[id];
-    CreateHatchedMon(mon, &raw mut gEnemyParty[0]);
+    let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[id]);
+    CreateHatchedMon(mon, crate::gl!(&raw gEnemyParty[0]));
     SetMonData(mon, MON_DATA_IS_EGG, &raw mut isEgg as *mut c_void);
     let mut species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
     GetSpeciesName(name.as_mut_ptr(), species);
@@ -405,18 +406,18 @@ unsafe fn _CheckDaycareMonReceivedMail(daycare: *mut DayCare, daycareId: u8) -> 
             (*daycareMon).mail.monName.as_mut_ptr(),
         ) != 0
             || StringCompareWithoutExtCtrlCodes(
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
                 (*daycareMon).mail.otName.as_mut_ptr(),
             ) != 0)
     {
         StringCopy(gStringVar1.as_mut_ptr(), nickname.as_mut_ptr());
         TVShowConvertInternationalString(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             (*daycareMon).mail.otName.as_mut_ptr(),
             (*daycareMon).mail.gameLanguage() as i32,
         );
         TVShowConvertInternationalString(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*daycareMon).mail.monName.as_mut_ptr(),
             (*daycareMon).mail.monLanguage() as i32,
         );
@@ -426,18 +427,21 @@ unsafe fn _CheckDaycareMonReceivedMail(daycare: *mut DayCare, daycareId: u8) -> 
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CheckDaycareMonReceivedMail() -> u8 {
-    _CheckDaycareMonReceivedMail(&raw mut (*gSaveBlock1Ptr).daycare, gSpecialVar_0x8004 as u8)
+    _CheckDaycareMonReceivedMail(
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).daycare,
+        gSpecialVar_0x8004 as u8,
+    )
 }
 unsafe fn EggHatchCreateMonSprite(useAlt: u8, state: u8, partyId: u8, speciesLoc: *mut u16) -> u8 {
     let mut position: u8 = 0;
     let mut spriteId: u8 = 0;
     let mut mon: *mut Pokemon = null_mut();
     if useAlt == FALSE {
-        mon = &raw mut gPlayerParty[partyId];
+        mon = crate::gl!(&raw gPlayerParty[partyId]);
         position = B_POSITION_OPPONENT_LEFT;
     }
     if useAlt == TRUE {
-        mon = &raw mut gPlayerParty[partyId];
+        mon = crate::gl!(&raw gPlayerParty[partyId]);
         position = B_POSITION_OPPONENT_RIGHT;
     }
     match state {
@@ -448,7 +452,7 @@ unsafe fn EggHatchCreateMonSprite(useAlt: u8, state: u8, partyId: u8, speciesLoc
                 (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                     .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                     .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr
                     [useAlt as i32 * 2 + B_POSITION_OPPONENT_LEFT as i32],
                 species as i32,
                 pid,
@@ -458,9 +462,9 @@ unsafe fn EggHatchCreateMonSprite(useAlt: u8, state: u8, partyId: u8, speciesLoc
         }
         1 => {
             SetMultiuseSpriteTemplateToPokemon((*GetMonSpritePalStruct(mon)).tag, position);
-            spriteId = CreateSprite(&raw mut gMultiuseSpriteTemplate, EGG_X, EGG_Y, 6);
-            gSprites[spriteId].set_invisible(TRUE as u16);
-            gSprites[spriteId].callback = Some(SpriteCallbackDummy);
+            spriteId = CreateSprite(crate::gl!(&raw gMultiuseSpriteTemplate), EGG_X, EGG_Y, 6);
+            (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCallbackDummy));
         }
         _ => {}
     }
@@ -478,21 +482,21 @@ pub unsafe fn EggHatch() {
     FadeScreen(FADE_TO_BLACK, 0);
 }
 pub(crate) unsafe fn Task_EggHatch(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         SetMainCallback2(Some(CB2_LoadEggHatch));
-        gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
+        crate::gl!(gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic));
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn CB2_LoadEggHatch() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetGpuReg(0x0, 0);
-            sEggHatchData = Alloc(20) as *mut EggHatchData;
+            crate::gl!(sEggHatchData = Alloc(20) as *mut EggHatchData);
             AllocateMonSpritesGfx();
-            (*sEggHatchData).eggPartyId = gSpecialVar_0x8004 as u8;
-            (*sEggHatchData).eggShardVelocityId = 0;
+            (*crate::gl!(sEggHatchData)).eggPartyId = gSpecialVar_0x8004 as u8;
+            (*crate::gl!(sEggHatchData)).eggShardVelocityId = 0;
             SetVBlankCallback(Some(VBlankCB_EggHatch));
             gSpecialVar_0x8005 = GetCurrentMapMusic();
             ResetTempTileDataBuffers();
@@ -512,12 +516,12 @@ pub(crate) unsafe fn CB2_LoadEggHatch() {
             ResetTasks();
             ScanlineEffect_Stop();
             m4aSoundVSyncOn();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             InitWindows(sWinTemplates_EggHatch.as_ptr().cast_mut());
-            (*sEggHatchData).windowId = 0;
-            gMain.state += 1;
+            (*crate::gl!(sEggHatchData)).windowId = 0;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             DecompressAndLoadBgGfxUsingHeap(
@@ -546,36 +550,36 @@ pub(crate) unsafe fn CB2_LoadEggHatch() {
                 0,
                 32,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             LoadSpriteSheet((&raw const *sEggHatch_Sheet).cast_mut());
             LoadSpriteSheet((&raw const *sEggShards_Sheet).cast_mut());
             LoadSpritePalette((&raw const *sEgg_SpritePalette).cast_mut());
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             CopyBgTilemapBufferToVram(0);
-            AddHatchedMonToParty((*sEggHatchData).eggPartyId);
-            gMain.state += 1;
+            AddHatchedMonToParty((*crate::gl!(sEggHatchData)).eggPartyId);
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             EggHatchCreateMonSprite(
                 0,
                 0,
-                (*sEggHatchData).eggPartyId,
-                &raw mut (*sEggHatchData).species,
+                (*crate::gl!(sEggHatchData)).eggPartyId,
+                &raw mut (*crate::gl!(sEggHatchData)).species,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
-            (*sEggHatchData).monSpriteId = EggHatchCreateMonSprite(
+            (*crate::gl!(sEggHatchData)).monSpriteId = EggHatchCreateMonSprite(
                 FALSE,
                 1,
-                (*sEggHatchData).eggPartyId,
-                &raw mut (*sEggHatchData).species,
+                (*crate::gl!(sEggHatchData)).eggPartyId,
+                &raw mut (*crate::gl!(sEggHatchData)).species,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
@@ -603,11 +607,11 @@ pub(crate) unsafe fn CB2_LoadEggHatch() {
                 0,
             );
             CopyBgTilemapBufferToVram(1);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             SetMainCallback2(Some(CB2_EggHatch));
-            (*sEggHatchData).state = 0;
+            (*crate::gl!(sEggHatchData)).state = 0;
         }
         _ => {}
     }
@@ -619,14 +623,17 @@ pub(crate) unsafe fn CB2_LoadEggHatch() {
 }
 pub(crate) unsafe fn EggHatchSetMonNickname() {
     SetMonData(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i0 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i0])
+        },
         MON_DATA_NICKNAME,
-        gStringVar3.as_mut_ptr() as *mut c_void,
+        (*gStringVar3.as_ptr()).as_mut_ptr() as *mut c_void,
     );
     FreeMonSpritesGfx();
-    Free(sEggHatchData as *mut c_void);
+    Free(crate::gl!(sEggHatchData) as *mut c_void);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 pub(crate) unsafe fn Task_EggHatchPlayBGM(taskId: u8) {
@@ -647,10 +654,10 @@ pub(crate) unsafe fn CB2_EggHatch() {
     let mut species: u16 = 0;
     let mut gender: u8 = 0;
     let mut personality: u32 = 0;
-    match (*sEggHatchData).state {
+    match (*crate::gl!(sEggHatchData)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sEggHatchData).eggSpriteId = CreateSprite(
+            (*crate::gl!(sEggHatchData)).eggSpriteId = CreateSprite(
                 (&raw const *sSpriteTemplate_Egg).cast_mut(),
                 EGG_X,
                 EGG_Y,
@@ -658,53 +665,69 @@ pub(crate) unsafe fn CB2_EggHatch() {
             );
             ShowBg(0);
             ShowBg(1);
-            (*sEggHatchData).state += 1;
+            (*crate::gl!(sEggHatchData)).state += 1;
             CreateTask(Some(Task_EggHatchPlayBGM), 5);
         }
         1 => {
-            if gPaletteFade.active() == 0 {
-                FillWindowPixelBuffer((*sEggHatchData).windowId, 0);
-                (*sEggHatchData).delayTimer = 0;
-                (*sEggHatchData).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                FillWindowPixelBuffer((*crate::gl!(sEggHatchData)).windowId, 0);
+                (*crate::gl!(sEggHatchData)).delayTimer = 0;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
         }
         2 => {
             if ({
-                (*sEggHatchData).delayTimer += 1;
-                (*sEggHatchData).delayTimer
+                (*crate::gl!(sEggHatchData)).delayTimer += 1;
+                (*crate::gl!(sEggHatchData)).delayTimer
             }) > 30
             {
-                (*sEggHatchData).state += 1;
-                gSprites[(*sEggHatchData).eggSpriteId].callback = Some(SpriteCB_Egg_Shake1);
+                (*crate::gl!(sEggHatchData)).state += 1;
+                {
+                    let gl_i1 = (*crate::gl!(sEggHatchData)).eggSpriteId;
+                    crate::gl!(gSprites[gl_i1].callback = Some(SpriteCB_Egg_Shake1))
+                };
             }
         }
         3 => {
-            if gSprites[(*sEggHatchData).eggSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i2 = (*crate::gl!(sEggHatchData)).eggSpriteId;
+                crate::gl!(gSprites[gl_i2].callback)
+            }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 species = GetMonData2(
-                    &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
+                    {
+                        let gl_i3 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                        crate::gl!(&raw gPlayerParty[gl_i3])
+                    },
                     MON_DATA_SPECIES,
                 ) as u16;
                 DoMonFrontSpriteAnimation(
-                    &raw mut gSprites[(*sEggHatchData).monSpriteId],
+                    {
+                        let gl_i4 = (*crate::gl!(sEggHatchData)).monSpriteId;
+                        crate::gl!(&raw gSprites[gl_i4])
+                    },
                     species,
                     FALSE,
                     1,
                 );
-                (*sEggHatchData).state += 1;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
         }
         4 => {
-            if gSprites[(*sEggHatchData).monSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i5 = (*crate::gl!(sEggHatchData)).monSpriteId;
+                crate::gl!(gSprites[gl_i5].callback)
+            }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
-                (*sEggHatchData).state += 1;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
         }
         5 => {
             GetMonNickname2(
-                &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
+                {
+                    let gl_i6 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                    crate::gl!(&raw gPlayerParty[gl_i6])
+                },
                 gStringVar1.as_mut_ptr(),
             );
             StringExpandPlaceholders(
@@ -714,30 +737,33 @@ pub(crate) unsafe fn CB2_EggHatch() {
                     .cast_mut(),
             );
             EggHatchPrintMessage(
-                (*sEggHatchData).windowId,
+                (*crate::gl!(sEggHatchData)).windowId,
                 gStringVar4.as_mut_ptr(),
                 0,
                 3,
                 TEXT_SKIP_DRAW,
             );
             PlayFanfare(MUS_EVOLVED);
-            (*sEggHatchData).state += 1;
-            PutWindowTilemap((*sEggHatchData).windowId);
-            CopyWindowToVram((*sEggHatchData).windowId, COPYWIN_FULL);
+            (*crate::gl!(sEggHatchData)).state += 1;
+            PutWindowTilemap((*crate::gl!(sEggHatchData)).windowId);
+            CopyWindowToVram((*crate::gl!(sEggHatchData)).windowId, COPYWIN_FULL);
         }
         6 => {
             if IsFanfareTaskInactive() != 0 {
-                (*sEggHatchData).state += 1;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
         }
         7 => {
             if IsFanfareTaskInactive() != 0 {
-                (*sEggHatchData).state += 1;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
         }
         8 => {
             GetMonNickname2(
-                &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
+                {
+                    let gl_i7 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                    crate::gl!(&raw gPlayerParty[gl_i7])
+                },
                 gStringVar1.as_mut_ptr(),
             );
             StringExpandPlaceholders(
@@ -747,35 +773,53 @@ pub(crate) unsafe fn CB2_EggHatch() {
                 .as_ptr()
                 .cast_mut(),
             );
-            EggHatchPrintMessage((*sEggHatchData).windowId, gStringVar4.as_mut_ptr(), 0, 2, 1);
-            (*sEggHatchData).state += 1;
+            EggHatchPrintMessage(
+                (*crate::gl!(sEggHatchData)).windowId,
+                gStringVar4.as_mut_ptr(),
+                0,
+                2,
+                1,
+            );
+            (*crate::gl!(sEggHatchData)).state += 1;
         }
         9 => {
-            if IsTextPrinterActive((*sEggHatchData).windowId) == 0 {
-                LoadUserWindowBorderGfx((*sEggHatchData).windowId, 0x140, 224);
+            if IsTextPrinterActive((*crate::gl!(sEggHatchData)).windowId) == 0 {
+                LoadUserWindowBorderGfx((*crate::gl!(sEggHatchData)).windowId, 0x140, 224);
                 CreateYesNoMenu((&raw const *sYesNoWinTemplate).cast_mut(), 0x140, 0xE, 0);
-                (*sEggHatchData).state += 1;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
         }
         10 => match Menu_ProcessInputNoWrapClearOnChoose() {
             0 => {
                 GetMonNickname2(
-                    &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
-                    gStringVar3.as_mut_ptr(),
+                    {
+                        let gl_i8 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                        crate::gl!(&raw gPlayerParty[gl_i8])
+                    },
+                    (*gStringVar3.as_ptr()).as_mut_ptr(),
                 );
                 species = GetMonData2(
-                    &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
+                    {
+                        let gl_i9 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                        crate::gl!(&raw gPlayerParty[gl_i9])
+                    },
                     MON_DATA_SPECIES,
                 ) as u16;
-                gender = GetMonGender(&raw mut gPlayerParty[(*sEggHatchData).eggPartyId]);
+                gender = GetMonGender({
+                    let gl_i10 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                    crate::gl!(&raw gPlayerParty[gl_i10])
+                });
                 personality = GetMonData3(
-                    &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
+                    {
+                        let gl_i11 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                        crate::gl!(&raw gPlayerParty[gl_i11])
+                    },
                     MON_DATA_PERSONALITY,
                     null_mut(),
                 );
                 DoNamingScreen(
                     NAMING_SCREEN_NICKNAME,
-                    gStringVar3.as_mut_ptr(),
+                    (*gStringVar3.as_ptr()).as_mut_ptr(),
                     species,
                     gender as u16,
                     personality,
@@ -783,20 +827,20 @@ pub(crate) unsafe fn CB2_EggHatch() {
                 );
             }
             1 | MENU_B_PRESSED => {
-                (*sEggHatchData).state += 1;
+                (*crate::gl!(sEggHatchData)).state += 1;
             }
             _ => {}
         },
         11 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sEggHatchData).state += 1;
+            (*crate::gl!(sEggHatchData)).state += 1;
         }
-        12 if gPaletteFade.active() == 0 => {
+        12 if (*gPaletteFade.as_ptr()).active() == 0 => {
             FreeMonSpritesGfx();
-            RemoveWindow((*sEggHatchData).windowId);
+            RemoveWindow((*crate::gl!(sEggHatchData)).windowId);
             UnsetBgTilemapBuffer(0);
             UnsetBgTilemapBuffer(1);
-            Free(sEggHatchData as *mut c_void);
+            Free(crate::gl!(sEggHatchData) as *mut c_void);
             SetMainCallback2(Some(CB2_ReturnToField));
         }
         _ => {}
@@ -863,11 +907,20 @@ pub(crate) unsafe fn SpriteCB_Egg_Shake3(sprite: *mut Sprite) {
             (*sprite).callback = Some(SpriteCB_Egg_WaitHatch);
             (*sprite).data[sTimer] = 0;
             let species: u16 = GetMonData2(
-                &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
+                {
+                    let gl_i12 = (*crate::gl!(sEggHatchData)).eggPartyId;
+                    crate::gl!(&raw gPlayerParty[gl_i12])
+                },
                 MON_DATA_SPECIES,
             ) as u16;
-            gSprites[(*sEggHatchData).monSpriteId].x2 = 0;
-            gSprites[(*sEggHatchData).monSpriteId].y2 = 0;
+            {
+                let gl_i13 = (*crate::gl!(sEggHatchData)).monSpriteId;
+                crate::gl!(gSprites[gl_i13].x2 = 0)
+            };
+            {
+                let gl_i14 = (*crate::gl!(sEggHatchData)).monSpriteId;
+                crate::gl!(gSprites[gl_i14].y2 = 0)
+            };
         } else {
             (*sprite).data[sSinIdx] = ((*sprite).data[sSinIdx] + 20) & 0xFF;
             (*sprite).x2 = Sin((*sprite).data[sSinIdx], 2);
@@ -903,7 +956,7 @@ pub(crate) unsafe fn SpriteCB_Egg_Hatch(sprite: *mut Sprite) {
         }
     }
     (*sprite).data[sTimer] += 1;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlaySE(SE_EGG_HATCH);
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).callback = Some(SpriteCB_Egg_Reveal);
@@ -912,9 +965,12 @@ pub(crate) unsafe fn SpriteCB_Egg_Hatch(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn SpriteCB_Egg_Reveal(sprite: *mut Sprite) {
     if (*sprite).data[sTimer] == 0 {
-        gSprites[(*sEggHatchData).monSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sEggHatchData)).monSpriteId].set_invisible(FALSE as u16);
         StartSpriteAffineAnim(
-            &raw mut gSprites[(*sEggHatchData).monSpriteId],
+            {
+                let gl_i15 = (*crate::gl!(sEggHatchData)).monSpriteId;
+                crate::gl!(&raw gSprites[gl_i15])
+            },
             BATTLER_AFFINE_EMERGE,
         );
     }
@@ -922,7 +978,10 @@ pub(crate) unsafe fn SpriteCB_Egg_Reveal(sprite: *mut Sprite) {
         BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 65535);
     }
     if (*sprite).data[sTimer] <= 9 {
-        gSprites[(*sEggHatchData).monSpriteId].y -= 1;
+        {
+            let gl_i16 = (*crate::gl!(sEggHatchData)).monSpriteId;
+            crate::gl!(gSprites[gl_i16].y -= 1)
+        };
     }
     if (*sprite).data[sTimer] > 40 {
         (*sprite).callback = Some(SpriteCallbackDummy);
@@ -942,9 +1001,9 @@ pub(crate) unsafe fn SpriteCB_EggShard(sprite: *mut Sprite) {
     }
 }
 unsafe fn CreateRandomEggShardSprite() {
-    let velocityX: i16 = sEggShardVelocities[(*sEggHatchData).eggShardVelocityId][0];
-    let velocityY: i16 = sEggShardVelocities[(*sEggHatchData).eggShardVelocityId][1];
-    (*sEggHatchData).eggShardVelocityId += 1;
+    let velocityX: i16 = sEggShardVelocities[(*crate::gl!(sEggHatchData)).eggShardVelocityId][0];
+    let velocityY: i16 = sEggShardVelocities[(*crate::gl!(sEggHatchData)).eggShardVelocityId][1];
+    (*crate::gl!(sEggHatchData)).eggShardVelocityId += 1;
     let spriteAnimIndex: u16 = Random() % 4;
     CreateEggShardSprite(
         EGG_X as u8,
@@ -969,16 +1028,25 @@ unsafe fn CreateEggShardSprite(
         y as i16,
         4,
     );
-    gSprites[spriteId].data[sVelocX] = velocityX;
-    gSprites[spriteId].data[sVelocY] = velocityY;
-    gSprites[spriteId].data[sAccelY] = acceleration;
-    StartSpriteAnim(&raw mut gSprites[spriteId], spriteAnimIndex);
+    {
+        let gl_i17 = sVelocX;
+        crate::gl!(gSprites[spriteId].data[gl_i17] = velocityX)
+    };
+    {
+        let gl_i18 = sVelocY;
+        crate::gl!(gSprites[spriteId].data[gl_i18] = velocityY)
+    };
+    {
+        let gl_i19 = sAccelY;
+        crate::gl!(gSprites[spriteId].data[gl_i19] = acceleration)
+    };
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), spriteAnimIndex);
 }
 unsafe fn EggHatchPrintMessage(windowId: u8, string: *mut u8, x: u8, y: u8, speed: u8) {
     FillWindowPixelBuffer(windowId, 255);
-    (*sEggHatchData).textColor[0] = 0;
-    (*sEggHatchData).textColor[1] = 5;
-    (*sEggHatchData).textColor[2] = 6;
+    (*crate::gl!(sEggHatchData)).textColor[0] = 0;
+    (*crate::gl!(sEggHatchData)).textColor[1] = 5;
+    (*crate::gl!(sEggHatchData)).textColor[2] = 6;
     AddTextPrinterParameterized4(
         windowId,
         FONT_NORMAL,
@@ -986,7 +1054,7 @@ unsafe fn EggHatchPrintMessage(windowId: u8, string: *mut u8, x: u8, y: u8, spee
         y,
         0,
         0,
-        (*sEggHatchData).textColor.as_mut_ptr(),
+        (*crate::gl!(sEggHatchData)).textColor.as_mut_ptr(),
         speed as i8,
         string,
     );
@@ -994,8 +1062,8 @@ unsafe fn EggHatchPrintMessage(windowId: u8, string: *mut u8, x: u8, y: u8, spee
 pub unsafe fn GetEggCyclesToSubtract() -> u8 {
     let count: u8 = CalculatePlayerPartyCount();
     for i in 0..count {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_IS_EGG) == 0 {
-            let ability: u8 = GetMonAbility(&raw mut gPlayerParty[i]);
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SANITY_IS_EGG) == 0 {
+            let ability: u8 = GetMonAbility(crate::gl!(&raw gPlayerParty[i]));
             if ability == ABILITY_MAGMA_ARMOR || ability == ABILITY_FLAME_BODY {
                 return 2;
             }

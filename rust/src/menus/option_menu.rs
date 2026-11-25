@@ -59,14 +59,14 @@ unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 // The C's names for task and sprite data slots.
@@ -109,7 +109,7 @@ static sOptionMenuText_Pal: Table<CArray<u16, 16>> =
 static sOptionMenuWinTemplates: Table<CArray<WindowTemplate, 3>> =
     Table((&raw const crate::data::option_menu::sOptionMenuWinTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sArrowPressed: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
@@ -161,7 +161,7 @@ pub(crate) unsafe fn VBlankCB() {
 }
 pub unsafe fn CB2_InitOptionMenu() {
     'l1: {
-        let sw1: u8 = gMain.state;
+        let sw1: u8 = crate::gl!(gMain.state);
         let matched = sw1 == 0
             || sw1 == 1
             || sw1 == 2
@@ -177,7 +177,7 @@ pub unsafe fn CB2_InitOptionMenu() {
         let mut fall = false;
         if sw1 == 0 || !matched {
             SetVBlankCallback(None);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 1 {
@@ -287,7 +287,7 @@ pub unsafe fn CB2_InitOptionMenu() {
             SetGpuReg(REG_OFFSET_DISPCNT, 12352);
             ShowBg(0);
             ShowBg(1);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 2 {
@@ -295,29 +295,33 @@ pub unsafe fn CB2_InitOptionMenu() {
             ScanlineEffect_Stop();
             ResetTasks();
             ResetSpriteData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 3 {
             LoadBgTiles(
                 1,
-                (*GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8)).tiles
-                    as *mut c_void,
+                (*GetWindowFrameTilesPal(
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsWindowFrameType() as u8
+                ))
+                .tiles as *mut c_void,
                 0x120,
                 0x1A2,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 4 {
             LoadPalette(sOptionMenuBg_Pal.as_ptr().cast_mut() as *mut c_void, 0, 2);
             LoadPalette(
-                (*GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8)).pal
-                    as *mut c_void,
+                (*GetWindowFrameTilesPal(
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsWindowFrameType() as u8
+                ))
+                .pal as *mut c_void,
                 112,
                 32,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 5 {
@@ -326,28 +330,28 @@ pub unsafe fn CB2_InitOptionMenu() {
                 16,
                 32,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 6 {
             PutWindowTilemap(WIN_HEADER);
             DrawHeaderText();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 7 {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 8 {
             fall = true;
             PutWindowTilemap(WIN_OPTIONS);
             DrawOptionMenuTexts();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         if fall || sw1 == 9 {
             DrawBgWindowFrames();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 10 {
@@ -357,28 +361,32 @@ pub unsafe fn CB2_InitOptionMenu() {
                 task_set(
                     taskId,
                     tTextSpeed,
-                    (*gSaveBlock2Ptr).optionsTextSpeed() as i16,
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsTextSpeed() as i16,
                 );
                 task_set(
                     taskId,
                     tBattleSceneOff,
-                    (*gSaveBlock2Ptr).optionsBattleSceneOff() as i16,
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsBattleSceneOff() as i16,
                 );
                 task_set(
                     taskId,
                     tBattleStyle,
-                    (*gSaveBlock2Ptr).optionsBattleStyle() as i16,
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsBattleStyle() as i16,
                 );
-                task_set(taskId, tSound, (*gSaveBlock2Ptr).optionsSound() as i16);
+                task_set(
+                    taskId,
+                    tSound,
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsSound() as i16,
+                );
                 task_set(
                     taskId,
                     tButtonMode,
-                    (*gSaveBlock2Ptr).optionsButtonMode as i16,
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode as i16,
                 );
                 task_set(
                     taskId,
                     tWindowFrameType,
-                    (*gSaveBlock2Ptr).optionsWindowFrameType() as i16,
+                    (*crate::gl!(gSaveBlock2Ptr)).optionsWindowFrameType() as i16,
                 );
                 TextSpeed_DrawChoices(task_get(taskId, tTextSpeed) as u8);
                 BattleScene_DrawChoices(task_get(taskId, tBattleSceneOff) as u8);
@@ -388,7 +396,7 @@ pub unsafe fn CB2_InitOptionMenu() {
                 FrameType_DrawChoices(task_get(taskId, tWindowFrameType) as u8);
                 HighlightOptionMenuItem(task_get(taskId, tMenuSelection) as u8);
                 CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
                 break 'l1;
             }
         }
@@ -400,25 +408,25 @@ pub unsafe fn CB2_InitOptionMenu() {
     }
 }
 pub(crate) unsafe fn Task_OptionMenuFadeIn(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set_func(taskId, Some(Task_OptionMenuProcessInput));
     }
 }
 pub(crate) unsafe fn Task_OptionMenuProcessInput(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         if task_get(taskId, tMenuSelection) == MENUITEM_CANCEL {
             task_set_func(taskId, Some(Task_OptionMenuSave));
         }
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         task_set_func(taskId, Some(Task_OptionMenuSave));
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         if task_get(taskId, tMenuSelection) > 0 {
             task_set(taskId, tMenuSelection, task_get(taskId, tMenuSelection) - 1);
         } else {
             task_set(taskId, tMenuSelection, MENUITEM_CANCEL);
         }
         HighlightOptionMenuItem(task_get(taskId, tMenuSelection) as u8);
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         if task_get(taskId, tMenuSelection) < MENUITEM_CANCEL {
             task_set(taskId, tMenuSelection, task_get(taskId, tMenuSelection) + 1);
         } else {
@@ -505,20 +513,22 @@ pub(crate) unsafe fn Task_OptionMenuProcessInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_OptionMenuSave(taskId: u8) {
-    (*gSaveBlock2Ptr).set_optionsTextSpeed(task_get(taskId, tTextSpeed) as u16);
-    (*gSaveBlock2Ptr).set_optionsBattleSceneOff(task_get(taskId, tBattleSceneOff) as u16);
-    (*gSaveBlock2Ptr).set_optionsBattleStyle(task_get(taskId, tBattleStyle) as u16);
-    (*gSaveBlock2Ptr).set_optionsSound(task_get(taskId, tSound) as u16);
-    (*gSaveBlock2Ptr).optionsButtonMode = task_get(taskId, tButtonMode) as u8;
-    (*gSaveBlock2Ptr).set_optionsWindowFrameType(task_get(taskId, tWindowFrameType) as u16);
+    (*crate::gl!(gSaveBlock2Ptr)).set_optionsTextSpeed(task_get(taskId, tTextSpeed) as u16);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .set_optionsBattleSceneOff(task_get(taskId, tBattleSceneOff) as u16);
+    (*crate::gl!(gSaveBlock2Ptr)).set_optionsBattleStyle(task_get(taskId, tBattleStyle) as u16);
+    (*crate::gl!(gSaveBlock2Ptr)).set_optionsSound(task_get(taskId, tSound) as u16);
+    (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode = task_get(taskId, tButtonMode) as u8;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .set_optionsWindowFrameType(task_get(taskId, tWindowFrameType) as u16);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     task_set_func(taskId, Some(Task_OptionMenuFadeOut));
 }
 pub(crate) unsafe fn Task_OptionMenuFadeOut(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(taskId);
         FreeAllWindowBuffers();
-        SetMainCallback2(gMain.savedCallback);
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }
 unsafe fn HighlightOptionMenuItem(index: u8) {
@@ -554,8 +564,8 @@ unsafe fn DrawOptionMenuChoice(mut text: *mut u8, x: u8, y: u8, style: u8) {
         None,
     );
 }
-unsafe fn TextSpeed_ProcessInput(mut selection: u8) -> u8 {
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+fn TextSpeed_ProcessInput(mut selection: u8) -> u8 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
         if selection <= 1 {
             selection += 1;
         } else {
@@ -563,7 +573,7 @@ unsafe fn TextSpeed_ProcessInput(mut selection: u8) -> u8 {
         }
         sArrowPressed.set(TRUE);
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
         if selection != 0 {
             selection -= 1;
         } else {
@@ -633,8 +643,8 @@ unsafe fn TextSpeed_DrawChoices(selection: u8) {
         styles[2],
     );
 }
-unsafe fn BattleScene_ProcessInput(mut selection: u8) -> u8 {
-    if gMain.newKeys as i32 & 48 != 0 {
+fn BattleScene_ProcessInput(mut selection: u8) -> u8 {
+    if crate::gl!(gMain.newKeys) as i32 & 48 != 0 {
         selection ^= 1;
         sArrowPressed.set(TRUE);
     }
@@ -668,8 +678,8 @@ unsafe fn BattleScene_DrawChoices(selection: u8) {
         styles[1],
     );
 }
-unsafe fn BattleStyle_ProcessInput(mut selection: u8) -> u8 {
-    if gMain.newKeys as i32 & 48 != 0 {
+fn BattleStyle_ProcessInput(mut selection: u8) -> u8 {
+    if crate::gl!(gMain.newKeys) as i32 & 48 != 0 {
         selection ^= 1;
         sArrowPressed.set(TRUE);
     }
@@ -704,7 +714,7 @@ unsafe fn BattleStyle_DrawChoices(selection: u8) {
     );
 }
 unsafe fn Sound_ProcessInput(mut selection: u8) -> u8 {
-    if gMain.newKeys as i32 & 48 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 48 != 0 {
         selection ^= 1;
         SetPokemonCryStereo(selection as u32);
         sArrowPressed.set(TRUE);
@@ -740,7 +750,7 @@ unsafe fn Sound_DrawChoices(selection: u8) {
     );
 }
 unsafe fn FrameType_ProcessInput(mut selection: u8) -> u8 {
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
         if selection < 19 {
             selection += 1;
         } else {
@@ -759,7 +769,7 @@ unsafe fn FrameType_ProcessInput(mut selection: u8) -> u8 {
         );
         sArrowPressed.set(TRUE);
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
         if selection != 0 {
             selection -= 1;
         } else {
@@ -814,8 +824,8 @@ unsafe fn FrameType_DrawChoices(selection: u8) {
     );
     DrawOptionMenuChoice(text.as_mut_ptr(), 128, 80, 1);
 }
-unsafe fn ButtonMode_ProcessInput(mut selection: u8) -> u8 {
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+fn ButtonMode_ProcessInput(mut selection: u8) -> u8 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
         if selection <= 1 {
             selection += 1;
         } else {
@@ -823,7 +833,7 @@ unsafe fn ButtonMode_ProcessInput(mut selection: u8) -> u8 {
         }
         sArrowPressed.set(TRUE);
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
         if selection != 0 {
             selection -= 1;
         } else {

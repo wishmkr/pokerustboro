@@ -91,7 +91,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `GetMaxWidthInMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
     unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
 }
 /// `GetStringCenterAlignXOffset` with this module's view of its types.
@@ -111,25 +111,19 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadSpecialPokePic` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpecialPokePic(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-    a4: u8,
-) {
+fn LoadSpecialPokePic(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32, a4: u8) {
     unsafe {
         crate::decompress::LoadSpecialPokePic(a0 as _, a1 as _, a2, a3, a4);
     }
 }
 /// `ScanlineEffect_SetParams` with this module's view of its types.
 #[inline]
-unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
     unsafe {
         crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
     }
@@ -214,10 +208,12 @@ static sSpriteTemplate_ConditionSparkle: Table<SpriteTemplate> =
 static sWindowTemplates_MailboxMenu: Table<CArray<WindowTemplate, 3>> =
     Table((&raw const crate::data::menu_specialized::sWindowTemplates_MailboxMenu).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMailboxWindowIds: Aligned<CArray<u8, 3>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMailboxList: *mut ListMenuItem = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMailboxWindowIds: crate::global::Global<Aligned<CArray<u8, 3>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMailboxList: crate::global::Global<*mut ListMenuItem> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -249,24 +245,24 @@ unsafe fn Alloc(a0: u32) -> *mut c_void {
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
 }
 
 pub unsafe fn MailboxMenu_Alloc(count: u8) -> u8 {
-    sMailboxList = Alloc((count as u32 + 1) * 8) as *mut ListMenuItem;
-    if sMailboxList.is_null() {
+    crate::gl!(sMailboxList = Alloc((count as u32 + 1) * 8) as *mut ListMenuItem);
+    if (*sMailboxList.as_ptr()).is_null() {
         return FALSE;
     }
     for i in 0..3u8 {
-        sMailboxWindowIds[i] = WINDOW_NONE;
+        crate::gl!(sMailboxWindowIds[i] = WINDOW_NONE);
     }
     TRUE
 }
 pub unsafe fn MailboxMenu_AddWindow(windowIdx: u8) -> u8 {
-    if sMailboxWindowIds[windowIdx] == WINDOW_NONE {
+    if crate::gl!(sMailboxWindowIds[windowIdx]) == WINDOW_NONE {
         if windowIdx == MAILBOXWIN_OPTIONS {
             let mut template: WindowTemplate = sWindowTemplates_MailboxMenu[windowIdx];
             template.width = GetMaxWidthInMenuTable(
@@ -275,23 +271,26 @@ pub unsafe fn MailboxMenu_AddWindow(windowIdx: u8) -> u8 {
                     .cast_mut(),
                 4,
             ) as u8;
-            sMailboxWindowIds[windowIdx] = AddWindow(&raw mut template) as u8;
+            crate::gl!(sMailboxWindowIds[windowIdx] = AddWindow(&raw mut template) as u8);
         } else {
-            sMailboxWindowIds[windowIdx] =
-                AddWindow((&raw const sWindowTemplates_MailboxMenu[windowIdx]).cast_mut()) as u8;
+            crate::gl!(
+                sMailboxWindowIds[windowIdx] =
+                    AddWindow((&raw const sWindowTemplates_MailboxMenu[windowIdx]).cast_mut())
+                        as u8
+            );
         }
-        SetStandardWindowBorderStyle(sMailboxWindowIds[windowIdx], FALSE);
+        SetStandardWindowBorderStyle(crate::gl!(sMailboxWindowIds[windowIdx]), FALSE);
     }
-    sMailboxWindowIds[windowIdx]
+    crate::gl!(sMailboxWindowIds[windowIdx])
 }
 pub unsafe fn MailboxMenu_RemoveWindow(windowIdx: u8) {
-    ClearStdWindowAndFrameToTransparent(sMailboxWindowIds[windowIdx], FALSE);
-    ClearWindowTilemap(sMailboxWindowIds[windowIdx]);
-    RemoveWindow(sMailboxWindowIds[windowIdx]);
-    sMailboxWindowIds[windowIdx] = WINDOW_NONE;
+    ClearStdWindowAndFrameToTransparent(crate::gl!(sMailboxWindowIds[windowIdx]), FALSE);
+    ClearWindowTilemap(crate::gl!(sMailboxWindowIds[windowIdx]));
+    RemoveWindow(crate::gl!(sMailboxWindowIds[windowIdx]));
+    crate::gl!(sMailboxWindowIds[windowIdx] = WINDOW_NONE);
 }
-unsafe fn MailboxMenu_GetWindowId(windowIdx: u8) -> u8 {
-    sMailboxWindowIds[windowIdx]
+fn MailboxMenu_GetWindowId(windowIdx: u8) -> u8 {
+    crate::gl!(sMailboxWindowIds[windowIdx])
 }
 pub(crate) unsafe fn MailboxMenu_ItemPrintFunc(windowId: u8, itemId: u32, y: u8) {
     let mut buffer: CArray<u8, 30> = zeroed();
@@ -300,7 +299,7 @@ pub(crate) unsafe fn MailboxMenu_ItemPrintFunc(windowId: u8, itemId: u32, y: u8)
     }
     StringCopy(
         buffer.as_mut_ptr(),
-        (*gSaveBlock1Ptr).mail[PARTY_SIZE as u32 + itemId]
+        (*crate::gl!(gSaveBlock1Ptr)).mail[PARTY_SIZE as u32 + itemId]
             .playerName
             .as_mut_ptr(),
     );
@@ -324,35 +323,35 @@ pub(crate) unsafe fn MailboxMenu_ItemPrintFunc(windowId: u8, itemId: u32, y: u8)
 pub unsafe fn MailboxMenu_CreateList(page: *mut PlayerPCItemPageStruct) -> u8 {
     let mut i: u16 = 0;
     while i < (*page).count as u16 {
-        (*sMailboxList.at(i)).name = sEmptyItemName.as_ptr().cast_mut();
-        (*sMailboxList.at(i)).id = i as i32;
+        (*(*sMailboxList.as_ptr()).at(i)).name = sEmptyItemName.as_ptr().cast_mut();
+        (*(*sMailboxList.as_ptr()).at(i)).id = i as i32;
         i += 1;
     }
-    (*sMailboxList.at(i)).name = (*(&raw const crate::data::strings::gText_Cancel2)
+    (*(*sMailboxList.as_ptr()).at(i)).name = (*(&raw const crate::data::strings::gText_Cancel2)
         .cast::<CArray<u8, 0>>())
     .as_ptr()
     .cast_mut();
-    (*sMailboxList.at(i)).id = LIST_CANCEL;
-    gMultiuseListMenuTemplate.items = sMailboxList;
-    gMultiuseListMenuTemplate.totalItems = (*page).count as u16 + 1;
-    gMultiuseListMenuTemplate.windowId = sMailboxWindowIds[1];
-    gMultiuseListMenuTemplate.header_X = 0;
-    gMultiuseListMenuTemplate.item_X = 8;
-    gMultiuseListMenuTemplate.cursor_X = 0;
-    gMultiuseListMenuTemplate.maxShowed = 8;
-    gMultiuseListMenuTemplate.set_upText_Y(9);
-    gMultiuseListMenuTemplate.set_cursorPal(2);
-    gMultiuseListMenuTemplate.set_fillValue(1);
-    gMultiuseListMenuTemplate.set_cursorShadowPal(3);
-    gMultiuseListMenuTemplate.moveCursorFunc = Some(MailboxMenu_MoveCursorFunc);
-    gMultiuseListMenuTemplate.itemPrintFunc = Some(MailboxMenu_ItemPrintFunc);
-    gMultiuseListMenuTemplate.set_fontId(FONT_NORMAL);
-    gMultiuseListMenuTemplate.set_cursorKind(CURSOR_BLACK_ARROW);
-    gMultiuseListMenuTemplate.set_lettersSpacing(0);
-    gMultiuseListMenuTemplate.set_itemVerticalPadding(0);
-    gMultiuseListMenuTemplate.set_scrollMultiple(LIST_NO_MULTIPLE_SCROLL);
+    (*(*sMailboxList.as_ptr()).at(i)).id = LIST_CANCEL;
+    crate::gl!(gMultiuseListMenuTemplate.items = crate::gl!(sMailboxList));
+    crate::gl!(gMultiuseListMenuTemplate.totalItems = (*page).count as u16 + 1);
+    crate::gl!(gMultiuseListMenuTemplate.windowId = crate::gl!(sMailboxWindowIds[1]));
+    crate::gl!(gMultiuseListMenuTemplate.header_X = 0);
+    crate::gl!(gMultiuseListMenuTemplate.item_X = 8);
+    crate::gl!(gMultiuseListMenuTemplate.cursor_X = 0);
+    crate::gl!(gMultiuseListMenuTemplate.maxShowed = 8);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_upText_Y(9);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_cursorPal(2);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_fillValue(1);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_cursorShadowPal(3);
+    crate::gl!(gMultiuseListMenuTemplate.moveCursorFunc = Some(MailboxMenu_MoveCursorFunc));
+    crate::gl!(gMultiuseListMenuTemplate.itemPrintFunc = Some(MailboxMenu_ItemPrintFunc));
+    (*gMultiuseListMenuTemplate.as_ptr()).set_fontId(FONT_NORMAL);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_cursorKind(CURSOR_BLACK_ARROW);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_lettersSpacing(0);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_itemVerticalPadding(0);
+    (*gMultiuseListMenuTemplate.as_ptr()).set_scrollMultiple(LIST_NO_MULTIPLE_SCROLL);
     ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
         (*page).itemsAbove,
         (*page).cursorPos,
     )
@@ -375,7 +374,7 @@ pub unsafe fn MailboxMenu_AddScrollArrows(page: *mut PlayerPCItemPageStruct) {
     );
 }
 pub unsafe fn MailboxMenu_Free() {
-    Free(sMailboxList as *mut c_void);
+    Free(crate::gl!(sMailboxList) as *mut c_void);
 }
 pub unsafe fn ConditionGraph_Init(graph: *mut ConditionGraph) {
     let mut i: u8 = 0;
@@ -475,27 +474,31 @@ pub unsafe fn ConditionGraph_Draw(graph: *mut ConditionGraph) {
     ConditionGraph_CalcRightHalf(graph);
     ConditionGraph_CalcLeftHalf(graph);
     for i in 0..CONDITION_GRAPH_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2] = {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2] =
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2] =
                 (*graph).scanlineRight[i][0] << 8 | (*graph).scanlineRight[i][1];
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2]
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2]
         };
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1] = {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1] =
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1] =
                 (*graph).scanlineLeft[i][0] << 8 | (*graph).scanlineLeft[i][1];
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1]
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][(i as i32 + CONDITION_GRAPH_TOP_Y - 1) * 2 + 1]
         };
     }
     (*graph).needsDraw = FALSE;
@@ -818,15 +821,15 @@ pub unsafe fn InitMoveRelearnerWindows(useContestWindow: u8) {
 }
 fn MoveRelearnerDummy() {}
 pub unsafe fn LoadMoveRelearnerMovesList(items: *mut ListMenuItem, numChoices: u16) -> u8 {
-    gMultiuseListMenuTemplate = *sMoveRelearnerMovesListTemplate;
-    gMultiuseListMenuTemplate.totalItems = numChoices;
-    gMultiuseListMenuTemplate.items = items;
+    crate::gl!(gMultiuseListMenuTemplate = *sMoveRelearnerMovesListTemplate);
+    crate::gl!(gMultiuseListMenuTemplate.totalItems = numChoices);
+    crate::gl!(gMultiuseListMenuTemplate.items = items);
     if numChoices < 6 {
-        gMultiuseListMenuTemplate.maxShowed = numChoices;
+        crate::gl!(gMultiuseListMenuTemplate.maxShowed = numChoices);
     } else {
-        gMultiuseListMenuTemplate.maxShowed = 6;
+        crate::gl!(gMultiuseListMenuTemplate.maxShowed = 6);
     }
-    gMultiuseListMenuTemplate.maxShowed as u8
+    crate::gl!(gMultiuseListMenuTemplate.maxShowed) as u8
 }
 unsafe fn MoveRelearnerLoadBattleMoveDescription(chosenMove: u32) {
     let mut buffer: CArray<u8, 32> = zeroed();
@@ -1058,7 +1061,7 @@ pub(crate) unsafe fn MoveRelearnerCursorCallback(itemIndex: i32, onInit: u8, lis
 }
 pub unsafe fn MoveRelearnerPrintMessage(str: *mut u8) {
     FillWindowPixelBuffer(RELEARNERWIN_MSG, 17);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(TRUE);
@@ -1090,9 +1093,9 @@ pub unsafe fn GetBoxOrPartyMonData(boxId: u16, monId: u16, request: i32, dst: *m
     let mut ret: i32 = 0;
     if boxId == TOTAL_BOXES_COUNT as u16 {
         if request == MON_DATA_NICKNAME || request == MON_DATA_OT_NAME {
-            ret = GetMonData3(&raw mut gPlayerParty[monId], request, dst) as i32;
+            ret = GetMonData3(crate::gl!(&raw gPlayerParty[monId]), request, dst) as i32;
         } else {
-            ret = GetMonData2(&raw mut gPlayerParty[monId], request) as i32;
+            ret = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), request) as i32;
         }
     } else {
         if request == MON_DATA_NICKNAME || request == MON_DATA_OT_NAME {
@@ -1149,8 +1152,8 @@ unsafe fn GetConditionMenuMonString(mut dst: *mut u8, boxId: u16, monId: u16) ->
     StringGet_Nickname(dst);
     let species: u16 = GetBoxOrPartyMonData(r#box, mon, MON_DATA_SPECIES, null_mut()) as u16;
     if r#box == TOTAL_BOXES_COUNT as u16 {
-        level = GetMonData2(&raw mut gPlayerParty[mon], MON_DATA_LEVEL) as u16;
-        gender = GetMonGender(&raw mut gPlayerParty[mon]) as u16;
+        level = GetMonData2(crate::gl!(&raw gPlayerParty[mon]), MON_DATA_LEVEL) as u16;
+        gender = GetMonGender(crate::gl!(&raw gPlayerParty[mon])) as u16;
     } else {
         boxMon = GetBoxedMonPtr(r#box as u8, mon as u8);
         gender = GetBoxMonGender(boxMon) as u16;
@@ -1619,7 +1622,10 @@ pub(crate) unsafe fn SpriteCB_ConditionSparkle_WaitForAllAnim(sprite: *mut Sprit
     }
 }
 unsafe fn SetConditionSparklePosition(sprite: *mut Sprite) {
-    let mon: *mut Sprite = &raw mut gSprites[(*sprite).data[sMonSpriteId]];
+    let mon: *mut Sprite = {
+        let gl_i0 = (*sprite).data[sMonSpriteId];
+        crate::gl!(&raw gSprites[gl_i0])
+    };
     if !mon.is_null() {
         (*sprite).x = (*mon).x + (*mon).x2 + sConditionSparkleCoords[(*sprite).data[sSparkleId]][0];
         (*sprite).y = (*mon).y + (*mon).y2 + sConditionSparkleCoords[(*sprite).data[sSparkleId]][1];
@@ -1650,9 +1656,21 @@ unsafe fn SetNextConditionSparkle(sprite: *mut Sprite) {
     let mut id: u8 = (*sprite).data[sNextSparkleSpriteId] as u8;
     let mut i: u16 = 0;
     while (i as i32) < (*sprite).data[sNumExtraSparkles] as i32 + 1 {
-        gSprites[id].data[sDelayTimer] = gSprites[id].data[sSparkleId] * 16 + 1;
-        gSprites[id].callback = Some(SpriteCB_ConditionSparkle);
-        id = gSprites[id].data[sNextSparkleSpriteId] as u8;
+        {
+            let gl_i1 = sDelayTimer;
+            crate::gl!(
+                gSprites[id].data[gl_i1] = ({
+                    let gl_i2 = sSparkleId;
+                    crate::gl!(gSprites[id].data[gl_i2])
+                }) * 16
+                    + 1
+            )
+        };
+        crate::gl!(gSprites[id].callback = Some(SpriteCB_ConditionSparkle));
+        id = ({
+            let gl_i3 = sNextSparkleSpriteId;
+            crate::gl!(gSprites[id].data[gl_i3])
+        }) as u8;
         i += 1;
     }
 }
@@ -1678,7 +1696,7 @@ pub unsafe fn CreateConditionSparkleSprites(
             0,
         ) as u16;
         if spriteId != MAX_SPRITES as u16 {
-            *sprites.at(i) = &raw mut gSprites[spriteId];
+            *sprites.at(i) = crate::gl!(&raw gSprites[spriteId]);
             (*(*sprites.at(i))).set_invisible(TRUE as u16);
             (*(*sprites.at(i))).data[sMonSpriteId] = monSpriteId as i16;
             if i != 0 {
@@ -1740,9 +1758,12 @@ unsafe fn ShowAllConditionSparkles(sprite: *mut Sprite) {
     let mut id: u8 = (*sprite).data[sNextSparkleSpriteId] as u8;
     let mut i: u8 = 0;
     while (i as i32) < (*sprite).data[sNumExtraSparkles] as i32 + 1 {
-        SeekSpriteAnim(&raw mut gSprites[id], 0);
-        gSprites[id].set_invisible(FALSE as u16);
-        id = gSprites[id].data[sNextSparkleSpriteId] as u8;
+        SeekSpriteAnim(crate::gl!(&raw gSprites[id]), 0);
+        (*gSprites.as_ptr())[id].set_invisible(FALSE as u16);
+        id = ({
+            let gl_i4 = sNextSparkleSpriteId;
+            crate::gl!(gSprites[id].data[gl_i4])
+        }) as u8;
         i += 1;
     }
 }

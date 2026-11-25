@@ -148,19 +148,19 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
@@ -255,11 +255,13 @@ static sWindowTemplates_MenuActions: Table<CArray<WindowTemplate, 5>> =
 static sYesNoTossFuncions: Table<YesNoFuncTable> =
     Table((&raw const crate::data::battle_pyramid_bag::sYesNoTossFuncions).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPyramidBagMenu: *mut PyramidBagMenu = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPyramidBagMenu: crate::global::Global<*mut PyramidBagMenu> =
+    crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPyramidBagMenuState: PyramidBagMenuState = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPyramidBagMenuState: crate::global::Global<PyramidBagMenuState> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -307,9 +309,9 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
     }
 }
 
-pub unsafe fn InitBattlePyramidBagCursorPosition() {
-    gPyramidBagMenuState.cursorPosition = 0;
-    gPyramidBagMenuState.scrollPosition = 0;
+pub fn InitBattlePyramidBagCursorPosition() {
+    crate::gl!(gPyramidBagMenuState.cursorPosition = 0);
+    crate::gl!(gPyramidBagMenuState.scrollPosition = 0);
 }
 pub unsafe fn CB2_PyramidBagMenuFromStartMenu() {
     GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_FIELD, Some(CB2_ReturnToFieldWithOpenMenu));
@@ -327,34 +329,37 @@ pub unsafe fn ChooseItemsToTossFromPyramidBag() {
     CreateTask(Some(Task_ChooseItemsToTossFromPyramidBag), 10);
 }
 pub(crate) unsafe fn Task_ChooseItemsToTossFromPyramidBag(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
-        gFieldCallback2 = Some(CB2_FadeFromPartyMenu);
+        crate::gl!(gFieldCallback2 = Some(CB2_FadeFromPartyMenu));
         GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_CHOOSE_TOSS, Some(CB2_ReturnToField));
         DestroyTask(taskId);
     }
 }
 pub unsafe fn CB2_ReturnToPyramidBagMenu() {
-    GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_PREV, gPyramidBagMenuState.exitCallback);
+    GoToBattlePyramidBagMenu(
+        PYRAMIDBAG_LOC_PREV,
+        crate::gl!(gPyramidBagMenuState.exitCallback),
+    );
 }
 pub unsafe fn GoToBattlePyramidBagMenu(location: u8, exitCallback: Option<unsafe fn()>) {
-    gPyramidBagMenu = AllocZeroed(2444) as *mut PyramidBagMenu;
+    crate::gl!(gPyramidBagMenu = AllocZeroed(2444) as *mut PyramidBagMenu);
     if location != PYRAMIDBAG_LOC_PREV {
-        gPyramidBagMenuState.location = location;
+        crate::gl!(gPyramidBagMenuState.location = location);
     }
     if exitCallback.is_some() {
-        gPyramidBagMenuState.exitCallback = exitCallback;
+        crate::gl!(gPyramidBagMenuState.exitCallback = exitCallback);
     }
-    (*gPyramidBagMenu).newScreenCallback = None;
-    (*gPyramidBagMenu).toSwapPos = POS_NONE as u8;
-    (*gPyramidBagMenu).scrollIndicatorsTaskId = TASK_NONE;
+    (*crate::gl!(gPyramidBagMenu)).newScreenCallback = None;
+    (*crate::gl!(gPyramidBagMenu)).toSwapPos = POS_NONE as u8;
+    (*crate::gl!(gPyramidBagMenu)).scrollIndicatorsTaskId = TASK_NONE;
     memset(
-        (*gPyramidBagMenu).spriteIds.as_mut_ptr(),
+        (*crate::gl!(gPyramidBagMenu)).spriteIds.as_mut_ptr(),
         SPRITE_NONE as i32,
         11,
     );
     memset(
-        (*gPyramidBagMenu).windowIds.as_mut_ptr(),
+        (*crate::gl!(gPyramidBagMenu)).windowIds.as_mut_ptr(),
         WINDOW_NONE as i32,
         5,
     );
@@ -379,83 +384,83 @@ pub(crate) unsafe fn CB2_LoadPyramidBagMenu() {
     {}
 }
 unsafe fn LoadPyramidBagMenu() -> u8 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankHBlankCallbacksToNull();
             ClearScheduledBgCopiesToVram();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             ScanlineEffect_Stop();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             FreeAllSpritePalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ResetPaletteFade();
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             ResetSpriteData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             if MenuHelpers_IsLinkActive() == 0 {
                 ResetTasks();
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             InitPyramidBagBgs();
-            (*gPyramidBagMenu).state = 0;
-            gMain.state += 1;
+            (*crate::gl!(gPyramidBagMenu)).state = 0;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             if LoadPyramidBagGfx() != 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         8 => {
             InitPyramidBagWindows();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             UpdatePyramidBagList();
             UpdatePyramidBagCursorPos();
             InitPyramidBagScroll();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             SetBagItemsListTemplate();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
             CreatePyramidBagInputTask();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         12 => {
             CreatePyramidBagSprite();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         13 => {
             AddScrollArrows();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         14 => {
             CreateSwapLine();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         15 => {
             BlendPalettes(PALETTES_ALL, 16, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         16 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+            crate::gl!(gMain.state += 1);
         }
         _ => {
             SetVBlankCallback(Some(VBlankCB_PyramidBag));
@@ -471,7 +476,7 @@ unsafe fn InitPyramidBagBgs() {
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 3);
     SetBgTilemapBuffer(
         2,
-        (*gPyramidBagMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(gPyramidBagMenu)).tilemapBuffer.as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(2);
@@ -482,7 +487,7 @@ unsafe fn InitPyramidBagBgs() {
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
 unsafe fn LoadPyramidBagGfx() -> u8 {
-    match (*gPyramidBagMenu).state {
+    match (*crate::gl!(gPyramidBagMenu)).state {
         0 => {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
@@ -494,7 +499,7 @@ unsafe fn LoadPyramidBagGfx() -> u8 {
                 0,
                 0,
             );
-            (*gPyramidBagMenu).state += 1;
+            (*crate::gl!(gPyramidBagMenu)).state += 1;
         }
         1 => {
             if FreeTempTileDataBuffersIfPossible() != TRUE {
@@ -503,9 +508,9 @@ unsafe fn LoadPyramidBagGfx() -> u8 {
                         .cast::<CArray<u32, 0>>())
                     .as_ptr()
                     .cast_mut(),
-                    (*gPyramidBagMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(gPyramidBagMenu)).tilemapBuffer.as_mut_ptr() as *mut c_void,
                 );
-                (*gPyramidBagMenu).state += 1;
+                (*crate::gl!(gPyramidBagMenu)).state += 1;
             }
         }
         2 => {
@@ -517,50 +522,59 @@ unsafe fn LoadPyramidBagGfx() -> u8 {
                 0,
                 32,
             );
-            (*gPyramidBagMenu).state += 1;
+            (*crate::gl!(gPyramidBagMenu)).state += 1;
         }
         3 => {
             LoadCompressedSpriteSheet((&raw const *sSpriteSheet_PyramidBag).cast_mut());
-            (*gPyramidBagMenu).state += 1;
+            (*crate::gl!(gPyramidBagMenu)).state += 1;
         }
         4 => {
             LoadPyramidBagPalette();
-            (*gPyramidBagMenu).state += 1;
+            (*crate::gl!(gPyramidBagMenu)).state += 1;
         }
         _ => {
             LoadListMenuSwapLineGfx();
-            (*gPyramidBagMenu).state = 0;
+            (*crate::gl!(gPyramidBagMenu)).state = 0;
             return TRUE;
         }
     }
     FALSE
 }
 unsafe fn SetBagItemsListTemplate() {
-    let itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let itemIds: *mut u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
     let mut i: u16 = 0;
-    while (i as i32) < (*gPyramidBagMenu).listMenuCount as i32 - 1 {
+    while (i as i32) < (*crate::gl!(gPyramidBagMenu)).listMenuCount as i32 - 1 {
         CopyBagItemName(
-            (*gPyramidBagMenu).itemStrings[i].as_mut_ptr(),
+            (*crate::gl!(gPyramidBagMenu)).itemStrings[i].as_mut_ptr(),
             *itemIds.at(i),
         );
-        (*gPyramidBagMenu).bagListItems[i].name = (*gPyramidBagMenu).itemStrings[i].as_mut_ptr();
-        (*gPyramidBagMenu).bagListItems[i].id = i as i32;
+        (*crate::gl!(gPyramidBagMenu)).bagListItems[i].name =
+            (*crate::gl!(gPyramidBagMenu)).itemStrings[i].as_mut_ptr();
+        (*crate::gl!(gPyramidBagMenu)).bagListItems[i].id = i as i32;
         i += 1;
     }
     StringCopy(
-        (*gPyramidBagMenu).itemStrings[i].as_mut_ptr(),
+        (*crate::gl!(gPyramidBagMenu)).itemStrings[i].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_CloseBag).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*gPyramidBagMenu).bagListItems[i].name = (*gPyramidBagMenu).itemStrings[i].as_mut_ptr();
-    (*gPyramidBagMenu).bagListItems[i].id = LIST_CANCEL;
-    gMultiuseListMenuTemplate = *sListMenuTemplate;
-    gMultiuseListMenuTemplate.totalItems = (*gPyramidBagMenu).listMenuCount as u16;
-    gMultiuseListMenuTemplate.items = (*gPyramidBagMenu).bagListItems.as_mut_ptr();
-    gMultiuseListMenuTemplate.maxShowed = (*gPyramidBagMenu).listMenuMaxShown as u16;
+    (*crate::gl!(gPyramidBagMenu)).bagListItems[i].name =
+        (*crate::gl!(gPyramidBagMenu)).itemStrings[i].as_mut_ptr();
+    (*crate::gl!(gPyramidBagMenu)).bagListItems[i].id = LIST_CANCEL;
+    crate::gl!(gMultiuseListMenuTemplate = *sListMenuTemplate);
+    crate::gl!(
+        gMultiuseListMenuTemplate.totalItems = (*crate::gl!(gPyramidBagMenu)).listMenuCount as u16
+    );
+    crate::gl!(
+        gMultiuseListMenuTemplate.items = (*crate::gl!(gPyramidBagMenu)).bagListItems.as_mut_ptr()
+    );
+    crate::gl!(
+        gMultiuseListMenuTemplate.maxShowed =
+            (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown as u16
+    );
 }
 unsafe fn CopyBagItemName(dst: *mut u8, itemId: u16) {
     if GetItemPocket(itemId) == POCKET_BERRIES {
@@ -570,7 +584,7 @@ unsafe fn CopyBagItemName(dst: *mut u8, itemId: u16) {
             STR_CONV_MODE_LEADING_ZEROS,
             2,
         );
-        CopyItemName(itemId, gStringVar2.as_mut_ptr());
+        CopyItemName(itemId, (*gStringVar2.as_ptr()).as_mut_ptr());
         StringExpandPlaceholders(
             dst,
             (*(&raw const crate::data::strings::gText_NumberItem_TMBerry).cast::<CArray<u8, 0>>())
@@ -586,18 +600,18 @@ pub(crate) unsafe fn BagCursorMoved(itemIndex: i32, onInit: u8, list: *mut ListM
         PlaySE(SE_SELECT);
         ShakePyramidBag();
     }
-    if (*gPyramidBagMenu).toSwapPos == POS_NONE as u8 {
-        FreeItemIconSpriteByAltId((*gPyramidBagMenu).isAltIcon ^ 1);
+    if (*crate::gl!(gPyramidBagMenu)).toSwapPos == POS_NONE as u8 {
+        FreeItemIconSpriteByAltId((*crate::gl!(gPyramidBagMenu)).isAltIcon ^ 1);
         if itemIndex != LIST_CANCEL {
             ShowItemIcon(
-                (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
-                    [itemIndex],
-                (*gPyramidBagMenu).isAltIcon,
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()][itemIndex],
+                (*crate::gl!(gPyramidBagMenu)).isAltIcon,
             );
         } else {
-            ShowItemIcon(ITEM_LIST_END, (*gPyramidBagMenu).isAltIcon);
+            ShowItemIcon(ITEM_LIST_END, (*crate::gl!(gPyramidBagMenu)).isAltIcon);
         }
-        (*gPyramidBagMenu).isAltIcon ^= 1;
+        (*crate::gl!(gPyramidBagMenu)).isAltIcon ^= 1;
         PrintItemDescription(itemIndex);
     }
 }
@@ -605,8 +619,8 @@ pub(crate) unsafe fn PrintItemQuantity(windowId: u8, itemIndex: u32, y: u8) {
     if itemIndex == LIST_CANCEL as u32 {
         return;
     }
-    if (*gPyramidBagMenu).toSwapPos != POS_NONE as u8 {
-        if (*gPyramidBagMenu).toSwapPos == itemIndex as u8 {
+    if (*crate::gl!(gPyramidBagMenu)).toSwapPos != POS_NONE as u8 {
+        if (*crate::gl!(gPyramidBagMenu)).toSwapPos == itemIndex as u8 {
             PrintSelectorArrowAtPos(y, COLORID_LIGHT_GRAY);
         } else {
             PrintSelectorArrowAtPos(y, COLORID_NONE);
@@ -614,8 +628,8 @@ pub(crate) unsafe fn PrintItemQuantity(windowId: u8, itemIndex: u32, y: u8) {
     }
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
-        (*gSaveBlock2Ptr).frontier.pyramidBag.quantity[(*gSaveBlock2Ptr).frontier.lvlMode()]
-            [itemIndex] as i32,
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()][itemIndex] as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         2,
     );
@@ -641,14 +655,14 @@ pub(crate) unsafe fn PrintItemDescription(listMenuId: i32) {
     let mut desc: *mut u8 = null_mut();
     if listMenuId != LIST_CANCEL {
         desc = GetItemDescription(
-            (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
-                [listMenuId],
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()][listMenuId],
         );
     } else {
         StringCopy(
             gStringVar1.as_mut_ptr(),
             (*(&raw const crate::data::strings::gPyramidBagMenu_ReturnToStrings)
-                .cast::<CArray<*mut u8, 0>>())[gPyramidBagMenuState.location],
+                .cast::<CArray<*mut u8, 0>>())[crate::gl!(gPyramidBagMenuState.location)],
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
@@ -662,40 +676,42 @@ pub(crate) unsafe fn PrintItemDescription(listMenuId: i32) {
     PyramidBagPrint(WIN_INFO, desc, 3, 0, 0, 1, 0, COLORID_DARK_GRAY);
 }
 pub(crate) unsafe fn AddScrollArrows() {
-    if (*gPyramidBagMenu).scrollIndicatorsTaskId == TASK_NONE {
-        (*gPyramidBagMenu).scrollIndicatorsTaskId = AddScrollIndicatorArrowPairParameterized(
-            SCROLL_ARROW_UP,
-            172,
-            12,
-            148,
-            (*gPyramidBagMenu).listMenuCount as i32 - (*gPyramidBagMenu).listMenuMaxShown as i32,
-            TAG_SCROLL_ARROW,
-            TAG_SCROLL_ARROW,
-            &raw mut gPyramidBagMenuState.scrollPosition,
-        );
+    if (*crate::gl!(gPyramidBagMenu)).scrollIndicatorsTaskId == TASK_NONE {
+        (*crate::gl!(gPyramidBagMenu)).scrollIndicatorsTaskId =
+            AddScrollIndicatorArrowPairParameterized(
+                SCROLL_ARROW_UP,
+                172,
+                12,
+                148,
+                (*crate::gl!(gPyramidBagMenu)).listMenuCount as i32
+                    - (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown as i32,
+                TAG_SCROLL_ARROW,
+                TAG_SCROLL_ARROW,
+                crate::gl!(&raw gPyramidBagMenuState.scrollPosition),
+            );
     }
 }
 unsafe fn RemoveScrollArrow() {
-    if (*gPyramidBagMenu).scrollIndicatorsTaskId != TASK_NONE {
-        RemoveScrollIndicatorArrowPair((*gPyramidBagMenu).scrollIndicatorsTaskId);
-        (*gPyramidBagMenu).scrollIndicatorsTaskId = TASK_NONE;
+    if (*crate::gl!(gPyramidBagMenu)).scrollIndicatorsTaskId != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*crate::gl!(gPyramidBagMenu)).scrollIndicatorsTaskId);
+        (*crate::gl!(gPyramidBagMenu)).scrollIndicatorsTaskId = TASK_NONE;
     }
 }
 unsafe fn CreatePyramidBagInputTask() {
     let taskId: u8 = CreateTask(Some(Task_HandlePyramidBagInput), 0);
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
-        gPyramidBagMenuState.scrollPosition,
-        gPyramidBagMenuState.cursorPosition,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
+        crate::gl!(gPyramidBagMenuState.scrollPosition),
+        crate::gl!(gPyramidBagMenuState.cursorPosition),
     ) as i16;
 }
 unsafe fn SwapItems(id1: u8, id2: u8) {
-    let itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let itemIds: *mut u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
-    let quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let quantities: *mut u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
     let mut temp: u16 = *itemIds.at(id1);
     *itemIds.at(id1) = *itemIds.at(id2);
@@ -705,11 +721,11 @@ unsafe fn SwapItems(id1: u8, id2: u8) {
     *quantities.at(id2) = temp as u8;
 }
 unsafe fn MovePyramidBagItemSlotInList(from: u8, mut to: u8) {
-    let itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let itemIds: *mut u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
-    let quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let quantities: *mut u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
     if from != to {
         let mut i: i16 = 0;
@@ -734,11 +750,11 @@ unsafe fn MovePyramidBagItemSlotInList(from: u8, mut to: u8) {
     }
 }
 unsafe fn CompactItems() {
-    let itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let itemIds: *mut u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
-    let quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let quantities: *mut u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
     for i in 0..(PYRAMID_BAG_ITEMS_COUNT as u8) {
         if *itemIds.at(i) == ITEM_NONE || *quantities.at(i) == 0 {
@@ -755,54 +771,63 @@ unsafe fn CompactItems() {
     }
 }
 pub unsafe fn UpdatePyramidBagList() {
-    let itemIds: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
+    let itemIds: *mut u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
     .as_mut_ptr();
     CompactItems();
-    (*gPyramidBagMenu).listMenuCount = 0;
+    (*crate::gl!(gPyramidBagMenu)).listMenuCount = 0;
     for i in 0..(PYRAMID_BAG_ITEMS_COUNT as u16) {
         if *itemIds.at(i) != ITEM_NONE {
-            (*gPyramidBagMenu).listMenuCount += 1;
+            (*crate::gl!(gPyramidBagMenu)).listMenuCount += 1;
         }
     }
-    (*gPyramidBagMenu).listMenuCount += 1;
-    if (*gPyramidBagMenu).listMenuCount > 8 {
-        (*gPyramidBagMenu).listMenuMaxShown = 8;
+    (*crate::gl!(gPyramidBagMenu)).listMenuCount += 1;
+    if (*crate::gl!(gPyramidBagMenu)).listMenuCount > 8 {
+        (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown = 8;
     } else {
-        (*gPyramidBagMenu).listMenuMaxShown = (*gPyramidBagMenu).listMenuCount;
+        (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown =
+            (*crate::gl!(gPyramidBagMenu)).listMenuCount;
     }
 }
 pub unsafe fn UpdatePyramidBagCursorPos() {
-    if gPyramidBagMenuState.scrollPosition != 0
-        && gPyramidBagMenuState.scrollPosition as i32 + (*gPyramidBagMenu).listMenuMaxShown as i32
-            > (*gPyramidBagMenu).listMenuCount as i32
+    if crate::gl!(gPyramidBagMenuState.scrollPosition) != 0
+        && crate::gl!(gPyramidBagMenuState.scrollPosition) as i32
+            + (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown as i32
+            > (*crate::gl!(gPyramidBagMenu)).listMenuCount as i32
     {
-        gPyramidBagMenuState.scrollPosition =
-            (*gPyramidBagMenu).listMenuCount as u16 - (*gPyramidBagMenu).listMenuMaxShown as u16;
+        crate::gl!(
+            gPyramidBagMenuState.scrollPosition = (*crate::gl!(gPyramidBagMenu)).listMenuCount
+                as u16
+                - (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown as u16
+        );
     }
-    if gPyramidBagMenuState.scrollPosition as i32 + gPyramidBagMenuState.cursorPosition as i32
-        >= (*gPyramidBagMenu).listMenuCount as i32
+    if crate::gl!(gPyramidBagMenuState.scrollPosition) as i32
+        + crate::gl!(gPyramidBagMenuState.cursorPosition) as i32
+        >= (*crate::gl!(gPyramidBagMenu)).listMenuCount as i32
     {
-        if (*gPyramidBagMenu).listMenuCount == 0 {
-            gPyramidBagMenuState.cursorPosition = 0;
+        if (*crate::gl!(gPyramidBagMenu)).listMenuCount == 0 {
+            crate::gl!(gPyramidBagMenuState.cursorPosition = 0);
         } else {
-            gPyramidBagMenuState.cursorPosition = (*gPyramidBagMenu).listMenuCount as u16 - 1;
+            crate::gl!(
+                gPyramidBagMenuState.cursorPosition =
+                    (*crate::gl!(gPyramidBagMenu)).listMenuCount as u16 - 1
+            );
         }
     }
 }
 unsafe fn InitPyramidBagScroll() {
     let mut i: u8 = 0;
-    if gPyramidBagMenuState.cursorPosition > 4 {
+    if crate::gl!(gPyramidBagMenuState.cursorPosition) > 4 {
         i = 0;
-        while i as i32 <= gPyramidBagMenuState.cursorPosition as i32 - 4 {
-            if gPyramidBagMenuState.scrollPosition as i32
-                + (*gPyramidBagMenu).listMenuMaxShown as i32
-                == (*gPyramidBagMenu).listMenuCount as i32
+        while i as i32 <= crate::gl!(gPyramidBagMenuState.cursorPosition) as i32 - 4 {
+            if crate::gl!(gPyramidBagMenuState.scrollPosition) as i32
+                + (*crate::gl!(gPyramidBagMenu)).listMenuMaxShown as i32
+                == (*crate::gl!(gPyramidBagMenu)).listMenuCount as i32
             {
                 break;
             }
-            gPyramidBagMenuState.cursorPosition -= 1;
-            gPyramidBagMenuState.scrollPosition += 1;
+            crate::gl!(gPyramidBagMenuState.cursorPosition -= 1);
+            crate::gl!(gPyramidBagMenuState.scrollPosition += 1);
             i += 1;
         }
     }
@@ -842,40 +867,40 @@ pub unsafe fn CloseBattlePyramidBag(taskId: u8) {
 }
 pub(crate) unsafe fn Task_ClosePyramidBag(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyListMenuTask(
             *data as u8,
-            &raw mut gPyramidBagMenuState.scrollPosition,
-            &raw mut gPyramidBagMenuState.cursorPosition,
+            crate::gl!(&raw gPyramidBagMenuState.scrollPosition),
+            crate::gl!(&raw gPyramidBagMenuState.cursorPosition),
         );
-        if (*gPyramidBagMenu).newScreenCallback.is_some() {
-            SetMainCallback2((*gPyramidBagMenu).newScreenCallback);
+        if (*crate::gl!(gPyramidBagMenu)).newScreenCallback.is_some() {
+            SetMainCallback2((*crate::gl!(gPyramidBagMenu)).newScreenCallback);
         } else {
-            SetMainCallback2(gPyramidBagMenuState.exitCallback);
+            SetMainCallback2(crate::gl!(gPyramidBagMenuState.exitCallback));
         }
         RemoveScrollArrow();
         ResetSpriteData();
         FreeAllSpritePalettes();
         FreeAllWindowBuffers();
-        Free(gPyramidBagMenu as *mut c_void);
+        Free(crate::gl!(gPyramidBagMenu) as *mut c_void);
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn Task_HandlePyramidBagInput(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if MenuHelpers_ShouldWaitForLinkRecv() == TRUE || gPaletteFade.active() != 0 {
+    if MenuHelpers_ShouldWaitForLinkRecv() == TRUE || (*gPaletteFade.as_ptr()).active() != 0 {
         return;
     }
-    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
-        if gPyramidBagMenuState.location != PYRAMIDBAG_LOC_PARTY {
+    if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
+        if crate::gl!(gPyramidBagMenuState.location) != PYRAMIDBAG_LOC_PARTY {
             ListMenuGetScrollAndRow(
                 *data as u8,
-                &raw mut gPyramidBagMenuState.scrollPosition,
-                &raw mut gPyramidBagMenuState.cursorPosition,
+                crate::gl!(&raw gPyramidBagMenuState.scrollPosition),
+                crate::gl!(&raw gPyramidBagMenuState.cursorPosition),
             );
-            if gPyramidBagMenuState.scrollPosition as i32
-                + gPyramidBagMenuState.cursorPosition as i32
-                != (*gPyramidBagMenu).listMenuCount as i32 - 1
+            if crate::gl!(gPyramidBagMenuState.scrollPosition) as i32
+                + crate::gl!(gPyramidBagMenuState.cursorPosition) as i32
+                != (*crate::gl!(gPyramidBagMenu)).listMenuCount as i32 - 1
             {
                 PlaySE(SE_SELECT);
                 Task_BeginItemSwap(taskId);
@@ -885,25 +910,27 @@ pub(crate) unsafe fn Task_HandlePyramidBagInput(taskId: u8) {
         let listId: i32 = ListMenu_ProcessInput(*data as u8);
         ListMenuGetScrollAndRow(
             *data as u8,
-            &raw mut gPyramidBagMenuState.scrollPosition,
-            &raw mut gPyramidBagMenuState.cursorPosition,
+            crate::gl!(&raw gPyramidBagMenuState.scrollPosition),
+            crate::gl!(&raw gPyramidBagMenuState.cursorPosition),
         );
         match listId {
             LIST_NOTHING_CHOSEN => {}
             LIST_CANCEL => {
                 PlaySE(SE_SELECT);
-                gSpecialVar_ItemId = ITEM_NONE;
+                gSpecialVar_ItemId.set(ITEM_NONE);
                 CloseBattlePyramidBag(taskId);
             }
             _ => {
                 PlaySE(SE_SELECT);
-                gSpecialVar_ItemId = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-                    [(*gSaveBlock2Ptr).frontier.lvlMode()][listId];
+                gSpecialVar_ItemId.set(
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+                        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()][listId],
+                );
                 *data.at(1) = listId as i16;
-                *data.at(2) = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-                    [(*gSaveBlock2Ptr).frontier.lvlMode()][listId]
+                *data.at(2) = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()][listId]
                     as i16;
-                if gPyramidBagMenuState.location == PYRAMIDBAG_LOC_PARTY {
+                if crate::gl!(gPyramidBagMenuState.location) == PYRAMIDBAG_LOC_PARTY {
                     TryCloseBagToGiveItem(taskId);
                 } else {
                     OpenContextMenu(taskId);
@@ -916,27 +943,29 @@ pub(crate) unsafe fn OpenContextMenu(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     RemoveScrollArrow();
     PrintSelectorArrow(*data as u8, COLORID_LIGHT_GRAY);
-    match gPyramidBagMenuState.location {
+    match crate::gl!(gPyramidBagMenuState.location) {
         PYRAMIDBAG_LOC_BATTLE => {
-            if GetItemBattleUsage(gSpecialVar_ItemId) != ITEM_B_USE_NONE {
-                (*gPyramidBagMenu).menuActionIds = sMenuActionIds_Battle.as_ptr().cast_mut();
-                (*gPyramidBagMenu).menuActionsCount = 2;
+            if GetItemBattleUsage(gSpecialVar_ItemId.get()) != ITEM_B_USE_NONE {
+                (*crate::gl!(gPyramidBagMenu)).menuActionIds =
+                    sMenuActionIds_Battle.as_ptr().cast_mut();
+                (*crate::gl!(gPyramidBagMenu)).menuActionsCount = 2;
             } else {
-                (*gPyramidBagMenu).menuActionIds =
+                (*crate::gl!(gPyramidBagMenu)).menuActionIds =
                     sMenuActionIds_BattleCannotUse.as_ptr().cast_mut();
-                (*gPyramidBagMenu).menuActionsCount = 1;
+                (*crate::gl!(gPyramidBagMenu)).menuActionsCount = 1;
             }
         }
         PYRAMIDBAG_LOC_CHOOSE_TOSS => {
-            (*gPyramidBagMenu).menuActionIds = sMenuActionIds_ChooseToss.as_ptr().cast_mut();
-            (*gPyramidBagMenu).menuActionsCount = 2;
+            (*crate::gl!(gPyramidBagMenu)).menuActionIds =
+                sMenuActionIds_ChooseToss.as_ptr().cast_mut();
+            (*crate::gl!(gPyramidBagMenu)).menuActionsCount = 2;
         }
         _ => {
-            (*gPyramidBagMenu).menuActionIds = sMenuActionIds_Field.as_ptr().cast_mut();
-            (*gPyramidBagMenu).menuActionsCount = 4;
+            (*crate::gl!(gPyramidBagMenu)).menuActionIds = sMenuActionIds_Field.as_ptr().cast_mut();
+            (*crate::gl!(gPyramidBagMenu)).menuActionsCount = 4;
         }
     }
-    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    CopyItemName(gSpecialVar_ItemId.get(), gStringVar1.as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Var1IsSelected).cast::<CArray<u8, 0>>())
@@ -954,14 +983,14 @@ pub(crate) unsafe fn OpenContextMenu(taskId: u8) {
         0,
         COLORID_DARK_GRAY,
     );
-    if (*gPyramidBagMenu).menuActionsCount == 1 {
+    if (*crate::gl!(gPyramidBagMenu)).menuActionsCount == 1 {
         PrintMenuActionText_SingleRow(OpenMenuActionWindowById(MENU_WIN_1x1));
-    } else if (*gPyramidBagMenu).menuActionsCount == 2 {
+    } else if (*crate::gl!(gPyramidBagMenu)).menuActionsCount == 2 {
         PrintMenuActionText_SingleRow(OpenMenuActionWindowById(MENU_WIN_1x2));
     } else {
         PrintMenuActionText_MultiRow(OpenMenuActionWindowById(MENU_WIN_2x2), 2, 2);
     }
-    if (*gPyramidBagMenu).menuActionsCount == 4 {
+    if (*crate::gl!(gPyramidBagMenu)).menuActionsCount == 4 {
         task_set_func(taskId, Some(HandleMenuActionInput_2x2));
     } else {
         task_set_func(taskId, Some(HandleMenuActionInput_SingleRow));
@@ -975,11 +1004,11 @@ unsafe fn PrintMenuActionText_SingleRow(windowId: u8) {
         1,
         0,
         0x10,
-        (*gPyramidBagMenu).menuActionsCount,
+        (*crate::gl!(gPyramidBagMenu)).menuActionsCount,
         sMenuActions.as_ptr().cast_mut(),
-        (*gPyramidBagMenu).menuActionIds,
+        (*crate::gl!(gPyramidBagMenu)).menuActionIds,
     );
-    InitMenuInUpperLeftCornerNormal(windowId, (*gPyramidBagMenu).menuActionsCount, 0);
+    InitMenuInUpperLeftCornerNormal(windowId, (*crate::gl!(gPyramidBagMenu)).menuActionsCount, 0);
 }
 unsafe fn PrintMenuActionText_MultiRow(windowId: u8, horizontalCount: u8, verticalCount: u8) {
     PrintMenuActionGrid(
@@ -991,7 +1020,7 @@ unsafe fn PrintMenuActionText_MultiRow(windowId: u8, horizontalCount: u8, vertic
         horizontalCount,
         verticalCount,
         sMenuActions.as_ptr().cast_mut(),
-        (*gPyramidBagMenu).menuActionIds,
+        (*crate::gl!(gPyramidBagMenu)).menuActionIds,
     );
     InitMenuActionGrid(windowId, 56, horizontalCount, verticalCount, 0);
 }
@@ -1006,12 +1035,12 @@ pub(crate) unsafe fn HandleMenuActionInput_SingleRow(taskId: u8) {
             }
             _ => {
                 PlaySE(SE_SELECT);
-                if sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                if sMenuActions[*(*crate::gl!(gPyramidBagMenu)).menuActionIds.at(id)]
                     .func
                     .void_u8
                     .is_some()
                 {
-                    sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                    sMenuActions[*(*crate::gl!(gPyramidBagMenu)).menuActionIds.at(id)]
                         .func
                         .void_u8
                         .unwrap_unchecked()(taskId);
@@ -1023,41 +1052,45 @@ pub(crate) unsafe fn HandleMenuActionInput_SingleRow(taskId: u8) {
 pub(crate) unsafe fn HandleMenuActionInput_2x2(taskId: u8) {
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         let id: i8 = Menu_GetCursorPos() as i8;
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             if id > 0 && IsValidMenuAction(id - 2) != 0 {
                 PlaySE(SE_SELECT);
                 ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_UP);
             }
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
-            if (id as i32) < (*gPyramidBagMenu).menuActionsCount as i32 - 2
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
+            if (id as i32) < (*crate::gl!(gPyramidBagMenu)).menuActionsCount as i32 - 2
                 && IsValidMenuAction(id + 2) != 0
             {
                 PlaySE(SE_SELECT);
                 ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_DOWN);
             }
-        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+            || GetLRKeysPressed() == MENU_L_PRESSED
+        {
             if id as i32 & 1 != 0 && IsValidMenuAction(id - 1) != 0 {
                 PlaySE(SE_SELECT);
                 ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_LEFT, MENU_CURSOR_DELTA_NONE);
             }
-        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+            || GetLRKeysPressed() == MENU_R_PRESSED
+        {
             if id as i32 & 1 == 0 && IsValidMenuAction(id + 1) != 0 {
                 PlaySE(SE_SELECT);
                 ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_RIGHT, MENU_CURSOR_DELTA_NONE);
             }
-        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             PlaySE(SE_SELECT);
-            if sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+            if sMenuActions[*(*crate::gl!(gPyramidBagMenu)).menuActionIds.at(id)]
                 .func
                 .void_u8
                 .is_some()
             {
-                sMenuActions[*(*gPyramidBagMenu).menuActionIds.at(id)]
+                sMenuActions[*(*crate::gl!(gPyramidBagMenu)).menuActionIds.at(id)]
                     .func
                     .void_u8
                     .unwrap_unchecked()(taskId);
             }
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_SELECT);
             sMenuActions[3].func.void_u8.unwrap_unchecked()(taskId);
         }
@@ -1066,9 +1099,13 @@ pub(crate) unsafe fn HandleMenuActionInput_2x2(taskId: u8) {
 unsafe fn IsValidMenuAction(actionTableId: i8) -> u8 {
     if actionTableId < 0 {
         return FALSE;
-    } else if actionTableId as i32 > (*gPyramidBagMenu).menuActionsCount as i32 {
+    } else if actionTableId as i32 > (*crate::gl!(gPyramidBagMenu)).menuActionsCount as i32 {
         return FALSE;
-    } else if *(*gPyramidBagMenu).menuActionIds.at(actionTableId) == ACTION_DUMMY {
+    } else if *(*crate::gl!(gPyramidBagMenu))
+        .menuActionIds
+        .at(actionTableId)
+        == ACTION_DUMMY
+    {
         return FALSE;
     } else {
         return TRUE;
@@ -1079,20 +1116,20 @@ unsafe fn IsValidMenuAction(actionTableId: i8) -> u8 {
     }
 }
 unsafe fn CloseMenuActionWindow() {
-    if (*gPyramidBagMenu).menuActionsCount == 1 {
+    if (*crate::gl!(gPyramidBagMenu)).menuActionsCount == 1 {
         CloseMenuActionWindowById(MENU_WIN_1x1);
-    } else if (*gPyramidBagMenu).menuActionsCount == 2 {
+    } else if (*crate::gl!(gPyramidBagMenu)).menuActionsCount == 2 {
         CloseMenuActionWindowById(MENU_WIN_1x2);
     } else {
         CloseMenuActionWindowById(MENU_WIN_2x2);
     }
 }
 pub(crate) unsafe fn BagAction_UseOnField(taskId: u8) {
-    let pocketId: u8 = GetItemPocket(gSpecialVar_ItemId);
+    let pocketId: u8 = GetItemPocket(gSpecialVar_ItemId.get());
     if pocketId == POCKET_KEY_ITEMS
         || pocketId == POCKET_POKE_BALLS
         || pocketId == POCKET_TM_HM
-        || ItemIsMail(gSpecialVar_ItemId) == TRUE
+        || ItemIsMail(gSpecialVar_ItemId.get()) == TRUE
     {
         CloseMenuActionWindow();
         DisplayItemMessageInBattlePyramid(
@@ -1102,11 +1139,11 @@ pub(crate) unsafe fn BagAction_UseOnField(taskId: u8) {
                 .cast_mut(),
             Some(Task_CloseBattlePyramidBagMessage),
         );
-    } else if GetItemFieldFunc(gSpecialVar_ItemId).is_some() {
+    } else if GetItemFieldFunc(gSpecialVar_ItemId.get()).is_some() {
         CloseMenuActionWindow();
         FillWindowPixelBuffer(WIN_INFO, 0);
         ScheduleBgCopyTilemapToVram(0);
-        GetItemFieldFunc(gSpecialVar_ItemId).unwrap_unchecked()(taskId);
+        GetItemFieldFunc(gSpecialVar_ItemId.get()).unwrap_unchecked()(taskId);
     }
 }
 pub(crate) unsafe fn BagAction_Cancel(taskId: u8) {
@@ -1129,7 +1166,7 @@ pub(crate) unsafe fn BagAction_Toss(taskId: u8) {
     if *data.at(2) == 1 {
         AskConfirmToss(taskId);
     } else {
-        CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+        CopyItemName(gSpecialVar_ItemId.get(), gStringVar1.as_mut_ptr());
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_TossHowManyVar1s).cast::<CArray<u8, 0>>())
@@ -1153,9 +1190,9 @@ pub(crate) unsafe fn BagAction_Toss(taskId: u8) {
 }
 unsafe fn AskConfirmToss(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    CopyItemName(gSpecialVar_ItemId.get(), gStringVar1.as_mut_ptr());
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         *data.at(8) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         2,
@@ -1233,13 +1270,13 @@ pub(crate) unsafe fn Task_ChooseHowManyToToss(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if AdjustQuantityAccordingToDPadInput(data.at(8), *data.at(2) as u16) == TRUE {
         UpdateNumToToss(*data.at(8));
-    } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         ClearStdWindowAndFrameToTransparent(WIN_TOSS_NUM, FALSE);
         ClearWindowTilemap(WIN_TOSS_NUM);
         ScheduleBgCopyTilemapToVram(1);
         AskConfirmToss(taskId);
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_SELECT);
         ClearStdWindowAndFrameToTransparent(WIN_TOSS_NUM, FALSE);
         ClearWindowTilemap(WIN_TOSS_NUM);
@@ -1249,9 +1286,9 @@ pub(crate) unsafe fn Task_ChooseHowManyToToss(taskId: u8) {
 }
 pub(crate) unsafe fn TossItem(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    CopyItemName(gSpecialVar_ItemId.get(), gStringVar1.as_mut_ptr());
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         *data.at(8) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         2,
@@ -1277,17 +1314,17 @@ pub(crate) unsafe fn TossItem(taskId: u8) {
 }
 pub(crate) unsafe fn Task_TossItem(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let scrollOffset: *mut u16 = &raw mut gPyramidBagMenuState.scrollPosition;
-    let selectedRow: *mut u16 = &raw mut gPyramidBagMenuState.cursorPosition;
-    if gMain.newKeys as i32 & 3 != 0 {
+    let scrollOffset: *mut u16 = crate::gl!(&raw gPyramidBagMenuState.scrollPosition);
+    let selectedRow: *mut u16 = crate::gl!(&raw gPyramidBagMenuState.cursorPosition);
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
-        RemovePyramidBagItem(gSpecialVar_ItemId, *data.at(8) as u16);
+        RemovePyramidBagItem(gSpecialVar_ItemId.get(), *data.at(8) as u16);
         DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
         UpdatePyramidBagList();
         UpdatePyramidBagCursorPos();
         SetBagItemsListTemplate();
         *data = ListMenuInit(
-            &raw mut gMultiuseListMenuTemplate,
+            crate::gl!(&raw gMultiuseListMenuTemplate),
             *scrollOffset,
             *selectedRow,
         ) as i16;
@@ -1297,7 +1334,7 @@ pub(crate) unsafe fn Task_TossItem(taskId: u8) {
 }
 pub(crate) unsafe fn BagAction_Give(taskId: u8) {
     CloseMenuActionWindow();
-    if ItemIsMail(gSpecialVar_ItemId) == TRUE {
+    if ItemIsMail(gSpecialVar_ItemId.get()) == TRUE {
         DisplayItemMessageInBattlePyramid(
             taskId,
             (*(&raw const crate::data::strings::gText_CantWriteMail).cast::<CArray<u8, 0>>())
@@ -1305,15 +1342,15 @@ pub(crate) unsafe fn BagAction_Give(taskId: u8) {
                 .cast_mut(),
             Some(Task_WaitCloseErrorMessage),
         );
-    } else if GetItemImportance(gSpecialVar_ItemId) == 0 {
-        (*gPyramidBagMenu).newScreenCallback = Some(CB2_ChooseMonToGiveItem);
+    } else if GetItemImportance(gSpecialVar_ItemId.get()) == 0 {
+        (*crate::gl!(gPyramidBagMenu)).newScreenCallback = Some(CB2_ChooseMonToGiveItem);
         CloseBattlePyramidBag(taskId);
     } else {
         ShowCantHoldMessage(taskId);
     }
 }
 unsafe fn ShowCantHoldMessage(taskId: u8) {
-    CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
+    CopyItemName(gSpecialVar_ItemId.get(), gStringVar1.as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Var1CantBeHeld).cast::<CArray<u8, 0>>())
@@ -1327,7 +1364,7 @@ unsafe fn ShowCantHoldMessage(taskId: u8) {
     );
 }
 pub(crate) unsafe fn Task_WaitCloseErrorMessage(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         Task_CloseBattlePyramidBagMessage(taskId);
     }
@@ -1340,7 +1377,7 @@ pub unsafe fn Task_CloseBattlePyramidBagMessage(taskId: u8) {
     SetTaskToMainPyramidBagInputHandler(taskId);
 }
 unsafe fn TryCloseBagToGiveItem(taskId: u8) {
-    if IsWritingMailAllowed(gSpecialVar_ItemId) == 0 {
+    if IsWritingMailAllowed(gSpecialVar_ItemId.get()) == 0 {
         DisplayItemMessageInBattlePyramid(
             taskId,
             (*(&raw const crate::data::strings::gText_CantWriteMail).cast::<CArray<u8, 0>>())
@@ -1348,27 +1385,27 @@ unsafe fn TryCloseBagToGiveItem(taskId: u8) {
                 .cast_mut(),
             Some(Task_WaitCloseErrorMessage),
         );
-    } else if GetItemImportance(gSpecialVar_ItemId) == 0 {
+    } else if GetItemImportance(gSpecialVar_ItemId.get()) == 0 {
         CloseBattlePyramidBag(taskId);
     } else {
         ShowCantHoldMessage(taskId);
     }
 }
 pub(crate) unsafe fn BagAction_UseInBattle(taskId: u8) {
-    if GetItemBattleFunc(gSpecialVar_ItemId).is_some() {
+    if GetItemBattleFunc(gSpecialVar_ItemId.get()).is_some() {
         CloseMenuActionWindow();
-        GetItemBattleFunc(gSpecialVar_ItemId).unwrap_unchecked()(taskId);
+        GetItemBattleFunc(gSpecialVar_ItemId.get()).unwrap_unchecked()(taskId);
     }
 }
 unsafe fn Task_BeginItemSwap(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    *data.at(1) =
-        gPyramidBagMenuState.scrollPosition as i16 + gPyramidBagMenuState.cursorPosition as i16;
-    (*gPyramidBagMenu).toSwapPos = *data.at(1) as u8;
+    *data.at(1) = crate::gl!(gPyramidBagMenuState.scrollPosition) as i16
+        + crate::gl!(gPyramidBagMenuState.cursorPosition) as i16;
+    (*crate::gl!(gPyramidBagMenu)).toSwapPos = *data.at(1) as u8;
     ListMenuSetTemplateField(*data as u8, LISTFIELD_CURSORKIND, CURSOR_INVISIBLE);
     CopyItemName(
-        (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
-            [*data.at(1)],
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()][*data.at(1)],
         gStringVar1.as_mut_ptr(),
     );
     StringExpandPlaceholders(
@@ -1395,28 +1432,28 @@ unsafe fn Task_BeginItemSwap(taskId: u8) {
 pub(crate) unsafe fn Task_ItemSwapHandleInput(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
-        if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             PlaySE(SE_SELECT);
             ListMenuGetScrollAndRow(
                 *data as u8,
-                &raw mut gPyramidBagMenuState.scrollPosition,
-                &raw mut gPyramidBagMenuState.cursorPosition,
+                crate::gl!(&raw gPyramidBagMenuState.scrollPosition),
+                crate::gl!(&raw gPyramidBagMenuState.cursorPosition),
             );
             PerformItemSwap(taskId);
         } else {
             let id: i32 = ListMenu_ProcessInput(*data as u8);
             ListMenuGetScrollAndRow(
                 *data as u8,
-                &raw mut gPyramidBagMenuState.scrollPosition,
-                &raw mut gPyramidBagMenuState.cursorPosition,
+                crate::gl!(&raw gPyramidBagMenuState.scrollPosition),
+                crate::gl!(&raw gPyramidBagMenuState.cursorPosition),
             );
             SetSwapLineInvisibility(FALSE);
-            UpdateSwapLinePos(gPyramidBagMenuState.cursorPosition as u8);
+            UpdateSwapLinePos(crate::gl!(gPyramidBagMenuState.cursorPosition) as u8);
             match id {
                 LIST_NOTHING_CHOSEN => {}
                 LIST_CANCEL => {
                     PlaySE(SE_SELECT);
-                    if gMain.newKeys as i32 & A_BUTTON != 0 {
+                    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                         PerformItemSwap(taskId);
                     } else {
                         CancelItemSwap(taskId);
@@ -1432,22 +1469,22 @@ pub(crate) unsafe fn Task_ItemSwapHandleInput(taskId: u8) {
 }
 unsafe fn PerformItemSwap(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let scrollOffset: *mut u16 = &raw mut gPyramidBagMenuState.scrollPosition;
-    let selectedRow: *mut u16 = &raw mut gPyramidBagMenuState.cursorPosition;
+    let scrollOffset: *mut u16 = crate::gl!(&raw gPyramidBagMenuState.scrollPosition);
+    let selectedRow: *mut u16 = crate::gl!(&raw gPyramidBagMenuState.cursorPosition);
     let swapPos: u16 = *scrollOffset + *selectedRow;
     if *data.at(1) as i32 == swapPos as i32 || *data.at(1) as i32 == swapPos as i32 - 1 {
         CancelItemSwap(taskId);
     } else {
         MovePyramidBagItemSlotInList(*data.at(1) as u8, swapPos as u8);
-        (*gPyramidBagMenu).toSwapPos = POS_NONE as u8;
+        (*crate::gl!(gPyramidBagMenu)).toSwapPos = POS_NONE as u8;
         SetSwapLineInvisibility(TRUE);
         DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
         if (*data.at(1) as i32) < swapPos as i32 {
-            gPyramidBagMenuState.cursorPosition -= 1;
+            crate::gl!(gPyramidBagMenuState.cursorPosition -= 1);
         }
         SetBagItemsListTemplate();
         *data = ListMenuInit(
-            &raw mut gMultiuseListMenuTemplate,
+            crate::gl!(&raw gMultiuseListMenuTemplate),
             *scrollOffset,
             *selectedRow,
         ) as i16;
@@ -1456,17 +1493,17 @@ unsafe fn PerformItemSwap(taskId: u8) {
 }
 pub(crate) unsafe fn CancelItemSwap(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let scrollOffset: *mut u16 = &raw mut gPyramidBagMenuState.scrollPosition;
-    let selectedRow: *mut u16 = &raw mut gPyramidBagMenuState.cursorPosition;
-    (*gPyramidBagMenu).toSwapPos = POS_NONE as u8;
+    let scrollOffset: *mut u16 = crate::gl!(&raw gPyramidBagMenuState.scrollPosition);
+    let selectedRow: *mut u16 = crate::gl!(&raw gPyramidBagMenuState.cursorPosition);
+    (*crate::gl!(gPyramidBagMenu)).toSwapPos = POS_NONE as u8;
     SetSwapLineInvisibility(TRUE);
     DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
     if (*data.at(1) as i32) < *scrollOffset as i32 + *selectedRow as i32 {
-        gPyramidBagMenuState.cursorPosition -= 1;
+        crate::gl!(gPyramidBagMenuState.cursorPosition -= 1);
     }
     SetBagItemsListTemplate();
     *data = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
         *scrollOffset,
         *selectedRow,
     ) as i16;
@@ -1474,20 +1511,22 @@ pub(crate) unsafe fn CancelItemSwap(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryStoreHeldItemsInPyramidBag() {
-    let party: *mut Pokemon = gPlayerParty.as_mut_ptr();
+    let party: *mut Pokemon = (*gPlayerParty.as_ptr()).as_mut_ptr();
     let newItems: *mut u16 = Alloc(20) as *mut u16;
     let newQuantities: *mut u8 = Alloc(PYRAMID_BAG_ITEMS_COUNT) as *mut u8;
     let mut heldItem: u16 = 0;
     memcpy(
         newItems as *mut u8,
-        (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
-            .as_mut_ptr() as *mut u8,
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
+        .as_mut_ptr() as *mut u8,
         20,
     );
     memcpy(
         newQuantities,
-        (*gSaveBlock2Ptr).frontier.pyramidBag.quantity[(*gSaveBlock2Ptr).frontier.lvlMode()]
-            .as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+            [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
+        .as_mut_ptr(),
         PYRAMID_BAG_ITEMS_COUNT,
     );
     let mut i: u8 = 0;
@@ -1495,14 +1534,15 @@ pub unsafe fn TryStoreHeldItemsInPyramidBag() {
         heldItem = GetMonData2(party.at(i), MON_DATA_HELD_ITEM) as u16;
         if heldItem != ITEM_NONE && AddBagItem(heldItem, 1) == 0 {
             memcpy(
-                (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[(*gSaveBlock2Ptr).frontier.lvlMode()]
-                    .as_mut_ptr() as *mut u8,
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
+                .as_mut_ptr() as *mut u8,
                 newItems as *mut u8,
                 20,
             );
             memcpy(
-                (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-                    [(*gSaveBlock2Ptr).frontier.lvlMode()]
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity
+                    [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
                 .as_mut_ptr(),
                 newQuantities,
                 PYRAMID_BAG_ITEMS_COUNT,
@@ -1595,10 +1635,10 @@ unsafe fn DrawTossNumberWindow(windowId: u8) {
     ScheduleBgCopyTilemapToVram(1);
 }
 unsafe fn GetMenuActionWindowId(windowArrayId: u8) -> u8 {
-    (*gPyramidBagMenu).windowIds[windowArrayId]
+    (*crate::gl!(gPyramidBagMenu)).windowIds[windowArrayId]
 }
 unsafe fn OpenMenuActionWindowById(windowArrayId: u8) -> u8 {
-    let windowId: *mut u8 = &raw mut (*gPyramidBagMenu).windowIds[windowArrayId];
+    let windowId: *mut u8 = &raw mut (*crate::gl!(gPyramidBagMenu)).windowIds[windowArrayId];
     if *windowId == WINDOW_NONE {
         *windowId =
             AddWindow((&raw const sWindowTemplates_MenuActions[windowArrayId]).cast_mut()) as u8;
@@ -1608,7 +1648,7 @@ unsafe fn OpenMenuActionWindowById(windowArrayId: u8) -> u8 {
     *windowId
 }
 unsafe fn CloseMenuActionWindowById(windowArrayId: u8) {
-    let windowId: *mut u8 = &raw mut (*gPyramidBagMenu).windowIds[windowArrayId];
+    let windowId: *mut u8 = &raw mut (*crate::gl!(gPyramidBagMenu)).windowIds[windowArrayId];
     if *windowId != WINDOW_NONE {
         ClearStdWindowAndFrameToTransparent(*windowId, FALSE);
         ClearWindowTilemap(*windowId);
@@ -1653,12 +1693,18 @@ unsafe fn CloseBattlePyramidBagTextWindow() {
     ScheduleBgCopyTilemapToVram(1);
 }
 unsafe fn FreeItemIconSprite(spriteArrId: u8) {
-    let spriteId: *mut u8 = &raw mut (*gPyramidBagMenu).spriteIds[spriteArrId];
+    let spriteId: *mut u8 = &raw mut (*crate::gl!(gPyramidBagMenu)).spriteIds[spriteArrId];
     if *spriteId != SPRITE_NONE {
         FreeSpriteTilesByTag(4132 + spriteArrId as u16);
         FreeSpritePaletteByTag(4132 + spriteArrId as u16);
-        FreeSpriteOamMatrix(&raw mut gSprites[*spriteId]);
-        DestroySprite(&raw mut gSprites[*spriteId]);
+        FreeSpriteOamMatrix({
+            let gl_i0 = *spriteId;
+            crate::gl!(&raw gSprites[gl_i0])
+        });
+        DestroySprite({
+            let gl_i1 = *spriteId;
+            crate::gl!(&raw gSprites[gl_i1])
+        });
         *spriteId = SPRITE_NONE;
     }
 }
@@ -1671,13 +1717,13 @@ unsafe fn LoadPyramidBagPalette() {
             .cast_mut(),
         palPtr as *mut c_void,
     );
-    spritePalette.data = palPtr.at((*gSaveBlock2Ptr).frontier.lvlMode() as i32 * 16);
+    spritePalette.data = palPtr.at((*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as i32 * 16);
     spritePalette.tag = TAG_PYRAMID_BAG;
     LoadSpritePalette(&raw mut spritePalette);
     Free(palPtr as *mut c_void);
 }
 unsafe fn CreatePyramidBagSprite() {
-    let spriteId: *mut u8 = &raw mut (*gPyramidBagMenu).spriteIds[0];
+    let spriteId: *mut u8 = &raw mut (*crate::gl!(gPyramidBagMenu)).spriteIds[0];
     *spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_PyramidBag).cast_mut(),
         68,
@@ -1686,7 +1732,10 @@ unsafe fn CreatePyramidBagSprite() {
     );
 }
 unsafe fn ShakePyramidBag() {
-    let sprite: *mut Sprite = &raw mut gSprites[(*gPyramidBagMenu).spriteIds[0]];
+    let sprite: *mut Sprite = {
+        let gl_i2 = (*crate::gl!(gPyramidBagMenu)).spriteIds[0];
+        crate::gl!(&raw gSprites[gl_i2])
+    };
     if (*sprite).affineAnimEnded() != 0 {
         StartSpriteAffineAnim(sprite, ANIM_BAG_SHAKE);
         (*sprite).callback = Some(SpriteCB_BagWaitForShake);
@@ -1701,7 +1750,7 @@ pub(crate) unsafe fn SpriteCB_BagWaitForShake(sprite: *mut Sprite) {
 unsafe fn ShowItemIcon(itemId: u16, isAlt: u8) {
     let mut itemSpriteId: u8 = 0;
     let spriteId: *mut u8 =
-        &raw mut (*gPyramidBagMenu).spriteIds[isAlt as i32 + PBAG_SPRITE_ITEM_ICON];
+        &raw mut (*crate::gl!(gPyramidBagMenu)).spriteIds[isAlt as i32 + PBAG_SPRITE_ITEM_ICON];
     if *spriteId == SPRITE_NONE {
         FreeSpriteTilesByTag(TAG_ITEM_ICON + isAlt as u16);
         FreeSpritePaletteByTag(TAG_ITEM_ICON + isAlt as u16);
@@ -1712,8 +1761,8 @@ unsafe fn ShowItemIcon(itemId: u16, isAlt: u8) {
         );
         if itemSpriteId != MAX_SPRITES {
             *spriteId = itemSpriteId;
-            gSprites[itemSpriteId].x2 = 24;
-            gSprites[itemSpriteId].y2 = 88;
+            crate::gl!(gSprites[itemSpriteId].x2 = 24);
+            crate::gl!(gSprites[itemSpriteId].y2 = 88);
         }
     }
 }
@@ -1721,14 +1770,18 @@ unsafe fn FreeItemIconSpriteByAltId(isAlt: u8) {
     FreeItemIconSprite(isAlt + PBAG_SPRITE_ITEM_ICON as u8);
 }
 unsafe fn CreateSwapLine() {
-    CreateSwapLineSprites(&raw mut (*gPyramidBagMenu).spriteIds[3], 8);
+    CreateSwapLineSprites(&raw mut (*crate::gl!(gPyramidBagMenu)).spriteIds[3], 8);
 }
 unsafe fn SetSwapLineInvisibility(invisible: u8) {
-    SetSwapLineSpritesInvisibility(&raw mut (*gPyramidBagMenu).spriteIds[3], 8, invisible);
+    SetSwapLineSpritesInvisibility(
+        &raw mut (*crate::gl!(gPyramidBagMenu)).spriteIds[3],
+        8,
+        invisible,
+    );
 }
 unsafe fn UpdateSwapLinePos(y: u8) {
     UpdateSwapLineSpritesPos(
-        &raw mut (*gPyramidBagMenu).spriteIds[3],
+        &raw mut (*crate::gl!(gPyramidBagMenu)).spriteIds[3],
         136,
         120,
         (y as u16 + 1) * 16,

@@ -310,7 +310,7 @@ unsafe fn IsDoubleBattle() -> u8 {
 #[inline]
 unsafe fn scripting(offset: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::battle_main::gBattleScripting)
+        (&raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleScripting;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(offset)
@@ -319,14 +319,14 @@ unsafe fn scripting(offset: usize) -> *mut u8 {
 
 #[inline]
 fn battle_type_has(flag: u32) -> bool {
-    let flags = unsafe { (&raw const gBattleTypeFlags).read() };
+    let flags = unsafe { (gBattleTypeFlags.as_ptr().cast_const()).read() };
     flags & flag != 0
 }
 
 #[inline]
 unsafe fn set_buffer_transfer_disabled(disabled: bool) {
     let byte = unsafe {
-        (&raw mut (*(&raw const crate::palette::gPaletteFade)
+        (&raw mut (*(crate::gl!(&raw @at crate::palette::gPaletteFade;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(PALETTE_FADE_BUFFER_TRANSFER_BYTE)
@@ -344,8 +344,9 @@ unsafe fn set_buffer_transfer_disabled(disabled: bool) {
 #[inline]
 unsafe fn sprite_info(battler: u8) -> *const u8 {
     let data = unsafe {
-        (&raw const (*(&raw const crate::battle_main::gBattleSpritesDataPtr)
-            .cast::<*const *const u8>()))
+        (&raw const (*(crate::gl!(&raw @at crate::battle_main::gBattleSpritesDataPtr;)
+            .cast_const())
+        .cast::<*const *const u8>()))
             .read()
     };
     let battler_data = unsafe { data.read() };
@@ -361,20 +362,20 @@ unsafe fn behind_substitute(battler: u8) -> bool {
 #[inline]
 unsafe fn party_index(battler: u8) -> usize {
     usize::from(unsafe {
-        (*(&raw const crate::battle_main::gBattlerPartyIndexes).cast::<[u16; 4]>())
-            [usize::from(battler) % 4]
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerPartyIndexes;).cast_const())
+            .cast::<[u16; 4]>())[usize::from(battler) % 4]
     })
 }
 
 #[inline]
 unsafe fn battler_mon(battler: u8, enemy: bool) -> *mut u8 {
     let party = if enemy {
-        (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+        (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gEnemyParty;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .cast::<u8>()
     } else {
-        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+        (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .cast::<u8>()
@@ -385,7 +386,7 @@ unsafe fn battler_mon(battler: u8, enemy: bool) -> *mut u8 {
 #[inline]
 unsafe fn player_gender() -> u8 {
     unsafe {
-        (&raw const gSaveBlock2Ptr)
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB2_PLAYER_GENDER)
@@ -423,14 +424,14 @@ unsafe fn cb2_reshow_battle_screen_after_menu() {
             }
             ResetPaletteFade();
             for register in [
-                &raw mut gBattle_BG0_X,
-                &raw mut gBattle_BG0_Y,
-                &raw mut gBattle_BG1_X,
-                &raw mut gBattle_BG1_Y,
-                &raw mut gBattle_BG2_X,
-                &raw mut gBattle_BG2_Y,
-                &raw mut gBattle_BG3_X,
-                &raw mut gBattle_BG3_Y,
+                gBattle_BG0_X.as_ptr(),
+                gBattle_BG0_Y.as_ptr(),
+                gBattle_BG1_X.as_ptr(),
+                gBattle_BG1_Y.as_ptr(),
+                gBattle_BG2_X.as_ptr(),
+                gBattle_BG2_Y.as_ptr(),
+                gBattle_BG3_X.as_ptr(),
+                gBattle_BG3_Y.as_ptr(),
             ] {
                 register.write(0);
             }
@@ -450,7 +451,7 @@ unsafe fn cb2_reshow_battle_screen_after_menu() {
         3 => unsafe { ResetSpriteData() },
         4 => {
             unsafe { FreeAllSpritePalettes() };
-            unsafe { (&raw mut gReservedSpritePaletteCount).write(MAX_BATTLERS_COUNT) };
+            unsafe { (gReservedSpritePaletteCount.as_ptr()).write(MAX_BATTLERS_COUNT) };
         }
         5 => unsafe { ClearSpritesHealthboxAnimData() },
         6 => {
@@ -494,16 +495,16 @@ unsafe fn reshow_shadows_and_cursor() {
         let species = unsafe { GetMonData2(battler_mon(opponent, true), MON_DATA_SPECIES) } as u16;
         unsafe { SetBattlerShadowSpriteCallback(opponent, species) };
     }
-    let menu_battler = usize::from(unsafe { (&raw const gBattlerInMenuId).read() }) % 4;
+    let menu_battler = usize::from(unsafe { (gBattlerInMenuId.as_ptr().cast_const()).read() }) % 4;
     unsafe {
         ActionSelectionCreateCursorAt(
-            (*(&raw const crate::battle_main::gActionSelectionCursor).cast::<[u8; 4]>())
-                [menu_battler],
+            (*(crate::gl!(&raw @at crate::battle_main::gActionSelectionCursor;).cast_const())
+                .cast::<[u8; 4]>())[menu_battler],
             0,
         )
     };
-    let wireless = unsafe { (&raw const gWirelessCommType).read() } != 0;
-    if wireless && unsafe { (&raw const gReceivedRemoteLinkPlayers).read() } != 0 {
+    let wireless = unsafe { (gWirelessCommType.as_ptr().cast_const()).read() } != 0;
+    if wireless && unsafe { (gReceivedRemoteLinkPlayers.as_ptr().cast_const()).read() } != 0 {
         unsafe { LoadWirelessStatusIndicatorSpriteGfx() };
         unsafe { CreateWirelessStatusIndicatorSprite(0, 0) };
     }
@@ -517,7 +518,7 @@ unsafe fn clear_battle_bg_cnt_base_blocks() {
 }
 
 unsafe fn load_battler_sprite_gfx(battler: u8) -> bool {
-    if battler >= unsafe { (&raw const gBattlersCount).read() } {
+    if battler >= unsafe { (gBattlersCount.as_ptr().cast_const()).read() } {
         return true;
     }
     if unsafe { GetBattlerSide(battler) } != B_SIDE_PLAYER {
@@ -542,7 +543,7 @@ unsafe fn load_battler_sprite_gfx(battler: u8) -> bool {
 
 unsafe fn finish_battler_sprite(battler: u8) -> *mut u8 {
     let id = unsafe {
-        (*(&raw const crate::battle_main::gBattlerSpriteIds)
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerSpriteIds;).cast_const())
             .cast::<[u8; 4]>()
             .cast_mut())[usize::from(battler) % 4]
     };
@@ -566,16 +567,17 @@ unsafe fn create_trainer_back_sprite(battler: u8, pic_id: u16) {
     let y = (8 - size) * 4 + 80;
     let id = unsafe {
         CreateSprite(
-            &raw const (*(&raw const crate::pokemon::gMultiuseSpriteTemplate)
-                .cast::<SpriteTemplate>()
-                .cast_mut()),
+            &raw const (*(crate::gl!(&raw @at crate::pokemon::gMultiuseSpriteTemplate;)
+                .cast_const())
+            .cast::<SpriteTemplate>()
+            .cast_mut()),
             0x50,
             y,
             GetBattlerSpriteSubpriority(0),
         )
     };
     unsafe {
-        (*(&raw const crate::battle_main::gBattlerSpriteIds)
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerSpriteIds;).cast_const())
             .cast::<[u8; 4]>()
             .cast_mut())[usize::from(battler) % 4] = id
     };
@@ -591,16 +593,17 @@ unsafe fn create_mon_sprite(battler: u8, enemy: bool, y: u8) -> bool {
     unsafe { SetMultiuseSpriteTemplateToPokemon(species, GetBattlerPosition(battler)) };
     let id = unsafe {
         CreateSprite(
-            &raw const (*(&raw const crate::pokemon::gMultiuseSpriteTemplate)
-                .cast::<SpriteTemplate>()
-                .cast_mut()),
+            &raw const (*(crate::gl!(&raw @at crate::pokemon::gMultiuseSpriteTemplate;)
+                .cast_const())
+            .cast::<SpriteTemplate>()
+            .cast_mut()),
             i16::from(GetBattlerSpriteCoord(battler, BATTLER_COORD_X_2)),
             i16::from(y),
             GetBattlerSpriteSubpriority(battler),
         )
     };
     unsafe {
-        (*(&raw const crate::battle_main::gBattlerSpriteIds)
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerSpriteIds;).cast_const())
             .cast::<[u8; 4]>()
             .cast_mut())[usize::from(battler) % 4] = id
     };
@@ -610,8 +613,8 @@ unsafe fn create_mon_sprite(battler: u8, enemy: bool, y: u8) -> bool {
     unsafe {
         StartSpriteAnim(
             s,
-            (*(&raw const crate::battle_main::gBattleMonForms).cast::<[u8; 4]>())
-                [usize::from(battler) % 4],
+            (*(crate::gl!(&raw @at crate::battle_main::gBattleMonForms;).cast_const())
+                .cast::<[u8; 4]>())[usize::from(battler) % 4],
         )
     };
     let transform = unsafe {
@@ -634,7 +637,7 @@ unsafe fn create_mon_sprite(battler: u8, enemy: bool, y: u8) -> bool {
 }
 
 unsafe fn create_battler_sprite(battler: u8) {
-    if battler >= unsafe { (&raw const gBattlersCount).read() } {
+    if battler >= unsafe { (gBattlersCount.as_ptr().cast_const()).read() } {
         return;
     }
     let y = if unsafe { behind_substitute(battler) } {
@@ -656,7 +659,7 @@ unsafe fn create_battler_sprite(battler: u8) {
     }
 
     let id = unsafe {
-        (*(&raw const crate::battle_main::gBattlerSpriteIds)
+        (*(crate::gl!(&raw @at crate::battle_main::gBattlerSpriteIds;).cast_const())
             .cast::<[u8; 4]>()
             .cast_mut())[usize::from(battler) % 4]
     };
@@ -672,7 +675,7 @@ unsafe fn create_battler_sprite(battler: u8) {
 }
 
 unsafe fn create_healthbox_sprite(battler: u8) {
-    if battler >= unsafe { (&raw const gBattlersCount).read() } {
+    if battler >= unsafe { (gBattlersCount.as_ptr().cast_const()).read() } {
         return;
     }
     let safari = battle_type_has(BATTLE_TYPE_SAFARI);
@@ -685,7 +688,7 @@ unsafe fn create_healthbox_sprite(battler: u8) {
     };
 
     unsafe {
-        (*(&raw const crate::battle_main::gHealthboxSpriteIds)
+        (*(crate::gl!(&raw @at crate::battle_main::gHealthboxSpriteIds;).cast_const())
             .cast::<[u8; 4]>()
             .cast_mut())[usize::from(battler) % 4] = healthbox
     };

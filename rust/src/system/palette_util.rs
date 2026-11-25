@@ -82,12 +82,14 @@ unsafe fn RouletteFlash_FadePalette(pal: *mut RouletteFlashPalette) -> u8 {
     let mut returnval: u8 = 0;
     let mut i: u8 = 0;
     while i < (*pal).settings.numColors {
-        let faded: *mut PlttData = &raw mut gPlttBufferFaded
-            [(*pal).settings.paletteOffset as i32 + i as i32]
-            as *mut PlttData;
-        let unfaded: *mut PlttData = &raw mut gPlttBufferUnfaded
-            [(*pal).settings.paletteOffset as i32 + i as i32]
-            as *mut PlttData;
+        let faded: *mut PlttData = {
+            let gl_i0 = (*pal).settings.paletteOffset as i32 + i as i32;
+            crate::gl!(&raw gPlttBufferFaded[gl_i0])
+        } as *mut PlttData;
+        let unfaded: *mut PlttData = {
+            let gl_i1 = (*pal).settings.paletteOffset as i32 + i as i32;
+            crate::gl!(&raw gPlttBufferUnfaded[gl_i1])
+        } as *mut PlttData;
         match (*pal).state() {
             1 => {
                 if (*faded).r() as i32 + (*pal).colorDelta as i32 >= 0
@@ -158,16 +160,25 @@ unsafe fn RouletteFlash_FlashPalette(pal: *mut RouletteFlashPalette) -> u8 {
     match (*pal).state() {
         1 => {
             while i < (*pal).settings.numColors {
-                gPlttBufferFaded[(*pal).settings.paletteOffset as i32 + i as i32] =
-                    (*pal).settings.color;
+                {
+                    let gl_v = (*pal).settings.color;
+                    let gl_i2 = (*pal).settings.paletteOffset as i32 + i as i32;
+                    crate::gl!(gPlttBufferFaded[gl_i2] = gl_v)
+                };
                 i += 1;
             }
             (*pal).set_state((*pal).state() + 1);
         }
         2 => {
             while i < (*pal).settings.numColors {
-                gPlttBufferFaded[(*pal).settings.paletteOffset as i32 + i as i32] =
-                    gPlttBufferUnfaded[(*pal).settings.paletteOffset as i32 + i as i32];
+                {
+                    let gl_v = {
+                        let gl_i4 = (*pal).settings.paletteOffset as i32 + i as i32;
+                        crate::gl!(gPlttBufferUnfaded[gl_i4])
+                    };
+                    let gl_i3 = (*pal).settings.paletteOffset as i32 + i as i32;
+                    crate::gl!(gPlttBufferFaded[gl_i3] = gl_v)
+                };
                 i += 1;
             }
             (*pal).set_state((*pal).state() - 1);
@@ -211,8 +222,8 @@ pub unsafe fn RouletteFlash_Stop(flash: *mut RouletteFlashUtil, flags: u16) {
             && shr_i32(flags as i32, i as u32) & 1 != 0
         {
             let offset: u32 = (*flash).palettes[i].settings.paletteOffset as u32;
-            let faded: *mut u16 = &raw mut gPlttBufferFaded[offset];
-            let unfaded: *mut u16 = &raw mut gPlttBufferUnfaded[offset];
+            let faded: *mut u16 = crate::gl!(&raw gPlttBufferFaded[offset]);
+            let unfaded: *mut u16 = crate::gl!(&raw gPlttBufferUnfaded[offset]);
             memcpy(
                 faded as *mut u8,
                 unfaded as *mut u8,
@@ -291,7 +302,7 @@ unsafe fn ClearPulseBlendPalettesSettings(pulseBlendPalette: *mut PulseBlendPale
             < (*pulseBlendPalette).pulseBlendSettings.paletteOffset as i32
                 + (*pulseBlendPalette).pulseBlendSettings.numColors as i32
         {
-            gPlttBufferFaded[i] = gPlttBufferUnfaded[i];
+            crate::gl!(gPlttBufferFaded[i] = crate::gl!(gPlttBufferUnfaded[i]));
             i += 1;
         }
     }
@@ -374,7 +385,7 @@ pub unsafe fn UnmarkUsedPulseBlendPalettes(
                     < (*pulseBlendPalette).pulseBlendSettings.paletteOffset as i32
                         + (*pulseBlendPalette).pulseBlendSettings.numColors as i32
                 {
-                    gPlttBufferFaded[i] = gPlttBufferUnfaded[i];
+                    crate::gl!(gPlttBufferFaded[i] = crate::gl!(gPlttBufferUnfaded[i]));
                     i += 1;
                 }
             }
@@ -400,7 +411,7 @@ pub unsafe fn UnmarkUsedPulseBlendPalettes(
                         < (*pulseBlendPalette).pulseBlendSettings.paletteOffset as i32
                             + (*pulseBlendPalette).pulseBlendSettings.numColors as i32
                     {
-                        gPlttBufferFaded[i] = gPlttBufferUnfaded[i];
+                        crate::gl!(gPlttBufferFaded[i] = crate::gl!(gPlttBufferUnfaded[i]));
                         i += 1;
                     }
                 }
@@ -417,7 +428,7 @@ pub unsafe fn UpdatePulseBlend(pulseBlend: *mut PulseBlend) {
             pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[i];
             if (*pulseBlendPalette).available() == 0
                 && (*pulseBlendPalette).inUse() != 0
-                && (gPaletteFade.active() == 0
+                && ((*gPaletteFade.as_ptr()).active() == 0
                     || (*pulseBlendPalette).pulseBlendSettings.unk7_7() == 0)
                 && ({
                     (*pulseBlendPalette).delayCounter -= 1;

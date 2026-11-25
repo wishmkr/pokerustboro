@@ -64,7 +64,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -81,14 +81,14 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadSpritePalette` with this module's view of its types.
@@ -191,7 +191,7 @@ unsafe fn AddTextPrinterParameterized(
 }
 /// `DoSoftReset` with this module's view of its types.
 #[inline]
-unsafe fn DoSoftReset() {
+fn DoSoftReset() {
     unsafe {
         crate::agb_main::DoSoftReset();
     }
@@ -298,13 +298,25 @@ unsafe fn CreateCursor(taskId: u8) {
     LoadSpritePalette((&raw const *sSpritePalette_Arrow).cast_mut());
     let mut spriteId: u32 =
         CreateSpriteAtEnd((&raw const *sSpriteTemplate_Arrow).cast_mut(), 53, 68, 0) as u32;
-    gSprites[spriteId].callback = Some(SpriteCB_Cursor_UpOrRight);
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].data[sState] = -1;
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Cursor_UpOrRight));
+    {
+        let gl_i0 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i0] = taskId as i16)
+    };
+    {
+        let gl_i1 = sState;
+        crate::gl!(gSprites[spriteId].data[gl_i1] = -1)
+    };
     spriteId = CreateSpriteAtEnd((&raw const *sSpriteTemplate_Arrow).cast_mut(), 53, 68, 0) as u32;
-    gSprites[spriteId].callback = Some(SpriteCB_Cursor_Down);
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].data[sState] = -1;
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Cursor_Down));
+    {
+        let gl_i2 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i2] = taskId as i16)
+    };
+    {
+        let gl_i3 = sState;
+        crate::gl!(gSprites[spriteId].data[gl_i3] = -1)
+    };
 }
 unsafe fn FreeCursorPalette() {
     FreeSpritePaletteByTag(sSpritePalette_Arrow.tag);
@@ -428,29 +440,29 @@ pub(crate) unsafe fn Task_ResetRtc_HandleInput(taskId: u8) {
     let selection: u8 = *data.at(2) as u8;
     let selectionInfo: *mut ResetRtcInputMap =
         (&raw const sInputMap[selection as i32 - 1]).cast_mut();
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         task_set_func(taskId, Some(Task_ResetRtc_Exit));
         *data.at(1) = FALSE as i16;
         *data.at(2) = SELECTION_NONE as i16;
         PlaySE(SE_SELECT);
         return;
     }
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0 && (*selectionInfo).right != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 && (*selectionInfo).right != 0 {
         *data.at(2) = (*selectionInfo).right as i16;
         PlaySE(SE_SELECT);
         return;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 && (*selectionInfo).left != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 && (*selectionInfo).left != 0 {
         *data.at(2) = (*selectionInfo).left as i16;
         PlaySE(SE_SELECT);
         return;
     }
     if selection == SELECTION_CONFIRM as u8 {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
-            gLocalTime.days = *data.at(3);
-            gLocalTime.hours = *data.at(4) as i8;
-            gLocalTime.minutes = *data.at(5) as i8;
-            gLocalTime.seconds = *data.at(6) as i8;
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            crate::gl!(gLocalTime.days = *data.at(3));
+            crate::gl!(gLocalTime.hours = *data.at(4) as i8);
+            crate::gl!(gLocalTime.minutes = *data.at(5) as i8);
+            crate::gl!(gLocalTime.seconds = *data.at(6) as i8);
             PlaySE(SE_SELECT);
             task_set_func(taskId, Some(Task_ResetRtc_Exit));
             *data.at(1) = TRUE as i16;
@@ -460,7 +472,7 @@ pub(crate) unsafe fn Task_ResetRtc_HandleInput(taskId: u8) {
         data.at((*selectionInfo).dataIndex),
         (*selectionInfo).minVal as i32,
         (*selectionInfo).maxVal as i32,
-        gMain.newAndRepeatedKeys & 192,
+        crate::gl!(gMain.newAndRepeatedKeys) & 192,
     ) != 0
     {
         PlaySE(SE_SELECT);
@@ -479,10 +491,10 @@ pub(crate) unsafe fn Task_ResetRtc_HandleInput(taskId: u8) {
 pub(crate) unsafe fn Task_ResetRtc_Init(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data = FALSE as i16;
-    *data.at(3) = gLocalTime.days;
-    *data.at(4) = gLocalTime.hours as i16;
-    *data.at(5) = gLocalTime.minutes as i16;
-    *data.at(6) = gLocalTime.seconds as i16;
+    *data.at(3) = crate::gl!(gLocalTime.days);
+    *data.at(4) = crate::gl!(gLocalTime.hours) as i16;
+    *data.at(5) = crate::gl!(gLocalTime.minutes) as i16;
+    *data.at(6) = crate::gl!(gLocalTime.seconds) as i16;
     *data.at(8) = AddWindow((&raw const *sInputTimeWindow).cast_mut()) as i16;
     ShowChooseTimeWindow(
         *data.at(8) as u8,
@@ -623,10 +635,10 @@ pub(crate) unsafe fn Task_ShowResetRtcPrompt(taskId: u8) {
                 WIN_TIME,
                 0,
                 17,
-                gLocalTime.days as u16,
-                gLocalTime.hours as u8,
-                gLocalTime.minutes as u8,
-                gLocalTime.seconds as u8,
+                crate::gl!(gLocalTime.days) as u16,
+                crate::gl!(gLocalTime.hours) as u8,
+                crate::gl!(gLocalTime.minutes) as u8,
+                crate::gl!(gLocalTime.seconds) as u8,
             );
             AddTextPrinterParameterized(
                 WIN_TIME,
@@ -643,10 +655,10 @@ pub(crate) unsafe fn Task_ShowResetRtcPrompt(taskId: u8) {
                 WIN_TIME,
                 0,
                 49,
-                (*gSaveBlock2Ptr).lastBerryTreeUpdate.days as u16,
-                (*gSaveBlock2Ptr).lastBerryTreeUpdate.hours as u8,
-                (*gSaveBlock2Ptr).lastBerryTreeUpdate.minutes as u8,
-                (*gSaveBlock2Ptr).lastBerryTreeUpdate.seconds as u8,
+                (*crate::gl!(gSaveBlock2Ptr)).lastBerryTreeUpdate.days as u16,
+                (*crate::gl!(gSaveBlock2Ptr)).lastBerryTreeUpdate.hours as u8,
+                (*crate::gl!(gSaveBlock2Ptr)).lastBerryTreeUpdate.minutes as u8,
+                (*crate::gl!(gSaveBlock2Ptr)).lastBerryTreeUpdate.seconds as u8,
             );
             ShowMessage(
                 (*(&raw const crate::data::strings::gText_ResetRTCConfirmCancel)
@@ -659,10 +671,10 @@ pub(crate) unsafe fn Task_ShowResetRtcPrompt(taskId: u8) {
             *data += 1;
         }
         if fall || sw1 == 1 {
-            if gMain.newKeys as i32 & B_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 DestroyTask(taskId);
                 DoSoftReset();
-            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 DestroyTask(taskId);
             }
@@ -681,9 +693,9 @@ pub(crate) unsafe fn Task_ResetRtcScreen(taskId: u8) {
             break 'l1;
         }
         if sw1 == MAINSTATE_CHECK_SAVE {
-            if gPaletteFade.active() == 0 {
-                if gSaveFileStatus == SAVE_STATUS_EMPTY as u16
-                    || gSaveFileStatus == SAVE_STATUS_CORRUPT
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                if gSaveFileStatus.get() == SAVE_STATUS_EMPTY as u16
+                    || gSaveFileStatus.get() == SAVE_STATUS_CORRUPT
                 {
                     ShowMessage(
                         (*(&raw const crate::data::strings::gText_NoSaveFileCantSetTime)
@@ -709,7 +721,7 @@ pub(crate) unsafe fn Task_ResetRtcScreen(taskId: u8) {
                     .as_ptr()
                     .cast_mut(),
                 );
-                gLocalTime = (*gSaveBlock2Ptr).lastBerryTreeUpdate;
+                crate::gl!(gLocalTime = (*crate::gl!(gSaveBlock2Ptr)).lastBerryTreeUpdate);
                 *data.at(1) = CreateTask(Some(Task_ResetRtc_Init), 80) as i16;
                 *data = MAINSTATE_WAIT_SET_TIME;
             }
@@ -724,13 +736,13 @@ pub(crate) unsafe fn Task_ResetRtcScreen(taskId: u8) {
                     DestroyTask(*data.at(1) as u8);
                     RtcReset();
                     RtcCalcLocalTimeOffset(
-                        gLocalTime.days as i32,
-                        gLocalTime.hours as i32,
-                        gLocalTime.minutes as i32,
-                        gLocalTime.seconds as i32,
+                        crate::gl!(gLocalTime.days) as i32,
+                        crate::gl!(gLocalTime.hours) as i32,
+                        crate::gl!(gLocalTime.minutes) as i32,
+                        crate::gl!(gLocalTime.seconds) as i32,
                     );
-                    (*gSaveBlock2Ptr).lastBerryTreeUpdate = gLocalTime;
-                    VarSet(VAR_DAYS, gLocalTime.days as u16);
+                    (*crate::gl!(gSaveBlock2Ptr)).lastBerryTreeUpdate = crate::gl!(gLocalTime);
+                    VarSet(VAR_DAYS, crate::gl!(gLocalTime.days) as u16);
                     DisableResetRTC();
                     ShowMessage(
                         (*(&raw const crate::data::strings::gText_ClockHasBeenReset)
@@ -765,14 +777,14 @@ pub(crate) unsafe fn Task_ResetRtcScreen(taskId: u8) {
         }
         if fall || sw1 == MAINSTATE_WAIT_EXIT {
             fall = true;
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 BeginNormalPaletteFade(PALETTES_ALL, 1, 0, 0x10, 65535);
                 *data = MAINSTATE_EXIT;
             } else {
                 break 'l1;
             }
         }
-        if (fall || sw1 == MAINSTATE_EXIT) && gPaletteFade.active() == 0 {
+        if (fall || sw1 == MAINSTATE_EXIT) && (*gPaletteFade.as_ptr()).active() == 0 {
             DestroyTask(taskId);
             FreeAllWindowBuffers();
             DoSoftReset();

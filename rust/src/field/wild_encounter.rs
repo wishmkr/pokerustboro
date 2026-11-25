@@ -81,15 +81,15 @@ static sRoute119WaterTileData: Table<CArray<u16, 9>> =
 static sWildFeebas: Table<WildPokemon> =
     Table((&raw const crate::data::wild_encounter::sWildFeebas).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sWildEncountersDisabled: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFeebasRngValue: crate::global::Global<u32> = crate::global::Global::new(0);
 
 /// `SafariZoneGetActivePokeblock` with this module's view of its types.
 #[inline]
-unsafe fn SafariZoneGetActivePokeblock() -> *mut Pokeblock {
+fn SafariZoneGetActivePokeblock() -> *mut Pokeblock {
     unsafe { crate::safari_zone::SafariZoneGetActivePokeblock() as *mut Pokeblock }
 }
 
@@ -104,7 +104,7 @@ unsafe fn GetFeebasFishingSpotId(targetX: i16, targetY: i16, section: u8) -> u16
     let mut y: u16 = yMin;
     while y <= yMax {
         x = 0;
-        while (x as i32) < (*gMapHeader.mapLayout).width {
+        while (x as i32) < (*crate::gl!(gMapHeader.mapLayout)).width {
             let behavior: u8 =
                 MapGridGetMetatileBehaviorAt(x as i32 + MAP_OFFSET, y as i32 + MAP_OFFSET) as u8;
             if MetatileBehavior_IsSurfableAndNotWaterfall(behavior) == TRUE {
@@ -126,7 +126,9 @@ unsafe fn CheckFeebas() -> u8 {
     let mut y: i16 = 0;
     let mut route119Section: u8 = 0;
     let mut spotId: u16 = 0;
-    if (*gSaveBlock1Ptr).location.mapGroup == 0 && (*gSaveBlock1Ptr).location.mapNum == 34 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 0
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 34
+    {
         GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
         x -= MAP_OFFSET as i16;
         y -= MAP_OFFSET as i16;
@@ -148,7 +150,7 @@ unsafe fn CheckFeebas() -> u8 {
         if Random() as i32 % 100 > 49 {
             return FALSE;
         }
-        FeebasSeedRng((*gSaveBlock1Ptr).dewfordTrends[0].rand);
+        FeebasSeedRng((*crate::gl!(gSaveBlock1Ptr)).dewfordTrends[0].rand);
         i = 0;
         while i != NUM_FEEBAS_SPOTS {
             feebasSpots[i] = (FeebasRandom() as i32 % 447) as u16;
@@ -331,8 +333,8 @@ unsafe fn ChooseWildMonLevel(wildPokemon: *mut WildPokemon) -> u8 {
     }
     let range: u8 = max - min + 1;
     let mut rand: u8 = rem_i32(Random() as i32, range as i32) as u8;
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0 {
-        let ability: u8 = GetMonAbility(&raw mut gPlayerParty[0]);
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) == 0 {
+        let ability: u8 = GetMonAbility(crate::gl!(&raw gPlayerParty[0]));
         if ability == ABILITY_HUSTLE
             || ability == ABILITY_VITAL_SPIRIT
             || ability == ABILITY_PRESSURE
@@ -352,10 +354,13 @@ unsafe fn GetCurrentMapWildMonHeaderId() -> u16 {
         if (*wildHeader).mapGroup == 255 {
             break;
         }
-        if gWildMonHeaders[i].mapGroup as i32 == (*gSaveBlock1Ptr).location.mapGroup as i32
-            && gWildMonHeaders[i].mapNum as i32 == (*gSaveBlock1Ptr).location.mapNum as i32
+        if gWildMonHeaders[i].mapGroup as i32
+            == (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as i32
+            && gWildMonHeaders[i].mapNum as i32
+                == (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as i32
         {
-            if (*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 106
+            if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 24
+                && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 106
             {
                 let mut alteringCaveId: u16 = VarGet(VAR_ALTERING_CAVE_WILD_SET);
                 if alteringCaveId >= NUM_ALTERING_CAVE_TABLES {
@@ -397,11 +402,11 @@ unsafe fn PickWildMonNature() -> u8 {
             }
         }
     }
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0
-        && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_SYNCHRONIZE
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) == 0
+        && GetMonAbility(crate::gl!(&raw gPlayerParty[0])) == ABILITY_SYNCHRONIZE
         && Random() as i32 % 2 == 0
     {
-        return (GetMonData2(&raw mut gPlayerParty[0], MON_DATA_PERSONALITY) % 25) as u8;
+        return (GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_PERSONALITY) % 25) as u8;
     }
     (Random() as i32 % 25) as u8
 }
@@ -418,13 +423,14 @@ unsafe fn CreateWildMon(species: u16, level: u8) {
         _ => {}
     }
     if checkCuteCharm != 0
-        && GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0
-        && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_CUTE_CHARM
+        && GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) == 0
+        && GetMonAbility(crate::gl!(&raw gPlayerParty[0])) == ABILITY_CUTE_CHARM
         && Random() as i32 % 3 != 0
     {
-        let leadingMonSpecies: u16 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SPECIES) as u16;
+        let leadingMonSpecies: u16 =
+            GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SPECIES) as u16;
         let leadingMonPersonality: u32 =
-            GetMonData2(&raw mut gPlayerParty[0], MON_DATA_PERSONALITY);
+            GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_PERSONALITY);
         let mut gender: u8 =
             GetGenderFromSpeciesAndPersonality(leadingMonSpecies, leadingMonPersonality);
         if gender == MON_FEMALE {
@@ -433,7 +439,7 @@ unsafe fn CreateWildMon(species: u16, level: u8) {
             gender = MON_FEMALE;
         }
         CreateMonWithGenderNatureLetter(
-            &raw mut gEnemyParty[0],
+            crate::gl!(&raw gEnemyParty[0]),
             species,
             level,
             USE_RANDOM_IVS,
@@ -444,7 +450,7 @@ unsafe fn CreateWildMon(species: u16, level: u8) {
         return;
     }
     CreateMonWithNature(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         species,
         level,
         USE_RANDOM_IVS,
@@ -498,7 +504,7 @@ unsafe fn TryGenerateWildMon(wildMonInfo: *mut WildPokemonInfo, area: u8, flags:
     if flags as i32 & WILD_CHECK_REPEL != 0 && IsWildLevelAllowedByRepel(level) == 0 {
         return FALSE;
     }
-    if gMapHeader.mapLayoutId != LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS
+    if crate::gl!(gMapHeader.mapLayoutId) != LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS
         && flags as i32 & WILD_CHECK_KEEN_EYE as i32 != 0
         && IsAbilityAllowingEncounter(level) == 0
     {
@@ -521,30 +527,30 @@ unsafe fn GenerateFishingWildMon(wildMonInfo: *mut WildPokemonInfo, rod: u8) -> 
 }
 unsafe fn SetUpMassOutbreakEncounter(flags: u8) -> u8 {
     if flags as i32 & WILD_CHECK_REPEL != 0
-        && IsWildLevelAllowedByRepel((*gSaveBlock1Ptr).outbreakPokemonLevel) == 0
+        && IsWildLevelAllowedByRepel((*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonLevel) == 0
     {
         return FALSE;
     }
     CreateWildMon(
-        (*gSaveBlock1Ptr).outbreakPokemonSpecies,
-        (*gSaveBlock1Ptr).outbreakPokemonLevel,
+        (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies,
+        (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonLevel,
     );
     for i in 0..(MAX_MON_MOVES as u16) {
         SetMonMoveSlot(
-            &raw mut gEnemyParty[0],
-            (*gSaveBlock1Ptr).outbreakPokemonMoves[i],
+            crate::gl!(&raw gEnemyParty[0]),
+            (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[i],
             i as u8,
         );
     }
     TRUE
 }
 unsafe fn DoMassOutbreakEncounterTest() -> u8 {
-    if (*gSaveBlock1Ptr).outbreakPokemonSpecies != SPECIES_NONE
-        && (*gSaveBlock1Ptr).location.mapNum as i32
-            == (*gSaveBlock1Ptr).outbreakLocationMapNum as i32
-        && (*gSaveBlock1Ptr).location.mapGroup as i32
-            == (*gSaveBlock1Ptr).outbreakLocationMapGroup as i32
-        && Random() as i32 % 100 < (*gSaveBlock1Ptr).outbreakPokemonProbability as i32
+    if (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies != SPECIES_NONE
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as i32
+            == (*crate::gl!(gSaveBlock1Ptr)).outbreakLocationMapNum as i32
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as i32
+            == (*crate::gl!(gSaveBlock1Ptr)).outbreakLocationMapGroup as i32
+        && Random() as i32 % 100 < (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonProbability as i32
     {
         return TRUE;
     }
@@ -568,10 +574,12 @@ unsafe fn WildEncounterCheck(mut encounterRate: u32, ignoreAbility: u8) -> u8 {
     }
     ApplyFluteEncounterRateMod(&raw mut encounterRate);
     ApplyCleanseTagEncounterRateMod(&raw mut encounterRate);
-    if ignoreAbility == 0 && GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0 {
-        let ability: u32 = GetMonAbility(&raw mut gPlayerParty[0]) as u32;
+    if ignoreAbility == 0
+        && GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) == 0
+    {
+        let ability: u32 = GetMonAbility(crate::gl!(&raw gPlayerParty[0])) as u32;
         if ability == ABILITY_STENCH
-            && gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR
+            && crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR
         {
             encounterRate = encounterRate * 3 / 4;
         } else if ability == ABILITY_STENCH {
@@ -582,7 +590,7 @@ unsafe fn WildEncounterCheck(mut encounterRate: u32, ignoreAbility: u8) -> u8 {
             encounterRate /= 2;
         } else if ability == ABILITY_ARENA_TRAP as u32 {
             encounterRate *= 2;
-        } else if ability == 8 && (*gSaveBlock1Ptr).weather == 8 {
+        } else if ability == 8 && (*crate::gl!(gSaveBlock1Ptr)).weather == 8 {
             encounterRate /= 2;
         }
     }
@@ -603,7 +611,9 @@ fn AllowWildCheckOnNewMetatile() -> u8 {
     }
 }
 unsafe fn AreLegendariesInSootopolisPreventingEncounters() -> u8 {
-    if (*gSaveBlock1Ptr).location.mapGroup != 0 || (*gSaveBlock1Ptr).location.mapNum != 7 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup != 0
+        || (*crate::gl!(gSaveBlock1Ptr)).location.mapNum != 7
+    {
         return FALSE;
     }
     FlagGet(FLAG_LEGENDARIES_IN_SOOTOPOLIS)
@@ -615,7 +625,7 @@ pub unsafe fn StandardWildEncounter(curMetatileBehavior: u16, prevMetatileBehavi
     }
     let mut headerId: u16 = GetCurrentMapWildMonHeaderId();
     if headerId == HEADER_NONE {
-        if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS {
+        if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS {
             headerId = GetBattlePikeWildMonHeaderId() as u16;
             if prevMetatileBehavior != curMetatileBehavior && AllowWildCheckOnNewMetatile() == 0 {
                 return FALSE;
@@ -638,8 +648,8 @@ pub unsafe fn StandardWildEncounter(curMetatileBehavior: u16, prevMetatileBehavi
             BattleSetup_StartBattlePikeWildBattle();
             return TRUE;
         }
-        if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
-            headerId = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
+        if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
+            headerId = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum;
             if prevMetatileBehavior != curMetatileBehavior && AllowWildCheckOnNewMetatile() == 0 {
                 return FALSE;
             } else if WildEncounterCheck(
@@ -676,7 +686,7 @@ pub unsafe fn StandardWildEncounter(curMetatileBehavior: u16, prevMetatileBehavi
                 return FALSE;
             }
             if TryStartRoamerEncounter() == TRUE {
-                roamer = &raw mut (*gSaveBlock1Ptr).roamer;
+                roamer = &raw mut (*crate::gl!(gSaveBlock1Ptr)).roamer;
                 if IsWildLevelAllowedByRepel((*roamer).level) == 0 {
                     return FALSE;
                 }
@@ -715,7 +725,7 @@ pub unsafe fn StandardWildEncounter(curMetatileBehavior: u16, prevMetatileBehavi
                 return FALSE;
             }
             if TryStartRoamerEncounter() == TRUE {
-                roamer = &raw mut (*gSaveBlock1Ptr).roamer;
+                roamer = &raw mut (*crate::gl!(gSaveBlock1Ptr)).roamer;
                 if IsWildLevelAllowedByRepel((*roamer).level) == 0 {
                     return FALSE;
                 }
@@ -760,7 +770,7 @@ pub unsafe fn SweetScentWildEncounter() -> u8 {
     PlayerGetDestCoords(&raw mut x, &raw mut y);
     let mut headerId: u16 = GetCurrentMapWildMonHeaderId();
     if headerId == HEADER_NONE {
-        if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS {
+        if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS {
             headerId = GetBattlePikeWildMonHeaderId() as u16;
             if TryGenerateWildMon(
                 gBattlePikeWildMonHeaders[headerId].landMonsInfo,
@@ -774,8 +784,8 @@ pub unsafe fn SweetScentWildEncounter() -> u8 {
             BattleSetup_StartBattlePikeWildBattle();
             return TRUE;
         }
-        if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
-            headerId = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
+        if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
+            headerId = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum;
             if TryGenerateWildMon(
                 gBattlePyramidWildMonHeaders[headerId].landMonsInfo,
                 WILD_AREA_LAND,
@@ -932,10 +942,10 @@ unsafe fn IsWildLevelAllowedByRepel(wildLevel: u8) -> u8 {
         return TRUE;
     }
     for i in 0..(PARTY_SIZE as u8) {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) != 0
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP) != 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0
         {
-            let ourLevel: u8 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) as u8;
+            let ourLevel: u8 = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_LEVEL) as u8;
             if wildLevel < ourLevel {
                 return FALSE;
             } else {
@@ -946,12 +956,13 @@ unsafe fn IsWildLevelAllowedByRepel(wildLevel: u8) -> u8 {
     FALSE
 }
 unsafe fn IsAbilityAllowingEncounter(level: u8) -> u8 {
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) != 0 {
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) != 0 {
         return TRUE;
     }
-    let ability: u8 = GetMonAbility(&raw mut gPlayerParty[0]);
+    let ability: u8 = GetMonAbility(crate::gl!(&raw gPlayerParty[0]));
     if ability == ABILITY_KEEN_EYE || ability == ABILITY_INTIMIDATE {
-        let playerMonLevel: u8 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_LEVEL) as u8;
+        let playerMonLevel: u8 =
+            GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_LEVEL) as u8;
         if playerMonLevel > 5
             && level as i32 <= playerMonLevel as i32 - 5
             && Random() as i32 % 2 == 0
@@ -1003,9 +1014,9 @@ unsafe fn TryGetAbilityInfluencedWildMonIndex(
     ability: u8,
     monIndex: *mut u8,
 ) -> u8 {
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) != 0 {
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SANITY_IS_EGG) != 0 {
         return FALSE;
-    } else if GetMonAbility(&raw mut gPlayerParty[0]) != ability {
+    } else if GetMonAbility(crate::gl!(&raw gPlayerParty[0])) != ability {
         return FALSE;
     } else if Random() as i32 % 2 != 0 {
         return FALSE;
@@ -1025,7 +1036,7 @@ unsafe fn ApplyFluteEncounterRateMod(encRate: *mut u32) {
     }
 }
 unsafe fn ApplyCleanseTagEncounterRateMod(encRate: *mut u32) {
-    if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_HELD_ITEM) == ITEM_CLEANSE_TAG {
+    if GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_HELD_ITEM) == ITEM_CLEANSE_TAG {
         *encRate = *encRate * 2 / 3;
     }
 }

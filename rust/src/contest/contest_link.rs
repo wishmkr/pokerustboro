@@ -51,7 +51,7 @@ const tStandbyState: usize = 12;
 
 pub unsafe fn LinkContest_SendBlock(src: *mut c_void, size: u16) -> u32 {
     memcpy(
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr(),
@@ -60,7 +60,7 @@ pub unsafe fn LinkContest_SendBlock(src: *mut c_void, size: u16) -> u32 {
     );
     if SendBlock(
         BitmaskAllOtherLinkPlayers(),
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -101,9 +101,9 @@ pub unsafe fn LinkContest_GetBlockReceivedFromAllPlayers() -> u8 {
         0
     }
 }
-pub unsafe fn Task_LinkContest_Init(taskId: u8) {
+pub fn Task_LinkContest_Init(taskId: u8) {
     for i in 0..(CONTESTANT_COUNT as u8) {
-        gBlockRecvBuffer[i][0] = 0xFF;
+        crate::gl!(gBlockRecvBuffer[i][0] = 0xFF);
     }
     task_set(taskId, tState, 0);
     task_set_func(taskId, Some(Task_LinkContest_StartInitFlags));
@@ -112,26 +112,28 @@ pub(crate) fn Task_LinkContest_StartInitFlags(taskId: u8) {
     task_set_func(taskId, Some(Task_LinkContest_InitFlags));
 }
 pub(crate) unsafe fn Task_LinkContest_InitFlags(taskId: u8) {
-    if gReceivedRemoteLinkPlayers == 0 {
+    if gReceivedRemoteLinkPlayers.get() == 0 {
         return;
     }
-    gContestPlayerMonIndex = GetMultiplayerId();
-    gNumLinkContestPlayers = GetLinkPlayerCount();
-    gLinkContestFlags = LINK_CONTEST_FLAG_IS_LINK as u8;
-    if gWirelessCommType == 1 {
-        gLinkContestFlags = 3;
+    gContestPlayerMonIndex.set(GetMultiplayerId());
+    gNumLinkContestPlayers.set(GetLinkPlayerCount());
+    gLinkContestFlags.set(LINK_CONTEST_FLAG_IS_LINK as u8);
+    if gWirelessCommType.get() == 1 {
+        gLinkContestFlags.set(3);
     }
     let mut i: i32 = 0;
-    while i < gNumLinkContestPlayers as i32 && (gLinkPlayers[i].version as u32 & 0xFF) - 1 > 1 {
+    while i < gNumLinkContestPlayers.get() as i32
+        && (crate::gl!(gLinkPlayers[i].version) as u32 & 0xFF) - 1 > 1
+    {
         i += 1;
     }
-    if i < gNumLinkContestPlayers as i32 {
-        gLinkContestFlags |= LINK_CONTEST_FLAG_HAS_RS_PLAYER as u8;
+    if i < gNumLinkContestPlayers.get() as i32 {
+        gLinkContestFlags.set(gLinkContestFlags.get() | (LINK_CONTEST_FLAG_HAS_RS_PLAYER as u8));
     }
     SwitchTaskToFollowupFunc(taskId);
 }
 pub unsafe fn LinkContest_TryLinkStandby(state: *mut i16) -> u32 {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER != 0 {
         return TRUE as u32;
     }
     match *state {
@@ -169,16 +171,22 @@ pub unsafe fn Task_LinkContest_CommunicateMonsRS(taskId: u8) {
             if GetMultiplayerId() == 0 {
                 if IsLinkTaskFinished() != 0 {
                     memcpy(
-                        gBlockSendBuffer.as_mut_ptr(),
-                        &raw mut gContestMons[gContestPlayerMonIndex] as *mut u8,
+                        (*gBlockSendBuffer.as_ptr()).as_mut_ptr(),
+                        {
+                            let gl_i0 = gContestPlayerMonIndex.get();
+                            crate::gl!(&raw gContestMons[gl_i0])
+                        } as *mut u8,
                         64,
                     );
                     task_set(taskId, tState, 10);
                 }
             } else {
                 memcpy(
-                    gBlockSendBuffer.as_mut_ptr(),
-                    &raw mut gContestMons[gContestPlayerMonIndex] as *mut u8,
+                    (*gBlockSendBuffer.as_ptr()).as_mut_ptr(),
+                    {
+                        let gl_i1 = gContestPlayerMonIndex.get();
+                        crate::gl!(&raw gContestMons[gl_i1])
+                    } as *mut u8,
                     64,
                 );
                 task_set(taskId, tState, 1);
@@ -187,15 +195,15 @@ pub unsafe fn Task_LinkContest_CommunicateMonsRS(taskId: u8) {
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 i = 0;
-                while i < gNumLinkContestPlayers as i32 {
+                while i < gNumLinkContestPlayers.get() as i32 {
                     memcpy(
-                        &raw mut gContestMons[i] as *mut u8,
-                        gBlockRecvBuffer[i].as_mut_ptr() as *mut u8,
+                        crate::gl!(&raw gContestMons[i]) as *mut u8,
+                        (*gBlockRecvBuffer.as_ptr())[i].as_mut_ptr() as *mut u8,
                         64,
                     );
                     StripPlayerAndMonNamesForLinkContest(
-                        &raw mut gContestMons[i],
-                        gLinkPlayers[i].language as i32,
+                        crate::gl!(&raw gContestMons[i]),
+                        crate::gl!(gLinkPlayers[i].language) as i32,
                     );
                     i += 1;
                 }
@@ -240,12 +248,12 @@ pub unsafe fn Task_LinkContest_CommunicateRngRS(taskId: u8) {
             if LinkContest_GetBlockReceived(0) != 0 {
                 memcpy(
                     &raw mut (*crate::random::gRngValue.as_ptr().cast::<u32>()) as *mut u8,
-                    gBlockRecvBuffer[0].as_mut_ptr() as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[0].as_mut_ptr() as *mut u8,
                     4,
                 );
                 memcpy(
-                    &raw mut gContestRngValue as *mut u8,
-                    gBlockRecvBuffer[0].as_mut_ptr() as *mut u8,
+                    gContestRngValue.as_ptr() as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[0].as_mut_ptr() as *mut u8,
                     4,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -263,7 +271,7 @@ pub unsafe fn Task_LinkContest_CommunicateCategoryRS(taskId: u8) {
     }
     match task_get(taskId, tState) {
         0 => {
-            gBlockSendBuffer[0] = task_get(taskId, tCategory) as u8;
+            crate::gl!(gBlockSendBuffer[0] = task_get(taskId, tCategory) as u8);
             if GetMultiplayerId() == 0 {
                 if IsLinkTaskFinished() != 0 {
                     task_set(taskId, tState, 10);
@@ -274,8 +282,8 @@ pub unsafe fn Task_LinkContest_CommunicateCategoryRS(taskId: u8) {
         }
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
-                for i in 0..(gNumLinkContestPlayers as i32) {
-                    task_set(taskId, i + 1, gBlockRecvBuffer[i][0] as i16);
+                for i in 0..(gNumLinkContestPlayers.get() as i32) {
+                    task_set(taskId, i + 1, crate::gl!(gBlockRecvBuffer[i][0]) as i16);
                 }
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -302,7 +310,7 @@ pub unsafe fn Task_LinkContest_CommunicateMonIdxs(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(&raw mut gContestPlayerMonIndex as *mut c_void, 1)
+                && LinkContest_SendBlock(gContestPlayerMonIndex.as_ptr() as *mut c_void, 1)
                     == TRUE as u32
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -324,8 +332,10 @@ pub unsafe fn Task_LinkContest_CommunicateMoveSelections(taskId: u8) {
         0 => {
             if IsLinkTaskFinished() != 0
                 && LinkContest_SendBlock(
-                    &raw mut (*(*gContestResources).status.at(gContestPlayerMonIndex)).currMove
-                        as *mut c_void,
+                    &raw mut (*(*crate::gl!(gContestResources))
+                        .status
+                        .at(gContestPlayerMonIndex.get()))
+                    .currMove as *mut c_void,
                     2,
                 ) == TRUE as u32
             {
@@ -334,8 +344,9 @@ pub unsafe fn Task_LinkContest_CommunicateMoveSelections(taskId: u8) {
         }
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
-                for i in 0..(gNumLinkContestPlayers as i32) {
-                    (*(*gContestResources).status.at(i)).currMove = gBlockRecvBuffer[i][0];
+                for i in 0..(gNumLinkContestPlayers.get() as i32) {
+                    (*(*crate::gl!(gContestResources)).status.at(i)).currMove =
+                        crate::gl!(gBlockRecvBuffer[i][0]);
                 }
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -350,7 +361,10 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(gContestMonTotalPoints.as_mut_ptr() as *mut c_void, 8) == 1
+                && LinkContest_SendBlock(
+                    (*gContestMonTotalPoints.as_ptr()).as_mut_ptr() as *mut c_void,
+                    8,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -358,8 +372,9 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestMonTotalPoints.as_mut_ptr() as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestMonTotalPoints.as_ptr()).as_mut_ptr() as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     8,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -379,7 +394,7 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         3 => {
             if IsLinkTaskFinished() != 0
                 && LinkContest_SendBlock(
-                    gContestMonAppealPointTotals.as_mut_ptr() as *mut c_void,
+                    (*gContestMonAppealPointTotals.as_ptr()).as_mut_ptr() as *mut c_void,
                     8,
                 ) == 1
             {
@@ -389,8 +404,9 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         4 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestMonAppealPointTotals.as_mut_ptr() as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestMonAppealPointTotals.as_ptr()).as_mut_ptr() as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     8,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -398,8 +414,10 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         }
         6 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(gContestMonRound2Points.as_mut_ptr() as *mut c_void, 8)
-                    == 1
+                && LinkContest_SendBlock(
+                    (*gContestMonRound2Points.as_ptr()).as_mut_ptr() as *mut c_void,
+                    8,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -407,8 +425,9 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         7 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestMonRound2Points.as_mut_ptr() as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestMonRound2Points.as_ptr()).as_mut_ptr() as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     8,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -416,7 +435,10 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         }
         9 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(gContestFinalStandings.as_mut_ptr() as *mut c_void, 4) == 1
+                && LinkContest_SendBlock(
+                    (*gContestFinalStandings.as_ptr()).as_mut_ptr() as *mut c_void,
+                    4,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -424,8 +446,9 @@ pub unsafe fn Task_LinkContest_CommunicateFinalStandings(taskId: u8) {
         10 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestFinalStandings.as_mut_ptr(),
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestFinalStandings.as_ptr()).as_mut_ptr(),
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     4,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -441,7 +464,10 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock((*gContestResources).status as *mut c_void, 112) == 1
+                && LinkContest_SendBlock(
+                    (*crate::gl!(gContestResources)).status as *mut c_void,
+                    112,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -449,8 +475,9 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    (*gContestResources).status as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*crate::gl!(gContestResources)).status as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     112,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -469,7 +496,10 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         }
         3 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock((*gContestResources).appealResults as *mut c_void, 20) == 1
+                && LinkContest_SendBlock(
+                    (*crate::gl!(gContestResources)).appealResults as *mut c_void,
+                    20,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -477,8 +507,9 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         4 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    (*gContestResources).appealResults as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*crate::gl!(gContestResources)).appealResults as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     20,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -486,7 +517,10 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         }
         6 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock((*gContestResources).excitement as *mut c_void, 4) == 1
+                && LinkContest_SendBlock(
+                    (*crate::gl!(gContestResources)).excitement as *mut c_void,
+                    4,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -494,8 +528,9 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         7 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    (*gContestResources).excitement as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*crate::gl!(gContestResources)).excitement as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     4,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -503,7 +538,10 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         }
         9 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(gContestantTurnOrder.as_mut_ptr() as *mut c_void, 4) == 1
+                && LinkContest_SendBlock(
+                    (*gContestantTurnOrder.as_ptr()).as_mut_ptr() as *mut c_void,
+                    4,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -511,8 +549,9 @@ pub unsafe fn Task_LinkContest_CommunicateAppealsState(taskId: u8) {
         10 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestantTurnOrder.as_mut_ptr(),
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestantTurnOrder.as_ptr()).as_mut_ptr(),
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     4,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -530,7 +569,7 @@ pub unsafe fn Task_LinkContest_CommunicateLeaderIdsRS(taskId: u8) {
     }
     match task_get(taskId, tState) {
         0 => {
-            gBlockSendBuffer[0] = 0x6E;
+            crate::gl!(gBlockSendBuffer[0] = 0x6E);
             if GetMultiplayerId() == 0 {
                 if IsLinkTaskFinished() != 0 {
                     task_set(taskId, tState, 10);
@@ -542,7 +581,7 @@ pub unsafe fn Task_LinkContest_CommunicateLeaderIdsRS(taskId: u8) {
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 for i in 0..CONTESTANT_COUNT {
-                    task_set(taskId, i + 5, gBlockRecvBuffer[i][0] as i16);
+                    task_set(taskId, i + 5, crate::gl!(gBlockRecvBuffer[i][0]) as i16);
                 }
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -572,8 +611,10 @@ pub unsafe fn Task_LinkContest_CommunicateRound1Points(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(gContestMonRound1Points.as_mut_ptr() as *mut c_void, 8)
-                    == 1
+                && LinkContest_SendBlock(
+                    (*gContestMonRound1Points.as_ptr()).as_mut_ptr() as *mut c_void,
+                    8,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -581,8 +622,9 @@ pub unsafe fn Task_LinkContest_CommunicateRound1Points(taskId: u8) {
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestMonRound1Points.as_mut_ptr() as *mut u8,
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestMonRound1Points.as_ptr()).as_mut_ptr() as *mut u8,
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     8,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -602,7 +644,10 @@ pub unsafe fn Task_LinkContest_CommunicateTurnOrder(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
             if IsLinkTaskFinished() != 0
-                && LinkContest_SendBlock(gContestantTurnOrder.as_mut_ptr() as *mut c_void, 4) == 1
+                && LinkContest_SendBlock(
+                    (*gContestantTurnOrder.as_ptr()).as_mut_ptr() as *mut c_void,
+                    4,
+                ) == 1
             {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -610,8 +655,9 @@ pub unsafe fn Task_LinkContest_CommunicateTurnOrder(taskId: u8) {
         1 => {
             if LinkContest_GetBlockReceivedFromAllPlayers() != 0 {
                 memcpy(
-                    gContestantTurnOrder.as_mut_ptr(),
-                    gBlockRecvBuffer[gContestLinkLeaderIndex].as_mut_ptr() as *mut u8,
+                    (*gContestantTurnOrder.as_ptr()).as_mut_ptr(),
+                    (*gBlockRecvBuffer.as_ptr())[gContestLinkLeaderIndex.get()].as_mut_ptr()
+                        as *mut u8,
                     4,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);

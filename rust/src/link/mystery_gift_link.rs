@@ -172,7 +172,7 @@ pub unsafe fn MysteryGiftLink_InitRecv(link: *mut u8, ident: u32, dest: *mut u8)
 #[inline]
 unsafe fn receive_block(player_id: u8, dest: *mut u8, size: usize) {
     let src = unsafe {
-        (&raw const (*(&raw const crate::link::gBlockRecvBuffer)
+        (&raw const (*(crate::gl!(&raw @at crate::link::gBlockRecvBuffer;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(player_id as usize * BLOCK_BUFFER_SIZE)

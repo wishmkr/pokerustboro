@@ -99,7 +99,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `BlitBitmapToWindow` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
     unsafe {
         crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
     }
@@ -207,19 +207,14 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `HandleLoadSpecialPokePic_2` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_2(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-) {
+fn HandleLoadSpecialPokePic_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32) {
     unsafe {
         crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
     }
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -231,26 +226,26 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -276,11 +271,7 @@ unsafe fn SetBoxMonData(a0: *mut BoxPokemon, a1: i32, a2: *mut c_void) {
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -603,12 +594,13 @@ static sTextPrinterFunctions: Table<CArray<Option<unsafe fn()>, 4>> =
 static sTextPrinterTasks: Table<CArray<Option<unsafe fn(u8)>, 4>> =
     Table((&raw const crate::data::pokemon_summary_screen::sTextPrinterTasks).cast());
 
-pub(crate) static mut sMonSummaryScreen: *mut PokemonSummaryScreenData = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub static mut gLastViewedMonIndex: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
+pub(crate) static sMonSummaryScreen: crate::global::Global<*mut PokemonSummaryScreenData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gLastViewedMonIndex: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMoveSlotToReplace: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAnimDelayTaskId: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `Alloc` with this module's view of its types.
@@ -623,7 +615,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -653,37 +645,37 @@ pub unsafe fn ShowPokemonSummaryScreen(
     maxMonIndex: u8,
     callback: Option<unsafe fn()>,
 ) {
-    sMonSummaryScreen = AllocZeroed(16632) as *mut PokemonSummaryScreenData;
-    (*sMonSummaryScreen).mode = mode;
-    (*sMonSummaryScreen).monList.mons = mons as *mut Pokemon;
-    (*sMonSummaryScreen).curMonIndex = monIndex;
-    (*sMonSummaryScreen).maxMonIndex = maxMonIndex;
-    (*sMonSummaryScreen).callback = callback;
+    crate::gl!(sMonSummaryScreen = AllocZeroed(16632) as *mut PokemonSummaryScreenData);
+    (*crate::gl!(sMonSummaryScreen)).mode = mode;
+    (*crate::gl!(sMonSummaryScreen)).monList.mons = mons as *mut Pokemon;
+    (*crate::gl!(sMonSummaryScreen)).curMonIndex = monIndex;
+    (*crate::gl!(sMonSummaryScreen)).maxMonIndex = maxMonIndex;
+    (*crate::gl!(sMonSummaryScreen)).callback = callback;
     if mode == SUMMARY_MODE_BOX {
-        (*sMonSummaryScreen).isBoxMon = TRUE;
+        (*crate::gl!(sMonSummaryScreen)).isBoxMon = TRUE;
     } else {
-        (*sMonSummaryScreen).isBoxMon = FALSE;
+        (*crate::gl!(sMonSummaryScreen)).isBoxMon = FALSE;
     }
     match mode {
         SUMMARY_MODE_NORMAL | SUMMARY_MODE_BOX => {
-            (*sMonSummaryScreen).minPageIndex = 0;
-            (*sMonSummaryScreen).maxPageIndex = 3;
+            (*crate::gl!(sMonSummaryScreen)).minPageIndex = 0;
+            (*crate::gl!(sMonSummaryScreen)).maxPageIndex = 3;
         }
         SUMMARY_MODE_LOCK_MOVES => {
-            (*sMonSummaryScreen).minPageIndex = 0;
-            (*sMonSummaryScreen).maxPageIndex = 3;
-            (*sMonSummaryScreen).lockMovesFlag = TRUE;
+            (*crate::gl!(sMonSummaryScreen)).minPageIndex = 0;
+            (*crate::gl!(sMonSummaryScreen)).maxPageIndex = 3;
+            (*crate::gl!(sMonSummaryScreen)).lockMovesFlag = TRUE;
         }
         SUMMARY_MODE_SELECT_MOVE => {
-            (*sMonSummaryScreen).minPageIndex = PSS_PAGE_BATTLE_MOVES;
-            (*sMonSummaryScreen).maxPageIndex = 3;
-            (*sMonSummaryScreen).lockMonFlag = TRUE;
+            (*crate::gl!(sMonSummaryScreen)).minPageIndex = PSS_PAGE_BATTLE_MOVES;
+            (*crate::gl!(sMonSummaryScreen)).maxPageIndex = 3;
+            (*crate::gl!(sMonSummaryScreen)).lockMonFlag = TRUE;
         }
         _ => {}
     }
-    (*sMonSummaryScreen).currPageIndex = (*sMonSummaryScreen).minPageIndex;
+    (*crate::gl!(sMonSummaryScreen)).currPageIndex = (*crate::gl!(sMonSummaryScreen)).minPageIndex;
     SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
-    if gMonSpritesGfxPtr.is_null() {
+    if (*gMonSpritesGfxPtr.as_ptr()).is_null() {
         CreateMonSpritesGfxManager(MON_SPR_GFX_MANAGER_A, MON_SPR_GFX_MODE_NORMAL as u8);
     }
     SetMainCallback2(Some(CB2_InitSummaryScreen));
@@ -702,7 +694,7 @@ pub unsafe fn ShowSelectMovePokemonSummaryScreen(
         maxMonIndex,
         callback,
     );
-    (*sMonSummaryScreen).newMove = newMove;
+    (*crate::gl!(sMonSummaryScreen)).newMove = newMove;
 }
 pub unsafe fn ShowPokemonSummaryScreenHandleDeoxys(
     mode: u8,
@@ -712,7 +704,7 @@ pub unsafe fn ShowPokemonSummaryScreenHandleDeoxys(
     callback: Option<unsafe fn()>,
 ) {
     ShowPokemonSummaryScreen(mode, mons as *mut c_void, monIndex, maxMonIndex, callback);
-    (*sMonSummaryScreen).handleDeoxys = TRUE;
+    (*crate::gl!(sMonSummaryScreen)).handleDeoxys = TRUE;
 }
 pub(crate) unsafe fn MainCB2() {
     RunTasks();
@@ -733,126 +725,128 @@ pub(crate) unsafe fn CB2_InitSummaryScreen() {
     {}
 }
 unsafe fn LoadGraphics() -> u8 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankHBlankCallbacksToNull();
             ResetVramOamAndBgCntRegs();
             ClearScheduledBgCopiesToVram();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             ScanlineEffect_Stop();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ResetPaletteFade();
-            gPaletteFade.set_bufferTransferDisabled(1);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(1);
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ResetSpriteData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             FreeAllSpritePalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             InitBGs();
-            (*sMonSummaryScreen).switchCounter = 0;
-            gMain.state += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter = 0;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             if DecompressGraphics() != FALSE {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         7 => {
             ResetWindows();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             DrawPagination();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
-            CopyMonToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon);
-            (*sMonSummaryScreen).switchCounter = 0;
-            gMain.state += 1;
+            CopyMonToSummaryStruct(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
+            (*crate::gl!(sMonSummaryScreen)).switchCounter = 0;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
-            if ExtractMonDataToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon) != 0 {
-                gMain.state += 1;
+            if ExtractMonDataToSummaryStruct(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon)
+                != 0
+            {
+                crate::gl!(gMain.state += 1);
             }
         }
         11 => {
             PrintMonInfo();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         12 => {
             PrintPageNamesAndStats();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         13 => {
-            PrintPageSpecificText((*sMonSummaryScreen).currPageIndex);
-            gMain.state += 1;
+            PrintPageSpecificText((*crate::gl!(sMonSummaryScreen)).currPageIndex);
+            crate::gl!(gMain.state += 1);
         }
         14 => {
             SetDefaultTilemaps();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         15 => {
-            PutPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
-            gMain.state += 1;
+            PutPageWindowTilemaps((*crate::gl!(sMonSummaryScreen)).currPageIndex);
+            crate::gl!(gMain.state += 1);
         }
         16 => {
             ResetSpriteIds();
             CreateMoveTypeIcons();
-            (*sMonSummaryScreen).switchCounter = 0;
-            gMain.state += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter = 0;
+            crate::gl!(gMain.state += 1);
         }
         17 => {
-            (*sMonSummaryScreen).spriteIds[0] = LoadMonGfxAndSprite(
-                &raw mut (*sMonSummaryScreen).currentMon,
-                &raw mut (*sMonSummaryScreen).switchCounter,
+            (*crate::gl!(sMonSummaryScreen)).spriteIds[0] = LoadMonGfxAndSprite(
+                &raw mut (*crate::gl!(sMonSummaryScreen)).currentMon,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).switchCounter,
             );
-            if (*sMonSummaryScreen).spriteIds[0] != SPRITE_NONE {
-                (*sMonSummaryScreen).switchCounter = 0;
-                gMain.state += 1;
+            if (*crate::gl!(sMonSummaryScreen)).spriteIds[0] != SPRITE_NONE {
+                (*crate::gl!(sMonSummaryScreen)).switchCounter = 0;
+                crate::gl!(gMain.state += 1);
             }
         }
         18 => {
-            CreateMonMarkingsSprite(&raw mut (*sMonSummaryScreen).currentMon);
-            gMain.state += 1;
+            CreateMonMarkingsSprite(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
+            crate::gl!(gMain.state += 1);
         }
         19 => {
-            CreateCaughtBallSprite(&raw mut (*sMonSummaryScreen).currentMon);
-            gMain.state += 1;
+            CreateCaughtBallSprite(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
+            crate::gl!(gMain.state += 1);
         }
         20 => {
             CreateSetStatusSprite();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         21 => {
             SetTypeIcons();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         22 => {
-            if (*sMonSummaryScreen).mode != SUMMARY_MODE_SELECT_MOVE {
+            if (*crate::gl!(sMonSummaryScreen)).mode != SUMMARY_MODE_SELECT_MOVE {
                 CreateTask(Some(Task_HandleInput), 0);
             } else {
                 CreateTask(Some(Task_SetHandleReplaceMoveInput), 0);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         23 => {
             BlendPalettes(PALETTES_ALL, 16, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         24 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gPaletteFade.set_bufferTransferDisabled(0);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(0);
+            crate::gl!(gMain.state += 1);
         }
         _ => {
             SetVBlankCallback(Some(VBlank));
@@ -867,15 +861,15 @@ unsafe fn InitBGs() {
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
         1,
-        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sMonSummaryScreen).bgTilemapBuffers[1][0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[1][0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         3,
-        (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(1);
@@ -889,7 +883,7 @@ unsafe fn InitBGs() {
     ShowBg(3);
 }
 unsafe fn DecompressGraphics() -> u8 {
-    match (*sMonSummaryScreen).switchCounter {
+    match (*crate::gl!(sMonSummaryScreen)).switchCounter {
         0 => {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
@@ -901,7 +895,7 @@ unsafe fn DecompressGraphics() -> u8 {
                 0,
                 0,
             );
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         1 => {
             if FreeTempTileDataBuffersIfPossible() != 1 {
@@ -910,9 +904,10 @@ unsafe fn DecompressGraphics() -> u8 {
                         .cast::<CArray<u32, 0>>())
                     .as_ptr()
                     .cast_mut(),
-                    (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0].as_mut_ptr()
+                        as *mut c_void,
                 );
-                (*sMonSummaryScreen).switchCounter += 1;
+                (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
             }
         }
         2 => {
@@ -921,9 +916,9 @@ unsafe fn DecompressGraphics() -> u8 {
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*sMonSummaryScreen).bgTilemapBuffers[0][1].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][1].as_mut_ptr() as *mut c_void,
             );
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         3 => {
             LZDecompressWram(
@@ -931,9 +926,9 @@ unsafe fn DecompressGraphics() -> u8 {
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*sMonSummaryScreen).bgTilemapBuffers[1][1].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[1][1].as_mut_ptr() as *mut c_void,
             );
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         4 => {
             LZDecompressWram(
@@ -941,9 +936,9 @@ unsafe fn DecompressGraphics() -> u8 {
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*sMonSummaryScreen).bgTilemapBuffers[2][1].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][1].as_mut_ptr() as *mut c_void,
             );
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         5 => {
             LZDecompressWram(
@@ -951,9 +946,9 @@ unsafe fn DecompressGraphics() -> u8 {
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][1].as_mut_ptr() as *mut c_void,
             );
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         6 => {
             LoadCompressedPalette(
@@ -970,27 +965,27 @@ unsafe fn DecompressGraphics() -> u8 {
                 129,
                 30,
             );
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         7 => {
             LoadCompressedSpriteSheet((&raw const *sSpriteSheet_MoveTypes).cast_mut());
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         8 => {
             LoadCompressedSpriteSheet((&raw const *sMoveSelectorSpriteSheet).cast_mut());
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         9 => {
             LoadCompressedSpriteSheet((&raw const *sStatusIconsSpriteSheet).cast_mut());
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         10 => {
             LoadCompressedSpritePalette((&raw const *sStatusIconsSpritePalette).cast_mut());
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         11 => {
             LoadCompressedSpritePalette((&raw const *sMoveSelectorSpritePal).cast_mut());
-            (*sMonSummaryScreen).switchCounter += 1;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
         }
         12 => {
             LoadCompressedPalette(
@@ -1000,7 +995,7 @@ unsafe fn DecompressGraphics() -> u8 {
                 464,
                 96,
             );
-            (*sMonSummaryScreen).switchCounter = 0;
+            (*crate::gl!(sMonSummaryScreen)).switchCounter = 0;
             return TRUE;
         }
         _ => {}
@@ -1008,17 +1003,17 @@ unsafe fn DecompressGraphics() -> u8 {
     FALSE
 }
 unsafe fn CopyMonToSummaryStruct(mon: *mut Pokemon) {
-    if (*sMonSummaryScreen).isBoxMon == 0 {
-        let partyMon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
-        *mon = *partyMon.at((*sMonSummaryScreen).curMonIndex);
+    if (*crate::gl!(sMonSummaryScreen)).isBoxMon == 0 {
+        let partyMon: *mut Pokemon = (*crate::gl!(sMonSummaryScreen)).monList.mons;
+        *mon = *partyMon.at((*crate::gl!(sMonSummaryScreen)).curMonIndex);
     } else {
-        let boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
-        BoxMonToMon(boxMon.at((*sMonSummaryScreen).curMonIndex), mon);
+        let boxMon: *mut BoxPokemon = (*crate::gl!(sMonSummaryScreen)).monList.boxMons;
+        BoxMonToMon(boxMon.at((*crate::gl!(sMonSummaryScreen)).curMonIndex), mon);
     }
 }
 unsafe fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon) -> u8 {
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    match (*sMonSummaryScreen).switchCounter {
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
+    match (*crate::gl!(sMonSummaryScreen)).switchCounter {
         0 => {
             (*sum).species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
             (*sum).species2 = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
@@ -1042,9 +1037,10 @@ unsafe fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon) -> u8 {
             (*sum).ppBonuses = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
         }
         2 => {
-            if (*sMonSummaryScreen).monList.mons == gPlayerParty.as_mut_ptr()
-                || (*sMonSummaryScreen).mode == SUMMARY_MODE_BOX
-                || (*sMonSummaryScreen).handleDeoxys == TRUE
+            if (*crate::gl!(sMonSummaryScreen)).monList.mons
+                == (*gPlayerParty.as_ptr()).as_mut_ptr()
+                || (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_BOX
+                || (*crate::gl!(sMonSummaryScreen)).handleDeoxys == TRUE
             {
                 (*sum).nature = GetNature(mon);
                 (*sum).currentHP = GetMonData2(mon, MON_DATA_HP) as u16;
@@ -1084,69 +1080,70 @@ unsafe fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon) -> u8 {
             return TRUE;
         }
     }
-    (*sMonSummaryScreen).switchCounter += 1;
+    (*crate::gl!(sMonSummaryScreen)).switchCounter += 1;
     FALSE
 }
 unsafe fn SetDefaultTilemaps() {
-    if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES
-        && (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES
+    if (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_BATTLE_MOVES
+        && (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_CONTEST_MOVES
     {
         PositionPowerAccSlidingWindow(0, 0xFF);
         PositionAppealJamSlidingWindow(0, 0xFF, 0);
     } else {
         DrawContestMoveHearts(
-            (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex],
+            (*crate::gl!(sMonSummaryScreen)).summary.moves
+                [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex],
         );
         TilemapFiveMovesDisplay(
-            (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr(),
             3,
             0,
         );
         TilemapFiveMovesDisplay(
-            (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][0].as_mut_ptr(),
             1,
             0,
         );
         SetBgTilemapBuffer(
             1,
-            (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][0].as_mut_ptr() as *mut c_void,
         );
         SetBgTilemapBuffer(
             2,
-            (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr() as *mut c_void,
         );
         ChangeBgX(2, 0x10000, BG_COORD_ADD);
         ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
     }
-    if (*sMonSummaryScreen).summary.ailment == AILMENT_NONE {
+    if (*crate::gl!(sMonSummaryScreen)).summary.ailment == AILMENT_NONE {
         PositionStatusSlidingWindow(0, 0xFF);
-    } else if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES
-        && (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES
+    } else if (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_BATTLE_MOVES
+        && (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_CONTEST_MOVES
     {
         PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
     }
     LimitEggSummaryPageDisplay();
-    DrawPokerusCuredSymbol(&raw mut (*sMonSummaryScreen).currentMon);
+    DrawPokerusCuredSymbol(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
 }
 unsafe fn FreeSummaryScreen() {
     FreeAllWindowBuffers();
-    Free(sMonSummaryScreen as *mut c_void);
+    Free(crate::gl!(sMonSummaryScreen) as *mut c_void);
 }
 unsafe fn BeginCloseSummaryScreen(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     task_set_func(taskId, Some(CloseSummaryScreen));
 }
 pub(crate) unsafe fn CloseSummaryScreen(taskId: u8) {
-    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
-        SetMainCallback2((*sMonSummaryScreen).callback);
-        gLastViewedMonIndex = (*sMonSummaryScreen).curMonIndex;
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && (*gPaletteFade.as_ptr()).active() == 0 {
+        SetMainCallback2((*crate::gl!(sMonSummaryScreen)).callback);
+        gLastViewedMonIndex.set((*crate::gl!(sMonSummaryScreen)).curMonIndex);
         SummaryScreen_DestroyAnimDelayTask();
         ResetSpriteData();
         FreeAllSpritePalettes();
         StopCryAndClearCrySongs();
-        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
-        if gMonSpritesGfxPtr.is_null() {
+        m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 0x100);
+        if (*gMonSpritesGfxPtr.as_ptr()).is_null() {
             DestroyMonSpritesGfxManager(MON_SPR_GFX_MANAGER_A);
         }
         FreeSummaryScreen();
@@ -1154,18 +1151,22 @@ pub(crate) unsafe fn CloseSummaryScreen(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleInput(taskId: u8) {
-    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && (*gPaletteFade.as_ptr()).active() == 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             ChangeSummaryPokemon(taskId, -1);
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
             ChangeSummaryPokemon(taskId, 1);
-        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+            || GetLRKeysPressed() == MENU_L_PRESSED
+        {
             ChangePage(taskId, -1);
-        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+            || GetLRKeysPressed() == MENU_R_PRESSED
+        {
             ChangePage(taskId, 1);
-        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_SKILLS {
-                if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_INFO {
+        } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            if (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_SKILLS {
+                if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_INFO {
                     StopPokemonAnimations();
                     PlaySE(SE_SELECT);
                     BeginCloseSummaryScreen(taskId);
@@ -1174,7 +1175,7 @@ pub(crate) unsafe fn Task_HandleInput(taskId: u8) {
                     SwitchToMoveSelection(taskId);
                 }
             }
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             StopPokemonAnimations();
             PlaySE(SE_SELECT);
             BeginCloseSummaryScreen(taskId);
@@ -1183,9 +1184,9 @@ pub(crate) unsafe fn Task_HandleInput(taskId: u8) {
 }
 unsafe fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) {
     let mut monId: i8 = 0;
-    if (*sMonSummaryScreen).lockMonFlag == 0 {
-        if (*sMonSummaryScreen).isBoxMon == TRUE {
-            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_INFO {
+    if (*crate::gl!(sMonSummaryScreen)).lockMonFlag == 0 {
+        if (*crate::gl!(sMonSummaryScreen)).isBoxMon == TRUE {
+            if (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_INFO {
                 if delta == 1 {
                     delta = 0;
                 } else {
@@ -1199,9 +1200,9 @@ unsafe fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) {
                 }
             }
             monId = AdvanceStorageMonIndex(
-                (*sMonSummaryScreen).monList.boxMons,
-                (*sMonSummaryScreen).curMonIndex,
-                (*sMonSummaryScreen).maxMonIndex,
+                (*crate::gl!(sMonSummaryScreen)).monList.boxMons,
+                (*crate::gl!(sMonSummaryScreen)).curMonIndex,
+                (*crate::gl!(sMonSummaryScreen)).maxMonIndex,
                 delta as u8,
             ) as i8;
         } else if IsMultiBattle() == TRUE {
@@ -1211,13 +1212,13 @@ unsafe fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) {
         }
         if monId != -1 {
             PlaySE(SE_SELECT);
-            if (*sMonSummaryScreen).summary.ailment != AILMENT_NONE {
+            if (*crate::gl!(sMonSummaryScreen)).summary.ailment != AILMENT_NONE {
                 SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, TRUE);
                 ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
                 ScheduleBgCopyTilemapToVram(0);
                 PositionStatusSlidingWindow(0, 2);
             }
-            (*sMonSummaryScreen).curMonIndex = monId as u8;
+            (*crate::gl!(sMonSummaryScreen)).curMonIndex = monId as u8;
             task_set(taskId, 0, 0);
             task_set_func(taskId, Some(Task_ChangeSummaryMon));
         }
@@ -1231,40 +1232,53 @@ pub(crate) unsafe fn Task_ChangeSummaryMon(taskId: u8) {
         }
         1 => {
             SummaryScreen_DestroyAnimDelayTask();
-            DestroySpriteAndFreeResources(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[0]]);
+            DestroySpriteAndFreeResources({
+                let gl_i0 = (*crate::gl!(sMonSummaryScreen)).spriteIds[0];
+                crate::gl!(&raw gSprites[gl_i0])
+            });
         }
         2 => {
-            DestroySpriteAndFreeResources(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[1]]);
+            DestroySpriteAndFreeResources({
+                let gl_i1 = (*crate::gl!(sMonSummaryScreen)).spriteIds[1];
+                crate::gl!(&raw gSprites[gl_i1])
+            });
         }
         3 => {
-            CopyMonToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon);
-            (*sMonSummaryScreen).switchCounter = 0;
+            CopyMonToSummaryStruct(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
+            (*crate::gl!(sMonSummaryScreen)).switchCounter = 0;
         }
         4 => {
-            if ExtractMonDataToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon) == FALSE {
+            if ExtractMonDataToSummaryStruct(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon)
+                == FALSE
+            {
                 return;
             }
         }
         5 => {
-            RemoveAndCreateMonMarkingsSprite(&raw mut (*sMonSummaryScreen).currentMon);
+            RemoveAndCreateMonMarkingsSprite(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
         }
         6 => {
-            CreateCaughtBallSprite(&raw mut (*sMonSummaryScreen).currentMon);
+            CreateCaughtBallSprite(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
         }
         7 => {
-            if (*sMonSummaryScreen).summary.ailment != AILMENT_NONE {
+            if (*crate::gl!(sMonSummaryScreen)).summary.ailment != AILMENT_NONE {
                 PositionStatusSlidingWindow(10, -2);
             }
-            DrawPokerusCuredSymbol(&raw mut (*sMonSummaryScreen).currentMon);
+            DrawPokerusCuredSymbol(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
             *data.at(1) = 0;
         }
         8 => {
-            (*sMonSummaryScreen).spriteIds[0] =
-                LoadMonGfxAndSprite(&raw mut (*sMonSummaryScreen).currentMon, data.at(1));
-            if (*sMonSummaryScreen).spriteIds[0] == SPRITE_NONE {
+            (*crate::gl!(sMonSummaryScreen)).spriteIds[0] = LoadMonGfxAndSprite(
+                &raw mut (*crate::gl!(sMonSummaryScreen)).currentMon,
+                data.at(1),
+            );
+            if (*crate::gl!(sMonSummaryScreen)).spriteIds[0] == SPRITE_NONE {
                 return;
             }
-            gSprites[(*sMonSummaryScreen).spriteIds[0]].data[2] = 1;
+            {
+                let gl_i2 = (*crate::gl!(sMonSummaryScreen)).spriteIds[0];
+                crate::gl!(gSprites[gl_i2].data[2] = 1)
+            };
             TryDrawExperienceProgressBar();
             *data.at(1) = 0;
         }
@@ -1275,11 +1289,14 @@ pub(crate) unsafe fn Task_ChangeSummaryMon(taskId: u8) {
             PrintMonInfo();
         }
         11 => {
-            PrintPageSpecificText((*sMonSummaryScreen).currPageIndex);
+            PrintPageSpecificText((*crate::gl!(sMonSummaryScreen)).currPageIndex);
             LimitEggSummaryPageDisplay();
         }
         12 => {
-            gSprites[(*sMonSummaryScreen).spriteIds[0]].data[2] = 0;
+            {
+                let gl_i3 = (*crate::gl!(sMonSummaryScreen)).spriteIds[0];
+                crate::gl!(gSprites[gl_i3].data[2] = 0)
+            };
         }
         _ => {
             if MenuHelpers_ShouldWaitForLinkRecv() == 0
@@ -1294,21 +1311,23 @@ pub(crate) unsafe fn Task_ChangeSummaryMon(taskId: u8) {
     *data += 1;
 }
 unsafe fn AdvanceMonIndex(delta: i8) -> i8 {
-    let mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
-    if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_INFO {
-        if delta == -1 && (*sMonSummaryScreen).curMonIndex == 0 {
+    let mon: *mut Pokemon = (*crate::gl!(sMonSummaryScreen)).monList.mons;
+    if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_INFO {
+        if delta == -1 && (*crate::gl!(sMonSummaryScreen)).curMonIndex == 0 {
             return -1;
-        } else if delta == 1 && (*sMonSummaryScreen).curMonIndex >= (*sMonSummaryScreen).maxMonIndex
+        } else if delta == 1
+            && (*crate::gl!(sMonSummaryScreen)).curMonIndex
+                >= (*crate::gl!(sMonSummaryScreen)).maxMonIndex
         {
             return -1;
         } else {
-            return (*sMonSummaryScreen).curMonIndex as i8 + delta;
+            return (*crate::gl!(sMonSummaryScreen)).curMonIndex as i8 + delta;
         }
     } else {
-        let mut index: i8 = (*sMonSummaryScreen).curMonIndex as i8;
+        let mut index: i8 = (*crate::gl!(sMonSummaryScreen)).curMonIndex as i8;
         loop {
             index += delta;
-            if index < 0 || index as i32 > (*sMonSummaryScreen).maxMonIndex as i32 {
+            if index < 0 || index as i32 > (*crate::gl!(sMonSummaryScreen)).maxMonIndex as i32 {
                 return -1;
             }
             if GetMonData2(mon.at(index), MON_DATA_IS_EGG) == 0 {
@@ -1323,11 +1342,11 @@ unsafe fn AdvanceMonIndex(delta: i8) -> i8 {
     }
 }
 unsafe fn AdvanceMultiBattleMonIndex(delta: i8) -> i8 {
-    let mons: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+    let mons: *mut Pokemon = (*crate::gl!(sMonSummaryScreen)).monList.mons;
     let mut index: i8 = 0;
     let mut arrId: i8 = 0;
     for i in 0..(PARTY_SIZE as u8) {
-        if sMultiBattleOrder[i] as i32 == (*sMonSummaryScreen).curMonIndex as i32 {
+        if sMultiBattleOrder[i] as i32 == (*crate::gl!(sMonSummaryScreen)).curMonIndex as i32 {
             arrId = i as i8;
             break;
         }
@@ -1351,7 +1370,9 @@ unsafe fn AdvanceMultiBattleMonIndex(delta: i8) -> i8 {
 unsafe fn IsValidToViewInMulti(mon: *mut Pokemon) -> u8 {
     if GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_NONE as u32 {
         return FALSE;
-    } else if (*sMonSummaryScreen).curMonIndex != 0 || GetMonData2(mon, MON_DATA_IS_EGG) == 0 {
+    } else if (*crate::gl!(sMonSummaryScreen)).curMonIndex != 0
+        || GetMonData2(mon, MON_DATA_IS_EGG) == 0
+    {
         return TRUE;
     } else {
         return FALSE;
@@ -1362,33 +1383,37 @@ unsafe fn IsValidToViewInMulti(mon: *mut Pokemon) -> u8 {
     }
 }
 unsafe fn ChangePage(taskId: u8, delta: i8) {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if (*summary).isEgg != 0 {
         return;
-    } else if delta == -1 && (*sMonSummaryScreen).currPageIndex == (*sMonSummaryScreen).minPageIndex
+    } else if delta == -1
+        && (*crate::gl!(sMonSummaryScreen)).currPageIndex
+            == (*crate::gl!(sMonSummaryScreen)).minPageIndex
     {
         return;
-    } else if delta == 1 && (*sMonSummaryScreen).currPageIndex == (*sMonSummaryScreen).maxPageIndex
+    } else if delta == 1
+        && (*crate::gl!(sMonSummaryScreen)).currPageIndex
+            == (*crate::gl!(sMonSummaryScreen)).maxPageIndex
     {
         return;
     }
     PlaySE(SE_SELECT);
-    ClearPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
-    (*sMonSummaryScreen).currPageIndex += delta as u8;
+    ClearPageWindowTilemaps((*crate::gl!(sMonSummaryScreen)).currPageIndex);
+    (*crate::gl!(sMonSummaryScreen)).currPageIndex += delta as u8;
     *data = 0;
     if delta == 1 {
         SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollRight), task_func(taskId));
     } else {
         SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollLeft), task_func(taskId));
     }
-    CreateTextPrinterTask((*sMonSummaryScreen).currPageIndex);
+    CreateTextPrinterTask((*crate::gl!(sMonSummaryScreen)).currPageIndex);
     HidePageSpecificSprites();
 }
 pub(crate) unsafe fn PssScrollRight(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
-        if (*sMonSummaryScreen).bgDisplayOrder == 0 {
+        if (*crate::gl!(sMonSummaryScreen)).bgDisplayOrder == 0 {
             *data.at(1) = 1;
             SetBgAttribute(1, BG_ATTR_PRIORITY, 1);
             SetBgAttribute(2, BG_ATTR_PRIORITY, 2);
@@ -1402,7 +1427,8 @@ pub(crate) unsafe fn PssScrollRight(taskId: u8) {
         ChangeBgX(*data.at(1) as u8, 0, BG_COORD_SET);
         SetBgTilemapBuffer(
             *data.at(1) as u8,
-            (*sMonSummaryScreen).bgTilemapBuffers[(*sMonSummaryScreen).currPageIndex][0]
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers
+                [(*crate::gl!(sMonSummaryScreen)).currPageIndex][0]
                 .as_mut_ptr() as *mut c_void,
         );
         ShowBg(1);
@@ -1416,11 +1442,11 @@ pub(crate) unsafe fn PssScrollRight(taskId: u8) {
 }
 pub(crate) unsafe fn PssScrollRightEnd(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    (*sMonSummaryScreen).bgDisplayOrder ^= 1;
+    (*crate::gl!(sMonSummaryScreen)).bgDisplayOrder ^= 1;
     *data.at(1) = 0;
     *data = 0;
     DrawPagination();
-    PutPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
+    PutPageWindowTilemaps((*crate::gl!(sMonSummaryScreen)).currPageIndex);
     SetTypeIcons();
     TryDrawExperienceProgressBar();
     SwitchTaskToFollowupFunc(taskId);
@@ -1428,7 +1454,7 @@ pub(crate) unsafe fn PssScrollRightEnd(taskId: u8) {
 pub(crate) unsafe fn PssScrollLeft(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
-        if (*sMonSummaryScreen).bgDisplayOrder == 0 {
+        if (*crate::gl!(sMonSummaryScreen)).bgDisplayOrder == 0 {
             *data.at(1) = 2;
         } else {
             *data.at(1) = 1;
@@ -1443,7 +1469,7 @@ pub(crate) unsafe fn PssScrollLeft(taskId: u8) {
 }
 pub(crate) unsafe fn PssScrollLeftEnd(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if (*sMonSummaryScreen).bgDisplayOrder == 0 {
+    if (*crate::gl!(sMonSummaryScreen)).bgDisplayOrder == 0 {
         SetBgAttribute(1, BG_ATTR_PRIORITY, 1);
         SetBgAttribute(2, BG_ATTR_PRIORITY, 2);
         ScheduleBgCopyTilemapToVram(2);
@@ -1452,50 +1478,52 @@ pub(crate) unsafe fn PssScrollLeftEnd(taskId: u8) {
         SetBgAttribute(1, BG_ATTR_PRIORITY, 2);
         ScheduleBgCopyTilemapToVram(1);
     }
-    if (*sMonSummaryScreen).currPageIndex > 1 {
+    if (*crate::gl!(sMonSummaryScreen)).currPageIndex > 1 {
         SetBgTilemapBuffer(
             *data.at(1) as u8,
-            (*sMonSummaryScreen).bgTilemapBuffers[(*sMonSummaryScreen).currPageIndex as i32 - 1][0]
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers
+                [(*crate::gl!(sMonSummaryScreen)).currPageIndex as i32 - 1][0]
                 .as_mut_ptr() as *mut c_void,
         );
         ChangeBgX(*data.at(1) as u8, 0x10000, BG_COORD_SET);
     }
     ShowBg(1);
     ShowBg(2);
-    (*sMonSummaryScreen).bgDisplayOrder ^= 1;
+    (*crate::gl!(sMonSummaryScreen)).bgDisplayOrder ^= 1;
     *data.at(1) = 0;
     *data = 0;
     DrawPagination();
-    PutPageWindowTilemaps((*sMonSummaryScreen).currPageIndex);
+    PutPageWindowTilemaps((*crate::gl!(sMonSummaryScreen)).currPageIndex);
     SetTypeIcons();
     TryDrawExperienceProgressBar();
     SwitchTaskToFollowupFunc(taskId);
 }
 unsafe fn TryDrawExperienceProgressBar() {
-    if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_SKILLS {
-        DrawExperienceProgressBar(&raw mut (*sMonSummaryScreen).currentMon);
+    if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_SKILLS {
+        DrawExperienceProgressBar(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
     }
 }
 unsafe fn SwitchToMoveSelection(taskId: u8) {
-    (*sMonSummaryScreen).firstMoveIndex = 0;
-    let r#move: u16 = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+    (*crate::gl!(sMonSummaryScreen)).firstMoveIndex = 0;
+    let r#move: u16 = (*crate::gl!(sMonSummaryScreen)).summary.moves
+        [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex];
     ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
-    if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+    if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible() == 0 {
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
     }
     PositionPowerAccSlidingWindow(9, -3);
     PositionAppealJamSlidingWindow(9, -3, r#move);
-    if (*sMonSummaryScreen).lockMovesFlag == 0 {
+    if (*crate::gl!(sMonSummaryScreen)).lockMovesFlag == 0 {
         ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
         PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_SWITCH);
     }
     TilemapFiveMovesDisplay(
-        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr(),
         3,
         0,
     );
     TilemapFiveMovesDisplay(
-        (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][0].as_mut_ptr(),
         1,
         0,
     );
@@ -1511,16 +1539,24 @@ unsafe fn SwitchToMoveSelection(taskId: u8) {
 pub(crate) unsafe fn Task_HandleInput_MoveSelect(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             *data = 4;
-            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            ChangeSelectedMove(
+                data,
+                -1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            );
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
             *data = 4;
-            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
-        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-            if (*sMonSummaryScreen).lockMovesFlag == TRUE
-                || (*sMonSummaryScreen).newMove == MOVE_NONE
-                    && (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8
+            ChangeSelectedMove(
+                data,
+                1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            );
+        } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            if (*crate::gl!(sMonSummaryScreen)).lockMovesFlag == TRUE
+                || (*crate::gl!(sMonSummaryScreen)).newMove == MOVE_NONE
+                    && (*crate::gl!(sMonSummaryScreen)).firstMoveIndex == MAX_MON_MOVES as u8
             {
                 PlaySE(SE_SELECT);
                 CloseMoveSelectMode(taskId);
@@ -1530,7 +1566,7 @@ pub(crate) unsafe fn Task_HandleInput_MoveSelect(taskId: u8) {
             } else {
                 PlaySE(SE_FAILURE);
             }
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_SELECT);
             CloseMoveSelectMode(taskId);
         }
@@ -1538,7 +1574,7 @@ pub(crate) unsafe fn Task_HandleInput_MoveSelect(taskId: u8) {
 }
 unsafe fn HasMoreThanOneMove() -> u8 {
     for i in 1..(MAX_MON_MOVES as u8) {
-        if (*sMonSummaryScreen).summary.moves[i] != 0 {
+        if (*crate::gl!(sMonSummaryScreen)).summary.moves[i] != 0 {
             return TRUE;
         }
     }
@@ -1556,10 +1592,10 @@ unsafe fn ChangeSelectedMove(taskData: *mut i16, direction: i8, moveIndexPtr: *m
             newMoveIndex = *taskData as i8;
         }
         if newMoveIndex == MAX_MON_MOVES as i8 {
-            r#move = (*sMonSummaryScreen).newMove;
+            r#move = (*crate::gl!(sMonSummaryScreen)).newMove;
             break;
         }
-        r#move = (*sMonSummaryScreen).summary.moves[newMoveIndex];
+        r#move = (*crate::gl!(sMonSummaryScreen)).summary.moves[newMoveIndex];
         if r#move != 0 {
             break;
         }
@@ -1568,11 +1604,11 @@ unsafe fn ChangeSelectedMove(taskData: *mut i16, direction: i8, moveIndexPtr: *m
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
     PrintMoveDetails(r#move);
-    if *moveIndexPtr == MAX_MON_MOVES as u8 && (*sMonSummaryScreen).newMove == MOVE_NONE
+    if *moveIndexPtr == MAX_MON_MOVES as u8 && (*crate::gl!(sMonSummaryScreen)).newMove == MOVE_NONE
         || *taskData.at(1) == 1
     {
         ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
-        if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+        if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible() == 0 {
             ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
         }
         ScheduleBgCopyTilemapToVram(0);
@@ -1581,7 +1617,7 @@ unsafe fn ChangeSelectedMove(taskData: *mut i16, direction: i8, moveIndexPtr: *m
     }
     if *moveIndexPtr != MAX_MON_MOVES as u8
         && newMoveIndex == MAX_MON_MOVES as i8
-        && (*sMonSummaryScreen).newMove == MOVE_NONE
+        && (*crate::gl!(sMonSummaryScreen)).newMove == MOVE_NONE
     {
         ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
         ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
@@ -1590,7 +1626,7 @@ unsafe fn ChangeSelectedMove(taskData: *mut i16, direction: i8, moveIndexPtr: *m
         PositionAppealJamSlidingWindow(0, 3, 0);
     }
     *moveIndexPtr = newMoveIndex as u8;
-    if moveIndexPtr == &raw mut (*sMonSummaryScreen).firstMoveIndex {
+    if moveIndexPtr == &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex {
         KeepMoveSelectorVisible(SPRITE_ARR_ID_MOVE_SELECTOR1);
     } else {
         KeepMoveSelectorVisible(SPRITE_ARR_ID_MOVE_SELECTOR2);
@@ -1602,17 +1638,17 @@ unsafe fn CloseMoveSelectMode(taskId: u8) {
     PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
     PrintMoveDetails(0);
     TilemapFiveMovesDisplay(
-        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr(),
         3,
         TRUE,
     );
     TilemapFiveMovesDisplay(
-        (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][0].as_mut_ptr(),
         1,
         1,
     );
     AddAndFillMoveNamesWindow();
-    if (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8 {
+    if (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8 {
         ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
         ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
         PositionPowerAccSlidingWindow(0, 3);
@@ -1624,7 +1660,8 @@ unsafe fn CloseMoveSelectMode(taskId: u8) {
     task_set_func(taskId, Some(Task_HandleInput));
 }
 unsafe fn SwitchToMovePositionSwitchMode(taskId: u8) {
-    (*sMonSummaryScreen).secondMoveIndex = (*sMonSummaryScreen).firstMoveIndex;
+    (*crate::gl!(sMonSummaryScreen)).secondMoveIndex =
+        (*crate::gl!(sMonSummaryScreen)).firstMoveIndex;
     SetMainMoveSelectorColor(1);
     CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR2);
     task_set_func(taskId, Some(Task_HandleInput_MovePositionSwitch));
@@ -1632,19 +1669,29 @@ unsafe fn SwitchToMovePositionSwitchMode(taskId: u8) {
 pub(crate) unsafe fn Task_HandleInput_MovePositionSwitch(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             *data = 3;
-            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).secondMoveIndex);
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            ChangeSelectedMove(
+                data,
+                -1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).secondMoveIndex,
+            );
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
             *data = 3;
-            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).secondMoveIndex);
-        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-            if (*sMonSummaryScreen).firstMoveIndex == (*sMonSummaryScreen).secondMoveIndex {
+            ChangeSelectedMove(
+                data,
+                1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).secondMoveIndex,
+            );
+        } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            if (*crate::gl!(sMonSummaryScreen)).firstMoveIndex
+                == (*crate::gl!(sMonSummaryScreen)).secondMoveIndex
+            {
                 ExitMovePositionSwitchMode(taskId, FALSE);
             } else {
                 ExitMovePositionSwitchMode(taskId, TRUE);
             }
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             ExitMovePositionSwitchMode(taskId, FALSE);
         }
     }
@@ -1654,33 +1701,35 @@ unsafe fn ExitMovePositionSwitchMode(taskId: u8, swapMoves: u8) {
     SetMainMoveSelectorColor(0);
     DestroyMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR2);
     if swapMoves == TRUE {
-        if (*sMonSummaryScreen).isBoxMon == 0 {
-            let mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+        if (*crate::gl!(sMonSummaryScreen)).isBoxMon == 0 {
+            let mon: *mut Pokemon = (*crate::gl!(sMonSummaryScreen)).monList.mons;
             SwapMonMoves(
-                mon.at((*sMonSummaryScreen).curMonIndex),
-                (*sMonSummaryScreen).firstMoveIndex,
-                (*sMonSummaryScreen).secondMoveIndex,
+                mon.at((*crate::gl!(sMonSummaryScreen)).curMonIndex),
+                (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+                (*crate::gl!(sMonSummaryScreen)).secondMoveIndex,
             );
         } else {
-            let boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
+            let boxMon: *mut BoxPokemon = (*crate::gl!(sMonSummaryScreen)).monList.boxMons;
             SwapBoxMonMoves(
-                boxMon.at((*sMonSummaryScreen).curMonIndex),
-                (*sMonSummaryScreen).firstMoveIndex,
-                (*sMonSummaryScreen).secondMoveIndex,
+                boxMon.at((*crate::gl!(sMonSummaryScreen)).curMonIndex),
+                (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+                (*crate::gl!(sMonSummaryScreen)).secondMoveIndex,
             );
         }
-        CopyMonToSummaryStruct(&raw mut (*sMonSummaryScreen).currentMon);
+        CopyMonToSummaryStruct(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
         SwapMovesNamesPP(
-            (*sMonSummaryScreen).firstMoveIndex,
-            (*sMonSummaryScreen).secondMoveIndex,
+            (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            (*crate::gl!(sMonSummaryScreen)).secondMoveIndex,
         );
         SwapMovesTypeSprites(
-            (*sMonSummaryScreen).firstMoveIndex,
-            (*sMonSummaryScreen).secondMoveIndex,
+            (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            (*crate::gl!(sMonSummaryScreen)).secondMoveIndex,
         );
-        (*sMonSummaryScreen).firstMoveIndex = (*sMonSummaryScreen).secondMoveIndex;
+        (*crate::gl!(sMonSummaryScreen)).firstMoveIndex =
+            (*crate::gl!(sMonSummaryScreen)).secondMoveIndex;
     }
-    let r#move: u16 = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+    let r#move: u16 = (*crate::gl!(sMonSummaryScreen)).summary.moves
+        [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex];
     PrintMoveDetails(r#move);
     DrawContestMoveHearts(r#move);
     ScheduleBgCopyTilemapToVram(1);
@@ -1688,7 +1737,7 @@ unsafe fn ExitMovePositionSwitchMode(taskId: u8, swapMoves: u8) {
     task_set_func(taskId, Some(Task_HandleInput_MoveSelect));
 }
 unsafe fn SwapMonMoves(mon: *mut Pokemon, moveIndex1: u8, moveIndex2: u8) {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let mut move1: u16 = (*summary).moves[moveIndex1];
     let mut move2: u16 = (*summary).moves[moveIndex2];
     let mut move1pp: u8 = (*summary).pp[moveIndex1];
@@ -1734,7 +1783,7 @@ unsafe fn SwapMonMoves(mon: *mut Pokemon, moveIndex1: u8, moveIndex2: u8) {
     (*summary).ppBonuses = ppBonuses;
 }
 unsafe fn SwapBoxMonMoves(mon: *mut BoxPokemon, moveIndex1: u8, moveIndex2: u8) {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let mut move1: u16 = (*summary).moves[moveIndex1];
     let mut move2: u16 = (*summary).moves[moveIndex2];
     let mut move1pp: u8 = (*summary).pp[moveIndex1];
@@ -1786,29 +1835,43 @@ pub(crate) unsafe fn Task_SetHandleReplaceMoveInput(taskId: u8) {
 }
 pub(crate) unsafe fn Task_HandleReplaceMoveInput(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() != TRUE as u16 {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE
+        && (*gPaletteFade.as_ptr()).active() != TRUE as u16
+    {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             *data = 4;
-            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            ChangeSelectedMove(
+                data,
+                -1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            );
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
             *data = 4;
-            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
-        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+            ChangeSelectedMove(
+                data,
+                1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            );
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+            || GetLRKeysPressed() == MENU_L_PRESSED
+        {
             ChangePage(taskId, -1);
-        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+            || GetLRKeysPressed() == MENU_R_PRESSED
+        {
             ChangePage(taskId, 1);
-        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             if CanReplaceMove() == TRUE {
                 StopPokemonAnimations();
                 PlaySE(SE_SELECT);
-                sMoveSlotToReplace.set((*sMonSummaryScreen).firstMoveIndex);
+                sMoveSlotToReplace.set((*crate::gl!(sMonSummaryScreen)).firstMoveIndex);
                 gSpecialVar_0x8005 = sMoveSlotToReplace.get() as u16;
                 BeginCloseSummaryScreen(taskId);
             } else {
                 PlaySE(SE_FAILURE);
                 ShowCantForgetHMsWindow(taskId);
             }
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             StopPokemonAnimations();
             PlaySE(SE_SELECT);
             sMoveSlotToReplace.set(MAX_MON_MOVES as u8);
@@ -1818,9 +1881,12 @@ pub(crate) unsafe fn Task_HandleReplaceMoveInput(taskId: u8) {
     }
 }
 unsafe fn CanReplaceMove() -> u8 {
-    if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8
-        || (*sMonSummaryScreen).newMove == MOVE_NONE
-        || IsMoveHm((*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex]) != TRUE
+    if (*crate::gl!(sMonSummaryScreen)).firstMoveIndex == MAX_MON_MOVES as u8
+        || (*crate::gl!(sMonSummaryScreen)).newMove == MOVE_NONE
+        || IsMoveHm(
+            (*crate::gl!(sMonSummaryScreen)).summary.moves
+                [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex],
+        ) != TRUE
     {
         return TRUE;
     } else {
@@ -1844,48 +1910,68 @@ pub(crate) unsafe fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     let mut r#move: u16 = 0;
     if FuncIsActiveTask(Some(Task_SlidePowerAccWindow)) != 1 {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             *data.at(1) = 1;
             *data = 4;
-            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+            ChangeSelectedMove(
+                data,
+                -1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            );
             *data.at(1) = 0;
             task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
             *data.at(1) = 1;
             *data = 4;
-            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+            ChangeSelectedMove(
+                data,
+                1,
+                &raw mut (*crate::gl!(sMonSummaryScreen)).firstMoveIndex,
+            );
             *data.at(1) = 0;
             task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
-        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
-            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+            || GetLRKeysPressed() == MENU_L_PRESSED
+        {
+            if (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_BATTLE_MOVES {
                 ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
-                if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible()
+                    == 0
+                {
                     ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
                 }
-                r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+                r#move = (*crate::gl!(sMonSummaryScreen)).summary.moves
+                    [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex];
                 task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
                 ChangePage(taskId, -1);
                 PositionPowerAccSlidingWindow(9, -2);
                 PositionAppealJamSlidingWindow(9, -2, r#move);
             }
-        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
-            if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+            || GetLRKeysPressed() == MENU_R_PRESSED
+        {
+            if (*crate::gl!(sMonSummaryScreen)).currPageIndex != PSS_PAGE_CONTEST_MOVES {
                 ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
-                if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+                if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible()
+                    == 0
+                {
                     ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
                 }
-                r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+                r#move = (*crate::gl!(sMonSummaryScreen)).summary.moves
+                    [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex];
                 task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
                 ChangePage(taskId, 1);
                 PositionPowerAccSlidingWindow(9, -2);
                 PositionAppealJamSlidingWindow(9, -2, r#move);
             }
-        } else if gMain.newKeys as i32 & 3 != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
             ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
-            if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+            if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible() == 0
+            {
                 ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
             }
-            r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+            r#move = (*crate::gl!(sMonSummaryScreen)).summary.moves
+                [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex];
             PrintMoveDetails(r#move);
             ScheduleBgCopyTilemapToVram(0);
             PositionPowerAccSlidingWindow(9, -3);
@@ -1901,23 +1987,23 @@ unsafe fn DrawPagination() {
     let tilemap: *mut u16 = Alloc(32) as *mut u16;
     for i in 0..PSS_PAGE_COUNT {
         let j: u8 = i * 2;
-        if i < (*sMonSummaryScreen).minPageIndex {
+        if i < (*crate::gl!(sMonSummaryScreen)).minPageIndex {
             *tilemap.at(j as i32) = 0x40;
             *tilemap.at(j as i32 + 1) = 0x40;
             *tilemap.at(j as i32 + 8) = 0x50;
             *tilemap.at(j as i32 + 8 + 1) = 0x50;
-        } else if i > (*sMonSummaryScreen).maxPageIndex {
+        } else if i > (*crate::gl!(sMonSummaryScreen)).maxPageIndex {
             *tilemap.at(j as i32) = 0x4A;
             *tilemap.at(j as i32 + 1) = 0x4A;
             *tilemap.at(j as i32 + 8) = 0x5A;
             *tilemap.at(j as i32 + 8 + 1) = 0x5A;
-        } else if i < (*sMonSummaryScreen).currPageIndex {
+        } else if i < (*crate::gl!(sMonSummaryScreen)).currPageIndex {
             *tilemap.at(j as i32) = 0x46;
             *tilemap.at(j as i32 + 1) = 0x47;
             *tilemap.at(j as i32 + 8) = 0x56;
             *tilemap.at(j as i32 + 8 + 1) = 0x57;
-        } else if i == (*sMonSummaryScreen).currPageIndex {
-            if i != (*sMonSummaryScreen).maxPageIndex {
+        } else if i == (*crate::gl!(sMonSummaryScreen)).currPageIndex {
+            if i != (*crate::gl!(sMonSummaryScreen)).maxPageIndex {
                 *tilemap.at(j as i32) = 0x41;
                 *tilemap.at(j as i32 + 1) = 0x42;
                 *tilemap.at(j as i32 + 8) = 0x51;
@@ -1928,7 +2014,7 @@ unsafe fn DrawPagination() {
                 *tilemap.at(j as i32 + 8) = 0x5B;
                 *tilemap.at(j as i32 + 8 + 1) = 0x5C;
             }
-        } else if i != (*sMonSummaryScreen).maxPageIndex {
+        } else if i != (*crate::gl!(sMonSummaryScreen)).maxPageIndex {
             *tilemap.at(j as i32) = 0x43;
             *tilemap.at(j as i32 + 1) = 0x44;
             *tilemap.at(j as i32 + 8) = 0x53;
@@ -2019,7 +2105,7 @@ unsafe fn PositionPowerAccSlidingWindow(visibleColumns: u16, mut speed: i16) {
     if speed == 0 || speed == sPowerAccSlidingWindow.width as i16 {
         CopyNColumnsToTilemap(
             (&raw const *sPowerAccSlidingWindow).cast_mut(),
-            (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr(),
             speed as u8,
             TRUE,
         );
@@ -2042,17 +2128,18 @@ pub(crate) unsafe fn Task_SlidePowerAccWindow(taskId: u8) {
     }
     CopyNColumnsToTilemap(
         (&raw const *sPowerAccSlidingWindow).cast_mut(),
-        (*sMonSummaryScreen).bgTilemapBuffers[2][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[2][0].as_mut_ptr(),
         *data.at(1) as u8,
         TRUE,
     );
     if *data.at(1) <= 0 || *data.at(1) >= sPowerAccSlidingWindow.width as i16 {
         if *data < 0 {
-            if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+            if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_BATTLE_MOVES {
                 PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
             }
         } else {
-            if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+            if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible() == 0
+            {
                 PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
             }
             PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
@@ -2070,7 +2157,7 @@ unsafe fn PositionAppealJamSlidingWindow(visibleColumns: u16, mut speed: i16, r#
     if speed == 0 || speed == sAppealJamSlidingWindow.width as i16 {
         CopyNColumnsToTilemap(
             (&raw const *sAppealJamSlidingWindow).cast_mut(),
-            (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][0].as_mut_ptr(),
             speed as u8,
             TRUE,
         );
@@ -2094,20 +2181,21 @@ pub(crate) unsafe fn Task_SlideAppealJamWindow(taskId: u8) {
     }
     CopyNColumnsToTilemap(
         (&raw const *sAppealJamSlidingWindow).cast_mut(),
-        (*sMonSummaryScreen).bgTilemapBuffers[3][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][0].as_mut_ptr(),
         *data.at(1) as u8,
         TRUE,
     );
     if *data.at(1) <= 0 || *data.at(1) >= sAppealJamSlidingWindow.width as i16 {
         if *data < 0 {
-            if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_CONTEST_MOVES
+            if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_CONTEST_MOVES
                 && FuncIsActiveTask(Some(PssScrollRight)) == 0
             {
                 PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
             }
             DrawContestMoveHearts(*data.at(2) as u16);
         } else {
-            if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
+            if (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[2]].invisible() == 0
+            {
                 PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
             }
             PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
@@ -2125,13 +2213,13 @@ unsafe fn PositionStatusSlidingWindow(visibleColumns: u16, mut speed: i16) {
     if speed == 0 || speed == sStatusSlidingWindow1.width as i16 {
         CopyNColumnsToTilemap(
             (&raw const *sStatusSlidingWindow1).cast_mut(),
-            (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0].as_mut_ptr(),
             speed as u8,
             0,
         );
         CopyNColumnsToTilemap(
             (&raw const *sStatusSlidingWindow2).cast_mut(),
-            (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+            (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0].as_mut_ptr(),
             speed as u8,
             0,
         );
@@ -2151,13 +2239,13 @@ pub(crate) unsafe fn Task_SlideStatusWindow(taskId: u8) {
     }
     CopyNColumnsToTilemap(
         (&raw const *sStatusSlidingWindow1).cast_mut(),
-        (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0].as_mut_ptr(),
         *data.at(1) as u8,
         0,
     );
     CopyNColumnsToTilemap(
         (&raw const *sStatusSlidingWindow2).cast_mut(),
-        (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0].as_mut_ptr(),
         *data.at(1) as u8,
         0,
     );
@@ -2208,11 +2296,11 @@ unsafe fn TilemapFiveMovesDisplay(dst: *mut u16, mut palette: u16, remove: u8) {
 }
 unsafe fn DrawPokerusCuredSymbol(mon: *mut Pokemon) {
     if CheckPartyPokerus(mon, 0) == 0 && CheckPartyHasHadPokerus(mon, 0) != 0 {
-        (*sMonSummaryScreen).bgTilemapBuffers[0][0][547] = 0x2C;
-        (*sMonSummaryScreen).bgTilemapBuffers[0][1][547] = 0x2C;
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0][547] = 0x2C;
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][1][547] = 0x2C;
     } else {
-        (*sMonSummaryScreen).bgTilemapBuffers[0][0][547] = 0x81A;
-        (*sMonSummaryScreen).bgTilemapBuffers[0][1][547] = 0x81A;
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][0][547] = 0x81A;
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[0][1][547] = 0x81A;
     }
     ScheduleBgCopyTilemapToVram(3);
 }
@@ -2226,7 +2314,7 @@ unsafe fn SetMonPicBackgroundPalette(isMonShiny: u8) {
 }
 unsafe fn DrawExperienceProgressBar(unused: *mut Pokemon) {
     let mut numExpProgressBarTicks: i64 = 0;
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     if (*summary).level < MAX_LEVEL as u8 {
         let expBetweenLevels: u32 = (*(&raw const crate::data::pokemon::gExperienceTables)
             .cast::<CArray<CArray<u32, 101>, 0>>())
@@ -2251,7 +2339,7 @@ unsafe fn DrawExperienceProgressBar(unused: *mut Pokemon) {
     } else {
         numExpProgressBarTicks = 0;
     }
-    let dst: *mut u16 = &raw mut (*sMonSummaryScreen).bgTilemapBuffers[1][1][597];
+    let dst: *mut u16 = &raw mut (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[1][1][597];
     for i in 0..8u8 {
         if numExpProgressBarTicks > 7 {
             *dst.at(i) = 0x206A;
@@ -2265,7 +2353,7 @@ unsafe fn DrawExperienceProgressBar(unused: *mut Pokemon) {
     }
     if core::ptr::addr_eq(
         GetBgTilemapBuffer(1),
-        (*sMonSummaryScreen).bgTilemapBuffers[1][0].as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[1][0].as_mut_ptr(),
     ) {
         ScheduleBgCopyTilemapToVram(1);
     } else {
@@ -2273,7 +2361,7 @@ unsafe fn DrawExperienceProgressBar(unused: *mut Pokemon) {
     }
 }
 unsafe fn DrawContestMoveHearts(r#move: u16) {
-    let tilemap: *mut u16 = (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr();
+    let tilemap: *mut u16 = (*crate::gl!(sMonSummaryScreen)).bgTilemapBuffers[3][1].as_mut_ptr();
     let mut i: u8 = 0;
     if r#move != MOVE_NONE {
         let mut effectValue: u8 = (*(&raw const crate::data::contest_effect::gContestEffects)
@@ -2313,7 +2401,7 @@ unsafe fn DrawContestMoveHearts(r#move: u16) {
     }
 }
 unsafe fn LimitEggSummaryPageDisplay() {
-    if (*sMonSummaryScreen).summary.isEgg != 0 {
+    if (*crate::gl!(sMonSummaryScreen)).summary.isEgg != 0 {
         ChangeBgX(3, 0x10000, BG_COORD_SET);
     } else {
         ChangeBgX(3, 0, BG_COORD_SET);
@@ -2326,7 +2414,7 @@ unsafe fn ResetWindows() {
         FillWindowPixelBuffer(i, 0);
     }
     for i in 0..8u8 {
-        (*sMonSummaryScreen).windowIds[i] = WINDOW_NONE;
+        (*crate::gl!(sMonSummaryScreen)).windowIds[i] = WINDOW_NONE;
     }
 }
 unsafe fn PrintTextOnWindow(
@@ -2353,7 +2441,7 @@ pub(crate) unsafe fn PrintMonInfo() {
     FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER, 0);
     FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME, 0);
     FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_SPECIES, 0);
-    if (*sMonSummaryScreen).summary.isEgg == 0 {
+    if (*crate::gl!(sMonSummaryScreen)).summary.isEgg == 0 {
         PrintNotEggInfo();
     } else {
         PrintEggInfo();
@@ -2362,8 +2450,8 @@ pub(crate) unsafe fn PrintMonInfo() {
 }
 unsafe fn PrintNotEggInfo() {
     let mut strArray: CArray<u8, 16> = zeroed();
-    let mon: *mut Pokemon = &raw mut (*sMonSummaryScreen).currentMon;
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let mon: *mut Pokemon = &raw mut (*crate::gl!(sMonSummaryScreen)).currentMon;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let dexNum: u16 = SpeciesToPokedexNum((*summary).species);
     if dexNum != 0xFFFF {
         StringCopy(
@@ -2373,12 +2461,15 @@ unsafe fn PrintNotEggInfo() {
                 .cast_mut(),
         );
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             dexNum as i32,
             STR_CONV_MODE_LEADING_ZEROS,
             3,
         );
-        StringAppend(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr());
+        StringAppend(
+            gStringVar1.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
+        );
         if IsMonShiny(mon) == 0 {
             PrintTextOnWindow(
                 PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER,
@@ -2416,12 +2507,15 @@ unsafe fn PrintNotEggInfo() {
             .cast_mut(),
     );
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*summary).level as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         3,
     );
-    StringAppend(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr());
+    StringAppend(
+        gStringVar1.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
         gStringVar1.as_mut_ptr(),
@@ -2460,7 +2554,7 @@ unsafe fn PrintNotEggInfo() {
 }
 unsafe fn PrintEggInfo() {
     GetMonNickname(
-        &raw mut (*sMonSummaryScreen).currentMon,
+        &raw mut (*crate::gl!(sMonSummaryScreen)).currentMon,
         gStringVar1.as_mut_ptr(),
     );
     PrintTextOnWindow(
@@ -2507,7 +2601,7 @@ unsafe fn PrintGenderSymbol(mon: *mut Pokemon, species: u16) {
         }
     }
 }
-unsafe fn PrintAOrBButtonIcon(windowId: u8, bButton: u8, x: u32) {
+fn PrintAOrBButtonIcon(windowId: u8, bButton: u8, x: u32) {
     let mut button: *mut u8 = null_mut();
     if bButton == 0 {
         button = sButtons_Gfx[0].as_ptr().cast_mut();
@@ -2838,9 +2932,9 @@ unsafe fn PutPageWindowTilemaps(page: u8) {
         }
         PSS_PAGE_BATTLE_MOVES => {
             PutWindowTilemap(PSS_LABEL_WINDOW_BATTLE_MOVES_TITLE);
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE
+                    || (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8
                 {
                     PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
                 }
@@ -2850,9 +2944,9 @@ unsafe fn PutPageWindowTilemaps(page: u8) {
         }
         PSS_PAGE_CONTEST_MOVES => {
             PutWindowTilemap(PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE);
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE
+                    || (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8
                 {
                     PutWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
                 }
@@ -2863,7 +2957,7 @@ unsafe fn PutPageWindowTilemaps(page: u8) {
         _ => {}
     }
     for i in 0..8u8 {
-        PutWindowTilemap((*sMonSummaryScreen).windowIds[i]);
+        PutWindowTilemap((*crate::gl!(sMonSummaryScreen)).windowIds[i]);
     }
     ScheduleBgCopyTilemapToVram(0);
 }
@@ -2882,9 +2976,9 @@ unsafe fn ClearPageWindowTilemaps(page: u8) {
             ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP);
         }
         PSS_PAGE_BATTLE_MOVES => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE
+                    || (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8
                 {
                     ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
                 }
@@ -2893,9 +2987,9 @@ unsafe fn ClearPageWindowTilemaps(page: u8) {
             }
         }
         PSS_PAGE_CONTEST_MOVES => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE
+                    || (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8
                 {
                     ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
                 }
@@ -2911,7 +3005,7 @@ unsafe fn ClearPageWindowTilemaps(page: u8) {
     ScheduleBgCopyTilemapToVram(0);
 }
 unsafe fn AddWindowFromTemplateList(template: *mut WindowTemplate, templateId: u8) -> u8 {
-    let windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[templateId];
+    let windowIdPtr: *mut u8 = &raw mut (*crate::gl!(sMonSummaryScreen)).windowIds[templateId];
     if *windowIdPtr == WINDOW_NONE {
         *windowIdPtr = AddWindow(template.at(templateId)) as u8;
         FillWindowPixelBuffer(*windowIdPtr, 0);
@@ -2919,7 +3013,7 @@ unsafe fn AddWindowFromTemplateList(template: *mut WindowTemplate, templateId: u
     *windowIdPtr
 }
 unsafe fn RemoveWindowByIndex(windowIndex: u8) {
-    let windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[windowIndex];
+    let windowIdPtr: *mut u8 = &raw mut (*crate::gl!(sMonSummaryScreen)).windowIds[windowIndex];
     if *windowIdPtr != WINDOW_NONE {
         ClearWindowTilemap(*windowIdPtr);
         RemoveWindow(*windowIdPtr);
@@ -2928,8 +3022,8 @@ unsafe fn RemoveWindowByIndex(windowIndex: u8) {
 }
 unsafe fn PrintPageSpecificText(pageIndex: u8) {
     for i in 0..8u16 {
-        if (*sMonSummaryScreen).windowIds[i] != WINDOW_NONE {
-            FillWindowPixelBuffer((*sMonSummaryScreen).windowIds[i], 0);
+        if (*crate::gl!(sMonSummaryScreen)).windowIds[i] != WINDOW_NONE {
+            FillWindowPixelBuffer((*crate::gl!(sMonSummaryScreen)).windowIds[i], 0);
         }
     }
     sTextPrinterFunctions[pageIndex].unwrap_unchecked()();
@@ -2938,7 +3032,7 @@ unsafe fn CreateTextPrinterTask(pageIndex: u8) {
     CreateTask(sTextPrinterTasks[pageIndex], 16);
 }
 pub(crate) unsafe fn PrintInfoPageText() {
-    if (*sMonSummaryScreen).summary.isEgg != 0 {
+    if (*crate::gl!(sMonSummaryScreen)).summary.isEgg != 0 {
         PrintEggOTName();
         PrintEggOTID();
         PrintEggState();
@@ -3006,10 +3100,10 @@ unsafe fn PrintMonOTName() {
                 .cast_mut(),
             0,
         );
-        if (*sMonSummaryScreen).summary.OTGender == 0 {
+        if (*crate::gl!(sMonSummaryScreen)).summary.OTGender == 0 {
             PrintTextOnWindow(
                 windowId as u8,
-                (*sMonSummaryScreen).summary.OTName.as_mut_ptr(),
+                (*crate::gl!(sMonSummaryScreen)).summary.OTName.as_mut_ptr(),
                 x as u8,
                 1,
                 0,
@@ -3018,7 +3112,7 @@ unsafe fn PrintMonOTName() {
         } else {
             PrintTextOnWindow(
                 windowId as u8,
-                (*sMonSummaryScreen).summary.OTName.as_mut_ptr(),
+                (*crate::gl!(sMonSummaryScreen)).summary.OTName.as_mut_ptr(),
                 x as u8,
                 1,
                 0,
@@ -3037,7 +3131,7 @@ unsafe fn PrintMonOTID() {
                     .as_ptr()
                     .cast_mut(),
             ),
-            (*sMonSummaryScreen).summary.OTID as u16 as i32,
+            (*crate::gl!(sMonSummaryScreen)).summary.OTID as u16 as i32,
             STR_CONV_MODE_LEADING_ZEROS,
             5,
         );
@@ -3054,8 +3148,8 @@ unsafe fn PrintMonOTID() {
 }
 unsafe fn PrintMonAbilityName() {
     let ability: u8 = GetAbilityBySpecies(
-        (*sMonSummaryScreen).summary.species,
-        (*sMonSummaryScreen).summary.abilityNum,
+        (*crate::gl!(sMonSummaryScreen)).summary.species,
+        (*crate::gl!(sMonSummaryScreen)).summary.abilityNum,
     );
     PrintTextOnWindow(
         AddWindowFromTemplateList(
@@ -3074,8 +3168,8 @@ unsafe fn PrintMonAbilityName() {
 }
 unsafe fn PrintMonAbilityDescription() {
     let ability: u8 = GetAbilityBySpecies(
-        (*sMonSummaryScreen).summary.species,
-        (*sMonSummaryScreen).summary.abilityNum,
+        (*crate::gl!(sMonSummaryScreen)).summary.species,
+        (*crate::gl!(sMonSummaryScreen)).summary.abilityNum,
     );
     PrintTextOnWindow(
         AddWindowFromTemplateList(
@@ -3091,7 +3185,7 @@ unsafe fn PrintMonAbilityDescription() {
     );
 }
 unsafe fn BufferMonTrainerMemo() {
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let mut text: *mut u8 = null_mut();
     DynamicPlaceholderTextUtil_Reset();
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, sMemoNatureTextColor.as_ptr().cast_mut());
@@ -3181,7 +3275,7 @@ unsafe fn PrintMonTrainerMemo() {
     );
 }
 unsafe fn BufferNatureString() {
-    let sumStruct: *mut PokemonSummaryScreenData = sMonSummaryScreen;
+    let sumStruct: *mut PokemonSummaryScreenData = crate::gl!(sMonSummaryScreen);
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(
         2,
         gNatureNamePointers[(*sumStruct).summary.nature],
@@ -3194,7 +3288,7 @@ unsafe fn BufferNatureString() {
     );
 }
 unsafe fn GetMetLevelString(output: *mut u8) {
-    let mut level: u8 = (*sMonSummaryScreen).summary.metLevel;
+    let mut level: u8 = (*crate::gl!(sMonSummaryScreen)).summary.metLevel;
     if level == 0 {
         level = EGG_HATCH_LEVEL;
     }
@@ -3202,23 +3296,23 @@ unsafe fn GetMetLevelString(output: *mut u8) {
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, output);
 }
 unsafe fn DoesMonOTMatchOwner() -> u8 {
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let mut trainerId: u32 = 0;
     let mut gender: u8 = 0;
-    if (*sMonSummaryScreen).monList.mons == gEnemyParty.as_mut_ptr() {
+    if (*crate::gl!(sMonSummaryScreen)).monList.mons == (*gEnemyParty.as_ptr()).as_mut_ptr() {
         let multiID: u8 = GetMultiplayerId() ^ 1;
-        trainerId = gLinkPlayers[multiID].trainerId & 0xFFFF;
-        gender = gLinkPlayers[multiID].gender;
+        trainerId = crate::gl!(gLinkPlayers[multiID].trainerId) & 0xFFFF;
+        gender = crate::gl!(gLinkPlayers[multiID].gender);
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gLinkPlayers[multiID].name.as_mut_ptr(),
+            (*gLinkPlayers.as_ptr())[multiID].name.as_mut_ptr(),
         );
     } else {
         trainerId = GetPlayerIDAsU32() & 0xFFFF;
-        gender = (*gSaveBlock2Ptr).playerGender;
+        gender = (*crate::gl!(gSaveBlock2Ptr)).playerGender;
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
     }
     if gender != (*sum).OTGender
@@ -3236,25 +3330,25 @@ unsafe fn DoesMonOTMatchOwner() -> u8 {
     }
 }
 unsafe fn DidMonComeFromGBAGames() -> u8 {
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     if (*sum).metGame > 0 && (*sum).metGame <= VERSION_LEAF_GREEN as u8 {
         return TRUE;
     }
     FALSE
 }
 pub unsafe fn DidMonComeFromRSE() -> u8 {
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     if (*sum).metGame > 0 && (*sum).metGame <= VERSION_EMERALD {
         return TRUE;
     }
     FALSE
 }
 unsafe fn IsInGamePartnerMon() -> u8 {
-    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
-        && gMain.inBattle() != 0
-        && ((*sMonSummaryScreen).curMonIndex == 1
-            || (*sMonSummaryScreen).curMonIndex == 4
-            || (*sMonSummaryScreen).curMonIndex == 5)
+    if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0
+        && (*gMain.as_ptr()).inBattle() != 0
+        && ((*crate::gl!(sMonSummaryScreen)).curMonIndex == 1
+            || (*crate::gl!(sMonSummaryScreen)).curMonIndex == 4
+            || (*crate::gl!(sMonSummaryScreen)).curMonIndex == 5)
     {
         return TRUE;
     }
@@ -3318,8 +3412,8 @@ unsafe fn PrintEggOTID() {
 }
 unsafe fn PrintEggState() {
     let mut text: *mut u8 = null_mut();
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    if (*sMonSummaryScreen).summary.sanity == TRUE {
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
+    if (*crate::gl!(sMonSummaryScreen)).summary.sanity == TRUE {
         text = (*(&raw const crate::data::strings::gText_EggWillTakeALongTime)
             .cast::<CArray<u8, 0>>())
         .as_ptr()
@@ -3357,8 +3451,8 @@ unsafe fn PrintEggState() {
 }
 unsafe fn PrintEggMemo() {
     let mut text: *mut u8 = null_mut();
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    if (*sMonSummaryScreen).summary.sanity != 1 {
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
+    if (*crate::gl!(sMonSummaryScreen)).summary.sanity != 1 {
         if (*sum).metLocation == METLOC_FATEFUL_ENCOUNTER {
             text = (*(&raw const crate::data::strings::gText_PeculiarEggNicePlace)
                 .cast::<CArray<u8, 0>>())
@@ -3447,19 +3541,22 @@ pub(crate) unsafe fn Task_PrintSkillsPage(taskId: u8) {
 }
 unsafe fn PrintHeldItemName() {
     let mut text: *mut u8 = null_mut();
-    if (*sMonSummaryScreen).summary.item == ITEM_ENIGMA_BERRY
+    if (*crate::gl!(sMonSummaryScreen)).summary.item == ITEM_ENIGMA_BERRY
         && IsMultiBattle() == TRUE
-        && ((*sMonSummaryScreen).curMonIndex == 1
-            || (*sMonSummaryScreen).curMonIndex == 4
-            || (*sMonSummaryScreen).curMonIndex == 5)
+        && ((*crate::gl!(sMonSummaryScreen)).curMonIndex == 1
+            || (*crate::gl!(sMonSummaryScreen)).curMonIndex == 4
+            || (*crate::gl!(sMonSummaryScreen)).curMonIndex == 5)
     {
         text = GetItemName(ITEM_ENIGMA_BERRY);
-    } else if (*sMonSummaryScreen).summary.item == ITEM_NONE {
+    } else if (*crate::gl!(sMonSummaryScreen)).summary.item == ITEM_NONE {
         text = (*(&raw const crate::data::strings::gText_None).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
     } else {
-        CopyItemName((*sMonSummaryScreen).summary.item, gStringVar1.as_mut_ptr());
+        CopyItemName(
+            (*crate::gl!(sMonSummaryScreen)).summary.item,
+            gStringVar1.as_mut_ptr(),
+        );
         text = gStringVar1.as_mut_ptr();
     }
     let x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 72) + 6;
@@ -3474,14 +3571,14 @@ unsafe fn PrintHeldItemName() {
 }
 unsafe fn PrintRibbonCount() {
     let mut text: *mut u8 = null_mut();
-    if (*sMonSummaryScreen).summary.ribbonCount == 0 {
+    if (*crate::gl!(sMonSummaryScreen)).summary.ribbonCount == 0 {
         text = (*(&raw const crate::data::strings::gText_None).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
     } else {
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
-            (*sMonSummaryScreen).summary.ribbonCount as i32,
+            (*crate::gl!(sMonSummaryScreen)).summary.ribbonCount as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             2,
         );
@@ -3510,25 +3607,25 @@ unsafe fn BufferLeftColumnStats() {
     let defenseString: *mut u8 = Alloc(8) as *mut u8;
     ConvertIntToDecimalStringN(
         currentHPString,
-        (*sMonSummaryScreen).summary.currentHP as i32,
+        (*crate::gl!(sMonSummaryScreen)).summary.currentHP as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         3,
     );
     ConvertIntToDecimalStringN(
         maxHPString,
-        (*sMonSummaryScreen).summary.maxHP as i32,
+        (*crate::gl!(sMonSummaryScreen)).summary.maxHP as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         3,
     );
     ConvertIntToDecimalStringN(
         attackString,
-        (*sMonSummaryScreen).summary.atk as i32,
+        (*crate::gl!(sMonSummaryScreen)).summary.atk as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         7,
     );
     ConvertIntToDecimalStringN(
         defenseString,
-        (*sMonSummaryScreen).summary.def as i32,
+        (*crate::gl!(sMonSummaryScreen)).summary.def as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         7,
     );
@@ -3562,26 +3659,26 @@ unsafe fn PrintLeftColumnStats() {
 unsafe fn BufferRightColumnStats() {
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
-        (*sMonSummaryScreen).summary.spatk as i32,
+        (*crate::gl!(sMonSummaryScreen)).summary.spatk as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         3,
     );
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
-        (*sMonSummaryScreen).summary.spdef as i32,
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).summary.spdef as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         3,
     );
     ConvertIntToDecimalStringN(
-        gStringVar3.as_mut_ptr(),
-        (*sMonSummaryScreen).summary.speed as i32,
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        (*crate::gl!(sMonSummaryScreen)).summary.speed as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         3,
     );
     DynamicPlaceholderTextUtil_Reset();
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar2.as_mut_ptr());
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, gStringVar3.as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, (*gStringVar2.as_ptr()).as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, (*gStringVar3.as_ptr()).as_mut_ptr());
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         sStatsRightColumnLayout.as_ptr().cast_mut(),
@@ -3601,7 +3698,7 @@ unsafe fn PrintRightColumnStats() {
     );
 }
 unsafe fn PrintExpPointsNextLevel() {
-    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let windowId: u8 =
         AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), PSS_DATA_WINDOW_EXP);
     let mut expToNextLevel: u32 = 0;
@@ -3638,15 +3735,16 @@ pub(crate) unsafe fn PrintBattleMoves() {
     PrintMoveNameAndPP(1);
     PrintMoveNameAndPP(2);
     PrintMoveNameAndPP(3);
-    if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+    if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
         PrintNewMoveDetailsOrCancelText();
-        if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8 {
-            if (*sMonSummaryScreen).newMove != MOVE_NONE {
-                PrintMoveDetails((*sMonSummaryScreen).newMove);
+        if (*crate::gl!(sMonSummaryScreen)).firstMoveIndex == MAX_MON_MOVES as u8 {
+            if (*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE {
+                PrintMoveDetails((*crate::gl!(sMonSummaryScreen)).newMove);
             }
         } else {
             PrintMoveDetails(
-                (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex],
+                (*crate::gl!(sMonSummaryScreen)).summary.moves
+                    [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex],
             );
         }
     }
@@ -3667,25 +3765,25 @@ pub(crate) unsafe fn Task_PrintBattleMoves(taskId: u8) {
             PrintMoveNameAndPP(3);
         }
         5 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
                 PrintNewMoveDetailsOrCancelText();
             }
         }
         6 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8 {
-                    *data.at(1) = (*sMonSummaryScreen).newMove as i16;
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
+                if (*crate::gl!(sMonSummaryScreen)).firstMoveIndex == MAX_MON_MOVES as u8 {
+                    *data.at(1) = (*crate::gl!(sMonSummaryScreen)).newMove as i16;
                 } else {
-                    *data.at(1) = (*sMonSummaryScreen).summary.moves
-                        [(*sMonSummaryScreen).firstMoveIndex]
+                    *data.at(1) = (*crate::gl!(sMonSummaryScreen)).summary.moves
+                        [(*crate::gl!(sMonSummaryScreen)).firstMoveIndex]
                         as i16;
                 }
             }
         }
         7 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE
-                && ((*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8)
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE
+                && ((*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE
+                    || (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8)
             {
                 PrintMoveDetails(*data.at(1) as u16);
             }
@@ -3703,7 +3801,7 @@ unsafe fn PrintMoveNameAndPP(moveIndex: u8) {
     let mut ppState: i32 = 0;
     let mut x: i32 = 0;
     let mut text: *mut u8 = null_mut();
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     let moveNameWindowId: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_NAMES,
@@ -3733,14 +3831,14 @@ unsafe fn PrintMoveNameAndPP(moveIndex: u8) {
             2,
         );
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             pp as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             2,
         );
         DynamicPlaceholderTextUtil_Reset();
         DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar2.as_mut_ptr());
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, (*gStringVar2.as_ptr()).as_mut_ptr());
         DynamicPlaceholderTextUtil_ExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
             sMovesPPLayout.as_ptr().cast_mut(),
@@ -3825,9 +3923,9 @@ pub(crate) unsafe fn PrintContestMoves() {
     PrintMoveNameAndPP(1);
     PrintMoveNameAndPP(2);
     PrintMoveNameAndPP(3);
-    if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+    if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
         PrintNewMoveDetailsOrCancelText();
-        PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
+        PrintContestMoveDescription((*crate::gl!(sMonSummaryScreen)).firstMoveIndex);
     }
 }
 pub(crate) unsafe fn Task_PrintContestMoves(taskId: u8) {
@@ -3846,16 +3944,16 @@ pub(crate) unsafe fn Task_PrintContestMoves(taskId: u8) {
             PrintMoveNameAndPP(3);
         }
         5 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE {
                 PrintNewMoveDetailsOrCancelText();
             }
         }
         6 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE
-                && ((*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8)
+            if (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_SELECT_MOVE
+                && ((*crate::gl!(sMonSummaryScreen)).newMove != MOVE_NONE
+                    || (*crate::gl!(sMonSummaryScreen)).firstMoveIndex != MAX_MON_MOVES as u8)
             {
-                PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
+                PrintContestMoveDescription((*crate::gl!(sMonSummaryScreen)).firstMoveIndex);
             }
         }
         7 => {
@@ -3869,9 +3967,9 @@ pub(crate) unsafe fn Task_PrintContestMoves(taskId: u8) {
 pub(crate) unsafe fn PrintContestMoveDescription(moveSlot: u8) {
     let mut r#move: u16 = 0;
     if moveSlot == MAX_MON_MOVES as u8 {
-        r#move = (*sMonSummaryScreen).newMove;
+        r#move = (*crate::gl!(sMonSummaryScreen)).newMove;
     } else {
-        r#move = (*sMonSummaryScreen).summary.moves[moveSlot];
+        r#move = (*crate::gl!(sMonSummaryScreen)).summary.moves[moveSlot];
     }
     if r#move != MOVE_NONE {
         let windowId: u8 = AddWindowFromTemplateList(
@@ -3899,7 +3997,7 @@ unsafe fn PrintMoveDetails(r#move: u16) {
     );
     FillWindowPixelBuffer(windowId, 0);
     if r#move != MOVE_NONE {
-        if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+        if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_BATTLE_MOVES {
             PrintMovePowerAndAccuracy(r#move);
             PrintTextOnWindow(
                 windowId,
@@ -3941,7 +4039,7 @@ unsafe fn PrintNewMoveDetailsOrCancelText() {
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_PP,
     );
-    if (*sMonSummaryScreen).newMove == MOVE_NONE {
+    if (*crate::gl!(sMonSummaryScreen)).newMove == MOVE_NONE {
         PrintTextOnWindow(
             windowId1,
             (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
@@ -3953,8 +4051,8 @@ unsafe fn PrintNewMoveDetailsOrCancelText() {
             1,
         );
     } else {
-        let r#move: u16 = (*sMonSummaryScreen).newMove;
-        if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+        let r#move: u16 = (*crate::gl!(sMonSummaryScreen)).newMove;
+        if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_BATTLE_MOVES {
             PrintTextOnWindow(
                 windowId1,
                 (*(&raw const crate::data::data_tables::gMoveNames)
@@ -4047,27 +4145,31 @@ unsafe fn PrintHMMovesCantBeForgotten() {
 }
 unsafe fn ResetSpriteIds() {
     for i in 0..28u8 {
-        (*sMonSummaryScreen).spriteIds[i] = SPRITE_NONE;
+        (*crate::gl!(sMonSummaryScreen)).spriteIds[i] = SPRITE_NONE;
     }
 }
 unsafe fn DestroySpriteInArray(spriteArrayId: u8) {
-    if (*sMonSummaryScreen).spriteIds[spriteArrayId] != SPRITE_NONE {
-        DestroySprite(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]]);
-        (*sMonSummaryScreen).spriteIds[spriteArrayId] = SPRITE_NONE;
+    if (*crate::gl!(sMonSummaryScreen)).spriteIds[spriteArrayId] != SPRITE_NONE {
+        DestroySprite({
+            let gl_i4 = (*crate::gl!(sMonSummaryScreen)).spriteIds[spriteArrayId];
+            crate::gl!(&raw gSprites[gl_i4])
+        });
+        (*crate::gl!(sMonSummaryScreen)).spriteIds[spriteArrayId] = SPRITE_NONE;
     }
 }
 unsafe fn SetSpriteInvisibility(spriteArrayId: u8, invisible: u8) {
-    gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]].set_invisible(invisible as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[spriteArrayId]]
+        .set_invisible(invisible as u16);
 }
 unsafe fn HidePageSpecificSprites() {
     for i in SPRITE_ARR_ID_TYPE..28 {
-        if (*sMonSummaryScreen).spriteIds[i] != SPRITE_NONE {
+        if (*crate::gl!(sMonSummaryScreen)).spriteIds[i] != SPRITE_NONE {
             SetSpriteInvisibility(i, TRUE);
         }
     }
 }
 unsafe fn SetTypeIcons() {
-    match (*sMonSummaryScreen).currPageIndex {
+    match (*crate::gl!(sMonSummaryScreen)).currPageIndex {
         PSS_PAGE_INFO => {
             SetMonTypeIcons();
         }
@@ -4084,15 +4186,18 @@ unsafe fn SetTypeIcons() {
 }
 unsafe fn CreateMoveTypeIcons() {
     for i in SPRITE_ARR_ID_TYPE..8 {
-        if (*sMonSummaryScreen).spriteIds[i] == SPRITE_NONE {
-            (*sMonSummaryScreen).spriteIds[i] =
+        if (*crate::gl!(sMonSummaryScreen)).spriteIds[i] == SPRITE_NONE {
+            (*crate::gl!(sMonSummaryScreen)).spriteIds[i] =
                 CreateSprite((&raw const *sSpriteTemplate_MoveTypes).cast_mut(), 0, 0, 2);
         }
         SetSpriteInvisibility(i, TRUE);
     }
 }
 unsafe fn SetTypeSpritePosAndPal(typeId: u8, x: u8, y: u8, spriteArrayId: u8) {
-    let sprite: *mut Sprite = &raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]];
+    let sprite: *mut Sprite = {
+        let gl_i5 = (*crate::gl!(sMonSummaryScreen)).spriteIds[spriteArrayId];
+        crate::gl!(&raw gSprites[gl_i5])
+    };
     StartSpriteAnim(sprite, typeId);
     (*sprite)
         .oam
@@ -4102,7 +4207,7 @@ unsafe fn SetTypeSpritePosAndPal(typeId: u8, x: u8, y: u8, spriteArrayId: u8) {
     SetSpriteInvisibility(spriteArrayId, FALSE);
 }
 unsafe fn SetMonTypeIcons() {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     if (*summary).isEgg != 0 {
         SetTypeSpritePosAndPal(TYPE_MYSTERY, 120, 48, SPRITE_ARR_ID_TYPE);
         SetSpriteInvisibility(4, 1);
@@ -4137,7 +4242,7 @@ unsafe fn SetMonTypeIcons() {
     }
 }
 unsafe fn SetMoveTypeIcons() {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     for i in 0..(MAX_MON_MOVES as u8) {
         if (*summary).moves[i] != MOVE_NONE {
             SetTypeSpritePosAndPal(
@@ -4154,7 +4259,7 @@ unsafe fn SetMoveTypeIcons() {
     }
 }
 unsafe fn SetContestMoveTypeIcons() {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     for i in 0..(MAX_MON_MOVES as u8) {
         if (*summary).moves[i] != MOVE_NONE {
             SetTypeSpritePosAndPal(
@@ -4175,13 +4280,13 @@ unsafe fn SetContestMoveTypeIcons() {
     }
 }
 unsafe fn SetNewMoveTypeIcon() {
-    if (*sMonSummaryScreen).newMove == MOVE_NONE {
+    if (*crate::gl!(sMonSummaryScreen)).newMove == MOVE_NONE {
         SetSpriteInvisibility(7, TRUE);
     } else {
-        if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
+        if (*crate::gl!(sMonSummaryScreen)).currPageIndex == PSS_PAGE_BATTLE_MOVES {
             SetTypeSpritePosAndPal(
                 (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-                    [(*sMonSummaryScreen).newMove]
+                    [(*crate::gl!(sMonSummaryScreen)).newMove]
                     .r#type,
                 85,
                 96,
@@ -4194,7 +4299,7 @@ unsafe fn SetNewMoveTypeIcon() {
                         ContestMove,
                         0,
                     >>(
-                    ))[(*sMonSummaryScreen).newMove]
+                    ))[(*crate::gl!(sMonSummaryScreen)).newMove]
                         .contestCategory(),
                 85,
                 96,
@@ -4204,10 +4309,16 @@ unsafe fn SetNewMoveTypeIcon() {
     }
 }
 unsafe fn SwapMovesTypeSprites(moveIndex1: u8, moveIndex2: u8) {
-    let sprite1: *mut Sprite = &raw mut gSprites
-        [(*sMonSummaryScreen).spriteIds[moveIndex1 as i32 + SPRITE_ARR_ID_TYPE as i32]];
-    let sprite2: *mut Sprite = &raw mut gSprites
-        [(*sMonSummaryScreen).spriteIds[moveIndex2 as i32 + SPRITE_ARR_ID_TYPE as i32]];
+    let sprite1: *mut Sprite = {
+        let gl_i6 = (*crate::gl!(sMonSummaryScreen)).spriteIds
+            [moveIndex1 as i32 + SPRITE_ARR_ID_TYPE as i32];
+        crate::gl!(&raw gSprites[gl_i6])
+    };
+    let sprite2: *mut Sprite = {
+        let gl_i7 = (*crate::gl!(sMonSummaryScreen)).spriteIds
+            [moveIndex2 as i32 + SPRITE_ARR_ID_TYPE as i32];
+        crate::gl!(&raw gSprites[gl_i7])
+    };
     let mut temp: u8 = (*sprite1).animNum;
     (*sprite1).animNum = (*sprite2).animNum;
     (*sprite2).animNum = temp;
@@ -4221,16 +4332,16 @@ unsafe fn SwapMovesTypeSprites(moveIndex1: u8, moveIndex2: u8) {
 }
 unsafe fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *mut i16) -> u8 {
     let mut pal: *mut CompressedSpritePalette = null_mut();
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     match *state {
         0 => {
-            if gMain.inBattle() != 0 {
-                if ShouldIgnoreDeoxysForm(3, (*sMonSummaryScreen).curMonIndex) != 0 {
+            if (*gMain.as_ptr()).inBattle() != 0 {
+                if ShouldIgnoreDeoxysForm(3, (*crate::gl!(sMonSummaryScreen)).curMonIndex) != 0 {
                     HandleLoadSpecialPokePic_DontHandleDeoxys(
                         (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                             .cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2])
                             .cast_mut(),
-                        (*gMonSpritesGfxPtr).sprites.ptr[1],
+                        (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                         (*summary).species2 as i32,
                         (*summary).pid,
                     );
@@ -4239,35 +4350,37 @@ unsafe fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *mut i16) -> u8 {
                         (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                             .cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2])
                             .cast_mut(),
-                        (*gMonSpritesGfxPtr).sprites.ptr[1],
+                        (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                         (*summary).species2 as i32,
                         (*summary).pid,
                     );
                 }
             } else {
-                if !gMonSpritesGfxPtr.is_null() {
-                    if (*sMonSummaryScreen).monList.mons == gPlayerParty.as_mut_ptr()
-                        || (*sMonSummaryScreen).mode == SUMMARY_MODE_BOX
-                        || (*sMonSummaryScreen).handleDeoxys == TRUE
+                if !(*gMonSpritesGfxPtr.as_ptr()).is_null() {
+                    if (*crate::gl!(sMonSummaryScreen)).monList.mons
+                        == (*gPlayerParty.as_ptr()).as_mut_ptr()
+                        || (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_BOX
+                        || (*crate::gl!(sMonSummaryScreen)).handleDeoxys == TRUE
                     {
                         HandleLoadSpecialPokePic_2(
                             (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
-                            (*gMonSpritesGfxPtr).sprites.ptr[1],
+                            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                             (*summary).species2 as i32,
                             (*summary).pid,
                         );
                     } else {
                         HandleLoadSpecialPokePic_DontHandleDeoxys(
                             (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
-                            (*gMonSpritesGfxPtr).sprites.ptr[1],
+                            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                             (*summary).species2 as i32,
                             (*summary).pid,
                         );
                     }
                 } else {
-                    if (*sMonSummaryScreen).monList.mons == gPlayerParty.as_mut_ptr()
-                        || (*sMonSummaryScreen).mode == SUMMARY_MODE_BOX
-                        || (*sMonSummaryScreen).handleDeoxys == TRUE
+                    if (*crate::gl!(sMonSummaryScreen)).monList.mons
+                        == (*gPlayerParty.as_ptr()).as_mut_ptr()
+                        || (*crate::gl!(sMonSummaryScreen)).mode == SUMMARY_MODE_BOX
+                        || (*crate::gl!(sMonSummaryScreen)).handleDeoxys == TRUE
                     {
                         HandleLoadSpecialPokePic_2(
                             (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
@@ -4315,9 +4428,11 @@ unsafe fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *mut i16) -> u8 {
     }
 }
 unsafe fn PlayMonCry() {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
     if (*summary).isEgg == 0 {
-        if ShouldPlayNormalMonCry(&raw mut (*sMonSummaryScreen).currentMon) == TRUE as u32 {
+        if ShouldPlayNormalMonCry(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon)
+            == TRUE as u32
+        {
             PlayCry_ByMode((*summary).species2, 0, 0);
         } else {
             PlayCry_ByMode((*summary).species2, 0, CRY_MODE_WEAK);
@@ -4325,23 +4440,23 @@ unsafe fn PlayMonCry() {
     }
 }
 pub(crate) unsafe fn CreateMonSprite(unused: *mut Pokemon) -> u8 {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let spriteId: u8 = CreateSprite(&raw mut gMultiuseSpriteTemplate, 40, 64, 5);
-    FreeSpriteOamMatrix(&raw mut gSprites[spriteId]);
-    gSprites[spriteId].data[0] = (*summary).species2 as i16;
-    gSprites[spriteId].data[2] = 0;
-    gSprites[spriteId].callback = Some(SpriteCB_Pokemon);
-    gSprites[spriteId].oam.set_priority(0);
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
+    let spriteId: u8 = CreateSprite(crate::gl!(&raw gMultiuseSpriteTemplate), 40, 64, 5);
+    FreeSpriteOamMatrix(crate::gl!(&raw gSprites[spriteId]));
+    crate::gl!(gSprites[spriteId].data[0] = (*summary).species2 as i16);
+    crate::gl!(gSprites[spriteId].data[2] = 0);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Pokemon));
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
     if IsMonSpriteNotFlipped((*summary).species2) == 0 {
-        gSprites[spriteId].set_hFlip(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].set_hFlip(TRUE as u16);
     } else {
-        gSprites[spriteId].set_hFlip(FALSE as u16);
+        (*gSprites.as_ptr())[spriteId].set_hFlip(FALSE as u16);
     }
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_Pokemon(sprite: *mut Sprite) {
-    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    if gPaletteFade.active() == 0 && (*sprite).data[2] != 1 {
+    let summary: *mut PokeSummary = &raw mut (*crate::gl!(sMonSummaryScreen)).summary;
+    if (*gPaletteFade.as_ptr()).active() == 0 && (*sprite).data[2] != 1 {
         (*sprite).data[1] = IsMonSpriteNotFlipped((*sprite).data[0] as u16) as i16;
         PlayMonCry();
         PokemonSummaryDoMonAnimation(sprite, (*sprite).data[0] as u16, (*summary).isEgg);
@@ -4357,8 +4472,10 @@ fn SummaryScreen_DestroyAnimDelayTask() {
     }
 }
 unsafe fn IsMonAnimationFinished() -> u32 {
-    if gSprites[(*sMonSummaryScreen).spriteIds[0]].callback
-        == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+    if ({
+        let gl_i8 = (*crate::gl!(sMonSummaryScreen)).spriteIds[0];
+        crate::gl!(gSprites[gl_i8].callback)
+    }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         return FALSE as u32;
     } else {
@@ -4370,14 +4487,20 @@ unsafe fn IsMonAnimationFinished() -> u32 {
     }
 }
 unsafe fn StopPokemonAnimations() {
-    gSprites[(*sMonSummaryScreen).spriteIds[0]].set_animPaused(TRUE);
-    gSprites[(*sMonSummaryScreen).spriteIds[0]].callback = Some(SpriteCallbackDummy);
+    (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[0]].set_animPaused(TRUE);
+    {
+        let gl_i9 = (*crate::gl!(sMonSummaryScreen)).spriteIds[0];
+        crate::gl!(gSprites[gl_i9].callback = Some(SpriteCallbackDummy))
+    };
     StopPokemonAnimationDelayTask();
-    let paletteIndex: u16 =
-        0x100 + gSprites[(*sMonSummaryScreen).spriteIds[0]].oam.paletteNum() * 16;
+    let paletteIndex: u16 = 0x100
+        + (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[0]]
+            .oam
+            .paletteNum()
+            * 16;
     for i in 0..16u16 {
         let id: u16 = i + paletteIndex;
-        gPlttBufferUnfaded[id] = gPlttBufferFaded[id];
+        crate::gl!(gPlttBufferUnfaded[id] = crate::gl!(gPlttBufferFaded[id]));
     }
 }
 unsafe fn CreateMonMarkingsSprite(mon: *mut Pokemon) {
@@ -4386,23 +4509,25 @@ unsafe fn CreateMonMarkingsSprite(mon: *mut Pokemon) {
         TAG_MON_MARKINGS,
         sMarkings_Pal.as_ptr().cast_mut(),
     );
-    (*sMonSummaryScreen).markingsSprite = sprite;
+    (*crate::gl!(sMonSummaryScreen)).markingsSprite = sprite;
     if !sprite.is_null() {
         StartSpriteAnim(sprite, GetMonData2(mon, MON_DATA_MARKINGS) as u8);
-        (*(*sMonSummaryScreen).markingsSprite).x = 60;
-        (*(*sMonSummaryScreen).markingsSprite).y = 26;
-        (*(*sMonSummaryScreen).markingsSprite).oam.set_priority(1);
+        (*(*crate::gl!(sMonSummaryScreen)).markingsSprite).x = 60;
+        (*(*crate::gl!(sMonSummaryScreen)).markingsSprite).y = 26;
+        (*(*crate::gl!(sMonSummaryScreen)).markingsSprite)
+            .oam
+            .set_priority(1);
     }
 }
 unsafe fn RemoveAndCreateMonMarkingsSprite(mon: *mut Pokemon) {
-    DestroySprite((*sMonSummaryScreen).markingsSprite);
+    DestroySprite((*crate::gl!(sMonSummaryScreen)).markingsSprite);
     FreeSpriteTilesByTag(TAG_MON_MARKINGS);
     CreateMonMarkingsSprite(mon);
 }
 unsafe fn CreateCaughtBallSprite(mon: *mut Pokemon) {
     let ball: u8 = ItemIdToBallId(GetMonData2(mon, MON_DATA_POKEBALL) as u16);
     LoadBallGfx(ball);
-    (*sMonSummaryScreen).spriteIds[1] = CreateSprite(
+    (*crate::gl!(sMonSummaryScreen)).spriteIds[1] = CreateSprite(
         (&raw const (*(&raw const crate::data::pokeball::gBallSpriteTemplates)
             .cast::<CArray<SpriteTemplate, 0>>())[ball])
             .cast_mut(),
@@ -4410,13 +4535,16 @@ unsafe fn CreateCaughtBallSprite(mon: *mut Pokemon) {
         136,
         0,
     );
-    gSprites[(*sMonSummaryScreen).spriteIds[1]].callback = Some(SpriteCallbackDummy);
-    gSprites[(*sMonSummaryScreen).spriteIds[1]]
+    {
+        let gl_i10 = (*crate::gl!(sMonSummaryScreen)).spriteIds[1];
+        crate::gl!(gSprites[gl_i10].callback = Some(SpriteCallbackDummy))
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sMonSummaryScreen)).spriteIds[1]]
         .oam
         .set_priority(3);
 }
 unsafe fn CreateSetStatusSprite() {
-    let spriteId: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[2];
+    let spriteId: *mut u8 = &raw mut (*crate::gl!(sMonSummaryScreen)).spriteIds[2];
     if *spriteId == SPRITE_NONE {
         *spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_StatusCondition).cast_mut(),
@@ -4425,17 +4553,23 @@ unsafe fn CreateSetStatusSprite() {
             0,
         );
     }
-    let statusAnim: u8 = GetMonAilment(&raw mut (*sMonSummaryScreen).currentMon);
+    let statusAnim: u8 = GetMonAilment(&raw mut (*crate::gl!(sMonSummaryScreen)).currentMon);
     if statusAnim != 0 {
-        StartSpriteAnim(&raw mut gSprites[*spriteId], statusAnim - 1);
+        StartSpriteAnim(
+            {
+                let gl_i11 = *spriteId;
+                crate::gl!(&raw gSprites[gl_i11])
+            },
+            statusAnim - 1,
+        );
         SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, FALSE);
     } else {
         SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, TRUE);
     }
 }
 unsafe fn CreateMoveSelectorSprites(idArrayStart: u8) {
-    let spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[idArrayStart];
-    if (*sMonSummaryScreen).currPageIndex >= PSS_PAGE_BATTLE_MOVES {
+    let spriteIds: *mut u8 = &raw mut (*crate::gl!(sMonSummaryScreen)).spriteIds[idArrayStart];
+    if (*crate::gl!(sMonSummaryScreen)).currPageIndex >= PSS_PAGE_BATTLE_MOVES {
         let mut subpriority: u8 = 0;
         if idArrayStart == SPRITE_ARR_ID_MOVE_SELECTOR1 {
             subpriority = 1;
@@ -4448,15 +4582,42 @@ unsafe fn CreateMoveSelectorSprites(idArrayStart: u8) {
                 subpriority,
             );
             if i == 0 {
-                StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 4);
+                StartSpriteAnim(
+                    {
+                        let gl_i12 = *spriteIds.at(i);
+                        crate::gl!(&raw gSprites[gl_i12])
+                    },
+                    4,
+                );
             } else if i == 9 {
-                StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 5);
+                StartSpriteAnim(
+                    {
+                        let gl_i13 = *spriteIds.at(i);
+                        crate::gl!(&raw gSprites[gl_i13])
+                    },
+                    5,
+                );
             } else {
-                StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 6);
+                StartSpriteAnim(
+                    {
+                        let gl_i14 = *spriteIds.at(i);
+                        crate::gl!(&raw gSprites[gl_i14])
+                    },
+                    6,
+                );
             }
-            gSprites[*spriteIds.at(i)].callback = Some(SpriteCB_MoveSelector);
-            gSprites[*spriteIds.at(i)].data[0] = idArrayStart as i16;
-            gSprites[*spriteIds.at(i)].data[1] = 0;
+            {
+                let gl_i15 = *spriteIds.at(i);
+                crate::gl!(gSprites[gl_i15].callback = Some(SpriteCB_MoveSelector))
+            };
+            {
+                let gl_i16 = *spriteIds.at(i);
+                crate::gl!(gSprites[gl_i16].data[0] = idArrayStart as i16)
+            };
+            {
+                let gl_i17 = *spriteIds.at(i);
+                crate::gl!(gSprites[gl_i17].data[1] = 0)
+            };
         }
     }
 }
@@ -4473,9 +4634,9 @@ pub(crate) unsafe fn SpriteCB_MoveSelector(sprite: *mut Sprite) {
         (*sprite).set_invisible(FALSE as u16);
     }
     if (*sprite).data[0] == SPRITE_ARR_ID_MOVE_SELECTOR1 as i16 {
-        (*sprite).y2 = (*sMonSummaryScreen).firstMoveIndex as i16 * 16;
+        (*sprite).y2 = (*crate::gl!(sMonSummaryScreen)).firstMoveIndex as i16 * 16;
     } else {
-        (*sprite).y2 = (*sMonSummaryScreen).secondMoveIndex as i16 * 16;
+        (*sprite).y2 = (*crate::gl!(sMonSummaryScreen)).secondMoveIndex as i16 * 16;
     }
 }
 unsafe fn DestroyMoveSelectorSprites(firstArrayId: u8) {
@@ -4484,22 +4645,43 @@ unsafe fn DestroyMoveSelectorSprites(firstArrayId: u8) {
     }
 }
 unsafe fn SetMainMoveSelectorColor(mut which: u8) {
-    let spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[8];
+    let spriteIds: *mut u8 = &raw mut (*crate::gl!(sMonSummaryScreen)).spriteIds[8];
     which *= 3;
     for i in 0..MOVE_SELECTOR_SPRITES_COUNT {
         if i == 0 {
-            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 4);
+            StartSpriteAnim(
+                {
+                    let gl_i18 = *spriteIds.at(i);
+                    crate::gl!(&raw gSprites[gl_i18])
+                },
+                which + 4,
+            );
         } else if i == 9 {
-            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 5);
+            StartSpriteAnim(
+                {
+                    let gl_i19 = *spriteIds.at(i);
+                    crate::gl!(&raw gSprites[gl_i19])
+                },
+                which + 5,
+            );
         } else {
-            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 6);
+            StartSpriteAnim(
+                {
+                    let gl_i20 = *spriteIds.at(i);
+                    crate::gl!(&raw gSprites[gl_i20])
+                },
+                which + 6,
+            );
         }
     }
 }
 unsafe fn KeepMoveSelectorVisible(firstSpriteId: u8) {
-    let spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[firstSpriteId];
+    let spriteIds: *mut u8 = &raw mut (*crate::gl!(sMonSummaryScreen)).spriteIds[firstSpriteId];
     for i in 0..MOVE_SELECTOR_SPRITES_COUNT {
-        gSprites[*spriteIds.at(i)].data[1] = 0;
-        gSprites[*spriteIds.at(i)].set_invisible(FALSE as u16);
+        {
+            let gl_i21 = *spriteIds.at(i);
+            crate::gl!(gSprites[gl_i21].data[1] = 0)
+        };
+        (*gSprites.as_ptr())[*spriteIds.at(i)].set_invisible(FALSE as u16);
     }
 }

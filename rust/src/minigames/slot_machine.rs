@@ -74,7 +74,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `CreateInvisibleSprite` with this module's view of its types.
 #[inline]
-unsafe fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
     unsafe { crate::sprite::CreateInvisibleSprite(core::mem::transmute(a0)) }
 }
 /// `CreateSprite` with this module's view of its types.
@@ -108,7 +108,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -122,12 +122,12 @@ unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
@@ -144,7 +144,7 @@ unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -156,14 +156,14 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
 }
 /// `SetSpriteSheetFrameTileNum` with this module's view of its types.
 #[inline]
-unsafe fn SetSpriteSheetFrameTileNum(a0: *mut Sprite) {
+fn SetSpriteSheetFrameTileNum(a0: *mut Sprite) {
     unsafe {
         crate::sprite::SetSpriteSheetFrameTileNum(a0 as _);
     }
@@ -643,64 +643,95 @@ static sWindowTemplate_InfoBox: Table<WindowTemplate> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 2>> =
     Table((&raw const crate::data::slot_machine::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenuGfx: *mut u16 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSelectedPikaPowerTile: *mut u16 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReelOverlay_Tilemap: *mut u16 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDigitalDisplayGfxPtr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReelTimeGfxPtr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReelButtonPress_Tilemap: *mut u16 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReelBackground_Gfx: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_ReelTimePikachu: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_ReelTimeMachineAntennae: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_ReelTimeMachine: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_BrokenReelTimeMachine: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Reel: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Time: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Insert: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Stop: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Win: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Lose: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Bonus: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Big: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Reg: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_AButton: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Smoke: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Number: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_Pokeball: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sImageTable_DigitalDisplay_DPad: *mut SpriteFrameImage = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReelBackgroundSpriteSheet: *mut SpriteSheet = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSlotMachineSpritesheetsPtr: *mut SpriteSheet = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSlotMachine: *mut SlotMachine = null_mut();
-pub(crate) static mut sImageTables_DigitalDisplay: CArray<*mut SpriteFrameImage, 26> =
-    unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMenuGfx: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSelectedPikaPowerTile: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sReelOverlay_Tilemap: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDigitalDisplayGfxPtr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sReelTimeGfxPtr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sReelButtonPress_Tilemap: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sReelBackground_Gfx: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_ReelTimePikachu: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_ReelTimeMachineAntennae: crate::global::Global<
+    *mut SpriteFrameImage,
+> = crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_ReelTimeMachine: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_BrokenReelTimeMachine: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Reel: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Time: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Insert: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Stop: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Win: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Lose: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Bonus: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Big: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Reg: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_AButton: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Smoke: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Number: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_Pokeball: crate::global::Global<
+    *mut SpriteFrameImage,
+> = crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sImageTable_DigitalDisplay_DPad: crate::global::Global<*mut SpriteFrameImage> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sReelBackgroundSpriteSheet: crate::global::Global<*mut SpriteSheet> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSlotMachineSpritesheetsPtr: crate::global::Global<*mut SpriteSheet> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSlotMachine: crate::global::Global<*mut SlotMachine> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sImageTables_DigitalDisplay: crate::global::Global<
+    CArray<*mut SpriteFrameImage, 26>,
+> = crate::global::Global::new(unsafe { zeroed() });
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -737,7 +768,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -756,7 +787,7 @@ pub(crate) unsafe fn Task_FadeToSlotMachine(taskId: u8) {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        1 if gPaletteFade.active() == 0 => {
+        1 if (*gPaletteFade.as_ptr()).active() == 0 => {
             SetMainCallback2(Some(CB2_SlotMachineSetup));
             DestroyTask(taskId);
         }
@@ -764,42 +795,42 @@ pub(crate) unsafe fn Task_FadeToSlotMachine(taskId: u8) {
     }
 }
 pub unsafe fn PlaySlotMachine(machineId: u8, exitCallback: Option<unsafe fn()>) {
-    sSlotMachine = AllocZeroed(104) as *mut SlotMachine;
+    crate::gl!(sSlotMachine = AllocZeroed(104) as *mut SlotMachine);
     PlaySlotMachine_Internal(machineId, exitCallback);
     let taskId: u8 = CreateTask(Some(Task_FadeToSlotMachine), 0);
     task_set(taskId, tState, 0);
 }
 pub(crate) unsafe fn CB2_SlotMachineSetup() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SlotMachineSetup_InitBgsWindows();
             InitSlotMachine();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             SlotMachineSetup_InitVRAM();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             SlotMachineSetup_InitOAM();
             SlotMachineSetup_InitGpuRegs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             SlotMachineSetup_InitPalsSpritesTasks();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             SlotMachineSetup_InitTilemaps();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             SlotMachineSetup_LoadGfxAndTilemaps();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             SlotMachineSetup_InitVBlank();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             BeginNormalPaletteFade(0xffffffff, 0, 0x10, 0, 0);
@@ -807,20 +838,20 @@ pub(crate) unsafe fn CB2_SlotMachineSetup() {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             AllocDigitalDisplayGfx();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             SetDigitalDisplayImagePtrs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             CreateSlotMachineSprites();
             CreateGameplayTasks();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
             SetMainCallback2(Some(CB2_SlotMachine));
@@ -838,10 +869,10 @@ pub(crate) unsafe fn SlotMachine_VBlankCB() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
-    SetGpuReg(REG_OFFSET_WIN0H, (*sSlotMachine).win0h);
-    SetGpuReg(REG_OFFSET_WIN0V, (*sSlotMachine).win0v);
-    SetGpuReg(REG_OFFSET_WININ, (*sSlotMachine).winIn);
-    SetGpuReg(REG_OFFSET_WINOUT, (*sSlotMachine).winOut);
+    SetGpuReg(REG_OFFSET_WIN0H, (*crate::gl!(sSlotMachine)).win0h);
+    SetGpuReg(REG_OFFSET_WIN0V, (*crate::gl!(sSlotMachine)).win0v);
+    SetGpuReg(REG_OFFSET_WININ, (*crate::gl!(sSlotMachine)).winIn);
+    SetGpuReg(REG_OFFSET_WINOUT, (*crate::gl!(sSlotMachine)).winOut);
 }
 unsafe fn PlaySlotMachine_Internal(machineId: u8, exitCallback: Option<unsafe fn()>) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[CreateTask(Some(SlotMachineDummyTask), 0xFF)];
@@ -853,10 +884,10 @@ unsafe fn PlaySlotMachine_Internal(machineId: u8, exitCallback: Option<unsafe fn
 }
 unsafe fn SlotMachine_InitFromTask() {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[FindTaskIdByFunc(Some(SlotMachineDummyTask))];
-    (*sSlotMachine).machineId = (*task).data[tMachineId] as u8;
+    (*crate::gl!(sSlotMachine)).machineId = (*task).data[tMachineId] as u8;
     LoadWordFromTwoHalfwords(
         &raw mut (*task).data[tExitCallback] as *mut u16,
-        &raw mut (*sSlotMachine).prevMainCb as *mut u32,
+        &raw mut (*crate::gl!(sSlotMachine)).prevMainCb as *mut u32,
     );
 }
 pub(crate) unsafe fn SlotMachineDummyTask(taskId: u8) {}
@@ -970,51 +1001,52 @@ unsafe fn SlotMachineSetup_InitGpuRegs() {
 }
 unsafe fn InitSlotMachine() {
     SlotMachine_InitFromTask();
-    (*sSlotMachine).state = SLOTTASK_UNFADE;
-    (*sSlotMachine).pikaPowerBolts = 0;
-    (*sSlotMachine).luckyGame = Random() as u8 & 1;
-    (*sSlotMachine).machineBias = 0;
-    (*sSlotMachine).matches = 0;
-    (*sSlotMachine).reelTimeSpinsLeft = 0;
-    (*sSlotMachine).reelTimeSpinsUsed = 0;
-    (*sSlotMachine).coins = GetCoins() as i16;
-    (*sSlotMachine).payout = 0;
-    (*sSlotMachine).netCoinLoss = 0;
-    (*sSlotMachine).bet = 0;
-    (*sSlotMachine).currentReel = LEFT_REEL as i16;
-    (*sSlotMachine).reelSpeed = REEL_NORMAL_SPEED;
-    (*sSlotMachine).win0h = DISPLAY_WIDTH;
-    (*sSlotMachine).win0v = DISPLAY_HEIGHT;
-    (*sSlotMachine).winIn = 63;
-    (*sSlotMachine).winOut = 63;
-    (*sSlotMachine).backupMapMusic = GetCurrentMapMusic();
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_UNFADE;
+    (*crate::gl!(sSlotMachine)).pikaPowerBolts = 0;
+    (*crate::gl!(sSlotMachine)).luckyGame = Random() as u8 & 1;
+    (*crate::gl!(sSlotMachine)).machineBias = 0;
+    (*crate::gl!(sSlotMachine)).matches = 0;
+    (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft = 0;
+    (*crate::gl!(sSlotMachine)).reelTimeSpinsUsed = 0;
+    (*crate::gl!(sSlotMachine)).coins = GetCoins() as i16;
+    (*crate::gl!(sSlotMachine)).payout = 0;
+    (*crate::gl!(sSlotMachine)).netCoinLoss = 0;
+    (*crate::gl!(sSlotMachine)).bet = 0;
+    (*crate::gl!(sSlotMachine)).currentReel = LEFT_REEL as i16;
+    (*crate::gl!(sSlotMachine)).reelSpeed = REEL_NORMAL_SPEED;
+    (*crate::gl!(sSlotMachine)).win0h = DISPLAY_WIDTH;
+    (*crate::gl!(sSlotMachine)).win0v = DISPLAY_HEIGHT;
+    (*crate::gl!(sSlotMachine)).winIn = 63;
+    (*crate::gl!(sSlotMachine)).winOut = 63;
+    (*crate::gl!(sSlotMachine)).backupMapMusic = GetCurrentMapMusic();
     for i in 0..NUM_REELS {
-        (*sSlotMachine).reelShockOffsets[i] = 0;
-        (*sSlotMachine).reelPositions[i] = sInitialReelPositions[i][(*sSlotMachine).luckyGame] % 21;
-        (*sSlotMachine).reelPixelOffsets[i] =
-            REEL_HEIGHT - (*sSlotMachine).reelPositions[i] * REEL_SYMBOL_HEIGHT;
-        (*sSlotMachine).reelPixelOffsets[i] %= 504;
+        (*crate::gl!(sSlotMachine)).reelShockOffsets[i] = 0;
+        (*crate::gl!(sSlotMachine)).reelPositions[i] =
+            sInitialReelPositions[i][(*crate::gl!(sSlotMachine)).luckyGame] % 21;
+        (*crate::gl!(sSlotMachine)).reelPixelOffsets[i] =
+            REEL_HEIGHT - (*crate::gl!(sSlotMachine)).reelPositions[i] * REEL_SYMBOL_HEIGHT;
+        (*crate::gl!(sSlotMachine)).reelPixelOffsets[i] %= 504;
     }
     AlertTVThatPlayerPlayedSlotMachine(GetCoins());
 }
 unsafe fn SlotMachineSetup_InitPalsSpritesTasks() {
     ResetPaletteFade();
     ResetSpriteData();
-    gOamLimit = 0x80;
+    gOamLimit.set(0x80);
     FreeAllSpritePalettes();
     ResetTasks();
 }
 unsafe fn SlotMachineSetup_InitTilemaps() {
-    sSelectedPikaPowerTile = Alloc(8) as *mut u16;
-    sReelOverlay_Tilemap = AllocZeroed(14) as *mut u16;
-    sReelButtonPress_Tilemap = AllocZeroed(8) as *mut u16;
-    *sReelOverlay_Tilemap = 0x2051;
-    *sReelOverlay_Tilemap.at(1) = 0x2851;
-    *sReelOverlay_Tilemap.at(2) = 0x2061;
-    *sReelOverlay_Tilemap.at(3) = 0x2861;
-    *sReelOverlay_Tilemap.at(4) = 0x20BE;
-    *sReelOverlay_Tilemap.at(5) = 0x28BE;
-    *sReelOverlay_Tilemap.at(6) = 0x20BF;
+    crate::gl!(sSelectedPikaPowerTile = Alloc(8) as *mut u16);
+    crate::gl!(sReelOverlay_Tilemap = AllocZeroed(14) as *mut u16);
+    crate::gl!(sReelButtonPress_Tilemap = AllocZeroed(8) as *mut u16);
+    *crate::gl!(sReelOverlay_Tilemap) = 0x2051;
+    *(*sReelOverlay_Tilemap.as_ptr()).at(1) = 0x2851;
+    *(*sReelOverlay_Tilemap.as_ptr()).at(2) = 0x2061;
+    *(*sReelOverlay_Tilemap.as_ptr()).at(3) = 0x2861;
+    *(*sReelOverlay_Tilemap.as_ptr()).at(4) = 0x20BE;
+    *(*sReelOverlay_Tilemap.as_ptr()).at(5) = 0x28BE;
+    *(*sReelOverlay_Tilemap.as_ptr()).at(6) = 0x20BF;
 }
 unsafe fn SlotMachineSetup_LoadGfxAndTilemaps() {
     LoadMenuGfx();
@@ -1040,80 +1072,87 @@ unsafe fn CreateSlotMachineTasks() {
     Task_SlotMachine(CreateTask(Some(Task_SlotMachine), 0));
 }
 pub(crate) unsafe fn Task_SlotMachine(taskId: u8) {
-    while sSlotTasks[(*sSlotMachine).state].unwrap_unchecked()(&raw mut (*gTasks.as_ptr())[taskId])
-        != 0
+    while sSlotTasks[(*crate::gl!(sSlotMachine)).state].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    ) != 0
     {}
 }
 pub(crate) unsafe fn SlotTask_UnfadeScreen(task: *mut Task) -> u8 {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-    LoadPikaPowerMeter((*sSlotMachine).pikaPowerBolts);
-    (*sSlotMachine).state += 1;
+    LoadPikaPowerMeter((*crate::gl!(sSlotMachine)).pikaPowerBolts);
+    (*crate::gl!(sSlotMachine)).state += 1;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitUnfade(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
-        (*sSlotMachine).state += 1;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        (*crate::gl!(sSlotMachine)).state += 1;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_ReadyNewSpin(task: *mut Task) -> u8 {
-    (*sSlotMachine).payout = 0;
-    (*sSlotMachine).bet = 0;
-    (*sSlotMachine).currentReel = LEFT_REEL as i16;
-    (*sSlotMachine).machineBias &= 192;
-    (*sSlotMachine).state = SLOTTASK_ASK_INSERT_BET;
-    if (*sSlotMachine).coins <= 0 {
-        (*sSlotMachine).state = SLOTTASK_MSG_NO_MORE_COINS;
-    } else if (*sSlotMachine).reelTimeSpinsLeft != 0 {
-        (*sSlotMachine).state = SLOTTASK_READY_NEW_RT_SPIN;
+    (*crate::gl!(sSlotMachine)).payout = 0;
+    (*crate::gl!(sSlotMachine)).bet = 0;
+    (*crate::gl!(sSlotMachine)).currentReel = LEFT_REEL as i16;
+    (*crate::gl!(sSlotMachine)).machineBias &= 192;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_ASK_INSERT_BET;
+    if (*crate::gl!(sSlotMachine)).coins <= 0 {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_MSG_NO_MORE_COINS;
+    } else if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft != 0 {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_READY_NEW_RT_SPIN;
         CreateDigitalDisplayScene(DIG_DISPLAY_REEL_TIME);
     }
     TRUE
 }
 pub(crate) unsafe fn SlotTask_ReadyNewReelTimeSpin(task: *mut Task) -> u8 {
     if IsDigitalDisplayAnimFinished() != 0 {
-        (*sSlotMachine).state = SLOTTASK_ASK_INSERT_BET;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_ASK_INSERT_BET;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_AskInsertBet(task: *mut Task) -> u8 {
     CreateDigitalDisplayScene(DIG_DISPLAY_INSERT_BET);
-    (*sSlotMachine).state = SLOTTASK_BET_INPUT;
-    if (*sSlotMachine).coins >= MAX_COINS {
-        (*sSlotMachine).state = SLOTTASK_MSG_MAX_COINS;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_BET_INPUT;
+    if (*crate::gl!(sSlotMachine)).coins >= MAX_COINS {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_MSG_MAX_COINS;
     }
     TRUE
 }
 pub(crate) unsafe fn SlotTask_HandleBetInput(task: *mut Task) -> u8 {
-    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
         OpenInfoBox(DIG_DISPLAY_INSERT_BET);
-        (*sSlotMachine).state = SLOTTASK_WAIT_INFO_BOX;
-    } else if gMain.newKeys as i32 & R_BUTTON != 0 {
-        if (*sSlotMachine).coins as i32 - (MAX_BET as i32 - (*sSlotMachine).bet as i32) >= 0 {
-            for i in (*sSlotMachine).bet..MAX_BET {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_INFO_BOX;
+    } else if crate::gl!(gMain.newKeys) as i32 & R_BUTTON != 0 {
+        if (*crate::gl!(sSlotMachine)).coins as i32
+            - (MAX_BET as i32 - (*crate::gl!(sSlotMachine)).bet as i32)
+            >= 0
+        {
+            for i in (*crate::gl!(sSlotMachine)).bet..MAX_BET {
                 LightenBetTiles(i as u8);
             }
-            (*sSlotMachine).coins -= MAX_BET - (*sSlotMachine).bet;
-            (*sSlotMachine).bet = MAX_BET;
-            (*sSlotMachine).state = SLOTTASK_START_SPIN;
+            (*crate::gl!(sSlotMachine)).coins -= MAX_BET - (*crate::gl!(sSlotMachine)).bet;
+            (*crate::gl!(sSlotMachine)).bet = MAX_BET;
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_START_SPIN;
             PlaySE(SE_SHOP);
         } else {
-            (*sSlotMachine).state = SLOTTASK_MSG_NEED_3_COINS;
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_MSG_NEED_3_COINS;
         }
     } else {
-        if gMain.newKeys as i32 & DPAD_DOWN != 0 && (*sSlotMachine).coins != 0 {
-            PlaySE(SE_SHOP);
-            LightenBetTiles((*sSlotMachine).bet as u8);
-            (*sSlotMachine).coins -= 1;
-            (*sSlotMachine).bet += 1;
-        }
-        if (*sSlotMachine).bet >= MAX_BET
-            || (*sSlotMachine).bet != 0 && gMain.newKeys as i32 & A_BUTTON != 0
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
+            && (*crate::gl!(sSlotMachine)).coins != 0
         {
-            (*sSlotMachine).state = SLOTTASK_START_SPIN;
+            PlaySE(SE_SHOP);
+            LightenBetTiles((*crate::gl!(sSlotMachine)).bet as u8);
+            (*crate::gl!(sSlotMachine)).coins -= 1;
+            (*crate::gl!(sSlotMachine)).bet += 1;
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
-            (*sSlotMachine).state = SLOTTASK_ASK_QUIT;
+        if (*crate::gl!(sSlotMachine)).bet >= MAX_BET
+            || (*crate::gl!(sSlotMachine)).bet != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        {
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_START_SPIN;
+        }
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_ASK_QUIT;
         }
     }
     FALSE
@@ -1132,19 +1171,19 @@ pub(crate) unsafe fn SlotTask_PrintMsg_Need3Coins(task: *mut Task) -> u8 {
         None,
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
-    (*sSlotMachine).state = SLOTTASK_WAIT_MSG_NEED_3_COINS;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_MSG_NEED_3_COINS;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitMsg_Need3Coins(task: *mut Task) -> u8 {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
-        (*sSlotMachine).state = SLOTTASK_BET_INPUT;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_BET_INPUT;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitInfoBox(task: *mut Task) -> u8 {
     if IsInfoBoxClosed() != 0 {
-        (*sSlotMachine).state = SLOTTASK_BET_INPUT;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_BET_INPUT;
     }
     FALSE
 }
@@ -1156,24 +1195,24 @@ pub(crate) unsafe fn SlotTask_StartSpin(task: *mut Task) -> u8 {
     SpinSlotReel(RIGHT_REEL);
     IncrementDailySlotsUses();
     (*task).data[0] = 0;
-    if (*sSlotMachine).machineBias as i32 & BIAS_REELTIME != 0 {
+    if (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_REELTIME != 0 {
         BeginReelTime();
-        (*sSlotMachine).state = SLOTTASK_START_RT_SPIN;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_START_RT_SPIN;
     } else {
         CreateDigitalDisplayScene(DIG_DISPLAY_STOP_REEL);
-        (*sSlotMachine).state = SLOTTASK_RESET_BIAS_FAILURE;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_RESET_BIAS_FAILURE;
     }
-    (*sSlotMachine).reelSpeed = REEL_NORMAL_SPEED;
-    if (*sSlotMachine).reelTimeSpinsLeft != 0 {
-        (*sSlotMachine).reelSpeed = ReelTimeSpeed() as i16;
+    (*crate::gl!(sSlotMachine)).reelSpeed = REEL_NORMAL_SPEED;
+    if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft != 0 {
+        (*crate::gl!(sSlotMachine)).reelSpeed = ReelTimeSpeed() as i16;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_StartReelTimeSpin(task: *mut Task) -> u8 {
     if IsReelTimeTaskDone() != 0 {
         CreateDigitalDisplayScene(DIG_DISPLAY_STOP_REEL);
-        (*sSlotMachine).machineBias &= 223;
-        (*sSlotMachine).state = SLOTTASK_RESET_BIAS_FAILURE;
+        (*crate::gl!(sSlotMachine)).machineBias &= 223;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_RESET_BIAS_FAILURE;
     }
     FALSE
 }
@@ -1184,120 +1223,124 @@ pub(crate) unsafe fn SlotTask_ResetBiasFailure(task: *mut Task) -> u8 {
     }) >= 30
     {
         ResetBiasFailure();
-        (*sSlotMachine).state = SLOTTASK_WAIT_REEL_STOP;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_REEL_STOP;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitReelStop(task: *mut Task) -> u8 {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_CONTEST_PLACE);
-        StopSlotReel((*sSlotMachine).currentReel as u8);
-        PressStopReelButton((*sSlotMachine).currentReel as u8);
-        (*sSlotMachine).state = SLOTTASK_WAIT_ALL_REELS_STOP;
+        StopSlotReel((*crate::gl!(sSlotMachine)).currentReel as u8);
+        PressStopReelButton((*crate::gl!(sSlotMachine)).currentReel as u8);
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_ALL_REELS_STOP;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitAllReelsStop(task: *mut Task) -> u8 {
-    if IsSlotReelMoving((*sSlotMachine).currentReel as u8) == 0 {
-        (*sSlotMachine).currentReel += 1;
-        (*sSlotMachine).state = SLOTTASK_WAIT_REEL_STOP;
-        if (*sSlotMachine).currentReel >= NUM_REELS as i16 {
-            (*sSlotMachine).state = SLOTTASK_CHECK_MATCHES;
+    if IsSlotReelMoving((*crate::gl!(sSlotMachine)).currentReel as u8) == 0 {
+        (*crate::gl!(sSlotMachine)).currentReel += 1;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_REEL_STOP;
+        if (*crate::gl!(sSlotMachine)).currentReel >= NUM_REELS as i16 {
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_CHECK_MATCHES;
         }
         return TRUE;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_CheckMatches(task: *mut Task) -> u8 {
-    (*sSlotMachine).machineBias &= 192;
+    (*crate::gl!(sSlotMachine)).machineBias &= 192;
     CheckMatch();
-    if (*sSlotMachine).reelTimeSpinsLeft != 0 {
-        (*sSlotMachine).reelTimeSpinsLeft -= 1;
-        (*sSlotMachine).reelTimeSpinsUsed += 1;
+    if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft != 0 {
+        (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft -= 1;
+        (*crate::gl!(sSlotMachine)).reelTimeSpinsUsed += 1;
     }
-    if (*sSlotMachine).matches != 0 {
-        (*sSlotMachine).state = SLOTTASK_WAIT_PAYOUT;
+    if (*crate::gl!(sSlotMachine)).matches != 0 {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_PAYOUT;
         AwardPayout();
         FlashSlotMachineLights();
         if ({
-            (*sSlotMachine).netCoinLoss -= (*sSlotMachine).payout;
-            (*sSlotMachine).netCoinLoss
+            (*crate::gl!(sSlotMachine)).netCoinLoss -= (*crate::gl!(sSlotMachine)).payout;
+            (*crate::gl!(sSlotMachine)).netCoinLoss
         }) < 0
         {
-            (*sSlotMachine).netCoinLoss = 0;
+            (*crate::gl!(sSlotMachine)).netCoinLoss = 0;
         }
-        if (*sSlotMachine).matches as i32 & 384 != 0 {
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 384 != 0 {
             PlayFanfare(MUS_SLOTS_JACKPOT);
             CreateDigitalDisplayScene(DIG_DISPLAY_BONUS_BIG);
-        } else if (*sSlotMachine).matches as i32 & 64 != 0 {
+        } else if (*crate::gl!(sSlotMachine)).matches as i32 & 64 != 0 {
             PlayFanfare(MUS_SLOTS_JACKPOT);
             CreateDigitalDisplayScene(DIG_DISPLAY_BONUS_REG);
         } else {
             PlayFanfare(MUS_SLOTS_WIN);
             CreateDigitalDisplayScene(DIG_DISPLAY_WIN);
         }
-        if (*sSlotMachine).matches as i32 & 448 != 0 {
-            (*sSlotMachine).machineBias &= 63;
-            if (*sSlotMachine).matches as i32 & 384 != 0 {
-                (*sSlotMachine).reelTimeSpinsLeft = 0;
-                (*sSlotMachine).reelTimeSpinsUsed = 0;
-                (*sSlotMachine).luckyGame = FALSE;
-                if (*sSlotMachine).matches as i32 & 256 != 0 {
-                    (*sSlotMachine).luckyGame = TRUE;
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 448 != 0 {
+            (*crate::gl!(sSlotMachine)).machineBias &= 63;
+            if (*crate::gl!(sSlotMachine)).matches as i32 & 384 != 0 {
+                (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft = 0;
+                (*crate::gl!(sSlotMachine)).reelTimeSpinsUsed = 0;
+                (*crate::gl!(sSlotMachine)).luckyGame = FALSE;
+                if (*crate::gl!(sSlotMachine)).matches as i32 & 256 != 0 {
+                    (*crate::gl!(sSlotMachine)).luckyGame = TRUE;
                 }
             }
         }
-        if (*sSlotMachine).matches as i32 & 32 != 0 && (*sSlotMachine).pikaPowerBolts < 16 {
-            (*sSlotMachine).pikaPowerBolts += 1;
-            AddPikaPowerBolt((*sSlotMachine).pikaPowerBolts);
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 32 != 0
+            && (*crate::gl!(sSlotMachine)).pikaPowerBolts < 16
+        {
+            (*crate::gl!(sSlotMachine)).pikaPowerBolts += 1;
+            AddPikaPowerBolt((*crate::gl!(sSlotMachine)).pikaPowerBolts);
         }
     } else {
         CreateDigitalDisplayScene(DIG_DISPLAY_LOSE);
-        (*sSlotMachine).state = SLOTTASK_NO_MATCHES;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_NO_MATCHES;
         if ({
-            (*sSlotMachine).netCoinLoss += (*sSlotMachine).bet;
-            (*sSlotMachine).netCoinLoss
+            (*crate::gl!(sSlotMachine)).netCoinLoss += (*crate::gl!(sSlotMachine)).bet;
+            (*crate::gl!(sSlotMachine)).netCoinLoss
         }) > MAX_COINS
         {
-            (*sSlotMachine).netCoinLoss = MAX_COINS;
+            (*crate::gl!(sSlotMachine)).netCoinLoss = MAX_COINS;
         }
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitPayout(task: *mut Task) -> u8 {
     if IsFinalTask_Task_Payout() != 0 {
-        (*sSlotMachine).state = SLOTTASK_END_PAYOUT;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_END_PAYOUT;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_EndPayout(task: *mut Task) -> u8 {
     if TryStopSlotMachineLights() != 0 {
-        (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
-        if (*sSlotMachine).matches as i32 & 384 != 0 {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_RESET_BET_TILES;
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 384 != 0 {
             IncrementGameStat(GAME_STAT_SLOT_JACKPOTS);
         }
-        if (*sSlotMachine).matches as i32 & 4 != 0 {
-            (*sSlotMachine).currentReel = LEFT_REEL as i16;
-            (*sSlotMachine).state = SLOTTASK_START_SPIN;
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 4 != 0 {
+            (*crate::gl!(sSlotMachine)).currentReel = LEFT_REEL as i16;
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_START_SPIN;
         }
-        if (*sSlotMachine).matches as i32 & 32 != 0 {
-            (*sSlotMachine).state = SLOTTASK_MATCHED_POWER;
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 32 != 0 {
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_MATCHED_POWER;
         }
-        if (*sSlotMachine).reelTimeSpinsLeft != 0 && (*sSlotMachine).matches as i32 & 4 != 0 {
+        if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft != 0
+            && (*crate::gl!(sSlotMachine)).matches as i32 & 4 != 0
+        {
             CreateDigitalDisplayScene(DIG_DISPLAY_REEL_TIME);
-            (*sSlotMachine).state = SLOTTASK_WAIT_RT_ANIM;
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_RT_ANIM;
         }
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_MatchedPower(task: *mut Task) -> u8 {
     if IsPikaPowerBoltAnimating() == 0 {
-        (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
-        if (*sSlotMachine).matches as i32 & 4 != 0 {
-            (*sSlotMachine).state = SLOTTASK_START_SPIN;
-            if (*sSlotMachine).reelTimeSpinsLeft != 0 {
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_RESET_BET_TILES;
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 4 != 0 {
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_START_SPIN;
+            if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft != 0 {
                 CreateDigitalDisplayScene(DIG_DISPLAY_REEL_TIME);
-                (*sSlotMachine).state = SLOTTASK_WAIT_RT_ANIM;
+                (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_RT_ANIM;
             }
         }
     }
@@ -1305,9 +1348,9 @@ pub(crate) unsafe fn SlotTask_MatchedPower(task: *mut Task) -> u8 {
 }
 pub(crate) unsafe fn SlotTask_WaitReelTimeAnim(task: *mut Task) -> u8 {
     if IsDigitalDisplayAnimFinished() != 0 {
-        (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
-        if (*sSlotMachine).matches as i32 & 4 != 0 {
-            (*sSlotMachine).state = SLOTTASK_START_SPIN;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_RESET_BET_TILES;
+        if (*crate::gl!(sSlotMachine)).matches as i32 & 4 != 0 {
+            (*crate::gl!(sSlotMachine)).state = SLOTTASK_START_SPIN;
         }
     }
     FALSE
@@ -1316,7 +1359,7 @@ pub(crate) unsafe fn SlotTask_ResetBetTiles(task: *mut Task) -> u8 {
     DarkenBetTiles(0);
     DarkenBetTiles(1);
     DarkenBetTiles(2);
-    (*sSlotMachine).state = SLOTTASK_READY_NEW_SPIN;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_READY_NEW_SPIN;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_NoMatches(task: *mut Task) -> u8 {
@@ -1326,7 +1369,7 @@ pub(crate) unsafe fn SlotTask_NoMatches(task: *mut Task) -> u8 {
     }) > 64
     {
         (*task).data[1] = 0;
-        (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_RESET_BET_TILES;
     }
     FALSE
 }
@@ -1345,7 +1388,7 @@ pub(crate) unsafe fn SlotTask_AskQuit(task: *mut Task) -> u8 {
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
     CreateYesNoMenuParameterized(0x15, 7, 0x214, 0x180, 0xE, 0xF);
-    (*sSlotMachine).state = SLOTTASK_HANDLE_QUIT_INPUT;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_HANDLE_QUIT_INPUT;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_HandleQuitInput(task: *mut Task) -> u8 {
@@ -1355,11 +1398,11 @@ pub(crate) unsafe fn SlotTask_HandleQuitInput(task: *mut Task) -> u8 {
         DarkenBetTiles(0);
         DarkenBetTiles(1);
         DarkenBetTiles(2);
-        (*sSlotMachine).coins += (*sSlotMachine).bet;
-        (*sSlotMachine).state = SLOTTASK_END;
+        (*crate::gl!(sSlotMachine)).coins += (*crate::gl!(sSlotMachine)).bet;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_END;
     } else if input == 1 || input == MENU_B_PRESSED {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
-        (*sSlotMachine).state = SLOTTASK_BET_INPUT;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_BET_INPUT;
     }
     FALSE
 }
@@ -1377,13 +1420,13 @@ pub(crate) unsafe fn SlotTask_PrintMsg_MaxCoins(task: *mut Task) -> u8 {
         None,
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
-    (*sSlotMachine).state = SLOTTASK_WAIT_MSG_MAX_COINS;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_MSG_MAX_COINS;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitMsg_MaxCoins(task: *mut Task) -> u8 {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
-        (*sSlotMachine).state = SLOTTASK_BET_INPUT;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_BET_INPUT;
     }
     FALSE
 }
@@ -1401,100 +1444,102 @@ pub(crate) unsafe fn SlotTask_PrintMsg_NoMoreCoins(task: *mut Task) -> u8 {
         None,
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
-    (*sSlotMachine).state = SLOTTASK_WAIT_MSG_NO_MORE_COINS;
+    (*crate::gl!(sSlotMachine)).state = SLOTTASK_WAIT_MSG_NO_MORE_COINS;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_WaitMsg_NoMoreCoins(task: *mut Task) -> u8 {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
-        (*sSlotMachine).state = SLOTTASK_END;
+        (*crate::gl!(sSlotMachine)).state = SLOTTASK_END;
     }
     FALSE
 }
 pub(crate) unsafe fn SlotTask_EndGame(task: *mut Task) -> u8 {
-    SetCoins((*sSlotMachine).coins as u16);
+    SetCoins((*crate::gl!(sSlotMachine)).coins as u16);
     TryPutFindThatGamerOnAir(GetCoins());
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    (*sSlotMachine).state += 1;
+    (*crate::gl!(sSlotMachine)).state += 1;
     FALSE
 }
 pub(crate) unsafe fn SlotTask_FreeDataStructures(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
-        SetMainCallback2((*sSlotMachine).prevMainCb);
-        Free(sImageTable_DigitalDisplay_Reel as *mut c_void);
-        sImageTable_DigitalDisplay_Reel = null_mut();
-        Free(sImageTable_DigitalDisplay_Time as *mut c_void);
-        sImageTable_DigitalDisplay_Time = null_mut();
-        Free(sImageTable_DigitalDisplay_Insert as *mut c_void);
-        sImageTable_DigitalDisplay_Insert = null_mut();
-        Free(sImageTable_DigitalDisplay_Stop as *mut c_void);
-        sImageTable_DigitalDisplay_Stop = null_mut();
-        Free(sImageTable_DigitalDisplay_Win as *mut c_void);
-        sImageTable_DigitalDisplay_Win = null_mut();
-        Free(sImageTable_DigitalDisplay_Lose as *mut c_void);
-        sImageTable_DigitalDisplay_Lose = null_mut();
-        Free(sImageTable_DigitalDisplay_Bonus as *mut c_void);
-        sImageTable_DigitalDisplay_Bonus = null_mut();
-        Free(sImageTable_DigitalDisplay_Big as *mut c_void);
-        sImageTable_DigitalDisplay_Big = null_mut();
-        Free(sImageTable_DigitalDisplay_Reg as *mut c_void);
-        sImageTable_DigitalDisplay_Reg = null_mut();
-        Free(sImageTable_DigitalDisplay_AButton as *mut c_void);
-        sImageTable_DigitalDisplay_AButton = null_mut();
-        Free(sImageTable_DigitalDisplay_Smoke as *mut c_void);
-        sImageTable_DigitalDisplay_Smoke = null_mut();
-        Free(sImageTable_DigitalDisplay_Number as *mut c_void);
-        sImageTable_DigitalDisplay_Number = null_mut();
-        Free(sImageTable_DigitalDisplay_Pokeball as *mut c_void);
-        sImageTable_DigitalDisplay_Pokeball = null_mut();
-        Free(sImageTable_DigitalDisplay_DPad as *mut c_void);
-        sImageTable_DigitalDisplay_DPad = null_mut();
-        if !sImageTable_ReelTimePikachu.is_null() {
-            Free(sImageTable_ReelTimePikachu as *mut c_void);
-            sImageTable_ReelTimePikachu = null_mut();
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        SetMainCallback2((*crate::gl!(sSlotMachine)).prevMainCb);
+        Free(crate::gl!(sImageTable_DigitalDisplay_Reel) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Reel = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Time) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Time = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Insert) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Insert = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Stop) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Stop = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Win) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Win = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Lose) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Lose = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Bonus) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Bonus = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Big) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Big = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Reg) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Reg = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_AButton) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_AButton = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Smoke) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Smoke = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Number) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Number = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_Pokeball) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_Pokeball = null_mut());
+        Free(crate::gl!(sImageTable_DigitalDisplay_DPad) as *mut c_void);
+        crate::gl!(sImageTable_DigitalDisplay_DPad = null_mut());
+        if !(*sImageTable_ReelTimePikachu.as_ptr()).is_null() {
+            Free(crate::gl!(sImageTable_ReelTimePikachu) as *mut c_void);
+            crate::gl!(sImageTable_ReelTimePikachu = null_mut());
         }
-        if !sImageTable_ReelTimeMachineAntennae.is_null() {
-            Free(sImageTable_ReelTimeMachineAntennae as *mut c_void);
-            sImageTable_ReelTimeMachineAntennae = null_mut();
+        if !(*sImageTable_ReelTimeMachineAntennae.as_ptr()).is_null() {
+            Free(crate::gl!(sImageTable_ReelTimeMachineAntennae) as *mut c_void);
+            crate::gl!(sImageTable_ReelTimeMachineAntennae = null_mut());
         }
-        if !sImageTable_ReelTimeMachine.is_null() {
-            Free(sImageTable_ReelTimeMachine as *mut c_void);
-            sImageTable_ReelTimeMachine = null_mut();
+        if !(*sImageTable_ReelTimeMachine.as_ptr()).is_null() {
+            Free(crate::gl!(sImageTable_ReelTimeMachine) as *mut c_void);
+            crate::gl!(sImageTable_ReelTimeMachine = null_mut());
         }
-        if !sImageTable_BrokenReelTimeMachine.is_null() {
-            Free(sImageTable_BrokenReelTimeMachine as *mut c_void);
-            sImageTable_BrokenReelTimeMachine = null_mut();
+        if !(*sImageTable_BrokenReelTimeMachine.as_ptr()).is_null() {
+            Free(crate::gl!(sImageTable_BrokenReelTimeMachine) as *mut c_void);
+            crate::gl!(sImageTable_BrokenReelTimeMachine = null_mut());
         }
-        Free(sMenuGfx as *mut c_void);
-        sMenuGfx = null_mut();
-        Free(sSelectedPikaPowerTile as *mut c_void);
-        sSelectedPikaPowerTile = null_mut();
-        Free(sReelOverlay_Tilemap as *mut c_void);
-        sReelOverlay_Tilemap = null_mut();
-        Free(sDigitalDisplayGfxPtr as *mut c_void);
-        sDigitalDisplayGfxPtr = null_mut();
-        Free(sReelTimeGfxPtr as *mut c_void);
-        sReelTimeGfxPtr = null_mut();
-        Free(sReelButtonPress_Tilemap as *mut c_void);
-        sReelButtonPress_Tilemap = null_mut();
-        Free(sReelBackground_Gfx as *mut c_void);
-        sReelBackground_Gfx = null_mut();
-        Free(sReelBackgroundSpriteSheet as *mut c_void);
-        sReelBackgroundSpriteSheet = null_mut();
-        Free(sSlotMachineSpritesheetsPtr as *mut c_void);
-        sSlotMachineSpritesheetsPtr = null_mut();
-        Free(sSlotMachine as *mut c_void);
-        sSlotMachine = null_mut();
+        Free(crate::gl!(sMenuGfx) as *mut c_void);
+        crate::gl!(sMenuGfx = null_mut());
+        Free(crate::gl!(sSelectedPikaPowerTile) as *mut c_void);
+        crate::gl!(sSelectedPikaPowerTile = null_mut());
+        Free(crate::gl!(sReelOverlay_Tilemap) as *mut c_void);
+        crate::gl!(sReelOverlay_Tilemap = null_mut());
+        Free(crate::gl!(sDigitalDisplayGfxPtr) as *mut c_void);
+        crate::gl!(sDigitalDisplayGfxPtr = null_mut());
+        Free(crate::gl!(sReelTimeGfxPtr) as *mut c_void);
+        crate::gl!(sReelTimeGfxPtr = null_mut());
+        Free(crate::gl!(sReelButtonPress_Tilemap) as *mut c_void);
+        crate::gl!(sReelButtonPress_Tilemap = null_mut());
+        Free(crate::gl!(sReelBackground_Gfx) as *mut c_void);
+        crate::gl!(sReelBackground_Gfx = null_mut());
+        Free(crate::gl!(sReelBackgroundSpriteSheet) as *mut c_void);
+        crate::gl!(sReelBackgroundSpriteSheet = null_mut());
+        Free(crate::gl!(sSlotMachineSpritesheetsPtr) as *mut c_void);
+        crate::gl!(sSlotMachineSpritesheetsPtr = null_mut());
+        Free(crate::gl!(sSlotMachine) as *mut c_void);
+        crate::gl!(sSlotMachine = null_mut());
     }
     FALSE
 }
 unsafe fn DrawMachineBias() {
     let mut whichBias: u8 = 0;
-    if (*sSlotMachine).reelTimeSpinsLeft == 0 && (*sSlotMachine).machineBias as i32 & 192 == 0 {
+    if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft == 0
+        && (*crate::gl!(sSlotMachine)).machineBias as i32 & 192 == 0
+    {
         if ShouldTrySpecialBias() != 0 {
             whichBias = TrySelectBias_Special();
             if whichBias != 3 {
-                (*sSlotMachine).machineBias |= sBiasesSpecial[whichBias] as u8;
+                (*crate::gl!(sSlotMachine)).machineBias |= sBiasesSpecial[whichBias] as u8;
                 if whichBias != 1 {
                     return;
                 }
@@ -1502,14 +1547,14 @@ unsafe fn DrawMachineBias() {
         }
         whichBias = TrySelectBias_Regular();
         if whichBias != 5 {
-            (*sSlotMachine).machineBias |= sBiasesRegular[whichBias] as u8;
+            (*crate::gl!(sSlotMachine)).machineBias |= sBiasesRegular[whichBias] as u8;
         }
     }
 }
 unsafe fn ResetBiasFailure() {
-    (*sSlotMachine).didNotFailBias = FALSE;
-    if (*sSlotMachine).machineBias != 0 {
-        (*sSlotMachine).didNotFailBias = TRUE;
+    (*crate::gl!(sSlotMachine)).didNotFailBias = FALSE;
+    if (*crate::gl!(sSlotMachine)).machineBias != 0 {
+        (*crate::gl!(sSlotMachine)).didNotFailBias = TRUE;
     }
 }
 unsafe fn GetBiasSymbol(mut machineBias: u8) -> u8 {
@@ -1523,7 +1568,10 @@ unsafe fn GetBiasSymbol(mut machineBias: u8) -> u8 {
 }
 unsafe fn ShouldTrySpecialBias() -> u8 {
     let rval: u8 = Random() as u8;
-    if sSpecialDrawOdds[(*sSlotMachine).machineId][(*sSlotMachine).bet as i32 - 1] > rval {
+    if sSpecialDrawOdds[(*crate::gl!(sSlotMachine)).machineId]
+        [(*crate::gl!(sSlotMachine)).bet as i32 - 1]
+        > rval
+    {
         return TRUE;
     }
     FALSE
@@ -1532,7 +1580,8 @@ unsafe fn TrySelectBias_Special() -> u8 {
     let mut whichBias: i16 = 0;
     while whichBias < 3 {
         let rval: i16 = Random() as i16 & 0xff;
-        let value: i16 = sBiasProbabilities_Special[whichBias][(*sSlotMachine).machineId] as i16;
+        let value: i16 =
+            sBiasProbabilities_Special[whichBias][(*crate::gl!(sSlotMachine)).machineId] as i16;
         if value > rval {
             break;
         }
@@ -1545,13 +1594,13 @@ unsafe fn TrySelectBias_Regular() -> u8 {
     while whichBias < 5 {
         let rval: i16 = Random() as i16 & 0xff;
         let mut value: i16 =
-            sBiasProbabilities_Regular[whichBias][(*sSlotMachine).machineId] as i16;
-        if whichBias == 0 && (*sSlotMachine).luckyGame == TRUE {
+            sBiasProbabilities_Regular[whichBias][(*crate::gl!(sSlotMachine)).machineId] as i16;
+        if whichBias == 0 && (*crate::gl!(sSlotMachine)).luckyGame == TRUE {
             value += 10;
             if value > 0x100 {
                 value = 0x100;
             }
-        } else if whichBias == 4 && (*sSlotMachine).luckyGame == TRUE {
+        } else if whichBias == 4 && (*crate::gl!(sSlotMachine)).luckyGame == TRUE {
             value -= 10;
             if value < 0 {
                 value = 0;
@@ -1565,10 +1614,11 @@ unsafe fn TrySelectBias_Regular() -> u8 {
     whichBias as u8
 }
 unsafe fn GetReelTimeSpinProbability(spins: u8) -> u8 {
-    if (*sSlotMachine).luckyGame == FALSE {
-        return sReelTimeProbabilities_NormalGame[spins][(*sSlotMachine).pikaPowerBolts];
+    if (*crate::gl!(sSlotMachine)).luckyGame == FALSE {
+        return sReelTimeProbabilities_NormalGame[spins]
+            [(*crate::gl!(sSlotMachine)).pikaPowerBolts];
     } else {
-        return sReelTimeProbabilities_LuckyGame[spins][(*sSlotMachine).pikaPowerBolts];
+        return sReelTimeProbabilities_LuckyGame[spins][(*crate::gl!(sSlotMachine)).pikaPowerBolts];
     }
     #[allow(unreachable_code)]
     {
@@ -1576,7 +1626,7 @@ unsafe fn GetReelTimeSpinProbability(spins: u8) -> u8 {
     }
 }
 unsafe fn GetReelTimeDraw() {
-    (*sSlotMachine).reelTimeDraw = 0;
+    (*crate::gl!(sSlotMachine)).reelTimeDraw = 0;
     let mut rval: u8 = Random() as u8;
     if rval < GetReelTimeSpinProbability(0) {
         return;
@@ -1589,7 +1639,7 @@ unsafe fn GetReelTimeDraw() {
         }
         spins -= 1;
     }
-    (*sSlotMachine).reelTimeDraw = spins as u8;
+    (*crate::gl!(sSlotMachine)).reelTimeDraw = spins as u8;
 }
 unsafe fn ShouldReelTimeMachineExplode(check: u16) -> u8 {
     let rval: u16 = Random() & 0xff;
@@ -1605,13 +1655,13 @@ unsafe fn ShouldReelTimeMachineExplode(check: u16) -> u8 {
 }
 unsafe fn ReelTimeSpeed() -> u16 {
     let mut i: u8 = 0;
-    if (*sSlotMachine).netCoinLoss >= 300 {
+    if (*crate::gl!(sSlotMachine)).netCoinLoss >= 300 {
         i = 4;
-    } else if (*sSlotMachine).netCoinLoss >= 250 {
+    } else if (*crate::gl!(sSlotMachine)).netCoinLoss >= 250 {
         i = 3;
-    } else if (*sSlotMachine).netCoinLoss >= 200 {
+    } else if (*crate::gl!(sSlotMachine)).netCoinLoss >= 200 {
         i = 2;
-    } else if (*sSlotMachine).netCoinLoss >= 150 {
+    } else if (*crate::gl!(sSlotMachine)).netCoinLoss >= 150 {
         i = 1;
     }
     let mut rval: u8 = (Random() as i32 % 100) as u8;
@@ -1621,19 +1671,19 @@ unsafe fn ReelTimeSpeed() -> u16 {
     }
     rval = (Random() as i32 % 100) as u8;
     value = sReelTimeSpeed_Probabilities[i][1] as u8
-        + sQuarterSpeed_ProbabilityBoost[(*sSlotMachine).reelTimeSpinsUsed] as u8;
+        + sQuarterSpeed_ProbabilityBoost[(*crate::gl!(sSlotMachine)).reelTimeSpinsUsed] as u8;
     if rval < value {
         return REEL_QUARTER_SPEED;
     }
     REEL_NORMAL_SPEED as u16
 }
 unsafe fn CheckMatch() {
-    (*sSlotMachine).matches = 0;
+    (*crate::gl!(sSlotMachine)).matches = 0;
     CheckMatch_CenterRow();
-    if (*sSlotMachine).bet > 1 {
+    if (*crate::gl!(sSlotMachine)).bet > 1 {
         CheckMatch_TopAndBottom();
     }
-    if (*sSlotMachine).bet > 2 {
+    if (*crate::gl!(sSlotMachine)).bet > 2 {
         CheckMatch_Diagonals();
     }
 }
@@ -1643,8 +1693,8 @@ unsafe fn CheckMatch_CenterRow() {
     let sym3: u8 = GetSymbolAtRest(RIGHT_REEL, 2);
     let r#match: u8 = GetMatchFromSymbols(sym1, sym2, sym3);
     if r#match != MATCH_NONE {
-        (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
-        (*sSlotMachine).matches |= sSlotMatchFlags[r#match];
+        (*crate::gl!(sSlotMachine)).payout += sSlotPayouts[r#match] as i16;
+        (*crate::gl!(sSlotMachine)).matches |= sSlotMatchFlags[r#match];
         FlashMatchLine(MATCH_MIDDLE_ROW);
     }
 }
@@ -1657,8 +1707,8 @@ unsafe fn CheckMatch_TopAndBottom() {
         if r#match == MATCH_CHERRY {
             r#match = MATCH_TOPBOT_CHERRY;
         }
-        (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
-        (*sSlotMachine).matches |= sSlotMatchFlags[r#match];
+        (*crate::gl!(sSlotMachine)).payout += sSlotPayouts[r#match] as i16;
+        (*crate::gl!(sSlotMachine)).matches |= sSlotMatchFlags[r#match];
         FlashMatchLine(MATCH_TOP_ROW);
     }
     sym1 = GetSymbolAtRest(LEFT_REEL, 3);
@@ -1669,8 +1719,8 @@ unsafe fn CheckMatch_TopAndBottom() {
         if r#match == MATCH_CHERRY {
             r#match = MATCH_TOPBOT_CHERRY;
         }
-        (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
-        (*sSlotMachine).matches |= sSlotMatchFlags[r#match];
+        (*crate::gl!(sSlotMachine)).payout += sSlotPayouts[r#match] as i16;
+        (*crate::gl!(sSlotMachine)).matches |= sSlotMatchFlags[r#match];
         FlashMatchLine(MATCH_BOTTOM_ROW);
     }
 }
@@ -1681,8 +1731,8 @@ unsafe fn CheckMatch_Diagonals() {
     let mut r#match: u8 = GetMatchFromSymbols(sym1, sym2, sym3);
     if r#match != MATCH_NONE {
         if r#match != MATCH_CHERRY {
-            (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
-            (*sSlotMachine).matches |= sSlotMatchFlags[r#match];
+            (*crate::gl!(sSlotMachine)).payout += sSlotPayouts[r#match] as i16;
+            (*crate::gl!(sSlotMachine)).matches |= sSlotMatchFlags[r#match];
         }
         FlashMatchLine(MATCH_NWSE_DIAG);
     }
@@ -1692,8 +1742,8 @@ unsafe fn CheckMatch_Diagonals() {
     r#match = GetMatchFromSymbols(sym1, sym2, sym3);
     if r#match != MATCH_NONE {
         if r#match != MATCH_CHERRY {
-            (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
-            (*sSlotMachine).matches |= sSlotMatchFlags[r#match];
+            (*crate::gl!(sSlotMachine)).payout += sSlotPayouts[r#match] as i16;
+            (*crate::gl!(sSlotMachine)).matches |= sSlotMatchFlags[r#match];
         }
         FlashMatchLine(MATCH_NESW_DIAG);
     }
@@ -1735,7 +1785,7 @@ pub(crate) unsafe fn Task_Payout(taskId: u8) {
 pub(crate) unsafe fn PayoutTask_Init(task: *mut Task) -> u8 {
     if IsMatchLineDoneFlashingBeforePayout() != 0 {
         (*task).data[tState] += 1;
-        if (*sSlotMachine).payout == 0 {
+        if (*crate::gl!(sSlotMachine)).payout == 0 {
             (*task).data[tState] = PAYOUT_TASK_FREE;
             return TRUE;
         }
@@ -1752,24 +1802,24 @@ pub(crate) unsafe fn PayoutTask_GivePayout(task: *mut Task) -> u8 {
         if IsFanfareTaskInactive() != 0 {
             PlaySE(SE_PIN);
         }
-        (*sSlotMachine).payout -= 1;
-        if (*sSlotMachine).coins < MAX_COINS {
-            (*sSlotMachine).coins += 1;
+        (*crate::gl!(sSlotMachine)).payout -= 1;
+        if (*crate::gl!(sSlotMachine)).coins < MAX_COINS {
+            (*crate::gl!(sSlotMachine)).coins += 1;
         }
         (*task).data[1] = 8;
-        if gMain.heldKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
             (*task).data[1] = 4;
         }
     }
-    if IsFanfareTaskInactive() != 0 && gMain.newKeys as i32 & START_BUTTON != 0 {
+    if IsFanfareTaskInactive() != 0 && crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
         PlaySE(SE_PIN);
-        (*sSlotMachine).coins += (*sSlotMachine).payout;
-        if (*sSlotMachine).coins > MAX_COINS {
-            (*sSlotMachine).coins = MAX_COINS;
+        (*crate::gl!(sSlotMachine)).coins += (*crate::gl!(sSlotMachine)).payout;
+        if (*crate::gl!(sSlotMachine)).coins > MAX_COINS {
+            (*crate::gl!(sSlotMachine)).coins = MAX_COINS;
         }
-        (*sSlotMachine).payout = 0;
+        (*crate::gl!(sSlotMachine)).payout = 0;
     }
-    if (*sSlotMachine).payout == 0 {
+    if (*crate::gl!(sSlotMachine)).payout == 0 {
         (*task).data[tState] += 1;
     }
     FALSE
@@ -1781,7 +1831,8 @@ pub(crate) unsafe fn PayoutTask_Free(task: *mut Task) -> u8 {
     FALSE
 }
 unsafe fn GetSymbolAtRest(reel: u8, offset: i16) -> u8 {
-    let mut pos: i16 = (((*sSlotMachine).reelPositions[reel] as i32 + offset as i32) % 21) as i16;
+    let mut pos: i16 =
+        (((*crate::gl!(sSlotMachine)).reelPositions[reel] as i32 + offset as i32) % 21) as i16;
     if pos < 0 {
         pos += SYMBOLS_PER_REEL;
     }
@@ -1789,7 +1840,7 @@ unsafe fn GetSymbolAtRest(reel: u8, offset: i16) -> u8 {
 }
 unsafe fn GetSymbol(reel: u8, offset: i16) -> u8 {
     let mut inc: i16 = 0;
-    let pixelOffset: i16 = (*sSlotMachine).reelPixelOffsets[reel] % 24;
+    let pixelOffset: i16 = (*crate::gl!(sSlotMachine)).reelPixelOffsets[reel] % 24;
     if pixelOffset != 0 {
         inc = -1;
     }
@@ -1797,42 +1848,43 @@ unsafe fn GetSymbol(reel: u8, offset: i16) -> u8 {
 }
 unsafe fn GetReelTimeSymbol(offset: i16) -> u8 {
     let mut newPosition: i16 =
-        (((*sSlotMachine).reeltimePosition as i32 + offset as i32) % 6) as i16;
+        (((*crate::gl!(sSlotMachine)).reeltimePosition as i32 + offset as i32) % 6) as i16;
     if newPosition < 0 {
         newPosition += REELTIME_SYMBOLS;
     }
     sReelTimeSymbols[newPosition]
 }
 unsafe fn AdvanceSlotReel(reelIndex: u8, value: i16) {
-    (*sSlotMachine).reelPixelOffsets[reelIndex] += value;
-    (*sSlotMachine).reelPixelOffsets[reelIndex] %= 504;
-    (*sSlotMachine).reelPositions[reelIndex] =
-        SYMBOLS_PER_REEL - (*sSlotMachine).reelPixelOffsets[reelIndex] / 24;
+    (*crate::gl!(sSlotMachine)).reelPixelOffsets[reelIndex] += value;
+    (*crate::gl!(sSlotMachine)).reelPixelOffsets[reelIndex] %= 504;
+    (*crate::gl!(sSlotMachine)).reelPositions[reelIndex] =
+        SYMBOLS_PER_REEL - (*crate::gl!(sSlotMachine)).reelPixelOffsets[reelIndex] / 24;
 }
 pub unsafe fn AdvanceSlotReelToNextSymbol(reelIndex: u8, mut value: i16) -> i16 {
-    let mut offset: i16 = (*sSlotMachine).reelPixelOffsets[reelIndex] % 24;
+    let mut offset: i16 = (*crate::gl!(sSlotMachine)).reelPixelOffsets[reelIndex] % 24;
     if offset != 0 {
         if offset < value {
             value = offset;
         }
         AdvanceSlotReel(reelIndex, value);
-        offset = (*sSlotMachine).reelPixelOffsets[reelIndex] % 24;
+        offset = (*crate::gl!(sSlotMachine)).reelPixelOffsets[reelIndex] % 24;
     }
     offset
 }
 unsafe fn AdvanceReeltimeReel(value: i16) {
-    (*sSlotMachine).reeltimePixelOffset += value;
-    (*sSlotMachine).reeltimePixelOffset %= 120;
-    (*sSlotMachine).reeltimePosition = REELTIME_SYMBOLS - (*sSlotMachine).reeltimePixelOffset / 20;
+    (*crate::gl!(sSlotMachine)).reeltimePixelOffset += value;
+    (*crate::gl!(sSlotMachine)).reeltimePixelOffset %= 120;
+    (*crate::gl!(sSlotMachine)).reeltimePosition =
+        REELTIME_SYMBOLS - (*crate::gl!(sSlotMachine)).reeltimePixelOffset / 20;
 }
 pub unsafe fn AdvanceReeltimeReelToNextSymbol(mut value: i16) -> i16 {
-    let mut offset: i16 = (*sSlotMachine).reeltimePixelOffset % 20;
+    let mut offset: i16 = (*crate::gl!(sSlotMachine)).reeltimePixelOffset % 20;
     if offset != 0 {
         if offset < value {
             value = offset;
         }
         AdvanceReeltimeReel(value);
-        offset = (*sSlotMachine).reeltimePixelOffset % 20;
+        offset = (*crate::gl!(sSlotMachine)).reeltimePixelOffset % 20;
     }
     offset
 }
@@ -1840,31 +1892,34 @@ unsafe fn CreateReelTasks() {
     for i in 0..NUM_REELS {
         let taskId: u8 = CreateTask(Some(Task_Reel), 2);
         task_set(taskId, tReelId, i as i16);
-        (*sSlotMachine).slotReelTasks[i] = taskId;
+        (*crate::gl!(sSlotMachine)).slotReelTasks[i] = taskId;
         Task_Reel(taskId);
     }
 }
 unsafe fn SpinSlotReel(reelIndex: u8) {
     task_set(
-        (*sSlotMachine).slotReelTasks[reelIndex],
+        (*crate::gl!(sSlotMachine)).slotReelTasks[reelIndex],
         tState,
         REEL_TASK_SPIN,
     );
     task_set(
-        (*sSlotMachine).slotReelTasks[reelIndex],
+        (*crate::gl!(sSlotMachine)).slotReelTasks[reelIndex],
         tMoving,
         TRUE as i16,
     );
 }
 unsafe fn StopSlotReel(reelIndex: u8) {
     task_set(
-        (*sSlotMachine).slotReelTasks[reelIndex],
+        (*crate::gl!(sSlotMachine)).slotReelTasks[reelIndex],
         tState,
         REEL_TASK_DECIDE_STOP,
     );
 }
 unsafe fn IsSlotReelMoving(reelIndex: u8) -> u8 {
-    task_get((*sSlotMachine).slotReelTasks[reelIndex], tMoving) as u8
+    task_get(
+        (*crate::gl!(sSlotMachine)).slotReelTasks[reelIndex],
+        tMoving,
+    ) as u8
 }
 pub(crate) unsafe fn Task_Reel(taskId: u8) {
     while sReelTasks[task_get(taskId, tState)].unwrap_unchecked()(
@@ -1876,22 +1931,25 @@ pub(crate) fn ReelTask_StayStill(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn ReelTask_Spin(task: *mut Task) -> u8 {
-    AdvanceSlotReel((*task).data[tReelId] as u8, (*sSlotMachine).reelSpeed);
+    AdvanceSlotReel(
+        (*task).data[tReelId] as u8,
+        (*crate::gl!(sSlotMachine)).reelSpeed,
+    );
     FALSE
 }
 pub(crate) unsafe fn ReelTask_DecideStop(task: *mut Task) -> u8 {
     (*task).data[tState] += 1;
-    (*sSlotMachine).winnerRows[(*task).data[tReelId]] = 0;
-    (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] = 0;
-    if (*sSlotMachine).reelTimeSpinsLeft == 0
-        && ((*sSlotMachine).machineBias == 0
-            || (*sSlotMachine).didNotFailBias == 0
+    (*crate::gl!(sSlotMachine)).winnerRows[(*task).data[tReelId]] = 0;
+    (*crate::gl!(sSlotMachine)).reelExtraTurns[(*task).data[tReelId]] = 0;
+    if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft == 0
+        && ((*crate::gl!(sSlotMachine)).machineBias == 0
+            || (*crate::gl!(sSlotMachine)).didNotFailBias == 0
             || sDecideStop_Bias[(*task).data[tReelId]].unwrap_unchecked()() == 0)
     {
-        (*sSlotMachine).didNotFailBias = FALSE;
+        (*crate::gl!(sSlotMachine)).didNotFailBias = FALSE;
         sDecideStop_NoBias[(*task).data[tReelId]].unwrap_unchecked()();
     }
-    (*task).data[tExtraTurns] = (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]];
+    (*task).data[tExtraTurns] = (*crate::gl!(sSlotMachine)).reelExtraTurns[(*task).data[tReelId]];
     TRUE
 }
 pub(crate) unsafe fn ReelTask_MoveToStop(task: *mut Task) -> u8 {
@@ -1901,16 +1959,22 @@ pub(crate) unsafe fn ReelTask_MoveToStop(task: *mut Task) -> u8 {
         sReelStopShocks.as_ptr().cast_mut() as *mut u8,
         10,
     );
-    let mut reelPixelPos: i16 = (*sSlotMachine).reelPixelOffsets[(*task).data[tReelId]] % 24;
+    let mut reelPixelPos: i16 =
+        (*crate::gl!(sSlotMachine)).reelPixelOffsets[(*task).data[tReelId]] % 24;
     if reelPixelPos != 0 {
-        reelPixelPos =
-            AdvanceSlotReelToNextSymbol((*task).data[tReelId] as u8, (*sSlotMachine).reelSpeed);
-    } else if (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] != 0 {
-        (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] -= 1;
-        AdvanceSlotReel((*task).data[tReelId] as u8, (*sSlotMachine).reelSpeed);
-        reelPixelPos = (*sSlotMachine).reelPixelOffsets[(*task).data[tReelId]] % 24;
+        reelPixelPos = AdvanceSlotReelToNextSymbol(
+            (*task).data[tReelId] as u8,
+            (*crate::gl!(sSlotMachine)).reelSpeed,
+        );
+    } else if (*crate::gl!(sSlotMachine)).reelExtraTurns[(*task).data[tReelId]] != 0 {
+        (*crate::gl!(sSlotMachine)).reelExtraTurns[(*task).data[tReelId]] -= 1;
+        AdvanceSlotReel(
+            (*task).data[tReelId] as u8,
+            (*crate::gl!(sSlotMachine)).reelSpeed,
+        );
+        reelPixelPos = (*crate::gl!(sSlotMachine)).reelPixelOffsets[(*task).data[tReelId]] % 24;
     }
-    if reelPixelPos == 0 && (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] == 0 {
+    if reelPixelPos == 0 && (*crate::gl!(sSlotMachine)).reelExtraTurns[(*task).data[tReelId]] == 0 {
         (*task).data[tState] += 1;
         (*task).data[1] = reelStopShocks[(*task).data[1]] as i16;
         (*task).data[2] = 0;
@@ -1918,7 +1982,8 @@ pub(crate) unsafe fn ReelTask_MoveToStop(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn ReelTask_ShakingStop(task: *mut Task) -> u8 {
-    (*sSlotMachine).reelShockOffsets[(*task).data[tReelId]] = (*task).data[tShockMagnitude] as u16;
+    (*crate::gl!(sSlotMachine)).reelShockOffsets[(*task).data[tReelId]] =
+        (*task).data[tShockMagnitude] as u16;
     (*task).data[tShockMagnitude] = -(*task).data[tShockMagnitude];
     (*task).data[2] += 1;
     if (*task).data[2] as i32 & 0x3 == 0 {
@@ -1927,23 +1992,25 @@ pub(crate) unsafe fn ReelTask_ShakingStop(task: *mut Task) -> u8 {
     if (*task).data[tShockMagnitude] == 0 {
         (*task).data[tState] = 0;
         (*task).data[tMoving] = FALSE as i16;
-        (*sSlotMachine).reelShockOffsets[(*task).data[tReelId]] = 0;
+        (*crate::gl!(sSlotMachine)).reelShockOffsets[(*task).data[tReelId]] = 0;
     }
     FALSE
 }
 pub(crate) unsafe fn DecideStop_Bias_Reel1() -> u8 {
-    let mut sym2: u8 = GetBiasSymbol((*sSlotMachine).machineBias);
+    let mut sym2: u8 = GetBiasSymbol((*crate::gl!(sSlotMachine)).machineBias);
     let mut sym1: u8 = sym2;
-    if (*sSlotMachine).machineBias as i32 & 192 != 0 {
+    if (*crate::gl!(sSlotMachine)).machineBias as i32 & 192 != 0 {
         sym1 = SYMBOL_7_RED;
         sym2 = SYMBOL_7_BLUE;
     }
-    sDecideStop_Bias_Reel1_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()(sym1, sym2)
+    sDecideStop_Bias_Reel1_Bets[(*crate::gl!(sSlotMachine)).bet as i32 - 1].unwrap_unchecked()(
+        sym1, sym2,
+    )
 }
 unsafe fn EitherSymbolAtPos_Reel1(pos: i16, sym1: u8, sym2: u8) -> u8 {
     let sym: u8 = GetSymbol(LEFT_REEL, pos);
     if sym == sym1 || sym == sym2 {
-        (*sSlotMachine).biasSymbol = sym;
+        (*crate::gl!(sSlotMachine)).biasSymbol = sym;
         return TRUE;
     }
     FALSE
@@ -1963,7 +2030,7 @@ unsafe fn AreCherriesOnScreen_Reel1(turns: i16) -> u8 {
     }
 }
 unsafe fn BiasedTowardCherryOr7s() -> u8 {
-    if (*sSlotMachine).machineBias as i32 & 194 != 0 {
+    if (*crate::gl!(sSlotMachine)).machineBias as i32 & 194 != 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -1977,8 +2044,8 @@ pub(crate) unsafe fn DecideStop_Bias_Reel1_Bet1(sym1: u8, sym2: u8) -> u8 {
     let mut i: i16 = 0;
     while i <= MAX_EXTRA_TURNS {
         if EitherSymbolAtPos_Reel1(2 - i, sym1, sym2) != 0 {
-            (*sSlotMachine).winnerRows[0] = 2;
-            (*sSlotMachine).reelExtraTurns[0] = i;
+            (*crate::gl!(sSlotMachine)).winnerRows[0] = 2;
+            (*crate::gl!(sSlotMachine)).reelExtraTurns[0] = i;
             return TRUE;
         }
         i += 1;
@@ -1991,8 +2058,8 @@ pub(crate) unsafe fn DecideStop_Bias_Reel1_Bet2or3(sym1: u8, sym2: u8) -> u8 {
     if cherry7Bias != 0 || AreCherriesOnScreen_Reel1(0) == 0 {
         for i in 1..=3i16 {
             if EitherSymbolAtPos_Reel1(i, sym1, sym2) != 0 {
-                (*sSlotMachine).winnerRows[0] = i;
-                (*sSlotMachine).reelExtraTurns[0] = 0;
+                (*crate::gl!(sSlotMachine)).winnerRows[0] = i;
+                (*crate::gl!(sSlotMachine)).reelExtraTurns[0] = 0;
                 return TRUE;
             }
         }
@@ -2004,17 +2071,17 @@ pub(crate) unsafe fn DecideStop_Bias_Reel1_Bet2or3(sym1: u8, sym2: u8) -> u8 {
             && EitherSymbolAtPos_Reel1(1 - i, sym1, sym2) != 0
         {
             if i == 1 && (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(3) == 0) {
-                (*sSlotMachine).winnerRows[0] = 3;
-                (*sSlotMachine).reelExtraTurns[0] = 3;
+                (*crate::gl!(sSlotMachine)).winnerRows[0] = 3;
+                (*crate::gl!(sSlotMachine)).reelExtraTurns[0] = 3;
                 return TRUE;
             }
             if i <= 3 && (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(i + 1) == 0) {
-                (*sSlotMachine).winnerRows[0] = 2;
-                (*sSlotMachine).reelExtraTurns[0] = i + 1;
+                (*crate::gl!(sSlotMachine)).winnerRows[0] = 2;
+                (*crate::gl!(sSlotMachine)).reelExtraTurns[0] = i + 1;
                 return TRUE;
             }
-            (*sSlotMachine).winnerRows[0] = 1;
-            (*sSlotMachine).reelExtraTurns[0] = i;
+            (*crate::gl!(sSlotMachine)).winnerRows[0] = 1;
+            (*crate::gl!(sSlotMachine)).reelExtraTurns[0] = i;
             return TRUE;
         }
         i += 1;
@@ -2022,15 +2089,15 @@ pub(crate) unsafe fn DecideStop_Bias_Reel1_Bet2or3(sym1: u8, sym2: u8) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn DecideStop_Bias_Reel2() -> u8 {
-    sDecideStop_Bias_Reel2_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()()
+    sDecideStop_Bias_Reel2_Bets[(*crate::gl!(sSlotMachine)).bet as i32 - 1].unwrap_unchecked()()
 }
 pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet1or2() -> u8 {
-    let reel1BiasRow: i16 = (*sSlotMachine).winnerRows[0];
+    let reel1BiasRow: i16 = (*crate::gl!(sSlotMachine)).winnerRows[0];
     let mut i: i16 = 0;
     while i <= MAX_EXTRA_TURNS {
-        if GetSymbol(MIDDLE_REEL, reel1BiasRow - i) == (*sSlotMachine).biasSymbol {
-            (*sSlotMachine).winnerRows[1] = reel1BiasRow;
-            (*sSlotMachine).reelExtraTurns[1] = i;
+        if GetSymbol(MIDDLE_REEL, reel1BiasRow - i) == (*crate::gl!(sSlotMachine)).biasSymbol {
+            (*crate::gl!(sSlotMachine)).winnerRows[1] = reel1BiasRow;
+            (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = i;
             return TRUE;
         }
         i += 1;
@@ -2040,15 +2107,15 @@ pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet1or2() -> u8 {
 pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet3() -> u8 {
     let mut i: i16 = 0;
     if DecideStop_Bias_Reel2_Bet1or2() != 0 {
-        if (*sSlotMachine).winnerRows[0] != 2
-            && (*sSlotMachine).reelExtraTurns[1] > 1
-            && (*sSlotMachine).reelExtraTurns[1] != 4
+        if (*crate::gl!(sSlotMachine)).winnerRows[0] != 2
+            && (*crate::gl!(sSlotMachine)).reelExtraTurns[1] > 1
+            && (*crate::gl!(sSlotMachine)).reelExtraTurns[1] != 4
         {
             i = 0;
             while i <= MAX_EXTRA_TURNS {
-                if GetSymbol(MIDDLE_REEL, 2 - i) == (*sSlotMachine).biasSymbol {
-                    (*sSlotMachine).winnerRows[1] = 2;
-                    (*sSlotMachine).reelExtraTurns[1] = i;
+                if GetSymbol(MIDDLE_REEL, 2 - i) == (*crate::gl!(sSlotMachine)).biasSymbol {
+                    (*crate::gl!(sSlotMachine)).winnerRows[1] = 2;
+                    (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = i;
                     break;
                 }
                 i += 1;
@@ -2056,12 +2123,12 @@ pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet3() -> u8 {
         }
         return TRUE;
     }
-    if (*sSlotMachine).winnerRows[0] != 2 {
+    if (*crate::gl!(sSlotMachine)).winnerRows[0] != 2 {
         i = 0;
         while i <= MAX_EXTRA_TURNS {
-            if GetSymbol(MIDDLE_REEL, 2 - i) == (*sSlotMachine).biasSymbol {
-                (*sSlotMachine).winnerRows[1] = 2;
-                (*sSlotMachine).reelExtraTurns[1] = i;
+            if GetSymbol(MIDDLE_REEL, 2 - i) == (*crate::gl!(sSlotMachine)).biasSymbol {
+                (*crate::gl!(sSlotMachine)).winnerRows[1] = 2;
+                (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = i;
                 return TRUE;
             }
             i += 1;
@@ -2070,22 +2137,24 @@ pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet3() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn DecideStop_Bias_Reel3() -> u8 {
-    let mut biasSymbol: u8 = (*sSlotMachine).biasSymbol;
-    if (*sSlotMachine).machineBias as i32 & BIAS_MIXED_7 != 0 {
+    let mut biasSymbol: u8 = (*crate::gl!(sSlotMachine)).biasSymbol;
+    if (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_MIXED_7 != 0 {
         biasSymbol = SYMBOL_7_RED;
-        if (*sSlotMachine).biasSymbol == SYMBOL_7_RED {
+        if (*crate::gl!(sSlotMachine)).biasSymbol == SYMBOL_7_RED {
             biasSymbol = SYMBOL_7_BLUE;
         }
     }
-    sDecideStop_Bias_Reel3_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()(biasSymbol)
+    sDecideStop_Bias_Reel3_Bets[(*crate::gl!(sSlotMachine)).bet as i32 - 1].unwrap_unchecked()(
+        biasSymbol,
+    )
 }
 pub(crate) unsafe fn DecideStop_Bias_Reel3_Bet1or2(biasSymbol: u8) -> u8 {
-    let reel2BiasRow: i16 = (*sSlotMachine).winnerRows[1];
+    let reel2BiasRow: i16 = (*crate::gl!(sSlotMachine)).winnerRows[1];
     let mut i: i16 = 0;
     while i <= MAX_EXTRA_TURNS {
         if GetSymbol(RIGHT_REEL, reel2BiasRow - i) == biasSymbol {
-            (*sSlotMachine).winnerRows[2] = reel2BiasRow;
-            (*sSlotMachine).reelExtraTurns[2] = i;
+            (*crate::gl!(sSlotMachine)).winnerRows[2] = reel2BiasRow;
+            (*crate::gl!(sSlotMachine)).reelExtraTurns[2] = i;
             return TRUE;
         }
         i += 1;
@@ -2094,10 +2163,10 @@ pub(crate) unsafe fn DecideStop_Bias_Reel3_Bet1or2(biasSymbol: u8) -> u8 {
 }
 pub(crate) unsafe fn DecideStop_Bias_Reel3_Bet3(biasSymbol: u8) -> u8 {
     let mut biasRow: i16 = 0;
-    if (*sSlotMachine).winnerRows[0] == (*sSlotMachine).winnerRows[1] {
+    if (*crate::gl!(sSlotMachine)).winnerRows[0] == (*crate::gl!(sSlotMachine)).winnerRows[1] {
         return DecideStop_Bias_Reel3_Bet1or2(biasSymbol);
     }
-    if (*sSlotMachine).winnerRows[0] == 1 {
+    if (*crate::gl!(sSlotMachine)).winnerRows[0] == 1 {
         biasRow = 3;
     } else {
         biasRow = 1;
@@ -2105,8 +2174,8 @@ pub(crate) unsafe fn DecideStop_Bias_Reel3_Bet3(biasSymbol: u8) -> u8 {
     let mut i: i16 = 0;
     while i <= MAX_EXTRA_TURNS {
         if GetSymbol(RIGHT_REEL, biasRow - i) == biasSymbol {
-            (*sSlotMachine).reelExtraTurns[2] = i;
-            (*sSlotMachine).winnerRows[2] = biasRow;
+            (*crate::gl!(sSlotMachine)).reelExtraTurns[2] = i;
+            (*crate::gl!(sSlotMachine)).winnerRows[2] = biasRow;
             return TRUE;
         }
         i += 1;
@@ -2118,7 +2187,7 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel1() {
     while AreCherriesOnScreen_Reel1(i) != 0 {
         i += 1;
     }
-    (*sSlotMachine).reelExtraTurns[0] = i;
+    (*crate::gl!(sSlotMachine)).reelExtraTurns[0] = i;
 }
 unsafe fn IfSymbol7_SwitchColor(symbol: *mut u8) -> u8 {
     if *symbol == SYMBOL_7_RED {
@@ -2132,19 +2201,20 @@ unsafe fn IfSymbol7_SwitchColor(symbol: *mut u8) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel2() {
-    sDecideStop_NoBias_Reel2_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()();
+    sDecideStop_NoBias_Reel2_Bets[(*crate::gl!(sSlotMachine)).bet as i32 - 1].unwrap_unchecked()();
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet1() {
-    if (*sSlotMachine).winnerRows[0] != 0
-        && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+    if (*crate::gl!(sSlotMachine)).winnerRows[0] != 0
+        && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
-        let mut reel1MiddleSym: u8 = GetSymbol(LEFT_REEL, 2 - (*sSlotMachine).reelExtraTurns[0]);
+        let mut reel1MiddleSym: u8 =
+            GetSymbol(LEFT_REEL, 2 - (*crate::gl!(sSlotMachine)).reelExtraTurns[0]);
         if IfSymbol7_SwitchColor(&raw mut reel1MiddleSym) != 0 {
             let mut i: i16 = 0;
             while i <= MAX_EXTRA_TURNS {
                 if reel1MiddleSym == GetSymbol(MIDDLE_REEL, 2 - i) {
-                    (*sSlotMachine).winnerRows[1] = 2;
-                    (*sSlotMachine).reelExtraTurns[1] = i;
+                    (*crate::gl!(sSlotMachine)).winnerRows[1] = 2;
+                    (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = i;
                     break;
                 }
                 i += 1;
@@ -2153,19 +2223,23 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet1() {
     }
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet2() {
-    if (*sSlotMachine).winnerRows[0] != 0
-        && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+    if (*crate::gl!(sSlotMachine)).winnerRows[0] != 0
+        && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
         let mut reel1BiasSym: u8 = GetSymbol(
             LEFT_REEL,
-            (*sSlotMachine).winnerRows[0] - (*sSlotMachine).reelExtraTurns[0],
+            (*crate::gl!(sSlotMachine)).winnerRows[0]
+                - (*crate::gl!(sSlotMachine)).reelExtraTurns[0],
         );
         if IfSymbol7_SwitchColor(&raw mut reel1BiasSym) != 0 {
             let mut i: i16 = 0;
             while i <= MAX_EXTRA_TURNS {
-                if reel1BiasSym == GetSymbol(MIDDLE_REEL, (*sSlotMachine).winnerRows[0] - i) {
-                    (*sSlotMachine).winnerRows[1] = (*sSlotMachine).winnerRows[0];
-                    (*sSlotMachine).reelExtraTurns[1] = i;
+                if reel1BiasSym
+                    == GetSymbol(MIDDLE_REEL, (*crate::gl!(sSlotMachine)).winnerRows[0] - i)
+                {
+                    (*crate::gl!(sSlotMachine)).winnerRows[1] =
+                        (*crate::gl!(sSlotMachine)).winnerRows[0];
+                    (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = i;
                     break;
                 }
                 i += 1;
@@ -2177,27 +2251,28 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet3() {
     let mut i: i16 = 0;
     let mut j: i16 = 0;
     let mut reel1BiasSym: u8 = 0;
-    if (*sSlotMachine).winnerRows[0] != 0
-        && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+    if (*crate::gl!(sSlotMachine)).winnerRows[0] != 0
+        && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
-        if (*sSlotMachine).winnerRows[0] == 2 {
+        if (*crate::gl!(sSlotMachine)).winnerRows[0] == 2 {
             DecideStop_NoBias_Reel2_Bet2();
             return;
         }
         reel1BiasSym = GetSymbol(
             LEFT_REEL,
-            (*sSlotMachine).winnerRows[0] - (*sSlotMachine).reelExtraTurns[0],
+            (*crate::gl!(sSlotMachine)).winnerRows[0]
+                - (*crate::gl!(sSlotMachine)).reelExtraTurns[0],
         );
         if IfSymbol7_SwitchColor(&raw mut reel1BiasSym) != 0 {
             j = 2;
-            if (*sSlotMachine).winnerRows[0] == 3 {
+            if (*crate::gl!(sSlotMachine)).winnerRows[0] == 3 {
                 j = 3;
             }
             i = 0;
             while i < 2 {
                 if reel1BiasSym == GetSymbol(MIDDLE_REEL, j) {
-                    (*sSlotMachine).winnerRows[1] = j;
-                    (*sSlotMachine).reelExtraTurns[1] = 0;
+                    (*crate::gl!(sSlotMachine)).winnerRows[1] = j;
+                    (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = 0;
                     return;
                 }
                 i += 1;
@@ -2205,22 +2280,24 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet3() {
             }
             j = 1;
             while j <= MAX_EXTRA_TURNS {
-                if reel1BiasSym == GetSymbol(MIDDLE_REEL, (*sSlotMachine).winnerRows[0] - j) {
-                    if (*sSlotMachine).winnerRows[0] == 1 {
+                if reel1BiasSym
+                    == GetSymbol(MIDDLE_REEL, (*crate::gl!(sSlotMachine)).winnerRows[0] - j)
+                {
+                    if (*crate::gl!(sSlotMachine)).winnerRows[0] == 1 {
                         if j <= 2 {
-                            (*sSlotMachine).winnerRows[1] = 2;
-                            (*sSlotMachine).reelExtraTurns[1] = j + 1;
+                            (*crate::gl!(sSlotMachine)).winnerRows[1] = 2;
+                            (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = j + 1;
                         } else {
-                            (*sSlotMachine).winnerRows[1] = 1;
-                            (*sSlotMachine).reelExtraTurns[1] = j;
+                            (*crate::gl!(sSlotMachine)).winnerRows[1] = 1;
+                            (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = j;
                         }
                     } else {
                         if j <= 2 {
-                            (*sSlotMachine).winnerRows[1] = 3;
-                            (*sSlotMachine).reelExtraTurns[1] = j;
+                            (*crate::gl!(sSlotMachine)).winnerRows[1] = 3;
+                            (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = j;
                         } else {
-                            (*sSlotMachine).winnerRows[1] = 2;
-                            (*sSlotMachine).reelExtraTurns[1] = j - 1;
+                            (*crate::gl!(sSlotMachine)).winnerRows[1] = 2;
+                            (*crate::gl!(sSlotMachine)).reelExtraTurns[1] = j - 1;
                         }
                     }
                     return;
@@ -2268,12 +2345,15 @@ fn NeitherMatchNor7Mismatch(sym1: u8, sym2: u8, sym3: u8) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel3() {
-    sDecideStop_NoBias_Reel3_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()();
+    sDecideStop_NoBias_Reel3_Bets[(*crate::gl!(sSlotMachine)).bet as i32 - 1].unwrap_unchecked()();
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet1() {
     let mut i: i16 = 0;
-    let sym1: u8 = GetSymbol(LEFT_REEL, 2 - (*sSlotMachine).reelExtraTurns[0]);
-    let sym2: u8 = GetSymbol(MIDDLE_REEL, 2 - (*sSlotMachine).reelExtraTurns[1]);
+    let sym1: u8 = GetSymbol(LEFT_REEL, 2 - (*crate::gl!(sSlotMachine)).reelExtraTurns[0]);
+    let sym2: u8 = GetSymbol(
+        MIDDLE_REEL,
+        2 - (*crate::gl!(sSlotMachine)).reelExtraTurns[1],
+    );
     if sym1 == sym2 {
         loop {
             let mut sym3: u8 = 0;
@@ -2290,11 +2370,11 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet1() {
             i += 1;
         }
     } else if MismatchedSyms_77(sym1, sym2) != 0 {
-        if (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0 {
+        if (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0 {
             i = 0;
             while i <= MAX_EXTRA_TURNS {
                 if sym1 == GetSymbol(RIGHT_REEL, 2 - i) {
-                    (*sSlotMachine).reelExtraTurns[2] = i;
+                    (*crate::gl!(sSlotMachine)).reelExtraTurns[2] = i;
                     return;
                 }
                 i += 1;
@@ -2308,7 +2388,7 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet1() {
             i += 1;
         }
     }
-    (*sSlotMachine).reelExtraTurns[2] = i;
+    (*crate::gl!(sSlotMachine)).reelExtraTurns[2] = i;
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet2() {
     let mut extraTurns: i16 = 0;
@@ -2316,22 +2396,24 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet2() {
     let mut sym1: u8 = 0;
     let mut sym2: u8 = 0;
     let mut sym3: u8 = 0;
-    if (*sSlotMachine).winnerRows[1] != 0
-        && (*sSlotMachine).winnerRows[0] == (*sSlotMachine).winnerRows[1]
-        && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+    if (*crate::gl!(sSlotMachine)).winnerRows[1] != 0
+        && (*crate::gl!(sSlotMachine)).winnerRows[0] == (*crate::gl!(sSlotMachine)).winnerRows[1]
+        && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
         sym1 = GetSymbol(
             LEFT_REEL,
-            (*sSlotMachine).winnerRows[0] - (*sSlotMachine).reelExtraTurns[0],
+            (*crate::gl!(sSlotMachine)).winnerRows[0]
+                - (*crate::gl!(sSlotMachine)).reelExtraTurns[0],
         );
         sym2 = GetSymbol(
             MIDDLE_REEL,
-            (*sSlotMachine).winnerRows[1] - (*sSlotMachine).reelExtraTurns[1],
+            (*crate::gl!(sSlotMachine)).winnerRows[1]
+                - (*crate::gl!(sSlotMachine)).reelExtraTurns[1],
         );
         if MismatchedSyms_77(sym1, sym2) != 0 {
             i = 0;
             while i <= MAX_EXTRA_TURNS {
-                sym3 = GetSymbol(RIGHT_REEL, (*sSlotMachine).winnerRows[1] - i);
+                sym3 = GetSymbol(RIGHT_REEL, (*crate::gl!(sSlotMachine)).winnerRows[1] - i);
                 if sym1 == sym3 {
                     extraTurns = i;
                     break;
@@ -2343,12 +2425,15 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet2() {
     loop {
         let mut numMatches: i16 = 0;
         for i in 1..=3i16 {
-            sym1 = GetSymbol(LEFT_REEL, i - (*sSlotMachine).reelExtraTurns[0]);
-            sym2 = GetSymbol(MIDDLE_REEL, i - (*sSlotMachine).reelExtraTurns[1]);
+            sym1 = GetSymbol(LEFT_REEL, i - (*crate::gl!(sSlotMachine)).reelExtraTurns[0]);
+            sym2 = GetSymbol(
+                MIDDLE_REEL,
+                i - (*crate::gl!(sSlotMachine)).reelExtraTurns[1],
+            );
             sym3 = GetSymbol(RIGHT_REEL, i - extraTurns);
             if NeitherMatchNor7Mismatch(sym1, sym2, sym3) == 0
                 && !(MismatchedSyms_777(sym1, sym2, sym3) != 0
-                    && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0)
+                    && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0)
             {
                 numMatches += 1;
                 break;
@@ -2359,7 +2444,7 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet2() {
         }
         extraTurns += 1;
     }
-    (*sSlotMachine).reelExtraTurns[2] = extraTurns;
+    (*crate::gl!(sSlotMachine)).reelExtraTurns[2] = extraTurns;
 }
 pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet3() {
     let mut sym1: u8 = 0;
@@ -2368,28 +2453,33 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet3() {
     let mut row: i16 = 0;
     let mut i: i16 = 0;
     DecideStop_NoBias_Reel3_Bet2();
-    if (*sSlotMachine).winnerRows[1] != 0
-        && (*sSlotMachine).winnerRows[0] != (*sSlotMachine).winnerRows[1]
-        && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+    if (*crate::gl!(sSlotMachine)).winnerRows[1] != 0
+        && (*crate::gl!(sSlotMachine)).winnerRows[0] != (*crate::gl!(sSlotMachine)).winnerRows[1]
+        && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
         sym1 = GetSymbol(
             LEFT_REEL,
-            (*sSlotMachine).winnerRows[0] - (*sSlotMachine).reelExtraTurns[0],
+            (*crate::gl!(sSlotMachine)).winnerRows[0]
+                - (*crate::gl!(sSlotMachine)).reelExtraTurns[0],
         );
         sym2 = GetSymbol(
             MIDDLE_REEL,
-            (*sSlotMachine).winnerRows[1] - (*sSlotMachine).reelExtraTurns[1],
+            (*crate::gl!(sSlotMachine)).winnerRows[1]
+                - (*crate::gl!(sSlotMachine)).reelExtraTurns[1],
         );
         if MismatchedSyms_77(sym1, sym2) != 0 {
             row = 1;
-            if (*sSlotMachine).winnerRows[0] == 1 {
+            if (*crate::gl!(sSlotMachine)).winnerRows[0] == 1 {
                 row = 3;
             }
             i = 0;
             while i <= MAX_EXTRA_TURNS {
-                sym3 = GetSymbol(RIGHT_REEL, row - ((*sSlotMachine).reelExtraTurns[2] + i));
+                sym3 = GetSymbol(
+                    RIGHT_REEL,
+                    row - ((*crate::gl!(sSlotMachine)).reelExtraTurns[2] + i),
+                );
                 if sym1 == sym3 {
-                    (*sSlotMachine).reelExtraTurns[2] += i;
+                    (*crate::gl!(sSlotMachine)).reelExtraTurns[2] += i;
                     break;
                 }
                 i += 1;
@@ -2397,28 +2487,40 @@ pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet3() {
         }
     }
     loop {
-        sym1 = GetSymbol(LEFT_REEL, 1 - (*sSlotMachine).reelExtraTurns[0]);
-        sym2 = GetSymbol(MIDDLE_REEL, 2 - (*sSlotMachine).reelExtraTurns[1]);
-        sym3 = GetSymbol(RIGHT_REEL, 3 - (*sSlotMachine).reelExtraTurns[2]);
+        sym1 = GetSymbol(LEFT_REEL, 1 - (*crate::gl!(sSlotMachine)).reelExtraTurns[0]);
+        sym2 = GetSymbol(
+            MIDDLE_REEL,
+            2 - (*crate::gl!(sSlotMachine)).reelExtraTurns[1],
+        );
+        sym3 = GetSymbol(
+            RIGHT_REEL,
+            3 - (*crate::gl!(sSlotMachine)).reelExtraTurns[2],
+        );
         if NeitherMatchNor7Mismatch(sym1, sym2, sym3) != 0
             || MismatchedSyms_777(sym1, sym2, sym3) != 0
-                && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+                && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
         {
             break;
         }
-        (*sSlotMachine).reelExtraTurns[2] += 1;
+        (*crate::gl!(sSlotMachine)).reelExtraTurns[2] += 1;
     }
     loop {
-        sym1 = GetSymbol(LEFT_REEL, 3 - (*sSlotMachine).reelExtraTurns[0]);
-        sym2 = GetSymbol(MIDDLE_REEL, 2 - (*sSlotMachine).reelExtraTurns[1]);
-        sym3 = GetSymbol(RIGHT_REEL, 1 - (*sSlotMachine).reelExtraTurns[2]);
+        sym1 = GetSymbol(LEFT_REEL, 3 - (*crate::gl!(sSlotMachine)).reelExtraTurns[0]);
+        sym2 = GetSymbol(
+            MIDDLE_REEL,
+            2 - (*crate::gl!(sSlotMachine)).reelExtraTurns[1],
+        );
+        sym3 = GetSymbol(
+            RIGHT_REEL,
+            1 - (*crate::gl!(sSlotMachine)).reelExtraTurns[2],
+        );
         if NeitherMatchNor7Mismatch(sym1, sym2, sym3) != 0
             || MismatchedSyms_777(sym1, sym2, sym3) != 0
-                && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
+                && (*crate::gl!(sSlotMachine)).machineBias as i32 & BIAS_STRAIGHT_7 != 0
         {
             break;
         }
-        (*sSlotMachine).reelExtraTurns[2] += 1;
+        (*crate::gl!(sSlotMachine)).reelExtraTurns[2] += 1;
     }
 }
 unsafe fn PressStopReelButton(reelNum: u8) {
@@ -2480,13 +2582,18 @@ unsafe fn DarkenBetTiles(betVal: u8) {
 unsafe fn CreateInvisibleFlashMatchLineSprites() {
     for i in 0..5u8 {
         let spriteId: u8 = CreateInvisibleSprite(Some(SpriteCB_FlashMatchingLines));
-        gSprites[spriteId].data[sMatchLineId] = i as i16;
-        (*sSlotMachine).flashMatchLineSpriteIds[i] = spriteId;
+        {
+            let gl_i0 = sMatchLineId;
+            crate::gl!(gSprites[spriteId].data[gl_i0] = i as i16)
+        };
+        (*crate::gl!(sSlotMachine)).flashMatchLineSpriteIds[i] = spriteId;
     }
 }
 unsafe fn FlashMatchLine(matchLineId: u8) {
-    let sprite: *mut Sprite =
-        &raw mut gSprites[(*sSlotMachine).flashMatchLineSpriteIds[matchLineId]];
+    let sprite: *mut Sprite = {
+        let gl_i1 = (*crate::gl!(sSlotMachine)).flashMatchLineSpriteIds[matchLineId];
+        crate::gl!(&raw gSprites[gl_i1])
+    };
     (*sprite).data[sFlashing] = TRUE as i16;
     (*sprite).data[sNumFullFlashes] = 4;
     (*sprite).data[3] = 0;
@@ -2496,7 +2603,10 @@ unsafe fn FlashMatchLine(matchLineId: u8) {
 }
 unsafe fn IsMatchLineDoneFlashingBeforePayout() -> u8 {
     for i in 0..5u8 {
-        let sprite: *mut Sprite = &raw mut gSprites[(*sSlotMachine).flashMatchLineSpriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i2 = (*crate::gl!(sSlotMachine)).flashMatchLineSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i2])
+        };
         if (*sprite).data[sFlashing] != 0 && (*sprite).data[sNumFullFlashes] != 0 {
             return FALSE;
         }
@@ -2505,14 +2615,14 @@ unsafe fn IsMatchLineDoneFlashingBeforePayout() -> u8 {
 }
 unsafe fn TryStopMatchLinesFlashing() -> u8 {
     for i in 0..5u8 {
-        if TryStopMatchLineFlashing((*sSlotMachine).flashMatchLineSpriteIds[i]) == 0 {
+        if TryStopMatchLineFlashing((*crate::gl!(sSlotMachine)).flashMatchLineSpriteIds[i]) == 0 {
             return FALSE;
         }
     }
     TRUE
 }
 unsafe fn TryStopMatchLineFlashing(spriteId: u8) -> u8 {
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     if (*sprite).data[sFlashing] == 0 {
         return TRUE;
     }
@@ -2593,23 +2703,25 @@ pub(crate) unsafe fn Task_FlashSlotMachineLights(taskId: u8) {
     );
 }
 unsafe fn CreatePikaPowerBoltTask() {
-    (*sSlotMachine).pikaPowerBoltTaskId = CreateTask(Some(Task_CreatePikaPowerBolt), 8);
+    (*crate::gl!(sSlotMachine)).pikaPowerBoltTaskId = CreateTask(Some(Task_CreatePikaPowerBolt), 8);
 }
 unsafe fn AddPikaPowerBolt(bolts: u8) {
-    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).pikaPowerBoltTaskId];
+    let task: *mut Task =
+        &raw mut (*gTasks.as_ptr())[(*crate::gl!(sSlotMachine)).pikaPowerBoltTaskId];
     ResetPikaPowerBoltTask(task);
     (*task).data[tState] = PIKABOLT_TASK_ADD_BOLT;
     (*task).data[tNumBolts] += 1;
     (*task).data[tAnimating] = TRUE as i16;
 }
 unsafe fn ResetPikaPowerBolts() {
-    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).pikaPowerBoltTaskId];
+    let task: *mut Task =
+        &raw mut (*gTasks.as_ptr())[(*crate::gl!(sSlotMachine)).pikaPowerBoltTaskId];
     ResetPikaPowerBoltTask(task);
     (*task).data[tState] = PIKABOLT_TASK_CLEAR_ALL;
     (*task).data[tAnimating] = TRUE as i16;
 }
 unsafe fn IsPikaPowerBoltAnimating() -> u8 {
-    task_get((*sSlotMachine).pikaPowerBoltTaskId, tAnimating) as u8
+    task_get((*crate::gl!(sSlotMachine)).pikaPowerBoltTaskId, tAnimating) as u8
 }
 pub(crate) unsafe fn Task_CreatePikaPowerBolt(taskId: u8) {
     sPikaPowerBoltTasks[task_get(taskId, tState)].unwrap_unchecked()(
@@ -2623,7 +2735,11 @@ pub(crate) unsafe fn PikaPowerBolt_AddBolt(task: *mut Task) {
     (*task).data[tState] += 1;
 }
 pub(crate) unsafe fn PikaPowerBolt_WaitAnim(task: *mut Task) {
-    if gSprites[(*task).data[tSpriteId]].data[7] != 0 {
+    if ({
+        let gl_i3 = (*task).data[tSpriteId];
+        crate::gl!(gSprites[gl_i3].data[7])
+    }) != 0
+    {
         let r5: i16 = (*task).data[tNumBolts] + 2;
         let mut r3: i16 = 0;
         let mut r2: i16 = 0;
@@ -2634,10 +2750,10 @@ pub(crate) unsafe fn PikaPowerBolt_WaitAnim(task: *mut Task) {
             r3 = 2;
             r2 = 2;
         }
-        *sSelectedPikaPowerTile.at(r2) = sPikaPowerTileTable[r3][0];
+        *(*sSelectedPikaPowerTile.as_ptr()).at(r2) = sPikaPowerTileTable[r3][0];
         LoadBgTilemap(
             2,
-            sSelectedPikaPowerTile.at(r2) as *mut c_void,
+            (*sSelectedPikaPowerTile.as_ptr()).at(r2) as *mut c_void,
             2,
             r5 as u16 + 0x40,
         );
@@ -2658,10 +2774,10 @@ pub(crate) unsafe fn PikaPowerBolt_ClearAll(task: *mut Task) {
         r2 = 2;
     }
     if (*task).data[2] == 0 {
-        *sSelectedPikaPowerTile.at(r2) = sPikaPowerTileTable[r3][1];
+        *(*sSelectedPikaPowerTile.as_ptr()).at(r2) = sPikaPowerTileTable[r3][1];
         LoadBgTilemap(
             2,
-            sSelectedPikaPowerTile.at(r2) as *mut c_void,
+            (*sSelectedPikaPowerTile.as_ptr()).at(r2) as *mut c_void,
             2,
             r5 as u16 + 0x40,
         );
@@ -2699,10 +2815,10 @@ unsafe fn LoadPikaPowerMeter(bolts: u8) {
             r3 = 2;
             r1 = 2;
         }
-        *sSelectedPikaPowerTile.at(r1) = sPikaPowerTileTable[r3][0];
+        *(*sSelectedPikaPowerTile.as_ptr()).at(r1) = sPikaPowerTileTable[r3][0];
         LoadBgTilemap(
             2,
-            sSelectedPikaPowerTile.at(r1) as *mut c_void,
+            (*sSelectedPikaPowerTile.as_ptr()).at(r1) as *mut c_void,
             2,
             r4 as u16 + 0x40,
         );
@@ -2719,17 +2835,21 @@ unsafe fn LoadPikaPowerMeter(bolts: u8) {
             r3 = 2;
             r1 = 2;
         }
-        *sSelectedPikaPowerTile.at(r1) = sPikaPowerTileTable[r3][1];
+        *(*sSelectedPikaPowerTile.as_ptr()).at(r1) = sPikaPowerTileTable[r3][1];
         LoadBgTilemap(
             2,
-            sSelectedPikaPowerTile.at(r1) as *mut c_void,
+            (*sSelectedPikaPowerTile.as_ptr()).at(r1) as *mut c_void,
             2,
             r4 as u16 + 0x40,
         );
         i += 1;
         r4 += 1;
     }
-    task_set((*sSlotMachine).pikaPowerBoltTaskId, 1, bolts as i16);
+    task_set(
+        (*crate::gl!(sSlotMachine)).pikaPowerBoltTaskId,
+        1,
+        bolts as i16,
+    );
 }
 unsafe fn BeginReelTime() {
     let taskId: u8 = CreateTask(Some(Task_ReelTime), 7);
@@ -2747,15 +2867,15 @@ pub(crate) unsafe fn Task_ReelTime(taskId: u8) {
     );
 }
 pub(crate) unsafe fn ReelTime_Init(task: *mut Task) {
-    (*sSlotMachine).reelTimeSpinsLeft = 0;
-    (*sSlotMachine).reeltimePixelOffset = 0;
-    (*sSlotMachine).reeltimePosition = 0;
+    (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft = 0;
+    (*crate::gl!(sSlotMachine)).reeltimePixelOffset = 0;
+    (*crate::gl!(sSlotMachine)).reeltimePosition = 0;
     (*task).data[tState] += 1;
     (*task).data[1] = 0;
     (*task).data[2] = 30;
     (*task).data[tRtReelSpeed] = 1280;
-    gSpriteCoordOffsetX = 0;
-    gSpriteCoordOffsetY = 0;
+    gSpriteCoordOffsetX.set(0);
+    gSpriteCoordOffsetY.set(0);
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
     SetGpuReg(REG_OFFSET_BG1VOFS, 0);
     LoadReelTimeWindowTilemap(REG_OFFSET_BG3VOFS as i16, 0);
@@ -2769,7 +2889,7 @@ pub(crate) unsafe fn ReelTime_Init(task: *mut Task) {
     PlayNewMapMusic(MUS_ROULETTE);
 }
 pub(crate) unsafe fn ReelTime_WindowEnter(task: *mut Task) {
-    gSpriteCoordOffsetX -= 8;
+    gSpriteCoordOffsetX.set(gSpriteCoordOffsetX.get() - (8));
     (*task).data[1] += 8;
     let r3: i16 = ((((*task).data[1] as i32 + 240) & 0xff) >> 3) as i16;
     SetGpuReg(REG_OFFSET_BG1HOFS, (*task).data[1] as u16 & 0x1ff);
@@ -2821,7 +2941,10 @@ pub(crate) unsafe fn ReelTime_PikachuSpeedUp1(task: *mut Task) {
     SetReelTimeBoltDelay(reelTimeBoltDelays[i]);
     SetReelTimePikachuAuraFlashDelay(pikachuAuraFlashDelays[i]);
     StartSpriteAnimIfDifferent(
-        &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
+        {
+            let gl_i4 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+            crate::gl!(&raw gSprites[gl_i4])
+        },
         pikachuAnimIds[i],
     );
     if (*task).data[tRtReelSpeed] <= 0x100 {
@@ -2841,7 +2964,10 @@ pub(crate) unsafe fn ReelTime_PikachuSpeedUp2(task: *mut Task) {
         (*task).data[tTimer1] = 0;
         SetReelTimePikachuAuraFlashDelay(2);
         StartSpriteAnimIfDifferent(
-            &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
+            {
+                let gl_i5 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+                crate::gl!(&raw gSprites[gl_i5])
+            },
             3,
         );
     }
@@ -2867,8 +2993,9 @@ pub(crate) unsafe fn ReelTime_CheckExplode(task: *mut Task) {
     }) >= 40
     {
         (*task).data[tTimer1] = 0;
-        if (*sSlotMachine).reelTimeDraw != 0 {
-            if (*sSlotMachine).reelTimeSpinsLeft as i16 <= (*task).data[tExplodeChecks] {
+        if (*crate::gl!(sSlotMachine)).reelTimeDraw != 0 {
+            if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft as i16 <= (*task).data[tExplodeChecks]
+            {
                 (*task).data[tState] += 1;
             }
         } else if (*task).data[tExplodeChecks] > 3 {
@@ -2880,16 +3007,17 @@ pub(crate) unsafe fn ReelTime_CheckExplode(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn ReelTime_LandOnOutcome(task: *mut Task) {
-    let mut reeltimePixelOffset: i16 = (*sSlotMachine).reeltimePixelOffset % 20;
+    let mut reeltimePixelOffset: i16 = (*crate::gl!(sSlotMachine)).reeltimePixelOffset % 20;
     if reeltimePixelOffset != 0 {
         reeltimePixelOffset = AdvanceReeltimeReelToNextSymbol((*task).data[tRtReelSpeed] >> 8);
         (*task).data[tRtReelSpeed] = (*task).data[tRtReelSpeed] as u8 as i16 + 0x40;
-    } else if GetReelTimeSymbol(1) != (*sSlotMachine).reelTimeDraw {
+    } else if GetReelTimeSymbol(1) != (*crate::gl!(sSlotMachine)).reelTimeDraw {
         AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
-        reeltimePixelOffset = (*sSlotMachine).reeltimePixelOffset % 20;
+        reeltimePixelOffset = (*crate::gl!(sSlotMachine)).reeltimePixelOffset % 20;
         (*task).data[tRtReelSpeed] = (*task).data[tRtReelSpeed] as u8 as i16 + 0x40;
     }
-    if reeltimePixelOffset == 0 && GetReelTimeSymbol(1) == (*sSlotMachine).reelTimeDraw {
+    if reeltimePixelOffset == 0 && GetReelTimeSymbol(1) == (*crate::gl!(sSlotMachine)).reelTimeDraw
+    {
         (*task).data[tRtReelSpeed] = 0;
         (*task).data[tState] += 1;
     }
@@ -2904,23 +3032,32 @@ pub(crate) unsafe fn ReelTime_PikachuReact(task: *mut Task) {
         DestroyReelTimeBoltSprites();
         DestroyReelTimePikachuAuraSprites();
         (*task).data[tState] += 1;
-        if (*sSlotMachine).reelTimeDraw == 0 {
+        if (*crate::gl!(sSlotMachine)).reelTimeDraw == 0 {
             (*task).data[4] = 0xa0;
             StartSpriteAnimIfDifferent(
-                &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
+                {
+                    let gl_i6 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+                    crate::gl!(&raw gSprites[gl_i6])
+                },
                 5,
             );
             PlayFanfare(MUS_TOO_BAD);
         } else {
             (*task).data[4] = 0xc0;
             StartSpriteAnimIfDifferent(
-                &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
+                {
+                    let gl_i7 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+                    crate::gl!(&raw gSprites[gl_i7])
+                },
                 4,
             );
-            gSprites[(*sSlotMachine).reelTimePikachuSpriteId].animCmdIndex = 0;
-            if (*sSlotMachine).pikaPowerBolts != 0 {
+            {
+                let gl_i8 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+                crate::gl!(gSprites[gl_i8].animCmdIndex = 0)
+            };
+            if (*crate::gl!(sSlotMachine)).pikaPowerBolts != 0 {
                 ResetPikaPowerBolts();
-                (*sSlotMachine).pikaPowerBolts = 0;
+                (*crate::gl!(sSlotMachine)).pikaPowerBolts = 0;
             }
             PlayFanfare(MUS_SLOTS_WIN);
         }
@@ -2938,7 +3075,7 @@ pub(crate) unsafe fn ReelTime_WaitClearPikaPower(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn ReelTime_CloseWindow(task: *mut Task) {
-    gSpriteCoordOffsetX -= 8;
+    gSpriteCoordOffsetX.set(gSpriteCoordOffsetX.get() - (8));
     (*task).data[1] += 8;
     (*task).data[3] += 8;
     let r4: i16 = ((((*task).data[1] as i32 - 8) & 0xff) >> 3) as i16;
@@ -2950,16 +3087,16 @@ pub(crate) unsafe fn ReelTime_CloseWindow(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn ReelTime_DestroySprites(task: *mut Task) {
-    (*sSlotMachine).reelTimeSpinsUsed = 0;
-    (*sSlotMachine).reelTimeSpinsLeft = (*sSlotMachine).reelTimeDraw;
-    gSpriteCoordOffsetX = 0;
+    (*crate::gl!(sSlotMachine)).reelTimeSpinsUsed = 0;
+    (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft = (*crate::gl!(sSlotMachine)).reelTimeDraw;
+    gSpriteCoordOffsetX.set(0);
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
-    (*sSlotMachine).reelSpeed = REEL_NORMAL_SPEED;
+    (*crate::gl!(sSlotMachine)).reelSpeed = REEL_NORMAL_SPEED;
     DestroyReelTimePikachuSprite();
     DestroyReelTimeMachineSprites();
     DestroyReelTimeShadowSprites();
-    PlayNewMapMusic((*sSlotMachine).backupMapMusic);
-    if (*sSlotMachine).reelTimeSpinsLeft == 0 {
+    PlayNewMapMusic((*crate::gl!(sSlotMachine)).backupMapMusic);
+    if (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft == 0 {
         DestroyTask(FindTaskIdByFunc(Some(Task_ReelTime)));
     } else {
         CreateDigitalDisplayScene(DIG_DISPLAY_REEL_TIME);
@@ -2970,9 +3107,9 @@ pub(crate) unsafe fn ReelTime_DestroySprites(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn ReelTime_SetReelSpeed(task: *mut Task) {
-    if (*sSlotMachine).reelSpeed == (*task).data[tReelSpeed] {
+    if (*crate::gl!(sSlotMachine)).reelSpeed == (*task).data[tReelSpeed] {
         (*task).data[tState] += 1;
-    } else if (*sSlotMachine).reelPixelOffsets[0] % 24 == 0
+    } else if (*crate::gl!(sSlotMachine)).reelPixelOffsets[0] % 24 == 0
         && ({
             (*task).data[tTimer3] += 1;
             (*task).data[tTimer3]
@@ -2980,7 +3117,7 @@ pub(crate) unsafe fn ReelTime_SetReelSpeed(task: *mut Task) {
             & 0x07
             == 0
     {
-        (*sSlotMachine).reelSpeed >>= 1;
+        (*crate::gl!(sSlotMachine)).reelSpeed >>= 1;
     }
 }
 pub(crate) unsafe fn ReelTime_EndSuccess(task: *mut Task) {
@@ -2993,9 +3130,13 @@ pub(crate) unsafe fn ReelTime_ExplodeMachine(task: *mut Task) {
     DestroyReelTimeBoltSprites();
     DestroyReelTimePikachuAuraSprites();
     CreateReelTimeExplosionSprite();
-    gSprites[(*sSlotMachine).reelTimeShadowSpriteIds[0]].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sSlotMachine)).reelTimeShadowSpriteIds[0]]
+        .set_invisible(TRUE as u16);
     StartSpriteAnimIfDifferent(
-        &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
+        {
+            let gl_i9 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+            crate::gl!(&raw gSprites[gl_i9])
+        },
         5,
     );
     (*task).data[tState] += 1;
@@ -3006,7 +3147,7 @@ pub(crate) unsafe fn ReelTime_ExplodeMachine(task: *mut Task) {
     PlaySE(SE_M_EXPLOSION);
 }
 pub(crate) unsafe fn ReelTime_WaitExplode(task: *mut Task) {
-    gSpriteCoordOffsetY = (*task).data[4];
+    gSpriteCoordOffsetY.set((*task).data[4]);
     SetGpuReg(REG_OFFSET_BG1VOFS, (*task).data[4] as u16);
     if (*task).data[tTimer1] as i32 & 0x01 != 0 {
         (*task).data[4] = -(*task).data[4];
@@ -3025,13 +3166,14 @@ pub(crate) unsafe fn ReelTime_WaitExplode(task: *mut Task) {
         CreateReelTimeDuckSprites();
         CreateBrokenReelTimeMachineSprite();
         CreateReelTimeSmokeSprite();
-        gSprites[(*sSlotMachine).reelTimeShadowSpriteIds[0]].set_invisible(0);
+        (*gSprites.as_ptr())[(*crate::gl!(sSlotMachine)).reelTimeShadowSpriteIds[0]]
+            .set_invisible(0);
         (*task).data[tState] += 1;
         (*task).data[tTimer1] = 0;
     }
 }
 pub(crate) unsafe fn ReelTime_WaitSmoke(task: *mut Task) {
-    gSpriteCoordOffsetY = 0;
+    gSpriteCoordOffsetY.set(0);
     SetGpuReg(REG_OFFSET_BG1VOFS, 0);
     if IsReelTimeSmokeAnimFinished() != 0 {
         (*task).data[tState] += 1;
@@ -3039,9 +3181,9 @@ pub(crate) unsafe fn ReelTime_WaitSmoke(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn ReelTime_EndFailure(task: *mut Task) {
-    gSpriteCoordOffsetX = 0;
+    gSpriteCoordOffsetX.set(0);
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
-    PlayNewMapMusic((*sSlotMachine).backupMapMusic);
+    PlayNewMapMusic((*crate::gl!(sSlotMachine)).backupMapMusic);
     DestroyReelTimePikachuSprite();
     DestroyBrokenReelTimeMachineSprite();
     DestroyReelTimeShadowSprites();
@@ -3093,7 +3235,7 @@ pub(crate) unsafe fn InfoBox_FadeIn(task: *mut Task) {
     (*task).data[tState] += 1;
 }
 pub(crate) unsafe fn InfoBox_WaitFade(task: *mut Task) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         (*task).data[tState] += 1;
     }
 }
@@ -3122,7 +3264,7 @@ pub(crate) unsafe fn InfoBox_AddText(task: *mut Task) {
     (*task).data[tState] += 1;
 }
 pub(crate) unsafe fn InfoBox_WaitInput(task: *mut Task) {
-    if gMain.newKeys as i32 & 6 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 6 != 0 {
         FillWindowPixelBuffer(WIN_INFO, 0);
         ClearWindowTilemap(WIN_INFO);
         CopyWindowToVram(WIN_INFO, COPYWIN_MAP);
@@ -3141,7 +3283,7 @@ pub(crate) unsafe fn InfoBox_CreateDigitalDisplay(task: *mut Task) {
     (*task).data[tState] += 1;
 }
 pub(crate) unsafe fn InfoBox_LoadPikaPowerMeter(task: *mut Task) {
-    LoadPikaPowerMeter((*sSlotMachine).pikaPowerBolts);
+    LoadPikaPowerMeter((*crate::gl!(sSlotMachine)).pikaPowerBolts);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
     (*task).data[tState] += 1;
 }
@@ -3150,7 +3292,7 @@ pub(crate) unsafe fn InfoBox_FreeTask(task: *mut Task) {
 }
 unsafe fn CreateDigitalDisplayTask() {
     let i: u8 = CreateTask(Some(Task_DigitalDisplay), 3);
-    (*sSlotMachine).digDisplayTaskId = i;
+    (*crate::gl!(sSlotMachine)).digDisplayTaskId = i;
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[i];
     (*task).data[1] = -1;
     for i in 4..NUM_TASK_DATA {
@@ -3159,7 +3301,7 @@ unsafe fn CreateDigitalDisplayTask() {
 }
 unsafe fn CreateDigitalDisplayScene(id: u8) {
     DestroyDigitalDisplayScene();
-    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*crate::gl!(sSlotMachine)).digDisplayTaskId];
     (*task).data[1] = id as i16;
     let mut i: u8 = 0;
     while (*sDigitalDisplayScenes[id].at(i)).spriteTemplateId != 255 {
@@ -3180,7 +3322,7 @@ unsafe fn AddDigitalDisplaySprite(
     y: i16,
     spriteId: i16,
 ) {
-    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*crate::gl!(sSlotMachine)).digDisplayTaskId];
     for i in 4..NUM_TASK_DATA {
         if (*task).data[i] == MAX_SPRITES as i16 {
             (*task).data[i] =
@@ -3190,22 +3332,29 @@ unsafe fn AddDigitalDisplaySprite(
     }
 }
 unsafe fn DestroyDigitalDisplayScene() {
-    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*crate::gl!(sSlotMachine)).digDisplayTaskId];
     if (*task).data[1] as u16 != 0xFFFF {
         sDigitalDisplaySceneExitCallbacks[(*task).data[1]].unwrap_unchecked()();
     }
     for i in 4..NUM_TASK_DATA {
         if (*task).data[i] != MAX_SPRITES as i16 {
-            DestroySprite(&raw mut gSprites[(*task).data[i]]);
+            DestroySprite({
+                let gl_i10 = (*task).data[i];
+                crate::gl!(&raw gSprites[gl_i10])
+            });
             (*task).data[i] = MAX_SPRITES as i16;
         }
     }
 }
 unsafe fn IsDigitalDisplayAnimFinished() -> u8 {
-    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*crate::gl!(sSlotMachine)).digDisplayTaskId];
     for i in 4..NUM_TASK_DATA {
         if (*task).data[i] != MAX_SPRITES as i16
-            && gSprites[(*task).data[i]].data[sWaitForAnim] != 0
+            && ({
+                let gl_i11 = (*task).data[i];
+                let gl_i12 = sWaitForAnim;
+                crate::gl!(gSprites[gl_i11].data[gl_i12])
+            }) != 0
         {
             return FALSE;
         }
@@ -3225,7 +3374,7 @@ unsafe fn CreateReelSymbolSprites() {
     while i < 3 {
         j = 0;
         while j < 120 {
-            let sprite: *mut Sprite = gSprites.as_mut_ptr().at(CreateSprite(
+            let sprite: *mut Sprite = (*gSprites.as_ptr()).as_mut_ptr().at(CreateSprite(
                 (&raw const *sSpriteTemplate_ReelSymbol).cast_mut(),
                 x,
                 0,
@@ -3242,10 +3391,12 @@ unsafe fn CreateReelSymbolSprites() {
     }
 }
 pub(crate) unsafe fn SpriteCB_ReelSymbol(sprite: *mut Sprite) {
-    (*sprite).data[2] = (*sSlotMachine).reelPixelOffsets[(*sprite).data[0]] + (*sprite).data[1];
+    (*sprite).data[2] =
+        (*crate::gl!(sSlotMachine)).reelPixelOffsets[(*sprite).data[0]] + (*sprite).data[1];
     (*sprite).data[2] %= 120;
-    (*sprite).y =
-        (*sSlotMachine).reelShockOffsets[(*sprite).data[0]] as i16 + 28 + (*sprite).data[2];
+    (*sprite).y = (*crate::gl!(sSlotMachine)).reelShockOffsets[(*sprite).data[0]] as i16
+        + 28
+        + (*sprite).data[2];
     (*sprite).sheetTileStart = GetSpriteTileStartByTag(GetSymbolAtRest(
         (*sprite).data[0] as u8,
         (*sprite).data[2] / 24,
@@ -3269,12 +3420,15 @@ unsafe fn CreateCreditPayoutNumberSprites() {
     }
 }
 unsafe fn CreateCoinNumberSprite(x: i16, y: i16, isPayout: u8, digitMult: i16) {
-    let sprite: *mut Sprite = &raw mut gSprites[CreateSprite(
-        (&raw const *sSpriteTemplate_CoinNumber).cast_mut(),
-        x,
-        y,
-        13,
-    )];
+    let sprite: *mut Sprite = {
+        let gl_i13 = CreateSprite(
+            (&raw const *sSpriteTemplate_CoinNumber).cast_mut(),
+            x,
+            y,
+            13,
+        );
+        crate::gl!(&raw gSprites[gl_i13])
+    };
     (*sprite).oam.set_priority(2);
     (*sprite).data[sIsPayout] = isPayout as i16;
     (*sprite).data[sDigitMin] = digitMult;
@@ -3282,9 +3436,9 @@ unsafe fn CreateCoinNumberSprite(x: i16, y: i16, isPayout: u8, digitMult: i16) {
     (*sprite).data[sCurNum] = -1;
 }
 pub(crate) unsafe fn SpriteCB_CoinNumber(sprite: *mut Sprite) {
-    let mut tag: u16 = (*sSlotMachine).coins as u16;
+    let mut tag: u16 = (*crate::gl!(sSlotMachine)).coins as u16;
     if (*sprite).data[sIsPayout] != 0 {
-        tag = (*sSlotMachine).payout as u16;
+        tag = (*crate::gl!(sSlotMachine)).payout as u16;
     }
     if (*sprite).data[sCurNum] as i32 != tag as i32 {
         (*sprite).data[sCurNum] = tag as i16;
@@ -3302,38 +3456,45 @@ unsafe fn CreateReelBackgroundSprite() {
         72,
         15,
     );
-    gSprites[spriteId].oam.set_priority(3);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
     SetSubspriteTables(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         sSubspriteTable_ReelBackground.as_ptr().cast_mut(),
     );
 }
 unsafe fn CreateReelTimePikachuSprite() {
-    if sImageTable_ReelTimePikachu.is_null() {
-        sImageTable_ReelTimePikachu = AllocZeroed(40) as *mut SpriteFrameImage;
+    if (*sImageTable_ReelTimePikachu.as_ptr()).is_null() {
+        crate::gl!(sImageTable_ReelTimePikachu = AllocZeroed(40) as *mut SpriteFrameImage);
     }
-    (*sImageTable_ReelTimePikachu).data = sReelTimeGfxPtr as *mut c_void;
-    (*sImageTable_ReelTimePikachu).size = 0x800;
-    (*sImageTable_ReelTimePikachu.at(1)).data = sReelTimeGfxPtr.at(2048) as *mut c_void;
-    (*sImageTable_ReelTimePikachu.at(1)).size = 0x800;
-    (*sImageTable_ReelTimePikachu.at(2)).data = sReelTimeGfxPtr.at(4096) as *mut c_void;
-    (*sImageTable_ReelTimePikachu.at(2)).size = 0x800;
-    (*sImageTable_ReelTimePikachu.at(3)).data = sReelTimeGfxPtr.at(6144) as *mut c_void;
-    (*sImageTable_ReelTimePikachu.at(3)).size = 0x800;
-    (*sImageTable_ReelTimePikachu.at(4)).data = sReelTimeGfxPtr.at(8192) as *mut c_void;
-    (*sImageTable_ReelTimePikachu.at(4)).size = 0x800;
+    (*crate::gl!(sImageTable_ReelTimePikachu)).data = crate::gl!(sReelTimeGfxPtr) as *mut c_void;
+    (*crate::gl!(sImageTable_ReelTimePikachu)).size = 0x800;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(1)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(2048) as *mut c_void;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(1)).size = 0x800;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(2)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(4096) as *mut c_void;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(2)).size = 0x800;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(3)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(6144) as *mut c_void;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(3)).size = 0x800;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(4)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(8192) as *mut c_void;
+    (*(*sImageTable_ReelTimePikachu.as_ptr()).at(4)).size = 0x800;
     let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_ReelTimePikachu;
-    spriteTemplate.images = sImageTable_ReelTimePikachu;
+    spriteTemplate.images = crate::gl!(sImageTable_ReelTimePikachu);
     let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, 280, 80, 1);
-    gSprites[spriteId].oam.set_priority(1);
-    gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
-    (*sSlotMachine).reelTimePikachuSpriteId = spriteId;
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
+    (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
+    (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId = spriteId;
 }
 unsafe fn DestroyReelTimePikachuSprite() {
-    DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId]);
-    if !sImageTable_ReelTimePikachu.is_null() {
-        Free(sImageTable_ReelTimePikachu as *mut c_void);
-        sImageTable_ReelTimePikachu = null_mut();
+    DestroySprite({
+        let gl_i14 = (*crate::gl!(sSlotMachine)).reelTimePikachuSpriteId;
+        crate::gl!(&raw gSprites[gl_i14])
+    });
+    if !(*sImageTable_ReelTimePikachu.as_ptr()).is_null() {
+        Free(crate::gl!(sImageTable_ReelTimePikachu) as *mut c_void);
+        crate::gl!(sImageTable_ReelTimePikachu = null_mut());
     }
 }
 pub(crate) unsafe fn SpriteCB_ReelTimePikachu(sprite: *mut Sprite) {
@@ -3354,53 +3515,61 @@ pub(crate) unsafe fn SpriteCB_ReelTimePikachu(sprite: *mut Sprite) {
     }
 }
 unsafe fn CreateReelTimeMachineSprites() {
-    if sImageTable_ReelTimeMachineAntennae.is_null() {
-        sImageTable_ReelTimeMachineAntennae = AllocZeroed(8) as *mut SpriteFrameImage;
+    if (*sImageTable_ReelTimeMachineAntennae.as_ptr()).is_null() {
+        crate::gl!(sImageTable_ReelTimeMachineAntennae = AllocZeroed(8) as *mut SpriteFrameImage);
     }
-    (*sImageTable_ReelTimeMachineAntennae).data = sReelTimeGfxPtr.at(10240) as *mut c_void;
-    (*sImageTable_ReelTimeMachineAntennae).size = 0x300;
+    (*crate::gl!(sImageTable_ReelTimeMachineAntennae)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(10240) as *mut c_void;
+    (*crate::gl!(sImageTable_ReelTimeMachineAntennae)).size = 0x300;
     let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_ReelTimeMachineAntennae;
-    spriteTemplate.images = sImageTable_ReelTimeMachineAntennae;
+    spriteTemplate.images = crate::gl!(sImageTable_ReelTimeMachineAntennae);
     let mut spriteId: u8 = CreateSprite(&raw mut spriteTemplate, 368, 52, 7);
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let mut sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     SetSubspriteTables(
         sprite,
         sSubspriteTable_ReelTimeMachineAntennae.as_ptr().cast_mut(),
     );
-    (*sSlotMachine).reelTimeMachineSpriteIds[0] = spriteId;
-    if sImageTable_ReelTimeMachine.is_null() {
-        sImageTable_ReelTimeMachine = AllocZeroed(8) as *mut SpriteFrameImage;
+    (*crate::gl!(sSlotMachine)).reelTimeMachineSpriteIds[0] = spriteId;
+    if (*sImageTable_ReelTimeMachine.as_ptr()).is_null() {
+        crate::gl!(sImageTable_ReelTimeMachine = AllocZeroed(8) as *mut SpriteFrameImage);
     }
-    (*sImageTable_ReelTimeMachine).data = sReelTimeGfxPtr.at(10240).at(768) as *mut c_void;
-    (*sImageTable_ReelTimeMachine).size = 0x500;
+    (*crate::gl!(sImageTable_ReelTimeMachine)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(10240).at(768) as *mut c_void;
+    (*crate::gl!(sImageTable_ReelTimeMachine)).size = 0x500;
     spriteTemplate = *sSpriteTemplate_ReelTimeMachine;
-    spriteTemplate.images = sImageTable_ReelTimeMachine;
+    spriteTemplate.images = crate::gl!(sImageTable_ReelTimeMachine);
     spriteId = CreateSprite(&raw mut spriteTemplate, 368, 84, 7);
-    sprite = &raw mut gSprites[spriteId];
+    sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     SetSubspriteTables(sprite, sSubspriteTable_ReelTimeMachine.as_ptr().cast_mut());
-    (*sSlotMachine).reelTimeMachineSpriteIds[1] = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeMachineSpriteIds[1] = spriteId;
 }
 unsafe fn CreateBrokenReelTimeMachineSprite() {
-    if sImageTable_BrokenReelTimeMachine.is_null() {
-        sImageTable_BrokenReelTimeMachine = AllocZeroed(8) as *mut SpriteFrameImage;
+    if (*sImageTable_BrokenReelTimeMachine.as_ptr()).is_null() {
+        crate::gl!(sImageTable_BrokenReelTimeMachine = AllocZeroed(8) as *mut SpriteFrameImage);
     }
-    (*sImageTable_BrokenReelTimeMachine).data = sReelTimeGfxPtr.at(12288) as *mut c_void;
-    (*sImageTable_BrokenReelTimeMachine).size = 0x600;
+    (*crate::gl!(sImageTable_BrokenReelTimeMachine)).data =
+        (*sReelTimeGfxPtr.as_ptr()).at(12288) as *mut c_void;
+    (*crate::gl!(sImageTable_BrokenReelTimeMachine)).size = 0x600;
     let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_BrokenReelTimeMachine;
-    spriteTemplate.images = sImageTable_BrokenReelTimeMachine;
-    let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, 168 - gSpriteCoordOffsetX, 80, 7);
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    spriteTemplate.images = crate::gl!(sImageTable_BrokenReelTimeMachine);
+    let spriteId: u8 = CreateSprite(
+        &raw mut spriteTemplate,
+        168 - gSpriteCoordOffsetX.get(),
+        80,
+        7,
+    );
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     SetSubspriteTables(
         sprite,
         sSubspriteTable_BrokenReelTimeMachine.as_ptr().cast_mut(),
     );
-    (*sSlotMachine).reelTimeBrokenMachineSpriteId = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeBrokenMachineSpriteId = spriteId;
 }
 unsafe fn CreateReelTimeNumberSprites() {
     let mut i: u8 = 0;
@@ -3412,18 +3581,18 @@ unsafe fn CreateReelTimeNumberSprites() {
             0,
             10,
         );
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).oam.set_priority(1);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).data[7] = r5;
-        (*sSlotMachine).reelTimeNumberSpriteIds[i] = spriteId;
+        (*crate::gl!(sSlotMachine)).reelTimeNumberSpriteIds[i] = spriteId;
         i += 1;
         r5 += 20;
     }
 }
 pub(crate) unsafe fn SpriteCB_ReelTimeNumbers(sprite: *mut Sprite) {
-    let mut r0: i16 =
-        (*sSlotMachine).reeltimePixelOffset as u16 as i16 + (*sprite).data[7] as u16 as i16;
+    let mut r0: i16 = (*crate::gl!(sSlotMachine)).reeltimePixelOffset as u16 as i16
+        + (*sprite).data[7] as u16 as i16;
     r0 %= 40;
     (*sprite).y = r0 + 59;
     StartSpriteAnimIfDifferent(sprite, GetReelTimeSymbol(r0 / 20));
@@ -3435,22 +3604,22 @@ unsafe fn CreateReelTimeShadowSprites() {
         100,
         9,
     );
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let mut sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     (*sprite).oam.set_priority(1);
     SetSubspriteTables(sprite, sSubspriteTable_ReelTimeShadow.as_ptr().cast_mut());
-    (*sSlotMachine).reelTimeShadowSpriteIds[0] = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeShadowSpriteIds[0] = spriteId;
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeShadow).cast_mut(),
         288,
         104,
         4,
     );
-    sprite = &raw mut gSprites[spriteId];
+    sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     (*sprite).oam.set_priority(1);
     SetSubspriteTables(sprite, sSubspriteTable_ReelTimeShadow.as_ptr().cast_mut());
-    (*sSlotMachine).reelTimeShadowSpriteIds[1] = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeShadowSpriteIds[1] = spriteId;
 }
 unsafe fn CreateReelTimeNumberGapSprite() {
     let spriteId: u8 = CreateSprite(
@@ -3459,42 +3628,57 @@ unsafe fn CreateReelTimeNumberGapSprite() {
         76,
         11,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     (*sprite).oam.set_priority(1);
     SetSubspriteTables(
         sprite,
         sSubspriteTable_ReelTimeNumberGap.as_ptr().cast_mut(),
     );
-    (*sSlotMachine).reelTimeNumberGapSpriteId = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeNumberGapSpriteId = spriteId;
 }
 unsafe fn DestroyReelTimeMachineSprites() {
-    DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeNumberGapSpriteId]);
+    DestroySprite({
+        let gl_i15 = (*crate::gl!(sSlotMachine)).reelTimeNumberGapSpriteId;
+        crate::gl!(&raw gSprites[gl_i15])
+    });
     for i in 0..2u8 {
-        DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeMachineSpriteIds[i]]);
+        DestroySprite({
+            let gl_i16 = (*crate::gl!(sSlotMachine)).reelTimeMachineSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i16])
+        });
     }
-    if !sImageTable_ReelTimeMachineAntennae.is_null() {
-        Free(sImageTable_ReelTimeMachineAntennae as *mut c_void);
-        sImageTable_ReelTimeMachineAntennae = null_mut();
+    if !(*sImageTable_ReelTimeMachineAntennae.as_ptr()).is_null() {
+        Free(crate::gl!(sImageTable_ReelTimeMachineAntennae) as *mut c_void);
+        crate::gl!(sImageTable_ReelTimeMachineAntennae = null_mut());
     }
-    if !sImageTable_ReelTimeMachine.is_null() {
-        Free(sImageTable_ReelTimeMachine as *mut c_void);
-        sImageTable_ReelTimeMachine = null_mut();
+    if !(*sImageTable_ReelTimeMachine.as_ptr()).is_null() {
+        Free(crate::gl!(sImageTable_ReelTimeMachine) as *mut c_void);
+        crate::gl!(sImageTable_ReelTimeMachine = null_mut());
     }
     for i in 0..3u8 {
-        DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeNumberSpriteIds[i]]);
+        DestroySprite({
+            let gl_i17 = (*crate::gl!(sSlotMachine)).reelTimeNumberSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i17])
+        });
     }
 }
 unsafe fn DestroyReelTimeShadowSprites() {
     for i in 0..2u8 {
-        DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeShadowSpriteIds[i]]);
+        DestroySprite({
+            let gl_i18 = (*crate::gl!(sSlotMachine)).reelTimeShadowSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i18])
+        });
     }
 }
 unsafe fn DestroyBrokenReelTimeMachineSprite() {
-    DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeBrokenMachineSpriteId]);
-    if !sImageTable_BrokenReelTimeMachine.is_null() {
-        Free(sImageTable_BrokenReelTimeMachine as *mut c_void);
-        sImageTable_BrokenReelTimeMachine = null_mut();
+    DestroySprite({
+        let gl_i19 = (*crate::gl!(sSlotMachine)).reelTimeBrokenMachineSpriteId;
+        crate::gl!(&raw gSprites[gl_i19])
+    });
+    if !(*sImageTable_BrokenReelTimeMachine.as_ptr()).is_null() {
+        Free(crate::gl!(sImageTable_BrokenReelTimeMachine) as *mut c_void);
+        crate::gl!(sImageTable_BrokenReelTimeMachine = null_mut());
     }
 }
 unsafe fn CreateReelTimeBoltSprites() {
@@ -3504,10 +3688,10 @@ unsafe fn CreateReelTimeBoltSprites() {
         32,
         5,
     );
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let mut sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
     (*sprite).set_hFlip(TRUE as u16);
-    (*sSlotMachine).reelTimeBoltSpriteIds[0] = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeBoltSpriteIds[0] = spriteId;
     (*sprite).data[0] = 8;
     (*sprite).data[sXDir] = -1;
     (*sprite).data[sYDir] = -1;
@@ -3518,9 +3702,9 @@ unsafe fn CreateReelTimeBoltSprites() {
         32,
         5,
     );
-    sprite = &raw mut gSprites[spriteId];
+    sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
-    (*sSlotMachine).reelTimeBoltSpriteIds[1] = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeBoltSpriteIds[1] = spriteId;
     (*sprite).data[sXDir] = 1;
     (*sprite).data[sYDir] = -1;
     (*sprite).data[sDelay] = 32;
@@ -3546,12 +3730,23 @@ pub(crate) unsafe fn SpriteCB_ReelTimeBolt(sprite: *mut Sprite) {
     }
 }
 unsafe fn SetReelTimeBoltDelay(delay: i16) {
-    gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[0]].data[sDelay] = delay;
-    gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[1]].data[sDelay] = delay;
+    {
+        let gl_i20 = (*crate::gl!(sSlotMachine)).reelTimeBoltSpriteIds[0];
+        let gl_i21 = sDelay;
+        crate::gl!(gSprites[gl_i20].data[gl_i21] = delay)
+    };
+    {
+        let gl_i22 = (*crate::gl!(sSlotMachine)).reelTimeBoltSpriteIds[1];
+        let gl_i23 = sDelay;
+        crate::gl!(gSprites[gl_i22].data[gl_i23] = delay)
+    };
 }
 unsafe fn DestroyReelTimeBoltSprites() {
     for i in 0..2u8 {
-        DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[i]]);
+        DestroySprite({
+            let gl_i24 = (*crate::gl!(sSlotMachine)).reelTimeBoltSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i24])
+        });
     }
 }
 unsafe fn CreateReelTimePikachuAuraSprites() {
@@ -3561,21 +3756,30 @@ unsafe fn CreateReelTimePikachuAuraSprites() {
         80,
         3,
     );
-    gSprites[spriteId].oam.set_priority(1);
-    gSprites[spriteId].data[sFlashPal] = TRUE as i16;
-    gSprites[spriteId].data[sColorIdx] = 0;
-    gSprites[spriteId].data[6] = 16;
-    gSprites[spriteId].data[sDelay] = 8;
-    (*sSlotMachine).reelTimePikachuAuraSpriteIds[0] = spriteId;
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
+    {
+        let gl_i25 = sFlashPal;
+        crate::gl!(gSprites[spriteId].data[gl_i25] = TRUE as i16)
+    };
+    {
+        let gl_i26 = sColorIdx;
+        crate::gl!(gSprites[spriteId].data[gl_i26] = 0)
+    };
+    crate::gl!(gSprites[spriteId].data[6] = 16);
+    {
+        let gl_i27 = sDelay;
+        crate::gl!(gSprites[spriteId].data[gl_i27] = 8)
+    };
+    (*crate::gl!(sSlotMachine)).reelTimePikachuAuraSpriteIds[0] = spriteId;
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimePikachuAura).cast_mut(),
         104,
         80,
         3,
     );
-    gSprites[spriteId].oam.set_priority(1);
-    gSprites[spriteId].set_hFlip(TRUE as u16);
-    (*sSlotMachine).reelTimePikachuAuraSpriteIds[1] = spriteId;
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
+    (*gSprites.as_ptr())[spriteId].set_hFlip(TRUE as u16);
+    (*crate::gl!(sSlotMachine)).reelTimePikachuAuraSpriteIds[1] = spriteId;
 }
 pub(crate) unsafe fn SpriteCB_ReelTimePikachuAura(sprite: *mut Sprite) {
     let colors: CArray<u8, 2> = CArray([16, 0]);
@@ -3597,7 +3801,11 @@ pub(crate) unsafe fn SpriteCB_ReelTimePikachuAura(sprite: *mut Sprite) {
     }
 }
 unsafe fn SetReelTimePikachuAuraFlashDelay(delay: i16) {
-    gSprites[(*sSlotMachine).reelTimePikachuAuraSpriteIds[0]].data[sDelay] = delay;
+    {
+        let gl_i28 = (*crate::gl!(sSlotMachine)).reelTimePikachuAuraSpriteIds[0];
+        let gl_i29 = sDelay;
+        crate::gl!(gSprites[gl_i28].data[gl_i29] = delay)
+    };
 }
 unsafe fn DestroyReelTimePikachuAuraSprites() {
     MultiplyInvertedPaletteRGBComponents(
@@ -3607,7 +3815,10 @@ unsafe fn DestroyReelTimePikachuAuraSprites() {
         0,
     );
     for i in 0..2u8 {
-        DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimePikachuAuraSpriteIds[i]]);
+        DestroySprite({
+            let gl_i30 = (*crate::gl!(sSlotMachine)).reelTimePikachuAuraSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i30])
+        });
     }
 }
 unsafe fn CreateReelTimeExplosionSprite() {
@@ -3617,29 +3828,32 @@ unsafe fn CreateReelTimeExplosionSprite() {
         80,
         6,
     );
-    gSprites[spriteId].oam.set_priority(1);
-    (*sSlotMachine).reelTimeExplosionSpriteId = spriteId;
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
+    (*crate::gl!(sSlotMachine)).reelTimeExplosionSpriteId = spriteId;
 }
 pub(crate) unsafe fn SpriteCB_ReelTimeExplosion(sprite: *mut Sprite) {
-    (*sprite).y2 = gSpriteCoordOffsetY;
+    (*sprite).y2 = gSpriteCoordOffsetY.get();
 }
 unsafe fn DestroyReelTimeExplosionSprite() {
-    DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeExplosionSpriteId]);
+    DestroySprite({
+        let gl_i31 = (*crate::gl!(sSlotMachine)).reelTimeExplosionSpriteId;
+        crate::gl!(&raw gSprites[gl_i31])
+    });
 }
 unsafe fn CreateReelTimeDuckSprites() {
     let sp: CArray<u16, 4> = CArray([0, 64, 128, 192]);
     for i in 0..4u8 {
         let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_ReelTimeDuck).cast_mut(),
-            80 - gSpriteCoordOffsetX,
+            80 - gSpriteCoordOffsetX.get(),
             68,
             0,
         );
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).oam.set_priority(1);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).data[0] = sp[i] as i16;
-        (*sSlotMachine).reelTimeDuckSpriteIds[i] = spriteId;
+        (*crate::gl!(sSlotMachine)).reelTimeDuckSpriteIds[i] = spriteId;
     }
 }
 pub(crate) unsafe fn SpriteCB_ReelTimeDuck(sprite: *mut Sprite) {
@@ -3662,7 +3876,10 @@ pub(crate) unsafe fn SpriteCB_ReelTimeDuck(sprite: *mut Sprite) {
 }
 unsafe fn DestroyReelTimeDuckSprites() {
     for i in 0..4u8 {
-        DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeDuckSpriteIds[i]]);
+        DestroySprite({
+            let gl_i32 = (*crate::gl!(sSlotMachine)).reelTimeDuckSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i32])
+        });
     }
 }
 unsafe fn CreateReelTimeSmokeSprite() {
@@ -3672,11 +3889,11 @@ unsafe fn CreateReelTimeSmokeSprite() {
         60,
         8,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
     (*sprite).oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
     InitSpriteAffineAnim(sprite);
-    (*sSlotMachine).reelTimeSmokeSpriteId = spriteId;
+    (*crate::gl!(sSlotMachine)).reelTimeSmokeSpriteId = spriteId;
 }
 pub(crate) unsafe fn SpriteCB_ReelTimeSmoke(sprite: *mut Sprite) {
     if (*sprite).data[sState] == 0 {
@@ -3708,10 +3925,17 @@ pub(crate) unsafe fn SpriteCB_ReelTimeSmoke(sprite: *mut Sprite) {
     (*sprite).y2 -= (*sprite).data[sMoveY] >> 8;
 }
 unsafe fn IsReelTimeSmokeAnimFinished() -> u8 {
-    gSprites[(*sSlotMachine).reelTimeSmokeSpriteId].data[sAnimFinished] as u8
+    ({
+        let gl_i33 = (*crate::gl!(sSlotMachine)).reelTimeSmokeSpriteId;
+        let gl_i34 = sAnimFinished;
+        crate::gl!(gSprites[gl_i33].data[gl_i34])
+    }) as u8
 }
 unsafe fn DestroyReelTimeSmokeSprite() {
-    let sprite: *mut Sprite = &raw mut gSprites[(*sSlotMachine).reelTimeSmokeSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i35 = (*crate::gl!(sSlotMachine)).reelTimeSmokeSpriteId;
+        crate::gl!(&raw gSprites[gl_i35])
+    };
     FreeOamMatrix((*sprite).oam.matrixNum() as u8);
     DestroySprite(sprite);
 }
@@ -3722,7 +3946,7 @@ unsafe fn CreatePikaPowerBoltSprite(x: i16, y: i16) -> u8 {
         y,
         12,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(2);
     (*sprite).oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
     InitSpriteAffineAnim(sprite);
@@ -3734,7 +3958,7 @@ pub(crate) unsafe fn SpriteCB_PikaPowerBolt(sprite: *mut Sprite) {
     }
 }
 unsafe fn DestroyPikaPowerBoltSprite(spriteId: u8) {
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     FreeOamMatrix((*sprite).oam.matrixNum() as u8);
     DestroySprite(sprite);
 }
@@ -3755,9 +3979,9 @@ unsafe fn CreateDigitalDisplaySprite(
     internalSpriteId: i16,
 ) -> u8 {
     let mut spriteTemplate: SpriteTemplate = *sSpriteTemplates_DigitalDisplay[templateIdx];
-    spriteTemplate.images = sImageTables_DigitalDisplay[templateIdx];
+    spriteTemplate.images = crate::gl!(sImageTables_DigitalDisplay[templateIdx]);
     let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, x, y, 16);
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(3);
     (*sprite).callback = callback;
     (*sprite).data[sSpriteId] = internalSpriteId;
@@ -3868,7 +4092,7 @@ pub(crate) unsafe fn SpriteCB_DigitalDisplay_ReelTimeNumber(sprite: *mut Sprite)
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            StartSpriteAnim(sprite, (*sSlotMachine).reelTimeSpinsLeft - 1);
+            StartSpriteAnim(sprite, (*crate::gl!(sSlotMachine)).reelTimeSpinsLeft - 1);
             (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
@@ -4112,9 +4336,9 @@ pub(crate) unsafe fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mut Sprite) {
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*sSlotMachine).winIn = 47;
-            (*sSlotMachine).winOut = 63;
-            (*sSlotMachine).win0v = 8328;
+            (*crate::gl!(sSlotMachine)).winIn = 47;
+            (*crate::gl!(sSlotMachine)).winOut = 63;
+            (*crate::gl!(sSlotMachine)).win0v = 8328;
             (*sprite).set_invisible(TRUE as u16);
             (*sprite).data[sState] += 1;
         }
@@ -4128,22 +4352,23 @@ pub(crate) unsafe fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mut Sprite) {
             if (*sprite).data[3] < 208 {
                 (*sprite).data[3] = 208;
             }
-            (*sSlotMachine).win0h = ((*sprite).data[2] as u16) << 8 | (*sprite).data[3] as u16;
+            (*crate::gl!(sSlotMachine)).win0h =
+                ((*sprite).data[2] as u16) << 8 | (*sprite).data[3] as u16;
             if (*sprite).data[1] > 51 {
                 (*sprite).data[sState] += 1;
-                (*sSlotMachine).winIn = 63;
+                (*crate::gl!(sSlotMachine)).winIn = 63;
             }
             break 'l1;
         }
         if sw1 == 2 {
             fall = true;
-            if (*sSlotMachine).bet == 0 {
+            if (*crate::gl!(sSlotMachine)).bet == 0 {
                 break 'l1;
             }
             AddDigitalDisplaySprite(DIG_SPRITE_A_BUTTON, Some(SpriteCallbackDummy), 208, 116, 0);
-            (*sSlotMachine).win0h = 49376;
-            (*sSlotMachine).win0v = 26752;
-            (*sSlotMachine).winIn = 47;
+            (*crate::gl!(sSlotMachine)).win0h = 49376;
+            (*crate::gl!(sSlotMachine)).win0v = 26752;
+            (*crate::gl!(sSlotMachine)).winIn = 47;
             (*sprite).data[sState] += 1;
             (*sprite).data[1] = 0;
         }
@@ -4157,10 +4382,11 @@ pub(crate) unsafe fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mut Sprite) {
             if (*sprite).data[3] < 208 {
                 (*sprite).data[3] = 208;
             }
-            (*sSlotMachine).win0h = ((*sprite).data[2] as u16) << 8 | (*sprite).data[3] as u16;
+            (*crate::gl!(sSlotMachine)).win0h =
+                ((*sprite).data[2] as u16) << 8 | (*sprite).data[3] as u16;
             if (*sprite).data[1] > 15 {
                 (*sprite).data[sState] += 1;
-                (*sSlotMachine).winIn = 63;
+                (*crate::gl!(sSlotMachine)).winIn = 63;
             }
             break 'l1;
         }
@@ -4178,44 +4404,48 @@ pub(crate) unsafe fn EndDigitalDisplayScene_Win() {
     );
 }
 pub(crate) unsafe fn EndDigitalDisplayScene_InsertBet() {
-    (*sSlotMachine).win0h = DISPLAY_WIDTH;
-    (*sSlotMachine).win0v = DISPLAY_HEIGHT;
-    (*sSlotMachine).winIn = 63;
-    (*sSlotMachine).winOut = 63;
+    (*crate::gl!(sSlotMachine)).win0h = DISPLAY_WIDTH;
+    (*crate::gl!(sSlotMachine)).win0v = DISPLAY_HEIGHT;
+    (*crate::gl!(sSlotMachine)).winIn = 63;
+    (*crate::gl!(sSlotMachine)).winOut = 63;
 }
 unsafe fn LoadSlotMachineGfx() {
     LoadReelBackground();
-    sDigitalDisplayGfxPtr = Alloc(0x3200) as *mut u8;
+    crate::gl!(sDigitalDisplayGfxPtr = Alloc(0x3200) as *mut u8);
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gSlotMachineDigitalDisplay_Gfx)
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        sDigitalDisplayGfxPtr as *mut c_void,
+        crate::gl!(sDigitalDisplayGfxPtr) as *mut c_void,
     );
-    sReelTimeGfxPtr = Alloc(0x3600) as *mut u8;
+    crate::gl!(sReelTimeGfxPtr = Alloc(0x3600) as *mut u8);
     LZDecompressWram(
         sReelTimeGfx.as_ptr().cast_mut(),
-        sReelTimeGfxPtr as *mut c_void,
+        crate::gl!(sReelTimeGfxPtr) as *mut c_void,
     );
-    sSlotMachineSpritesheetsPtr = AllocZeroed(176) as *mut SpriteSheet;
+    crate::gl!(sSlotMachineSpritesheetsPtr = AllocZeroed(176) as *mut SpriteSheet);
     for i in 0..22u8 {
-        (*sSlotMachineSpritesheetsPtr.at(i)).data = sSlotMachineSpriteSheets[i].data;
-        (*sSlotMachineSpritesheetsPtr.at(i)).size = sSlotMachineSpriteSheets[i].size;
-        (*sSlotMachineSpritesheetsPtr.at(i)).tag = sSlotMachineSpriteSheets[i].tag;
+        (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(i)).data = sSlotMachineSpriteSheets[i].data;
+        (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(i)).size = sSlotMachineSpriteSheets[i].size;
+        (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(i)).tag = sSlotMachineSpriteSheets[i].tag;
     }
-    (*sSlotMachineSpritesheetsPtr.at(17)).data = sDigitalDisplayGfxPtr.at(2560) as *mut c_void;
-    (*sSlotMachineSpritesheetsPtr.at(18)).data = sDigitalDisplayGfxPtr.at(5120) as *mut c_void;
-    (*sSlotMachineSpritesheetsPtr.at(19)).data = sDigitalDisplayGfxPtr.at(5632) as *mut c_void;
-    (*sSlotMachineSpritesheetsPtr.at(20)).data = sDigitalDisplayGfxPtr.at(6400) as *mut c_void;
-    LoadSpriteSheets(sSlotMachineSpritesheetsPtr);
+    (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(17)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(2560) as *mut c_void;
+    (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(18)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(5120) as *mut c_void;
+    (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(19)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(5632) as *mut c_void;
+    (*(*sSlotMachineSpritesheetsPtr.as_ptr()).at(20)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(6400) as *mut c_void;
+    LoadSpriteSheets(crate::gl!(sSlotMachineSpritesheetsPtr));
     LoadSpritePalettes(sSlotMachineSpritePalettes.as_ptr().cast_mut());
 }
 unsafe fn LoadReelBackground() {
     let mut j: u8 = 0;
-    sReelBackgroundSpriteSheet = AllocZeroed(8) as *mut SpriteSheet;
-    sReelBackground_Gfx = AllocZeroed(0x2000) as *mut u8;
-    let mut dest: *mut u8 = sReelBackground_Gfx;
+    crate::gl!(sReelBackgroundSpriteSheet = AllocZeroed(8) as *mut SpriteSheet);
+    crate::gl!(sReelBackground_Gfx = AllocZeroed(0x2000) as *mut u8);
+    let mut dest: *mut u8 = crate::gl!(sReelBackground_Gfx);
     for i in 0..0x40 {
         j = 0;
         while j < 0x20 {
@@ -4224,20 +4454,20 @@ unsafe fn LoadReelBackground() {
             dest = dest.at(1);
         }
     }
-    (*sReelBackgroundSpriteSheet).data = sReelBackground_Gfx as *mut c_void;
-    (*sReelBackgroundSpriteSheet).size = 0x800;
-    (*sReelBackgroundSpriteSheet).tag = GFXTAG_REEL_BG;
-    LoadSpriteSheet(sReelBackgroundSpriteSheet);
+    (*crate::gl!(sReelBackgroundSpriteSheet)).data = crate::gl!(sReelBackground_Gfx) as *mut c_void;
+    (*crate::gl!(sReelBackgroundSpriteSheet)).size = 0x800;
+    (*crate::gl!(sReelBackgroundSpriteSheet)).tag = GFXTAG_REEL_BG;
+    LoadSpriteSheet(crate::gl!(sReelBackgroundSpriteSheet));
 }
 unsafe fn LoadMenuGfx() {
-    sMenuGfx = Alloc(0x2200) as *mut u16;
+    crate::gl!(sMenuGfx = Alloc(0x2200) as *mut u16);
     LZDecompressWram(
         (*(&raw const crate::data::graphics::gSlotMachineMenu_Gfx).cast::<CArray<u32, 0>>())
             .as_ptr()
             .cast_mut(),
-        sMenuGfx as *mut c_void,
+        crate::gl!(sMenuGfx) as *mut c_void,
     );
-    LoadBgTiles(2, sMenuGfx as *mut c_void, 0x2200, 0);
+    LoadBgTiles(2, crate::gl!(sMenuGfx) as *mut c_void, 0x2200, 0);
     LoadPalette(
         (*(&raw const crate::data::graphics::gSlotMachineMenu_Pal).cast::<CArray<u16, 0>>())
             .as_ptr()
@@ -4267,45 +4497,45 @@ unsafe fn LoadSlotMachineReelOverlay() {
         for dx in 0..4i16 {
             LoadBgTilemap(
                 3,
-                sReelOverlay_Tilemap as *mut c_void,
+                crate::gl!(sReelOverlay_Tilemap) as *mut c_void,
                 2,
                 x as u16 + dx as u16 + 160,
             );
             LoadBgTilemap(
                 3,
-                sReelOverlay_Tilemap.at(1) as *mut c_void,
+                (*sReelOverlay_Tilemap.as_ptr()).at(1) as *mut c_void,
                 2,
                 x as u16 + dx as u16 + 416,
             );
             LoadBgTilemap(
                 3,
-                sReelOverlay_Tilemap.at(2) as *mut c_void,
+                (*sReelOverlay_Tilemap.as_ptr()).at(2) as *mut c_void,
                 2,
                 x as u16 + dx as u16 + 192,
             );
             LoadBgTilemap(
                 3,
-                sReelOverlay_Tilemap.at(3) as *mut c_void,
+                (*sReelOverlay_Tilemap.as_ptr()).at(3) as *mut c_void,
                 2,
                 x as u16 + dx as u16 + 384,
             );
         }
         LoadBgTilemap(
             3,
-            sReelOverlay_Tilemap.at(4) as *mut c_void,
+            (*sReelOverlay_Tilemap.as_ptr()).at(4) as *mut c_void,
             2,
             x as u16 + 192,
         );
         LoadBgTilemap(
             3,
-            sReelOverlay_Tilemap.at(5) as *mut c_void,
+            (*sReelOverlay_Tilemap.as_ptr()).at(5) as *mut c_void,
             2,
             x as u16 + 384,
         );
         for y in 7..=11i16 {
             LoadBgTilemap(
                 3,
-                sReelOverlay_Tilemap.at(6) as *mut c_void,
+                (*sReelOverlay_Tilemap.as_ptr()).at(6) as *mut c_void,
                 2,
                 x as u16 + y as u16 * 32,
             );
@@ -4320,31 +4550,31 @@ unsafe fn SetReelButtonTilemap(
     bottomLeft: u16,
     bottomRight: u16,
 ) {
-    *sReelButtonPress_Tilemap = topLeft;
-    *sReelButtonPress_Tilemap.at(1) = topRight;
-    *sReelButtonPress_Tilemap.at(2) = bottomLeft;
-    *sReelButtonPress_Tilemap.at(3) = bottomRight;
+    *crate::gl!(sReelButtonPress_Tilemap) = topLeft;
+    *(*sReelButtonPress_Tilemap.as_ptr()).at(1) = topRight;
+    *(*sReelButtonPress_Tilemap.as_ptr()).at(2) = bottomLeft;
+    *(*sReelButtonPress_Tilemap.as_ptr()).at(3) = bottomRight;
     LoadBgTilemap(
         2,
-        sReelButtonPress_Tilemap as *mut c_void,
+        crate::gl!(sReelButtonPress_Tilemap) as *mut c_void,
         2,
         480 + offset as u16,
     );
     LoadBgTilemap(
         2,
-        sReelButtonPress_Tilemap.at(1) as *mut c_void,
+        (*sReelButtonPress_Tilemap.as_ptr()).at(1) as *mut c_void,
         2,
         481 + offset as u16,
     );
     LoadBgTilemap(
         2,
-        sReelButtonPress_Tilemap.at(2) as *mut c_void,
+        (*sReelButtonPress_Tilemap.as_ptr()).at(2) as *mut c_void,
         2,
         512 + offset as u16,
     );
     LoadBgTilemap(
         2,
-        sReelButtonPress_Tilemap.at(3) as *mut c_void,
+        (*sReelButtonPress_Tilemap.as_ptr()).at(3) as *mut c_void,
         2,
         513 + offset as u16,
     );
@@ -4360,91 +4590,110 @@ unsafe fn LoadInfoBoxTilemap() {
     );
     HideBg(3);
 }
-unsafe fn SetDigitalDisplayImagePtrs() {
-    sImageTables_DigitalDisplay[0] = sImageTable_DigitalDisplay_Reel;
-    sImageTables_DigitalDisplay[1] = sImageTable_DigitalDisplay_Time;
-    sImageTables_DigitalDisplay[2] = sImageTable_DigitalDisplay_Insert;
-    sImageTables_DigitalDisplay[3] = sImageTable_DigitalDisplay_Win;
-    sImageTables_DigitalDisplay[4] = sImageTable_DigitalDisplay_Lose;
-    sImageTables_DigitalDisplay[5] = sImageTable_DigitalDisplay_AButton;
-    sImageTables_DigitalDisplay[6] = sImageTable_DigitalDisplay_Smoke;
-    sImageTables_DigitalDisplay[7] = sImageTable_DigitalDisplay_Number;
-    sImageTables_DigitalDisplay[8] = sImageTable_DigitalDisplay_Pokeball;
-    sImageTables_DigitalDisplay[9] = sImageTable_DigitalDisplay_DPad;
-    sImageTables_DigitalDisplay[10] = sImageTable_DigitalDisplay_Stop;
-    sImageTables_DigitalDisplay[11] = sImageTable_DigitalDisplay_Stop;
-    sImageTables_DigitalDisplay[12] = sImageTable_DigitalDisplay_Stop;
-    sImageTables_DigitalDisplay[13] = sImageTable_DigitalDisplay_Stop;
-    sImageTables_DigitalDisplay[14] = sImageTable_DigitalDisplay_Bonus;
-    sImageTables_DigitalDisplay[15] = sImageTable_DigitalDisplay_Bonus;
-    sImageTables_DigitalDisplay[16] = sImageTable_DigitalDisplay_Bonus;
-    sImageTables_DigitalDisplay[17] = sImageTable_DigitalDisplay_Bonus;
-    sImageTables_DigitalDisplay[18] = sImageTable_DigitalDisplay_Bonus;
-    sImageTables_DigitalDisplay[19] = sImageTable_DigitalDisplay_Big;
-    sImageTables_DigitalDisplay[20] = sImageTable_DigitalDisplay_Big;
-    sImageTables_DigitalDisplay[21] = sImageTable_DigitalDisplay_Big;
-    sImageTables_DigitalDisplay[22] = sImageTable_DigitalDisplay_Reg;
-    sImageTables_DigitalDisplay[23] = sImageTable_DigitalDisplay_Reg;
-    sImageTables_DigitalDisplay[24] = sImageTable_DigitalDisplay_Reg;
-    sImageTables_DigitalDisplay[25] = null_mut();
+fn SetDigitalDisplayImagePtrs() {
+    crate::gl!(sImageTables_DigitalDisplay[0] = crate::gl!(sImageTable_DigitalDisplay_Reel));
+    crate::gl!(sImageTables_DigitalDisplay[1] = crate::gl!(sImageTable_DigitalDisplay_Time));
+    crate::gl!(sImageTables_DigitalDisplay[2] = crate::gl!(sImageTable_DigitalDisplay_Insert));
+    crate::gl!(sImageTables_DigitalDisplay[3] = crate::gl!(sImageTable_DigitalDisplay_Win));
+    crate::gl!(sImageTables_DigitalDisplay[4] = crate::gl!(sImageTable_DigitalDisplay_Lose));
+    crate::gl!(sImageTables_DigitalDisplay[5] = crate::gl!(sImageTable_DigitalDisplay_AButton));
+    crate::gl!(sImageTables_DigitalDisplay[6] = crate::gl!(sImageTable_DigitalDisplay_Smoke));
+    crate::gl!(sImageTables_DigitalDisplay[7] = crate::gl!(sImageTable_DigitalDisplay_Number));
+    crate::gl!(sImageTables_DigitalDisplay[8] = crate::gl!(sImageTable_DigitalDisplay_Pokeball));
+    crate::gl!(sImageTables_DigitalDisplay[9] = crate::gl!(sImageTable_DigitalDisplay_DPad));
+    crate::gl!(sImageTables_DigitalDisplay[10] = crate::gl!(sImageTable_DigitalDisplay_Stop));
+    crate::gl!(sImageTables_DigitalDisplay[11] = crate::gl!(sImageTable_DigitalDisplay_Stop));
+    crate::gl!(sImageTables_DigitalDisplay[12] = crate::gl!(sImageTable_DigitalDisplay_Stop));
+    crate::gl!(sImageTables_DigitalDisplay[13] = crate::gl!(sImageTable_DigitalDisplay_Stop));
+    crate::gl!(sImageTables_DigitalDisplay[14] = crate::gl!(sImageTable_DigitalDisplay_Bonus));
+    crate::gl!(sImageTables_DigitalDisplay[15] = crate::gl!(sImageTable_DigitalDisplay_Bonus));
+    crate::gl!(sImageTables_DigitalDisplay[16] = crate::gl!(sImageTable_DigitalDisplay_Bonus));
+    crate::gl!(sImageTables_DigitalDisplay[17] = crate::gl!(sImageTable_DigitalDisplay_Bonus));
+    crate::gl!(sImageTables_DigitalDisplay[18] = crate::gl!(sImageTable_DigitalDisplay_Bonus));
+    crate::gl!(sImageTables_DigitalDisplay[19] = crate::gl!(sImageTable_DigitalDisplay_Big));
+    crate::gl!(sImageTables_DigitalDisplay[20] = crate::gl!(sImageTable_DigitalDisplay_Big));
+    crate::gl!(sImageTables_DigitalDisplay[21] = crate::gl!(sImageTable_DigitalDisplay_Big));
+    crate::gl!(sImageTables_DigitalDisplay[22] = crate::gl!(sImageTable_DigitalDisplay_Reg));
+    crate::gl!(sImageTables_DigitalDisplay[23] = crate::gl!(sImageTable_DigitalDisplay_Reg));
+    crate::gl!(sImageTables_DigitalDisplay[24] = crate::gl!(sImageTable_DigitalDisplay_Reg));
+    crate::gl!(sImageTables_DigitalDisplay[25] = null_mut());
 }
 unsafe fn AllocDigitalDisplayGfx() {
-    sImageTable_DigitalDisplay_Reel = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Reel).data = sDigitalDisplayGfxPtr as *mut c_void;
-    (*sImageTable_DigitalDisplay_Reel).size = 0x600;
-    sImageTable_DigitalDisplay_Time = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Time).data = sDigitalDisplayGfxPtr.at(1536) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Time).size = 0x200;
-    sImageTable_DigitalDisplay_Insert = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Insert).data = sDigitalDisplayGfxPtr.at(2048) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Insert).size = 0x200;
-    sImageTable_DigitalDisplay_Stop = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Stop).data = sDigitalDisplayGfxPtr.at(2560) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Stop).size = 0x200;
-    sImageTable_DigitalDisplay_Win = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Win).data = sDigitalDisplayGfxPtr.at(3072) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Win).size = 0x300;
-    sImageTable_DigitalDisplay_Lose = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Lose).data = sDigitalDisplayGfxPtr.at(4096) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Lose).size = 0x400;
-    sImageTable_DigitalDisplay_Bonus = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Bonus).data = sDigitalDisplayGfxPtr.at(5120) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Bonus).size = 0x200;
-    sImageTable_DigitalDisplay_Big = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Big).data = sDigitalDisplayGfxPtr.at(5632) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Big).size = 0x300;
-    sImageTable_DigitalDisplay_Reg = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Reg).data = sDigitalDisplayGfxPtr.at(6400) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Reg).size = 0x300;
-    sImageTable_DigitalDisplay_AButton = AllocZeroed(16) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_AButton).data = sDigitalDisplayGfxPtr.at(7168) as *mut c_void;
-    (*sImageTable_DigitalDisplay_AButton).size = 0x200;
-    (*sImageTable_DigitalDisplay_AButton.at(1)).data =
-        sDigitalDisplayGfxPtr.at(7680) as *mut c_void;
-    (*sImageTable_DigitalDisplay_AButton.at(1)).size = 0x200;
-    sImageTable_DigitalDisplay_Smoke = AllocZeroed(8) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Smoke).data = sDigitalDisplayGfxPtr.at(8192) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Smoke).size = 640;
-    sImageTable_DigitalDisplay_Number = AllocZeroed(40) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Number).data = sDigitalDisplayGfxPtr.at(8832) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Number).size = 0x80;
-    (*sImageTable_DigitalDisplay_Number.at(1)).data = sDigitalDisplayGfxPtr.at(8960) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Number.at(1)).size = 0x80;
-    (*sImageTable_DigitalDisplay_Number.at(2)).data = sDigitalDisplayGfxPtr.at(9088) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Number.at(2)).size = 0x80;
-    (*sImageTable_DigitalDisplay_Number.at(3)).data = sDigitalDisplayGfxPtr.at(9216) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Number.at(3)).size = 0x80;
-    (*sImageTable_DigitalDisplay_Number.at(4)).data = sDigitalDisplayGfxPtr.at(9344) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Number.at(4)).size = 0x80;
-    sImageTable_DigitalDisplay_Pokeball = AllocZeroed(16) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_Pokeball).data = sDigitalDisplayGfxPtr.at(9728) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Pokeball).size = 0x480;
-    (*sImageTable_DigitalDisplay_Pokeball.at(1)).data =
-        sDigitalDisplayGfxPtr.at(10880) as *mut c_void;
-    (*sImageTable_DigitalDisplay_Pokeball.at(1)).size = 0x480;
-    sImageTable_DigitalDisplay_DPad = AllocZeroed(16) as *mut SpriteFrameImage;
-    (*sImageTable_DigitalDisplay_DPad).data = sDigitalDisplayGfxPtr.at(12032) as *mut c_void;
-    (*sImageTable_DigitalDisplay_DPad).size = 0x180;
-    (*sImageTable_DigitalDisplay_DPad.at(1)).data = sDigitalDisplayGfxPtr.at(12416) as *mut c_void;
-    (*sImageTable_DigitalDisplay_DPad.at(1)).size = 0x180;
+    crate::gl!(sImageTable_DigitalDisplay_Reel = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Reel)).data =
+        crate::gl!(sDigitalDisplayGfxPtr) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Reel)).size = 0x600;
+    crate::gl!(sImageTable_DigitalDisplay_Time = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Time)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(1536) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Time)).size = 0x200;
+    crate::gl!(sImageTable_DigitalDisplay_Insert = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Insert)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(2048) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Insert)).size = 0x200;
+    crate::gl!(sImageTable_DigitalDisplay_Stop = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Stop)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(2560) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Stop)).size = 0x200;
+    crate::gl!(sImageTable_DigitalDisplay_Win = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Win)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(3072) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Win)).size = 0x300;
+    crate::gl!(sImageTable_DigitalDisplay_Lose = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Lose)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(4096) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Lose)).size = 0x400;
+    crate::gl!(sImageTable_DigitalDisplay_Bonus = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Bonus)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(5120) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Bonus)).size = 0x200;
+    crate::gl!(sImageTable_DigitalDisplay_Big = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Big)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(5632) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Big)).size = 0x300;
+    crate::gl!(sImageTable_DigitalDisplay_Reg = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Reg)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(6400) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Reg)).size = 0x300;
+    crate::gl!(sImageTable_DigitalDisplay_AButton = AllocZeroed(16) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_AButton)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(7168) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_AButton)).size = 0x200;
+    (*(*sImageTable_DigitalDisplay_AButton.as_ptr()).at(1)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(7680) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_AButton.as_ptr()).at(1)).size = 0x200;
+    crate::gl!(sImageTable_DigitalDisplay_Smoke = AllocZeroed(8) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Smoke)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(8192) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Smoke)).size = 640;
+    crate::gl!(sImageTable_DigitalDisplay_Number = AllocZeroed(40) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Number)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(8832) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Number)).size = 0x80;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(1)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(8960) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(1)).size = 0x80;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(2)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(9088) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(2)).size = 0x80;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(3)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(9216) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(3)).size = 0x80;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(4)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(9344) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_Number.as_ptr()).at(4)).size = 0x80;
+    crate::gl!(sImageTable_DigitalDisplay_Pokeball = AllocZeroed(16) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_Pokeball)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(9728) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_Pokeball)).size = 0x480;
+    (*(*sImageTable_DigitalDisplay_Pokeball.as_ptr()).at(1)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(10880) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_Pokeball.as_ptr()).at(1)).size = 0x480;
+    crate::gl!(sImageTable_DigitalDisplay_DPad = AllocZeroed(16) as *mut SpriteFrameImage);
+    (*crate::gl!(sImageTable_DigitalDisplay_DPad)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(12032) as *mut c_void;
+    (*crate::gl!(sImageTable_DigitalDisplay_DPad)).size = 0x180;
+    (*(*sImageTable_DigitalDisplay_DPad.as_ptr()).at(1)).data =
+        (*sDigitalDisplayGfxPtr.as_ptr()).at(12416) as *mut c_void;
+    (*(*sImageTable_DigitalDisplay_DPad.as_ptr()).at(1)).size = 0x180;
 }

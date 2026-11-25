@@ -11,7 +11,6 @@ use crate::ffi::{
 use crate::save_blocks::{save_block1, save_block2};
 use crate::types::{SaveBlock1, SaveBlock2};
 use core::ffi::c_int;
-use core::ptr::addr_of;
 
 const MAX_MONEY: u32 = 999_999;
 const MONEY_LABEL_TAG: u16 = 0x2722;
@@ -24,12 +23,12 @@ const MONEY_BOX_BASE_TILE: u16 = 0x214;
 const MONEY_BOX_PALETTE: u8 = 14;
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-static mut sMoneyBoxWindowId: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static sMoneyBoxWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-static mut sMoneyLabelSpriteId: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static sMoneyLabelSpriteId: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// 32x16, 4bpp, no affine, normal object mode. Bytes read from the compiler
 /// with `tools/rustport/probe.sh`.
@@ -214,7 +213,11 @@ pub unsafe fn PrintMoneyAmountInMoneyBoxWithBorder(
 
 #[unsafe(no_mangle)]
 pub unsafe fn ChangeAmountInMoneyBox(amount: i32) {
-    let window_id = unsafe { addr_of!(sMoneyBoxWindowId).read_volatile() };
+    let window_id = unsafe {
+        crate::gl!(&raw sMoneyBoxWindowId)
+            .cast_const()
+            .read_volatile()
+    };
     unsafe { PrintMoneyAmountInMoneyBox(window_id, amount, 0) };
 }
 
@@ -224,7 +227,7 @@ pub unsafe fn DrawMoneyBox(amount: i32, x: u8, y: u8) {
     unsafe { SetWindowTemplateFields(&raw mut template, 0, x + 1, y + 1, 10, 2, 15, 8) };
 
     let window_id = unsafe { AddWindow(&raw const template) } as u8;
-    unsafe { (&raw mut sMoneyBoxWindowId).write_volatile(window_id) };
+    unsafe { (crate::gl!(&raw sMoneyBoxWindowId)).write_volatile(window_id) };
 
     unsafe { FillWindowPixelBuffer(window_id, PIXEL_FILL_0) };
     unsafe { PutWindowTilemap(window_id) };
@@ -243,7 +246,11 @@ pub unsafe fn DrawMoneyBox(amount: i32, x: u8, y: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn HideMoneyBox() {
     unsafe { RemoveMoneyLabelObject() };
-    let window_id = unsafe { addr_of!(sMoneyBoxWindowId).read_volatile() };
+    let window_id = unsafe {
+        crate::gl!(&raw sMoneyBoxWindowId)
+            .cast_const()
+            .read_volatile()
+    };
     unsafe { ClearStdWindowAndFrameToTransparent(window_id, 0) };
     unsafe { CopyWindowToVram(window_id, COPYWIN_GFX) };
     unsafe { RemoveWindow(window_id) };
@@ -261,12 +268,16 @@ pub unsafe fn AddMoneyLabelObject(x: u16, y: u16) {
             0,
         )
     };
-    unsafe { (&raw mut sMoneyLabelSpriteId).write_volatile(sprite_id) };
+    unsafe { (crate::gl!(&raw sMoneyLabelSpriteId)).write_volatile(sprite_id) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn RemoveMoneyLabelObject() {
-    let sprite_id = unsafe { addr_of!(sMoneyLabelSpriteId).read_volatile() } as usize;
+    let sprite_id = unsafe {
+        crate::gl!(&raw sMoneyLabelSpriteId)
+            .cast_const()
+            .read_volatile()
+    } as usize;
     unsafe { DestroySpriteAndFreeResources(sprite(sprite_id)) };
 }
 

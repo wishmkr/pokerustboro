@@ -1,7 +1,6 @@
 use crate::ffi::{StringExpandPlaceholders, gStringVar4};
 use crate::task::task_data_ptr;
 use crate::text::gTextFlags;
-use core::ptr::{addr_of, addr_of_mut};
 
 const FIELD_MESSAGE_BOX_HIDDEN: u8 = 0;
 const FIELD_MESSAGE_BOX_NORMAL: u8 = 2;
@@ -10,8 +9,9 @@ const TASK_NONE: u8 = 0xff;
 
 type TaskFunc = unsafe fn(u8);
 
-#[unsafe(link_section = "ewram_data")]
-static mut FIELD_MESSAGE_BOX_MODE: u8 = FIELD_MESSAGE_BOX_HIDDEN;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static FIELD_MESSAGE_BOX_MODE: crate::global::Global<u8> =
+    crate::global::Global::new(FIELD_MESSAGE_BOX_HIDDEN);
 
 /// `LoadMessageBoxAndBorderGfx` with this module's view of its types.
 #[inline]
@@ -93,7 +93,7 @@ unsafe fn task_draw_field_message(task_id: u8) {
         }
         2 => {
             if unsafe { RunTextPrintersAndIsPrinter0Active() } != 1 {
-                unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
+                unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
                 unsafe { DestroyTask(task_id) };
             }
         }
@@ -125,56 +125,64 @@ unsafe fn start_from_buffer() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn InitFieldMessageBox() {
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
-    let flags = unsafe { addr_of!(gTextFlags).read() };
-    unsafe { addr_of_mut!(gTextFlags).write(flags & !0x0f) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
+    let flags = unsafe { crate::gl!(&raw gTextFlags).cast_const().read() };
+    unsafe { crate::gl!(&raw gTextFlags).write(flags & !0x0f) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ShowFieldMessage(message: *const u8) -> u8 {
-    if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
+    if unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).cast_const().read() }
+        != FIELD_MESSAGE_BOX_HIDDEN
+    {
         return 0;
     }
     unsafe { expand_and_start(message, true) };
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_NORMAL) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_NORMAL) };
     1
 }
 
 unsafe fn task_hide_pokenav_message_when_done(task_id: u8) {
     if unsafe { IsMatchCallTaskActive() } == 0 {
-        unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
+        unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
         unsafe { DestroyTask(task_id) };
     }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ShowPokenavFieldMessage(message: *const u8) -> u8 {
-    if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
+    if unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).cast_const().read() }
+        != FIELD_MESSAGE_BOX_HIDDEN
+    {
         return 0;
     }
     let _ = unsafe { StringExpandPlaceholders((&raw mut gStringVar4).cast(), message) };
     let _ = unsafe { CreateTask(task_hide_pokenav_message_when_done, 0) };
     unsafe { StartMatchCallFromScript(message) };
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_NORMAL) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_NORMAL) };
     1
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ShowFieldAutoScrollMessage(message: *const u8) -> u8 {
-    if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
+    if unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).cast_const().read() }
+        != FIELD_MESSAGE_BOX_HIDDEN
+    {
         return 0;
     }
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_AUTO_SCROLL) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_AUTO_SCROLL) };
     unsafe { expand_and_start(message, false) };
     1
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ShowFieldMessageFromBuffer() -> u8 {
-    if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
+    if unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).cast_const().read() }
+        != FIELD_MESSAGE_BOX_HIDDEN
+    {
         return 0;
     }
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_NORMAL) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_NORMAL) };
     unsafe { start_from_buffer() };
     1
 }
@@ -183,21 +191,22 @@ pub unsafe fn ShowFieldMessageFromBuffer() -> u8 {
 pub unsafe fn HideFieldMessageBox() {
     unsafe { destroy_draw_task() };
     unsafe { ClearDialogWindowAndFrame(0, 1) };
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn GetFieldMessageBoxMode() -> u8 {
-    unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() }
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).cast_const().read() }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn IsFieldMessageBoxHidden() -> u8 {
-    (unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } == FIELD_MESSAGE_BOX_HIDDEN) as u8
+    (unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).cast_const().read() }
+        == FIELD_MESSAGE_BOX_HIDDEN) as u8
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn StopFieldMessage() {
     unsafe { destroy_draw_task() };
-    unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
+    unsafe { crate::gl!(&raw FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
 }

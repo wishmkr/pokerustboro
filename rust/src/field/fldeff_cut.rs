@@ -122,9 +122,11 @@ static sSpriteTemplate_CutGrass: Table<SpriteTemplate> =
 pub(crate) static sCutSquareSide: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sTileCountFromPlayer_X: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sTileCountFromPlayer_Y: crate::global::Global<u8> = crate::global::Global::new(0);
-pub(crate) static mut sHyperCutTiles: Aligned<CArray<u8, 25>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCutGrassSpriteArrayPtr: *mut u8 = null_mut();
+pub(crate) static sHyperCutTiles: crate::global::Global<Aligned<CArray<u8, 25>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCutGrassSpriteArrayPtr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -141,15 +143,18 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
     let mut cutTiles: CArray<u8, 9> = zeroed();
     let mut ret: u8 = 0;
     if CheckObjectGraphicsInFrontOfPlayer(OBJ_EVENT_GFX_CUTTABLE_TREE) == TRUE {
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_CutTree);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_CutTree));
         return TRUE;
     } else {
         PlayerGetDestCoords(
-            &raw mut gPlayerFacingPosition.x,
-            &raw mut gPlayerFacingPosition.y,
+            crate::gl!(&raw gPlayerFacingPosition.x),
+            crate::gl!(&raw gPlayerFacingPosition.y),
         );
-        userAbility = GetMonAbility(&raw mut gPlayerParty[GetCursorSelectionMonId()]);
+        userAbility = GetMonAbility({
+            let gl_i0 = GetCursorSelectionMonId();
+            crate::gl!(&raw gPlayerParty[gl_i0])
+        });
         if userAbility == ABILITY_HYPER_CUTTER {
             sCutSquareSide.set(CUT_HYPER_SIDE);
             sTileCountFromPlayer_X.set(2);
@@ -163,22 +168,26 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
             cutTiles[i] = FALSE;
         }
         for i in 0..CUT_HYPER_AREA {
-            sHyperCutTiles[i] = FALSE;
+            crate::gl!(sHyperCutTiles[i] = FALSE);
         }
         ret = FALSE;
         i = 0;
         while i < CUT_NORMAL_SIDE {
-            y = i as i16 - 1 + gPlayerFacingPosition.y;
+            y = i as i16 - 1 + crate::gl!(gPlayerFacingPosition.y);
             for j in 0..CUT_NORMAL_SIDE {
-                x = j as i16 - 1 + gPlayerFacingPosition.x;
+                x = j as i16 - 1 + crate::gl!(gPlayerFacingPosition.x);
                 if MapGridGetElevationAt(x as i32, y as i32) as i32
-                    == gPlayerFacingPosition.elevation as i32
+                    == crate::gl!(gPlayerFacingPosition.elevation) as i32
                 {
                     tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
                     if MetatileBehavior_IsPokeGrass(tileBehavior) == TRUE
                         || MetatileBehavior_IsAshGrass(tileBehavior) == TRUE
                     {
-                        sHyperCutTiles[6 + i as i32 * 5 + j as i32] = TRUE;
+                        {
+                            let gl_v = TRUE;
+                            let gl_i0 = 6 + i as i32 * 5 + j as i32;
+                            crate::gl!(sHyperCutTiles[gl_i0] = gl_v)
+                        };
                         ret = TRUE;
                     }
                     if MapGridGetCollisionAt(x as i32, y as i32) == 1 {
@@ -186,7 +195,11 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
                     } else {
                         cutTiles[i as i32 * 3 + j as i32] = TRUE;
                         if MetatileBehavior_IsCuttableGrass(tileBehavior) == TRUE {
-                            sHyperCutTiles[6 + i as i32 * 5 + j as i32] = TRUE;
+                            {
+                                let gl_v = TRUE;
+                                let gl_i1 = 6 + i as i32 * 5 + j as i32;
+                                crate::gl!(sHyperCutTiles[gl_i1] = gl_v)
+                            };
                         }
                     }
                 } else {
@@ -197,14 +210,14 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
         }
         if userAbility != ABILITY_HYPER_CUTTER {
             if ret == TRUE {
-                gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-                gPostMenuFieldCallback = Some(FieldCallback_CutGrass);
+                crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+                crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_CutGrass));
             }
         } else {
             let mut tileCuttable: u8 = 0;
             for i in 0..16u8 {
-                x = gPlayerFacingPosition.x + sHyperCutStruct[i].x as i16;
-                y = gPlayerFacingPosition.y + sHyperCutStruct[i].y as i16;
+                x = crate::gl!(gPlayerFacingPosition.x) + sHyperCutStruct[i].x as i16;
+                y = crate::gl!(gPlayerFacingPosition.y) + sHyperCutStruct[i].y as i16;
                 tileCuttable = TRUE;
                 for j in 0..2u8 {
                     if sHyperCutStruct[i].unk2[j] == 0 {
@@ -217,7 +230,7 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
                 }
                 if tileCuttable == TRUE
                     && MapGridGetElevationAt(x as i32, y as i32) as i32
-                        == gPlayerFacingPosition.elevation as i32
+                        == crate::gl!(gPlayerFacingPosition.elevation) as i32
                 {
                     let tileArrayId: u8 =
                         sHyperCutStruct[i].y as u8 * 5 + 12 + sHyperCutStruct[i].x as u8;
@@ -225,20 +238,20 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
                     if MetatileBehavior_IsPokeGrass(tileBehavior) == TRUE
                         || MetatileBehavior_IsAshGrass(tileBehavior) == TRUE
                     {
-                        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-                        gPostMenuFieldCallback = Some(FieldCallback_CutGrass);
-                        sHyperCutTiles[tileArrayId] = TRUE;
+                        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+                        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_CutGrass));
+                        crate::gl!(sHyperCutTiles[tileArrayId] = TRUE);
                         ret = TRUE;
                     } else {
                         if MetatileBehavior_IsCuttableGrass(tileBehavior) == TRUE {
-                            sHyperCutTiles[tileArrayId] = TRUE;
+                            crate::gl!(sHyperCutTiles[tileArrayId] = TRUE);
                         }
                     }
                 }
             }
             if ret == TRUE {
-                gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-                gPostMenuFieldCallback = Some(FieldCallback_CutGrass);
+                crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+                crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_CutGrass));
             }
         }
         return ret;
@@ -250,7 +263,7 @@ pub unsafe fn SetUpFieldMove_Cut() -> u8 {
 }
 pub(crate) unsafe fn FieldCallback_CutGrass() {
     FieldEffectStart(FLDEFF_USE_CUT_ON_GRASS);
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UseCutOnGrass() -> u8 {
@@ -269,7 +282,7 @@ pub unsafe fn FldEff_UseCutOnGrass() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn FieldCallback_CutTree() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     ScriptContext_SetupScript(
         (*crate::asmdata::EventScript_UseCut.cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -302,35 +315,44 @@ pub unsafe fn FldEff_CutGrass() -> u8 {
     let mut y: i16 = 0;
     PlaySE(SE_M_CUT);
     PlayerGetDestCoords(
-        &raw mut gPlayerFacingPosition.x,
-        &raw mut gPlayerFacingPosition.y,
+        crate::gl!(&raw gPlayerFacingPosition.x),
+        crate::gl!(&raw gPlayerFacingPosition.y),
     );
     let mut i: u8 = 0;
     while i < CUT_HYPER_AREA {
-        if sHyperCutTiles[i] == TRUE {
+        if crate::gl!(sHyperCutTiles[i]) == TRUE {
             let xAdd: i8 = (i as i32 % 5) as i8 - 2;
             let yAdd: i8 = (i as i32 / 5) as i8 - 2;
-            x = xAdd as i16 + gPlayerFacingPosition.x;
-            y = yAdd as i16 + gPlayerFacingPosition.y;
+            x = xAdd as i16 + crate::gl!(gPlayerFacingPosition.x);
+            y = yAdd as i16 + crate::gl!(gPlayerFacingPosition.y);
             SetCutGrassMetatile(x, y);
             AllowObjectAtPosTriggerGroundEffects(x, y);
         }
         i += 1;
     }
     SetCutGrassMetatiles(
-        gPlayerFacingPosition.x - sTileCountFromPlayer_X.get() as i16,
-        gPlayerFacingPosition.y - (1 + sTileCountFromPlayer_Y.get() as i16),
+        crate::gl!(gPlayerFacingPosition.x) - sTileCountFromPlayer_X.get() as i16,
+        crate::gl!(gPlayerFacingPosition.y) - (1 + sTileCountFromPlayer_Y.get() as i16),
     );
     DrawWholeMapView();
-    sCutGrassSpriteArrayPtr = AllocZeroed(CUT_SPRITE_ARRAY_COUNT as u32) as *mut u8;
+    crate::gl!(sCutGrassSpriteArrayPtr = AllocZeroed(CUT_SPRITE_ARRAY_COUNT as u32) as *mut u8);
     for i in 0..CUT_SPRITE_ARRAY_COUNT {
-        *sCutGrassSpriteArrayPtr.at(i) = CreateSprite(
+        *(*sCutGrassSpriteArrayPtr.as_ptr()).at(i) = CreateSprite(
             (&raw const *sSpriteTemplate_CutGrass).cast_mut(),
-            gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 8,
-            gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 20,
+            (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                .oam
+                .x() as i16
+                + 8,
+            (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                .oam
+                .y() as i16
+                + 20,
             0,
         );
-        gSprites[*sCutGrassSpriteArrayPtr.at(i)].data[2] = 32 * i as i16;
+        {
+            let gl_i1 = *(*sCutGrassSpriteArrayPtr.as_ptr()).at(i);
+            crate::gl!(gSprites[gl_i1].data[2] = 32 * i as i16)
+        };
     }
     FALSE
 }
@@ -481,14 +503,14 @@ unsafe fn HandleLongGrassOnHyper(caseId: u8, x: i16, y: i16) {
     let mut newX: i16 = 0;
     let mut arr: CArray<u8, 3> = zeroed();
     if caseId == 0 {
-        arr[0] = sHyperCutTiles[5];
-        arr[1] = sHyperCutTiles[10];
-        arr[2] = sHyperCutTiles[15];
+        arr[0] = crate::gl!(sHyperCutTiles[5]);
+        arr[1] = crate::gl!(sHyperCutTiles[10]);
+        arr[2] = crate::gl!(sHyperCutTiles[15]);
         newX = x;
     } else if caseId == 1 {
-        arr[0] = sHyperCutTiles[9];
-        arr[1] = sHyperCutTiles[14];
-        arr[2] = sHyperCutTiles[19];
+        arr[0] = crate::gl!(sHyperCutTiles[9]);
+        arr[1] = crate::gl!(sHyperCutTiles[14]);
+        arr[2] = crate::gl!(sHyperCutTiles[19]);
         newX = x + 4;
     } else {
         return;
@@ -646,14 +668,20 @@ pub(crate) unsafe fn CutGrassSpriteCallback2(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn CutGrassSpriteCallbackEnd(sprite: *mut Sprite) {
     for i in 1..CUT_SPRITE_ARRAY_COUNT {
-        DestroySprite(&raw mut gSprites[*sCutGrassSpriteArrayPtr.at(i)]);
+        DestroySprite({
+            let gl_i2 = *(*sCutGrassSpriteArrayPtr.as_ptr()).at(i);
+            crate::gl!(&raw gSprites[gl_i2])
+        });
     }
     FieldEffectStop(
-        &raw mut gSprites[*sCutGrassSpriteArrayPtr],
+        {
+            let gl_i3 = *crate::gl!(sCutGrassSpriteArrayPtr);
+            crate::gl!(&raw gSprites[gl_i3])
+        },
         FLDEFF_CUT_GRASS,
     );
-    Free(sCutGrassSpriteArrayPtr as *mut c_void);
-    sCutGrassSpriteArrayPtr = null_mut();
+    Free(crate::gl!(sCutGrassSpriteArrayPtr) as *mut c_void);
+    crate::gl!(sCutGrassSpriteArrayPtr = null_mut());
     ScriptUnfreezeObjectEvents();
     UnlockPlayerFieldControls();
     if IsMewPlayingHideAndSeek() == TRUE {

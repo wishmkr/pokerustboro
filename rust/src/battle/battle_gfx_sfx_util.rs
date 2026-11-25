@@ -92,7 +92,7 @@ unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
 }
 /// `DecompressPicFromTable_2` with this module's view of its types.
 #[inline]
-unsafe fn DecompressPicFromTable_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32) {
+fn DecompressPicFromTable_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32) {
     unsafe {
         crate::decompress::DecompressPicFromTable_2(a0 as _, a1 as _, a2);
     }
@@ -106,19 +106,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `HandleLoadSpecialPokePic` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-) {
+fn HandleLoadSpecialPokePic(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32) {
     unsafe {
         crate::decompress::HandleLoadSpecialPokePic(a0 as _, a1 as _, a2, a3);
     }
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -130,21 +125,21 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -211,44 +206,46 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 
 pub unsafe fn AllocateBattleSpritesData() {
-    gBattleSpritesDataPtr = AllocZeroed(16) as *mut BattleSpriteData;
-    (*gBattleSpritesDataPtr).battlerData = AllocZeroed(16) as *mut BattleSpriteInfo;
-    (*gBattleSpritesDataPtr).healthBoxesData = AllocZeroed(48) as *mut BattleHealthboxInfo;
-    (*gBattleSpritesDataPtr).animationData = AllocZeroed(16) as *mut BattleAnimationInfo;
-    (*gBattleSpritesDataPtr).battleBars = AllocZeroed(80) as *mut BattleBarInfo;
+    crate::gl!(gBattleSpritesDataPtr = AllocZeroed(16) as *mut BattleSpriteData);
+    (*crate::gl!(gBattleSpritesDataPtr)).battlerData = AllocZeroed(16) as *mut BattleSpriteInfo;
+    (*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData =
+        AllocZeroed(48) as *mut BattleHealthboxInfo;
+    (*crate::gl!(gBattleSpritesDataPtr)).animationData =
+        AllocZeroed(16) as *mut BattleAnimationInfo;
+    (*crate::gl!(gBattleSpritesDataPtr)).battleBars = AllocZeroed(80) as *mut BattleBarInfo;
 }
 pub unsafe fn FreeBattleSpritesData() {
-    if gBattleSpritesDataPtr.is_null() {
+    if (*gBattleSpritesDataPtr.as_ptr()).is_null() {
         return;
     }
-    Free((*gBattleSpritesDataPtr).battleBars as *mut c_void);
-    (*gBattleSpritesDataPtr).battleBars = null_mut();
-    Free((*gBattleSpritesDataPtr).animationData as *mut c_void);
-    (*gBattleSpritesDataPtr).animationData = null_mut();
-    Free((*gBattleSpritesDataPtr).healthBoxesData as *mut c_void);
-    (*gBattleSpritesDataPtr).healthBoxesData = null_mut();
-    Free((*gBattleSpritesDataPtr).battlerData as *mut c_void);
-    (*gBattleSpritesDataPtr).battlerData = null_mut();
-    Free(gBattleSpritesDataPtr as *mut c_void);
-    gBattleSpritesDataPtr = null_mut();
+    Free((*crate::gl!(gBattleSpritesDataPtr)).battleBars as *mut c_void);
+    (*crate::gl!(gBattleSpritesDataPtr)).battleBars = null_mut();
+    Free((*crate::gl!(gBattleSpritesDataPtr)).animationData as *mut c_void);
+    (*crate::gl!(gBattleSpritesDataPtr)).animationData = null_mut();
+    Free((*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData as *mut c_void);
+    (*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData = null_mut();
+    Free((*crate::gl!(gBattleSpritesDataPtr)).battlerData as *mut c_void);
+    (*crate::gl!(gBattleSpritesDataPtr)).battlerData = null_mut();
+    Free(crate::gl!(gBattleSpritesDataPtr) as *mut c_void);
+    crate::gl!(gBattleSpritesDataPtr = null_mut());
 }
 pub unsafe fn ChooseMoveAndTargetInBattlePalace() -> u16 {
     let mut chosenMoveId: i32 = -1;
     let moveInfo: *mut ChooseMoveStruct =
-        &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+        &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
             .cast::<CArray<CArray<u8, 512>, 4>>()
-            .cast_mut())[gActiveBattler][4] as *mut ChooseMoveStruct;
-    let unusableMovesBits: u8 = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
+            .cast_mut())[gActiveBattler.get()][4] as *mut ChooseMoveStruct;
+    let unusableMovesBits: u8 = CheckMoveLimitations(gActiveBattler.get(), 0, MOVE_LIMITATIONS_ALL);
     let mut percent: i32 = Random() as i32 % 100;
-    let mut i: i32 = if (*gBattleStruct).palaceFlags as u32
-        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler]
+    let mut i: i32 = if (*crate::gl!(gBattleStruct)).palaceFlags as u32
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler.get()]
         != 0
     {
         2
@@ -259,7 +256,7 @@ pub unsafe fn ChooseMoveAndTargetInBattlePalace() -> u16 {
     let mut var1: i32 = i + 2;
     while i < var1 {
         if (*(&raw const crate::data::battle_script_commands::gBattlePalaceNatureToMoveGroupLikelihood).cast::<CArray<CArray<u8, 4>, 25>>())
-            [GetNatureFromPersonality(gBattleMons[gActiveBattler].personality)][i] as i32
+            [GetNatureFromPersonality({ let gl_i0 = gActiveBattler.get(); crate::gl!(gBattleMons[gl_i0].personality) })][i] as i32
             > percent
         {
             break;
@@ -284,8 +281,8 @@ pub unsafe fn ChooseMoveAndTargetInBattlePalace() -> u16 {
         i += 1;
     }
     if var2 != 0 {
-        (*gBattleStruct).palaceFlags &= 15;
-        (*gBattleStruct).palaceFlags |= (var2 as u8) << 4;
+        (*crate::gl!(gBattleStruct)).palaceFlags &= 15;
+        (*crate::gl!(gBattleStruct)).palaceFlags |= (var2 as u8) << 4;
         BattleAI_SetupAIData(var2 as u8);
         chosenMoveId = BattleAI_ChooseMoveOrAction() as i32;
     }
@@ -360,11 +357,13 @@ pub unsafe fn ChooseMoveAndTargetInBattlePalace() -> u16 {
                 }
             }
             if Random() as i32 % 100 >= 50 {
-                gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+                (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                    .set_palaceUnableToUseMove(TRUE as u32);
                 return 0;
             }
         } else {
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
             return 0;
         }
     }
@@ -380,12 +379,12 @@ pub unsafe fn ChooseMoveAndTargetInBattlePalace() -> u16 {
             .target as i32;
     }
     if var1 & MOVE_TARGET_USER as i32 != 0 {
-        chosenMoveId |= (gActiveBattler as i32) << 8;
+        chosenMoveId |= (gActiveBattler.get() as i32) << 8;
     } else if var1 == MOVE_TARGET_SELECTED as i32 {
         chosenMoveId |= GetBattlePalaceTarget() as i32;
     } else {
         chosenMoveId |=
-            (GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) & 1 ^ 1) as i32) << 8;
+            (GetBattlerAtPosition(GetBattlerPosition(gActiveBattler.get()) & 1 ^ 1) as i32) << 8;
     }
     chosenMoveId as u16
 }
@@ -424,61 +423,64 @@ unsafe fn GetBattlePalaceMoveGroup(r#move: u16) -> u8 {
     }
 }
 unsafe fn GetBattlePalaceTarget() -> u16 {
-    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 {
         let mut opposing1: u8 = 0;
         let mut opposing2: u8 = 0;
-        if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+        if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
             opposing1 = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
             opposing2 = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
         } else {
             opposing1 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
             opposing2 = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
         }
-        if gBattleMons[opposing1].hp == gBattleMons[opposing2].hp {
-            return ((gActiveBattler as u16 & BIT_SIDE as u16 ^ BIT_SIDE as u16) + (Random() & 2))
+        if crate::gl!(gBattleMons[opposing1].hp) == crate::gl!(gBattleMons[opposing2].hp) {
+            return ((gActiveBattler.get() as u16 & BIT_SIDE as u16 ^ BIT_SIDE as u16)
+                + (Random() & 2))
                 << 8;
         }
         'l1: {
             let sw1: u8 =
                 (*(&raw const crate::battle_anim_smokescreen::gBattlePalaceNatureToMoveTarget)
-                    .cast::<CArray<u8, 0>>())
-                    [GetNatureFromPersonality(gBattleMons[gActiveBattler].personality)];
+                    .cast::<CArray<u8, 0>>())[GetNatureFromPersonality({
+                    let gl_i1 = gActiveBattler.get();
+                    crate::gl!(gBattleMons[gl_i1].personality)
+                })];
             let fall = false;
             if sw1 == PALACE_TARGET_STRONGER {
-                if gBattleMons[opposing1].hp > gBattleMons[opposing2].hp {
+                if crate::gl!(gBattleMons[opposing1].hp) > crate::gl!(gBattleMons[opposing2].hp) {
                     return (opposing1 as u16) << 8;
                 } else {
                     return (opposing2 as u16) << 8;
                 }
             }
             if fall || sw1 == PALACE_TARGET_WEAKER {
-                if gBattleMons[opposing1].hp < gBattleMons[opposing2].hp {
+                if crate::gl!(gBattleMons[opposing1].hp) < crate::gl!(gBattleMons[opposing2].hp) {
                     return (opposing1 as u16) << 8;
                 } else {
                     return (opposing2 as u16) << 8;
                 }
             }
             if fall || sw1 == PALACE_TARGET_RANDOM {
-                return ((gActiveBattler as u16 & BIT_SIDE as u16 ^ BIT_SIDE as u16)
+                return ((gActiveBattler.get() as u16 & BIT_SIDE as u16 ^ BIT_SIDE as u16)
                     + (Random() & 2))
                     << 8;
             }
         }
     }
-    (gActiveBattler as u16 ^ 1) << 8
+    (gActiveBattler.get() as u16 ^ 1) << 8
 }
 pub unsafe fn SpriteCB_WaitForBattlerBallReleaseAnim(sprite: *mut Sprite) {
     let spriteId: u8 = (*sprite).data[1] as u8;
-    if gSprites[spriteId].affineAnimEnded() == 0 {
+    if (*gSprites.as_ptr())[spriteId].affineAnimEnded() == 0 {
         return;
     }
-    if gSprites[spriteId].invisible() != 0 {
+    if (*gSprites.as_ptr())[spriteId].invisible() != 0 {
         return;
     }
-    if gSprites[spriteId].animPaused() != 0 {
-        gSprites[spriteId].set_animPaused(0);
+    if (*gSprites.as_ptr())[spriteId].animPaused() != 0 {
+        (*gSprites.as_ptr())[spriteId].set_animPaused(0);
     } else {
-        if gSprites[spriteId].animEnded() != 0 {
+        if (*gSprites.as_ptr())[spriteId].animEnded() != 0 {
             (*sprite).callback = Some(SpriteCallbackDummy);
         }
     }
@@ -494,7 +496,7 @@ unsafe fn UnusedDoBattleSpriteAffineAnim(sprite: *mut Sprite, pointless: u8) {
     AnimateSprite(sprite);
 }
 pub unsafe fn SpriteCB_TrainerSlideIn(sprite: *mut Sprite) {
-    if gIntroSlideFlags as i32 & 1 == 0 {
+    if gIntroSlideFlags.get() as i32 & 1 == 0 {
         (*sprite).x2 += (*sprite).data[sSpeedX];
         if (*sprite).x2 == 0 {
             if (*sprite).y2 != 0 {
@@ -512,34 +514,43 @@ pub(crate) unsafe fn SpriteCB_TrainerSlideVertical(sprite: *mut Sprite) {
     }
 }
 pub unsafe fn InitAndLaunchChosenStatusAnimation(isStatus2: u8, status: u32) {
-    (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).set_statusAnimActive(1);
+    (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .set_statusAnimActive(1);
     if isStatus2 == 0 {
         if status == STATUS1_FREEZE {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_FRZ);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_FRZ);
         } else if status == STATUS1_POISON || status & STATUS1_TOXIC_POISON != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_PSN);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_PSN);
         } else if status == STATUS1_BURN {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_BRN);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_BRN);
         } else if status & STATUS1_SLEEP != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_SLP);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_SLP);
         } else if status == STATUS1_PARALYSIS {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_PRZ);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_PRZ);
         } else {
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).set_statusAnimActive(0);
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .set_statusAnimActive(0);
         }
     } else {
         if status & STATUS2_INFATUATION != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_INFATUATION);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_INFATUATION);
         } else if status & STATUS2_CONFUSION != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_CONFUSION);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_CONFUSION);
         } else if status & STATUS2_CURSED != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_CURSED);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_CURSED);
         } else if status & STATUS2_NIGHTMARE != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_NIGHTMARE);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_NIGHTMARE);
         } else if status & STATUS2_WRAPPED != 0 {
-            LaunchStatusAnimation(gActiveBattler, B_ANIM_STATUS_WRAPPED);
+            LaunchStatusAnimation(gActiveBattler.get(), B_ANIM_STATUS_WRAPPED);
         } else {
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).set_statusAnimActive(0);
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .set_statusAnimActive(0);
         }
     }
 }
@@ -551,25 +562,37 @@ pub unsafe fn TryHandleLaunchBattleTableAnimation(
     argument: u16,
 ) -> u8 {
     if tableId == B_ANIM_CASTFORM_CHANGE && argument as i32 & CASTFORM_SUBSTITUTE != 0 {
-        gBattleMonForms[activeBattler] = argument as u8 & 127;
+        crate::gl!(gBattleMonForms[activeBattler] = argument as u8 & 127);
         return TRUE;
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(activeBattler)).behindSubstitute() != 0
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .battlerData
+        .at(activeBattler))
+    .behindSubstitute()
+        != 0
         && ShouldAnimBeDoneRegardlessOfSubstitute(tableId) == 0
     {
         return TRUE;
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(activeBattler)).behindSubstitute() != 0
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .battlerData
+        .at(activeBattler))
+    .behindSubstitute()
+        != 0
         && tableId == B_ANIM_SUBSTITUTE_FADE
-        && gSprites[gBattlerSpriteIds[activeBattler]].invisible() != 0
+        && (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[activeBattler])].invisible() != 0
     {
-        LoadBattleMonGfxAndAnimate(activeBattler, TRUE, gBattlerSpriteIds[activeBattler]);
+        LoadBattleMonGfxAndAnimate(
+            activeBattler,
+            TRUE,
+            crate::gl!(gBattlerSpriteIds[activeBattler]),
+        );
         ClearBehindSubstituteBit(activeBattler);
         return TRUE;
     }
-    gBattleAnimAttacker = atkBattler;
-    gBattleAnimTarget = defBattler;
-    (*(*gBattleSpritesDataPtr).animationData).animArg = argument;
+    gBattleAnimAttacker.set(atkBattler);
+    gBattleAnimTarget.set(defBattler);
+    (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).animArg = argument;
     LaunchBattleAnimation(
         (*crate::asmdata::gBattleAnims_General.cast::<CArray<*mut u8, 0>>())
             .as_ptr()
@@ -579,16 +602,16 @@ pub unsafe fn TryHandleLaunchBattleTableAnimation(
     );
     let taskId: u8 = CreateTask(Some(Task_ClearBitWhenBattleTableAnimDone), 10);
     task_set(taskId, tBattlerId, activeBattler as i16);
-    (*(*gBattleSpritesDataPtr)
+    (*(*crate::gl!(gBattleSpritesDataPtr))
         .healthBoxesData
         .at(task_get(taskId, tBattlerId)))
     .set_animFromTableActive(1);
     FALSE
 }
 pub(crate) unsafe fn Task_ClearBitWhenBattleTableAnimDone(taskId: u8) {
-    gAnimScriptCallback.unwrap_unchecked()();
-    if gAnimScriptActive == 0 {
-        (*(*gBattleSpritesDataPtr)
+    (*gAnimScriptCallback.as_ptr()).unwrap_unchecked()();
+    if gAnimScriptActive.get() == 0 {
+        (*(*crate::gl!(gBattleSpritesDataPtr))
             .healthBoxesData
             .at(task_get(taskId, tBattlerId)))
         .set_animFromTableActive(0);
@@ -620,8 +643,8 @@ pub unsafe fn InitAndLaunchSpecialAnimation(
     defBattler: u8,
     tableId: u8,
 ) {
-    gBattleAnimAttacker = atkBattler;
-    gBattleAnimTarget = defBattler;
+    gBattleAnimAttacker.set(atkBattler);
+    gBattleAnimTarget.set(defBattler);
     LaunchBattleAnimation(
         (*crate::asmdata::gBattleAnims_Special.cast::<CArray<*mut u8, 0>>())
             .as_ptr()
@@ -631,36 +654,47 @@ pub unsafe fn InitAndLaunchSpecialAnimation(
     );
     let taskId: u8 = CreateTask(Some(Task_ClearBitWhenSpecialAnimDone), 10);
     task_set(taskId, tBattlerId, activeBattler as i16);
-    (*(*gBattleSpritesDataPtr)
+    (*(*crate::gl!(gBattleSpritesDataPtr))
         .healthBoxesData
         .at(task_get(taskId, tBattlerId)))
     .set_specialAnimActive(1);
 }
 pub(crate) unsafe fn Task_ClearBitWhenSpecialAnimDone(taskId: u8) {
-    gAnimScriptCallback.unwrap_unchecked()();
-    if gAnimScriptActive == 0 {
-        (*(*gBattleSpritesDataPtr)
+    (*gAnimScriptCallback.as_ptr()).unwrap_unchecked()();
+    if gAnimScriptActive.get() == 0 {
+        (*(*crate::gl!(gBattleSpritesDataPtr))
             .healthBoxesData
             .at(task_get(taskId, tBattlerId)))
         .set_specialAnimActive(0);
         DestroyTask(taskId);
     }
 }
-pub unsafe fn IsMoveWithoutAnimation(r#move: u16, animationTurn: u8) -> u8 {
+pub fn IsMoveWithoutAnimation(r#move: u16, animationTurn: u8) -> u8 {
     FALSE
 }
 pub unsafe fn IsBattleSEPlaying(battler: u8) -> u8 {
     let zero: u8 = 0;
     if IsSEPlaying() != 0 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).soundTimer += 1;
-        if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).soundTimer < 30 {
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .soundTimer += 1;
+        if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .soundTimer
+            < 30
+        {
             return TRUE;
         }
-        m4aMPlayStop(&raw mut gMPlayInfo_SE1);
-        m4aMPlayStop(&raw mut gMPlayInfo_SE2);
+        m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE1));
+        m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE2));
     }
     if zero == 0 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).soundTimer = 0;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .soundTimer = 0;
         return FALSE;
     }
     TRUE
@@ -671,12 +705,14 @@ pub unsafe fn BattleLoadOpponentMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
     let mut species: u16 = 0;
     let mut lzPaletteData: *mut c_void = null_mut();
     let monsPersonality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies == SPECIES_NONE {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        == SPECIES_NONE
+    {
         species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
         currentPersonality = monsPersonality;
     } else {
-        species = (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies;
-        currentPersonality = gTransformedPersonalities[battler];
+        species = (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies;
+        currentPersonality = crate::gl!(gTransformedPersonalities[battler]);
     }
     let otId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
     let position: u8 = GetBattlerPosition(battler);
@@ -684,12 +720,14 @@ pub unsafe fn BattleLoadOpponentMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
         (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
             .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
             .cast_mut(),
-        (*gMonSpritesGfxPtr).sprites.ptr[position],
+        (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
         species as i32,
         currentPersonality,
     );
     let mut paletteOffset: u16 = 0x100 + battler as u16 * 16;
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies == SPECIES_NONE {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        == SPECIES_NONE
+    {
         lzPaletteData = GetMonFrontSpritePal(mon) as *mut c_void;
     } else {
         lzPaletteData =
@@ -697,13 +735,13 @@ pub unsafe fn BattleLoadOpponentMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
     }
     LZDecompressWram(
         lzPaletteData as *mut u32,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
     );
     LoadPalette(
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -711,7 +749,7 @@ pub unsafe fn BattleLoadOpponentMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
         32,
     );
     LoadPalette(
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -722,21 +760,24 @@ pub unsafe fn BattleLoadOpponentMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
         paletteOffset = 0x100 + battler as u16 * 16;
         LZDecompressWram(
             lzPaletteData as *mut u32,
-            (*gBattleStruct).castformPalette.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(gBattleStruct)).castformPalette.as_mut_ptr() as *mut c_void,
         );
         LoadPalette(
-            (*gBattleStruct).castformPalette[gBattleMonForms[battler]].as_mut_ptr() as *mut c_void,
+            (*crate::gl!(gBattleStruct)).castformPalette[crate::gl!(gBattleMonForms[battler])]
+                .as_mut_ptr() as *mut c_void,
             paletteOffset,
             32,
         );
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != SPECIES_NONE {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        != SPECIES_NONE
+    {
         BlendPalette(paletteOffset, 16, 6, 32767);
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[paletteOffset] as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[paletteOffset] as *mut c_void,
             0x4000008,
@@ -749,23 +790,26 @@ pub unsafe fn BattleLoadPlayerMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
     let mut species: u16 = 0;
     let mut lzPaletteData: *mut c_void = null_mut();
     let monsPersonality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies == SPECIES_NONE {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        == SPECIES_NONE
+    {
         species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
         currentPersonality = monsPersonality;
     } else {
-        species = (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies;
-        currentPersonality = gTransformedPersonalities[battler];
+        species = (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies;
+        currentPersonality = crate::gl!(gTransformedPersonalities[battler]);
     }
     let otId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
     let position: u8 = GetBattlerPosition(battler);
     if ShouldIgnoreDeoxysForm(1, battler) == 1
-        || (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != SPECIES_NONE
+        || (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+            != SPECIES_NONE
     {
         HandleLoadSpecialPokePic_DontHandleDeoxys(
             (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                 .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                 .cast_mut(),
-            (*gMonSpritesGfxPtr).sprites.ptr[position],
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
             species as i32,
             currentPersonality,
         );
@@ -774,13 +818,15 @@ pub unsafe fn BattleLoadPlayerMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
             (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                 .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                 .cast_mut(),
-            (*gMonSpritesGfxPtr).sprites.ptr[position],
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
             species as i32,
             currentPersonality,
         );
     }
     let mut paletteOffset: u16 = 0x100 + battler as u16 * 16;
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies == SPECIES_NONE {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        == SPECIES_NONE
+    {
         lzPaletteData = GetMonFrontSpritePal(mon) as *mut c_void;
     } else {
         lzPaletteData =
@@ -788,13 +834,13 @@ pub unsafe fn BattleLoadPlayerMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
     }
     LZDecompressWram(
         lzPaletteData as *mut u32,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
     );
     LoadPalette(
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -802,7 +848,7 @@ pub unsafe fn BattleLoadPlayerMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
         32,
     );
     LoadPalette(
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -813,21 +859,24 @@ pub unsafe fn BattleLoadPlayerMonSpriteGfx(mon: *mut Pokemon, battler: u8) {
         paletteOffset = 0x100 + battler as u16 * 16;
         LZDecompressWram(
             lzPaletteData as *mut u32,
-            (*gBattleStruct).castformPalette.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(gBattleStruct)).castformPalette.as_mut_ptr() as *mut c_void,
         );
         LoadPalette(
-            (*gBattleStruct).castformPalette[gBattleMonForms[battler]].as_mut_ptr() as *mut c_void,
+            (*crate::gl!(gBattleStruct)).castformPalette[crate::gl!(gBattleMonForms[battler])]
+                .as_mut_ptr() as *mut c_void,
             paletteOffset,
             32,
         );
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != SPECIES_NONE {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        != SPECIES_NONE
+    {
         BlendPalette(paletteOffset, 16, 6, 32767);
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[paletteOffset] as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[paletteOffset] as *mut c_void,
             0x4000008,
@@ -842,7 +891,7 @@ pub unsafe fn DecompressTrainerFrontPic(frontPicId: u16, battler: u8) {
         (&raw const (*(&raw const crate::data::data_tables::gTrainerFrontPicTable)
             .cast::<CArray<CompressedSpriteSheet, 0>>())[frontPicId])
             .cast_mut(),
-        (*gMonSpritesGfxPtr).sprites.ptr[position],
+        (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
         SPECIES_NONE as i32,
     );
     LoadCompressedSpritePalette(
@@ -858,7 +907,7 @@ pub unsafe fn DecompressTrainerBackPic(backPicId: u16, battler: u8) {
         (&raw const (*(&raw const crate::data::data_tables::gTrainerBackPicTable)
             .cast::<CArray<CompressedSpriteSheet, 0>>())[backPicId])
             .cast_mut(),
-        (*gMonSpritesGfxPtr).sprites.ptr[position],
+        (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
         SPECIES_NONE as i32,
     );
     LoadCompressedPalette(
@@ -898,7 +947,7 @@ pub unsafe fn BattleLoadAllHealthBoxesGfxAtOnce() {
     }
     for i in 0..numberOfBattlers {
         LoadCompressedSpriteSheet(
-            (&raw const sSpriteSheets_HealthBar[gBattlerPositions[i]]).cast_mut(),
+            (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[i])]).cast_mut(),
         );
     }
 }
@@ -911,7 +960,7 @@ pub unsafe fn BattleLoadAllHealthBoxesGfx(state: u8) -> u8 {
             LoadSpritePalette((&raw const sSpritePalettes_HealthBoxHealthBar[1]).cast_mut());
         } else if IsDoubleBattle() == 0 {
             if state == 2 {
-                if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI != 0 {
                     LoadCompressedSpriteSheet(
                         (&raw const *sSpriteSheet_SafariHealthbox).cast_mut(),
                     );
@@ -926,11 +975,13 @@ pub unsafe fn BattleLoadAllHealthBoxesGfx(state: u8) -> u8 {
                 );
             } else if state == 4 {
                 LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheets_HealthBar[gBattlerPositions[0]]).cast_mut(),
+                    (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[0])])
+                        .cast_mut(),
                 );
             } else if state == 5 {
                 LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheets_HealthBar[gBattlerPositions[1]]).cast_mut(),
+                    (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[1])])
+                        .cast_mut(),
                 );
             } else {
                 retVal = TRUE;
@@ -954,19 +1005,23 @@ pub unsafe fn BattleLoadAllHealthBoxesGfx(state: u8) -> u8 {
                 );
             } else if state == 6 {
                 LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheets_HealthBar[gBattlerPositions[0]]).cast_mut(),
+                    (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[0])])
+                        .cast_mut(),
                 );
             } else if state == 7 {
                 LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheets_HealthBar[gBattlerPositions[1]]).cast_mut(),
+                    (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[1])])
+                        .cast_mut(),
                 );
             } else if state == 8 {
                 LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheets_HealthBar[gBattlerPositions[2]]).cast_mut(),
+                    (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[2])])
+                        .cast_mut(),
                 );
             } else if state == 9 {
                 LoadCompressedSpriteSheet(
-                    (&raw const sSpriteSheets_HealthBar[gBattlerPositions[3]]).cast_mut(),
+                    (&raw const sSpriteSheets_HealthBar[crate::gl!(gBattlerPositions[3])])
+                        .cast_mut(),
                 );
             } else {
                 retVal = TRUE;
@@ -981,7 +1036,7 @@ pub unsafe fn LoadBattleBarGfx(unused: u8) {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*gMonSpritesGfxPtr).barFontGfx as *mut c_void,
+        (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx as *mut c_void,
     );
 }
 pub unsafe fn BattleInitAllSprites(state1: *mut u8, battler: *mut u8) -> u8 {
@@ -1003,49 +1058,88 @@ pub unsafe fn BattleInitAllSprites(state1: *mut u8, battler: *mut u8) -> u8 {
             *state1 += 1;
         }
         3 => {
-            if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 && *battler == 0 {
-                gHealthboxSpriteIds[*battler] = CreateSafariPlayerHealthboxSprites();
+            if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI != 0 && *battler == 0 {
+                {
+                    let gl_v = CreateSafariPlayerHealthboxSprites();
+                    let gl_i2 = *battler;
+                    crate::gl!(gHealthboxSpriteIds[gl_i2] = gl_v)
+                };
             } else {
-                gHealthboxSpriteIds[*battler] = CreateBattlerHealthboxSprites(*battler);
+                {
+                    let gl_v = CreateBattlerHealthboxSprites(*battler);
+                    let gl_i3 = *battler;
+                    crate::gl!(gHealthboxSpriteIds[gl_i3] = gl_v)
+                };
             }
             *battler += 1;
-            if *battler == gBattlersCount {
+            if *battler == gBattlersCount.get() {
                 *battler = 0;
                 *state1 += 1;
             }
         }
         4 => {
             InitBattlerHealthboxCoords(*battler);
-            if gBattlerPositions[*battler] <= B_POSITION_OPPONENT_LEFT {
-                DummyBattleInterfaceFunc(gHealthboxSpriteIds[*battler], FALSE);
+            if {
+                let gl_i0 = *battler;
+                crate::gl!(gBattlerPositions[gl_i0])
+            } <= B_POSITION_OPPONENT_LEFT
+            {
+                DummyBattleInterfaceFunc(
+                    {
+                        let gl_i4 = *battler;
+                        crate::gl!(gHealthboxSpriteIds[gl_i4])
+                    },
+                    FALSE,
+                );
             } else {
-                DummyBattleInterfaceFunc(gHealthboxSpriteIds[*battler], TRUE);
+                DummyBattleInterfaceFunc(
+                    {
+                        let gl_i5 = *battler;
+                        crate::gl!(gHealthboxSpriteIds[gl_i5])
+                    },
+                    TRUE,
+                );
             }
             *battler += 1;
-            if *battler == gBattlersCount {
+            if *battler == gBattlersCount.get() {
                 *battler = 0;
                 *state1 += 1;
             }
         }
         5 => {
             if GetBattlerSide(*battler) == B_SIDE_PLAYER {
-                if gBattleTypeFlags & BATTLE_TYPE_SAFARI == 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI == 0 {
                     UpdateHealthboxAttribute(
-                        gHealthboxSpriteIds[*battler],
-                        &raw mut gPlayerParty[gBattlerPartyIndexes[*battler]],
+                        {
+                            let gl_i6 = *battler;
+                            crate::gl!(gHealthboxSpriteIds[gl_i6])
+                        },
+                        &raw mut (*gPlayerParty.as_ptr())[{
+                            let gl_i7 = *battler;
+                            crate::gl!(gBattlerPartyIndexes[gl_i7])
+                        }],
                         HEALTHBOX_ALL,
                     );
                 }
             } else {
                 UpdateHealthboxAttribute(
-                    gHealthboxSpriteIds[*battler],
-                    &raw mut gEnemyParty[gBattlerPartyIndexes[*battler]],
+                    {
+                        let gl_i8 = *battler;
+                        crate::gl!(gHealthboxSpriteIds[gl_i8])
+                    },
+                    &raw mut (*gEnemyParty.as_ptr())[{
+                        let gl_i9 = *battler;
+                        crate::gl!(gBattlerPartyIndexes[gl_i9])
+                    }],
                     HEALTHBOX_ALL,
                 );
             }
-            SetHealthboxSpriteInvisible(gHealthboxSpriteIds[*battler]);
+            SetHealthboxSpriteInvisible({
+                let gl_i10 = *battler;
+                crate::gl!(gHealthboxSpriteIds[gl_i10])
+            });
             *battler += 1;
-            if *battler == gBattlersCount {
+            if *battler == gBattlersCount.get() {
                 *battler = 0;
                 *state1 += 1;
             }
@@ -1061,24 +1155,36 @@ pub unsafe fn BattleInitAllSprites(state1: *mut u8, battler: *mut u8) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ClearSpritesHealthboxAnimData() {
-    memset((*gBattleSpritesDataPtr).healthBoxesData as *mut u8, 0, 48);
-    memset((*gBattleSpritesDataPtr).animationData as *mut u8, 0, 16);
+    memset(
+        (*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData as *mut u8,
+        0,
+        48,
+    );
+    memset(
+        (*crate::gl!(gBattleSpritesDataPtr)).animationData as *mut u8,
+        0,
+        16,
+    );
 }
 unsafe fn ClearSpritesBattlerHealthboxAnimData() {
     ClearSpritesHealthboxAnimData();
-    memset((*gBattleSpritesDataPtr).battlerData as *mut u8, 0, 16);
+    memset(
+        (*crate::gl!(gBattleSpritesDataPtr)).battlerData as *mut u8,
+        0,
+        16,
+    );
 }
 pub unsafe fn CopyAllBattleSpritesInvisibilities() {
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
-        (*(*gBattleSpritesDataPtr).battlerData.at(i))
-            .set_invisible(gSprites[gBattlerSpriteIds[i]].invisible());
+    while i < gBattlersCount.get() as i32 {
+        (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(i))
+            .set_invisible((*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[i])].invisible());
         i += 1;
     }
 }
 pub unsafe fn CopyBattleSpriteInvisibility(battler: u8) {
-    (*(*gBattleSpritesDataPtr).battlerData.at(battler))
-        .set_invisible(gSprites[gBattlerSpriteIds[battler]].invisible());
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler))
+        .set_invisible((*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].invisible());
 }
 pub unsafe fn HandleSpeciesGfxDataChange(battlerAtk: u8, battlerDef: u8, castform: u8) {
     let mut paletteOffset: u16 = 0;
@@ -1088,99 +1194,111 @@ pub unsafe fn HandleSpeciesGfxDataChange(battlerAtk: u8, battlerDef: u8, castfor
     let mut lzPaletteData: *mut u32 = null_mut();
     if castform != 0 {
         StartSpriteAnim(
-            &raw mut gSprites[gBattlerSpriteIds[battlerAtk]],
-            (*(*gBattleSpritesDataPtr).animationData).animArg as u8,
+            &raw mut (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battlerAtk])],
+            (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).animArg as u8,
         );
         paletteOffset = 0x100 + battlerAtk as u16 * 16;
         LoadPalette(
-            (*gBattleStruct).castformPalette[(*(*gBattleSpritesDataPtr).animationData).animArg]
+            (*crate::gl!(gBattleStruct)).castformPalette
+                [(*(*crate::gl!(gBattleSpritesDataPtr)).animationData).animArg]
                 .as_mut_ptr() as *mut c_void,
             paletteOffset,
             32,
         );
-        gBattleMonForms[battlerAtk] = (*(*gBattleSpritesDataPtr).animationData).animArg as u8;
-        if (*(*gBattleSpritesDataPtr).battlerData.at(battlerAtk)).transformSpecies != SPECIES_NONE {
+        crate::gl!(
+            gBattleMonForms[battlerAtk] =
+                (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).animArg as u8
+        );
+        if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .battlerData
+            .at(battlerAtk))
+        .transformSpecies
+            != SPECIES_NONE
+        {
             BlendPalette(paletteOffset, 16, 6, 32767);
             CpuSet(
-                &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[paletteOffset] as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[paletteOffset] as *mut c_void,
                 0x4000008,
             );
         }
-        gSprites[gBattlerSpriteIds[battlerAtk]].y = GetBattlerSpriteDefault_Y(battlerAtk) as i16;
+        (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battlerAtk])].y =
+            GetBattlerSpriteDefault_Y(battlerAtk) as i16;
     } else {
         let mut targetSpecies: u16 = 0;
         if IsContest() != 0 {
             position = B_POSITION_PLAYER_LEFT;
-            targetSpecies = (*(*gContestResources).moveAnim).targetSpecies;
-            personalityValue = (*(*gContestResources).moveAnim).personality;
-            otId = (*(*gContestResources).moveAnim).otId;
+            targetSpecies = (*(*crate::gl!(gContestResources)).moveAnim).targetSpecies;
+            personalityValue = (*(*crate::gl!(gContestResources)).moveAnim).personality;
+            otId = (*(*crate::gl!(gContestResources)).moveAnim).otId;
             HandleLoadSpecialPokePic_DontHandleDeoxys(
                 (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                     .cast::<CArray<CompressedSpriteSheet, 0>>())[targetSpecies])
                     .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr[position],
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
                 targetSpecies as i32,
-                (*(*gContestResources).moveAnim).targetPersonality,
+                (*(*crate::gl!(gContestResources)).moveAnim).targetPersonality,
             );
         } else {
             position = GetBattlerPosition(battlerAtk);
             if GetBattlerSide(battlerDef) == B_SIDE_OPPONENT {
                 targetSpecies = GetMonData2(
-                    &raw mut gEnemyParty[gBattlerPartyIndexes[battlerDef]],
+                    &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battlerDef])],
                     MON_DATA_SPECIES,
                 ) as u16;
             } else {
                 targetSpecies = GetMonData2(
-                    &raw mut gPlayerParty[gBattlerPartyIndexes[battlerDef]],
+                    &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battlerDef])],
                     MON_DATA_SPECIES,
                 ) as u16;
             }
             if GetBattlerSide(battlerAtk) == B_SIDE_PLAYER {
                 personalityValue = GetMonData2(
-                    &raw mut gPlayerParty[gBattlerPartyIndexes[battlerAtk]],
+                    &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battlerAtk])],
                     MON_DATA_PERSONALITY,
                 );
                 otId = GetMonData2(
-                    &raw mut gPlayerParty[gBattlerPartyIndexes[battlerAtk]],
+                    &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battlerAtk])],
                     MON_DATA_OT_ID,
                 );
                 HandleLoadSpecialPokePic_DontHandleDeoxys(
                     (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                         .cast::<CArray<CompressedSpriteSheet, 0>>())[targetSpecies])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[position],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
                     targetSpecies as i32,
-                    gTransformedPersonalities[battlerAtk],
+                    crate::gl!(gTransformedPersonalities[battlerAtk]),
                 );
             } else {
                 personalityValue = GetMonData2(
-                    &raw mut gEnemyParty[gBattlerPartyIndexes[battlerAtk]],
+                    &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battlerAtk])],
                     MON_DATA_PERSONALITY,
                 );
                 otId = GetMonData2(
-                    &raw mut gEnemyParty[gBattlerPartyIndexes[battlerAtk]],
+                    &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battlerAtk])],
                     MON_DATA_OT_ID,
                 );
                 HandleLoadSpecialPokePic_DontHandleDeoxys(
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                         .cast::<CArray<CompressedSpriteSheet, 0>>())[targetSpecies])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[position],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
                     targetSpecies as i32,
-                    gTransformedPersonalities[battlerAtk],
+                    crate::gl!(gTransformedPersonalities[battlerAtk]),
                 );
             }
         }
         {
-            let mut _src: *mut c_void = (*gMonSpritesGfxPtr).sprites.ptr[position];
+            let mut _src: *mut c_void = (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position];
             let mut _dest: *mut c_void = (OBJ_VRAM0
-                + gSprites[gBattlerSpriteIds[battlerAtk]].oam.tileNum() as i32 * 32)
-                as usize as *mut c_void;
+                + (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battlerAtk])]
+                    .oam
+                    .tileNum() as i32
+                    * 32) as usize as *mut c_void;
             let mut _size: u32 = MON_PIC_SIZE as u32;
             {
                 {
@@ -1199,13 +1317,13 @@ pub unsafe fn HandleSpeciesGfxDataChange(battlerAtk: u8, battlerDef: u8, castfor
             GetMonSpritePalFromSpeciesAndPersonality(targetSpecies, otId, personalityValue);
         LZDecompressWram(
             lzPaletteData,
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut c_void,
         );
         LoadPalette(
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut c_void,
@@ -1213,7 +1331,7 @@ pub unsafe fn HandleSpeciesGfxDataChange(battlerAtk: u8, battlerDef: u8, castfor
             32,
         );
         if targetSpecies == SPECIES_CASTFORM {
-            gSprites[gBattlerSpriteIds[battlerAtk]].anims =
+            (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battlerAtk])].anims =
                 (*(&raw const crate::data::data_tables::gMonFrontAnimsPtrTable).cast::<CArray<
                     *mut *mut AnimCmd,
                     0,
@@ -1221,33 +1339,38 @@ pub unsafe fn HandleSpeciesGfxDataChange(battlerAtk: u8, battlerDef: u8, castfor
                 ))[targetSpecies];
             LZDecompressWram(
                 lzPaletteData,
-                (*gBattleStruct).castformPalette.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gBattleStruct)).castformPalette.as_mut_ptr() as *mut c_void,
             );
             LoadPalette(
-                (*gBattleStruct).castformPalette[gBattleMonForms[battlerDef]].as_mut_ptr()
-                    as *mut c_void,
+                (*crate::gl!(gBattleStruct)).castformPalette
+                    [crate::gl!(gBattleMonForms[battlerDef])]
+                .as_mut_ptr() as *mut c_void,
                 paletteOffset,
                 32,
             );
         }
         BlendPalette(paletteOffset, 16, 6, 32767);
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[paletteOffset] as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[paletteOffset] as *mut c_void,
             0x4000008,
         );
         if IsContest() == 0 {
-            (*(*gBattleSpritesDataPtr).battlerData.at(battlerAtk)).transformSpecies = targetSpecies;
-            gBattleMonForms[battlerAtk] = gBattleMonForms[battlerDef];
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .battlerData
+                .at(battlerAtk))
+            .transformSpecies = targetSpecies;
+            crate::gl!(gBattleMonForms[battlerAtk] = crate::gl!(gBattleMonForms[battlerDef]));
         }
-        gSprites[gBattlerSpriteIds[battlerAtk]].y = GetBattlerSpriteDefault_Y(battlerAtk) as i16;
+        (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battlerAtk])].y =
+            GetBattlerSpriteDefault_Y(battlerAtk) as i16;
         StartSpriteAnim(
-            &raw mut gSprites[gBattlerSpriteIds[battlerAtk]],
-            gBattleMonForms[battlerAtk],
+            &raw mut (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battlerAtk])],
+            crate::gl!(gBattleMonForms[battlerAtk]),
         );
     }
 }
@@ -1267,7 +1390,7 @@ pub unsafe fn BattleLoadSubstituteOrMonSpriteGfx(battler: u8, loadMonSprite: u8)
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr[position],
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
             );
         } else if GetBattlerSide(battler) != B_SIDE_PLAYER {
             LZDecompressVram(
@@ -1275,7 +1398,7 @@ pub unsafe fn BattleLoadSubstituteOrMonSpriteGfx(battler: u8, loadMonSprite: u8)
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr[position],
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
             );
         } else {
             LZDecompressVram(
@@ -1283,13 +1406,13 @@ pub unsafe fn BattleLoadSubstituteOrMonSpriteGfx(battler: u8, loadMonSprite: u8)
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr[position],
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position],
             );
         }
         for i in 1..4i32 {
             {
-                let mut _src: *mut c_void = (*gMonSpritesGfxPtr).sprites.ptr[position];
-                let mut _dest: *mut c_void = (*gMonSpritesGfxPtr).sprites.byte[position]
+                let mut _src: *mut c_void = (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[position];
+                let mut _dest: *mut c_void = (*crate::gl!(gMonSpritesGfxPtr)).sprites.byte[position]
                     .at(MON_PIC_SIZE as i32 * i)
                     as *mut c_void;
                 let mut _size: u32 = MON_PIC_SIZE as u32;
@@ -1337,12 +1460,12 @@ pub unsafe fn BattleLoadSubstituteOrMonSpriteGfx(battler: u8, loadMonSprite: u8)
         if IsContest() == 0 {
             if GetBattlerSide(battler) != B_SIDE_PLAYER {
                 BattleLoadOpponentMonSpriteGfx(
-                    &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+                    &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                     battler,
                 );
             } else {
                 BattleLoadPlayerMonSpriteGfx(
-                    &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                    &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                     battler,
                 );
             }
@@ -1351,39 +1474,51 @@ pub unsafe fn BattleLoadSubstituteOrMonSpriteGfx(battler: u8, loadMonSprite: u8)
 }
 pub unsafe fn LoadBattleMonGfxAndAnimate(battler: u8, loadMonSprite: u8, spriteId: u8) {
     BattleLoadSubstituteOrMonSpriteGfx(battler, loadMonSprite);
-    StartSpriteAnim(&raw mut gSprites[spriteId], gBattleMonForms[battler]);
+    StartSpriteAnim(
+        crate::gl!(&raw gSprites[spriteId]),
+        crate::gl!(gBattleMonForms[battler]),
+    );
     if loadMonSprite == 0 {
-        gSprites[spriteId].y = GetSubstituteSpriteDefault_Y(battler) as i16;
+        crate::gl!(gSprites[spriteId].y = GetSubstituteSpriteDefault_Y(battler) as i16);
     } else {
-        gSprites[spriteId].y = GetBattlerSpriteDefault_Y(battler) as i16;
+        crate::gl!(gSprites[spriteId].y = GetBattlerSpriteDefault_Y(battler) as i16);
     }
 }
 pub unsafe fn TrySetBehindSubstituteSpriteBit(battler: u8, r#move: u16) {
     if r#move == MOVE_SUBSTITUTE {
-        (*(*gBattleSpritesDataPtr).battlerData.at(battler)).set_behindSubstitute(1);
+        (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).set_behindSubstitute(1);
     }
 }
 pub unsafe fn ClearBehindSubstituteBit(battler: u8) {
-    (*(*gBattleSpritesDataPtr).battlerData.at(battler)).set_behindSubstitute(0);
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).set_behindSubstitute(0);
 }
 pub unsafe fn HandleLowHpMusicChange(mon: *mut Pokemon, battler: u8) {
     let hp: u16 = GetMonData2(mon, MON_DATA_HP) as u16;
     let maxHP: u16 = GetMonData2(mon, MON_DATA_MAX_HP) as u16;
     if GetHPBarLevel(hp as i16, maxHP as i16) == HP_BAR_RED {
-        if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).lowHpSong() == 0 {
-            if (*(*gBattleSpritesDataPtr).battlerData.at(battler as i32 ^ 2)).lowHpSong() == 0 {
+        if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).lowHpSong() == 0 {
+            if (*(*crate::gl!(gBattleSpritesDataPtr))
+                .battlerData
+                .at(battler as i32 ^ 2))
+            .lowHpSong()
+                == 0
+            {
                 PlaySE(SE_LOW_HEALTH);
             }
-            (*(*gBattleSpritesDataPtr).battlerData.at(battler)).set_lowHpSong(1);
+            (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).set_lowHpSong(1);
         }
     } else {
-        (*(*gBattleSpritesDataPtr).battlerData.at(battler)).set_lowHpSong(0);
+        (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).set_lowHpSong(0);
         if IsDoubleBattle() == 0 {
             m4aSongNumStop(SE_LOW_HEALTH);
             return;
         }
         if IsDoubleBattle() != 0
-            && (*(*gBattleSpritesDataPtr).battlerData.at(battler as i32 ^ 2)).lowHpSong() == 0
+            && (*(*crate::gl!(gBattleSpritesDataPtr))
+                .battlerData
+                .at(battler as i32 ^ 2))
+            .lowHpSong()
+                == 0
         {
             m4aSongNumStop(SE_LOW_HEALTH);
         }
@@ -1391,9 +1526,12 @@ pub unsafe fn HandleLowHpMusicChange(mon: *mut Pokemon, battler: u8) {
 }
 pub unsafe fn BattleStopLowHpSound() {
     let playerBattler: u8 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
-    (*(*gBattleSpritesDataPtr).battlerData.at(playerBattler)).set_lowHpSong(0);
+    (*(*crate::gl!(gBattleSpritesDataPtr))
+        .battlerData
+        .at(playerBattler))
+    .set_lowHpSong(0);
     if IsDoubleBattle() != 0 {
-        (*(*gBattleSpritesDataPtr)
+        (*(*crate::gl!(gBattleSpritesDataPtr))
             .battlerData
             .at(playerBattler as i32 ^ 2))
         .set_lowHpSong(0);
@@ -1406,38 +1544,51 @@ pub unsafe fn GetMonHPBarLevel(mon: *mut Pokemon) -> u8 {
     GetHPBarLevel(hp as i16, maxHP as i16)
 }
 pub unsafe fn HandleBattleLowHpMusicChange() {
-    if gMain.inBattle() != 0 {
+    if (*gMain.as_ptr()).inBattle() != 0 {
         let playerBattler1: u8 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
         let playerBattler2: u8 = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
         let battler1PartyId: u8 =
-            GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[playerBattler1] as u8);
+            GetPartyIdFromBattlePartyId(crate::gl!(gBattlerPartyIndexes[playerBattler1]) as u8);
         let battler2PartyId: u8 =
-            GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[playerBattler2] as u8);
-        if GetMonData2(&raw mut gPlayerParty[battler1PartyId], MON_DATA_HP) != 0 {
-            HandleLowHpMusicChange(&raw mut gPlayerParty[battler1PartyId], playerBattler1);
+            GetPartyIdFromBattlePartyId(crate::gl!(gBattlerPartyIndexes[playerBattler2]) as u8);
+        if GetMonData2(crate::gl!(&raw gPlayerParty[battler1PartyId]), MON_DATA_HP) != 0 {
+            HandleLowHpMusicChange(
+                crate::gl!(&raw gPlayerParty[battler1PartyId]),
+                playerBattler1,
+            );
         }
         if IsDoubleBattle() != 0
-            && GetMonData2(&raw mut gPlayerParty[battler2PartyId], MON_DATA_HP) != 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[battler2PartyId]), MON_DATA_HP) != 0
         {
-            HandleLowHpMusicChange(&raw mut gPlayerParty[battler2PartyId], playerBattler2);
+            HandleLowHpMusicChange(
+                crate::gl!(&raw gPlayerParty[battler2PartyId]),
+                playerBattler2,
+            );
         }
     }
 }
 pub unsafe fn SetBattlerSpriteAffineMode(affineMode: u8) {
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
+    while i < gBattlersCount.get() as i32 {
         if IsBattlerSpritePresent(i as u8) != 0 {
-            gSprites[gBattlerSpriteIds[i]]
+            (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[i])]
                 .oam
                 .set_affineMode(affineMode as u32);
             if affineMode == ST_OAM_AFFINE_OFF as u8 {
-                (*(*gBattleSpritesDataPtr).healthBoxesData.at(i)).matrixNum =
-                    gSprites[gBattlerSpriteIds[i]].oam.matrixNum() as u8;
-                gSprites[gBattlerSpriteIds[i]].oam.set_matrixNum(0);
+                (*(*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData.at(i)).matrixNum =
+                    (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[i])]
+                        .oam
+                        .matrixNum() as u8;
+                (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[i])]
+                    .oam
+                    .set_matrixNum(0);
             } else {
-                gSprites[gBattlerSpriteIds[i]].oam.set_matrixNum(
-                    (*(*gBattleSpritesDataPtr).healthBoxesData.at(i)).matrixNum as u32,
-                );
+                (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[i])]
+                    .oam
+                    .set_matrixNum(
+                        (*(*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData.at(i)).matrixNum
+                            as u32,
+                    );
             }
         }
         i += 1;
@@ -1451,7 +1602,10 @@ pub unsafe fn LoadAndCreateEnemyShadowSprites() {
             .cast_mut(),
     );
     let mut battler: u8 = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
-    (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId = CreateSprite(
+    (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(battler))
+    .shadowSpriteId = CreateSprite(
         (&raw const (*(&raw const crate::battle_anim_smokescreen::gSpriteTemplate_EnemyShadow)
             .cast::<SpriteTemplate>()))
             .cast_mut(),
@@ -1459,38 +1613,46 @@ pub unsafe fn LoadAndCreateEnemyShadowSprites() {
         GetBattlerSpriteCoord(battler, BATTLER_COORD_Y) as i16 + 29,
         0xC8,
     );
-    gSprites[(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId].data[0] =
-        battler as i16;
+    (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(battler))
+    .shadowSpriteId]
+        .data[0] = battler as i16;
     if IsDoubleBattle() != 0 {
         battler = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId = CreateSprite(
+        (*(*crate::gl!(gBattleSpritesDataPtr)).healthBoxesData.at(battler)).shadowSpriteId = CreateSprite(
             (&raw const (*(&raw const crate::battle_anim_smokescreen::gSpriteTemplate_EnemyShadow).cast::<SpriteTemplate>())).cast_mut(),
             GetBattlerSpriteCoord(battler, BATTLER_COORD_X) as i16,
             GetBattlerSpriteCoord(battler, BATTLER_COORD_Y) as i16 + 29,
             0xC8,
         );
-        gSprites[(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId].data[0] =
-            battler as i16;
+        (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .shadowSpriteId]
+            .data[0] = battler as i16;
     }
 }
 pub unsafe fn SpriteCB_EnemyShadow(shadowSprite: *mut Sprite) {
     let mut invisible: u8 = FALSE;
     let battler: u8 = (*shadowSprite).data[tBattlerId] as u8;
-    let battlerSprite: *mut Sprite = &raw mut gSprites[gBattlerSpriteIds[battler]];
+    let battlerSprite: *mut Sprite =
+        &raw mut (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])];
     if (*battlerSprite).inUse() == 0 || IsBattlerSpritePresent(battler) == 0 {
         (*shadowSprite).callback = Some(SpriteCB_SetInvisible);
         return;
     }
-    if gAnimScriptActive != 0 || (*battlerSprite).invisible() != 0 {
+    if gAnimScriptActive.get() != 0 || (*battlerSprite).invisible() != 0 {
         invisible = TRUE;
-    } else if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != SPECIES_NONE
+    } else if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        != SPECIES_NONE
         && (*(&raw const crate::data::data_tables::gEnemyMonElevation).cast::<CArray<u8, 412>>())
-            [(*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies]
+            [(*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies]
             == 0
     {
         invisible = TRUE;
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).behindSubstitute() != 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).behindSubstitute() != 0 {
         invisible = TRUE;
     }
     (*shadowSprite).x = (*battlerSprite).x;
@@ -1506,23 +1668,34 @@ pub unsafe fn SetBattlerShadowSpriteCallback(battler: u8, mut species: u16) {
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         return;
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != SPECIES_NONE {
-        species = (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies;
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies
+        != SPECIES_NONE
+    {
+        species = (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies;
     }
     if (*(&raw const crate::data::data_tables::gEnemyMonElevation).cast::<CArray<u8, 412>>())
         [species]
         != 0
     {
-        gSprites[(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId].callback =
-            Some(SpriteCB_EnemyShadow);
+        (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .shadowSpriteId]
+            .callback = Some(SpriteCB_EnemyShadow);
     } else {
-        gSprites[(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId].callback =
-            Some(SpriteCB_SetInvisible);
+        (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .shadowSpriteId]
+            .callback = Some(SpriteCB_SetInvisible);
     }
 }
 pub unsafe fn HideBattlerShadowSprite(battler: u8) {
-    gSprites[(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).shadowSpriteId].callback =
-        Some(SpriteCB_SetInvisible);
+    (*gSprites.as_ptr())[(*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(battler))
+    .shadowSpriteId]
+        .callback = Some(SpriteCB_SetInvisible);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FillAroundBattleWindows() {
@@ -1546,55 +1719,58 @@ pub unsafe fn FillAroundBattleWindows() {
     }
 }
 pub unsafe fn ClearTemporarySpeciesSpriteData(battler: u8, dontClearSubstitute: u8) {
-    (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies = SPECIES_NONE;
-    gBattleMonForms[battler] = 0;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).transformSpecies = SPECIES_NONE;
+    crate::gl!(gBattleMonForms[battler] = 0);
     if dontClearSubstitute == 0 {
         ClearBehindSubstituteBit(battler);
     }
 }
 pub unsafe fn AllocateMonSpritesGfx() {
-    gMonSpritesGfxPtr = null_mut();
-    gMonSpritesGfxPtr = AllocZeroed(384) as *mut MonSpritesGfx;
-    (*gMonSpritesGfxPtr).firstDecompressed = AllocZeroed(32768);
+    crate::gl!(gMonSpritesGfxPtr = null_mut());
+    crate::gl!(gMonSpritesGfxPtr = AllocZeroed(384) as *mut MonSpritesGfx);
+    (*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed = AllocZeroed(32768);
     for i in 0..MAX_BATTLERS_COUNT {
-        (*gMonSpritesGfxPtr).sprites.ptr[i] = ((*gMonSpritesGfxPtr).firstDecompressed as *mut u8)
-            .at(i as i32 * MON_PIC_SIZE as i32 * 4)
-            as *mut c_void;
-        *(*gMonSpritesGfxPtr).templates.as_mut_ptr().at(i) =
-            (*(&raw const crate::data::pokemon::gBattlerSpriteTemplates)
-                .cast::<CArray<SpriteTemplate, 0>>())[i];
+        (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[i] =
+            ((*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed as *mut u8)
+                .at(i as i32 * MON_PIC_SIZE as i32 * 4) as *mut c_void;
+        *(*crate::gl!(gMonSpritesGfxPtr))
+            .templates
+            .as_mut_ptr()
+            .at(i) = (*(&raw const crate::data::pokemon::gBattlerSpriteTemplates)
+            .cast::<CArray<SpriteTemplate, 0>>())[i];
         for j in 0..4u8 {
-            (*gMonSpritesGfxPtr).frameImages[i][j].data =
-                ((*gMonSpritesGfxPtr).sprites.ptr[i] as *mut u8).at(j as i32 * MON_PIC_SIZE as i32)
-                    as *mut c_void;
-            (*gMonSpritesGfxPtr).frameImages[i][j].size = MON_PIC_SIZE;
+            (*crate::gl!(gMonSpritesGfxPtr)).frameImages[i][j].data =
+                ((*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[i] as *mut u8)
+                    .at(j as i32 * MON_PIC_SIZE as i32) as *mut c_void;
+            (*crate::gl!(gMonSpritesGfxPtr)).frameImages[i][j].size = MON_PIC_SIZE;
         }
-        (*gMonSpritesGfxPtr).templates[i].images = (*gMonSpritesGfxPtr).frameImages[i].as_mut_ptr();
+        (*crate::gl!(gMonSpritesGfxPtr)).templates[i].images =
+            (*crate::gl!(gMonSpritesGfxPtr)).frameImages[i].as_mut_ptr();
     }
-    (*gMonSpritesGfxPtr).barFontGfx = AllocZeroed(0x1000) as *mut u8;
+    (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx = AllocZeroed(0x1000) as *mut u8;
 }
 pub unsafe fn FreeMonSpritesGfx() {
-    if gMonSpritesGfxPtr.is_null() {
+    if (*gMonSpritesGfxPtr.as_ptr()).is_null() {
         return;
     }
-    if !(*gMonSpritesGfxPtr).buffer.is_null() {
-        Free((*gMonSpritesGfxPtr).buffer as *mut c_void);
-        (*gMonSpritesGfxPtr).buffer = null_mut();
+    if !(*crate::gl!(gMonSpritesGfxPtr)).buffer.is_null() {
+        Free((*crate::gl!(gMonSpritesGfxPtr)).buffer as *mut c_void);
+        (*crate::gl!(gMonSpritesGfxPtr)).buffer = null_mut();
     }
-    if !(*gMonSpritesGfxPtr).unusedPtr.is_null() {
-        Free((*gMonSpritesGfxPtr).unusedPtr);
-        (*gMonSpritesGfxPtr).unusedPtr = null_mut();
+    if !(*crate::gl!(gMonSpritesGfxPtr)).unusedPtr.is_null() {
+        Free((*crate::gl!(gMonSpritesGfxPtr)).unusedPtr);
+        (*crate::gl!(gMonSpritesGfxPtr)).unusedPtr = null_mut();
     }
-    Free((*gMonSpritesGfxPtr).barFontGfx as *mut c_void);
-    (*gMonSpritesGfxPtr).barFontGfx = null_mut();
-    Free((*gMonSpritesGfxPtr).firstDecompressed);
-    (*gMonSpritesGfxPtr).firstDecompressed = null_mut();
-    (*gMonSpritesGfxPtr).sprites.ptr[0] = null_mut();
-    (*gMonSpritesGfxPtr).sprites.ptr[1] = null_mut();
-    (*gMonSpritesGfxPtr).sprites.ptr[2] = null_mut();
-    (*gMonSpritesGfxPtr).sprites.ptr[3] = null_mut();
-    Free(gMonSpritesGfxPtr as *mut c_void);
-    gMonSpritesGfxPtr = null_mut();
+    Free((*crate::gl!(gMonSpritesGfxPtr)).barFontGfx as *mut c_void);
+    (*crate::gl!(gMonSpritesGfxPtr)).barFontGfx = null_mut();
+    Free((*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed);
+    (*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed = null_mut();
+    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[0] = null_mut();
+    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1] = null_mut();
+    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[2] = null_mut();
+    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[3] = null_mut();
+    Free(crate::gl!(gMonSpritesGfxPtr) as *mut c_void);
+    crate::gl!(gMonSpritesGfxPtr = null_mut());
 }
 pub unsafe fn ShouldPlayNormalMonCry(mon: *mut Pokemon) -> u32 {
     if GetMonData2(mon, MON_DATA_STATUS) & 4095 != 0 {

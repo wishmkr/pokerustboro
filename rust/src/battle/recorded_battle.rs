@@ -177,64 +177,72 @@ const _: () = {
 const ACTION_MOVE_CHANGE: u8 = 6;
 const BATTLER_RECORD_SIZE: i32 = 664;
 
-#[unsafe(link_section = "ewram_data")]
-pub static mut gRecordedBattleRngSeed: u32 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gBattlePalaceMoveSelectionRngValue: u32 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleRecords: Aligned<CArray<CArray<u8, 664>, 4>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlerRecordSizes: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlerPrevRecordSizes: Aligned<CArray<u16, 4>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlerSavedRecordSizes: Aligned<CArray<u16, 4>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gRecordedBattleRngSeed: crate::global::Global<u32> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gBattlePalaceMoveSelectionRngValue: crate::global::Global<u32> =
+    crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattleRecords: crate::global::Global<Aligned<CArray<CArray<u8, 664>, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattlerRecordSizes: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattlerPrevRecordSizes: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattlerSavedRecordSizes: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sRecordMode: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sLvlMode: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFrontierFacility: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFrontierBrainSymbol: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCallback2_AfterRecordedBattle: Option<unsafe fn()> = None;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gRecordedBattleMultiplayerId: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCallback2_AfterRecordedBattle: crate::global::Global<Option<unsafe fn()>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gRecordedBattleMultiplayerId: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFrontierPassFlag: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sBattleScene: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sTextSpeed: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleFlags: u32 = 0;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattleFlags: crate::global::Global<u32> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAI_Scripts: crate::global::Global<u32> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedPlayerParty: CArray<Pokemon, 6> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedOpponentParty: CArray<Pokemon, 6> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlayerMonMoves: Aligned<CArray<CArray<u16, 4>, 2>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlayers: CArray<PlayerInfo, 4> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSavedPlayerParty: crate::global::Global<CArray<Pokemon, 6>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSavedOpponentParty: crate::global::Global<CArray<Pokemon, 6>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPlayerMonMoves: crate::global::Global<Aligned<CArray<CArray<u16, 4>, 2>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPlayers: crate::global::Global<CArray<PlayerInfo, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sIsPlaybackFinished: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRecordMixFriendName: Aligned<CArray<u8, 8>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRecordMixFriendName: crate::global::Global<Aligned<CArray<u8, 8>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sRecordMixFriendClass: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sApprenticeId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sEasyChatSpeech: Aligned<CArray<u16, 6>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleOutcome: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sEasyChatSpeech: crate::global::Global<Aligned<CArray<u16, 6>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattleOutcome: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sRecordMixFriendLanguage: crate::global::Global<u8> =
     crate::global::Global::new(0);
 pub(crate) static sApprenticeLanguage: crate::global::Global<u8> = crate::global::Global::new(0);
@@ -256,94 +264,99 @@ pub unsafe fn RecordedBattle_Init(mode: u8) {
     sRecordMode.set(mode);
     sIsPlaybackFinished.set(FALSE);
     for i in 0..(MAX_BATTLERS_COUNT as i32) {
-        sBattlerRecordSizes[i] = 0;
-        sBattlerPrevRecordSizes[i] = 0;
-        sBattlerSavedRecordSizes[i] = 0;
+        crate::gl!(sBattlerRecordSizes[i] = 0);
+        crate::gl!(sBattlerPrevRecordSizes[i] = 0);
+        crate::gl!(sBattlerSavedRecordSizes[i] = 0);
         if mode == B_RECORD_MODE_RECORDING {
             for j in 0..BATTLER_RECORD_SIZE {
-                sBattleRecords[i][j] = 0xFF;
+                crate::gl!(sBattleRecords[i][j] = 0xFF);
             }
-            sBattleFlags = gBattleTypeFlags;
-            sAI_Scripts.set((*(*gBattleResources).ai).aiFlags);
+            sBattleFlags.set(gBattleTypeFlags.get());
+            sAI_Scripts.set((*(*crate::gl!(gBattleResources)).ai).aiFlags);
         }
     }
 }
 pub unsafe fn RecordedBattle_SetTrainerInfo() {
     if sRecordMode.get() == B_RECORD_MODE_RECORDING {
-        gRecordedBattleRngSeed = *crate::random::gRngValue.as_ptr().cast::<u32>();
+        gRecordedBattleRngSeed.set(*crate::random::gRngValue.as_ptr().cast::<u32>());
         sFrontierFacility.set(VarGet(VAR_FRONTIER_FACILITY) as u8);
         sFrontierBrainSymbol.set(GetFronterBrainSymbol() as u8);
     } else if sRecordMode.get() == B_RECORD_MODE_PLAYBACK {
-        (*crate::random::gRngValue.as_ptr().cast::<u32>()) = gRecordedBattleRngSeed;
+        (*crate::random::gRngValue.as_ptr().cast::<u32>()) = gRecordedBattleRngSeed.get();
     }
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
         let mut text: CArray<u8, 30> = zeroed();
-        gRecordedBattleMultiplayerId = GetMultiplayerId();
+        gRecordedBattleMultiplayerId.set(GetMultiplayerId());
         let linkPlayersCount: u8 = GetLinkPlayerCount();
         for i in 0..MAX_LINK_PLAYERS {
-            sPlayers[i].trainerId = gLinkPlayers[i].trainerId;
-            sPlayers[i].gender = gLinkPlayers[i].gender;
-            sPlayers[i].battler = gLinkPlayers[i].id;
-            sPlayers[i].language = gLinkPlayers[i].language;
+            crate::gl!(sPlayers[i].trainerId = crate::gl!(gLinkPlayers[i].trainerId));
+            crate::gl!(sPlayers[i].gender = crate::gl!(gLinkPlayers[i].gender));
+            crate::gl!(sPlayers[i].battler = crate::gl!(gLinkPlayers[i].id));
+            crate::gl!(sPlayers[i].language = crate::gl!(gLinkPlayers[i].language));
             if i < linkPlayersCount as i32 {
-                StringCopy(text.as_mut_ptr(), gLinkPlayers[i].name.as_mut_ptr());
+                StringCopy(
+                    text.as_mut_ptr(),
+                    (*gLinkPlayers.as_ptr())[i].name.as_mut_ptr(),
+                );
                 StripExtCtrlCodes(text.as_mut_ptr());
-                StringCopy(sPlayers[i].name.as_mut_ptr(), text.as_mut_ptr());
+                StringCopy((*sPlayers.as_ptr())[i].name.as_mut_ptr(), text.as_mut_ptr());
             } else {
                 for j in 0..8i32 {
-                    sPlayers[i].name[j] = gLinkPlayers[i].name[j];
+                    crate::gl!(sPlayers[i].name[j] = crate::gl!(gLinkPlayers[i].name[j]));
                 }
             }
         }
     } else {
-        sPlayers[0].trainerId = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-            | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-            | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-            | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
-        sPlayers[0].gender = (*gSaveBlock2Ptr).playerGender;
-        sPlayers[0].battler = 0;
-        sPlayers[0].language = gGameLanguage as u16;
+        crate::gl!(
+            sPlayers[0].trainerId = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+                | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+                | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+                | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24
+        );
+        crate::gl!(sPlayers[0].gender = (*crate::gl!(gSaveBlock2Ptr)).playerGender);
+        crate::gl!(sPlayers[0].battler = 0);
+        crate::gl!(sPlayers[0].language = gGameLanguage as u16);
         for i in 0..8i32 {
-            sPlayers[0].name[i] = (*gSaveBlock2Ptr).playerName[i];
+            crate::gl!(sPlayers[0].name[i] = (*crate::gl!(gSaveBlock2Ptr)).playerName[i]);
         }
     }
 }
 pub unsafe fn RecordedBattle_SetBattlerAction(battler: u8, action: u8) {
-    if sBattlerRecordSizes[battler] < BATTLER_RECORD_SIZE as u16
+    if crate::gl!(sBattlerRecordSizes[battler]) < BATTLER_RECORD_SIZE as u16
         && sRecordMode.get() != B_RECORD_MODE_PLAYBACK
     {
-        sBattleRecords[battler][{
-            let t1 = sBattlerRecordSizes[battler];
-            sBattlerRecordSizes[battler] += 1;
+        (*sBattleRecords.as_ptr())[battler][{
+            let t1 = crate::gl!(sBattlerRecordSizes[battler]);
+            crate::gl!(sBattlerRecordSizes[battler] += 1);
             t1
         }] = action;
     }
 }
 pub unsafe fn RecordedBattle_ClearBattlerAction(battler: u8, bytesToClear: u8) {
     for i in 0..(bytesToClear as i32) {
-        sBattlerRecordSizes[battler] -= 1;
-        sBattleRecords[battler][sBattlerRecordSizes[battler]] = 0xFF;
-        if sBattlerRecordSizes[battler] == 0 {
+        crate::gl!(sBattlerRecordSizes[battler] -= 1);
+        (*sBattleRecords.as_ptr())[battler][crate::gl!(sBattlerRecordSizes[battler])] = 0xFF;
+        if crate::gl!(sBattlerRecordSizes[battler]) == 0 {
             break;
         }
     }
 }
 pub unsafe fn RecordedBattle_GetBattlerAction(battler: u8) -> u8 {
-    if sBattlerRecordSizes[battler] >= BATTLER_RECORD_SIZE as u16
-        || sBattleRecords[battler][sBattlerRecordSizes[battler]] == 0xFF
+    if crate::gl!(sBattlerRecordSizes[battler]) >= BATTLER_RECORD_SIZE as u16
+        || (*sBattleRecords.as_ptr())[battler][crate::gl!(sBattlerRecordSizes[battler])] == 0xFF
     {
         gSpecialVar_Result = ({
-            gBattleOutcome = B_OUTCOME_PLAYER_TELEPORTED;
-            gBattleOutcome
+            gBattleOutcome.set(B_OUTCOME_PLAYER_TELEPORTED);
+            gBattleOutcome.get()
         }) as u16;
         ResetPaletteFadeControl();
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         SetMainCallback2(Some(CB2_QuitRecordedBattle));
         return B_ACTION_NONE;
     } else {
-        return sBattleRecords[battler][{
-            let t1 = sBattlerRecordSizes[battler];
-            sBattlerRecordSizes[battler] += 1;
+        return (*sBattleRecords.as_ptr())[battler][{
+            let t1 = crate::gl!(sBattlerRecordSizes[battler]);
+            crate::gl!(sBattlerRecordSizes[battler] += 1);
             t1
         }];
     }
@@ -359,7 +372,7 @@ pub unsafe fn RecordedBattle_BufferNewBattlerData(dst: *mut u8) -> u8 {
     let mut j: u8 = 0;
     let mut idx: u8 = 0;
     for i in 0..MAX_BATTLERS_COUNT {
-        if sBattlerRecordSizes[i] != sBattlerPrevRecordSizes[i] {
+        if crate::gl!(sBattlerRecordSizes[i]) != crate::gl!(sBattlerPrevRecordSizes[i]) {
             *dst.at({
                 let t1 = idx;
                 idx += 1;
@@ -369,17 +382,22 @@ pub unsafe fn RecordedBattle_BufferNewBattlerData(dst: *mut u8) -> u8 {
                 let t2 = idx;
                 idx += 1;
                 t2
-            }) = sBattlerRecordSizes[i] as u8 - sBattlerPrevRecordSizes[i] as u8;
+            }) = crate::gl!(sBattlerRecordSizes[i]) as u8
+                - crate::gl!(sBattlerPrevRecordSizes[i]) as u8;
             j = 0;
-            while (j as i32) < sBattlerRecordSizes[i] as i32 - sBattlerPrevRecordSizes[i] as i32 {
+            while (j as i32)
+                < crate::gl!(sBattlerRecordSizes[i]) as i32
+                    - crate::gl!(sBattlerPrevRecordSizes[i]) as i32
+            {
                 *dst.at({
                     let t3 = idx;
                     idx += 1;
                     t3
-                }) = sBattleRecords[i][sBattlerPrevRecordSizes[i] as i32 + j as i32];
+                }) = (*sBattleRecords.as_ptr())[i]
+                    [crate::gl!(sBattlerPrevRecordSizes[i]) as i32 + j as i32];
                 j += 1;
             }
-            sBattlerPrevRecordSizes[i] = sBattlerRecordSizes[i];
+            crate::gl!(sBattlerPrevRecordSizes[i] = crate::gl!(sBattlerRecordSizes[i]));
         }
     }
     idx
@@ -387,25 +405,25 @@ pub unsafe fn RecordedBattle_BufferNewBattlerData(dst: *mut u8) -> u8 {
 pub unsafe fn RecordedBattle_RecordAllBattlerData(src: *mut u8) {
     let mut idx: u8 = 2;
     let mut size: u8 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK == 0 {
         return;
     }
     let mut i: i32 = 0;
     while i < GetLinkPlayerCount() as i32 {
-        if gLinkPlayers[i].version as i32 & 0xFF != VERSION_EMERALD as i32 {
+        if crate::gl!(gLinkPlayers[i].version) as i32 & 0xFF != VERSION_EMERALD as i32 {
             return;
         }
         i += 1;
     }
-    if gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_IS_MASTER == 0 {
         size = *src;
         while size != 0 {
             let battler: u8 = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
             let numActions: u8 = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
             for i in 0..(numActions as i32) {
-                sBattleRecords[battler][{
-                    let t1 = sBattlerSavedRecordSizes[battler];
-                    sBattlerSavedRecordSizes[battler] += 1;
+                (*sBattleRecords.as_ptr())[battler][{
+                    let t1 = crate::gl!(sBattlerSavedRecordSizes[battler]);
+                    crate::gl!(sBattlerSavedRecordSizes[battler] += 1);
                     t1
                 }] = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
             }
@@ -465,159 +483,179 @@ pub unsafe fn MoveRecordedBattleToSaveData() -> u32 {
     let battleSave: *mut RecordedBattleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
     let savSection: *mut RecordedBattleSave = AllocZeroed(SECTOR_SIZE) as *mut RecordedBattleSave;
     for i in 0..PARTY_SIZE {
-        (*battleSave).playerParty[i] = sSavedPlayerParty[i];
-        (*battleSave).opponentParty[i] = sSavedOpponentParty[i];
+        (*battleSave).playerParty[i] = crate::gl!(sSavedPlayerParty[i]);
+        (*battleSave).opponentParty[i] = crate::gl!(sSavedOpponentParty[i]);
     }
     let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
         for j in 0..8i32 {
-            (*battleSave).playersName[i][j] = sPlayers[i].name[j];
+            (*battleSave).playersName[i][j] = crate::gl!(sPlayers[i].name[j]);
         }
-        (*battleSave).playersGender[i] = sPlayers[i].gender;
-        (*battleSave).playersLanguage[i] = sPlayers[i].language as u8;
-        (*battleSave).playersBattlers[i] = sPlayers[i].battler as u8;
-        (*battleSave).playersTrainerId[i] = sPlayers[i].trainerId;
+        (*battleSave).playersGender[i] = crate::gl!(sPlayers[i].gender);
+        (*battleSave).playersLanguage[i] = crate::gl!(sPlayers[i].language) as u8;
+        (*battleSave).playersBattlers[i] = crate::gl!(sPlayers[i].battler) as u8;
+        (*battleSave).playersTrainerId[i] = crate::gl!(sPlayers[i].trainerId);
         i += 1;
     }
-    (*battleSave).rngSeed = gRecordedBattleRngSeed;
-    if sBattleFlags & BATTLE_TYPE_LINK != 0 {
-        (*battleSave).battleFlags = sBattleFlags & 0xffffffdd | BATTLE_TYPE_RECORDED_LINK;
-        if sBattleFlags & BATTLE_TYPE_IS_MASTER != 0 {
+    (*battleSave).rngSeed = gRecordedBattleRngSeed.get();
+    if sBattleFlags.get() & BATTLE_TYPE_LINK != 0 {
+        (*battleSave).battleFlags = sBattleFlags.get() & 0xffffffdd | BATTLE_TYPE_RECORDED_LINK;
+        if sBattleFlags.get() & BATTLE_TYPE_IS_MASTER != 0 {
             (*battleSave).battleFlags |= 0x80000000;
-        } else if sBattleFlags & BATTLE_TYPE_MULTI != 0 {
-            match sPlayers[0].battler {
+        } else if sBattleFlags.get() & BATTLE_TYPE_MULTI != 0 {
+            match crate::gl!(sPlayers[0].battler) {
                 0 | 2 => {
-                    if sPlayers[gRecordedBattleMultiplayerId].battler as i32 & 1 == 0 {
+                    if {
+                        let gl_i0 = gRecordedBattleMultiplayerId.get();
+                        crate::gl!(sPlayers[gl_i0].battler)
+                    } as i32
+                        & 1
+                        == 0
+                    {
                         (*battleSave).battleFlags |= 0x80000000;
                     }
                 }
-                1 | 3 if sPlayers[gRecordedBattleMultiplayerId].battler as i32 & 1 != 0 => {
+                1 | 3
+                    if {
+                        let gl_i1 = gRecordedBattleMultiplayerId.get();
+                        crate::gl!(sPlayers[gl_i1].battler)
+                    } as i32
+                        & 1
+                        != 0 =>
+                {
                     (*battleSave).battleFlags |= 0x80000000;
                 }
                 _ => {}
             }
         }
     } else {
-        (*battleSave).battleFlags = sBattleFlags;
+        (*battleSave).battleFlags = sBattleFlags.get();
     }
-    (*battleSave).opponentA = gTrainerBattleOpponent_A;
-    (*battleSave).opponentB = gTrainerBattleOpponent_B;
-    (*battleSave).partnerId = gPartnerTrainerId;
-    (*battleSave).multiplayerId = gRecordedBattleMultiplayerId as u16;
-    (*battleSave).lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
+    (*battleSave).opponentA = gTrainerBattleOpponent_A.get();
+    (*battleSave).opponentB = gTrainerBattleOpponent_B.get();
+    (*battleSave).partnerId = gPartnerTrainerId.get();
+    (*battleSave).multiplayerId = gRecordedBattleMultiplayerId.get() as u16;
+    (*battleSave).lvlMode = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
     (*battleSave).frontierFacility = sFrontierFacility.get();
     (*battleSave).frontierBrainSymbol = sFrontierBrainSymbol.get();
-    (*battleSave).set_battleScene((*gSaveBlock2Ptr).optionsBattleSceneOff() as u8);
-    (*battleSave).set_textSpeed((*gSaveBlock2Ptr).optionsTextSpeed() as u8);
+    (*battleSave).set_battleScene((*crate::gl!(gSaveBlock2Ptr)).optionsBattleSceneOff() as u8);
+    (*battleSave).set_textSpeed((*crate::gl!(gSaveBlock2Ptr)).optionsTextSpeed() as u8);
     (*battleSave).AI_scripts = sAI_Scripts.get();
-    if gTrainerBattleOpponent_A >= TRAINER_RECORD_MIXING_FRIEND as u16
-        && gTrainerBattleOpponent_A < TRAINER_RECORD_MIXING_APPRENTICE as u16
+    if gTrainerBattleOpponent_A.get() >= TRAINER_RECORD_MIXING_FRIEND as u16
+        && gTrainerBattleOpponent_A.get() < TRAINER_RECORD_MIXING_APPRENTICE as u16
     {
         i = 0;
         while i < 8 {
-            (*battleSave).recordMixFriendName[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
+            (*battleSave).recordMixFriendName[i] = (*crate::gl!(gSaveBlock2Ptr))
+                .frontier
+                .towerRecords[gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .name[i];
             i += 1;
         }
-        (*battleSave).recordMixFriendClass = (*gSaveBlock2Ptr).frontier.towerRecords
-            [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        (*battleSave).recordMixFriendClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
-        if sBattleOutcome == B_OUTCOME_WON {
+        if sBattleOutcome.get() == B_OUTCOME_WON {
             for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-                (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                    [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
-                    .speechLost[i];
+                (*battleSave).easyChatSpeech[i] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+                        [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                        .speechLost[i];
             }
         } else {
             for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-                (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                    [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
-                    .speechWon[i];
+                (*battleSave).easyChatSpeech[i] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+                        [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                        .speechWon[i];
             }
         }
-        (*battleSave).recordMixFriendLanguage = (*gSaveBlock2Ptr).frontier.towerRecords
-            [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        (*battleSave).recordMixFriendLanguage = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .language;
-    } else if gTrainerBattleOpponent_B >= TRAINER_RECORD_MIXING_FRIEND as u16
-        && gTrainerBattleOpponent_B < TRAINER_RECORD_MIXING_APPRENTICE as u16
+    } else if gTrainerBattleOpponent_B.get() >= TRAINER_RECORD_MIXING_FRIEND as u16
+        && gTrainerBattleOpponent_B.get() < TRAINER_RECORD_MIXING_APPRENTICE as u16
     {
         i = 0;
         while i < 8 {
-            (*battleSave).recordMixFriendName[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
+            (*battleSave).recordMixFriendName[i] = (*crate::gl!(gSaveBlock2Ptr))
+                .frontier
+                .towerRecords[gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .name[i];
             i += 1;
         }
-        (*battleSave).recordMixFriendClass = (*gSaveBlock2Ptr).frontier.towerRecords
-            [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        (*battleSave).recordMixFriendClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
-        if sBattleOutcome == B_OUTCOME_WON {
+        if sBattleOutcome.get() == B_OUTCOME_WON {
             for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-                (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                    [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
-                    .speechLost[i];
+                (*battleSave).easyChatSpeech[i] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+                        [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                        .speechLost[i];
             }
         } else {
             for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-                (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                    [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
-                    .speechWon[i];
+                (*battleSave).easyChatSpeech[i] =
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+                        [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
+                        .speechWon[i];
             }
         }
-        (*battleSave).recordMixFriendLanguage = (*gSaveBlock2Ptr).frontier.towerRecords
-            [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        (*battleSave).recordMixFriendLanguage = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .language;
-    } else if gPartnerTrainerId >= TRAINER_RECORD_MIXING_FRIEND as u16
-        && gPartnerTrainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16
+    } else if gPartnerTrainerId.get() >= TRAINER_RECORD_MIXING_FRIEND as u16
+        && gPartnerTrainerId.get() < TRAINER_RECORD_MIXING_APPRENTICE as u16
     {
         for i in 0..8i32 {
-            (*battleSave).recordMixFriendName[i] = (*gSaveBlock2Ptr).frontier.towerRecords
-                [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+            (*battleSave).recordMixFriendName[i] = (*crate::gl!(gSaveBlock2Ptr))
+                .frontier
+                .towerRecords[gPartnerTrainerId.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .name[i];
         }
-        (*battleSave).recordMixFriendClass = (*gSaveBlock2Ptr).frontier.towerRecords
-            [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        (*battleSave).recordMixFriendClass = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [gPartnerTrainerId.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
-        (*battleSave).recordMixFriendLanguage = (*gSaveBlock2Ptr).frontier.towerRecords
-            [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
+        (*battleSave).recordMixFriendLanguage = (*crate::gl!(gSaveBlock2Ptr)).frontier.towerRecords
+            [gPartnerTrainerId.get() as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .language;
     }
-    if gTrainerBattleOpponent_A >= TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        (*battleSave).apprenticeId = (*gSaveBlock2Ptr).apprentices
-            [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+    if gTrainerBattleOpponent_A.get() >= TRAINER_RECORD_MIXING_APPRENTICE as u16 {
+        (*battleSave).apprenticeId = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id();
         for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-            (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).apprentices
-                [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+            (*battleSave).easyChatSpeech[i] = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+                [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .speechWon[i];
         }
-        (*battleSave).apprenticeLanguage = (*gSaveBlock2Ptr).apprentices
-            [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+        (*battleSave).apprenticeLanguage = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [gTrainerBattleOpponent_A.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .language;
-    } else if gTrainerBattleOpponent_B >= TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        (*battleSave).apprenticeId = (*gSaveBlock2Ptr).apprentices
-            [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+    } else if gTrainerBattleOpponent_B.get() >= TRAINER_RECORD_MIXING_APPRENTICE as u16 {
+        (*battleSave).apprenticeId = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id();
         for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
-            (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).apprentices
-                [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+            (*battleSave).easyChatSpeech[i] = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+                [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .speechWon[i];
         }
-        (*battleSave).apprenticeLanguage = (*gSaveBlock2Ptr).apprentices
-            [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+        (*battleSave).apprenticeLanguage = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [gTrainerBattleOpponent_B.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .language;
-    } else if gPartnerTrainerId >= TRAINER_RECORD_MIXING_APPRENTICE as u16 {
-        (*battleSave).apprenticeId = (*gSaveBlock2Ptr).apprentices
-            [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+    } else if gPartnerTrainerId.get() >= TRAINER_RECORD_MIXING_APPRENTICE as u16 {
+        (*battleSave).apprenticeId = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [gPartnerTrainerId.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id();
-        (*battleSave).apprenticeLanguage = (*gSaveBlock2Ptr).apprentices
-            [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
+        (*battleSave).apprenticeLanguage = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+            [gPartnerTrainerId.get() as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .language;
     }
     for i in 0..(MAX_BATTLERS_COUNT as i32) {
         for j in 0..BATTLER_RECORD_SIZE {
-            (*battleSave).battleRecord[i][j] = sBattleRecords[i][j];
+            (*battleSave).battleRecord[i][j] = crate::gl!(sBattleRecords[i][j]);
         }
     }
     loop {
@@ -658,14 +696,16 @@ unsafe fn CopyRecordedBattleFromSave(dst: *mut RecordedBattleSave) -> u32 {
     ret
 }
 pub(crate) unsafe fn CB2_RecordedBattleEnd() {
-    (*gSaveBlock2Ptr).frontier.set_lvlMode(sLvlMode.get());
-    gBattleOutcome = 0;
-    gBattleTypeFlags = 0;
-    gTrainerBattleOpponent_A = 0;
-    gTrainerBattleOpponent_B = 0;
-    gPartnerTrainerId = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_lvlMode(sLvlMode.get());
+    gBattleOutcome.set(0);
+    gBattleTypeFlags.set(0);
+    gTrainerBattleOpponent_A.set(0);
+    gTrainerBattleOpponent_B.set(0);
+    gPartnerTrainerId.set(0);
     RecordedBattle_RestoreSavedParties();
-    SetMainCallback2(sCallback2_AfterRecordedBattle);
+    SetMainCallback2(crate::gl!(sCallback2_AfterRecordedBattle));
 }
 pub(crate) unsafe fn Task_StartAfterCountdown(taskId: u8) {
     if ({
@@ -673,7 +713,7 @@ pub(crate) unsafe fn Task_StartAfterCountdown(taskId: u8) {
         task_get(taskId, tFramesToWait)
     }) == 0
     {
-        gMain.savedCallback = Some(CB2_RecordedBattleEnd);
+        crate::gl!(gMain.savedCallback = Some(CB2_RecordedBattleEnd));
         SetMainCallback2(Some(CB2_InitBattle));
         DestroyTask(taskId);
     }
@@ -683,44 +723,44 @@ unsafe fn SetVariablesForRecordedBattle(src: *mut RecordedBattleSave) {
     ZeroPlayerPartyMons();
     ZeroEnemyPartyMons();
     for i in 0..PARTY_SIZE {
-        gPlayerParty[i] = (*src).playerParty[i];
-        gEnemyParty[i] = (*src).opponentParty[i];
+        crate::gl!(gPlayerParty[i] = (*src).playerParty[i]);
+        crate::gl!(gEnemyParty[i] = (*src).opponentParty[i]);
     }
     let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
         var = 0;
         for j in 0..8i32 {
-            gLinkPlayers[i].name[j] = (*src).playersName[i][j];
+            crate::gl!(gLinkPlayers[i].name[j] = (*src).playersName[i][j]);
             if (*src).playersName[i][j] == EOS {
                 var = TRUE;
             }
         }
-        gLinkPlayers[i].gender = (*src).playersGender[i];
-        gLinkPlayers[i].language = (*src).playersLanguage[i] as u16;
-        gLinkPlayers[i].id = (*src).playersBattlers[i] as u16;
-        gLinkPlayers[i].trainerId = (*src).playersTrainerId[i];
+        crate::gl!(gLinkPlayers[i].gender = (*src).playersGender[i]);
+        crate::gl!(gLinkPlayers[i].language = (*src).playersLanguage[i] as u16);
+        crate::gl!(gLinkPlayers[i].id = (*src).playersBattlers[i] as u16);
+        crate::gl!(gLinkPlayers[i].trainerId = (*src).playersTrainerId[i]);
         if var != 0 {
             ConvertInternationalString(
-                gLinkPlayers[i].name.as_mut_ptr(),
-                gLinkPlayers[i].language as u8,
+                (*gLinkPlayers.as_ptr())[i].name.as_mut_ptr(),
+                crate::gl!(gLinkPlayers[i].language) as u8,
             );
         }
         i += 1;
     }
-    gRecordedBattleRngSeed = (*src).rngSeed;
-    gBattleTypeFlags = (*src).battleFlags | BATTLE_TYPE_RECORDED;
-    gTrainerBattleOpponent_A = (*src).opponentA;
-    gTrainerBattleOpponent_B = (*src).opponentB;
-    gPartnerTrainerId = (*src).partnerId;
-    gRecordedBattleMultiplayerId = (*src).multiplayerId as u8;
-    sLvlMode.set((*gSaveBlock2Ptr).frontier.lvlMode());
+    gRecordedBattleRngSeed.set((*src).rngSeed);
+    gBattleTypeFlags.set((*src).battleFlags | BATTLE_TYPE_RECORDED);
+    gTrainerBattleOpponent_A.set((*src).opponentA);
+    gTrainerBattleOpponent_B.set((*src).opponentB);
+    gPartnerTrainerId.set((*src).partnerId);
+    gRecordedBattleMultiplayerId.set((*src).multiplayerId as u8);
+    sLvlMode.set((*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode());
     sFrontierFacility.set((*src).frontierFacility);
     sFrontierBrainSymbol.set((*src).frontierBrainSymbol);
     sBattleScene.set((*src).battleScene());
     sTextSpeed.set((*src).textSpeed());
     sAI_Scripts.set((*src).AI_scripts);
     for i in 0..8i32 {
-        sRecordMixFriendName[i] = (*src).recordMixFriendName[i];
+        crate::gl!(sRecordMixFriendName[i] = (*src).recordMixFriendName[i]);
     }
     sRecordMixFriendClass.set((*src).recordMixFriendClass);
     sApprenticeId.set((*src).apprenticeId);
@@ -728,13 +768,15 @@ unsafe fn SetVariablesForRecordedBattle(src: *mut RecordedBattleSave) {
     sApprenticeLanguage.set((*src).apprenticeLanguage);
     i = 0;
     while i < EASY_CHAT_BATTLE_WORDS_COUNT {
-        sEasyChatSpeech[i] = (*src).easyChatSpeech[i];
+        crate::gl!(sEasyChatSpeech[i] = (*src).easyChatSpeech[i]);
         i += 1;
     }
-    (*gSaveBlock2Ptr).frontier.set_lvlMode((*src).lvlMode);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_lvlMode((*src).lvlMode);
     for i in 0..(MAX_BATTLERS_COUNT as i32) {
         for j in 0..BATTLER_RECORD_SIZE {
-            sBattleRecords[i][j] = (*src).battleRecord[i][j];
+            crate::gl!(sBattleRecords[i][j] = (*src).battleRecord[i][j]);
         }
     }
 }
@@ -745,7 +787,7 @@ pub unsafe fn PlayRecordedBattle(CB2_After: Option<unsafe fn()>) {
         SetVariablesForRecordedBattle(battleSave);
         let taskId: u8 = CreateTask(Some(Task_StartAfterCountdown), 1);
         task_set(taskId, tFramesToWait, 128);
-        sCallback2_AfterRecordedBattle = CB2_After;
+        crate::gl!(sCallback2_AfterRecordedBattle = CB2_After);
         PlayMapChosenOrBattleBGM(FALSE as u16);
         SetMainCallback2(Some(CB2_RecordedBattle));
     }
@@ -762,72 +804,82 @@ pub fn GetRecordedBattleFrontierFacility() -> u8 {
 pub fn GetRecordedBattleFronterBrainSymbol() -> u8 {
     sFrontierBrainSymbol.get()
 }
-pub unsafe fn RecordedBattle_SaveParties() {
+pub fn RecordedBattle_SaveParties() {
     for i in 0..PARTY_SIZE {
-        sSavedPlayerParty[i] = gPlayerParty[i];
-        sSavedOpponentParty[i] = gEnemyParty[i];
+        crate::gl!(sSavedPlayerParty[i] = crate::gl!(gPlayerParty[i]));
+        crate::gl!(sSavedOpponentParty[i] = crate::gl!(gEnemyParty[i]));
     }
 }
-unsafe fn RecordedBattle_RestoreSavedParties() {
+fn RecordedBattle_RestoreSavedParties() {
     for i in 0..PARTY_SIZE {
-        gPlayerParty[i] = sSavedPlayerParty[i];
-        gEnemyParty[i] = sSavedOpponentParty[i];
+        crate::gl!(gPlayerParty[i] = crate::gl!(sSavedPlayerParty[i]));
+        crate::gl!(gEnemyParty[i] = crate::gl!(sSavedOpponentParty[i]));
     }
 }
-pub unsafe fn GetActiveBattlerLinkPlayerGender() -> u8 {
+pub fn GetActiveBattlerLinkPlayerGender() -> u8 {
     let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
-        if gLinkPlayers[i].id == gActiveBattler as u16 {
+        if crate::gl!(gLinkPlayers[i].id) == gActiveBattler.get() as u16 {
             break;
         }
         i += 1;
     }
     if i != MAX_LINK_PLAYERS {
-        return gLinkPlayers[i].gender;
+        return crate::gl!(gLinkPlayers[i].gender);
     }
     0
 }
 pub fn RecordedBattle_ClearFrontierPassFlag() {
     sFrontierPassFlag.set(0);
 }
-pub unsafe fn RecordedBattle_SetFrontierPassFlagFromHword(flags: u16) {
+pub fn RecordedBattle_SetFrontierPassFlagFromHword(flags: u16) {
     sFrontierPassFlag.set(sFrontierPassFlag.get() | (((flags as i32 & 32768) >> 15) as u8));
 }
 pub unsafe fn RecordedBattle_GetFrontierPassFlag() -> u8 {
     sFrontierPassFlag.get()
 }
-pub unsafe fn GetBattleSceneInRecordedBattle() -> u8 {
+pub fn GetBattleSceneInRecordedBattle() -> u8 {
     sBattleScene.get()
 }
 pub fn GetTextSpeedInRecordedBattle() -> u8 {
     sTextSpeed.get()
 }
 pub unsafe fn RecordedBattle_CopyBattlerMoves() {
-    if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT {
+    if GetBattlerSide(gActiveBattler.get()) == B_SIDE_OPPONENT {
         return;
     }
-    if gBattleTypeFlags & 0x2000002 != 0 {
+    if gBattleTypeFlags.get() & 0x2000002 != 0 {
         return;
     }
     if sRecordMode.get() == B_RECORD_MODE_PLAYBACK {
         return;
     }
     for i in 0..MAX_MON_MOVES {
-        sPlayerMonMoves[gActiveBattler as i32 / 2][i] = gBattleMons[gActiveBattler].moves[i];
+        {
+            let gl_v = {
+                let gl_i0 = gActiveBattler.get();
+                crate::gl!(gBattleMons[gl_i0].moves[i])
+            };
+            let gl_i2 = gActiveBattler.get() as i32 / 2;
+            crate::gl!(sPlayerMonMoves[gl_i2][i] = gl_v)
+        };
     }
 }
 pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
     let mut j: i32 = 0;
-    if gBattleTypeFlags & 0x2000002 != 0 {
+    if gBattleTypeFlags.get() & 0x2000002 != 0 {
         return;
     }
     let mut battler: i32 = 0;
-    while battler < gBattlersCount as i32 {
+    while battler < gBattlersCount.get() as i32 {
         if GetBattlerSide(battler as u8) != B_SIDE_OPPONENT {
             if mode == B_RECORD_MODE_RECORDING {
                 j = 0;
                 while j < MAX_MON_MOVES {
-                    if gBattleMons[battler].moves[j] != sPlayerMonMoves[battler / 2][j] {
+                    if crate::gl!(gBattleMons[battler].moves[j]) != {
+                        let gl_i3 = battler / 2;
+                        crate::gl!(sPlayerMonMoves[gl_i3][j])
+                    } {
                         break;
                     }
                     j += 1;
@@ -836,7 +888,10 @@ pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                     RecordedBattle_SetBattlerAction(battler as u8, ACTION_MOVE_CHANGE);
                     for j in 0..MAX_MON_MOVES {
                         for k in 0..MAX_MON_MOVES {
-                            if gBattleMons[battler].moves[j] == sPlayerMonMoves[battler / 2][k] {
+                            if crate::gl!(gBattleMons[battler].moves[j]) == {
+                                let gl_i4 = battler / 2;
+                                crate::gl!(sPlayerMonMoves[gl_i4][k])
+                            } {
                                 RecordedBattle_SetBattlerAction(battler as u8, k as u8);
                                 break;
                             }
@@ -844,7 +899,9 @@ pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                     }
                 }
             } else {
-                if sBattleRecords[battler][sBattlerRecordSizes[battler]] == ACTION_MOVE_CHANGE {
+                if (*sBattleRecords.as_ptr())[battler][crate::gl!(sBattlerRecordSizes[battler])]
+                    == ACTION_MOVE_CHANGE
+                {
                     let mut ppBonuses: CArray<u8, 4> = zeroed();
                     let mut moveSlots: CArray<u8, 4> = zeroed();
                     let mut mimickedMoveSlots: CArray<u8, 4> = zeroed();
@@ -853,43 +910,53 @@ pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                     RecordedBattle_GetBattlerAction(battler as u8);
                     for j in 0..MAX_MON_MOVES {
                         ppBonuses[j] = shr_i32(
-                            gBattleMons[battler].ppBonuses as i32 & shl_i32(3, (j as u32) << 1),
+                            crate::gl!(gBattleMons[battler].ppBonuses) as i32
+                                & shl_i32(3, (j as u32) << 1),
                             (j as u32) << 1,
                         ) as u8;
                     }
                     for j in 0..MAX_MON_MOVES {
                         moveSlots[j] = RecordedBattle_GetBattlerAction(battler as u8);
-                        movePP.moves[j] = gBattleMons[battler].moves[moveSlots[j]];
-                        movePP.currentPP[j] = gBattleMons[battler].pp[moveSlots[j]];
+                        movePP.moves[j] = {
+                            let gl_i1 = moveSlots[j];
+                            crate::gl!(gBattleMons[battler].moves[gl_i1])
+                        };
+                        movePP.currentPP[j] = {
+                            let gl_i2 = moveSlots[j];
+                            crate::gl!(gBattleMons[battler].pp[gl_i2])
+                        };
                         movePP.maxPP[j] = ppBonuses[moveSlots[j]];
                         mimickedMoveSlots[j] = shr_u32(
-                            gDisableStructs[battler].mimickedMoves() as u32
+                            (*gDisableStructs.as_ptr())[battler].mimickedMoves() as u32
                                 & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
                                     [j],
                             j as u32,
                         ) as u8;
                     }
                     for j in 0..MAX_MON_MOVES {
-                        gBattleMons[battler].moves[j] = movePP.moves[j];
-                        gBattleMons[battler].pp[j] = movePP.currentPP[j];
+                        crate::gl!(gBattleMons[battler].moves[j] = movePP.moves[j]);
+                        crate::gl!(gBattleMons[battler].pp[j] = movePP.currentPP[j]);
                     }
-                    gBattleMons[battler].ppBonuses = 0;
-                    gDisableStructs[battler].set_mimickedMoves(0);
+                    crate::gl!(gBattleMons[battler].ppBonuses = 0);
+                    (*gDisableStructs.as_ptr())[battler].set_mimickedMoves(0);
                     j = 0;
                     while j < MAX_MON_MOVES {
-                        gBattleMons[battler].ppBonuses |=
-                            shl_i32(movePP.maxPP[j] as i32, (j as u32) << 1) as u8;
-                        gDisableStructs[battler].set_mimickedMoves(
-                            gDisableStructs[battler].mimickedMoves()
+                        crate::gl!(
+                            gBattleMons[battler].ppBonuses |=
+                                shl_i32(movePP.maxPP[j] as i32, (j as u32) << 1) as u8
+                        );
+                        (*gDisableStructs.as_ptr())[battler].set_mimickedMoves(
+                            (*gDisableStructs.as_ptr())[battler].mimickedMoves()
                                 | shl_i32(mimickedMoveSlots[j] as i32, j as u32) as u8,
                         );
                         j += 1;
                     }
-                    if gBattleMons[battler].status2 & STATUS2_TRANSFORMED == 0 {
+                    if crate::gl!(gBattleMons[battler].status2) & STATUS2_TRANSFORMED == 0 {
                         for j in 0..MAX_MON_MOVES {
                             ppBonuses[j] = shr_u32(
                                 GetMonData3(
-                                    &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                                    &raw mut (*gPlayerParty.as_ptr())
+                                        [crate::gl!(gBattlerPartyIndexes[battler])],
                                     MON_DATA_PP_BONUSES,
                                     null_mut(),
                                 ) & shl_i32(3, (j as u32) << 1) as u32,
@@ -898,12 +965,14 @@ pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                         }
                         for j in 0..MAX_MON_MOVES {
                             movePP.moves[j] = GetMonData3(
-                                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                                &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[battler])],
                                 MON_DATA_MOVE1 + moveSlots[j] as i32,
                                 null_mut(),
                             ) as u16;
                             movePP.currentPP[j] = GetMonData3(
-                                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                                &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[battler])],
                                 MON_DATA_PP1 + moveSlots[j] as i32,
                                 null_mut(),
                             ) as u8;
@@ -912,12 +981,14 @@ pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                         j = 0;
                         while j < MAX_MON_MOVES {
                             SetMonData(
-                                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                                &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[battler])],
                                 MON_DATA_MOVE1 + j,
                                 &raw mut movePP.moves[j] as *mut c_void,
                             );
                             SetMonData(
-                                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                                &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[battler])],
                                 MON_DATA_PP1 + j,
                                 &raw mut movePP.currentPP[j] as *mut c_void,
                             );
@@ -928,15 +999,19 @@ pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                             ppBonusSet |= shl_i32(movePP.maxPP[j] as i32, (j as u32) << 1) as u8;
                         }
                         SetMonData(
-                            &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                            &raw mut (*gPlayerParty.as_ptr())
+                                [crate::gl!(gBattlerPartyIndexes[battler])],
                             MON_DATA_PP_BONUSES,
                             &raw mut ppBonusSet as *mut c_void,
                         );
                     }
-                    gChosenMoveByBattler[battler] = gBattleMons[battler].moves[*(*gBattleStruct)
-                        .chosenMovePositions
-                        .as_mut_ptr()
-                        .at(battler)];
+                    crate::gl!(
+                        gChosenMoveByBattler[battler] = (*gBattleMons.as_ptr())[battler].moves
+                            [*(*crate::gl!(gBattleStruct))
+                                .chosenMovePositions
+                                .as_mut_ptr()
+                                .at(battler)]
+                    );
                 }
             }
         }
@@ -954,7 +1029,7 @@ pub fn RecordedBattle_CanStopPlayback() -> u8 {
 }
 pub unsafe fn GetRecordedBattleRecordMixFriendName(dst: *mut u8) {
     for i in 0..8i32 {
-        *dst.at(i) = sRecordMixFriendName[i];
+        *dst.at(i) = crate::gl!(sRecordMixFriendName[i]);
     }
     *dst.at(7) = EOS;
     ConvertInternationalString(dst, sRecordMixFriendLanguage.get());
@@ -971,9 +1046,9 @@ pub unsafe fn GetRecordedBattleRecordMixFriendLanguage() -> u8 {
 pub unsafe fn GetRecordedBattleApprenticeLanguage() -> u8 {
     sApprenticeLanguage.get()
 }
-pub unsafe fn RecordedBattle_SaveBattleOutcome() {
-    sBattleOutcome = gBattleOutcome;
+pub fn RecordedBattle_SaveBattleOutcome() {
+    sBattleOutcome.set(gBattleOutcome.get());
 }
 pub unsafe fn GetRecordedBattleEasyChatSpeech() -> *mut u16 {
-    sEasyChatSpeech.as_mut_ptr()
+    (*sEasyChatSpeech.as_ptr()).as_mut_ptr()
 }

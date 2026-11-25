@@ -153,7 +153,9 @@ unsafe fn cpu_fill32_zero(dest: *mut u8, size: usize) {
 #[inline]
 unsafe fn set_saved_callback(callback: MainCallback) {
     unsafe {
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_SAVED_CALLBACK)
             .cast::<MainCallback>()
             .write(callback)
@@ -162,7 +164,7 @@ unsafe fn set_saved_callback(callback: MainCallback) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn HealPlayerParty() {
-    let count = unsafe { (&raw const gPlayerPartyCount).read_volatile() } as usize;
+    let count = unsafe { (gPlayerPartyCount.as_ptr().cast_const()).read_volatile() } as usize;
 
     for i in 0..count {
         let mon = unsafe { party_mon(i) };
@@ -279,7 +281,7 @@ pub unsafe fn DoesPartyHaveEnigmaBerry() -> u8 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn CreateScriptedWildMon(species: u16, level: u8, item: u16) {
-    let mon = (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+    let mon = (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gEnemyParty;).cast_const())
         .cast::<u8>()
         .cast_mut()))
         .cast::<u8>();
@@ -309,7 +311,7 @@ pub unsafe fn ScriptSetMonMoveSlot(mon_index: u8, move_id: u16, slot: u8) {
     // past the party. No script passes that value, and the check is left as
     // the original wrote it.
     let mon_index = if mon_index as usize > PARTY_SIZE {
-        unsafe { (&raw const gPlayerPartyCount).read_volatile() }.wrapping_sub(1)
+        unsafe { (gPlayerPartyCount.as_ptr().cast_const()).read_volatile() }.wrapping_sub(1)
     } else {
         mon_index
     };
@@ -329,9 +331,10 @@ pub unsafe fn ChooseHalfPartyForBattle() {
 #[inline]
 unsafe fn report_selection_result() {
     let picked = unsafe {
-        (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
-            .cast::<[u8; 4]>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::party_menu::gSelectedOrderFromParty;)
+            .cast_const())
+        .cast::<[u8; 4]>()
+        .cast_mut()))
             .cast::<u8>()
             .read_volatile()
     };
@@ -363,9 +366,10 @@ pub unsafe fn ReducePlayerPartyToSelectedMons() {
     // leaves the rest of the scratch party blank.
     for i in 0..MAX_FRONTIER_PARTY_SIZE {
         let choice = unsafe {
-            (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
-                .cast::<[u8; 4]>()
-                .cast_mut()))
+            (&raw const (*(crate::gl!(&raw @at crate::party_menu::gSelectedOrderFromParty;)
+                .cast_const())
+            .cast::<[u8; 4]>()
+            .cast_mut()))
                 .cast::<u8>()
                 .add(i)
                 .read_volatile()

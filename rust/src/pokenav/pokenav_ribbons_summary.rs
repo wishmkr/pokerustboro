@@ -367,7 +367,7 @@ pub unsafe fn PokenavCallback_Init_RibbonsSummaryMenu() -> u32 {
     GetMonRibbons(list);
     (*list).callback = Some(RibbonsSummaryHandleInput);
     gKeyRepeatContinueDelay.set(3);
-    gKeyRepeatStartDelay = 10;
+    gKeyRepeatStartDelay.set(10);
     TRUE as u32
 }
 pub unsafe fn GetRibbonsSummaryMenuCallback() -> u32 {
@@ -379,13 +379,15 @@ pub unsafe fn FreeRibbonsSummaryScreen1() {
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_RIBBONS_SUMMARY_LIST);
 }
 pub(crate) unsafe fn RibbonsSummaryHandleInput(list: *mut Pokenav_RibbonsSummaryList) -> u32 {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 && (*(*list).monList).currIndex != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0
+        && (*(*list).monList).currIndex != 0
+    {
         (*(*list).monList).currIndex -= 1;
         (*list).selectedPos = 0;
         GetMonRibbons(list);
         return RIBBONS_SUMMARY_FUNC_SWITCH_MONS;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0
         && ((*(*list).monList).currIndex as i32) < (*(*list).monList).listCount as i32 - 1
     {
         (*(*list).monList).currIndex += 1;
@@ -393,30 +395,36 @@ pub(crate) unsafe fn RibbonsSummaryHandleInput(list: *mut Pokenav_RibbonsSummary
         GetMonRibbons(list);
         return RIBBONS_SUMMARY_FUNC_SWITCH_MONS;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         (*list).callback = Some(HandleExpandedRibbonInput);
         return RIBBONS_SUMMARY_FUNC_SELECT_RIBBON;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*list).callback = Some(ReturnToRibbonsListFromSummary);
         return RIBBONS_SUMMARY_FUNC_EXIT;
     }
     RIBBONS_SUMMARY_FUNC_NONE
 }
 pub(crate) unsafe fn HandleExpandedRibbonInput(list: *mut Pokenav_RibbonsSummaryList) -> u32 {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 && TrySelectRibbonUp(list) != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 && TrySelectRibbonUp(list) != 0 {
         return RIBBONS_SUMMARY_FUNC_EXPANDED_CURSOR_MOVE;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 && TrySelectRibbonDown(list) != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0
+        && TrySelectRibbonDown(list) != 0
+    {
         return RIBBONS_SUMMARY_FUNC_EXPANDED_CURSOR_MOVE;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 && TrySelectRibbonLeft(list) != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0
+        && TrySelectRibbonLeft(list) != 0
+    {
         return RIBBONS_SUMMARY_FUNC_EXPANDED_CURSOR_MOVE;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 && TrySelectRibbonRight(list) != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0
+        && TrySelectRibbonRight(list) != 0
+    {
         return RIBBONS_SUMMARY_FUNC_EXPANDED_CURSOR_MOVE;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*list).callback = Some(RibbonsSummaryHandleInput);
         return RIBBONS_SUMMARY_FUNC_EXPANDED_CANCEL;
     }
@@ -507,7 +515,10 @@ unsafe fn GetMonNicknameLevelGender(nick: *mut u8, level: *mut u8, gender: *mut 
     let mons: *mut PokenavMonList = (*list).monList;
     let monInfo: *mut PokenavMonListItem = &raw mut (*mons).monData[(*mons).currIndex];
     if (*monInfo).boxId == TOTAL_BOXES_COUNT {
-        let mon: *mut Pokemon = &raw mut gPlayerParty[(*monInfo).monId];
+        let mon: *mut Pokemon = {
+            let gl_i0 = (*monInfo).monId;
+            crate::gl!(&raw gPlayerParty[gl_i0])
+        };
         GetMonData3(mon, MON_DATA_NICKNAME, nick);
         *level = GetLevelFromMonExp(mon);
         *gender = GetMonGender(mon);
@@ -525,7 +536,10 @@ unsafe fn GetMonSpeciesPersonalityOtId(species: *mut u16, personality: *mut u32,
     let mons: *mut PokenavMonList = (*list).monList;
     let monInfo: *mut PokenavMonListItem = &raw mut (*mons).monData[(*mons).currIndex];
     if (*monInfo).boxId == TOTAL_BOXES_COUNT {
-        let mon: *mut Pokemon = &raw mut gPlayerParty[(*monInfo).monId];
+        let mon: *mut Pokemon = {
+            let gl_i1 = (*monInfo).monId;
+            crate::gl!(&raw gPlayerParty[gl_i1])
+        };
         *species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
         *personality = GetMonData2(mon, MON_DATA_PERSONALITY);
         *otId = GetMonData2(mon, MON_DATA_OT_ID);
@@ -543,7 +557,10 @@ unsafe fn GetCurrMonRibbonCount() -> u32 {
     let monInfo: *mut PokenavMonListItem = &raw mut (*mons).monData[(*mons).currIndex];
     if (*monInfo).boxId == TOTAL_BOXES_COUNT {
         return GetMonData2(
-            &raw mut gPlayerParty[(*monInfo).monId],
+            {
+                let gl_i2 = (*monInfo).monId;
+                crate::gl!(&raw gPlayerParty[gl_i2])
+            },
             MON_DATA_RIBBON_COUNT,
         );
     } else {
@@ -559,7 +576,13 @@ unsafe fn GetMonRibbons(list: *mut Pokenav_RibbonsSummaryList) {
     let mons: *mut PokenavMonList = (*list).monList;
     let monInfo: *mut PokenavMonListItem = &raw mut (*mons).monData[(*mons).currIndex];
     if (*monInfo).boxId == TOTAL_BOXES_COUNT {
-        ribbonFlags = GetMonData2(&raw mut gPlayerParty[(*monInfo).monId], MON_DATA_RIBBONS);
+        ribbonFlags = GetMonData2(
+            {
+                let gl_i3 = (*monInfo).monId;
+                crate::gl!(&raw gPlayerParty[gl_i3])
+            },
+            MON_DATA_RIBBONS,
+        );
     } else {
         ribbonFlags = GetBoxMonDataAt((*monInfo).boxId, (*monInfo).monId, MON_DATA_RIBBONS);
     }
@@ -976,7 +999,8 @@ unsafe fn PrintRibbonNameAndDescription(menu: *mut Pokenav_RibbonsSummaryMenu) {
             );
         }
     } else {
-        ribbonId = (*gSaveBlock1Ptr).giftRibbons[ribbonId - FIRST_GIFT_RIBBON as u32] as u32;
+        ribbonId =
+            (*crate::gl!(gSaveBlock1Ptr)).giftRibbons[ribbonId - FIRST_GIFT_RIBBON as u32] as u32;
         if ribbonId == 0 {
             return;
         }
@@ -1006,11 +1030,15 @@ unsafe fn PrintRibbbonsSummaryMonInfo(menu: *mut Pokenav_RibbonsSummaryMenu) {
     let mut gender: u8 = 0;
     let windowId: u16 = (*menu).nameWindowId;
     FillWindowPixelBuffer(windowId as u8, 17);
-    GetMonNicknameLevelGender(gStringVar3.as_mut_ptr(), &raw mut level, &raw mut gender);
+    GetMonNicknameLevelGender(
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        &raw mut level,
+        &raw mut gender,
+    );
     AddTextPrinterParameterized(
         windowId as u8,
         FONT_NORMAL,
-        gStringVar3.as_mut_ptr(),
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
         0,
         1,
         TEXT_SKIP_DRAW,
@@ -1115,12 +1143,15 @@ unsafe fn DrawRibbonsMonFrontPic(x: i32, y: i32) -> u16 {
         15,
         TAG_NONE,
     );
-    gSprites[spriteId].oam.set_priority(0);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
     spriteId
 }
 unsafe fn SlideMonSpriteOff(menu: *mut Pokenav_RibbonsSummaryMenu) {
     StartMonSpriteSlide(
-        &raw mut gSprites[(*menu).monSpriteId],
+        {
+            let gl_i4 = (*menu).monSpriteId;
+            crate::gl!(&raw gSprites[gl_i4])
+        },
         MON_SPRITE_X_ON,
         MON_SPRITE_X_OFF,
         6,
@@ -1130,15 +1161,20 @@ unsafe fn SlideMonSpriteOn(menu: *mut Pokenav_RibbonsSummaryMenu) {
     FreeAndDestroyMonPicSprite((*menu).monSpriteId);
     (*menu).monSpriteId = DrawRibbonsMonFrontPic(MON_SPRITE_X_OFF, MON_SPRITE_Y);
     StartMonSpriteSlide(
-        &raw mut gSprites[(*menu).monSpriteId],
+        {
+            let gl_i5 = (*menu).monSpriteId;
+            crate::gl!(&raw gSprites[gl_i5])
+        },
         MON_SPRITE_X_OFF,
         MON_SPRITE_X_ON,
         6,
     );
 }
 unsafe fn IsMonSpriteAnimating(menu: *mut Pokenav_RibbonsSummaryMenu) -> u32 {
-    (gSprites[(*menu).monSpriteId].callback != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite)))
-        as u32
+    (({
+        let gl_i6 = (*menu).monSpriteId;
+        crate::gl!(gSprites[gl_i6].callback)
+    }) != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))) as u32
 }
 unsafe fn StartMonSpriteSlide(sprite: *mut Sprite, startX: i32, destX: i32, time: i32) {
     let delta: u32 = destX as u32 - startX as u32;
@@ -1228,7 +1264,7 @@ unsafe fn CreateBigRibbonSprite(menu: *mut Pokenav_RibbonsSummaryMenu) {
         0,
         0,
     );
-    (*menu).bigRibbonSprite = &raw mut gSprites[spriteId];
+    (*menu).bigRibbonSprite = crate::gl!(&raw gSprites[spriteId]);
     (*(*menu).bigRibbonSprite).set_invisible(TRUE as u16);
 }
 unsafe fn UpdateAndZoomInSelectedRibbon(menu: *mut Pokenav_RibbonsSummaryMenu) {

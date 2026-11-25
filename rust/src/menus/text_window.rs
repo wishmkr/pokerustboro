@@ -101,7 +101,11 @@ fn frame(id: usize) -> &'static TilesPal {
 }
 
 unsafe fn user_frame_type() -> usize {
-    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
+    let sb2 = unsafe {
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     let options = unsafe { sb2.add(SB2_OPTIONS).cast::<u16>().read() };
     usize::from((options >> 3) & 0x1f)
 }

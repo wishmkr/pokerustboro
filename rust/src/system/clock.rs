@@ -101,7 +101,7 @@ fn local_time() -> Time {
     // SAFETY: the RTC code is the only writer of gLocalTime.
     unsafe {
         RtcCalcLocalTime();
-        *(&raw const gLocalTime)
+        *(crate::gl!(&raw gLocalTime).cast_const())
     }
 }
 

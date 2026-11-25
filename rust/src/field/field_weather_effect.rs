@@ -60,7 +60,7 @@ unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -191,10 +191,10 @@ static sWeatherCycleRoute119: Table<CArray<u8, 4>> =
 static sWeatherCycleRoute123: Table<CArray<u8, 4>> =
     Table((&raw const crate::data::field_weather_effect::sWeatherCycleRoute123).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurrentAbnormalWeather: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sUnusedWeatherRelated: crate::global::Global<u16> = crate::global::Global::new(0);
 
 pub unsafe fn Clouds_InitVars() {
@@ -296,7 +296,7 @@ pub(crate) unsafe fn CreateCloudSprites() {
             (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
                 .sprites
                 .s1
-                .cloudSprites[i] = &raw mut gSprites[spriteId];
+                .cloudSprites[i] = crate::gl!(&raw gSprites[spriteId]);
             sprite = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
                 .cast::<*mut Weather>()))
             .sprites
@@ -631,8 +631,8 @@ pub(crate) unsafe fn UpdateRainSprite(sprite: *mut Sprite) {
                     + 1,
             );
             (*sprite).data[4] = 1;
-            (*sprite).x -= gSpriteCoordOffsetX;
-            (*sprite).y -= gSpriteCoordOffsetY;
+            (*sprite).x -= gSpriteCoordOffsetX.get();
+            (*sprite).y -= gSpriteCoordOffsetY.get();
             (*sprite).set_coordOffsetEnabled(TRUE as u16);
         }
     } else if (*sprite).animEnded() != 0 {
@@ -708,18 +708,31 @@ unsafe fn CreateRainSprite() -> u8 {
         78,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[tActive] = FALSE as i16;
-        gSprites[spriteId].data[tRandom] = spriteIndex as i16 * 145;
-        while gSprites[spriteId].data[tRandom] >= 600 {
-            gSprites[spriteId].data[tRandom] -= 600;
+        {
+            let gl_i0 = tActive;
+            crate::gl!(gSprites[spriteId].data[gl_i0] = FALSE as i16)
+        };
+        {
+            let gl_i1 = tRandom;
+            crate::gl!(gSprites[spriteId].data[gl_i1] = spriteIndex as i16 * 145)
+        };
+        while ({
+            let gl_i2 = tRandom;
+            crate::gl!(gSprites[spriteId].data[gl_i2])
+        }) >= 600
+        {
+            {
+                let gl_i3 = tRandom;
+                crate::gl!(gSprites[spriteId].data[gl_i3] -= 600)
+            };
         }
-        StartRainSpriteFall(&raw mut gSprites[spriteId]);
-        InitRainSpriteMovement(&raw mut gSprites[spriteId], spriteIndex as u16 * 9);
-        gSprites[spriteId].set_invisible(TRUE as u16);
+        StartRainSpriteFall(crate::gl!(&raw gSprites[spriteId]));
+        InitRainSpriteMovement(crate::gl!(&raw gSprites[spriteId]), spriteIndex as u16 * 9);
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .sprites
             .s1
-            .rainSprites[spriteIndex] = &raw mut gSprites[spriteId];
+            .rainSprites[spriteIndex] = crate::gl!(&raw gSprites[spriteId]);
     } else {
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .sprites
@@ -962,11 +975,14 @@ unsafe fn CreateSnowflakeSprite() -> u8 {
     if spriteId == MAX_SPRITES {
         return FALSE;
     }
-    gSprites[spriteId].data[tSnowflakeId] =
-        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+    {
+        let gl_v = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .snowflakeSpriteCount as i16;
-    InitSnowflakeSpriteMovement(&raw mut gSprites[spriteId]);
-    gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        let gl_i4 = tSnowflakeId;
+        crate::gl!(gSprites[spriteId].data[gl_i4] = gl_v)
+    };
+    InitSnowflakeSpriteMovement(crate::gl!(&raw gSprites[spriteId]));
+    (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
         .sprites
         .s1
@@ -976,7 +992,7 @@ unsafe fn CreateSnowflakeSprite() -> u8 {
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .snowflakeSpriteCount += 1;
         t1
-    }] = &raw mut gSprites[spriteId];
+    }] = crate::gl!(&raw gSprites[spriteId]);
     TRUE
 }
 unsafe fn DestroySnowflakeSprite() -> u8 {
@@ -1003,8 +1019,8 @@ unsafe fn DestroySnowflakeSprite() -> u8 {
 unsafe fn InitSnowflakeSpriteMovement(sprite: *mut Sprite) {
     let x: u16 =
         (((*sprite).data[tSnowflakeId] as u16 * 5) & 7) * 30 + (Random() as i32 % 30) as u16;
-    (*sprite).y = -3 - (gSpriteCoordOffsetY + (*sprite).centerToCornerVecY as i16);
-    (*sprite).x = x as i16 - (gSpriteCoordOffsetX + (*sprite).centerToCornerVecX as i16);
+    (*sprite).y = -3 - (gSpriteCoordOffsetY.get() + (*sprite).centerToCornerVecY as i16);
+    (*sprite).x = x as i16 - (gSpriteCoordOffsetX.get() + (*sprite).centerToCornerVecX as i16);
     (*sprite).data[0] = (*sprite).y * 128;
     (*sprite).x2 = 0;
     let rand: u16 = Random();
@@ -1023,7 +1039,7 @@ pub(crate) unsafe fn WaitSnowflakeSprite(sprite: *mut Sprite) {
     {
         (*sprite).set_invisible(FALSE as u16);
         (*sprite).callback = Some(UpdateSnowflakeSprite);
-        (*sprite).y = 250 - (gSpriteCoordOffsetY + (*sprite).centerToCornerVecY as i16);
+        (*sprite).y = 250 - (gSpriteCoordOffsetY.get() + (*sprite).centerToCornerVecY as i16);
         (*sprite).data[0] = (*sprite).y * 128;
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .snowflakeTimer = 0;
@@ -1038,18 +1054,18 @@ pub(crate) unsafe fn UpdateSnowflakeSprite(sprite: *mut Sprite) {
     (*sprite).data[3] &= 0xFF;
     (*sprite).x2 =
         (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[(*sprite).data[3]] / 64;
-    x = ((*sprite).x + (*sprite).centerToCornerVecX as i16 + gSpriteCoordOffsetX) & 0x1FF;
+    x = ((*sprite).x + (*sprite).centerToCornerVecX as i16 + gSpriteCoordOffsetX.get()) & 0x1FF;
     if x as i32 & 0x100 != 0 {
         x |= -256;
     }
     if x < -3 {
-        (*sprite).x = 242 - (gSpriteCoordOffsetX + (*sprite).centerToCornerVecX as i16);
+        (*sprite).x = 242 - (gSpriteCoordOffsetX.get() + (*sprite).centerToCornerVecX as i16);
     } else if x > 242 {
-        (*sprite).x = -3 - (gSpriteCoordOffsetX + (*sprite).centerToCornerVecX as i16);
+        (*sprite).x = -3 - (gSpriteCoordOffsetX.get() + (*sprite).centerToCornerVecX as i16);
     }
-    y = ((*sprite).y + (*sprite).centerToCornerVecY as i16 + gSpriteCoordOffsetY) & 0xFF;
+    y = ((*sprite).y + (*sprite).centerToCornerVecY as i16 + gSpriteCoordOffsetY.get()) & 0xFF;
     if y > 163 && y < 171 {
-        (*sprite).y = 250 - (gSpriteCoordOffsetY + (*sprite).centerToCornerVecY as i16);
+        (*sprite).y = 250 - (gSpriteCoordOffsetY.get() + (*sprite).centerToCornerVecY as i16);
         (*sprite).data[0] = (*sprite).y * 128;
         (*sprite).data[tFallCounter] = 0;
         (*sprite).data[tFallDuration] = 220;
@@ -1473,7 +1489,7 @@ pub unsafe fn FogHorizontal_InitAll() {
 }
 pub unsafe fn FogHorizontal_Main() {
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
-        .fogHScrollPosX = (gSpriteCoordOffsetX as u16
+        .fogHScrollPosX = (gSpriteCoordOffsetX.get() as u16
         - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .fogHScrollOffset)
         & 0xFF;
@@ -1515,7 +1531,7 @@ pub unsafe fn FogHorizontal_Main() {
 }
 pub unsafe fn FogHorizontal_Finish() -> u8 {
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
-        .fogHScrollPosX = (gSpriteCoordOffsetX as u16
+        .fogHScrollPosX = (gSpriteCoordOffsetX.get() as u16
         - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .fogHScrollOffset)
         & 0xFF;
@@ -1558,7 +1574,7 @@ pub unsafe fn FogHorizontal_Finish() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn FogHorizontalSpriteCallback(sprite: *mut Sprite) {
-    (*sprite).y2 = gSpriteCoordOffsetY as u8 as i16;
+    (*sprite).y2 = gSpriteCoordOffsetY.get() as u8 as i16;
     (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
         .fogHScrollPosX as i16
         + 32
@@ -1592,7 +1608,7 @@ unsafe fn CreateFogHorizontalSprites() {
                 0xFF,
             );
             if spriteId != MAX_SPRITES {
-                sprite = &raw mut gSprites[spriteId];
+                sprite = crate::gl!(&raw gSprites[spriteId]);
                 (*sprite).data[0] = (i as i32 % 5) as i16;
                 (*sprite).x = (i as i32 % 5) as i16 * 64 + 32;
                 (*sprite).y = (i as i32 / 5) as i16 * 64 + 32;
@@ -1666,7 +1682,7 @@ pub unsafe fn Ash_InitAll() {
 }
 pub unsafe fn Ash_Main() {
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
-        .ashBaseSpritesX = gSpriteCoordOffsetX as u16 & 0x1FF;
+        .ashBaseSpritesX = gSpriteCoordOffsetX.get() as u16 & 0x1FF;
     while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
         .ashBaseSpritesX
         >= DISPLAY_WIDTH
@@ -1748,7 +1764,7 @@ unsafe fn CreateAshSprites() {
         for i in 0..NUM_ASH_SPRITES {
             spriteId = CreateSpriteAtEnd((&raw const *sAshSpriteTemplate).cast_mut(), 0, 0, 0x4E);
             if spriteId != MAX_SPRITES {
-                sprite = &raw mut gSprites[spriteId];
+                sprite = crate::gl!(&raw gSprites[spriteId]);
                 (*sprite).data[tCounterY] = 0;
                 (*sprite).data[2] = (i as i32 % 5) as u8 as i16;
                 (*sprite).data[3] = (i as i32 / 5) as u8 as i16;
@@ -1803,7 +1819,7 @@ pub(crate) unsafe fn UpdateAshSprite(sprite: *mut Sprite) {
         (*sprite).data[tCounterY] = 0;
         (*sprite).data[tOffsetY] += 1;
     }
-    (*sprite).y = gSpriteCoordOffsetY + (*sprite).data[tOffsetY];
+    (*sprite).y = gSpriteCoordOffsetY.get() + (*sprite).data[tOffsetY];
     (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
         .ashBaseSpritesX as i16
         + 32
@@ -1948,12 +1964,12 @@ unsafe fn UpdateFogDiagonalMovement() {
             .fogDScrollYCounter = 0;
     }
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
-        .fogDBaseSpritesX = (gSpriteCoordOffsetX as u16
+        .fogDBaseSpritesX = (gSpriteCoordOffsetX.get() as u16
         - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .fogDXOffset)
         & 0xFF;
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).fogDPosY =
-        gSpriteCoordOffsetY as u16
+        gSpriteCoordOffsetY.get() as u16
             + (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
                 .fogDYOffset;
 }
@@ -1975,7 +1991,7 @@ unsafe fn CreateFogDiagonalSprites() {
                 0xFF,
             );
             if spriteId != MAX_SPRITES {
-                sprite = &raw mut gSprites[spriteId];
+                sprite = crate::gl!(&raw gSprites[spriteId]);
                 (*sprite).data[0] = (i as i32 % 5) as i16;
                 (*sprite).data[1] = (i as i32 / 5) as i16;
                 (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
@@ -2166,13 +2182,13 @@ unsafe fn UpdateSandstormMovement() {
         [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .sandstormWaveIndex] as u32;
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
-        .sandstormBaseSpritesX = (gSpriteCoordOffsetX as u16
+        .sandstormBaseSpritesX = (gSpriteCoordOffsetX.get() as u16
         + ((*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .sandstormXOffset
             >> 8) as u16)
         & 0xFF;
     (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
-        .sandstormPosY = gSpriteCoordOffsetY as u16
+        .sandstormPosY = gSpriteCoordOffsetY.get() as u16
         + ((*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .sandstormYOffset
             >> 8) as u16;
@@ -2245,7 +2261,7 @@ unsafe fn CreateSandstormSprites() {
                 (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
                     .sprites
                     .s2
-                    .sandstormSprites1[i] = &raw mut gSprites[spriteId];
+                    .sandstormSprites1[i] = crate::gl!(&raw gSprites[spriteId]);
                 (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
                     .cast::<*mut Weather>()))
                 .sprites
@@ -2286,7 +2302,7 @@ unsafe fn CreateSwirlSandstormSprites() {
                 (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
                     .sprites
                     .s2
-                    .sandstormSprites2[i] = &raw mut gSprites[spriteId];
+                    .sandstormSprites2[i] = crate::gl!(&raw gSprites[spriteId]);
                 (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
                     .cast::<*mut Weather>()))
                 .sprites
@@ -2500,14 +2516,20 @@ pub unsafe fn Bubbles_Finish() -> u8 {
 }
 unsafe fn CreateBubbleSprite(coordsIndex: u16) {
     let x: i16 = sBubbleStartCoords[coordsIndex][0];
-    let y: i16 = sBubbleStartCoords[coordsIndex][1] - gSpriteCoordOffsetY;
+    let y: i16 = sBubbleStartCoords[coordsIndex][1] - gSpriteCoordOffsetY.get();
     let spriteId: u8 = CreateSpriteAtEnd((&raw const *sBubbleSpriteTemplate).cast_mut(), x, y, 0);
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].oam.set_priority(1);
-        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
-        gSprites[spriteId].data[tScrollXCounter] = 0;
-        gSprites[spriteId].data[tScrollXDir] = 0;
-        gSprites[spriteId].data[2] = 0;
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
+        (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        {
+            let gl_i5 = tScrollXCounter;
+            crate::gl!(gSprites[spriteId].data[gl_i5] = 0)
+        };
+        {
+            let gl_i6 = tScrollXDir;
+            crate::gl!(gSprites[spriteId].data[gl_i6] = 0)
+        };
+        crate::gl!(gSprites[spriteId].data[2] = 0);
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .bubblesSpriteCount += 1;
     }
@@ -2518,8 +2540,8 @@ unsafe fn DestroyBubbleSprites() {
         != 0
     {
         for i in 0..(MAX_SPRITES as u16) {
-            if gSprites[i].template == (&raw const *sBubbleSpriteTemplate).cast_mut() {
-                DestroySprite(&raw mut gSprites[i]);
+            if crate::gl!(gSprites[i].template) == (&raw const *sBubbleSpriteTemplate).cast_mut() {
+                DestroySprite(crate::gl!(&raw gSprites[i]));
             }
         }
         FreeSpriteTilesByTag(GFXTAG_BUBBLE);
@@ -2613,17 +2635,17 @@ unsafe fn CreateAbnormalWeatherTask() {
     }
 }
 pub unsafe fn SetSavedWeather(weather: u32) {
-    let oldWeather: u8 = (*gSaveBlock1Ptr).weather;
-    (*gSaveBlock1Ptr).weather = TranslateWeatherNum(weather as u8);
-    UpdateRainCounter((*gSaveBlock1Ptr).weather, oldWeather);
+    let oldWeather: u8 = (*crate::gl!(gSaveBlock1Ptr)).weather;
+    (*crate::gl!(gSaveBlock1Ptr)).weather = TranslateWeatherNum(weather as u8);
+    UpdateRainCounter((*crate::gl!(gSaveBlock1Ptr)).weather, oldWeather);
 }
 pub unsafe fn GetSavedWeather() -> u8 {
-    (*gSaveBlock1Ptr).weather
+    (*crate::gl!(gSaveBlock1Ptr)).weather
 }
 pub unsafe fn SetSavedWeatherFromCurrMapHeader() {
-    let oldWeather: u8 = (*gSaveBlock1Ptr).weather;
-    (*gSaveBlock1Ptr).weather = TranslateWeatherNum(gMapHeader.weather);
-    UpdateRainCounter((*gSaveBlock1Ptr).weather, oldWeather);
+    let oldWeather: u8 = (*crate::gl!(gSaveBlock1Ptr)).weather;
+    (*crate::gl!(gSaveBlock1Ptr)).weather = TranslateWeatherNum(crate::gl!(gMapHeader.weather));
+    UpdateRainCounter((*crate::gl!(gSaveBlock1Ptr)).weather, oldWeather);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetWeather(weather: u32) {
@@ -2715,10 +2737,10 @@ unsafe fn TranslateWeatherNum(weather: u8) -> u8 {
             return WEATHER_ABNORMAL;
         }
         20 => {
-            return sWeatherCycleRoute119[(*gSaveBlock1Ptr).weatherCycleStage];
+            return sWeatherCycleRoute119[(*crate::gl!(gSaveBlock1Ptr)).weatherCycleStage];
         }
         21 => {
-            return sWeatherCycleRoute123[(*gSaveBlock1Ptr).weatherCycleStage];
+            return sWeatherCycleRoute123[(*crate::gl!(gSaveBlock1Ptr)).weatherCycleStage];
         }
         _ => {
             return WEATHER_NONE;
@@ -2731,9 +2753,9 @@ unsafe fn TranslateWeatherNum(weather: u8) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn UpdateWeatherPerDay(increment: u16) {
-    let mut weatherStage: u16 = (*gSaveBlock1Ptr).weatherCycleStage as u16 + increment;
+    let mut weatherStage: u16 = (*crate::gl!(gSaveBlock1Ptr)).weatherCycleStage as u16 + increment;
     weatherStage = (weatherStage as i32 % 4) as u16;
-    (*gSaveBlock1Ptr).weatherCycleStage = weatherStage as u8;
+    (*crate::gl!(gSaveBlock1Ptr)).weatherCycleStage = weatherStage as u8;
 }
 unsafe fn UpdateRainCounter(newWeather: u8, oldWeather: u8) {
     if newWeather != oldWeather

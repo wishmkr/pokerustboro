@@ -110,11 +110,7 @@ unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -258,20 +254,20 @@ fn CheckLinkErrored(taskId: u8) -> u32 {
     }
     FALSE as u32
 }
-unsafe fn CheckLinkCanceledBeforeConnection(taskId: u8) -> u32 {
-    if gMain.newKeys as i32 & B_BUTTON != 0 && IsLinkConnectionEstablished() == FALSE {
-        gLinkType = 0;
+fn CheckLinkCanceledBeforeConnection(taskId: u8) -> u32 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 && IsLinkConnectionEstablished() == FALSE {
+        gLinkType.set(0);
         task_set_func(taskId, Some(Task_LinkupFailed));
         return TRUE as u32;
     }
     FALSE as u32
 }
-unsafe fn CheckLinkCanceled(taskId: u8) -> u32 {
+fn CheckLinkCanceled(taskId: u8) -> u32 {
     if IsLinkConnectionEstablished() != 0 {
         SetSuppressLinkErrorMessage(TRUE);
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
-        gLinkType = 0;
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
+        gLinkType.set(0);
         task_set_func(taskId, Some(Task_LinkupFailed));
         return TRUE as u32;
     }
@@ -353,7 +349,7 @@ pub(crate) unsafe fn Task_LinkupAwaitConfirmation(taskId: u8) {
         return;
     }
     UpdateLinkPlayerCountDisplay(taskId, linkPlayerCount as u8);
-    if gMain.newKeys as i32 & A_BUTTON == 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON == 0 {
         return;
     }
     if linkPlayerCount < *data.at(1) as i32 {
@@ -389,14 +385,14 @@ pub(crate) unsafe fn Task_LinkupTryConfirmation(taskId: u8) {
                     .cast_mut(),
             );
             task_set_func(taskId, Some(Task_LinkupConfirmWhenReady));
-        } else if gMain.heldKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.heldKeys) as i32 & B_BUTTON != 0 {
             ShowFieldAutoScrollMessage(
                 (*crate::asmdata::gText_ConfirmLinkWhenPlayersReady.cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
             );
             task_set_func(taskId, Some(Task_LinkupConfirmWhenReady));
-        } else if gMain.heldKeys as i32 & A_BUTTON != 0 {
+        } else if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
             PlaySE(SE_SELECT);
             CheckShouldAdvanceLinkState();
             task_set_func(taskId, Some(Task_LinkupConfirm));
@@ -444,18 +440,24 @@ pub(crate) unsafe fn Task_LinkupExchangeDataWithLeader(taskId: u8) {
         HideFieldMessageBox();
         task_set_func(taskId, Some(Task_StopLinkup));
     } else {
-        gFieldLinkPlayerCount = GetLinkPlayerCount_2();
-        gLocalLinkPlayerId = GetMultiplayerId();
-        SaveLinkPlayers(gFieldLinkPlayerCount);
-        card = gBlockSendBuffer.as_mut_ptr() as *mut TrainerCard;
+        gFieldLinkPlayerCount.set(GetLinkPlayerCount_2());
+        gLocalLinkPlayerId.set(GetMultiplayerId());
+        SaveLinkPlayers(gFieldLinkPlayerCount.get());
+        card = (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut TrainerCard;
         TrainerCard_GenerateCardForLinkPlayer(card);
         (*card).monSpecies[0] = GetMonData3(
-            &raw mut gPlayerParty[gSelectedOrderFromParty[0] as i32 - 1],
+            {
+                let gl_i0 = crate::gl!(gSelectedOrderFromParty[0]) as i32 - 1;
+                crate::gl!(&raw gPlayerParty[gl_i0])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
         (*card).monSpecies[1] = GetMonData3(
-            &raw mut gPlayerParty[gSelectedOrderFromParty[1] as i32 - 1],
+            {
+                let gl_i1 = crate::gl!(gSelectedOrderFromParty[1]) as i32 - 1;
+                crate::gl!(&raw gPlayerParty[gl_i1])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
@@ -488,18 +490,24 @@ pub(crate) unsafe fn Task_LinkupCheckStatusAfterConfirm(taskId: u8) {
         HideFieldMessageBox();
         task_set_func(taskId, Some(Task_StopLinkup));
     } else {
-        gFieldLinkPlayerCount = GetLinkPlayerCount_2();
-        gLocalLinkPlayerId = GetMultiplayerId();
-        SaveLinkPlayers(gFieldLinkPlayerCount);
-        card = gBlockSendBuffer.as_mut_ptr() as *mut TrainerCard;
+        gFieldLinkPlayerCount.set(GetLinkPlayerCount_2());
+        gLocalLinkPlayerId.set(GetMultiplayerId());
+        SaveLinkPlayers(gFieldLinkPlayerCount.get());
+        card = (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut TrainerCard;
         TrainerCard_GenerateCardForLinkPlayer(card);
         (*card).monSpecies[0] = GetMonData3(
-            &raw mut gPlayerParty[gSelectedOrderFromParty[0] as i32 - 1],
+            {
+                let gl_i2 = crate::gl!(gSelectedOrderFromParty[0]) as i32 - 1;
+                crate::gl!(&raw gPlayerParty[gl_i2])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
         (*card).monSpecies[1] = GetMonData3(
-            &raw mut gPlayerParty[gSelectedOrderFromParty[1] as i32 - 1],
+            {
+                let gl_i3 = crate::gl!(gSelectedOrderFromParty[1]) as i32 - 1;
+                crate::gl!(&raw gPlayerParty[gl_i3])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
@@ -511,7 +519,7 @@ pub unsafe fn AreBattleTowerLinkSpeciesSame(speciesList1: *mut u16, speciesList2
     let mut haveSameSpecies: u32 = FALSE as u32;
     let mut numSameSpecies: i32 = 0;
     gStringVar1[0] = EOS;
-    gStringVar2[0] = EOS;
+    crate::gl!(gStringVar2[0] = EOS);
     for i in 0..FRONTIER_MULTI_PARTY_SIZE {
         for j in 0..FRONTIER_MULTI_PARTY_SIZE {
             if *speciesList1.at(i) == *speciesList2.at(j) {
@@ -530,7 +538,7 @@ pub unsafe fn AreBattleTowerLinkSpeciesSame(speciesList1: *mut u16, speciesList2
                 }
                 if numSameSpecies == 1 {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
                             CArray<u8, 11>,
                             0,
@@ -549,9 +557,11 @@ pub unsafe fn AreBattleTowerLinkSpeciesSame(speciesList1: *mut u16, speciesList2
     haveSameSpecies
 }
 unsafe fn FinishLinkup(linkupStatus: *mut u16, taskId: u32) {
-    let trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
+    let trainerCards: *mut TrainerCard = (*gTrainerCards.as_ptr()).as_mut_ptr();
     if *linkupStatus == LINKUP_SUCCESS {
-        if gLinkType == LINKTYPE_BATTLE_TOWER_50 || gLinkType == LINKTYPE_BATTLE_TOWER_OPEN {
+        if gLinkType.get() == LINKTYPE_BATTLE_TOWER_50
+            || gLinkType.get() == LINKTYPE_BATTLE_TOWER_OPEN
+        {
             if AreBattleTowerLinkSpeciesSame(
                 (*trainerCards).monSpecies.as_mut_ptr(),
                 (*trainerCards.at(1)).monSpecies.as_mut_ptr(),
@@ -585,9 +595,9 @@ pub(crate) unsafe fn Task_LinkupAwaitTrainerCardData(taskId: u8) {
     let mut index: u8 = 0;
     while index < GetLinkPlayerCount() {
         CopyTrainerCardData(
-            &raw mut gTrainerCards[index],
-            gBlockRecvBuffer[index].as_mut_ptr() as *mut TrainerCard,
-            gLinkPlayers[index].version as u8,
+            crate::gl!(&raw gTrainerCards[index]),
+            (*gBlockRecvBuffer.as_ptr())[index].as_mut_ptr() as *mut TrainerCard,
+            crate::gl!(gLinkPlayers[index].version) as u8,
         );
         index += 1;
     }
@@ -596,7 +606,7 @@ pub(crate) unsafe fn Task_LinkupAwaitTrainerCardData(taskId: u8) {
     FinishLinkup(&raw mut gSpecialVar_Result, taskId as u32);
 }
 pub(crate) unsafe fn Task_StopLinkup(taskId: u8) {
-    if gReceivedRemoteLinkPlayers == 0 {
+    if gReceivedRemoteLinkPlayers.get() == 0 {
         ClearLinkPlayerCountWindow(task_get(taskId, tWindowId) as u16);
         ScriptContext_Enable();
         RemoveWindow(task_get(taskId, tWindowId) as u8);
@@ -637,23 +647,23 @@ pub unsafe fn TryBattleLinkup() {
     {
         USING_SINGLE_BATTLE => {
             minPlayers = 2;
-            gLinkType = LINKTYPE_SINGLE_BATTLE;
+            gLinkType.set(LINKTYPE_SINGLE_BATTLE);
         }
         USING_DOUBLE_BATTLE => {
             minPlayers = 2;
-            gLinkType = LINKTYPE_DOUBLE_BATTLE;
+            gLinkType.set(LINKTYPE_DOUBLE_BATTLE);
         }
         USING_MULTI_BATTLE => {
             minPlayers = 4;
             maxPlayers = 4;
-            gLinkType = LINKTYPE_MULTI_BATTLE;
+            gLinkType.set(LINKTYPE_MULTI_BATTLE);
         }
         USING_BATTLE_TOWER => {
             minPlayers = 2;
-            if (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_50 {
-                gLinkType = LINKTYPE_BATTLE_TOWER_50;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() == FRONTIER_LVL_50 {
+                gLinkType.set(LINKTYPE_BATTLE_TOWER_50);
             } else {
-                gLinkType = LINKTYPE_BATTLE_TOWER_OPEN;
+                gLinkType.set(LINKTYPE_BATTLE_TOWER_OPEN);
             }
         }
         _ => {}
@@ -662,15 +672,15 @@ pub unsafe fn TryBattleLinkup() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryTradeLinkup() {
-    gLinkType = LINKTYPE_TRADE_SETUP;
-    gBattleTypeFlags = 0;
+    gLinkType.set(LINKTYPE_TRADE_SETUP);
+    gBattleTypeFlags.set(0);
     CreateLinkupTask(2, 2);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryRecordMixLinkup() {
     gSpecialVar_Result = LINKUP_ONGOING;
-    gLinkType = LINKTYPE_RECORD_MIX_BEFORE;
-    gBattleTypeFlags = 0;
+    gLinkType.set(LINKTYPE_RECORD_MIX_BEFORE);
+    gBattleTypeFlags.set(0);
     CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
@@ -691,8 +701,8 @@ pub(crate) unsafe fn Task_ValidateMixingGameLanguage(taskId: u8) {
                 let mut isJapaneseEmeraldLinked: u32 = FALSE as u32;
                 playerCount = GetLinkPlayerCount() as i32;
                 for i in 0..playerCount {
-                    let version: u32 = gLinkPlayers[i].version as u8 as u32;
-                    let language: u32 = gLinkPlayers[i].language as u32;
+                    let version: u32 = crate::gl!(gLinkPlayers[i].version) as u8 as u32;
+                    let language: u32 = crate::gl!(gLinkPlayers[i].language) as u32;
                     if version == VERSION_RUBY as u32 || version == VERSION_SAPPHIRE as u32 {
                         if language == LANGUAGE_JAPANESE as u32 {
                             mixingForeignGames = TRUE as u32;
@@ -719,7 +729,7 @@ pub(crate) unsafe fn Task_ValidateMixingGameLanguage(taskId: u8) {
             ScriptContext_Enable();
             DestroyTask(taskId);
         }
-        1 if gReceivedRemoteLinkPlayers == 0 => {
+        1 if gReceivedRemoteLinkPlayers.get() == 0 => {
             ScriptContext_Enable();
             DestroyTask(taskId);
         }
@@ -728,20 +738,20 @@ pub(crate) unsafe fn Task_ValidateMixingGameLanguage(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryBerryBlenderLinkup() {
-    gLinkType = LINKTYPE_BERRY_BLENDER_SETUP;
-    gBattleTypeFlags = 0;
+    gLinkType.set(LINKTYPE_BERRY_BLENDER_SETUP);
+    gBattleTypeFlags.set(0);
     CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryContestGModeLinkup() {
-    gLinkType = LINKTYPE_CONTEST_GMODE;
-    gBattleTypeFlags = 0;
+    gLinkType.set(LINKTYPE_CONTEST_GMODE);
+    gBattleTypeFlags.set(0);
     CreateLinkupTask(4, 4);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryContestEModeLinkup() {
-    gLinkType = LINKTYPE_CONTEST_EMODE;
-    gBattleTypeFlags = 0;
+    gLinkType.set(LINKTYPE_CONTEST_EMODE);
+    gBattleTypeFlags.set(0);
     CreateLinkupTask(2, 4);
 }
 pub unsafe fn CreateTask_ReestablishCableClubLink() -> u8 {
@@ -753,26 +763,26 @@ pub unsafe fn CreateTask_ReestablishCableClubLink() -> u8 {
         .cast_mut()
     {
         USING_SINGLE_BATTLE => {
-            gLinkType = LINKTYPE_SINGLE_BATTLE;
+            gLinkType.set(LINKTYPE_SINGLE_BATTLE);
         }
         USING_DOUBLE_BATTLE => {
-            gLinkType = LINKTYPE_DOUBLE_BATTLE;
+            gLinkType.set(LINKTYPE_DOUBLE_BATTLE);
         }
         USING_MULTI_BATTLE => {
-            gLinkType = LINKTYPE_MULTI_BATTLE;
+            gLinkType.set(LINKTYPE_MULTI_BATTLE);
         }
         USING_BATTLE_TOWER => {
-            if (*gSaveBlock2Ptr).frontier.lvlMode() == FRONTIER_LVL_50 {
-                gLinkType = LINKTYPE_BATTLE_TOWER_50;
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() == FRONTIER_LVL_50 {
+                gLinkType.set(LINKTYPE_BATTLE_TOWER_50);
             } else {
-                gLinkType = LINKTYPE_BATTLE_TOWER_OPEN;
+                gLinkType.set(LINKTYPE_BATTLE_TOWER_OPEN);
             }
         }
         USING_TRADE_CENTER => {
-            gLinkType = LINKTYPE_TRADE;
+            gLinkType.set(LINKTYPE_TRADE);
         }
         USING_RECORD_CORNER => {
-            gLinkType = LINKTYPE_RECORD_MIX_AFTER;
+            gLinkType.set(LINKTYPE_RECORD_MIX_AFTER);
         }
         _ => {}
     }
@@ -805,7 +815,7 @@ pub(crate) unsafe fn Task_ReestablishLinkLeader(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ReestablishLinkAwaitConfirmation(taskId: u8) {
-    if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
+    if gReceivedRemoteLinkPlayers.get() == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
         CheckLinkPlayersMatchSaved();
         StartSendingKeysToLink();
         DestroyTask(taskId);
@@ -818,17 +828,17 @@ pub unsafe fn CableClubSaveGame() {
 unsafe fn SetLinkBattleTypeFlags(linkService: i32) {
     match linkService {
         1 => {
-            gBattleTypeFlags = 10;
+            gBattleTypeFlags.set(10);
         }
         2 => {
-            gBattleTypeFlags = 11;
+            gBattleTypeFlags.set(11);
         }
         5 => {
             ReducePlayerPartyToSelectedMons();
-            gBattleTypeFlags = 75;
+            gBattleTypeFlags.set(75);
         }
         9 => {
-            gBattleTypeFlags = 331;
+            gBattleTypeFlags.set(331);
         }
         _ => {}
     }
@@ -838,12 +848,12 @@ pub(crate) unsafe fn Task_StartWiredCableClubBattle(taskId: u8) {
     match (*task).data[tState] {
         0 => {
             FadeScreen(FADE_TO_BLACK, 0);
-            gLinkType = LINKTYPE_BATTLE;
+            gLinkType.set(LINKTYPE_BATTLE);
             ClearLinkCallback_2();
             (*task).data[tState] += 1;
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 (*task).data[tState] += 1;
             }
         }
@@ -858,21 +868,21 @@ pub(crate) unsafe fn Task_StartWiredCableClubBattle(taskId: u8) {
             (*task).data[tState] += 1;
         }
         4 => {
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 (*task).data[tState] += 1;
             }
         }
         5 => {
-            if gLinkPlayers[0].trainerId & 1 != 0 {
+            if crate::gl!(gLinkPlayers[0].trainerId) & 1 != 0 {
                 PlayMapChosenOrBattleBGM(MUS_VS_GYM_LEADER);
             } else {
                 PlayMapChosenOrBattleBGM(MUS_VS_TRAINER);
             }
             SetLinkBattleTypeFlags(gSpecialVar_0x8004 as i32);
             CleanupOverworldWindowsAndTilemaps();
-            gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
+            gTrainerBattleOpponent_A.set(TRAINER_LINK_OPPONENT);
             SetMainCallback2(Some(CB2_InitBattle));
-            gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle);
+            crate::gl!(gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle));
             DestroyTask(taskId);
         }
         _ => {}
@@ -884,17 +894,17 @@ pub(crate) unsafe fn Task_StartWirelessCableClubBattle(taskId: u8) {
     match *data {
         0 => {
             FadeScreen(FADE_TO_BLACK, 0);
-            gLinkType = LINKTYPE_BATTLE;
+            gLinkType.set(LINKTYPE_BATTLE);
             ClearLinkCallback_2();
             *data = 1;
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 *data = 2;
             }
         }
         2 => {
-            SendBlock(0, &raw mut gLocalLinkPlayer as *mut c_void, 28);
+            SendBlock(0, crate::gl!(&raw gLocalLinkPlayer) as *mut c_void, 28);
             *data = 3;
         }
         3 => {
@@ -902,9 +912,9 @@ pub(crate) unsafe fn Task_StartWirelessCableClubBattle(taskId: u8) {
                 i = 0;
                 while i < GetLinkPlayerCount() as i32 {
                     let player: *mut LinkPlayer =
-                        gBlockRecvBuffer[i].as_mut_ptr() as *mut LinkPlayer;
-                    gLinkPlayers[i] = *player;
-                    ConvertLinkPlayerName(&raw mut gLinkPlayers[i]);
+                        (*gBlockRecvBuffer.as_ptr())[i].as_mut_ptr() as *mut LinkPlayer;
+                    crate::gl!(gLinkPlayers[i] = *player);
+                    ConvertLinkPlayerName(crate::gl!(&raw gLinkPlayers[i]));
                     ResetBlockReceivedFlag(i as u8);
                     i += 1;
                 }
@@ -927,17 +937,17 @@ pub(crate) unsafe fn Task_StartWirelessCableClubBattle(taskId: u8) {
             }
         }
         7 => {
-            if gLinkPlayers[0].trainerId & 1 != 0 {
+            if crate::gl!(gLinkPlayers[0].trainerId) & 1 != 0 {
                 PlayMapChosenOrBattleBGM(MUS_VS_GYM_LEADER);
             } else {
                 PlayMapChosenOrBattleBGM(MUS_VS_TRAINER);
             }
-            gLinkPlayers[0].linkType = LINKTYPE_BATTLE as u32;
+            crate::gl!(gLinkPlayers[0].linkType = LINKTYPE_BATTLE as u32);
             SetLinkBattleTypeFlags(gSpecialVar_0x8004 as i32);
             CleanupOverworldWindowsAndTilemaps();
-            gTrainerBattleOpponent_A = TRAINER_LINK_OPPONENT;
+            gTrainerBattleOpponent_A.set(TRAINER_LINK_OPPONENT);
             SetMainCallback2(Some(CB2_InitBattle));
-            gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle);
+            crate::gl!(gMain.savedCallback = Some(CB2_ReturnFromCableClubBattle));
             DestroyTask(taskId);
         }
         _ => {}
@@ -946,26 +956,26 @@ pub(crate) unsafe fn Task_StartWirelessCableClubBattle(taskId: u8) {
 pub(crate) unsafe fn CB2_ReturnFromUnionRoomBattle() {
     let mut playerCount: u8 = 0;
     let mut linkedWithFRLG: u32 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             playerCount = GetLinkPlayerCount();
             linkedWithFRLG = FALSE as u32;
             for i in 0..(playerCount as i32) {
-                let version: u32 = gLinkPlayers[i].version as u8 as u32;
+                let version: u32 = crate::gl!(gLinkPlayers[i].version) as u8 as u32;
                 if version == VERSION_FIRE_RED as u32 || version == VERSION_LEAF_GREEN as u32 {
                     linkedWithFRLG = TRUE as u32;
                     break;
                 }
             }
             if linkedWithFRLG != 0 {
-                gMain.state = 2;
+                crate::gl!(gMain.state = 2);
             } else {
                 SetCloseLinkCallback();
-                gMain.state = 1;
+                crate::gl!(gMain.state = 1);
             }
         }
         1 => {
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 SetMainCallback2(Some(CB2_ReturnToField));
             }
         }
@@ -977,35 +987,35 @@ pub(crate) unsafe fn CB2_ReturnFromUnionRoomBattle() {
     RunTasks();
 }
 pub unsafe fn CB2_ReturnFromCableClubBattle() {
-    gBattleTypeFlags &= 0xffffffdf;
+    gBattleTypeFlags.set(gBattleTypeFlags.get() & (0xffffffdf));
     Overworld_ResetMapMusic();
     LoadPlayerParty();
     SavePlayerBag();
     UpdateTrainerFansAfterLinkBattle();
     if gSpecialVar_0x8004 == USING_SINGLE_BATTLE || gSpecialVar_0x8004 == USING_DOUBLE_BATTLE {
-        UpdatePlayerLinkBattleRecords(gLocalLinkPlayerId as i32 ^ 1);
-        if gWirelessCommType != 0 {
-            match gBattleOutcome {
+        UpdatePlayerLinkBattleRecords(gLocalLinkPlayerId.get() as i32 ^ 1);
+        if gWirelessCommType.get() != 0 {
+            match gBattleOutcome.get() {
                 B_OUTCOME_WON => {
-                    MysteryGift_TryIncrementStat(
-                        CARD_STAT_BATTLES_WON,
-                        gLinkPlayers[GetMultiplayerId() as i32 ^ 1].trainerId,
-                    );
+                    MysteryGift_TryIncrementStat(CARD_STAT_BATTLES_WON, {
+                        let gl_i4 = GetMultiplayerId() as i32 ^ 1;
+                        crate::gl!(gLinkPlayers[gl_i4].trainerId)
+                    });
                 }
                 B_OUTCOME_LOST => {
-                    MysteryGift_TryIncrementStat(
-                        1,
-                        gLinkPlayers[GetMultiplayerId() as i32 ^ 1].trainerId,
-                    );
+                    MysteryGift_TryIncrementStat(1, {
+                        let gl_i5 = GetMultiplayerId() as i32 ^ 1;
+                        crate::gl!(gLinkPlayers[gl_i5].trainerId)
+                    });
                 }
                 _ => {}
             }
         }
     }
     if InUnionRoom() == TRUE as u32 {
-        gMain.savedCallback = Some(CB2_ReturnFromUnionRoomBattle);
+        crate::gl!(gMain.savedCallback = Some(CB2_ReturnFromUnionRoomBattle));
     } else {
-        gMain.savedCallback = Some(CB2_ReturnToFieldFromMultiplayer);
+        crate::gl!(gMain.savedCallback = Some(CB2_ReturnToFieldFromMultiplayer));
     }
     SetMainCallback2(Some(CB2_SetUpSaveAfterLinkBattle));
 }
@@ -1022,7 +1032,7 @@ pub unsafe fn CleanupLinkRoomState() {
     SetWarpDestinationToDynamicWarp(WARP_ID_DYNAMIC);
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ExitLinkRoom() {
+pub fn ExitLinkRoom() {
     QueueExitLinkRoomKey();
 }
 pub(crate) unsafe fn Task_EnterCableClubSeat(taskId: u8) {
@@ -1080,18 +1090,18 @@ pub(crate) unsafe fn Task_StartWiredTrade(taskId: u8) {
             (*task).data[tState] += 1;
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 (*task).data[tState] += 1;
             }
         }
         2 => {
-            gSelectedTradeMonPositions[0] = 0;
-            gSelectedTradeMonPositions[1] = 0;
+            crate::gl!(gSelectedTradeMonPositions[0] = 0);
+            crate::gl!(gSelectedTradeMonPositions[1] = 0);
             m4aMPlayAllStop();
             SetCloseLinkCallback();
             (*task).data[tState] += 1;
         }
-        3 if gReceivedRemoteLinkPlayers == 0 => {
+        3 if gReceivedRemoteLinkPlayers.get() == 0 => {
             SetMainCallback2(Some(CB2_StartCreateTradeMenu));
             DestroyTask(taskId);
         }
@@ -1108,13 +1118,13 @@ pub(crate) unsafe fn Task_StartWirelessTrade(taskId: u8) {
             *data += 1;
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 *data += 1;
             }
         }
         2 => {
-            gSelectedTradeMonPositions[0] = 0;
-            gSelectedTradeMonPositions[1] = 0;
+            crate::gl!(gSelectedTradeMonPositions[0] = 0);
+            crate::gl!(gSelectedTradeMonPositions[1] = 0);
             m4aMPlayAllStop();
             SetLinkStandbyCallback();
             *data += 1;
@@ -1128,7 +1138,7 @@ pub(crate) unsafe fn Task_StartWirelessTrade(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn PlayerEnteredTradeSeat() {
-    if gWirelessCommType != 0 {
+    if gWirelessCommType.get() != 0 {
         CreateTask_EnterCableClubSeat(Some(Task_StartWirelessTrade));
     } else {
         CreateTask_EnterCableClubSeat(Some(Task_StartWiredTrade));
@@ -1141,8 +1151,8 @@ unsafe fn CreateTask_StartWiredTrade() {
 pub fn Script_StartWiredTrade() {}
 #[unsafe(no_mangle)]
 pub unsafe fn ColosseumPlayerSpotTriggered() {
-    gLinkType = LINKTYPE_BATTLE;
-    if gWirelessCommType != 0 {
+    gLinkType.set(LINKTYPE_BATTLE);
+    if gWirelessCommType.get() != 0 {
         CreateTask_EnterCableClubSeat(Some(Task_StartWirelessCableClubBattle));
     } else {
         CreateTask_EnterCableClubSeat(Some(Task_StartWiredCableClubBattle));
@@ -1163,14 +1173,14 @@ pub unsafe fn GetLinkTrainerCardColor(linkPlayerIndex: u8) -> u32 {
     gSpecialVar_0x8006 = linkPlayerIndex as u16;
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gLinkPlayers[linkPlayerIndex].name.as_mut_ptr(),
+        (*gLinkPlayers.as_ptr())[linkPlayerIndex].name.as_mut_ptr(),
     );
     let numStars: u32 = GetTrainerCardStars(linkPlayerIndex) as u32;
     if numStars == 0 {
         return FALSE as u32;
     }
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         sTrainerCardColorNames[numStars - 1],
     );
     TRUE as u32
@@ -1183,8 +1193,8 @@ pub unsafe fn Task_WaitForLinkPlayerConnection(taskId: u8) {
         SetMainCallback2(Some(CB2_LinkError));
         DestroyTask(taskId);
     }
-    if gReceivedRemoteLinkPlayers != 0 {
-        if gWirelessCommType == 0 {
+    if gReceivedRemoteLinkPlayers.get() != 0 {
+        if gWirelessCommType.get() == 0 {
             if DoesLinkPlayerCountMatchSaved() == 0 {
                 CloseLink();
                 SetMainCallback2(Some(CB2_LinkError));
@@ -1196,7 +1206,7 @@ pub unsafe fn Task_WaitForLinkPlayerConnection(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_WaitExitToScript(taskId: u8) {
-    if gReceivedRemoteLinkPlayers == 0 {
+    if gReceivedRemoteLinkPlayers.get() == 0 {
         ScriptContext_Enable();
         DestroyTask(taskId);
     }
@@ -1209,7 +1219,7 @@ pub unsafe fn Task_ReconnectWithLinkPlayers(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
-            if gWirelessCommType != 0 {
+            if gWirelessCommType.get() != 0 {
                 DestroyTask(taskId);
             } else {
                 OpenLink();
@@ -1243,15 +1253,17 @@ pub unsafe fn Task_ReconnectWithLinkPlayers(taskId: u8) {
                 }
             }
         }
-        3 if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE => {
+        3 if gReceivedRemoteLinkPlayers.get() == TRUE
+            && IsLinkPlayerDataExchangeComplete() == TRUE =>
+        {
             DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn TrySetBattleTowerLinkType() {
-    if gWirelessCommType == 0 {
-        gLinkType = LINKTYPE_BATTLE_TOWER;
+pub fn TrySetBattleTowerLinkType() {
+    if gWirelessCommType.get() == 0 {
+        gLinkType.set(LINKTYPE_BATTLE_TOWER);
     }
 }

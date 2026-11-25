@@ -99,25 +99,39 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 fn SpriteCB_Null4() {}
-pub unsafe fn SetControllerToSafari() {
-    gBattlerControllerFuncs[gActiveBattler] = Some(SafariBufferRunCommand);
+pub fn SetControllerToSafari() {
+    {
+        let gl_i0 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i0] = Some(SafariBufferRunCommand))
+    };
 }
 pub(crate) unsafe fn SafariBufferRunCommand() {
-    if gBattleControllerExecFlags
-        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler]
+    if gBattleControllerExecFlags.get()
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler.get()]
         != 0
     {
-        if gBattleBufferA[gActiveBattler][0] < 57 {
-            sSafariBufferCommands[gBattleBufferA[gActiveBattler][0]].unwrap_unchecked()();
+        if ({
+            let gl_i1 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i1][0])
+        }) < 57
+        {
+            sSafariBufferCommands[{
+                let gl_i2 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i2][0])
+            }]
+            .unwrap_unchecked()();
         } else {
             SafariBufferExecCompleted();
         }
     }
 }
 pub(crate) unsafe fn HandleInputChooseAction() {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        match gActionSelectionCursor[gActiveBattler] {
+        match {
+            let gl_i3 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i3])
+        } {
             0 => {
                 BtlController_EmitTwoReturnValues(B_COMM_TO_ENGINE, B_ACTION_SAFARI_BALL, 0);
             }
@@ -133,42 +147,112 @@ pub(crate) unsafe fn HandleInputChooseAction() {
             _ => {}
         }
         SafariBufferExecCompleted();
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
-        if gActionSelectionCursor[gActiveBattler] as i32 & 1 != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
+        if ({
+            let gl_i4 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i4])
+        }) as i32
+            & 1
+            != 0
+        {
             PlaySE(SE_SELECT);
-            ActionSelectionDestroyCursorAt(gActionSelectionCursor[gActiveBattler]);
-            gActionSelectionCursor[gActiveBattler] ^= 1;
-            ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
+            ActionSelectionDestroyCursorAt({
+                let gl_i5 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i5])
+            });
+            {
+                let gl_i6 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i6] ^= 1)
+            };
+            ActionSelectionCreateCursorAt(
+                {
+                    let gl_i7 = gActiveBattler.get();
+                    crate::gl!(gActionSelectionCursor[gl_i7])
+                },
+                0,
+            );
         }
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
-        if gActionSelectionCursor[gActiveBattler] as i32 & 1 == 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
+        if ({
+            let gl_i8 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i8])
+        }) as i32
+            & 1
+            == 0
+        {
             PlaySE(SE_SELECT);
-            ActionSelectionDestroyCursorAt(gActionSelectionCursor[gActiveBattler]);
-            gActionSelectionCursor[gActiveBattler] ^= 1;
-            ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
+            ActionSelectionDestroyCursorAt({
+                let gl_i9 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i9])
+            });
+            {
+                let gl_i10 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i10] ^= 1)
+            };
+            ActionSelectionCreateCursorAt(
+                {
+                    let gl_i11 = gActiveBattler.get();
+                    crate::gl!(gActionSelectionCursor[gl_i11])
+                },
+                0,
+            );
         }
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 {
-        if gActionSelectionCursor[gActiveBattler] as i32 & 2 != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
+        if ({
+            let gl_i12 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i12])
+        }) as i32
+            & 2
+            != 0
+        {
             PlaySE(SE_SELECT);
-            ActionSelectionDestroyCursorAt(gActionSelectionCursor[gActiveBattler]);
-            gActionSelectionCursor[gActiveBattler] ^= 2;
-            ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
+            ActionSelectionDestroyCursorAt({
+                let gl_i13 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i13])
+            });
+            {
+                let gl_i14 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i14] ^= 2)
+            };
+            ActionSelectionCreateCursorAt(
+                {
+                    let gl_i15 = gActiveBattler.get();
+                    crate::gl!(gActionSelectionCursor[gl_i15])
+                },
+                0,
+            );
         }
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0
-        && (*(&raw const crate::battle_main::gActionSelectionCursor)
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
+        && (*(crate::gl!(&raw @at crate::battle_main::gActionSelectionCursor;).cast_const())
             .cast::<CArray<u8, 4>>()
-            .cast_mut())[gActiveBattler] as i32
+            .cast_mut())[gActiveBattler.get()] as i32
             & 2
             == 0
     {
         PlaySE(SE_SELECT);
-        ActionSelectionDestroyCursorAt(gActionSelectionCursor[gActiveBattler]);
-        gActionSelectionCursor[gActiveBattler] ^= 2;
-        ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
+        ActionSelectionDestroyCursorAt({
+            let gl_i16 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i16])
+        });
+        {
+            let gl_i17 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i17] ^= 2)
+        };
+        ActionSelectionCreateCursorAt(
+            {
+                let gl_i18 = gActiveBattler.get();
+                crate::gl!(gActionSelectionCursor[gl_i18])
+            },
+            0,
+        );
     }
 }
 pub(crate) unsafe fn CompleteOnBattlerSpriteCallbackDummy() {
-    if gSprites[gBattlerSpriteIds[gActiveBattler]].callback
+    if (*gSprites.as_ptr())[{
+        let gl_i19 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i19])
+    }]
+    .callback
         == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         SafariBufferExecCompleted();
@@ -180,56 +264,86 @@ pub(crate) unsafe fn CompleteOnInactiveTextPrinter() {
     }
 }
 pub(crate) unsafe fn CompleteOnHealthboxSpriteCallbackDummy() {
-    if gSprites[gHealthboxSpriteIds[gActiveBattler]].callback
+    if (*gSprites.as_ptr())[{
+        let gl_i20 = gActiveBattler.get();
+        crate::gl!(gHealthboxSpriteIds[gl_i20])
+    }]
+    .callback
         == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         SafariBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn SafariSetBattleEndCallbacks() {
-    if gPaletteFade.active() == 0 {
-        gMain.set_inBattle(FALSE);
-        gMain.callback1 = gPreBattleCallback1;
-        SetMainCallback2(gMain.savedCallback);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        (*gMain.as_ptr()).set_inBattle(FALSE);
+        crate::gl!(gMain.callback1 = crate::gl!(gPreBattleCallback1));
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }
 pub(crate) unsafe fn CompleteOnSpecialAnimDone() {
-    if gDoingBattleAnim == 0
-        || (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive() == 0
+    if gDoingBattleAnim.get() == 0
+        || (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .specialAnimActive()
+            == 0
     {
         SafariBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn SafariOpenPokeblockCase() {
-    if gPaletteFade.active() == 0 {
-        gBattlerControllerFuncs[gActiveBattler] = Some(CompleteWhenChosePokeblock);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        {
+            let gl_i21 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i21] = Some(CompleteWhenChosePokeblock))
+        };
         FreeAllWindowBuffers();
         OpenPokeblockCaseInBattle();
     }
 }
 pub(crate) unsafe fn CompleteWhenChosePokeblock() {
-    if gMain.callback2 == Some(BattleMainCB2 as unsafe fn()) && gPaletteFade.active() == 0 {
-        BtlController_EmitOneReturnValue(B_COMM_TO_ENGINE, gSpecialVar_ItemId);
+    if crate::gl!(gMain.callback2) == Some(BattleMainCB2 as unsafe fn())
+        && (*gPaletteFade.as_ptr()).active() == 0
+    {
+        BtlController_EmitOneReturnValue(B_COMM_TO_ENGINE, gSpecialVar_ItemId.get());
         SafariBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn CompleteOnFinishedBattleAnimation() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animFromTableActive() == 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .animFromTableActive()
+        == 0
+    {
         SafariBufferExecCompleted();
     }
 }
 unsafe fn SafariBufferExecCompleted() {
-    gBattlerControllerFuncs[gActiveBattler] = Some(SafariBufferRunCommand);
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+    {
+        let gl_i22 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i22] = Some(SafariBufferRunCommand))
+    };
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
         let mut playerId: u8 = GetMultiplayerId();
         PrepareBufferDataTransferLink(B_COMM_CONTROLLER_IS_DONE, 4, &raw mut playerId);
-        gBattleBufferA[gActiveBattler][0] = CONTROLLER_TERMINATOR_NOP;
+        {
+            let gl_i23 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i23][0] = CONTROLLER_TERMINATOR_NOP)
+        };
     } else {
-        gBattleControllerExecFlags &= !gBitTable[gActiveBattler];
+        gBattleControllerExecFlags
+            .set(gBattleControllerExecFlags.get() & (!gBitTable[gActiveBattler.get()]));
     }
 }
 pub(crate) unsafe fn CompleteOnFinishedStatusAnimation() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).statusAnimActive() == 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .statusAnimActive()
+        == 0
+    {
         SafariBufferExecCompleted();
     }
 }
@@ -255,28 +369,53 @@ pub(crate) unsafe fn SafariHandleReturnMonToBall() {
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleDrawTrainerPic() {
-    DecompressTrainerBackPic((*gSaveBlock2Ptr).playerGender as u16, gActiveBattler);
+    DecompressTrainerBackPic(
+        (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16,
+        gActiveBattler.get(),
+    );
     SetMultiuseSpriteTemplateToTrainerBack(
-        (*gSaveBlock2Ptr).playerGender as u16,
-        GetBattlerPosition(gActiveBattler),
+        (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16,
+        GetBattlerPosition(gActiveBattler.get()),
     );
-    gBattlerSpriteIds[gActiveBattler] = CreateSprite(
-        &raw mut gMultiuseSpriteTemplate,
-        80,
-        (8 - (*(&raw const crate::data::data_tables::gTrainerBackPicCoords)
-            .cast::<CArray<MonCoords, 0>>())[(*gSaveBlock2Ptr).playerGender]
-            .size as i16)
-            * 4
-            + 80,
-        30,
-    );
-    gSprites[gBattlerSpriteIds[gActiveBattler]]
-        .oam
-        .set_paletteNum(gActiveBattler as u16);
-    gSprites[gBattlerSpriteIds[gActiveBattler]].x2 = DISPLAY_WIDTH as i16;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[sSpeedX] = -2;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].callback = Some(SpriteCB_TrainerSlideIn);
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnBattlerSpriteCallbackDummy);
+    {
+        let gl_v = CreateSprite(
+            crate::gl!(&raw gMultiuseSpriteTemplate),
+            80,
+            (8 - (*(&raw const crate::data::data_tables::gTrainerBackPicCoords)
+                .cast::<CArray<MonCoords, 0>>())[(*crate::gl!(gSaveBlock2Ptr)).playerGender]
+                .size as i16)
+                * 4
+                + 80,
+            30,
+        );
+        let gl_i24 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i24] = gl_v)
+    };
+    (*gSprites.as_ptr())[{
+        let gl_i25 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i25])
+    }]
+    .oam
+    .set_paletteNum(gActiveBattler.get() as u16);
+    (*gSprites.as_ptr())[{
+        let gl_i26 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i26])
+    }]
+    .x2 = DISPLAY_WIDTH as i16;
+    (*gSprites.as_ptr())[{
+        let gl_i27 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i27])
+    }]
+    .data[sSpeedX] = -2;
+    (*gSprites.as_ptr())[{
+        let gl_i28 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i28])
+    }]
+    .callback = Some(SpriteCB_TrainerSlideIn);
+    {
+        let gl_i29 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i29] = Some(CompleteOnBattlerSpriteCallbackDummy))
+    };
 }
 pub(crate) unsafe fn SafariHandleTrainerSlide() {
     SafariBufferExecCompleted();
@@ -291,27 +430,36 @@ pub(crate) unsafe fn SafariHandlePaletteFade() {
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleSuccessBallThrowAnim() {
-    (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId = BALL_3_SHAKES_SUCCESS;
-    gDoingBattleAnim = TRUE;
+    (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).ballThrowCaseId = BALL_3_SHAKES_SUCCESS;
+    gDoingBattleAnim.set(TRUE);
     InitAndLaunchSpecialAnimation(
-        gActiveBattler,
-        gActiveBattler,
+        gActiveBattler.get(),
+        gActiveBattler.get(),
         GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT),
         B_ANIM_BALL_THROW_WITH_TRAINER,
     );
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnSpecialAnimDone);
+    {
+        let gl_i30 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i30] = Some(CompleteOnSpecialAnimDone))
+    };
 }
 pub(crate) unsafe fn SafariHandleBallThrowAnim() {
-    let ballThrowCaseId: u8 = gBattleBufferA[gActiveBattler][1];
-    (*(*gBattleSpritesDataPtr).animationData).ballThrowCaseId = ballThrowCaseId;
-    gDoingBattleAnim = TRUE;
+    let ballThrowCaseId: u8 = {
+        let gl_i31 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i31][1])
+    };
+    (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).ballThrowCaseId = ballThrowCaseId;
+    gDoingBattleAnim.set(TRUE);
     InitAndLaunchSpecialAnimation(
-        gActiveBattler,
-        gActiveBattler,
+        gActiveBattler.get(),
+        gActiveBattler.get(),
         GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT),
         B_ANIM_BALL_THROW_WITH_TRAINER,
     );
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnSpecialAnimDone);
+    {
+        let gl_i32 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i32] = Some(CompleteOnSpecialAnimDone))
+    };
 }
 pub(crate) unsafe fn SafariHandlePause() {
     SafariBufferExecCompleted();
@@ -320,17 +468,21 @@ pub(crate) unsafe fn SafariHandleMoveAnimation() {
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandlePrintString() {
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    let stringId: *mut u16 = &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
-        .cast::<CArray<CArray<u8, 512>, 4>>()
-        .cast_mut())[gActiveBattler][2] as *mut u16;
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    let stringId: *mut u16 = &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;)
+        .cast_const())
+    .cast::<CArray<CArray<u8, 512>, 4>>()
+    .cast_mut())[gActiveBattler.get()][2] as *mut u16;
     BufferStringBattle(*stringId);
-    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnInactiveTextPrinter);
+    BattlePutTextOnWindow((*gDisplayedStringBattle.as_ptr()).as_mut_ptr(), B_WIN_MSG);
+    {
+        let gl_i33 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i33] = Some(CompleteOnInactiveTextPrinter))
+    };
 }
 pub(crate) unsafe fn SafariHandlePrintSelectionString() {
-    if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+    if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
         SafariHandlePrintString();
     } else {
         SafariBufferExecCompleted();
@@ -338,13 +490,19 @@ pub(crate) unsafe fn SafariHandlePrintSelectionString() {
 }
 pub(crate) unsafe fn HandleChooseActionAfterDma3() {
     if IsDma3ManagerBusyWithBgCopy() == 0 {
-        gBattle_BG0_X = 0;
-        gBattle_BG0_Y = DISPLAY_HEIGHT;
-        gBattlerControllerFuncs[gActiveBattler] = Some(HandleInputChooseAction);
+        gBattle_BG0_X.set(0);
+        gBattle_BG0_Y.set(DISPLAY_HEIGHT);
+        {
+            let gl_i34 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i34] = Some(HandleInputChooseAction))
+        };
     }
 }
 pub(crate) unsafe fn SafariHandleChooseAction() {
-    gBattlerControllerFuncs[gActiveBattler] = Some(HandleChooseActionAfterDma3);
+    {
+        let gl_i35 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i35] = Some(HandleChooseActionAfterDma3))
+    };
     BattlePutTextOnWindow(
         (*(&raw const crate::data::battle_message::gText_SafariZoneMenu).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -354,13 +512,22 @@ pub(crate) unsafe fn SafariHandleChooseAction() {
     for i in 0..4i32 {
         ActionSelectionDestroyCursorAt(i as u8);
     }
-    ActionSelectionCreateCursorAt(gActionSelectionCursor[gActiveBattler], 0);
+    ActionSelectionCreateCursorAt(
+        {
+            let gl_i36 = gActiveBattler.get();
+            crate::gl!(gActionSelectionCursor[gl_i36])
+        },
+        0,
+    );
     BattleStringExpandPlaceholdersToDisplayedString(
         (*(&raw const crate::data::battle_message::gText_WhatWillPkmnDo2).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_ACTION_PROMPT);
+    BattlePutTextOnWindow(
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
+        B_WIN_ACTION_PROMPT,
+    );
 }
 pub(crate) unsafe fn SafariHandleYesNoBox() {
     SafariBufferExecCompleted();
@@ -370,8 +537,11 @@ pub(crate) unsafe fn SafariHandleChooseMove() {
 }
 pub(crate) unsafe fn SafariHandleChooseItem() {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-    gBattlerControllerFuncs[gActiveBattler] = Some(SafariOpenPokeblockCase);
-    gBattlerInMenuId = gActiveBattler;
+    {
+        let gl_i37 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i37] = Some(SafariOpenPokeblockCase))
+    };
+    gBattlerInMenuId.set(gActiveBattler.get());
 }
 pub(crate) unsafe fn SafariHandleChoosePokemon() {
     SafariBufferExecCompleted();
@@ -387,8 +557,14 @@ pub(crate) unsafe fn SafariHandleExpUpdate() {
 }
 pub(crate) unsafe fn SafariHandleStatusIconUpdate() {
     UpdateHealthboxAttribute(
-        gHealthboxSpriteIds[gActiveBattler],
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+        {
+            let gl_i38 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i38])
+        },
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i39 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i39])
+        }],
         HEALTHBOX_SAFARI_BALLS_TEXT,
     );
     SafariBufferExecCompleted();
@@ -443,54 +619,98 @@ pub(crate) unsafe fn SafariHandleCantSwitch() {
 }
 pub(crate) unsafe fn SafariHandlePlaySE() {
     let mut pan: i8 = 0;
-    if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+    if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
         pan = SOUND_PAN_ATTACKER;
     } else {
         pan = SOUND_PAN_TARGET;
     }
     PlaySE12WithPanning(
-        gBattleBufferA[gActiveBattler][1] as u16 | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+        ({
+            let gl_i40 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i40][1])
+        }) as u16
+            | (({
+                let gl_i41 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i41][2])
+            }) as u16)
+                << 8,
         pan,
     );
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandlePlayFanfareOrBGM() {
-    if gBattleBufferA[gActiveBattler][3] != 0 {
+    if ({
+        let gl_i42 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i42][3])
+    }) != 0
+    {
         BattleStopLowHpSound();
         PlayBGM(
-            gBattleBufferA[gActiveBattler][1] as u16
-                | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+            ({
+                let gl_i43 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i43][1])
+            }) as u16
+                | (({
+                    let gl_i44 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i44][2])
+                }) as u16)
+                    << 8,
         );
     } else {
         PlayFanfare(
-            gBattleBufferA[gActiveBattler][1] as u16
-                | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+            ({
+                let gl_i45 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i45][1])
+            }) as u16
+                | (({
+                    let gl_i46 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i46][2])
+                }) as u16)
+                    << 8,
         );
     }
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleFaintingCry() {
     let species: u16 = GetMonData2(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i47 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i47])
+        }],
         MON_DATA_SPECIES,
     ) as u16;
     PlayCry_Normal(species, 25);
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleIntroSlide() {
-    HandleIntroSlide(gBattleBufferA[gActiveBattler][1]);
-    gIntroSlideFlags |= 1;
+    HandleIntroSlide({
+        let gl_i48 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i48][1])
+    });
+    gIntroSlideFlags.set(gIntroSlideFlags.get() | (1));
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleIntroTrainerBallThrow() {
     UpdateHealthboxAttribute(
-        gHealthboxSpriteIds[gActiveBattler],
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+        {
+            let gl_i49 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i49])
+        },
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i50 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i50])
+        }],
         HEALTHBOX_SAFARI_ALL_TEXT,
     );
-    StartHealthboxSlideIn(gActiveBattler);
-    SetHealthboxSpriteVisible(gHealthboxSpriteIds[gActiveBattler]);
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnHealthboxSpriteCallbackDummy);
+    StartHealthboxSlideIn(gActiveBattler.get());
+    SetHealthboxSpriteVisible({
+        let gl_i51 = gActiveBattler.get();
+        crate::gl!(gHealthboxSpriteIds[gl_i51])
+    });
+    {
+        let gl_i52 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i52] = Some(CompleteOnHealthboxSpriteCallbackDummy))
+    };
 }
 pub(crate) unsafe fn SafariHandleDrawPartyStatusSummary() {
     SafariBufferExecCompleted();
@@ -505,20 +725,33 @@ pub(crate) unsafe fn SafariHandleSpriteInvisibility() {
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleBattleAnimation() {
-    let animationId: u8 = gBattleBufferA[gActiveBattler][1];
-    let argument: u16 =
-        gBattleBufferA[gActiveBattler][2] as u16 | (gBattleBufferA[gActiveBattler][3] as u16) << 8;
+    let animationId: u8 = {
+        let gl_i53 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i53][1])
+    };
+    let argument: u16 = ({
+        let gl_i54 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i54][2])
+    }) as u16
+        | (({
+            let gl_i55 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i55][3])
+        }) as u16)
+            << 8;
     if TryHandleLaunchBattleTableAnimation(
-        gActiveBattler,
-        gActiveBattler,
-        gActiveBattler,
+        gActiveBattler.get(),
+        gActiveBattler.get(),
+        gActiveBattler.get(),
         animationId,
         argument,
     ) != 0
     {
         SafariBufferExecCompleted();
     } else {
-        gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnFinishedBattleAnimation);
+        {
+            let gl_i56 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i56] = Some(CompleteOnFinishedBattleAnimation))
+        };
     }
 }
 pub(crate) unsafe fn SafariHandleLinkStandbyMsg() {
@@ -528,12 +761,20 @@ pub(crate) unsafe fn SafariHandleResetActionMoveSelection() {
     SafariBufferExecCompleted();
 }
 pub(crate) unsafe fn SafariHandleEndLinkBattle() {
-    gBattleOutcome = gBattleBufferA[gActiveBattler][1];
+    gBattleOutcome.set({
+        let gl_i57 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i57][1])
+    });
     FadeOutMapMusic(5);
     BeginFastPaletteFade(3);
     SafariBufferExecCompleted();
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 && gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
-        gBattlerControllerFuncs[gActiveBattler] = Some(SafariSetBattleEndCallbacks);
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_IS_MASTER == 0
+    {
+        {
+            let gl_i58 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i58] = Some(SafariSetBattleEndCallbacks))
+        };
     }
 }
 pub(crate) fn SafariCmdEnd() {}

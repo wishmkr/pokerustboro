@@ -481,11 +481,11 @@ const _: () = {
 };
 
 pub(crate) unsafe fn AnimConfusionDuck(sprite: *mut Sprite) {
-    let cmd: *mut Anon1 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon1;
+    let cmd: *mut Anon1 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon1;
     (*sprite).x += (*cmd).x;
     (*sprite).y += (*cmd).y;
     (*sprite).data[0] = (*cmd).waveOffset;
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
         (*sprite).data[1] = -(*cmd).wavePeriod;
         (*sprite).data[4] = 1;
     } else {
@@ -515,7 +515,7 @@ pub(crate) unsafe fn AnimConfusionDuck_Step(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn AnimSimplePaletteBlend(sprite: *mut Sprite) {
-    let cmd: *mut Anon2 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon2;
+    let cmd: *mut Anon2 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon2;
     let selectedPalettes: u32 = UnpackSelectedBattlePalettes((*cmd).selector);
     BeginNormalPaletteFade(
         selectedPalettes,
@@ -546,12 +546,12 @@ pub unsafe fn UnpackSelectedBattlePalettes(selector: i16) -> u32 {
     )
 }
 pub(crate) unsafe fn AnimSimplePaletteBlend_Step(sprite: *mut Sprite) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyAnimSprite(sprite);
     }
 }
 pub(crate) unsafe fn AnimComplexPaletteBlend(sprite: *mut Sprite) {
-    let cmd: *mut Anon3 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon3;
+    let cmd: *mut Anon3 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon3;
     (*sprite).data[0] = (*cmd).delay;
     (*sprite).data[sDelay] = (*cmd).delay;
     (*sprite).data[sNumBlends] = (*cmd).numBlends;
@@ -570,7 +570,7 @@ pub(crate) unsafe fn AnimComplexPaletteBlend_Step1(sprite: *mut Sprite) {
         (*sprite).data[0] -= 1;
         return;
     }
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         return;
     }
     if (*sprite).data[sNumBlends] == 0 {
@@ -597,14 +597,14 @@ pub(crate) unsafe fn AnimComplexPaletteBlend_Step1(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn AnimComplexPaletteBlend_Step2(sprite: *mut Sprite) {
     let mut selectedPalettes: u32 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         selectedPalettes = UnpackSelectedBattlePalettes((*sprite).data[sPaletteSelector]);
         BlendPalettes(selectedPalettes, 0, 0);
         DestroyAnimSprite(sprite);
     }
 }
 pub(crate) unsafe fn AnimCirclingSparkle(sprite: *mut Sprite) {
-    let cmd: *mut Anon4 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon4;
+    let cmd: *mut Anon4 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon4;
     (*sprite).x += (*cmd).x;
     (*sprite).y += (*cmd).y;
     (*sprite).data[0] = 0;
@@ -619,7 +619,7 @@ pub(crate) unsafe fn AnimCirclingSparkle(sprite: *mut Sprite) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_BlendColorCycle(taskId: u8) {
-    let cmd: *mut Anon5 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon5;
+    let cmd: *mut Anon5 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon5;
     task_set(taskId, tPalSelector, (*cmd).selector);
     task_set(taskId, tDelay, (*cmd).delay);
     task_set(taskId, tNumBlends, (*cmd).numBlends);
@@ -645,7 +645,7 @@ unsafe fn BlendColorCycle(taskId: u8, startBlendAmount: u8, targetBlendAmount: u
 pub(crate) unsafe fn AnimTask_BlendColorCycleLoop(taskId: u8) {
     let mut startBlendAmount: u8 = 0;
     let mut targetBlendAmount: u8 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if task_get(taskId, tNumBlends) > 0 {
             if task_get(taskId, tRestoreBlend) == 0 {
                 startBlendAmount = task_get(taskId, tInitialBlendY) as u8;
@@ -665,7 +665,7 @@ pub(crate) unsafe fn AnimTask_BlendColorCycleLoop(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_BlendColorCycleExclude(taskId: u8) {
-    let cmd: *mut Anon6 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon6;
+    let cmd: *mut Anon6 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon6;
     let mut selectedPalettes: u32 = 0;
     task_set(taskId, 0, (*cmd).unk0);
     task_set(taskId, tDelay, (*cmd).delay);
@@ -675,8 +675,9 @@ pub unsafe fn AnimTask_BlendColorCycleExclude(taskId: u8) {
     task_set(taskId, tBlendColor, (*cmd).color);
     task_set(taskId, tRestoreBlend, 0);
     let mut battler: i32 = 0;
-    while battler < gBattlersCount as i32 {
-        if battler != gBattleAnimAttacker as i32 && battler != gBattleAnimTarget as i32 {
+    while battler < gBattlersCount.get() as i32 {
+        if battler != gBattleAnimAttacker.get() as i32 && battler != gBattleAnimTarget.get() as i32
+        {
             selectedPalettes |= shl_i32(1, battler as u32 + 16) as u32;
         }
         battler += 1;
@@ -705,7 +706,7 @@ unsafe fn BlendColorCycleExclude(taskId: u8, startBlendAmount: u8, targetBlendAm
 pub(crate) unsafe fn AnimTask_BlendColorCycleExcludeLoop(taskId: u8) {
     let mut startBlendAmount: u8 = 0;
     let mut targetBlendAmount: u8 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if task_get(taskId, tNumBlends) > 0 {
             if task_get(taskId, tRestoreBlend) == 0 {
                 startBlendAmount = task_get(taskId, tInitialBlendY) as u8;
@@ -725,7 +726,7 @@ pub(crate) unsafe fn AnimTask_BlendColorCycleExcludeLoop(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_BlendColorCycleByTag(taskId: u8) {
-    let cmd: *mut Anon7 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon7;
+    let cmd: *mut Anon7 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon7;
     task_set(taskId, tPalTag, (*cmd).tag);
     task_set(taskId, tDelay, (*cmd).delay);
     task_set(taskId, tNumBlends, (*cmd).numBlends);
@@ -751,7 +752,7 @@ unsafe fn BlendColorCycleByTag(taskId: u8, startBlendAmount: u8, targetBlendAmou
 pub(crate) unsafe fn AnimTask_BlendColorCycleByTagLoop(taskId: u8) {
     let mut startBlendAmount: u8 = 0;
     let mut targetBlendAmount: u8 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if task_get(taskId, tNumBlends) > 0 {
             if task_get(taskId, tRestoreBlend) == 0 {
                 startBlendAmount = task_get(taskId, tInitialBlendY) as u8;
@@ -771,7 +772,7 @@ pub(crate) unsafe fn AnimTask_BlendColorCycleByTagLoop(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_FlashAnimTagWithColor(taskId: u8) {
-    let cmd: *mut Anon8 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon8;
+    let cmd: *mut Anon8 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon8;
     task_set(taskId, 0, (*cmd).delay);
     task_set(taskId, tDelay, (*cmd).delay);
     task_set(taskId, tNumBlends, (*cmd).numBlends);
@@ -795,7 +796,7 @@ pub(crate) unsafe fn AnimTask_FlashAnimTagWithColor_Step1(taskId: u8) {
         task_set(taskId, 0, task_get(taskId, 0) - 1);
         return;
     }
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         return;
     }
     if task_get(taskId, tNumBlends) == 0 {
@@ -829,7 +830,7 @@ pub(crate) unsafe fn AnimTask_FlashAnimTagWithColor_Step1(taskId: u8) {
 }
 pub(crate) unsafe fn AnimTask_FlashAnimTagWithColor_Step2(taskId: u8) {
     let mut selectedPalettes: u32 = 0;
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         selectedPalettes = shl_i32(
             1,
             IndexOfSpritePaletteTag(task_get(taskId, tAnimTag) as u16) as u32 + 16,
@@ -840,10 +841,10 @@ pub(crate) unsafe fn AnimTask_FlashAnimTagWithColor_Step2(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_InvertScreenColor(taskId: u8) {
-    let cmd: *mut Anon9 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon9;
+    let cmd: *mut Anon9 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon9;
     let mut selectedPalettes: u32 = 0;
-    let attackerBattler: u8 = gBattleAnimAttacker;
-    let targetBattler: u8 = gBattleAnimTarget;
+    let attackerBattler: u8 = gBattleAnimAttacker.get();
+    let targetBattler: u8 = gBattleAnimTarget.get();
     if (*cmd).flagsScenery as i32 & 256 != 0 {
         selectedPalettes = GetBattlePalettesMask(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE);
     }
@@ -857,7 +858,7 @@ pub unsafe fn AnimTask_InvertScreenColor(taskId: u8) {
     DestroyAnimVisualTask(taskId);
 }
 pub unsafe fn AnimTask_TintPalettes(taskId: u8) {
-    let cmd: *mut Anon10 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon10;
+    let cmd: *mut Anon10 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon10;
     let mut paletteIndex: u8 = 0;
     let mut selectedPalettes: u32 = 0;
     if task_get(taskId, 0) == 0 {
@@ -870,14 +871,15 @@ pub unsafe fn AnimTask_TintPalettes(taskId: u8) {
         task_set(taskId, tColorB, (*cmd).b);
     }
     task_set(taskId, 0, task_get(taskId, 0) + 1);
-    let attackerBattler: u8 = gBattleAnimAttacker;
-    let targetBattler: u8 = gBattleAnimTarget;
+    let attackerBattler: u8 = gBattleAnimAttacker.get();
+    let targetBattler: u8 = gBattleAnimTarget.get();
     if task_get(taskId, tFlagsScenery) as i32 & 256 != 0 {
         selectedPalettes = PALETTES_BG;
     }
     if task_get(taskId, tFlagsScenery) as i32 & 1 != 0 {
         paletteIndex = IndexOfSpritePaletteTag(
-            (*gSprites[gHealthboxSpriteIds[attackerBattler]].template).paletteTag,
+            (*(*gSprites.as_ptr())[crate::gl!(gHealthboxSpriteIds[attackerBattler])].template)
+                .paletteTag,
         );
         selectedPalettes |= (shl_i32(1, paletteIndex as u32) as u32) << 16;
     }
@@ -899,7 +901,7 @@ pub unsafe fn AnimTask_TintPalettes(taskId: u8) {
     }
 }
 pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms(sprite: *mut Sprite) {
-    let cmd: *mut Anon11 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon11;
+    let cmd: *mut Anon11 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon11;
     (*sprite).set_invisible(TRUE as u16);
     (*sprite).data[sShakeVelocity] = -(*cmd).velocity;
     (*sprite).data[sShakeTimer] = (*cmd).shakeTimer;
@@ -910,7 +912,7 @@ pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms(sprite: *mut Sprite) {
             StoreSpriteCallbackInData6(
                 sprite,
                 core::mem::transmute::<_, Option<unsafe fn(*mut Sprite)>>(
-                    &raw mut gBattle_BG3_X as *mut c_void,
+                    gBattle_BG3_X.as_ptr() as *mut c_void
                 ),
             );
         }
@@ -918,7 +920,7 @@ pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms(sprite: *mut Sprite) {
             StoreSpriteCallbackInData6(
                 sprite,
                 core::mem::transmute::<_, Option<unsafe fn(*mut Sprite)>>(
-                    &raw mut gBattle_BG3_Y as *mut c_void,
+                    gBattle_BG3_Y.as_ptr() as *mut c_void
                 ),
             );
         }
@@ -926,7 +928,7 @@ pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms(sprite: *mut Sprite) {
             StoreSpriteCallbackInData6(
                 sprite,
                 core::mem::transmute::<_, Option<unsafe fn(*mut Sprite)>>(
-                    &raw mut gSpriteCoordOffsetX as *mut c_void,
+                    gSpriteCoordOffsetX.as_ptr() as *mut c_void,
                 ),
             );
         }
@@ -934,7 +936,7 @@ pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms(sprite: *mut Sprite) {
             StoreSpriteCallbackInData6(
                 sprite,
                 core::mem::transmute::<_, Option<unsafe fn(*mut Sprite)>>(
-                    &raw mut gSpriteCoordOffsetY as *mut c_void,
+                    gSpriteCoordOffsetY.as_ptr() as *mut c_void,
                 ),
             );
         }
@@ -965,8 +967,9 @@ pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms_Step(sprite: *mut Sprite) {
             as *mut u16) = (*sprite).data[sOriginalValue] as u16;
         if (*sprite).data[sType] == SHAKE_MON_X || (*sprite).data[sType] == SHAKE_MON_Y {
             i = 0;
-            while i < gBattlersCount {
-                gSprites[gBattlerSpriteIds[i]].set_coordOffsetEnabled(FALSE as u16);
+            while i < gBattlersCount.get() {
+                (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[i])]
+                    .set_coordOffsetEnabled(FALSE as u16);
                 i += 1;
             }
         }
@@ -974,44 +977,68 @@ pub(crate) unsafe fn AnimShakeMonOrBattlePlatforms_Step(sprite: *mut Sprite) {
     }
 }
 unsafe fn AnimShakeMonOrBattlePlatforms_UpdateCoordOffsetEnabled() {
-    let cmd: *mut Anon12 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon12;
-    gSprites[gBattlerSpriteIds[gBattleAnimAttacker]].set_coordOffsetEnabled(FALSE as u16);
-    gSprites[gBattlerSpriteIds[gBattleAnimTarget]].set_coordOffsetEnabled(FALSE as u16);
+    let cmd: *mut Anon12 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon12;
+    (*gSprites.as_ptr())[{
+        let gl_i0 = gBattleAnimAttacker.get();
+        crate::gl!(gBattlerSpriteIds[gl_i0])
+    }]
+    .set_coordOffsetEnabled(FALSE as u16);
+    (*gSprites.as_ptr())[{
+        let gl_i1 = gBattleAnimTarget.get();
+        crate::gl!(gBattlerSpriteIds[gl_i1])
+    }]
+    .set_coordOffsetEnabled(FALSE as u16);
     if (*cmd).battlerSelector == 2 {
-        gSprites[gBattlerSpriteIds[gBattleAnimAttacker]].set_coordOffsetEnabled(TRUE as u16);
-        gSprites[gBattlerSpriteIds[gBattleAnimTarget]].set_coordOffsetEnabled(TRUE as u16);
+        (*gSprites.as_ptr())[{
+            let gl_i2 = gBattleAnimAttacker.get();
+            crate::gl!(gBattlerSpriteIds[gl_i2])
+        }]
+        .set_coordOffsetEnabled(TRUE as u16);
+        (*gSprites.as_ptr())[{
+            let gl_i3 = gBattleAnimTarget.get();
+            crate::gl!(gBattlerSpriteIds[gl_i3])
+        }]
+        .set_coordOffsetEnabled(TRUE as u16);
     } else {
         if (*cmd).battlerSelector == 0 {
-            gSprites[gBattlerSpriteIds[gBattleAnimAttacker]].set_coordOffsetEnabled(TRUE as u16);
+            (*gSprites.as_ptr())[{
+                let gl_i4 = gBattleAnimAttacker.get();
+                crate::gl!(gBattlerSpriteIds[gl_i4])
+            }]
+            .set_coordOffsetEnabled(TRUE as u16);
         } else {
-            gSprites[gBattlerSpriteIds[gBattleAnimTarget]].set_coordOffsetEnabled(TRUE as u16);
+            (*gSprites.as_ptr())[{
+                let gl_i5 = gBattleAnimTarget.get();
+                crate::gl!(gBattlerSpriteIds[gl_i5])
+            }]
+            .set_coordOffsetEnabled(TRUE as u16);
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_ShakeBattlePlatforms(taskId: u8) {
-    let cmd: *mut Anon13 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon13;
+    let cmd: *mut Anon13 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon13;
     task_set(taskId, tXOffset, (*cmd).xOffset);
     task_set(taskId, tYOffset, (*cmd).yOffset);
     task_set(taskId, tNumShakes, (*cmd).shakes);
     task_set(taskId, 3, (*cmd).delay);
     task_set(taskId, tShakeDelay, (*cmd).delay);
-    gBattle_BG3_X = (*cmd).xOffset as u16;
-    gBattle_BG3_Y = (*cmd).yOffset as u16;
+    gBattle_BG3_X.set((*cmd).xOffset as u16);
+    gBattle_BG3_Y.set((*cmd).yOffset as u16);
     task_set_func(taskId, Some(AnimTask_ShakeBattlePlatforms_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
-pub(crate) unsafe fn AnimTask_ShakeBattlePlatforms_Step(taskId: u8) {
+pub(crate) fn AnimTask_ShakeBattlePlatforms_Step(taskId: u8) {
     if task_get(taskId, 3) == 0 {
-        if gBattle_BG3_X as i32 == task_get(taskId, tXOffset) as i32 {
-            gBattle_BG3_X = (task_get(taskId, tXOffset) as u16).wrapping_neg();
+        if gBattle_BG3_X.get() as i32 == task_get(taskId, tXOffset) as i32 {
+            gBattle_BG3_X.set((task_get(taskId, tXOffset) as u16).wrapping_neg());
         } else {
-            gBattle_BG3_X = task_get(taskId, tXOffset) as u16;
+            gBattle_BG3_X.set(task_get(taskId, tXOffset) as u16);
         }
-        if gBattle_BG3_Y as i32 == -(task_get(taskId, tYOffset) as i32) {
-            gBattle_BG3_Y = 0;
+        if gBattle_BG3_Y.get() as i32 == -(task_get(taskId, tYOffset) as i32) {
+            gBattle_BG3_Y.set(0);
         } else {
-            gBattle_BG3_Y = (task_get(taskId, tYOffset) as u16).wrapping_neg();
+            gBattle_BG3_Y.set((task_get(taskId, tYOffset) as u16).wrapping_neg());
         }
         task_set(taskId, 3, task_get(taskId, tShakeDelay));
         if ({
@@ -1019,8 +1046,8 @@ pub(crate) unsafe fn AnimTask_ShakeBattlePlatforms_Step(taskId: u8) {
             task_get(taskId, tNumShakes)
         }) == 0
         {
-            gBattle_BG3_X = 0;
-            gBattle_BG3_Y = 0;
+            gBattle_BG3_X.set(0);
+            gBattle_BG3_Y.set(0);
             DestroyAnimVisualTask(taskId);
         }
     } else {
@@ -1028,7 +1055,7 @@ pub(crate) unsafe fn AnimTask_ShakeBattlePlatforms_Step(taskId: u8) {
     }
 }
 pub(crate) unsafe fn AnimHitSplatBasic(sprite: *mut Sprite) {
-    let cmd: *mut Anon14 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon14;
+    let cmd: *mut Anon14 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon14;
     StartSpriteAffineAnim(sprite, (*cmd).animation as u8);
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
         InitSpritePosToAnimAttacker(sprite, TRUE);
@@ -1039,7 +1066,7 @@ pub(crate) unsafe fn AnimHitSplatBasic(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
 pub(crate) unsafe fn AnimHitSplatPersistent(sprite: *mut Sprite) {
-    let cmd: *mut Anon15 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon15;
+    let cmd: *mut Anon15 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon15;
     StartSpriteAffineAnim(sprite, (*cmd).animation as u8);
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
         InitSpritePosToAnimAttacker(sprite, TRUE);
@@ -1051,14 +1078,14 @@ pub(crate) unsafe fn AnimHitSplatPersistent(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSpriteAfterTimer));
 }
 pub(crate) unsafe fn AnimHitSplatHandleInvert(sprite: *mut Sprite) {
-    let cmd: *mut Anon16 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon16;
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER && IsContest() == 0 {
+    let cmd: *mut Anon16 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon16;
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER && IsContest() == 0 {
         (*cmd).y = -(*cmd).y;
     }
     AnimHitSplatBasic(sprite);
 }
 pub(crate) unsafe fn AnimHitSplatRandom(sprite: *mut Sprite) {
-    let cmd: *mut Anon17 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon17;
+    let cmd: *mut Anon17 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon17;
     if (*cmd).animation == -1 {
         (*cmd).animation = Random2() as i16 & 3;
     }
@@ -1074,10 +1101,22 @@ pub(crate) unsafe fn AnimHitSplatRandom(sprite: *mut Sprite) {
     (*sprite).callback = Some(RunStoredCallbackWhenAffineAnimEnds);
 }
 pub(crate) unsafe fn AnimHitSplatOnMonEdge(sprite: *mut Sprite) {
-    let cmd: *mut Anon18 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon18;
+    let cmd: *mut Anon18 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon18;
     (*sprite).data[0] = GetAnimBattlerSpriteId((*cmd).relativeTo as u8) as i16;
-    (*sprite).x = gSprites[(*sprite).data[0]].x + gSprites[(*sprite).data[0]].x2;
-    (*sprite).y = gSprites[(*sprite).data[0]].y + gSprites[(*sprite).data[0]].y2;
+    (*sprite).x = ({
+        let gl_i6 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i6].x)
+    }) + ({
+        let gl_i7 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i7].x2)
+    });
+    (*sprite).y = ({
+        let gl_i8 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i8].y)
+    }) + ({
+        let gl_i9 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i9].y2)
+    });
     (*sprite).x2 = (*cmd).x;
     (*sprite).y2 = (*cmd).y;
     StartSpriteAffineAnim(sprite, (*cmd).animation as u8);
@@ -1085,7 +1124,7 @@ pub(crate) unsafe fn AnimHitSplatOnMonEdge(sprite: *mut Sprite) {
     (*sprite).callback = Some(RunStoredCallbackWhenAffineAnimEnds);
 }
 pub(crate) unsafe fn AnimCrossImpact(sprite: *mut Sprite) {
-    let cmd: *mut Anon19 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon19;
+    let cmd: *mut Anon19 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon19;
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
         InitSpritePosToAnimAttacker(sprite, TRUE);
     } else {
@@ -1096,7 +1135,7 @@ pub(crate) unsafe fn AnimCrossImpact(sprite: *mut Sprite) {
     (*sprite).callback = Some(WaitAnimForDuration);
 }
 pub(crate) unsafe fn AnimFlashingHitSplat(sprite: *mut Sprite) {
-    let cmd: *mut Anon20 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon20;
+    let cmd: *mut Anon20 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon20;
     StartSpriteAffineAnim(sprite, (*cmd).animation as u8);
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
         InitSpritePosToAnimAttacker(sprite, TRUE);

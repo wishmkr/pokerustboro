@@ -102,7 +102,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `CreateInvisibleSpriteWithCallback` with this module's view of its types.
 #[inline]
-unsafe fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
     unsafe { crate::util::CreateInvisibleSpriteWithCallback(core::mem::transmute(a0)) }
 }
 /// `CreateSprite` with this module's view of its types.
@@ -160,61 +160,113 @@ static sPlayerPartnerBufferCommands: Table<CArray<Option<unsafe fn()>, 57>> = Ta
     (&raw const crate::data::battle_controller_player_partner::sPlayerPartnerBufferCommands).cast(),
 );
 
-pub(crate) unsafe fn PlayerPartnerDummy() {}
-pub unsafe fn SetControllerToPlayerPartner() {
-    gBattlerControllerFuncs[gActiveBattler] = Some(PlayerPartnerBufferRunCommand);
+pub(crate) fn PlayerPartnerDummy() {}
+pub fn SetControllerToPlayerPartner() {
+    {
+        let gl_i0 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i0] = Some(PlayerPartnerBufferRunCommand))
+    };
 }
 pub(crate) unsafe fn PlayerPartnerBufferRunCommand() {
-    if gBattleControllerExecFlags
-        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler]
+    if gBattleControllerExecFlags.get()
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler.get()]
         != 0
     {
-        if gBattleBufferA[gActiveBattler][0] < 57 {
-            sPlayerPartnerBufferCommands[gBattleBufferA[gActiveBattler][0]].unwrap_unchecked()();
+        if ({
+            let gl_i1 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i1][0])
+        }) < 57
+        {
+            sPlayerPartnerBufferCommands[{
+                let gl_i2 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i2][0])
+            }]
+            .unwrap_unchecked()();
         } else {
             PlayerPartnerBufferExecCompleted();
         }
     }
 }
 pub(crate) unsafe fn CompleteOnBattlerSpriteCallbackDummy() {
-    if gSprites[gBattlerSpriteIds[gActiveBattler]].callback
+    if (*gSprites.as_ptr())[{
+        let gl_i3 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i3])
+    }]
+    .callback
         == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn FreeTrainerSpriteAfterSlide() {
-    if gSprites[gBattlerSpriteIds[gActiveBattler]].callback
+    if (*gSprites.as_ptr())[{
+        let gl_i4 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i4])
+    }]
+    .callback
         == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         BattleGfxSfxDummy3(MALE);
-        FreeSpriteOamMatrix(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-        DestroySprite(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
+        FreeSpriteOamMatrix(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i5 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i5])
+            }],
+        );
+        DestroySprite(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i6 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i6])
+            }],
+        );
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn Intro_DelayAndEnd() {
     if ({
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay -= 1;
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .introEndDelay -= 1;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .introEndDelay
     }) == 255
     {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay = 0;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .introEndDelay = 0;
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn Intro_WaitForHealthbox() {
     let mut finished: u32 = FALSE as u32;
-    if IsDoubleBattle() == 0 || IsDoubleBattle() != 0 && gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-        if gSprites[gHealthboxSpriteIds[gActiveBattler]].callback
+    if IsDoubleBattle() == 0
+        || IsDoubleBattle() != 0 && gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0
+    {
+        if (*gSprites.as_ptr())[{
+            let gl_i7 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i7])
+        }]
+        .callback
             == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
         {
             finished = TRUE as u32;
         }
     } else {
-        if gSprites[gHealthboxSpriteIds[gActiveBattler]].callback
+        if (*gSprites.as_ptr())[{
+            let gl_i8 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i8])
+        }]
+        .callback
             == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-            && gSprites[gHealthboxSpriteIds[gActiveBattler as i32 ^ 2]].callback
+            && (*gSprites.as_ptr())[{
+                let gl_i9 = gActiveBattler.get() as i32 ^ 2;
+                crate::gl!(gHealthboxSpriteIds[gl_i9])
+            }]
+            .callback
                 == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
         {
             finished = TRUE as u32;
@@ -224,70 +276,153 @@ pub(crate) unsafe fn Intro_WaitForHealthbox() {
         finished = FALSE as u32;
     }
     if finished != 0 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay = 3;
-        gBattlerControllerFuncs[gActiveBattler] = Some(Intro_DelayAndEnd);
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .introEndDelay = 3;
+        {
+            let gl_i10 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i10] = Some(Intro_DelayAndEnd))
+        };
     }
 }
 pub(crate) unsafe fn Intro_ShowHealthbox() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).ballAnimActive() == 0
-        && (*(*gBattleSpritesDataPtr)
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .ballAnimActive()
+        == 0
+        && (*(*crate::gl!(gBattleSpritesDataPtr))
             .healthBoxesData
-            .at(gActiveBattler as i32 ^ 2))
+            .at(gActiveBattler.get() as i32 ^ 2))
         .ballAnimActive()
             == 0
-        && gSprites[gBattleControllerData[gActiveBattler]].callback
+        && (*gSprites.as_ptr())[{
+            let gl_i11 = gActiveBattler.get();
+            crate::gl!(gBattleControllerData[gl_i11])
+        }]
+        .callback
             == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-        && gSprites[gBattlerSpriteIds[gActiveBattler]].callback
+        && (*gSprites.as_ptr())[{
+            let gl_i12 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i12])
+        }]
+        .callback
             == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
         && ({
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay += 1;
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .introEndDelay += 1;
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .introEndDelay
         }) != 1
     {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).introEndDelay = 0;
-        if IsDoubleBattle() != 0 && gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
-            DestroySprite(&raw mut gSprites[gBattleControllerData[gActiveBattler as i32 ^ 2]]);
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .introEndDelay = 0;
+        if IsDoubleBattle() != 0 && gBattleTypeFlags.get() & BATTLE_TYPE_MULTI == 0 {
+            DestroySprite(
+                &raw mut (*gSprites.as_ptr())[{
+                    let gl_i13 = gActiveBattler.get() as i32 ^ 2;
+                    crate::gl!(gBattleControllerData[gl_i13])
+                }],
+            );
             UpdateHealthboxAttribute(
-                gHealthboxSpriteIds[gActiveBattler as i32 ^ 2],
-                &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler as i32 ^ 2]],
+                {
+                    let gl_i14 = gActiveBattler.get() as i32 ^ 2;
+                    crate::gl!(gHealthboxSpriteIds[gl_i14])
+                },
+                &raw mut (*gPlayerParty.as_ptr())[{
+                    let gl_i15 = gActiveBattler.get() as i32 ^ 2;
+                    crate::gl!(gBattlerPartyIndexes[gl_i15])
+                }],
                 HEALTHBOX_ALL,
             );
-            StartHealthboxSlideIn(gActiveBattler ^ 2);
-            SetHealthboxSpriteVisible(gHealthboxSpriteIds[gActiveBattler as i32 ^ 2]);
+            StartHealthboxSlideIn(gActiveBattler.get() ^ 2);
+            SetHealthboxSpriteVisible({
+                let gl_i16 = gActiveBattler.get() as i32 ^ 2;
+                crate::gl!(gHealthboxSpriteIds[gl_i16])
+            });
         }
-        DestroySprite(&raw mut gSprites[gBattleControllerData[gActiveBattler]]);
+        DestroySprite(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i17 = gActiveBattler.get();
+                crate::gl!(gBattleControllerData[gl_i17])
+            }],
+        );
         UpdateHealthboxAttribute(
-            gHealthboxSpriteIds[gActiveBattler],
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            {
+                let gl_i18 = gActiveBattler.get();
+                crate::gl!(gHealthboxSpriteIds[gl_i18])
+            },
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i19 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i19])
+            }],
             HEALTHBOX_ALL,
         );
-        StartHealthboxSlideIn(gActiveBattler);
-        SetHealthboxSpriteVisible(gHealthboxSpriteIds[gActiveBattler]);
-        (*(*gBattleSpritesDataPtr).animationData).set_introAnimActive(FALSE);
-        gBattlerControllerFuncs[gActiveBattler] = Some(Intro_WaitForHealthbox);
+        StartHealthboxSlideIn(gActiveBattler.get());
+        SetHealthboxSpriteVisible({
+            let gl_i20 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i20])
+        });
+        (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).set_introAnimActive(FALSE);
+        {
+            let gl_i21 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i21] = Some(Intro_WaitForHealthbox))
+        };
     }
 }
 pub(crate) unsafe fn WaitForMonAnimAfterLoad() {
-    if gSprites[gBattlerSpriteIds[gActiveBattler]].animEnded() != 0
-        && gSprites[gBattlerSpriteIds[gActiveBattler]].x2 == 0
+    if (*gSprites.as_ptr())[{
+        let gl_i22 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i22])
+    }]
+    .animEnded()
+        != 0
+        && (*gSprites.as_ptr())[{
+            let gl_i23 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i23])
+        }]
+        .x2 == 0
     {
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn CompleteOnHealthbarDone() {
     let hpValue: i16 = MoveBattleBar(
-        gActiveBattler,
-        gHealthboxSpriteIds[gActiveBattler],
+        gActiveBattler.get(),
+        {
+            let gl_i24 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i24])
+        },
         HEALTH_BAR,
         0,
     ) as i16;
-    SetHealthboxSpriteVisible(gHealthboxSpriteIds[gActiveBattler]);
+    SetHealthboxSpriteVisible({
+        let gl_i25 = gActiveBattler.get();
+        crate::gl!(gHealthboxSpriteIds[gl_i25])
+    });
     if hpValue != -1 {
-        UpdateHpTextInHealthbox(gHealthboxSpriteIds[gActiveBattler], hpValue, HP_CURRENT);
+        UpdateHpTextInHealthbox(
+            {
+                let gl_i26 = gActiveBattler.get();
+                crate::gl!(gHealthboxSpriteIds[gl_i26])
+            },
+            hpValue,
+            HP_CURRENT,
+        );
     } else {
         HandleLowHpMusicChange(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-            gActiveBattler,
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i27 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i27])
+            }],
+            gActiveBattler.get(),
         );
         PlayerPartnerBufferExecCompleted();
     }
@@ -301,8 +436,8 @@ pub(crate) unsafe fn Task_GiveExpToMon(taskId: u8) {
     let monId: u32 = task_get(taskId, tExpTask_monId) as u8 as u32;
     let battler: u8 = task_get(taskId, tExpTask_bank) as u8;
     let mut gainedExp: i16 = task_get(taskId, tExpTask_gainedExp);
-    if IsDoubleBattle() == TRUE || monId != gBattlerPartyIndexes[battler] as u32 {
-        let mon: *mut Pokemon = &raw mut gPlayerParty[monId];
+    if IsDoubleBattle() == TRUE || monId != crate::gl!(gBattlerPartyIndexes[battler]) as u32 {
+        let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[monId]);
         let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
         let level: u8 = GetMonData2(mon, MON_DATA_LEVEL) as u8;
         let mut currExp: u32 = GetMonData2(mon, MON_DATA_EXP);
@@ -315,17 +450,21 @@ pub(crate) unsafe fn Task_GiveExpToMon(taskId: u8) {
             SetMonData(mon, MON_DATA_EXP, &raw mut nextLvlExp as *mut c_void);
             CalculateMonStats(mon);
             gainedExp -= nextLvlExp as i16 - currExp as i16;
-            let savedActiveBank: u8 = gActiveBattler;
-            gActiveBattler = battler;
+            let savedActiveBank: u8 = gActiveBattler.get();
+            gActiveBattler.set(battler);
             BtlController_EmitTwoReturnValues(
                 B_COMM_TO_ENGINE,
                 RET_VALUE_LEVELED_UP,
                 gainedExp as u16,
             );
-            gActiveBattler = savedActiveBank;
+            gActiveBattler.set(savedActiveBank);
             if IsDoubleBattle() == TRUE
-                && (monId as u16 == gBattlerPartyIndexes[battler]
-                    || monId as u16 == gBattlerPartyIndexes[battler as i32 ^ 2])
+                && (monId as u16 == crate::gl!(gBattlerPartyIndexes[battler])
+                    || monId as u16
+                        == ({
+                            let gl_i28 = battler as i32 ^ 2;
+                            crate::gl!(gBattlerPartyIndexes[gl_i28])
+                        }))
             {
                 task_set_func(taskId, Some(Task_LaunchLvlUpAnim));
             } else {
@@ -334,7 +473,7 @@ pub(crate) unsafe fn Task_GiveExpToMon(taskId: u8) {
         } else {
             currExp += gainedExp as u32;
             SetMonData(mon, MON_DATA_EXP, &raw mut currExp as *mut c_void);
-            gBattlerControllerFuncs[battler] = Some(CompleteOnInactiveTextPrinter);
+            crate::gl!(gBattlerControllerFuncs[battler] = Some(CompleteOnInactiveTextPrinter));
             DestroyTask(taskId);
         }
     } else {
@@ -345,7 +484,7 @@ pub(crate) unsafe fn Task_PrepareToGiveExpWithExpBar(taskId: u8) {
     let monIndex: u8 = task_get(taskId, tExpTask_monId) as u8;
     let gainedExp: i32 = task_get(taskId, tExpTask_gainedExp) as i32;
     let battler: u8 = task_get(taskId, tExpTask_bank) as u8;
-    let mon: *mut Pokemon = &raw mut gPlayerParty[monIndex];
+    let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[monIndex]);
     let level: u8 = GetMonData2(mon, MON_DATA_LEVEL) as u8;
     let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
     let mut exp: u32 = GetMonData2(mon, MON_DATA_EXP);
@@ -361,7 +500,7 @@ pub(crate) unsafe fn Task_PrepareToGiveExpWithExpBar(taskId: u8) {
         - currLvlExp;
     SetBattleBarStruct(
         battler,
-        gHealthboxSpriteIds[battler],
+        crate::gl!(gHealthboxSpriteIds[battler]),
         expToNextLvl as i32,
         exp as i32,
         -gainedExp,
@@ -380,13 +519,20 @@ pub(crate) unsafe fn Task_GiveExpWithExpBar(taskId: u8) {
         let monId: u8 = task_get(taskId, tExpTask_monId) as u8;
         let mut gainedExp: i16 = task_get(taskId, tExpTask_gainedExp);
         let battler: u8 = task_get(taskId, tExpTask_bank) as u8;
-        let r4: i16 = MoveBattleBar(battler, gHealthboxSpriteIds[battler], EXP_BAR, 0) as i16;
-        SetHealthboxSpriteVisible(gHealthboxSpriteIds[battler]);
+        let r4: i16 = MoveBattleBar(
+            battler,
+            crate::gl!(gHealthboxSpriteIds[battler]),
+            EXP_BAR,
+            0,
+        ) as i16;
+        SetHealthboxSpriteVisible(crate::gl!(gHealthboxSpriteIds[battler]));
         if r4 == -1 {
             m4aSongNumStop(SE_EXP);
-            let level: u8 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
-            let mut currExp: i32 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_EXP) as i32;
-            let species: u16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES) as u16;
+            let level: u8 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_LEVEL) as u8;
+            let mut currExp: i32 =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_EXP) as i32;
+            let species: u16 =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPECIES) as u16;
             let mut expOnNextLvl: i32 = (*(&raw const crate::data::pokemon::gExperienceTables)
                 .cast::<CArray<CArray<u32, 101>, 0>>())
                 [(*(&raw const crate::data::pokemon::gSpeciesInfo)
@@ -394,29 +540,29 @@ pub(crate) unsafe fn Task_GiveExpWithExpBar(taskId: u8) {
                     .growthRate][level as i32 + 1] as i32;
             if currExp + gainedExp as i32 >= expOnNextLvl {
                 SetMonData(
-                    &raw mut gPlayerParty[monId],
+                    crate::gl!(&raw gPlayerParty[monId]),
                     MON_DATA_EXP,
                     &raw mut expOnNextLvl as *mut c_void,
                 );
-                CalculateMonStats(&raw mut gPlayerParty[monId]);
+                CalculateMonStats(crate::gl!(&raw gPlayerParty[monId]));
                 gainedExp -= expOnNextLvl as i16 - currExp as i16;
-                let savedActiveBank: u8 = gActiveBattler;
-                gActiveBattler = battler;
+                let savedActiveBank: u8 = gActiveBattler.get();
+                gActiveBattler.set(battler);
                 BtlController_EmitTwoReturnValues(
                     B_COMM_TO_ENGINE,
                     RET_VALUE_LEVELED_UP,
                     gainedExp as u16,
                 );
-                gActiveBattler = savedActiveBank;
+                gActiveBattler.set(savedActiveBank);
                 task_set_func(taskId, Some(Task_LaunchLvlUpAnim));
             } else {
                 currExp += gainedExp as i32;
                 SetMonData(
-                    &raw mut gPlayerParty[monId],
+                    crate::gl!(&raw gPlayerParty[monId]),
                     MON_DATA_EXP,
                     &raw mut currExp as *mut c_void,
                 );
-                gBattlerControllerFuncs[battler] = Some(CompleteOnInactiveTextPrinter);
+                crate::gl!(gBattlerControllerFuncs[battler] = Some(CompleteOnInactiveTextPrinter));
                 DestroyTask(taskId);
             }
         }
@@ -425,7 +571,13 @@ pub(crate) unsafe fn Task_GiveExpWithExpBar(taskId: u8) {
 pub(crate) unsafe fn Task_LaunchLvlUpAnim(taskId: u8) {
     let mut battler: u8 = task_get(taskId, tExpTask_bank) as u8;
     let monIndex: u8 = task_get(taskId, tExpTask_monId) as u8;
-    if IsDoubleBattle() == TRUE && monIndex as u16 == gBattlerPartyIndexes[battler as i32 ^ 2] {
+    if IsDoubleBattle() == TRUE
+        && monIndex as u16
+            == ({
+                let gl_i29 = battler as i32 ^ 2;
+                crate::gl!(gBattlerPartyIndexes[gl_i29])
+            })
+    {
         battler ^= BIT_FLANK;
     }
     InitAndLaunchSpecialAnimation(battler, battler, battler, B_ANIM_LVL_UP);
@@ -433,19 +585,33 @@ pub(crate) unsafe fn Task_LaunchLvlUpAnim(taskId: u8) {
 }
 pub(crate) unsafe fn Task_UpdateLvlInHealthbox(taskId: u8) {
     let battler: u8 = task_get(taskId, tExpTask_bank) as u8;
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).specialAnimActive() == 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(battler))
+    .specialAnimActive()
+        == 0
+    {
         let monIndex: u8 = task_get(taskId, tExpTask_monId) as u8;
-        GetMonData2(&raw mut gPlayerParty[monIndex], MON_DATA_LEVEL);
-        if IsDoubleBattle() == TRUE && monIndex as u16 == gBattlerPartyIndexes[battler as i32 ^ 2] {
+        GetMonData2(crate::gl!(&raw gPlayerParty[monIndex]), MON_DATA_LEVEL);
+        if IsDoubleBattle() == TRUE
+            && monIndex as u16
+                == ({
+                    let gl_i30 = battler as i32 ^ 2;
+                    crate::gl!(gBattlerPartyIndexes[gl_i30])
+                })
+        {
             UpdateHealthboxAttribute(
-                gHealthboxSpriteIds[battler as i32 ^ 2],
-                &raw mut gPlayerParty[monIndex],
+                {
+                    let gl_i31 = battler as i32 ^ 2;
+                    crate::gl!(gHealthboxSpriteIds[gl_i31])
+                },
+                crate::gl!(&raw gPlayerParty[monIndex]),
                 HEALTHBOX_ALL,
             );
         } else {
             UpdateHealthboxAttribute(
-                gHealthboxSpriteIds[battler],
-                &raw mut gPlayerParty[monIndex],
+                crate::gl!(gHealthboxSpriteIds[battler]),
+                crate::gl!(&raw gPlayerParty[monIndex]),
                 HEALTHBOX_ALL,
             );
         }
@@ -454,32 +620,76 @@ pub(crate) unsafe fn Task_UpdateLvlInHealthbox(taskId: u8) {
 }
 pub(crate) unsafe fn DestroyExpTaskAndCompleteOnInactiveTextPrinter(taskId: u8) {
     let monIndex: u8 = task_get(taskId, tExpTask_monId) as u8;
-    GetMonData2(&raw mut gPlayerParty[monIndex], MON_DATA_LEVEL);
+    GetMonData2(crate::gl!(&raw gPlayerParty[monIndex]), MON_DATA_LEVEL);
     let battler: u8 = task_get(taskId, tExpTask_bank) as u8;
-    gBattlerControllerFuncs[battler] = Some(CompleteOnInactiveTextPrinter);
+    crate::gl!(gBattlerControllerFuncs[battler] = Some(CompleteOnInactiveTextPrinter));
     DestroyTask(taskId);
 }
 pub(crate) unsafe fn FreeMonSpriteAfterFaintAnim() {
-    if gSprites[gBattlerSpriteIds[gActiveBattler]].y as i32
-        + gSprites[gBattlerSpriteIds[gActiveBattler]].y2 as i32
+    if (*gSprites.as_ptr())[{
+        let gl_i32 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i32])
+    }]
+    .y as i32
+        + (*gSprites.as_ptr())[{
+            let gl_i33 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i33])
+        }]
+        .y2 as i32
         > DISPLAY_HEIGHT as i32
     {
         let species: u16 = GetMonData2(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i34 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i34])
+            }],
             MON_DATA_SPECIES,
         ) as u16;
         BattleGfxSfxDummy2(species);
-        FreeOamMatrix(gSprites[gBattlerSpriteIds[gActiveBattler]].oam.matrixNum() as u8);
-        DestroySprite(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-        SetHealthboxSpriteInvisible(gHealthboxSpriteIds[gActiveBattler]);
+        FreeOamMatrix(
+            (*gSprites.as_ptr())[{
+                let gl_i35 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i35])
+            }]
+            .oam
+            .matrixNum() as u8,
+        );
+        DestroySprite(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i36 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i36])
+            }],
+        );
+        SetHealthboxSpriteInvisible({
+            let gl_i37 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i37])
+        });
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn FreeMonSpriteAfterSwitchOutAnim() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive() == 0 {
-        FreeSpriteOamMatrix(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-        DestroySprite(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-        SetHealthboxSpriteInvisible(gHealthboxSpriteIds[gActiveBattler]);
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .specialAnimActive()
+        == 0
+    {
+        FreeSpriteOamMatrix(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i38 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i38])
+            }],
+        );
+        DestroySprite(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i39 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i39])
+            }],
+        );
+        SetHealthboxSpriteInvisible({
+            let gl_i40 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i40])
+        });
         PlayerPartnerBufferExecCompleted();
     }
 }
@@ -489,100 +699,199 @@ pub(crate) unsafe fn CompleteOnInactiveTextPrinter2() {
     }
 }
 pub(crate) unsafe fn DoHitAnimBlinkSpriteEffect() {
-    let spriteId: u8 = gBattlerSpriteIds[gActiveBattler];
-    if gSprites[spriteId].data[1] == 32 {
-        gSprites[spriteId].data[1] = 0;
-        gSprites[spriteId].set_invisible(FALSE as u16);
-        gDoingBattleAnim = FALSE;
+    let spriteId: u8 = {
+        let gl_i41 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i41])
+    };
+    if crate::gl!(gSprites[spriteId].data[1]) == 32 {
+        crate::gl!(gSprites[spriteId].data[1] = 0);
+        (*gSprites.as_ptr())[spriteId].set_invisible(FALSE as u16);
+        gDoingBattleAnim.set(FALSE);
         PlayerPartnerBufferExecCompleted();
     } else {
-        if gSprites[spriteId].data[1] % 4 == 0 {
-            gSprites[spriteId].set_invisible(gSprites[spriteId].invisible() ^ 1);
+        if crate::gl!(gSprites[spriteId].data[1]) % 4 == 0 {
+            (*gSprites.as_ptr())[spriteId]
+                .set_invisible((*gSprites.as_ptr())[spriteId].invisible() ^ 1);
         }
-        gSprites[spriteId].data[1] += 1;
+        crate::gl!(gSprites[spriteId].data[1] += 1);
     }
 }
 pub(crate) unsafe fn SwitchIn_ShowSubstitute() {
-    if gSprites[gHealthboxSpriteIds[gActiveBattler]].callback
+    if (*gSprites.as_ptr())[{
+        let gl_i42 = gActiveBattler.get();
+        crate::gl!(gHealthboxSpriteIds[gl_i42])
+    }]
+    .callback
         == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
-        CopyBattleSpriteInvisibility(gActiveBattler);
-        if (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).behindSubstitute() != 0 {
+        CopyBattleSpriteInvisibility(gActiveBattler.get());
+        if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .battlerData
+            .at(gActiveBattler.get()))
+        .behindSubstitute()
+            != 0
+        {
             InitAndLaunchSpecialAnimation(
-                gActiveBattler,
-                gActiveBattler,
-                gActiveBattler,
+                gActiveBattler.get(),
+                gActiveBattler.get(),
+                gActiveBattler.get(),
                 B_ANIM_MON_TO_SUBSTITUTE,
             );
         }
-        gBattlerControllerFuncs[gActiveBattler] = Some(SwitchIn_WaitAndEnd);
+        {
+            let gl_i43 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i43] = Some(SwitchIn_WaitAndEnd))
+        };
     }
 }
 pub(crate) unsafe fn SwitchIn_WaitAndEnd() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive() == 0
-        && gSprites[gBattlerSpriteIds[gActiveBattler]].callback
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .specialAnimActive()
+        == 0
+        && (*gSprites.as_ptr())[{
+            let gl_i44 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i44])
+        }]
+        .callback
             == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn SwitchIn_ShowHealthbox() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).finishedShinyMonAnim() != 0 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).set_triedShinyMonAnim(FALSE);
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler))
-            .set_finishedShinyMonAnim(FALSE);
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .finishedShinyMonAnim()
+        != 0
+    {
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .set_triedShinyMonAnim(FALSE);
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .set_finishedShinyMonAnim(FALSE);
         FreeSpriteTilesByTag(ANIM_TAG_GOLD_STARS);
         FreeSpritePaletteByTag(ANIM_TAG_GOLD_STARS);
         CreateTask(Some(Task_PlayerController_RestoreBgmAfterCry), 10);
         HandleLowHpMusicChange(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-            gActiveBattler,
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i45 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i45])
+            }],
+            gActiveBattler.get(),
         );
-        StartSpriteAnim(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]], 0);
+        StartSpriteAnim(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i46 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i46])
+            }],
+            0,
+        );
         UpdateHealthboxAttribute(
-            gHealthboxSpriteIds[gActiveBattler],
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            {
+                let gl_i47 = gActiveBattler.get();
+                crate::gl!(gHealthboxSpriteIds[gl_i47])
+            },
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i48 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i48])
+            }],
             HEALTHBOX_ALL,
         );
-        StartHealthboxSlideIn(gActiveBattler);
-        SetHealthboxSpriteVisible(gHealthboxSpriteIds[gActiveBattler]);
-        gBattlerControllerFuncs[gActiveBattler] = Some(SwitchIn_ShowSubstitute);
+        StartHealthboxSlideIn(gActiveBattler.get());
+        SetHealthboxSpriteVisible({
+            let gl_i49 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i49])
+        });
+        {
+            let gl_i50 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i50] = Some(SwitchIn_ShowSubstitute))
+        };
     }
 }
 pub(crate) unsafe fn SwitchIn_TryShinyAnim() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).triedShinyMonAnim() == 0
-        && (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).ballAnimActive() == 0
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .triedShinyMonAnim()
+        == 0
+        && (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .ballAnimActive()
+            == 0
     {
         TryShinyAnimation(
-            gActiveBattler,
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            gActiveBattler.get(),
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i51 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i51])
+            }],
         );
     }
-    if gSprites[gBattleControllerData[gActiveBattler]].callback
+    if (*gSprites.as_ptr())[{
+        let gl_i52 = gActiveBattler.get();
+        crate::gl!(gBattleControllerData[gl_i52])
+    }]
+    .callback
         == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-        && (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).ballAnimActive() == 0
+        && (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .ballAnimActive()
+            == 0
     {
-        DestroySprite(&raw mut gSprites[gBattleControllerData[gActiveBattler]]);
-        gBattlerControllerFuncs[gActiveBattler] = Some(SwitchIn_ShowHealthbox);
+        DestroySprite(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i53 = gActiveBattler.get();
+                crate::gl!(gBattleControllerData[gl_i53])
+            }],
+        );
+        {
+            let gl_i54 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i54] = Some(SwitchIn_ShowHealthbox))
+        };
     }
 }
 unsafe fn PlayerPartnerBufferExecCompleted() {
-    gBattlerControllerFuncs[gActiveBattler] = Some(PlayerPartnerBufferRunCommand);
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
+    {
+        let gl_i55 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i55] = Some(PlayerPartnerBufferRunCommand))
+    };
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
         let mut playerId: u8 = GetMultiplayerId();
         PrepareBufferDataTransferLink(B_COMM_CONTROLLER_IS_DONE, 4, &raw mut playerId);
-        gBattleBufferA[gActiveBattler][0] = CONTROLLER_TERMINATOR_NOP;
+        {
+            let gl_i56 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i56][0] = CONTROLLER_TERMINATOR_NOP)
+        };
     } else {
-        gBattleControllerExecFlags &= !gBitTable[gActiveBattler];
+        gBattleControllerExecFlags
+            .set(gBattleControllerExecFlags.get() & (!gBitTable[gActiveBattler.get()]));
     }
 }
 pub(crate) unsafe fn CompleteOnFinishedStatusAnimation() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).statusAnimActive() == 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .statusAnimActive()
+        == 0
+    {
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn CompleteOnFinishedBattleAnimation() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animFromTableActive() == 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .animFromTableActive()
+        == 0
+    {
         PlayerPartnerBufferExecCompleted();
     }
 }
@@ -590,13 +899,23 @@ pub(crate) unsafe fn PlayerPartnerHandleGetMonData() {
     let mut monData: CArray<u8, 256> = zeroed();
     let mut size: u32 = 0;
     let mut monToCheck: u8 = 0;
-    if gBattleBufferA[gActiveBattler][2] == 0 {
+    if ({
+        let gl_i57 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i57][2])
+    }) == 0
+    {
         size += CopyPlayerPartnerMonData(
-            gBattlerPartyIndexes[gActiveBattler] as u8,
+            ({
+                let gl_i58 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i58])
+            }) as u8,
             monData.as_mut_ptr(),
         );
     } else {
-        monToCheck = gBattleBufferA[gActiveBattler][2];
+        monToCheck = {
+            let gl_i59 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i59][2])
+        };
         for i in 0..PARTY_SIZE {
             if monToCheck as i32 & 1 != 0 {
                 size += CopyPlayerPartnerMonData(i as u8, monData.as_mut_ptr().at(size));
@@ -619,51 +938,85 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
     let mut data16: i16 = 0;
     let mut data32: u32 = 0;
     let mut size: i32 = 0;
-    match gBattleBufferA[gActiveBattler][1] {
+    match {
+        let gl_i60 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i60][1])
+    } {
         REQUEST_ALL_BATTLE => {
-            battleMon.species = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES) as u16;
-            battleMon.item = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HELD_ITEM) as u16;
+            battleMon.species =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPECIES) as u16;
+            battleMon.item =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HELD_ITEM) as u16;
             for size in 0..MAX_MON_MOVES {
                 battleMon.moves[size] =
-                    GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MOVE1 + size) as u16;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MOVE1 + size) as u16;
                 battleMon.pp[size] =
-                    GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PP1 + size) as u8;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PP1 + size) as u8;
             }
             battleMon.ppBonuses =
-                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PP_BONUSES) as u8;
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PP_BONUSES) as u8;
             battleMon.friendship =
-                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_FRIENDSHIP) as u8;
-            battleMon.experience = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_EXP);
-            battleMon.set_hpIV(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP_IV));
-            battleMon.set_attackIV(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_ATK_IV));
-            battleMon.set_defenseIV(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_DEF_IV));
-            battleMon.set_speedIV(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPEED_IV));
-            battleMon.set_spAttackIV(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPATK_IV));
-            battleMon.set_spDefenseIV(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPDEF_IV));
-            battleMon.personality = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PERSONALITY);
-            battleMon.status1 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_STATUS);
-            battleMon.level = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
-            battleMon.hp = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP) as u16;
-            battleMon.maxHP = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MAX_HP) as u16;
-            battleMon.attack = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_ATK) as u16;
-            battleMon.defense = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_DEF) as u16;
-            battleMon.speed = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPEED) as u16;
-            battleMon.spAttack = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPATK) as u16;
-            battleMon.spDefense = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPDEF) as u16;
-            battleMon.set_isEgg(GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_IS_EGG));
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_FRIENDSHIP) as u8;
+            battleMon.experience = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_EXP);
+            battleMon.set_hpIV(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_HP_IV,
+            ));
+            battleMon.set_attackIV(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_ATK_IV,
+            ));
+            battleMon.set_defenseIV(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_DEF_IV,
+            ));
+            battleMon.set_speedIV(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPEED_IV,
+            ));
+            battleMon.set_spAttackIV(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPATK_IV,
+            ));
+            battleMon.set_spDefenseIV(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPDEF_IV,
+            ));
+            battleMon.personality =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PERSONALITY);
+            battleMon.status1 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_STATUS);
+            battleMon.level =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_LEVEL) as u8;
+            battleMon.hp = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HP) as u16;
+            battleMon.maxHP =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MAX_HP) as u16;
+            battleMon.attack =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_ATK) as u16;
+            battleMon.defense =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_DEF) as u16;
+            battleMon.speed =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPEED) as u16;
+            battleMon.spAttack =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPATK) as u16;
+            battleMon.spDefense =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPDEF) as u16;
+            battleMon.set_isEgg(GetMonData2(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_IS_EGG,
+            ));
             battleMon.set_abilityNum(GetMonData2(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ABILITY_NUM,
             ));
-            battleMon.otId = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_OT_ID);
+            battleMon.otId = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_OT_ID);
             GetMonData3(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_NICKNAME,
                 nickname.as_mut_ptr(),
             );
             StringCopy_Nickname(battleMon.nickname.as_mut_ptr(), nickname.as_mut_ptr());
             GetMonData3(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_OT_NAME,
                 battleMon.otName.as_mut_ptr(),
             );
@@ -673,13 +1026,13 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
             }
         }
         REQUEST_SPECIES_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPECIES) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_HELDITEM_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HELD_ITEM) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HELD_ITEM) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
@@ -687,12 +1040,12 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
         REQUEST_MOVES_PP_BATTLE => {
             for size in 0..MAX_MON_MOVES {
                 moveData.moves[size] =
-                    GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MOVE1 + size) as u16;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MOVE1 + size) as u16;
                 moveData.pp[size] =
-                    GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PP1 + size) as u8;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PP1 + size) as u8;
             }
             moveData.ppBonuses =
-                GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PP_BONUSES) as u8;
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PP_BONUSES) as u8;
             src = &raw mut moveData as *mut u8;
             for size in 0..16i32 {
                 *dst.at(size) = *src.at(size);
@@ -700,8 +1053,13 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
         }
         4 | REQUEST_MOVE2_BATTLE | REQUEST_MOVE3_BATTLE | REQUEST_MOVE4_BATTLE => {
             data16 = GetMonData2(
-                &raw mut gPlayerParty[monId],
-                MON_DATA_MOVE1 + gBattleBufferA[gActiveBattler][1] as i32 - REQUEST_MOVE1_BATTLE,
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_MOVE1
+                    + ({
+                        let gl_i61 = gActiveBattler.get();
+                        crate::gl!(gBattleBufferA[gl_i61][1])
+                    }) as i32
+                    - REQUEST_MOVE1_BATTLE,
             ) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
@@ -711,10 +1069,11 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
             size = 0;
             while size < MAX_MON_MOVES {
                 *dst.at(size) =
-                    GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PP1 + size) as u8;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PP1 + size) as u8;
                 size += 1;
             }
-            *dst.at(size) = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PP_BONUSES) as u8;
+            *dst.at(size) =
+                GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PP_BONUSES) as u8;
             size += 1;
         }
         REQUEST_PPMOVE1_BATTLE
@@ -722,109 +1081,113 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
         | REQUEST_PPMOVE3_BATTLE
         | REQUEST_PPMOVE4_BATTLE => {
             *dst = GetMonData2(
-                &raw mut gPlayerParty[monId],
-                MON_DATA_PP1 + gBattleBufferA[gActiveBattler][1] as i32
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_PP1
+                    + ({
+                        let gl_i62 = gActiveBattler.get();
+                        crate::gl!(gBattleBufferA[gl_i62][1])
+                    }) as i32
                     - REQUEST_PPMOVE1_BATTLE as i32,
             ) as u8;
             size = 1;
         }
         REQUEST_OTID_BATTLE => {
-            data32 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_OT_ID);
+            data32 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_OT_ID);
             *dst = data32 as u8;
             *dst.at(1) = ((data32 & 0x0000FF00) >> 8) as u8;
             *dst.at(2) = ((data32 & 0x00FF0000) >> 16) as u8;
             size = 3;
         }
         REQUEST_EXP_BATTLE => {
-            data32 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_EXP);
+            data32 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_EXP);
             *dst = data32 as u8;
             *dst.at(1) = ((data32 & 0x0000FF00) >> 8) as u8;
             *dst.at(2) = ((data32 & 0x00FF0000) >> 16) as u8;
             size = 3;
         }
         REQUEST_HP_EV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP_EV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HP_EV) as u8;
             size = 1;
         }
         REQUEST_ATK_EV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_ATK_EV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_ATK_EV) as u8;
             size = 1;
         }
         REQUEST_DEF_EV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_DEF_EV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_DEF_EV) as u8;
             size = 1;
         }
         REQUEST_SPEED_EV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPEED_EV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPEED_EV) as u8;
             size = 1;
         }
         REQUEST_SPATK_EV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPATK_EV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPATK_EV) as u8;
             size = 1;
         }
         REQUEST_SPDEF_EV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPDEF_EV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPDEF_EV) as u8;
             size = 1;
         }
         REQUEST_FRIENDSHIP_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_FRIENDSHIP) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_FRIENDSHIP) as u8;
             size = 1;
         }
         REQUEST_POKERUS_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_POKERUS) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_POKERUS) as u8;
             size = 1;
         }
         REQUEST_MET_LOCATION_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MET_LOCATION) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MET_LOCATION) as u8;
             size = 1;
         }
         REQUEST_MET_LEVEL_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MET_LEVEL) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MET_LEVEL) as u8;
             size = 1;
         }
         REQUEST_MET_GAME_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MET_GAME) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MET_GAME) as u8;
             size = 1;
         }
         REQUEST_POKEBALL_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_POKEBALL) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_POKEBALL) as u8;
             size = 1;
         }
         REQUEST_ALL_IVS_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP_IV) as u8;
-            *dst.at(1) = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_ATK_IV) as u8;
-            *dst.at(2) = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_DEF_IV) as u8;
-            *dst.at(3) = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPEED_IV) as u8;
-            *dst.at(4) = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPATK_IV) as u8;
-            *dst.at(5) = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPDEF_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HP_IV) as u8;
+            *dst.at(1) = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_ATK_IV) as u8;
+            *dst.at(2) = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_DEF_IV) as u8;
+            *dst.at(3) = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPEED_IV) as u8;
+            *dst.at(4) = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPATK_IV) as u8;
+            *dst.at(5) = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPDEF_IV) as u8;
             size = 6;
         }
         REQUEST_HP_IV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HP_IV) as u8;
             size = 1;
         }
         REQUEST_ATK_IV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_ATK_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_ATK_IV) as u8;
             size = 1;
         }
         REQUEST_DEF_IV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_DEF_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_DEF_IV) as u8;
             size = 1;
         }
         REQUEST_SPEED_IV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPEED_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPEED_IV) as u8;
             size = 1;
         }
         REQUEST_SPATK_IV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPATK_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPATK_IV) as u8;
             size = 1;
         }
         REQUEST_SPDEF_IV_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPDEF_IV) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPDEF_IV) as u8;
             size = 1;
         }
         REQUEST_PERSONALITY_BATTLE => {
-            data32 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PERSONALITY);
+            data32 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_PERSONALITY);
             *dst = data32 as u8;
             *dst.at(1) = ((data32 & 0x0000FF00) >> 8) as u8;
             *dst.at(2) = ((data32 & 0x00FF0000) >> 16) as u8;
@@ -832,13 +1195,13 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
             size = 4;
         }
         REQUEST_CHECKSUM_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_CHECKSUM) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_CHECKSUM) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_STATUS_BATTLE => {
-            data32 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_STATUS);
+            data32 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_STATUS);
             *dst = data32 as u8;
             *dst.at(1) = ((data32 & 0x0000FF00) >> 8) as u8;
             *dst.at(2) = ((data32 & 0x00FF0000) >> 16) as u8;
@@ -846,93 +1209,93 @@ unsafe fn CopyPlayerPartnerMonData(monId: u8, dst: *mut u8) -> u32 {
             size = 4;
         }
         REQUEST_LEVEL_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_LEVEL) as u8;
             size = 1;
         }
         REQUEST_HP_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_HP) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_MAX_HP_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_MAX_HP) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_MAX_HP) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_ATK_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_ATK) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_ATK) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_DEF_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_DEF) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_DEF) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_SPEED_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPEED) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPEED) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_SPATK_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPATK) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPATK) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_SPDEF_BATTLE => {
-            data16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPDEF) as i16;
+            data16 = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPDEF) as i16;
             *dst = data16 as u8;
             *dst.at(1) = (data16 >> 8) as u8;
             size = 2;
         }
         REQUEST_COOL_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_COOL) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_COOL) as u8;
             size = 1;
         }
         REQUEST_BEAUTY_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_BEAUTY) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_BEAUTY) as u8;
             size = 1;
         }
         REQUEST_CUTE_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_CUTE) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_CUTE) as u8;
             size = 1;
         }
         REQUEST_SMART_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SMART) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SMART) as u8;
             size = 1;
         }
         REQUEST_TOUGH_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_TOUGH) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_TOUGH) as u8;
             size = 1;
         }
         REQUEST_SHEEN_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SHEEN) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SHEEN) as u8;
             size = 1;
         }
         REQUEST_COOL_RIBBON_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_COOL_RIBBON) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_COOL_RIBBON) as u8;
             size = 1;
         }
         REQUEST_BEAUTY_RIBBON_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_BEAUTY_RIBBON) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_BEAUTY_RIBBON) as u8;
             size = 1;
         }
         REQUEST_CUTE_RIBBON_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_CUTE_RIBBON) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_CUTE_RIBBON) as u8;
             size = 1;
         }
         REQUEST_SMART_RIBBON_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SMART_RIBBON) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SMART_RIBBON) as u8;
             size = 1;
         }
         REQUEST_TOUGH_RIBBON_BATTLE => {
-            *dst = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_TOUGH_RIBBON) as u8;
+            *dst = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_TOUGH_RIBBON) as u8;
             size = 1;
         }
         _ => {}
@@ -944,10 +1307,22 @@ pub(crate) unsafe fn PlayerPartnerHandleGetRawMonData() {
 }
 pub(crate) unsafe fn PlayerPartnerHandleSetMonData() {
     let mut monToCheck: u8 = 0;
-    if gBattleBufferA[gActiveBattler][2] == 0 {
-        SetPlayerPartnerMonData(gBattlerPartyIndexes[gActiveBattler] as u8);
+    if ({
+        let gl_i63 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i63][2])
+    }) == 0
+    {
+        SetPlayerPartnerMonData(
+            ({
+                let gl_i64 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i64])
+            }) as u8,
+        );
     } else {
-        monToCheck = gBattleBufferA[gActiveBattler][2];
+        monToCheck = {
+            let gl_i65 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i65][2])
+        };
         for i in 0..(PARTY_SIZE as u8) {
             if monToCheck as i32 & 1 != 0 {
                 SetPlayerPartnerMonData(i);
@@ -959,219 +1334,228 @@ pub(crate) unsafe fn PlayerPartnerHandleSetMonData() {
 }
 unsafe fn SetPlayerPartnerMonData(monId: u8) {
     let battlePokemon: *mut BattlePokemon =
-        &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+        &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
             .cast::<CArray<CArray<u8, 512>, 4>>()
-            .cast_mut())[gActiveBattler][3] as *mut BattlePokemon;
-    let moveData: *mut MovePPInfo = &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
-        .cast::<CArray<CArray<u8, 512>, 4>>()
-        .cast_mut())[gActiveBattler][3] as *mut MovePPInfo;
-    match gBattleBufferA[gActiveBattler][1] {
+            .cast_mut())[gActiveBattler.get()][3] as *mut BattlePokemon;
+    let moveData: *mut MovePPInfo =
+        &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
+            .cast::<CArray<CArray<u8, 512>, 4>>()
+            .cast_mut())[gActiveBattler.get()][3] as *mut MovePPInfo;
+    match {
+        let gl_i66 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i66][1])
+    } {
         REQUEST_ALL_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPECIES,
                 &raw mut (*battlePokemon).species as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HELD_ITEM,
                 &raw mut (*battlePokemon).item as *mut c_void,
             );
             for i in 0..MAX_MON_MOVES {
                 SetMonData(
-                    &raw mut gPlayerParty[monId],
+                    crate::gl!(&raw gPlayerParty[monId]),
                     MON_DATA_MOVE1 + i,
                     &raw mut (*battlePokemon).moves[i] as *mut c_void,
                 );
                 SetMonData(
-                    &raw mut gPlayerParty[monId],
+                    crate::gl!(&raw gPlayerParty[monId]),
                     MON_DATA_PP1 + i,
                     &raw mut (*battlePokemon).pp[i] as *mut c_void,
                 );
             }
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP_BONUSES,
                 &raw mut (*battlePokemon).ppBonuses as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_FRIENDSHIP,
                 &raw mut (*battlePokemon).friendship as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_EXP,
                 &raw mut (*battlePokemon).experience as *mut c_void,
             );
             let mut iv: u8 = (*battlePokemon).hpIV() as u8;
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HP_IV,
                 &raw mut iv as *mut c_void,
             );
             iv = (*battlePokemon).attackIV() as u8;
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ATK_IV,
                 &raw mut iv as *mut c_void,
             );
             iv = (*battlePokemon).defenseIV() as u8;
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_DEF_IV,
                 &raw mut iv as *mut c_void,
             );
             iv = (*battlePokemon).speedIV() as u8;
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPEED_IV,
                 &raw mut iv as *mut c_void,
             );
             iv = (*battlePokemon).spAttackIV() as u8;
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPATK_IV,
                 &raw mut iv as *mut c_void,
             );
             iv = (*battlePokemon).spDefenseIV() as u8;
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPDEF_IV,
                 &raw mut iv as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PERSONALITY,
                 &raw mut (*battlePokemon).personality as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_STATUS,
                 &raw mut (*battlePokemon).status1 as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_LEVEL,
                 &raw mut (*battlePokemon).level as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HP,
                 &raw mut (*battlePokemon).hp as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_MAX_HP,
                 &raw mut (*battlePokemon).maxHP as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ATK,
                 &raw mut (*battlePokemon).attack as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_DEF,
                 &raw mut (*battlePokemon).defense as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPEED,
                 &raw mut (*battlePokemon).speed as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPATK,
                 &raw mut (*battlePokemon).spAttack as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPDEF,
                 &raw mut (*battlePokemon).spDefense as *mut c_void,
             );
         }
         REQUEST_SPECIES_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPECIES,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_HELDITEM_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HELD_ITEM,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_MOVES_PP_BATTLE => {
             for i in 0..MAX_MON_MOVES {
                 SetMonData(
-                    &raw mut gPlayerParty[monId],
+                    crate::gl!(&raw gPlayerParty[monId]),
                     MON_DATA_MOVE1 + i,
                     &raw mut (*moveData).moves[i] as *mut c_void,
                 );
                 SetMonData(
-                    &raw mut gPlayerParty[monId],
+                    crate::gl!(&raw gPlayerParty[monId]),
                     MON_DATA_PP1 + i,
                     &raw mut (*moveData).pp[i] as *mut c_void,
                 );
             }
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP_BONUSES,
                 &raw mut (*moveData).ppBonuses as *mut c_void,
             );
         }
         4 | REQUEST_MOVE2_BATTLE | REQUEST_MOVE3_BATTLE | REQUEST_MOVE4_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
-                MON_DATA_MOVE1 + gBattleBufferA[gActiveBattler][1] as i32 - REQUEST_MOVE1_BATTLE,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_MOVE1
+                    + ({
+                        let gl_i67 = gActiveBattler.get();
+                        crate::gl!(gBattleBufferA[gl_i67][1])
+                    }) as i32
+                    - REQUEST_MOVE1_BATTLE,
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_PP_DATA_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP1,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP2,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][4] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][4] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP3,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][5] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][5] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP4,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][6] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][6] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PP_BONUSES,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][7] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][7] as *mut c_void,
             );
         }
         REQUEST_PPMOVE1_BATTLE
@@ -1179,555 +1563,675 @@ unsafe fn SetPlayerPartnerMonData(monId: u8) {
         | REQUEST_PPMOVE3_BATTLE
         | REQUEST_PPMOVE4_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
-                MON_DATA_PP1 + gBattleBufferA[gActiveBattler][1] as i32
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_PP1
+                    + ({
+                        let gl_i68 = gActiveBattler.get();
+                        crate::gl!(gBattleBufferA[gl_i68][1])
+                    }) as i32
                     - REQUEST_PPMOVE1_BATTLE as i32,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_OTID_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_OT_ID,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_EXP_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_EXP,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_HP_EV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HP_EV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_ATK_EV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ATK_EV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_DEF_EV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_DEF_EV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPEED_EV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPEED_EV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPATK_EV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPATK_EV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPDEF_EV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPDEF_EV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_FRIENDSHIP_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_FRIENDSHIP,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_POKERUS_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_POKERUS,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_MET_LOCATION_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_MET_LOCATION,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_MET_LEVEL_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_MET_LEVEL,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_MET_GAME_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_MET_GAME,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_POKEBALL_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_POKEBALL,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_ALL_IVS_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HP_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ATK_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][4] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][4] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_DEF_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][5] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][5] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPEED_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][6] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][6] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPATK_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][7] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][7] as *mut c_void,
             );
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPDEF_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][8] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][8] as *mut c_void,
             );
         }
         REQUEST_HP_IV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HP_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_ATK_IV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ATK_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_DEF_IV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_DEF_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPEED_IV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPEED_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPATK_IV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPATK_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPDEF_IV_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPDEF_IV,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_PERSONALITY_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_PERSONALITY,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_CHECKSUM_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_CHECKSUM,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_STATUS_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_STATUS,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_LEVEL_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_LEVEL,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_HP_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_HP,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_MAX_HP_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_MAX_HP,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_ATK_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_ATK,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_DEF_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_DEF,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPEED_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPEED,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPATK_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPATK,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SPDEF_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SPDEF,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_COOL_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_COOL,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_BEAUTY_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_BEAUTY,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_CUTE_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_CUTE,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SMART_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SMART,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_TOUGH_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_TOUGH,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SHEEN_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SHEEN,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_COOL_RIBBON_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_COOL_RIBBON,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_BEAUTY_RIBBON_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_BEAUTY_RIBBON,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_CUTE_RIBBON_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_CUTE_RIBBON,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_SMART_RIBBON_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_SMART_RIBBON,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         REQUEST_TOUGH_RIBBON_BATTLE => {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_TOUGH_RIBBON,
-                &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
                     .cast::<CArray<CArray<u8, 512>, 4>>()
-                    .cast_mut())[gActiveBattler][3] as *mut c_void,
+                    .cast_mut())[gActiveBattler.get()][3] as *mut c_void,
             );
         }
         _ => {}
     }
     HandleLowHpMusicChange(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-        gActiveBattler,
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i69 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i69])
+        }],
+        gActiveBattler.get(),
     );
 }
 pub(crate) unsafe fn PlayerPartnerHandleSetRawMonData() {
-    let dst: *mut u8 = (&raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]] as *mut u8)
-        .at(gBattleBufferA[gActiveBattler][1]);
-    for i in 0..gBattleBufferA[gActiveBattler][2] {
-        *dst.at(i) = gBattleBufferA[gActiveBattler][3 + i as i32];
+    let dst: *mut u8 = (&raw mut (*gPlayerParty.as_ptr())[{
+        let gl_i70 = gActiveBattler.get();
+        crate::gl!(gBattlerPartyIndexes[gl_i70])
+    }] as *mut u8)
+        .at({
+            let gl_i71 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i71][1])
+        });
+    for i in 0..({
+        let gl_i72 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i72][2])
+    }) {
+        *dst.at(i) = {
+            let gl_i73 = gActiveBattler.get();
+            let gl_i74 = 3 + i as i32;
+            crate::gl!(gBattleBufferA[gl_i73][gl_i74])
+        };
     }
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleLoadMonSprite() {
     BattleLoadPlayerMonSpriteGfx(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-        gActiveBattler,
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i75 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i75])
+        }],
+        gActiveBattler.get(),
     );
     let species: u16 = GetMonData2(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i76 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i76])
+        }],
         MON_DATA_SPECIES,
     ) as u16;
-    SetMultiuseSpriteTemplateToPokemon(species, GetBattlerPosition(gActiveBattler));
-    gBattlerSpriteIds[gActiveBattler] = CreateSprite(
-        &raw mut gMultiuseSpriteTemplate,
-        GetBattlerSpriteCoord(gActiveBattler, BATTLER_COORD_X_2) as i16,
-        GetBattlerSpriteDefault_Y(gActiveBattler) as i16,
-        GetBattlerSpriteSubpriority(gActiveBattler),
-    );
-    gSprites[gBattlerSpriteIds[gActiveBattler]].x2 = -240;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[0] = gActiveBattler as i16;
-    gSprites[gBattlerSpriteIds[gActiveBattler]]
-        .oam
-        .set_paletteNum(gActiveBattler as u16);
+    SetMultiuseSpriteTemplateToPokemon(species, GetBattlerPosition(gActiveBattler.get()));
+    {
+        let gl_v = CreateSprite(
+            crate::gl!(&raw gMultiuseSpriteTemplate),
+            GetBattlerSpriteCoord(gActiveBattler.get(), BATTLER_COORD_X_2) as i16,
+            GetBattlerSpriteDefault_Y(gActiveBattler.get()) as i16,
+            GetBattlerSpriteSubpriority(gActiveBattler.get()),
+        );
+        let gl_i77 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i77] = gl_v)
+    };
+    (*gSprites.as_ptr())[{
+        let gl_i78 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i78])
+    }]
+    .x2 = -240;
+    (*gSprites.as_ptr())[{
+        let gl_i79 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i79])
+    }]
+    .data[0] = gActiveBattler.get() as i16;
+    (*gSprites.as_ptr())[{
+        let gl_i80 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i80])
+    }]
+    .oam
+    .set_paletteNum(gActiveBattler.get() as u16);
     StartSpriteAnim(
-        &raw mut gSprites[gBattlerSpriteIds[gActiveBattler]],
-        gBattleMonForms[gActiveBattler],
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i81 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i81])
+        }],
+        {
+            let gl_i82 = gActiveBattler.get();
+            crate::gl!(gBattleMonForms[gl_i82])
+        },
     );
-    gBattlerControllerFuncs[gActiveBattler] = Some(WaitForMonAnimAfterLoad);
+    {
+        let gl_i83 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i83] = Some(WaitForMonAnimAfterLoad))
+    };
 }
 pub(crate) unsafe fn PlayerPartnerHandleSwitchInAnim() {
-    ClearTemporarySpeciesSpriteData(gActiveBattler, gBattleBufferA[gActiveBattler][2]);
-    gBattlerPartyIndexes[gActiveBattler] = gBattleBufferA[gActiveBattler][1] as u16;
+    ClearTemporarySpeciesSpriteData(gActiveBattler.get(), {
+        let gl_i84 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i84][2])
+    });
+    {
+        let gl_i85 = gActiveBattler.get();
+        crate::gl!(
+            gBattlerPartyIndexes[gl_i85] = ({
+                let gl_i86 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i86][1])
+            }) as u16
+        )
+    };
     BattleLoadPlayerMonSpriteGfx(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-        gActiveBattler,
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i87 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i87])
+        }],
+        gActiveBattler.get(),
     );
-    StartSendOutAnim(gActiveBattler, gBattleBufferA[gActiveBattler][2]);
-    gBattlerControllerFuncs[gActiveBattler] = Some(SwitchIn_TryShinyAnim);
+    StartSendOutAnim(gActiveBattler.get(), {
+        let gl_i88 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i88][2])
+    });
+    {
+        let gl_i89 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i89] = Some(SwitchIn_TryShinyAnim))
+    };
 }
 pub(crate) unsafe fn StartSendOutAnim(battler: u8, dontClearSubstituteBit: u8) {
     ClearTemporarySpeciesSpriteData(battler, dontClearSubstituteBit);
-    gBattlerPartyIndexes[battler] = gBattleBufferA[battler][1] as u16;
+    crate::gl!(gBattlerPartyIndexes[battler] = crate::gl!(gBattleBufferA[battler][1]) as u16);
     let species: u16 = GetMonData2(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+        &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
         MON_DATA_SPECIES,
     ) as u16;
-    gBattleControllerData[battler] =
-        CreateInvisibleSpriteWithCallback(Some(SpriteCB_WaitForBattlerBallReleaseAnim));
-    SetMultiuseSpriteTemplateToPokemon(species, GetBattlerPosition(battler));
-    gBattlerSpriteIds[battler] = CreateSprite(
-        &raw mut gMultiuseSpriteTemplate,
-        GetBattlerSpriteCoord(battler, BATTLER_COORD_X_2) as i16,
-        GetBattlerSpriteDefault_Y(battler) as i16,
-        GetBattlerSpriteSubpriority(battler),
+    crate::gl!(
+        gBattleControllerData[battler] =
+            CreateInvisibleSpriteWithCallback(Some(SpriteCB_WaitForBattlerBallReleaseAnim))
     );
-    gSprites[gBattleControllerData[battler]].data[1] = gBattlerSpriteIds[battler] as i16;
-    gSprites[gBattleControllerData[battler]].data[2] = battler as i16;
-    gSprites[gBattlerSpriteIds[battler]].data[0] = battler as i16;
-    gSprites[gBattlerSpriteIds[battler]].data[2] = species as i16;
-    gSprites[gBattlerSpriteIds[battler]]
+    SetMultiuseSpriteTemplateToPokemon(species, GetBattlerPosition(battler));
+    crate::gl!(
+        gBattlerSpriteIds[battler] = CreateSprite(
+            crate::gl!(&raw gMultiuseSpriteTemplate),
+            GetBattlerSpriteCoord(battler, BATTLER_COORD_X_2) as i16,
+            GetBattlerSpriteDefault_Y(battler) as i16,
+            GetBattlerSpriteSubpriority(battler),
+        )
+    );
+    (*gSprites.as_ptr())[crate::gl!(gBattleControllerData[battler])].data[1] =
+        crate::gl!(gBattlerSpriteIds[battler]) as i16;
+    (*gSprites.as_ptr())[crate::gl!(gBattleControllerData[battler])].data[2] = battler as i16;
+    (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].data[0] = battler as i16;
+    (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].data[2] = species as i16;
+    (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])]
         .oam
         .set_paletteNum(battler as u16);
     StartSpriteAnim(
-        &raw mut gSprites[gBattlerSpriteIds[battler]],
-        gBattleMonForms[battler],
+        &raw mut (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])],
+        crate::gl!(gBattleMonForms[battler]),
     );
-    gSprites[gBattlerSpriteIds[battler]].set_invisible(TRUE as u16);
-    gSprites[gBattlerSpriteIds[battler]].callback = Some(SpriteCallbackDummy);
-    gSprites[gBattleControllerData[battler]].data[0] =
+    (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].callback =
+        Some(SpriteCallbackDummy);
+    (*gSprites.as_ptr())[crate::gl!(gBattleControllerData[battler])].data[0] =
         DoPokeballSendOutAnimation(0, POKEBALL_PLAYER_SENDOUT) as i16;
 }
 pub(crate) unsafe fn PlayerPartnerHandleReturnMonToBall() {
-    if gBattleBufferA[gActiveBattler][1] == 0 {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 0;
-        gBattlerControllerFuncs[gActiveBattler] = Some(DoSwitchOutAnimation);
+    if ({
+        let gl_i90 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i90][1])
+    }) == 0
+    {
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .animationState = 0;
+        {
+            let gl_i91 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i91] = Some(DoSwitchOutAnimation))
+        };
     } else {
-        FreeSpriteOamMatrix(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-        DestroySprite(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-        SetHealthboxSpriteInvisible(gHealthboxSpriteIds[gActiveBattler]);
+        FreeSpriteOamMatrix(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i92 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i92])
+            }],
+        );
+        DestroySprite(
+            &raw mut (*gSprites.as_ptr())[{
+                let gl_i93 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i93])
+            }],
+        );
+        SetHealthboxSpriteInvisible({
+            let gl_i94 = gActiveBattler.get();
+            crate::gl!(gHealthboxSpriteIds[gl_i94])
+        });
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn DoSwitchOutAnimation() {
-    match (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState {
+    match (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .animationState
+    {
         0 => {
-            if (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).behindSubstitute() != 0 {
+            if (*(*crate::gl!(gBattleSpritesDataPtr))
+                .battlerData
+                .at(gActiveBattler.get()))
+            .behindSubstitute()
+                != 0
+            {
                 InitAndLaunchSpecialAnimation(
-                    gActiveBattler,
-                    gActiveBattler,
-                    gActiveBattler,
+                    gActiveBattler.get(),
+                    gActiveBattler.get(),
+                    gActiveBattler.get(),
                     B_ANIM_SUBSTITUTE_TO_MON,
                 );
             }
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 1;
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .animationState = 1;
         }
-        1 if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive()
+        1 if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .specialAnimActive()
             == 0 =>
         {
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 0;
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .animationState = 0;
             InitAndLaunchSpecialAnimation(
-                gActiveBattler,
-                gActiveBattler,
-                gActiveBattler,
+                gActiveBattler.get(),
+                gActiveBattler.get(),
+                gActiveBattler.get(),
                 B_ANIM_SWITCH_OUT_PLAYER_MON,
             );
-            gBattlerControllerFuncs[gActiveBattler] = Some(FreeMonSpriteAfterSwitchOutAnim);
+            {
+                let gl_i95 = gActiveBattler.get();
+                crate::gl!(gBattlerControllerFuncs[gl_i95] = Some(FreeMonSpriteAfterSwitchOutAnim))
+            };
         }
         _ => {}
     }
@@ -1736,7 +2240,7 @@ pub(crate) unsafe fn PlayerPartnerHandleDrawTrainerPic() {
     let mut xPos: i16 = 0;
     let mut yPos: i16 = 0;
     let mut trainerPicId: u32 = 0;
-    if gPartnerTrainerId == TRAINER_STEVEN_PARTNER {
+    if gPartnerTrainerId.get() == TRAINER_STEVEN_PARTNER {
         trainerPicId = TRAINER_BACK_PIC_STEVEN;
         xPos = 90;
         yPos = (8
@@ -1746,7 +2250,7 @@ pub(crate) unsafe fn PlayerPartnerHandleDrawTrainerPic() {
             * 4
             + 80;
     } else {
-        trainerPicId = GetFrontierTrainerFrontSpriteId(gPartnerTrainerId) as u32;
+        trainerPicId = GetFrontierTrainerFrontSpriteId(gPartnerTrainerId.get()) as u32;
         xPos = 32;
         yPos = (8
             - (*(&raw const crate::data::data_tables::gTrainerFrontPicCoords)
@@ -1755,93 +2259,214 @@ pub(crate) unsafe fn PlayerPartnerHandleDrawTrainerPic() {
             * 4
             + 80;
     }
-    if gPartnerTrainerId == TRAINER_STEVEN_PARTNER {
-        DecompressTrainerBackPic(trainerPicId as u16, gActiveBattler);
+    if gPartnerTrainerId.get() == TRAINER_STEVEN_PARTNER {
+        DecompressTrainerBackPic(trainerPicId as u16, gActiveBattler.get());
         SetMultiuseSpriteTemplateToTrainerBack(
             trainerPicId as u16,
-            GetBattlerPosition(gActiveBattler),
+            GetBattlerPosition(gActiveBattler.get()),
         );
-        gBattlerSpriteIds[gActiveBattler] = CreateSprite(
-            &raw mut gMultiuseSpriteTemplate,
-            xPos,
-            yPos,
-            GetBattlerSpriteSubpriority(gActiveBattler),
-        );
-        gSprites[gBattlerSpriteIds[gActiveBattler]]
-            .oam
-            .set_paletteNum(gActiveBattler as u16);
-        gSprites[gBattlerSpriteIds[gActiveBattler]].x2 = DISPLAY_WIDTH as i16;
-        gSprites[gBattlerSpriteIds[gActiveBattler]].data[0] = -2;
-        gSprites[gBattlerSpriteIds[gActiveBattler]].callback = Some(SpriteCB_TrainerSlideIn);
+        {
+            let gl_v = CreateSprite(
+                crate::gl!(&raw gMultiuseSpriteTemplate),
+                xPos,
+                yPos,
+                GetBattlerSpriteSubpriority(gActiveBattler.get()),
+            );
+            let gl_i96 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i96] = gl_v)
+        };
+        (*gSprites.as_ptr())[{
+            let gl_i97 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i97])
+        }]
+        .oam
+        .set_paletteNum(gActiveBattler.get() as u16);
+        (*gSprites.as_ptr())[{
+            let gl_i98 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i98])
+        }]
+        .x2 = DISPLAY_WIDTH as i16;
+        (*gSprites.as_ptr())[{
+            let gl_i99 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i99])
+        }]
+        .data[0] = -2;
+        (*gSprites.as_ptr())[{
+            let gl_i100 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i100])
+        }]
+        .callback = Some(SpriteCB_TrainerSlideIn);
     } else {
-        DecompressTrainerFrontPic(trainerPicId as u16, gActiveBattler);
+        DecompressTrainerFrontPic(trainerPicId as u16, gActiveBattler.get());
         SetMultiuseSpriteTemplateToTrainerFront(
             trainerPicId as u16,
-            GetBattlerPosition(gActiveBattler),
+            GetBattlerPosition(gActiveBattler.get()),
         );
-        gBattlerSpriteIds[gActiveBattler] = CreateSprite(
-            &raw mut gMultiuseSpriteTemplate,
-            xPos,
-            yPos,
-            GetBattlerSpriteSubpriority(gActiveBattler),
-        );
-        gSprites[gBattlerSpriteIds[gActiveBattler]]
-            .oam
-            .set_paletteNum(IndexOfSpritePaletteTag(
-                (*(&raw const crate::data::data_tables::gTrainerFrontPicPaletteTable)
-                    .cast::<CArray<CompressedSpritePalette, 0>>())[trainerPicId]
-                    .tag,
-            ) as u16);
-        gSprites[gBattlerSpriteIds[gActiveBattler]].x2 = DISPLAY_WIDTH as i16;
-        gSprites[gBattlerSpriteIds[gActiveBattler]].y2 = 48;
-        gSprites[gBattlerSpriteIds[gActiveBattler]].data[0] = -2;
-        gSprites[gBattlerSpriteIds[gActiveBattler]].callback = Some(SpriteCB_TrainerSlideIn);
-        gSprites[gBattlerSpriteIds[gActiveBattler]]
-            .oam
-            .set_affineMode(ST_OAM_AFFINE_OFF);
-        gSprites[gBattlerSpriteIds[gActiveBattler]].set_hFlip(1);
+        {
+            let gl_v = CreateSprite(
+                crate::gl!(&raw gMultiuseSpriteTemplate),
+                xPos,
+                yPos,
+                GetBattlerSpriteSubpriority(gActiveBattler.get()),
+            );
+            let gl_i101 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i101] = gl_v)
+        };
+        (*gSprites.as_ptr())[{
+            let gl_i102 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i102])
+        }]
+        .oam
+        .set_paletteNum(IndexOfSpritePaletteTag(
+            (*(&raw const crate::data::data_tables::gTrainerFrontPicPaletteTable)
+                .cast::<CArray<CompressedSpritePalette, 0>>())[trainerPicId]
+                .tag,
+        ) as u16);
+        (*gSprites.as_ptr())[{
+            let gl_i103 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i103])
+        }]
+        .x2 = DISPLAY_WIDTH as i16;
+        (*gSprites.as_ptr())[{
+            let gl_i104 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i104])
+        }]
+        .y2 = 48;
+        (*gSprites.as_ptr())[{
+            let gl_i105 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i105])
+        }]
+        .data[0] = -2;
+        (*gSprites.as_ptr())[{
+            let gl_i106 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i106])
+        }]
+        .callback = Some(SpriteCB_TrainerSlideIn);
+        (*gSprites.as_ptr())[{
+            let gl_i107 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i107])
+        }]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_OFF);
+        (*gSprites.as_ptr())[{
+            let gl_i108 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i108])
+        }]
+        .set_hFlip(1);
     }
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnBattlerSpriteCallbackDummy);
+    {
+        let gl_i109 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i109] = Some(CompleteOnBattlerSpriteCallbackDummy))
+    };
 }
 pub(crate) unsafe fn PlayerPartnerHandleTrainerSlide() {
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleTrainerSlideBack() {
-    SetSpritePrimaryCoordsFromSecondaryCoords(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[0] = 35;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[2] = -40;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[4] =
-        gSprites[gBattlerSpriteIds[gActiveBattler]].y;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].callback = Some(StartAnimLinearTranslation);
+    SetSpritePrimaryCoordsFromSecondaryCoords(
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i110 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i110])
+        }],
+    );
+    (*gSprites.as_ptr())[{
+        let gl_i111 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i111])
+    }]
+    .data[0] = 35;
+    (*gSprites.as_ptr())[{
+        let gl_i112 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i112])
+    }]
+    .data[2] = -40;
+    (*gSprites.as_ptr())[{
+        let gl_i113 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i113])
+    }]
+    .data[4] = (*gSprites.as_ptr())[{
+        let gl_i114 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i114])
+    }]
+    .y;
+    (*gSprites.as_ptr())[{
+        let gl_i115 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i115])
+    }]
+    .callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(
-        &raw mut gSprites[gBattlerSpriteIds[gActiveBattler]],
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i116 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i116])
+        }],
         Some(SpriteCallbackDummy),
     );
-    gBattlerControllerFuncs[gActiveBattler] = Some(FreeTrainerSpriteAfterSlide);
+    {
+        let gl_i117 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i117] = Some(FreeTrainerSpriteAfterSlide))
+    };
 }
 pub(crate) unsafe fn PlayerPartnerHandleFaintAnimation() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState == 0 {
-        if (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).behindSubstitute() != 0 {
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .animationState
+        == 0
+    {
+        if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .battlerData
+            .at(gActiveBattler.get()))
+        .behindSubstitute()
+            != 0
+        {
             InitAndLaunchSpecialAnimation(
-                gActiveBattler,
-                gActiveBattler,
-                gActiveBattler,
+                gActiveBattler.get(),
+                gActiveBattler.get(),
+                gActiveBattler.get(),
                 B_ANIM_SUBSTITUTE_TO_MON,
             );
         }
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState += 1;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .animationState += 1;
     } else {
-        if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive() == 0 {
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 0;
+        if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .specialAnimActive()
+            == 0
+        {
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .animationState = 0;
             HandleLowHpMusicChange(
-                &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-                gActiveBattler,
+                &raw mut (*gPlayerParty.as_ptr())[{
+                    let gl_i118 = gActiveBattler.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i118])
+                }],
+                gActiveBattler.get(),
             );
             PlaySE12WithPanning(SE_FAINT, SOUND_PAN_ATTACKER);
-            gSprites[gBattlerSpriteIds[gActiveBattler]].data[1] = 0;
-            gSprites[gBattlerSpriteIds[gActiveBattler]].data[sSpeedY] = 5;
-            gSprites[gBattlerSpriteIds[gActiveBattler]].callback = Some(SpriteCB_FaintSlideAnim);
-            gBattlerControllerFuncs[gActiveBattler] = Some(FreeMonSpriteAfterFaintAnim);
+            (*gSprites.as_ptr())[{
+                let gl_i119 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i119])
+            }]
+            .data[1] = 0;
+            (*gSprites.as_ptr())[{
+                let gl_i120 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i120])
+            }]
+            .data[sSpeedY] = 5;
+            (*gSprites.as_ptr())[{
+                let gl_i121 = gActiveBattler.get();
+                crate::gl!(gBattlerSpriteIds[gl_i121])
+            }]
+            .callback = Some(SpriteCB_FaintSlideAnim);
+            {
+                let gl_i122 = gActiveBattler.get();
+                crate::gl!(gBattlerControllerFuncs[gl_i122] = Some(FreeMonSpriteAfterFaintAnim))
+            };
         }
     }
 }
@@ -1858,103 +2483,225 @@ pub(crate) unsafe fn PlayerPartnerHandlePause() {
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleMoveAnimation() {
-    if IsBattleSEPlaying(gActiveBattler) == 0 {
-        let r#move: u16 = gBattleBufferA[gActiveBattler][1] as u16
-            | (gBattleBufferA[gActiveBattler][2] as u16) << 8;
-        gAnimMoveTurn = gBattleBufferA[gActiveBattler][3];
-        gAnimMovePower = gBattleBufferA[gActiveBattler][4] as u16
-            | (gBattleBufferA[gActiveBattler][5] as u16) << 8;
-        gAnimMoveDmg = gBattleBufferA[gActiveBattler][6] as i32
-            | (gBattleBufferA[gActiveBattler][7] as i32) << 8
-            | (gBattleBufferA[gActiveBattler][8] as i32) << 16
-            | (gBattleBufferA[gActiveBattler][9] as i32) << 24;
-        gAnimFriendship = gBattleBufferA[gActiveBattler][10];
-        gWeatherMoveAnim = gBattleBufferA[gActiveBattler][12] as u16
-            | (gBattleBufferA[gActiveBattler][13] as u16) << 8;
-        gAnimDisableStructPtr = &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
-            .cast::<CArray<CArray<u8, 512>, 4>>()
-            .cast_mut())[gActiveBattler][16] as *mut DisableStruct;
-        gTransformedPersonalities[gActiveBattler] =
-            (*gAnimDisableStructPtr).transformedMonPersonality;
-        if IsMoveWithoutAnimation(r#move, gAnimMoveTurn) != 0 {
+    if IsBattleSEPlaying(gActiveBattler.get()) == 0 {
+        let r#move: u16 = ({
+            let gl_i123 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i123][1])
+        }) as u16
+            | (({
+                let gl_i124 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i124][2])
+            }) as u16)
+                << 8;
+        gAnimMoveTurn.set({
+            let gl_i125 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i125][3])
+        });
+        gAnimMovePower.set(
+            ({
+                let gl_i126 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i126][4])
+            }) as u16
+                | (({
+                    let gl_i127 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i127][5])
+                }) as u16)
+                    << 8,
+        );
+        gAnimMoveDmg.set(
+            ({
+                let gl_i128 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i128][6])
+            }) as i32
+                | (({
+                    let gl_i129 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i129][7])
+                }) as i32)
+                    << 8
+                | (({
+                    let gl_i130 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i130][8])
+                }) as i32)
+                    << 16
+                | (({
+                    let gl_i131 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i131][9])
+                }) as i32)
+                    << 24,
+        );
+        gAnimFriendship.set({
+            let gl_i132 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i132][10])
+        });
+        gWeatherMoveAnim.set(
+            ({
+                let gl_i133 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i133][12])
+            }) as u16
+                | (({
+                    let gl_i134 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i134][13])
+                }) as u16)
+                    << 8,
+        );
+        crate::gl!(
+            gAnimDisableStructPtr =
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
+                    .cast::<CArray<CArray<u8, 512>, 4>>()
+                    .cast_mut())[gActiveBattler.get()][16] as *mut DisableStruct
+        );
+        {
+            let gl_i135 = gActiveBattler.get();
+            crate::gl!(
+                gTransformedPersonalities[gl_i135] =
+                    (*crate::gl!(gAnimDisableStructPtr)).transformedMonPersonality
+            )
+        };
+        if IsMoveWithoutAnimation(r#move, gAnimMoveTurn.get()) != 0 {
             PlayerPartnerBufferExecCompleted();
         } else {
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 0;
-            gBattlerControllerFuncs[gActiveBattler] = Some(PlayerPartnerDoMoveAnimation);
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .animationState = 0;
+            {
+                let gl_i136 = gActiveBattler.get();
+                crate::gl!(gBattlerControllerFuncs[gl_i136] = Some(PlayerPartnerDoMoveAnimation))
+            };
         }
     }
 }
 pub(crate) unsafe fn PlayerPartnerDoMoveAnimation() {
-    let r#move: u16 =
-        gBattleBufferA[gActiveBattler][1] as u16 | (gBattleBufferA[gActiveBattler][2] as u16) << 8;
-    let multihit: u8 = gBattleBufferA[gActiveBattler][11];
-    match (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState {
+    let r#move: u16 = ({
+        let gl_i137 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i137][1])
+    }) as u16
+        | (({
+            let gl_i138 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i138][2])
+        }) as u16)
+            << 8;
+    let multihit: u8 = {
+        let gl_i139 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i139][11])
+    };
+    match (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .animationState
+    {
         0 => {
-            if (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).behindSubstitute() != 0
-                && (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).flag_x8() == 0
+            if (*(*crate::gl!(gBattleSpritesDataPtr))
+                .battlerData
+                .at(gActiveBattler.get()))
+            .behindSubstitute()
+                != 0
+                && (*(*crate::gl!(gBattleSpritesDataPtr))
+                    .battlerData
+                    .at(gActiveBattler.get()))
+                .flag_x8()
+                    == 0
             {
-                (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).set_flag_x8(1);
+                (*(*crate::gl!(gBattleSpritesDataPtr))
+                    .battlerData
+                    .at(gActiveBattler.get()))
+                .set_flag_x8(1);
                 InitAndLaunchSpecialAnimation(
-                    gActiveBattler,
-                    gActiveBattler,
-                    gActiveBattler,
+                    gActiveBattler.get(),
+                    gActiveBattler.get(),
+                    gActiveBattler.get(),
                     B_ANIM_SUBSTITUTE_TO_MON,
                 );
             }
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 1;
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .animationState = 1;
         }
         1 => {
-            if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive()
+            if (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .specialAnimActive()
                 == 0
             {
                 SetBattlerSpriteAffineMode(ST_OAM_AFFINE_OFF as u8);
                 DoMoveAnim(r#move);
-                (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 2;
+                (*(*crate::gl!(gBattleSpritesDataPtr))
+                    .healthBoxesData
+                    .at(gActiveBattler.get()))
+                .animationState = 2;
             }
         }
         2 => {
-            gAnimScriptCallback.unwrap_unchecked()();
-            if gAnimScriptActive == 0 {
+            (*gAnimScriptCallback.as_ptr()).unwrap_unchecked()();
+            if gAnimScriptActive.get() == 0 {
                 SetBattlerSpriteAffineMode(ST_OAM_AFFINE_NORMAL as u8);
-                if (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).behindSubstitute()
+                if (*(*crate::gl!(gBattleSpritesDataPtr))
+                    .battlerData
+                    .at(gActiveBattler.get()))
+                .behindSubstitute()
                     != 0
                     && multihit < 2
                 {
                     InitAndLaunchSpecialAnimation(
-                        gActiveBattler,
-                        gActiveBattler,
-                        gActiveBattler,
+                        gActiveBattler.get(),
+                        gActiveBattler.get(),
+                        gActiveBattler.get(),
                         B_ANIM_MON_TO_SUBSTITUTE,
                     );
-                    (*(*gBattleSpritesDataPtr).battlerData.at(gActiveBattler)).set_flag_x8(0);
+                    (*(*crate::gl!(gBattleSpritesDataPtr))
+                        .battlerData
+                        .at(gActiveBattler.get()))
+                    .set_flag_x8(0);
                 }
-                (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 3;
+                (*(*crate::gl!(gBattleSpritesDataPtr))
+                    .healthBoxesData
+                    .at(gActiveBattler.get()))
+                .animationState = 3;
             }
         }
-        3 if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).specialAnimActive()
+        3 if (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .specialAnimActive()
             == 0 =>
         {
             CopyAllBattleSpritesInvisibilities();
             TrySetBehindSubstituteSpriteBit(
-                gActiveBattler,
-                gBattleBufferA[gActiveBattler][1] as u16
-                    | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+                gActiveBattler.get(),
+                ({
+                    let gl_i140 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i140][1])
+                }) as u16
+                    | (({
+                        let gl_i141 = gActiveBattler.get();
+                        crate::gl!(gBattleBufferA[gl_i141][2])
+                    }) as u16)
+                        << 8,
             );
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).animationState = 0;
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .animationState = 0;
             PlayerPartnerBufferExecCompleted();
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandlePrintString() {
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    let stringId: *mut u16 = &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
-        .cast::<CArray<CArray<u8, 512>, 4>>()
-        .cast_mut())[gActiveBattler][2] as *mut u16;
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    let stringId: *mut u16 = &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;)
+        .cast_const())
+    .cast::<CArray<CArray<u8, 512>, 4>>()
+    .cast_mut())[gActiveBattler.get()][2] as *mut u16;
     BufferStringBattle(*stringId);
-    BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnInactiveTextPrinter2);
+    BattlePutTextOnWindow((*gDisplayedStringBattle.as_ptr()).as_mut_ptr(), B_WIN_MSG);
+    {
+        let gl_i142 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i142] = Some(CompleteOnInactiveTextPrinter2))
+    };
 }
 pub(crate) unsafe fn PlayerPartnerHandlePrintSelectionString() {
     PlayerPartnerBufferExecCompleted();
@@ -1968,9 +2715,9 @@ pub(crate) unsafe fn PlayerPartnerHandleYesNoBox() {
 }
 pub(crate) unsafe fn PlayerPartnerHandleChooseMove() {
     let moveInfo: *mut ChooseMoveStruct =
-        &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
+        &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
             .cast::<CArray<CArray<u8, 512>, 4>>()
-            .cast_mut())[gActiveBattler][4] as *mut ChooseMoveStruct;
+            .cast_mut())[gActiveBattler.get()][4] as *mut ChooseMoveStruct;
     BattleAI_SetupAIData(ALL_MOVES_MASK);
     let chosenMoveId: u8 = BattleAI_ChooseMoveOrAction();
     if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
@@ -1979,7 +2726,7 @@ pub(crate) unsafe fn PlayerPartnerHandleChooseMove() {
         & 18
         != 0
     {
-        gBattlerTarget = gActiveBattler;
+        gBattlerTarget.set(gActiveBattler.get());
     }
     if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
         [(*moveInfo).moves[chosenMoveId]]
@@ -1987,18 +2734,18 @@ pub(crate) unsafe fn PlayerPartnerHandleChooseMove() {
         & MOVE_TARGET_BOTH as i32
         != 0
     {
-        gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
-        if gAbsentBattlerFlags as u32
-            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+        gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT));
+        if gAbsentBattlerFlags.get() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget.get()]
             != 0
         {
-            gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+            gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT));
         }
     }
     BtlController_EmitTwoReturnValues(
         B_COMM_TO_ENGINE,
         B_ACTION_EXEC_SCRIPT,
-        chosenMoveId as u16 | (gBattlerTarget as u16) << 8,
+        chosenMoveId as u16 | (gBattlerTarget.get() as u16) << 8,
     );
     PlayerPartnerBufferExecCompleted();
 }
@@ -2011,18 +2758,18 @@ pub(crate) unsafe fn PlayerPartnerHandleChoosePokemon() {
         let playerMonIdentity: u8 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
         let selfIdentity: u8 = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
         for chosenMonId in 3..PARTY_SIZE {
-            if GetMonData2(&raw mut gPlayerParty[chosenMonId], MON_DATA_HP) != 0
-                && chosenMonId != gBattlerPartyIndexes[playerMonIdentity] as i32
-                && chosenMonId != gBattlerPartyIndexes[selfIdentity] as i32
+            if GetMonData2(crate::gl!(&raw gPlayerParty[chosenMonId]), MON_DATA_HP) != 0
+                && chosenMonId != crate::gl!(gBattlerPartyIndexes[playerMonIdentity]) as i32
+                && chosenMonId != crate::gl!(gBattlerPartyIndexes[selfIdentity]) as i32
             {
                 break;
             }
         }
     }
-    *(*gBattleStruct)
+    *(*crate::gl!(gBattleStruct))
         .monToSwitchIntoId
         .as_mut_ptr()
-        .at(gActiveBattler) = chosenMonId as u8;
+        .at(gActiveBattler.get()) = chosenMonId as u8;
     BtlController_EmitChosenMonReturnValue(B_COMM_TO_ENGINE, chosenMonId as u8, null_mut());
     PlayerPartnerBufferExecCompleted();
 }
@@ -2031,77 +2778,148 @@ pub(crate) unsafe fn PlayerPartnerHandleCmd23() {
 }
 pub(crate) unsafe fn PlayerPartnerHandleHealthBarUpdate() {
     LoadBattleBarGfx(0);
-    let hpVal: i16 =
-        gBattleBufferA[gActiveBattler][2] as i16 | (gBattleBufferA[gActiveBattler][3] as i16) << 8;
+    let hpVal: i16 = ({
+        let gl_i143 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i143][2])
+    }) as i16
+        | (({
+            let gl_i144 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i144][3])
+        }) as i16)
+            << 8;
     if hpVal != INSTANT_HP_BAR_DROP {
         let maxHP: u32 = GetMonData2(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i145 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i145])
+            }],
             MON_DATA_MAX_HP,
         );
         let curHP: u32 = GetMonData2(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i146 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i146])
+            }],
             MON_DATA_HP,
         );
         SetBattleBarStruct(
-            gActiveBattler,
-            gHealthboxSpriteIds[gActiveBattler],
+            gActiveBattler.get(),
+            {
+                let gl_i147 = gActiveBattler.get();
+                crate::gl!(gHealthboxSpriteIds[gl_i147])
+            },
             maxHP as i32,
             curHP as i32,
             hpVal as i32,
         );
     } else {
         let maxHP: u32 = GetMonData2(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i148 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i148])
+            }],
             MON_DATA_MAX_HP,
         );
         SetBattleBarStruct(
-            gActiveBattler,
-            gHealthboxSpriteIds[gActiveBattler],
+            gActiveBattler.get(),
+            {
+                let gl_i149 = gActiveBattler.get();
+                crate::gl!(gHealthboxSpriteIds[gl_i149])
+            },
             maxHP as i32,
             0,
             hpVal as i32,
         );
     }
-    gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnHealthbarDone);
+    {
+        let gl_i150 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i150] = Some(CompleteOnHealthbarDone))
+    };
 }
 pub(crate) unsafe fn PlayerPartnerHandleExpUpdate() {
-    let monId: u8 = gBattleBufferA[gActiveBattler][1];
-    if GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) >= MAX_LEVEL {
+    let monId: u8 = {
+        let gl_i151 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i151][1])
+    };
+    if GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_LEVEL) >= MAX_LEVEL {
         PlayerPartnerBufferExecCompleted();
     } else {
         LoadBattleBarGfx(1);
-        GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES);
-        let expPointsToGive: i16 = gBattleBufferA[gActiveBattler][2] as i16
-            | (gBattleBufferA[gActiveBattler][3] as i16) << 8;
+        GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_SPECIES);
+        let expPointsToGive: i16 = ({
+            let gl_i152 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i152][2])
+        }) as i16
+            | (({
+                let gl_i153 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i153][3])
+            }) as i16)
+                << 8;
         let taskId: u8 = CreateTask(Some(Task_GiveExpToMon), 10);
         task_set(taskId, tExpTask_monId, monId as i16);
         task_set(taskId, tExpTask_gainedExp, expPointsToGive);
-        task_set(taskId, tExpTask_bank, gActiveBattler as i16);
-        gBattlerControllerFuncs[gActiveBattler] = Some(BattleControllerDummy);
+        task_set(taskId, tExpTask_bank, gActiveBattler.get() as i16);
+        {
+            let gl_i154 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i154] = Some(BattleControllerDummy))
+        };
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandleStatusIconUpdate() {
-    if IsBattleSEPlaying(gActiveBattler) == 0 {
+    if IsBattleSEPlaying(gActiveBattler.get()) == 0 {
         UpdateHealthboxAttribute(
-            gHealthboxSpriteIds[gActiveBattler],
-            &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+            {
+                let gl_i155 = gActiveBattler.get();
+                crate::gl!(gHealthboxSpriteIds[gl_i155])
+            },
+            &raw mut (*gPlayerParty.as_ptr())[{
+                let gl_i156 = gActiveBattler.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i156])
+            }],
             HEALTHBOX_STATUS_ICON,
         );
-        let battler: u8 = gActiveBattler;
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_statusAnimActive(0);
-        gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnFinishedStatusAnimation);
+        let battler: u8 = gActiveBattler.get();
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(battler))
+        .set_statusAnimActive(0);
+        {
+            let gl_i157 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i157] = Some(CompleteOnFinishedStatusAnimation))
+        };
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandleStatusAnimation() {
-    if IsBattleSEPlaying(gActiveBattler) == 0 {
+    if IsBattleSEPlaying(gActiveBattler.get()) == 0 {
         InitAndLaunchChosenStatusAnimation(
-            gBattleBufferA[gActiveBattler][1],
-            gBattleBufferA[gActiveBattler][2] as u32
-                | (gBattleBufferA[gActiveBattler][3] as u32) << 8
-                | (gBattleBufferA[gActiveBattler][4] as u32) << 16
-                | (gBattleBufferA[gActiveBattler][5] as u32) << 24,
+            {
+                let gl_i158 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i158][1])
+            },
+            ({
+                let gl_i159 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i159][2])
+            }) as u32
+                | (({
+                    let gl_i160 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i160][3])
+                }) as u32)
+                    << 8
+                | (({
+                    let gl_i161 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i161][4])
+                }) as u32)
+                    << 16
+                | (({
+                    let gl_i162 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i162][5])
+                }) as u32)
+                    << 24,
         );
-        gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnFinishedStatusAnimation);
+        {
+            let gl_i163 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i163] = Some(CompleteOnFinishedStatusAnimation))
+        };
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandleStatusXor() {
@@ -2132,29 +2950,45 @@ pub(crate) unsafe fn PlayerPartnerHandleOneReturnValue_Duplicate() {
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleClearUnkVar() {
-    gUnusedControllerStruct.set_unk(0);
+    (*gUnusedControllerStruct.as_ptr()).set_unk(0);
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleSetUnkVar() {
-    gUnusedControllerStruct.set_unk(gBattleBufferA[gActiveBattler][1]);
+    (*gUnusedControllerStruct.as_ptr()).set_unk({
+        let gl_i164 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i164][1])
+    });
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleClearUnkFlag() {
-    gUnusedControllerStruct.set_flag(0);
+    (*gUnusedControllerStruct.as_ptr()).set_flag(0);
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleToggleUnkFlag() {
-    gUnusedControllerStruct.set_flag(gUnusedControllerStruct.flag() ^ 1);
+    (*gUnusedControllerStruct.as_ptr()).set_flag((*gUnusedControllerStruct.as_ptr()).flag() ^ 1);
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleHitAnimation() {
-    if gSprites[gBattlerSpriteIds[gActiveBattler]].invisible() == TRUE as u16 {
+    if (*gSprites.as_ptr())[{
+        let gl_i165 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i165])
+    }]
+    .invisible()
+        == TRUE as u16
+    {
         PlayerPartnerBufferExecCompleted();
     } else {
-        gDoingBattleAnim = TRUE;
-        gSprites[gBattlerSpriteIds[gActiveBattler]].data[1] = 0;
-        DoHitAnimHealthboxEffect(gActiveBattler);
-        gBattlerControllerFuncs[gActiveBattler] = Some(DoHitAnimBlinkSpriteEffect);
+        gDoingBattleAnim.set(TRUE);
+        (*gSprites.as_ptr())[{
+            let gl_i166 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i166])
+        }]
+        .data[1] = 0;
+        DoHitAnimHealthboxEffect(gActiveBattler.get());
+        {
+            let gl_i167 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i167] = Some(DoHitAnimBlinkSpriteEffect))
+        };
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandleCantSwitch() {
@@ -2162,60 +2996,129 @@ pub(crate) unsafe fn PlayerPartnerHandleCantSwitch() {
 }
 pub(crate) unsafe fn PlayerPartnerHandlePlaySE() {
     let mut pan: i8 = 0;
-    if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
+    if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
         pan = SOUND_PAN_ATTACKER;
     } else {
         pan = SOUND_PAN_TARGET;
     }
     PlaySE12WithPanning(
-        gBattleBufferA[gActiveBattler][1] as u16 | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+        ({
+            let gl_i168 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i168][1])
+        }) as u16
+            | (({
+                let gl_i169 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i169][2])
+            }) as u16)
+                << 8,
         pan,
     );
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandlePlayFanfareOrBGM() {
-    if gBattleBufferA[gActiveBattler][3] != 0 {
+    if ({
+        let gl_i170 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i170][3])
+    }) != 0
+    {
         BattleStopLowHpSound();
         PlayBGM(
-            gBattleBufferA[gActiveBattler][1] as u16
-                | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+            ({
+                let gl_i171 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i171][1])
+            }) as u16
+                | (({
+                    let gl_i172 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i172][2])
+                }) as u16)
+                    << 8,
         );
     } else {
         PlayFanfare(
-            gBattleBufferA[gActiveBattler][1] as u16
-                | (gBattleBufferA[gActiveBattler][2] as u16) << 8,
+            ({
+                let gl_i173 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i173][1])
+            }) as u16
+                | (({
+                    let gl_i174 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i174][2])
+                }) as u16)
+                    << 8,
         );
     }
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleFaintingCry() {
     let species: u16 = GetMonData2(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
+        &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i175 = gActiveBattler.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i175])
+        }],
         MON_DATA_SPECIES,
     ) as u16;
     PlayCry_ByMode(species, -25, CRY_MODE_FAINT);
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleIntroSlide() {
-    HandleIntroSlide(gBattleBufferA[gActiveBattler][1]);
-    gIntroSlideFlags |= 1;
+    HandleIntroSlide({
+        let gl_i176 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i176][1])
+    });
+    gIntroSlideFlags.set(gIntroSlideFlags.get() | (1));
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleIntroTrainerBallThrow() {
-    SetSpritePrimaryCoordsFromSecondaryCoords(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]]);
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[0] = 50;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[2] = -40;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[4] =
-        gSprites[gBattlerSpriteIds[gActiveBattler]].y;
-    gSprites[gBattlerSpriteIds[gActiveBattler]].callback = Some(StartAnimLinearTranslation);
-    gSprites[gBattlerSpriteIds[gActiveBattler]].data[5] = gActiveBattler as i16;
+    SetSpritePrimaryCoordsFromSecondaryCoords(
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i177 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i177])
+        }],
+    );
+    (*gSprites.as_ptr())[{
+        let gl_i178 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i178])
+    }]
+    .data[0] = 50;
+    (*gSprites.as_ptr())[{
+        let gl_i179 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i179])
+    }]
+    .data[2] = -40;
+    (*gSprites.as_ptr())[{
+        let gl_i180 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i180])
+    }]
+    .data[4] = (*gSprites.as_ptr())[{
+        let gl_i181 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i181])
+    }]
+    .y;
+    (*gSprites.as_ptr())[{
+        let gl_i182 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i182])
+    }]
+    .callback = Some(StartAnimLinearTranslation);
+    (*gSprites.as_ptr())[{
+        let gl_i183 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i183])
+    }]
+    .data[5] = gActiveBattler.get() as i16;
     StoreSpriteCallbackInData6(
-        &raw mut gSprites[gBattlerSpriteIds[gActiveBattler]],
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i184 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i184])
+        }],
         Some(SpriteCB_FreePlayerSpriteLoadMonSprite),
     );
-    StartSpriteAnim(&raw mut gSprites[gBattlerSpriteIds[gActiveBattler]], 1);
+    StartSpriteAnim(
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i185 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i185])
+        }],
+        1,
+    );
     let paletteNum: u8 = AllocSpritePalette(0xD6F9);
-    if gPartnerTrainerId == TRAINER_STEVEN_PARTNER {
+    if gPartnerTrainerId.get() == TRAINER_STEVEN_PARTNER {
         let spriteId: u8 = TRAINER_BACK_PIC_STEVEN as u8;
         LoadCompressedPalette(
             (*(&raw const crate::data::data_tables::gTrainerBackPicPaletteTable)
@@ -2225,7 +3128,7 @@ pub(crate) unsafe fn PlayerPartnerHandleIntroTrainerBallThrow() {
             32,
         );
     } else {
-        let spriteId: u8 = GetFrontierTrainerFrontSpriteId(gPartnerTrainerId);
+        let spriteId: u8 = GetFrontierTrainerFrontSpriteId(gPartnerTrainerId.get());
         LoadCompressedPalette(
             (*(&raw const crate::data::data_tables::gTrainerFrontPicPaletteTable)
                 .cast::<CArray<CompressedSpritePalette, 0>>())[spriteId]
@@ -2234,86 +3137,173 @@ pub(crate) unsafe fn PlayerPartnerHandleIntroTrainerBallThrow() {
             32,
         );
     }
-    gSprites[gBattlerSpriteIds[gActiveBattler]]
-        .oam
-        .set_paletteNum(paletteNum as u16);
+    (*gSprites.as_ptr())[{
+        let gl_i186 = gActiveBattler.get();
+        crate::gl!(gBattlerSpriteIds[gl_i186])
+    }]
+    .oam
+    .set_paletteNum(paletteNum as u16);
     let taskId: u8 = CreateTask(Some(Task_StartSendOutAnim), 5);
-    task_set(taskId, 0, gActiveBattler as i16);
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusSummaryShown() != 0
+    task_set(taskId, 0, gActiveBattler.get() as i16);
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .partyStatusSummaryShown()
+        != 0
     {
         task_set_func(
-            gBattlerStatusSummaryTaskId[gActiveBattler],
+            {
+                let gl_i187 = gActiveBattler.get();
+                crate::gl!(gBattlerStatusSummaryTaskId[gl_i187])
+            },
             Some(Task_HidePartyStatusSummary),
         );
     }
-    (*(*gBattleSpritesDataPtr).animationData).set_introAnimActive(TRUE);
-    gBattlerControllerFuncs[gActiveBattler] = Some(PlayerPartnerDummy);
+    (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).set_introAnimActive(TRUE);
+    {
+        let gl_i188 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i188] = Some(PlayerPartnerDummy))
+    };
 }
 pub(crate) unsafe fn Task_StartSendOutAnim(taskId: u8) {
     if task_get(taskId, 1) < 24 {
         task_set(taskId, 1, task_get(taskId, 1) + 1);
     } else {
-        let savedActiveBank: u8 = gActiveBattler;
-        gActiveBattler = task_get(taskId, 0) as u8;
-        if IsDoubleBattle() == 0 || gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-            gBattleBufferA[gActiveBattler][1] = gBattlerPartyIndexes[gActiveBattler] as u8;
-            StartSendOutAnim(gActiveBattler, FALSE);
+        let savedActiveBank: u8 = gActiveBattler.get();
+        gActiveBattler.set(task_get(taskId, 0) as u8);
+        if IsDoubleBattle() == 0 || gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
+            {
+                let gl_i189 = gActiveBattler.get();
+                crate::gl!(
+                    gBattleBufferA[gl_i189][1] = ({
+                        let gl_i190 = gActiveBattler.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i190])
+                    }) as u8
+                )
+            };
+            StartSendOutAnim(gActiveBattler.get(), FALSE);
         } else {
-            gBattleBufferA[gActiveBattler][1] = gBattlerPartyIndexes[gActiveBattler] as u8;
-            StartSendOutAnim(gActiveBattler, FALSE);
-            gActiveBattler ^= BIT_FLANK;
-            gBattleBufferA[gActiveBattler][1] = gBattlerPartyIndexes[gActiveBattler] as u8;
+            {
+                let gl_i191 = gActiveBattler.get();
+                crate::gl!(
+                    gBattleBufferA[gl_i191][1] = ({
+                        let gl_i192 = gActiveBattler.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i192])
+                    }) as u8
+                )
+            };
+            StartSendOutAnim(gActiveBattler.get(), FALSE);
+            gActiveBattler.set(gActiveBattler.get() ^ (BIT_FLANK));
+            {
+                let gl_i193 = gActiveBattler.get();
+                crate::gl!(
+                    gBattleBufferA[gl_i193][1] = ({
+                        let gl_i194 = gActiveBattler.get();
+                        crate::gl!(gBattlerPartyIndexes[gl_i194])
+                    }) as u8
+                )
+            };
             BattleLoadPlayerMonSpriteGfx(
-                &raw mut gPlayerParty[gBattlerPartyIndexes[gActiveBattler]],
-                gActiveBattler,
+                &raw mut (*gPlayerParty.as_ptr())[{
+                    let gl_i195 = gActiveBattler.get();
+                    crate::gl!(gBattlerPartyIndexes[gl_i195])
+                }],
+                gActiveBattler.get(),
             );
-            StartSendOutAnim(gActiveBattler, FALSE);
-            gActiveBattler ^= BIT_FLANK;
+            StartSendOutAnim(gActiveBattler.get(), FALSE);
+            gActiveBattler.set(gActiveBattler.get() ^ (BIT_FLANK));
         }
-        gBattlerControllerFuncs[gActiveBattler] = Some(Intro_ShowHealthbox);
-        gActiveBattler = savedActiveBank;
+        {
+            let gl_i196 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i196] = Some(Intro_ShowHealthbox))
+        };
+        gActiveBattler.set(savedActiveBank);
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandleDrawPartyStatusSummary() {
-    if gBattleBufferA[gActiveBattler][1] != 0 && GetBattlerSide(gActiveBattler) == 0 {
+    if ({
+        let gl_i197 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i197][1])
+    }) != 0
+        && GetBattlerSide(gActiveBattler.get()) == 0
+    {
         PlayerPartnerBufferExecCompleted();
     } else {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler))
-            .set_partyStatusSummaryShown(1);
-        gBattlerStatusSummaryTaskId[gActiveBattler] = CreatePartyStatusSummarySprites(
-            gActiveBattler,
-            &raw mut (*(&raw const crate::battle_main::gBattleBufferA)
-                .cast::<CArray<CArray<u8, 512>, 4>>()
-                .cast_mut())[gActiveBattler][4] as *mut HpAndStatus,
-            gBattleBufferA[gActiveBattler][1],
-            gBattleBufferA[gActiveBattler][2],
-        );
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusDelayTimer = 0;
-        if gBattleBufferA[gActiveBattler][2] != 0 {
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusDelayTimer =
-                93;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .set_partyStatusSummaryShown(1);
+        {
+            let gl_v = CreatePartyStatusSummarySprites(
+                gActiveBattler.get(),
+                &raw mut (*(crate::gl!(&raw @at crate::battle_main::gBattleBufferA;).cast_const())
+                    .cast::<CArray<CArray<u8, 512>, 4>>()
+                    .cast_mut())[gActiveBattler.get()][4] as *mut HpAndStatus,
+                {
+                    let gl_i199 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i199][1])
+                },
+                {
+                    let gl_i200 = gActiveBattler.get();
+                    crate::gl!(gBattleBufferA[gl_i200][2])
+                },
+            );
+            let gl_i198 = gActiveBattler.get();
+            crate::gl!(gBattlerStatusSummaryTaskId[gl_i198] = gl_v)
+        };
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .partyStatusDelayTimer = 0;
+        if ({
+            let gl_i201 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i201][2])
+        }) != 0
+        {
+            (*(*crate::gl!(gBattleSpritesDataPtr))
+                .healthBoxesData
+                .at(gActiveBattler.get()))
+            .partyStatusDelayTimer = 93;
         }
-        gBattlerControllerFuncs[gActiveBattler] = Some(EndDrawPartyStatusSummary);
+        {
+            let gl_i202 = gActiveBattler.get();
+            crate::gl!(gBattlerControllerFuncs[gl_i202] = Some(EndDrawPartyStatusSummary))
+        };
     }
 }
 pub(crate) unsafe fn EndDrawPartyStatusSummary() {
     if ({
-        let t1 =
-            (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusDelayTimer;
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusDelayTimer += 1;
+        let t1 = (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .partyStatusDelayTimer;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .partyStatusDelayTimer += 1;
         t1
     }) > 92
     {
-        (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusDelayTimer = 0;
+        (*(*crate::gl!(gBattleSpritesDataPtr))
+            .healthBoxesData
+            .at(gActiveBattler.get()))
+        .partyStatusDelayTimer = 0;
         PlayerPartnerBufferExecCompleted();
     }
 }
 pub(crate) unsafe fn PlayerPartnerHandleHidePartyStatusSummary() {
-    if (*(*gBattleSpritesDataPtr).healthBoxesData.at(gActiveBattler)).partyStatusSummaryShown() != 0
+    if (*(*crate::gl!(gBattleSpritesDataPtr))
+        .healthBoxesData
+        .at(gActiveBattler.get()))
+    .partyStatusSummaryShown()
+        != 0
     {
         task_set_func(
-            gBattlerStatusSummaryTaskId[gActiveBattler],
+            {
+                let gl_i203 = gActiveBattler.get();
+                crate::gl!(gBattlerStatusSummaryTaskId[gl_i203])
+            },
             Some(Task_HidePartyStatusSummary),
         );
     }
@@ -2323,29 +3313,52 @@ pub(crate) unsafe fn PlayerPartnerHandleEndBounceEffect() {
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleSpriteInvisibility() {
-    if IsBattlerSpritePresent(gActiveBattler) != 0 {
-        gSprites[gBattlerSpriteIds[gActiveBattler]]
-            .set_invisible(gBattleBufferA[gActiveBattler][1] as u16);
-        CopyBattleSpriteInvisibility(gActiveBattler);
+    if IsBattlerSpritePresent(gActiveBattler.get()) != 0 {
+        (*gSprites.as_ptr())[{
+            let gl_i204 = gActiveBattler.get();
+            crate::gl!(gBattlerSpriteIds[gl_i204])
+        }]
+        .set_invisible(
+            ({
+                let gl_i205 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i205][1])
+            }) as u16,
+        );
+        CopyBattleSpriteInvisibility(gActiveBattler.get());
     }
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleBattleAnimation() {
-    if IsBattleSEPlaying(gActiveBattler) == 0 {
-        let animationId: u8 = gBattleBufferA[gActiveBattler][1];
-        let argument: u16 = gBattleBufferA[gActiveBattler][2] as u16
-            | (gBattleBufferA[gActiveBattler][3] as u16) << 8;
+    if IsBattleSEPlaying(gActiveBattler.get()) == 0 {
+        let animationId: u8 = {
+            let gl_i206 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i206][1])
+        };
+        let argument: u16 = ({
+            let gl_i207 = gActiveBattler.get();
+            crate::gl!(gBattleBufferA[gl_i207][2])
+        }) as u16
+            | (({
+                let gl_i208 = gActiveBattler.get();
+                crate::gl!(gBattleBufferA[gl_i208][3])
+            }) as u16)
+                << 8;
         if TryHandleLaunchBattleTableAnimation(
-            gActiveBattler,
-            gActiveBattler,
-            gActiveBattler,
+            gActiveBattler.get(),
+            gActiveBattler.get(),
+            gActiveBattler.get(),
             animationId,
             argument,
         ) != 0
         {
             PlayerPartnerBufferExecCompleted();
         } else {
-            gBattlerControllerFuncs[gActiveBattler] = Some(CompleteOnFinishedBattleAnimation);
+            {
+                let gl_i209 = gActiveBattler.get();
+                crate::gl!(
+                    gBattlerControllerFuncs[gl_i209] = Some(CompleteOnFinishedBattleAnimation)
+                )
+            };
         }
     }
 }
@@ -2356,10 +3369,16 @@ pub(crate) unsafe fn PlayerPartnerHandleResetActionMoveSelection() {
     PlayerPartnerBufferExecCompleted();
 }
 pub(crate) unsafe fn PlayerPartnerHandleEndLinkBattle() {
-    gBattleOutcome = gBattleBufferA[gActiveBattler][1];
+    gBattleOutcome.set({
+        let gl_i210 = gActiveBattler.get();
+        crate::gl!(gBattleBufferA[gl_i210][1])
+    });
     FadeOutMapMusic(5);
     BeginFastPaletteFade(3);
     PlayerPartnerBufferExecCompleted();
-    gBattlerControllerFuncs[gActiveBattler] = Some(SetBattleEndCallbacks);
+    {
+        let gl_i211 = gActiveBattler.get();
+        crate::gl!(gBattlerControllerFuncs[gl_i211] = Some(SetBattleEndCallbacks))
+    };
 }
 pub(crate) fn PlayerPartnerCmdEnd() {}

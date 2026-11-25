@@ -43,8 +43,8 @@ const PALETTES_ALL: u32 = 0xffff_ffff;
 const RGB_BLACK: u16 = 0;
 const TEXT_SKIP_DRAW: i8 = -1;
 
-#[unsafe(link_section = "ewram_data")]
-static mut TILEMAP: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static TILEMAP: crate::global::Global<*mut u8> = crate::global::Global::new(core::ptr::null_mut());
 
 /// `sDiplomaPalettes[2][16]`: national, then Hoenn.
 static DIPLOMA_PALETTES: RomBytes<64> = {
@@ -153,9 +153,7 @@ unsafe fn ScanlineEffect_Stop() {
 /// `ResetTempTileDataBuffers` with this module's view of its types.
 #[inline]
 unsafe fn ResetTempTileDataBuffers() {
-    unsafe {
-        crate::menu::ResetTempTileDataBuffers();
-    }
+    crate::menu::ResetTempTileDataBuffers();
 }
 /// `DecompressAndCopyTileDataToVram` with this module's view of its types.
 #[inline]
@@ -244,7 +242,7 @@ pub unsafe fn CB2_ShowDiploma() {
         )
     };
     let tilemap = unsafe { Alloc(0x1000) };
-    unsafe { (&raw mut TILEMAP).write(tilemap) };
+    unsafe { (crate::gl!(&raw TILEMAP)).write(tilemap) };
     unsafe { init_bg(tilemap) };
     unsafe { init_window() };
     unsafe { ResetTempTileDataBuffers() };
@@ -283,7 +281,7 @@ unsafe fn task_wait_for_key_press(task_id: u8) {
 
 unsafe fn task_fade_out(task_id: u8) {
     if !unsafe { palette_fade_active() } {
-        unsafe { Free((&raw const TILEMAP).read()) };
+        unsafe { Free((crate::gl!(&raw TILEMAP).cast_const()).read()) };
         unsafe { FreeAllWindowBuffers() };
         unsafe { DestroyTask(task_id) };
         unsafe { SetMainCallback2(CB2_ReturnToFieldFadeFromBlack) };

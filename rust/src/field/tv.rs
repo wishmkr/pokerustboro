@@ -216,38 +216,41 @@ static sTVWhatsNo1InHoennTodayTextGroup: Table<CArray<*mut u8, 9>> =
 static sTVWorldOfMastersTextGroup: Table<CArray<*mut u8, 3>> =
     Table((&raw const crate::data::tv::sTVWorldOfMastersTextGroup).cast());
 
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static sCurTVShowSlot: crate::global::Global<i8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut sTV_SecretBaseVisitMovesTemp: Aligned<CArray<u16, 8>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "common_data")]
-pub static mut sTV_DecorationsBuffer: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
-pub static mut sTV_SecretBaseVisitMonsTemp: CArray<sTV_SecretBaseVisitMonsTemp_0_t, 10> =
-    unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static sTV_SecretBaseVisitMovesTemp: crate::global::Global<Aligned<CArray<u16, 8>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static sTV_DecorationsBuffer: crate::global::Global<Aligned<CArray<u8, 16>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+pub static sTV_SecretBaseVisitMonsTemp: crate::global::Global<
+    CArray<sTV_SecretBaseVisitMonsTemp_0_t, 10>,
+> = crate::global::Global::new(unsafe { zeroed() });
 pub(crate) static sTVShowMixingNumPlayers: crate::global::Global<u8> =
     crate::global::Global::new(0);
 pub(crate) static sTVShowNewsMixingNumPlayers: crate::global::Global<u8> =
     crate::global::Global::new(0);
 pub(crate) static sTVShowMixingCurSlot: crate::global::Global<i8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPokemonAnglerSpecies: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPokemonAnglerAttemptCounters: crate::global::Global<u16> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFindThatGamerCoinsSpent: crate::global::Global<u16> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFindThatGamerWhichGame: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sRecordMixingPartnersWithoutShowsToShare: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sTVShowState: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTVSecretBaseSecretsRandomValues: Aligned<CArray<u8, 3>> =
-    Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTVSecretBaseSecretsRandomValues: crate::global::Global<Aligned<CArray<u8, 3>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -268,10 +271,10 @@ unsafe fn GetItemName(a0: u16) -> *mut u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn ClearTVShowData() {
     for i in 0..25u8 {
-        (*gSaveBlock1Ptr).tvShows[i].commonInit.kind = 0;
-        (*gSaveBlock1Ptr).tvShows[i].commonInit.active = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].commonInit.kind = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].commonInit.active = 0;
         for j in 0..34u8 {
-            (*gSaveBlock1Ptr).tvShows[i].commonInit.data[j] = 0;
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].commonInit.data[j] = 0;
         }
     }
     ClearPokeNews();
@@ -281,7 +284,7 @@ pub unsafe fn GetRandomActiveShowIdx() -> u8 {
     let mut show: *mut TVShow = null_mut();
     let mut i: u8 = NUM_NORMAL_TVSHOW_SLOTS;
     while i < LAST_TVSHOW_IDX {
-        if (*gSaveBlock1Ptr).tvShows[i].common.kind == TVSHOW_OFF_AIR {
+        if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind == TVSHOW_OFF_AIR {
             break;
         }
         i += 1;
@@ -289,12 +292,14 @@ pub unsafe fn GetRandomActiveShowIdx() -> u8 {
     let mut j: u8 = rem_i32(Random() as i32, i as i32) as u8;
     let selIdx: u8 = j;
     loop {
-        if GetTVGroupByShowId((*gSaveBlock1Ptr).tvShows[j].common.kind) != TVGROUP_OUTBREAK {
-            if (*gSaveBlock1Ptr).tvShows[j].common.active == TRUE {
+        if GetTVGroupByShowId((*crate::gl!(gSaveBlock1Ptr)).tvShows[j].common.kind)
+            != TVGROUP_OUTBREAK
+        {
+            if (*crate::gl!(gSaveBlock1Ptr)).tvShows[j].common.active == TRUE {
                 return j;
             }
         } else {
-            show = &raw mut (*gSaveBlock1Ptr).tvShows[j];
+            show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[j];
             if (*show).massOutbreak.daysBeforeOutbreak == 0 && (*show).massOutbreak.active == TRUE {
                 return j;
             }
@@ -315,8 +320,8 @@ pub unsafe fn FindAnyTVShowOnTheAir() -> u8 {
     if slot == 0xFF {
         return 0xFF;
     }
-    if (*gSaveBlock1Ptr).outbreakPokemonSpecies != SPECIES_NONE
-        && (*gSaveBlock1Ptr).tvShows[slot].common.kind == TVSHOW_MASS_OUTBREAK
+    if (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies != SPECIES_NONE
+        && (*crate::gl!(gSaveBlock1Ptr)).tvShows[slot].common.kind == TVSHOW_MASS_OUTBREAK
     {
         return FindFirstActiveTVShowThatIsNotAMassOutbreak();
     }
@@ -330,7 +335,9 @@ pub unsafe fn UpdateTVScreensOnMap(width: i32, height: i32) {
         }
         PLAYERS_HOUSE_TV_MOVIE => {}
         _ => {
-            if (*gSaveBlock1Ptr).location.mapGroup == 13 && (*gSaveBlock1Ptr).location.mapNum == 0 {
+            if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 13
+                && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 0
+            {
                 SetTVMetatilesOnMap(width, height, METATILE_Building_TV_On);
             } else if FlagGet(FLAG_SYS_TV_START) != 0
                 && (FindAnyTVShowOnTheAir() != 0xFF
@@ -355,8 +362,8 @@ unsafe fn SetTVMetatilesOnMap(width: i32, height: i32, metatileId: u16) {
 #[unsafe(no_mangle)]
 pub unsafe fn TurnOffTVScreen() {
     SetTVMetatilesOnMap(
-        gBackupMapLayout.width,
-        gBackupMapLayout.height,
+        crate::gl!(gBackupMapLayout.width),
+        crate::gl!(gBackupMapLayout.height),
         METATILE_Building_TV_Off,
     );
     DrawWholeMapView();
@@ -364,15 +371,15 @@ pub unsafe fn TurnOffTVScreen() {
 #[unsafe(no_mangle)]
 pub unsafe fn TurnOnTVScreen() {
     SetTVMetatilesOnMap(
-        gBackupMapLayout.width,
-        gBackupMapLayout.height,
+        crate::gl!(gBackupMapLayout.width),
+        crate::gl!(gBackupMapLayout.height),
         METATILE_Building_TV_On,
     );
     DrawWholeMapView();
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetSelectedTVShow() -> u8 {
-    (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
+    (*crate::gl!(gSaveBlock1Ptr)).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
         .cast::<u16>()
         .cast_mut()]
     .common
@@ -380,9 +387,9 @@ pub unsafe fn GetSelectedTVShow() -> u8 {
 }
 unsafe fn FindFirstActiveTVShowThatIsNotAMassOutbreak() -> u8 {
     for i in 0..24u8 {
-        if (*gSaveBlock1Ptr).tvShows[i].common.kind != TVSHOW_OFF_AIR
-            && (*gSaveBlock1Ptr).tvShows[i].common.kind != TVSHOW_MASS_OUTBREAK
-            && (*gSaveBlock1Ptr).tvShows[i].common.active == TRUE
+        if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind != TVSHOW_OFF_AIR
+            && (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind != TVSHOW_MASS_OUTBREAK
+            && (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.active == TRUE
         {
             return i;
         }
@@ -391,12 +398,12 @@ unsafe fn FindFirstActiveTVShowThatIsNotAMassOutbreak() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetNextActiveShowIfMassOutbreak() -> u8 {
-    let tvShow: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let tvShow: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
     if (*tvShow).common.kind == TVSHOW_MASS_OUTBREAK
-        && (*gSaveBlock1Ptr).outbreakPokemonSpecies != SPECIES_NONE
+        && (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies != SPECIES_NONE
     {
         return FindFirstActiveTVShowThatIsNotAMassOutbreak();
     }
@@ -404,135 +411,184 @@ pub unsafe fn GetNextActiveShowIfMassOutbreak() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ResetGabbyAndTy() {
-    (*gSaveBlock1Ptr).gabbyAndTyData.mon1 = SPECIES_NONE;
-    (*gSaveBlock1Ptr).gabbyAndTyData.mon2 = SPECIES_NONE;
-    (*gSaveBlock1Ptr).gabbyAndTyData.lastMove = MOVE_NONE;
-    (*gSaveBlock1Ptr).gabbyAndTyData.quote[0] = 65535;
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon1 = SPECIES_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon2 = SPECIES_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.lastMove = MOVE_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.quote[0] = 65535;
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .set_battleTookMoreThanOneTurn(FALSE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_playerLostAMon(FALSE);
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .set_playerLostAMon(FALSE);
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .set_playerUsedHealingItem(FALSE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_playerThrewABall(FALSE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_onAir(FALSE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_valA_5(0);
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .set_playerThrewABall(FALSE);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .set_onAir(FALSE);
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.set_valA_5(0);
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .set_battleTookMoreThanOneTurn2(FALSE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_playerLostAMon2(FALSE);
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .set_playerLostAMon2(FALSE);
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .set_playerUsedHealingItem2(FALSE);
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .set_playerThrewABall2(FALSE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_valB_4(0);
-    (*gSaveBlock1Ptr).gabbyAndTyData.mapnum = 0;
-    (*gSaveBlock1Ptr).gabbyAndTyData.battleNum = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.set_valB_4(0);
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mapnum = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.battleNum = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GabbyAndTyBeforeInterview() {
-    (*gSaveBlock1Ptr).gabbyAndTyData.mon1 = gBattleResults.playerMon1Species;
-    (*gSaveBlock1Ptr).gabbyAndTyData.mon2 = gBattleResults.playerMon2Species;
-    (*gSaveBlock1Ptr).gabbyAndTyData.lastMove = gBattleResults.lastUsedMovePlayer;
-    (*gSaveBlock1Ptr).gabbyAndTyData.battleNum =
-        (*gSaveBlock1Ptr).gabbyAndTyData.battleNum.saturating_add(1);
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon1 =
+        crate::gl!(gBattleResults.playerMon1Species);
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon2 =
+        crate::gl!(gBattleResults.playerMon2Species);
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.lastMove =
+        crate::gl!(gBattleResults.lastUsedMovePlayer);
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.battleNum = (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
-        .set_battleTookMoreThanOneTurn(gBattleResults.playerMonWasDamaged());
-    if gBattleResults.playerFaintCounter != 0 {
-        (*gSaveBlock1Ptr).gabbyAndTyData.set_playerLostAMon(TRUE);
+        .battleNum
+        .saturating_add(1);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .set_battleTookMoreThanOneTurn((*gBattleResults.as_ptr()).playerMonWasDamaged());
+    if crate::gl!(gBattleResults.playerFaintCounter) != 0 {
+        (*crate::gl!(gSaveBlock1Ptr))
+            .gabbyAndTyData
+            .set_playerLostAMon(TRUE);
     } else {
-        (*gSaveBlock1Ptr).gabbyAndTyData.set_playerLostAMon(FALSE);
+        (*crate::gl!(gSaveBlock1Ptr))
+            .gabbyAndTyData
+            .set_playerLostAMon(FALSE);
     }
-    if gBattleResults.numHealingItemsUsed != 0 {
-        (*gSaveBlock1Ptr)
+    if crate::gl!(gBattleResults.numHealingItemsUsed) != 0 {
+        (*crate::gl!(gSaveBlock1Ptr))
             .gabbyAndTyData
             .set_playerUsedHealingItem(TRUE);
     } else {
-        (*gSaveBlock1Ptr)
+        (*crate::gl!(gSaveBlock1Ptr))
             .gabbyAndTyData
             .set_playerUsedHealingItem(FALSE);
     }
-    if gBattleResults.usedMasterBall() == 0 {
+    if (*gBattleResults.as_ptr()).usedMasterBall() == 0 {
         for i in 0..11u8 {
-            if gBattleResults.catchAttempts[i] != 0 {
-                (*gSaveBlock1Ptr).gabbyAndTyData.set_playerThrewABall(TRUE);
+            if crate::gl!(gBattleResults.catchAttempts[i]) != 0 {
+                (*crate::gl!(gSaveBlock1Ptr))
+                    .gabbyAndTyData
+                    .set_playerThrewABall(TRUE);
                 break;
             }
         }
     } else {
-        (*gSaveBlock1Ptr).gabbyAndTyData.set_playerThrewABall(TRUE);
+        (*crate::gl!(gSaveBlock1Ptr))
+            .gabbyAndTyData
+            .set_playerThrewABall(TRUE);
     }
     TakeGabbyAndTyOffTheAir();
-    if (*gSaveBlock1Ptr).gabbyAndTyData.lastMove == MOVE_NONE {
+    if (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.lastMove == MOVE_NONE {
         FlagSet(FLAG_TEMP_SKIP_GABBY_INTERVIEW);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GabbyAndTyAfterInterview() {
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .set_battleTookMoreThanOneTurn2(
-            (*gSaveBlock1Ptr).gabbyAndTyData.battleTookMoreThanOneTurn(),
+            (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .battleTookMoreThanOneTurn(),
         );
-    (*gSaveBlock1Ptr)
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
-        .set_playerLostAMon2((*gSaveBlock1Ptr).gabbyAndTyData.playerLostAMon());
-    (*gSaveBlock1Ptr)
+        .set_playerLostAMon2(
+            (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .playerLostAMon(),
+        );
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
-        .set_playerUsedHealingItem2((*gSaveBlock1Ptr).gabbyAndTyData.playerUsedHealingItem());
-    (*gSaveBlock1Ptr)
+        .set_playerUsedHealingItem2(
+            (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .playerUsedHealingItem(),
+        );
+    (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
-        .set_playerThrewABall2((*gSaveBlock1Ptr).gabbyAndTyData.playerThrewABall());
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_onAir(TRUE);
-    (*gSaveBlock1Ptr).gabbyAndTyData.mapnum = gMapHeader.regionMapSectionId;
+        .set_playerThrewABall2(
+            (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .playerThrewABall(),
+        );
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.set_onAir(TRUE);
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mapnum = crate::gl!(gMapHeader.regionMapSectionId);
     IncrementGameStat(GAME_STAT_GOT_INTERVIEWED);
 }
 unsafe fn TakeGabbyAndTyOffTheAir() {
-    (*gSaveBlock1Ptr).gabbyAndTyData.set_onAir(FALSE);
+    (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .set_onAir(FALSE);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GabbyAndTyGetBattleNum() -> u8 {
-    if (*gSaveBlock1Ptr).gabbyAndTyData.battleNum > 5 {
-        return ((*gSaveBlock1Ptr).gabbyAndTyData.battleNum as i32 % 3) as u8 + 6;
+    if (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.battleNum > 5 {
+        return ((*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.battleNum as i32 % 3) as u8 + 6;
     }
-    (*gSaveBlock1Ptr).gabbyAndTyData.battleNum
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.battleNum
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsGabbyAndTyShowOnTheAir() -> u8 {
-    (*gSaveBlock1Ptr).gabbyAndTyData.onAir()
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.onAir()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GabbyAndTyGetLastQuote() -> u8 {
-    if (*gSaveBlock1Ptr).gabbyAndTyData.quote[0] == EC_EMPTY_WORD {
+    if (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.quote[0] == EC_EMPTY_WORD {
         return FALSE;
     }
     CopyEasyChatWord(
         gStringVar1.as_mut_ptr(),
-        (*gSaveBlock1Ptr).gabbyAndTyData.quote[0],
+        (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.quote[0],
     );
-    (*gSaveBlock1Ptr).gabbyAndTyData.quote[0] = 65535;
+    (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.quote[0] = 65535;
     TRUE
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GabbyAndTyGetLastBattleTrivia() -> u8 {
-    if (*gSaveBlock1Ptr)
+    if (*crate::gl!(gSaveBlock1Ptr))
         .gabbyAndTyData
         .battleTookMoreThanOneTurn2()
         == 0
     {
         return 1;
     }
-    if (*gSaveBlock1Ptr).gabbyAndTyData.playerThrewABall2() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .playerThrewABall2()
+        != 0
+    {
         return 2;
     }
-    if (*gSaveBlock1Ptr).gabbyAndTyData.playerUsedHealingItem2() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .playerUsedHealingItem2()
+        != 0
+    {
         return 3;
     }
-    if (*gSaveBlock1Ptr).gabbyAndTyData.playerLostAMon2() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr))
+        .gabbyAndTyData
+        .playerLostAMon2()
+        != 0
+    {
         return 4;
     }
     0
@@ -613,61 +669,62 @@ pub unsafe fn TryPutPokemonTodayOnAir() {
     let mut ballsUsed: u16 = 0;
     TryPutRandomPokeNewsOnAir();
     TryStartRandomMassOutbreak();
-    if gBattleResults.caughtMonSpecies == SPECIES_NONE {
+    if crate::gl!(gBattleResults.caughtMonSpecies) == SPECIES_NONE {
         TryPutPokemonTodayFailedOnTheAir();
     } else {
         InitWorldOfMastersShowAttempt();
         if BernoulliTrial(65535) == 0
             && StringCompare(
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[gBattleResults.caughtMonSpecies]
-                    .as_ptr()
-                    .cast_mut(),
-                gBattleResults.caughtMonNick.as_mut_ptr(),
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [crate::gl!(gBattleResults.caughtMonSpecies)]
+                .as_ptr()
+                .cast_mut(),
+                (*gBattleResults.as_ptr()).caughtMonNick.as_mut_ptr(),
             ) != 0
         {
             sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-                (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
             ));
             if sCurTVShowSlot.get() != -1
                 && IsRecordMixShowAlreadySpawned(TVSHOW_POKEMON_TODAY_CAUGHT, FALSE) != 1
             {
                 i = 0;
                 while i < 11 {
-                    ballsUsed += gBattleResults.catchAttempts[i] as u16;
+                    ballsUsed += crate::gl!(gBattleResults.catchAttempts[i]) as u16;
                     i += 1;
                 }
-                if ballsUsed != 0 || gBattleResults.usedMasterBall() != 0 {
+                if ballsUsed != 0 || (*gBattleResults.as_ptr()).usedMasterBall() != 0 {
                     ballsUsed = 0;
-                    show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+                    show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
                     (*show).pokemonToday.kind = TVSHOW_POKEMON_TODAY_CAUGHT;
                     (*show).pokemonToday.active = FALSE;
-                    if gBattleResults.usedMasterBall() != 0 {
+                    if (*gBattleResults.as_ptr()).usedMasterBall() != 0 {
                         ballsUsed = 1;
                         itemLastUsed = ITEM_MASTER_BALL;
                     } else {
                         for i in 0..11u8 {
-                            ballsUsed += gBattleResults.catchAttempts[i] as u16;
+                            ballsUsed += crate::gl!(gBattleResults.catchAttempts[i]) as u16;
                         }
                         if ballsUsed > 255 {
                             ballsUsed = 255;
                         }
-                        itemLastUsed = gLastUsedItem;
+                        itemLastUsed = gLastUsedItem.get();
                     }
                     (*show).pokemonToday.nBallsUsed = ballsUsed as u8;
                     (*show).pokemonToday.ball = itemLastUsed as u8;
                     StringCopy(
                         (*show).pokemonToday.playerName.as_mut_ptr(),
-                        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
                     );
                     StringCopy(
                         (*show).pokemonToday.nickname.as_mut_ptr(),
-                        gBattleResults.caughtMonNick.as_mut_ptr(),
+                        (*gBattleResults.as_ptr()).caughtMonNick.as_mut_ptr(),
                     );
                     language2 =
                         GetNicknameLanguage((*show).pokemonToday.nickname.as_mut_ptr()) as u32;
                     StripExtCtrlCodes((*show).pokemonToday.nickname.as_mut_ptr());
-                    (*show).pokemonToday.species = gBattleResults.caughtMonSpecies;
+                    (*show).pokemonToday.species = crate::gl!(gBattleResults.caughtMonSpecies);
                     StorePlayerIdInRecordMixShow(show);
                     (*show).pokemonToday.language = gGameLanguage;
                     (*show).pokemonToday.language2 = language2 as u8;
@@ -677,16 +734,19 @@ pub unsafe fn TryPutPokemonTodayOnAir() {
     }
 }
 unsafe fn InitWorldOfMastersShowAttempt() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     if (*show).common.kind != TVSHOW_WORLD_OF_MASTERS {
-        DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+        DeleteTVShowInArrayByIdx(
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+            LAST_TVSHOW_IDX,
+        );
         (*show).worldOfMasters.steps = GetGameStat(GAME_STAT_STEPS) as u16;
         (*show).worldOfMasters.kind = TVSHOW_WORLD_OF_MASTERS;
     }
     (*show).worldOfMasters.numPokeCaught += 1;
-    (*show).worldOfMasters.caughtPoke = gBattleResults.caughtMonSpecies;
-    (*show).worldOfMasters.species = gBattleResults.playerMon1Species;
-    (*show).worldOfMasters.location = gMapHeader.regionMapSectionId;
+    (*show).worldOfMasters.caughtPoke = crate::gl!(gBattleResults.caughtMonSpecies);
+    (*show).worldOfMasters.species = crate::gl!(gBattleResults.playerMon1Species);
+    (*show).worldOfMasters.location = crate::gl!(gMapHeader.regionMapSectionId);
 }
 unsafe fn TryPutPokemonTodayFailedOnTheAir() {
     let mut ballsUsed: u16 = 0;
@@ -694,31 +754,32 @@ unsafe fn TryPutPokemonTodayFailedOnTheAir() {
     if BernoulliTrial(65535) == 0 {
         ballsUsed = 0;
         for i in 0..11u8 {
-            ballsUsed += gBattleResults.catchAttempts[i] as u16;
+            ballsUsed += crate::gl!(gBattleResults.catchAttempts[i]) as u16;
         }
         if ballsUsed > 255 {
             ballsUsed = 255;
         }
         if ballsUsed > 2
-            && (gBattleOutcome == B_OUTCOME_MON_FLED || gBattleOutcome == B_OUTCOME_WON)
+            && (gBattleOutcome.get() == B_OUTCOME_MON_FLED || gBattleOutcome.get() == B_OUTCOME_WON)
         {
             sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-                (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
             ));
             if sCurTVShowSlot.get() != -1
                 && IsRecordMixShowAlreadySpawned(TVSHOW_POKEMON_TODAY_FAILED, FALSE) != 1
             {
-                show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+                show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
                 (*show).pokemonTodayFailed.kind = TVSHOW_POKEMON_TODAY_FAILED;
                 (*show).pokemonTodayFailed.active = FALSE;
-                (*show).pokemonTodayFailed.species = gBattleResults.playerMon1Species;
-                (*show).pokemonTodayFailed.species2 = gBattleResults.lastOpponentSpecies;
+                (*show).pokemonTodayFailed.species = crate::gl!(gBattleResults.playerMon1Species);
+                (*show).pokemonTodayFailed.species2 =
+                    crate::gl!(gBattleResults.lastOpponentSpecies);
                 (*show).pokemonTodayFailed.nBallsUsed = ballsUsed as u8;
-                (*show).pokemonTodayFailed.outcome = gBattleOutcome;
-                (*show).pokemonTodayFailed.location = gMapHeader.regionMapSectionId;
+                (*show).pokemonTodayFailed.outcome = gBattleOutcome.get();
+                (*show).pokemonTodayFailed.location = crate::gl!(gMapHeader.regionMapSectionId);
                 StringCopy(
                     (*show).pokemonTodayFailed.playerName.as_mut_ptr(),
-                    (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
                 );
                 StorePlayerIdInRecordMixShow(show);
                 (*show).pokemonTodayFailed.language = gGameLanguage;
@@ -744,18 +805,21 @@ unsafe fn StorePlayerIdInNormalShow(show: *mut TVShow) {
 }
 unsafe fn InterviewAfter_ContestLiveUpdates() {
     let mut show2: *mut TVShow = null_mut();
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     if (*show).contestLiveUpdates.kind == TVSHOW_CONTEST_LIVE_UPDATES {
-        show2 = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show2 = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show2).contestLiveUpdates.kind = TVSHOW_CONTEST_LIVE_UPDATES;
         (*show2).contestLiveUpdates.active = TRUE;
         StringCopy(
             (*show2).contestLiveUpdates.winningTrainerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
-        (*show2).contestLiveUpdates.category = gSpecialVar_ContestCategory as u8;
+        (*show2).contestLiveUpdates.category = gSpecialVar_ContestCategory.get() as u8;
         (*show2).contestLiveUpdates.winningSpecies = GetMonData3(
-            &raw mut gPlayerParty[gContestMonPartyIndex],
+            {
+                let gl_i0 = gContestMonPartyIndex.get();
+                crate::gl!(&raw gPlayerParty[gl_i0])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
@@ -773,7 +837,10 @@ unsafe fn InterviewAfter_ContestLiveUpdates() {
         (*show2).contestLiveUpdates.winningTrainerLanguage = gGameLanguage;
         (*show2).contestLiveUpdates.losingTrainerLanguage =
             (*show).contestLiveUpdates.losingTrainerLanguage;
-        DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+        DeleteTVShowInArrayByIdx(
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+            LAST_TVSHOW_IDX,
+        );
     }
 }
 pub unsafe fn PutBattleUpdateOnTheAir(
@@ -785,21 +852,21 @@ pub unsafe fn PutBattleUpdateOnTheAir(
     let mut show: *mut TVShow = null_mut();
     let mut name: CArray<u8, 32> = zeroed();
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
         TryReplaceOldTVShowOfKind(TVSHOW_BATTLE_UPDATE);
         if gSpecialVar_Result != TRUE as u16 {
-            show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+            show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
             (*show).battleUpdate.kind = TVSHOW_BATTLE_UPDATE;
             (*show).battleUpdate.active = TRUE;
             StringCopy(
                 (*show).battleUpdate.playerName.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
-            if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
                 (*show).battleUpdate.battleType = 2;
-            } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
+            } else if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 {
                 (*show).battleUpdate.battleType = 1;
             } else {
                 (*show).battleUpdate.battleType = 0;
@@ -809,7 +876,9 @@ pub unsafe fn PutBattleUpdateOnTheAir(
             (*show).battleUpdate.speciesOpponent = speciesOpponent;
             StringCopy(
                 name.as_mut_ptr(),
-                gLinkPlayers[opponentLinkPlayerId].name.as_mut_ptr(),
+                (*gLinkPlayers.as_ptr())[opponentLinkPlayerId]
+                    .name
+                    .as_mut_ptr(),
             );
             StripExtCtrlCodes(name.as_mut_ptr());
             StringCopy(
@@ -819,12 +888,13 @@ pub unsafe fn PutBattleUpdateOnTheAir(
             StorePlayerIdInNormalShow(show);
             (*show).battleUpdate.language = gGameLanguage;
             if (*show).battleUpdate.language == LANGUAGE_JAPANESE
-                || gLinkPlayers[opponentLinkPlayerId].language == LANGUAGE_JAPANESE as u16
+                || crate::gl!(gLinkPlayers[opponentLinkPlayerId].language)
+                    == LANGUAGE_JAPANESE as u16
             {
                 (*show).battleUpdate.linkOpponentLanguage = LANGUAGE_JAPANESE;
             } else {
                 (*show).battleUpdate.linkOpponentLanguage =
-                    gLinkPlayers[opponentLinkPlayerId].language as u8;
+                    crate::gl!(gLinkPlayers[opponentLinkPlayerId].language) as u8;
             }
         }
     }
@@ -838,7 +908,7 @@ pub unsafe fn Put3CheersForPokeblocksOnTheAir(
 ) -> u8 {
     let mut name: CArray<u8, 32> = zeroed();
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() == -1 {
         return FALSE;
@@ -847,12 +917,12 @@ pub unsafe fn Put3CheersForPokeblocksOnTheAir(
     if gSpecialVar_Result == TRUE as u16 {
         return FALSE;
     }
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
     (*show).threeCheers.kind = TVSHOW_3_CHEERS_FOR_POKEBLOCKS;
     (*show).threeCheers.active = TRUE;
     StringCopy(
         (*show).threeCheers.playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     StringCopy(name.as_mut_ptr(), partnersName);
     StripExtCtrlCodes(name.as_mut_ptr());
@@ -875,14 +945,14 @@ pub unsafe fn Put3CheersForPokeblocksOnTheAir(
 #[unsafe(no_mangle)]
 pub unsafe fn PutFanClubSpecialOnTheAir() {
     let mut name: CArray<u8, 32> = zeroed();
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8006)
             .cast::<u16>()
             .cast_mut()];
     (*show).fanClubSpecial.score = gSpecialVar_0x8005 as u8 * 10;
     StringCopy(
         (*show).fanClubSpecial.playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     (*show).fanClubSpecial.kind = TVSHOW_FAN_CLUB_SPECIAL;
     (*show).fanClubSpecial.active = TRUE;
@@ -898,87 +968,93 @@ pub unsafe fn PutFanClubSpecialOnTheAir() {
     StorePlayerIdInNormalShow(show);
     (*show).fanClubSpecial.language = gGameLanguage;
     if (*show).fanClubSpecial.language == LANGUAGE_JAPANESE
-        || (*gSaveBlock1Ptr).linkBattleRecords.languages[0] == LANGUAGE_JAPANESE
+        || (*crate::gl!(gSaveBlock1Ptr)).linkBattleRecords.languages[0] == LANGUAGE_JAPANESE
     {
         (*show).fanClubSpecial.idolNameLanguage = LANGUAGE_JAPANESE;
     } else {
-        (*show).fanClubSpecial.idolNameLanguage = (*gSaveBlock1Ptr).linkBattleRecords.languages[0];
+        (*show).fanClubSpecial.idolNameLanguage =
+            (*crate::gl!(gSaveBlock1Ptr)).linkBattleRecords.languages[0];
     }
 }
 pub unsafe fn ContestLiveUpdates_Init(round1Placing: u8) {
     let mut show: *mut TVShow = null_mut();
-    DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+    DeleteTVShowInArrayByIdx(
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+        LAST_TVSHOW_IDX,
+    );
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
         (*show).contestLiveUpdates.round1Placing = round1Placing;
         (*show).contestLiveUpdates.kind = TVSHOW_CONTEST_LIVE_UPDATES;
     }
 }
 pub unsafe fn ContestLiveUpdates_SetRound2Placing(round2Placing: u8) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
         (*show).contestLiveUpdates.round2Placing = round2Placing;
     }
 }
 pub unsafe fn ContestLiveUpdates_SetWinnerAppealFlag(flag: u8) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
         (*show).contestLiveUpdates.winnerAppealFlag = flag;
     }
 }
 pub unsafe fn ContestLiveUpdates_SetWinnerMoveUsed(r#move: u16) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
         (*show).contestLiveUpdates.r#move = r#move;
     }
 }
 pub unsafe fn ContestLiveUpdates_SetLoserData(flag: u8, loser: u8) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        (*show).contestLiveUpdates.losingSpecies = gContestMons[loser].species;
+        (*show).contestLiveUpdates.losingSpecies = crate::gl!(gContestMons[loser].species);
         StringCopy(
             (*show).contestLiveUpdates.losingTrainerName.as_mut_ptr(),
-            gContestMons[loser].trainerName.as_mut_ptr(),
+            (*gContestMons.as_ptr())[loser].trainerName.as_mut_ptr(),
         );
         StripExtCtrlCodes((*show).contestLiveUpdates.losingTrainerName.as_mut_ptr());
         (*show).contestLiveUpdates.loserAppealFlag = flag;
-        if loser as i32 + 1 > gNumLinkContestPlayers as i32 {
-            (*show).contestLiveUpdates.losingTrainerLanguage = gLinkPlayers[0].language as u8;
+        if loser as i32 + 1 > gNumLinkContestPlayers.get() as i32 {
+            (*show).contestLiveUpdates.losingTrainerLanguage =
+                crate::gl!(gLinkPlayers[0].language) as u8;
         } else if gGameLanguage == LANGUAGE_JAPANESE
-            || gLinkPlayers[loser].language == LANGUAGE_JAPANESE as u16
+            || crate::gl!(gLinkPlayers[loser].language) == LANGUAGE_JAPANESE as u16
         {
             (*show).contestLiveUpdates.losingTrainerLanguage = LANGUAGE_JAPANESE;
         } else {
-            (*show).contestLiveUpdates.losingTrainerLanguage = gLinkPlayers[loser].language as u8;
+            (*show).contestLiveUpdates.losingTrainerLanguage =
+                crate::gl!(gLinkPlayers[loser].language) as u8;
         }
     }
 }
 unsafe fn InterviewAfter_BravoTrainerPokemonProfile() {
     let mut show2: *mut TVShow = null_mut();
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     if (*show).bravoTrainer.kind == TVSHOW_BRAVO_TRAINER_POKEMON_PROFILE {
-        show2 = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show2 = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show2).bravoTrainer.kind = TVSHOW_BRAVO_TRAINER_POKEMON_PROFILE;
         (*show2).bravoTrainer.active = TRUE;
         (*show2).bravoTrainer.species = (*show).bravoTrainer.species;
         StringCopy(
             (*show2).bravoTrainer.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StringCopy(
             (*show2).bravoTrainer.pokemonNickname.as_mut_ptr(),
@@ -1006,74 +1082,95 @@ unsafe fn InterviewAfter_BravoTrainerPokemonProfile() {
         } else {
             (*show2).bravoTrainer.pokemonNameLanguage = (*show).bravoTrainer.pokemonNameLanguage;
         }
-        DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+        DeleteTVShowInArrayByIdx(
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+            LAST_TVSHOW_IDX,
+        );
     }
 }
 pub unsafe fn BravoTrainerPokemonProfile_BeforeInterview1(r#move: u16) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     InterviewBefore_BravoTrainerPkmnProfile();
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+        DeleteTVShowInArrayByIdx(
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+            LAST_TVSHOW_IDX,
+        );
         (*show).bravoTrainer.r#move = r#move;
         (*show).bravoTrainer.kind = TVSHOW_BRAVO_TRAINER_POKEMON_PROFILE;
     }
 }
 pub unsafe fn BravoTrainerPokemonProfile_BeforeInterview2(contestStandingPlace: u8) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
         (*show).bravoTrainer.set_contestResult(contestStandingPlace);
         (*show)
             .bravoTrainer
-            .set_contestCategory(gSpecialVar_ContestCategory as u8);
+            .set_contestCategory(gSpecialVar_ContestCategory.get() as u8);
         (*show)
             .bravoTrainer
-            .set_contestRank(gSpecialVar_ContestRank as u8);
+            .set_contestRank(gSpecialVar_ContestRank.get() as u8);
         (*show).bravoTrainer.species = GetMonData3(
-            &raw mut gPlayerParty[gContestMonPartyIndex],
+            {
+                let gl_i1 = gContestMonPartyIndex.get();
+                crate::gl!(&raw gPlayerParty[gl_i1])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
         GetMonData3(
-            &raw mut gPlayerParty[gContestMonPartyIndex],
+            {
+                let gl_i2 = gContestMonPartyIndex.get();
+                crate::gl!(&raw gPlayerParty[gl_i2])
+            },
             MON_DATA_NICKNAME,
             (*show).bravoTrainer.pokemonNickname.as_mut_ptr(),
         );
         StripExtCtrlCodes((*show).bravoTrainer.pokemonNickname.as_mut_ptr());
         (*show).bravoTrainer.pokemonNameLanguage = GetMonData2(
-            &raw mut gPlayerParty[gContestMonPartyIndex],
+            {
+                let gl_i3 = gContestMonPartyIndex.get();
+                crate::gl!(&raw gPlayerParty[gl_i3])
+            },
             MON_DATA_LANGUAGE,
         ) as u8;
     }
 }
 unsafe fn InterviewAfter_BravoTrainerBattleTowerProfile() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
     (*show).bravoTrainerTower.kind = TVSHOW_BRAVO_TRAINER_BATTLE_TOWER_PROFILE;
     (*show).bravoTrainerTower.active = TRUE;
     StringCopy(
         (*show).bravoTrainerTower.playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     StringCopy(
         (*show).bravoTrainerTower.opponentName.as_mut_ptr(),
-        (*gSaveBlock2Ptr)
+        (*crate::gl!(gSaveBlock2Ptr))
             .frontier
             .towerInterview
             .opponentName
             .as_mut_ptr(),
     );
-    (*show).bravoTrainerTower.species = (*gSaveBlock2Ptr).frontier.towerInterview.playerSpecies;
-    (*show).bravoTrainerTower.defeatedSpecies =
-        (*gSaveBlock2Ptr).frontier.towerInterview.opponentSpecies;
+    (*show).bravoTrainerTower.species = (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .towerInterview
+        .playerSpecies;
+    (*show).bravoTrainerTower.defeatedSpecies = (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .towerInterview
+        .opponentSpecies;
     (*show).bravoTrainerTower.numFights =
-        GetCurrentBattleTowerWinStreak((*gSaveBlock2Ptr).frontier.towerLvlMode, 0);
-    (*show).bravoTrainerTower.wonTheChallenge = (*gSaveBlock2Ptr).frontier.towerBattleOutcome;
-    if (*gSaveBlock2Ptr).frontier.towerLvlMode == FRONTIER_LVL_50 {
+        GetCurrentBattleTowerWinStreak((*crate::gl!(gSaveBlock2Ptr)).frontier.towerLvlMode, 0);
+    (*show).bravoTrainerTower.wonTheChallenge =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.towerBattleOutcome;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.towerLvlMode == FRONTIER_LVL_50 {
         (*show).bravoTrainerTower.btLevel = FRONTIER_MAX_LEVEL_50;
     } else {
         (*show).bravoTrainerTower.btLevel = FRONTIER_MAX_LEVEL_OPEN;
@@ -1082,40 +1179,50 @@ unsafe fn InterviewAfter_BravoTrainerBattleTowerProfile() {
     StorePlayerIdInNormalShow(show);
     (*show).bravoTrainerTower.playerLanguage = gGameLanguage;
     if (*show).bravoTrainerTower.playerLanguage == LANGUAGE_JAPANESE
-        || (*gSaveBlock2Ptr).frontier.towerInterview.opponentLanguage == LANGUAGE_JAPANESE
+        || (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .towerInterview
+            .opponentLanguage
+            == LANGUAGE_JAPANESE
     {
         (*show).bravoTrainerTower.opponentLanguage = LANGUAGE_JAPANESE;
     } else {
-        (*show).bravoTrainerTower.opponentLanguage =
-            (*gSaveBlock2Ptr).frontier.towerInterview.opponentLanguage;
+        (*show).bravoTrainerTower.opponentLanguage = (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .towerInterview
+            .opponentLanguage;
     }
 }
 pub unsafe fn TryPutSmartShopperOnAir() {
     let mut show: *mut TVShow = null_mut();
-    if !((*gSaveBlock1Ptr).location.mapGroup == 26 && (*gSaveBlock1Ptr).location.mapNum == 60)
-        && !((*gSaveBlock1Ptr).location.mapGroup == 26 && (*gSaveBlock1Ptr).location.mapNum == 55)
+    if !((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 26
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 60)
+        && !((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 26
+            && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 55)
         && BernoulliTrial(21845) == 0
     {
         sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-            (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
         ));
         if sCurTVShowSlot.get() != -1
             && IsRecordMixShowAlreadySpawned(TVSHOW_SMART_SHOPPER, FALSE) != 1
         {
             SortPurchasesByQuantity();
-            if gMartPurchaseHistory[0].quantity >= 20 {
-                show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+            if crate::gl!(gMartPurchaseHistory[0].quantity) >= 20 {
+                show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
                 (*show).smartshopperShow.kind = TVSHOW_SMART_SHOPPER;
                 (*show).smartshopperShow.active = FALSE;
-                (*show).smartshopperShow.shopLocation = gMapHeader.regionMapSectionId;
+                (*show).smartshopperShow.shopLocation = crate::gl!(gMapHeader.regionMapSectionId);
                 for i in 0..SMARTSHOPPER_NUM_ITEMS {
-                    (*show).smartshopperShow.itemIds[i] = gMartPurchaseHistory[i].itemId;
-                    (*show).smartshopperShow.itemAmounts[i] = gMartPurchaseHistory[i].quantity;
+                    (*show).smartshopperShow.itemIds[i] =
+                        crate::gl!(gMartPurchaseHistory[i].itemId);
+                    (*show).smartshopperShow.itemAmounts[i] =
+                        crate::gl!(gMartPurchaseHistory[i].quantity);
                 }
                 (*show).smartshopperShow.priceReduced = IsPokeNewsActive(POKENEWS_SLATEPORT);
                 StringCopy(
                     (*show).smartshopperShow.playerName.as_mut_ptr(),
-                    (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
                 );
                 StorePlayerIdInRecordMixShow(show);
                 (*show).smartshopperShow.language = gGameLanguage;
@@ -1128,22 +1235,28 @@ pub unsafe fn PutNameRaterShowOnTheAir() {
     InterviewBefore_NameRater();
     if gSpecialVar_Result != 1 {
         GetMonData3(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i4 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i4])
+            },
             MON_DATA_NICKNAME,
             gStringVar1.as_mut_ptr(),
         );
-        if StringLength((*gSaveBlock2Ptr).playerName.as_mut_ptr()) > 1
+        if StringLength((*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr()) > 1
             && StringLength(gStringVar1.as_mut_ptr()) > 1
         {
-            show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+            show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
             (*show).nameRaterShow.kind = TVSHOW_NAME_RATER_SHOW;
             (*show).nameRaterShow.active = TRUE;
             (*show).nameRaterShow.species = GetMonData3(
-                &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                    .cast::<u16>()
-                    .cast_mut()],
+                {
+                    let gl_i5 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                        .cast::<u16>()
+                        .cast_mut();
+                    crate::gl!(&raw gPlayerParty[gl_i5])
+                },
                 MON_DATA_SPECIES,
                 null_mut(),
             ) as u16;
@@ -1153,12 +1266,15 @@ pub unsafe fn PutNameRaterShowOnTheAir() {
                 GetRandomDifferentSpeciesSeenByPlayer((*show).nameRaterShow.species);
             StringCopy(
                 (*show).nameRaterShow.trainerName.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
             GetMonData3(
-                &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                    .cast::<u16>()
-                    .cast_mut()],
+                {
+                    let gl_i6 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                        .cast::<u16>()
+                        .cast_mut();
+                    crate::gl!(&raw gPlayerParty[gl_i6])
+                },
                 MON_DATA_NICKNAME,
                 (*show).nameRaterShow.pokemonName.as_mut_ptr(),
             );
@@ -1166,39 +1282,42 @@ pub unsafe fn PutNameRaterShowOnTheAir() {
             StorePlayerIdInNormalShow(show);
             (*show).nameRaterShow.language = gGameLanguage;
             (*show).nameRaterShow.pokemonNameLanguage = GetMonData2(
-                &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                    .cast::<u16>()
-                    .cast_mut()],
+                {
+                    let gl_i7 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                        .cast::<u16>()
+                        .cast_mut();
+                    crate::gl!(&raw gPlayerParty[gl_i7])
+                },
                 MON_DATA_LANGUAGE,
             ) as u8;
         }
     }
 }
 pub unsafe fn StartMassOutbreak() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
-    (*gSaveBlock1Ptr).outbreakPokemonSpecies = (*show).massOutbreak.species;
-    (*gSaveBlock1Ptr).outbreakLocationMapNum = (*show).massOutbreak.locationMapNum;
-    (*gSaveBlock1Ptr).outbreakLocationMapGroup = (*show).massOutbreak.locationMapGroup;
-    (*gSaveBlock1Ptr).outbreakPokemonLevel = (*show).massOutbreak.level;
-    (*gSaveBlock1Ptr).outbreakUnused1 = (*show).massOutbreak.unused1;
-    (*gSaveBlock1Ptr).outbreakUnused2 = (*show).massOutbreak.unused2;
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[0] = (*show).massOutbreak.moves[0];
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[1] = (*show).massOutbreak.moves[1];
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[2] = (*show).massOutbreak.moves[2];
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[3] = (*show).massOutbreak.moves[3];
-    (*gSaveBlock1Ptr).outbreakUnused3 = (*show).massOutbreak.unused3;
-    (*gSaveBlock1Ptr).outbreakPokemonProbability = (*show).massOutbreak.probability;
-    (*gSaveBlock1Ptr).outbreakDaysLeft = 2;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies = (*show).massOutbreak.species;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakLocationMapNum = (*show).massOutbreak.locationMapNum;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakLocationMapGroup = (*show).massOutbreak.locationMapGroup;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonLevel = (*show).massOutbreak.level;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakUnused1 = (*show).massOutbreak.unused1;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakUnused2 = (*show).massOutbreak.unused2;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[0] = (*show).massOutbreak.moves[0];
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[1] = (*show).massOutbreak.moves[1];
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[2] = (*show).massOutbreak.moves[2];
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[3] = (*show).massOutbreak.moves[3];
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakUnused3 = (*show).massOutbreak.unused3;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonProbability = (*show).massOutbreak.probability;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakDaysLeft = 2;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn PutLilycoveContestLadyShowOnTheAir() {
     let mut show: *mut TVShow = null_mut();
     Script_FindFirstEmptyNormalTVShowSlot();
     if gSpecialVar_Result != TRUE as u16 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         BufferContestLadyLanguage(&raw mut (*show).contestLady.language);
         (*show).contestLady.pokemonNameLanguage = GAME_LANGUAGE;
         (*show).contestLady.kind = TVSHOW_LILYCOVE_CONTEST_LADY;
@@ -1213,15 +1332,18 @@ pub unsafe fn PutLilycoveContestLadyShowOnTheAir() {
     }
 }
 unsafe fn InterviewAfter_FanClubLetter() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
     (*show).fanclubLetter.kind = TVSHOW_FAN_CLUB_LETTER;
     (*show).fanclubLetter.active = TRUE;
     StringCopy(
         (*show).fanclubLetter.playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     (*show).fanclubLetter.species = GetMonData3(
-        &raw mut gPlayerParty[GetLeadMonIndex()],
+        {
+            let gl_i8 = GetLeadMonIndex();
+            crate::gl!(&raw gPlayerParty[gl_i8])
+        },
         MON_DATA_SPECIES,
         null_mut(),
     ) as u16;
@@ -1229,24 +1351,27 @@ unsafe fn InterviewAfter_FanClubLetter() {
     (*show).fanclubLetter.language = gGameLanguage;
 }
 unsafe fn InterviewAfter_RecentHappenings() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
     (*show).recentHappenings.kind = TVSHOW_RECENT_HAPPENINGS;
     (*show).recentHappenings.active = TRUE;
     StringCopy(
         (*show).recentHappenings.playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     (*show).recentHappenings.species = SPECIES_NONE;
     StorePlayerIdInNormalShow(show);
     (*show).recentHappenings.language = gGameLanguage;
 }
 unsafe fn InterviewAfter_PkmnFanClubOpinions() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
     (*show).fanclubOpinions.kind = TVSHOW_PKMN_FAN_CLUB_OPINIONS;
     (*show).fanclubOpinions.active = TRUE;
     (*show).fanclubOpinions.set_friendshipHighNybble(
         (GetMonData3(
-            &raw mut gPlayerParty[GetLeadMonIndex()],
+            {
+                let gl_i9 = GetLeadMonIndex();
+                crate::gl!(&raw gPlayerParty[gl_i9])
+            },
             MON_DATA_FRIENDSHIP,
             null_mut(),
         ) >> 4) as u8,
@@ -1256,50 +1381,66 @@ unsafe fn InterviewAfter_PkmnFanClubOpinions() {
         .set_questionAsked(gSpecialVar_0x8007 as u8);
     StringCopy(
         (*show).fanclubOpinions.playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
     GetMonData3(
-        &raw mut gPlayerParty[GetLeadMonIndex()],
+        {
+            let gl_i10 = GetLeadMonIndex();
+            crate::gl!(&raw gPlayerParty[gl_i10])
+        },
         MON_DATA_NICKNAME,
         (*show).fanclubOpinions.nickname.as_mut_ptr(),
     );
     StripExtCtrlCodes((*show).fanclubOpinions.nickname.as_mut_ptr());
     (*show).fanclubOpinions.species = GetMonData3(
-        &raw mut gPlayerParty[GetLeadMonIndex()],
+        {
+            let gl_i11 = GetLeadMonIndex();
+            crate::gl!(&raw gPlayerParty[gl_i11])
+        },
         MON_DATA_SPECIES,
         null_mut(),
     ) as u16;
     StorePlayerIdInNormalShow(show);
     (*show).fanclubOpinions.language = gGameLanguage;
     if gGameLanguage == LANGUAGE_JAPANESE
-        || GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_LANGUAGE)
-            == LANGUAGE_JAPANESE as u32
+        || GetMonData2(
+            {
+                let gl_i12 = GetLeadMonIndex();
+                crate::gl!(&raw gPlayerParty[gl_i12])
+            },
+            MON_DATA_LANGUAGE,
+        ) == LANGUAGE_JAPANESE as u32
     {
         (*show).fanclubOpinions.pokemonNameLanguage = LANGUAGE_JAPANESE;
     } else {
-        (*show).fanclubOpinions.pokemonNameLanguage =
-            GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_LANGUAGE) as u8;
+        (*show).fanclubOpinions.pokemonNameLanguage = GetMonData2(
+            {
+                let gl_i13 = GetLeadMonIndex();
+                crate::gl!(&raw gPlayerParty[gl_i13])
+            },
+            MON_DATA_LANGUAGE,
+        ) as u8;
     }
 }
 unsafe fn InterviewAfter_Dummy() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
 }
 unsafe fn TryStartRandomMassOutbreak() {
     let mut outbreakIdx: u16 = 0;
     let mut show: *mut TVShow = null_mut();
     if FlagGet(FLAG_SYS_GAME_CLEAR) != 0 {
         for i in 0..LAST_TVSHOW_IDX {
-            if (*gSaveBlock1Ptr).tvShows[i].common.kind == TVSHOW_MASS_OUTBREAK {
+            if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind == TVSHOW_MASS_OUTBREAK {
                 return;
             }
         }
         if BernoulliTrial(327) == 0 {
             sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-                (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
             ));
             if sCurTVShowSlot.get() != -1 {
                 outbreakIdx = Random() % 5;
-                show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+                show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
                 (*show).massOutbreak.kind = TVSHOW_MASS_OUTBREAK;
                 (*show).massOutbreak.active = TRUE;
                 (*show).massOutbreak.level = sPokeOutbreakSpeciesList[outbreakIdx].level;
@@ -1325,19 +1466,19 @@ unsafe fn TryStartRandomMassOutbreak() {
     }
 }
 pub unsafe fn EndMassOutbreak() {
-    (*gSaveBlock1Ptr).outbreakPokemonSpecies = SPECIES_NONE;
-    (*gSaveBlock1Ptr).outbreakLocationMapNum = 0;
-    (*gSaveBlock1Ptr).outbreakLocationMapGroup = 0;
-    (*gSaveBlock1Ptr).outbreakPokemonLevel = 0;
-    (*gSaveBlock1Ptr).outbreakUnused1 = 0;
-    (*gSaveBlock1Ptr).outbreakUnused2 = 0;
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[0] = 0;
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[1] = MOVE_NONE;
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[2] = MOVE_NONE;
-    (*gSaveBlock1Ptr).outbreakPokemonMoves[3] = MOVE_NONE;
-    (*gSaveBlock1Ptr).outbreakUnused3 = 0;
-    (*gSaveBlock1Ptr).outbreakPokemonProbability = 0;
-    (*gSaveBlock1Ptr).outbreakDaysLeft = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies = SPECIES_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakLocationMapNum = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakLocationMapGroup = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonLevel = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakUnused1 = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakUnused2 = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[0] = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[1] = MOVE_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[2] = MOVE_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonMoves[3] = MOVE_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakUnused3 = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonProbability = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).outbreakDaysLeft = 0;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn UpdateTVShowsPerDay(days: u16) {
@@ -1349,12 +1490,12 @@ pub unsafe fn UpdateTVShowsPerDay(days: u16) {
 }
 unsafe fn UpdateTimeBeforeMassOutbreak(days: u16) {
     let mut show: *mut TVShow = null_mut();
-    if (*gSaveBlock1Ptr).outbreakPokemonSpecies == SPECIES_NONE {
+    if (*crate::gl!(gSaveBlock1Ptr)).outbreakPokemonSpecies == SPECIES_NONE {
         for i in 0..LAST_TVSHOW_IDX {
-            if (*gSaveBlock1Ptr).tvShows[i].massOutbreak.kind == TVSHOW_MASS_OUTBREAK
-                && (*gSaveBlock1Ptr).tvShows[i].massOutbreak.active == TRUE
+            if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].massOutbreak.kind == TVSHOW_MASS_OUTBREAK
+                && (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].massOutbreak.active == TRUE
             {
-                show = &raw mut (*gSaveBlock1Ptr).tvShows[i];
+                show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[i];
                 if (*show).massOutbreak.daysBeforeOutbreak < days {
                     (*show).massOutbreak.daysBeforeOutbreak = 0;
                 } else {
@@ -1366,10 +1507,10 @@ unsafe fn UpdateTimeBeforeMassOutbreak(days: u16) {
     }
 }
 unsafe fn TryEndMassOutbreak(days: u16) {
-    if (*gSaveBlock1Ptr).outbreakDaysLeft <= days {
+    if (*crate::gl!(gSaveBlock1Ptr)).outbreakDaysLeft <= days {
         EndMassOutbreak();
     } else {
-        (*gSaveBlock1Ptr).outbreakDaysLeft -= days;
+        (*crate::gl!(gSaveBlock1Ptr)).outbreakDaysLeft -= days;
     }
 }
 pub unsafe fn RecordFishingAttemptForTV(caughtFish: u8) {
@@ -1394,12 +1535,12 @@ pub unsafe fn RecordFishingAttemptForTV(caughtFish: u8) {
 unsafe fn TryPutFishingAdviceOnAir() {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1
         && IsRecordMixShowAlreadySpawned(TVSHOW_FISHING_ADVICE, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).pokemonAngler.kind = TVSHOW_FISHING_ADVICE;
         (*show).pokemonAngler.active = FALSE;
         (*show).pokemonAngler.nBites = sPokemonAnglerAttemptCounters.get() as u8;
@@ -1407,7 +1548,7 @@ unsafe fn TryPutFishingAdviceOnAir() {
         (*show).pokemonAngler.species = sPokemonAnglerSpecies.get();
         StringCopy(
             (*show).pokemonAngler.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StorePlayerIdInRecordMixShow(show);
         (*show).pokemonAngler.language = gGameLanguage;
@@ -1417,25 +1558,28 @@ pub fn SetPokemonAnglerSpecies(species: u16) {
     sPokemonAnglerSpecies.set(species);
 }
 unsafe fn ResolveWorldOfMastersShow(days: u16) {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     if (*show).worldOfMasters.kind == TVSHOW_WORLD_OF_MASTERS {
         if (*show).worldOfMasters.numPokeCaught >= 20 {
             TryPutWorldOfMastersOnAir();
         }
-        DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+        DeleteTVShowInArrayByIdx(
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+            LAST_TVSHOW_IDX,
+        );
     }
 }
 unsafe fn TryPutWorldOfMastersOnAir() {
     let mut show2: *mut TVShow = null_mut();
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows[24];
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[24];
     if BernoulliTrial(65535) == 0 {
         sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-            (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
         ));
         if sCurTVShowSlot.get() != -1
             && IsRecordMixShowAlreadySpawned(TVSHOW_WORLD_OF_MASTERS, FALSE) != 1
         {
-            show2 = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+            show2 = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
             (*show2).worldOfMasters.kind = TVSHOW_WORLD_OF_MASTERS;
             (*show2).worldOfMasters.active = FALSE;
             (*show2).worldOfMasters.numPokeCaught = (*show).worldOfMasters.numPokeCaught;
@@ -1446,11 +1590,14 @@ unsafe fn TryPutWorldOfMastersOnAir() {
             (*show2).worldOfMasters.location = (*show).worldOfMasters.location;
             StringCopy(
                 (*show2).worldOfMasters.playerName.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
             StorePlayerIdInRecordMixShow(show2);
             (*show2).worldOfMasters.language = gGameLanguage;
-            DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), LAST_TVSHOW_IDX);
+            DeleteTVShowInArrayByIdx(
+                (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+                LAST_TVSHOW_IDX,
+            );
         }
     }
 }
@@ -1460,10 +1607,10 @@ pub unsafe fn TryPutTodaysRivalTrainerOnAir() {
     let mut nBadges: u8 = 0;
     IsRecordMixShowAlreadySpawned(TVSHOW_TODAYS_RIVAL_TRAINER, TRUE);
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).rivalTrainer.kind = TVSHOW_TODAYS_RIVAL_TRAINER;
         (*show).rivalTrainer.active = FALSE;
         i = FLAG_BADGE01_GET;
@@ -1480,8 +1627,8 @@ pub unsafe fn TryPutTodaysRivalTrainerOnAir() {
         } else {
             (*show).rivalTrainer.dexCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
         }
-        (*show).rivalTrainer.location = gMapHeader.regionMapSectionId;
-        (*show).rivalTrainer.mapLayoutId = gMapHeader.mapLayoutId;
+        (*show).rivalTrainer.location = crate::gl!(gMapHeader.regionMapSectionId);
+        (*show).rivalTrainer.mapLayoutId = crate::gl!(gMapHeader.mapLayoutId);
         (*show).rivalTrainer.nSilverSymbols = 0;
         (*show).rivalTrainer.nGoldSymbols = 0;
         for i in 0..(NUM_FRONTIER_FACILITIES as u32) {
@@ -1492,10 +1639,10 @@ pub unsafe fn TryPutTodaysRivalTrainerOnAir() {
                 (*show).rivalTrainer.nGoldSymbols += 1;
             }
         }
-        (*show).rivalTrainer.battlePoints = (*gSaveBlock2Ptr).frontier.battlePoints;
+        (*show).rivalTrainer.battlePoints = (*crate::gl!(gSaveBlock2Ptr)).frontier.battlePoints;
         StringCopy(
             (*show).rivalTrainer.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StorePlayerIdInRecordMixShow(show);
         (*show).rivalTrainer.language = gGameLanguage;
@@ -1505,19 +1652,19 @@ pub unsafe fn TryPutTodaysRivalTrainerOnAir() {
 pub unsafe fn TryPutTrendWatcherOnAir(words: *mut u16) {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 && IsRecordMixShowAlreadySpawned(TVSHOW_TREND_WATCHER, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).trendWatcher.kind = TVSHOW_TREND_WATCHER;
         (*show).trendWatcher.active = FALSE;
-        (*show).trendWatcher.gender = (*gSaveBlock2Ptr).playerGender;
+        (*show).trendWatcher.gender = (*crate::gl!(gSaveBlock2Ptr)).playerGender;
         (*show).trendWatcher.words[0] = *words;
         (*show).trendWatcher.words[1] = *words.at(1);
         StringCopy(
             (*show).trendWatcher.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StorePlayerIdInRecordMixShow(show);
         (*show).trendWatcher.language = gGameLanguage;
@@ -1527,22 +1674,22 @@ pub unsafe fn TryPutTrendWatcherOnAir(words: *mut u16) {
 pub unsafe fn TryPutTreasureInvestigatorsOnAir() {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1
         && IsRecordMixShowAlreadySpawned(TVSHOW_TREASURE_INVESTIGATORS, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).treasureInvestigators.kind = TVSHOW_TREASURE_INVESTIGATORS;
         (*show).treasureInvestigators.active = FALSE;
         (*show).treasureInvestigators.item = *(&raw const crate::ffi::gSpecialVar_0x8005)
             .cast::<u16>()
             .cast_mut();
-        (*show).treasureInvestigators.location = gMapHeader.regionMapSectionId;
-        (*show).treasureInvestigators.mapLayoutId = gMapHeader.mapLayoutId;
+        (*show).treasureInvestigators.location = crate::gl!(gMapHeader.regionMapSectionId);
+        (*show).treasureInvestigators.mapLayoutId = crate::gl!(gMapHeader.mapLayoutId);
         StringCopy(
             (*show).treasureInvestigators.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StorePlayerIdInRecordMixShow(show);
         (*show).treasureInvestigators.language = gGameLanguage;
@@ -1553,7 +1700,7 @@ pub unsafe fn TryPutFindThatGamerOnAir(nCoinsPaidOut: u16) {
     let mut flag: u8 = 0;
     let mut nCoinsWon: u16 = 0;
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1
         && IsRecordMixShowAlreadySpawned(TVSHOW_FIND_THAT_GAMER, FALSE) != 1
@@ -1594,7 +1741,7 @@ pub unsafe fn TryPutFindThatGamerOnAir(nCoinsPaidOut: u16) {
                 }
             }
         }
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).findThatGamer.kind = TVSHOW_FIND_THAT_GAMER;
         (*show).findThatGamer.active = FALSE;
         (*show).findThatGamer.nCoins = nCoinsWon;
@@ -1602,7 +1749,7 @@ pub unsafe fn TryPutFindThatGamerOnAir(nCoinsPaidOut: u16) {
         (*show).findThatGamer.won = flag;
         StringCopy(
             (*show).findThatGamer.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         StorePlayerIdInRecordMixShow(show);
         (*show).findThatGamer.language = gGameLanguage;
@@ -1621,20 +1768,20 @@ unsafe fn SecretBaseVisit_CalculateDecorationData(show: *mut TVShow) {
     let mut k: u16 = 0;
     let mut decoration: u8 = 0;
     for i in 0..DECOR_MAX_SECRET_BASE {
-        sTV_DecorationsBuffer[i] = DECOR_NONE;
+        crate::gl!(sTV_DecorationsBuffer[i] = DECOR_NONE);
     }
     let mut i: u8 = 0;
     let mut n: u8 = 0;
     while i < DECOR_MAX_SECRET_BASE {
-        decoration = (*gSaveBlock1Ptr).secretBases[0].decorations[i];
+        decoration = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].decorations[i];
         if decoration != DECOR_NONE {
             for j in 0..DECOR_MAX_SECRET_BASE {
-                if sTV_DecorationsBuffer[j] == DECOR_NONE {
-                    sTV_DecorationsBuffer[j] = decoration;
+                if crate::gl!(sTV_DecorationsBuffer[j]) == DECOR_NONE {
+                    crate::gl!(sTV_DecorationsBuffer[j] = decoration);
                     n += 1;
                     break;
                 }
-                if sTV_DecorationsBuffer[j] == decoration {
+                if crate::gl!(sTV_DecorationsBuffer[j]) == decoration {
                     break;
                 }
             }
@@ -1649,21 +1796,23 @@ unsafe fn SecretBaseVisit_CalculateDecorationData(show: *mut TVShow) {
     match (*show).secretBaseVisit.numDecorations {
         0 => {}
         1 => {
-            (*show).secretBaseVisit.decorations[0] = sTV_DecorationsBuffer[0];
+            (*show).secretBaseVisit.decorations[0] = crate::gl!(sTV_DecorationsBuffer[0]);
         }
         _ => {
             k = 0;
             while (k as i32) < n as i32 * n as i32 {
                 decoration = rem_i32(Random() as i32, n as i32) as u8;
                 j = rem_i32(Random() as i32, n as i32) as u8;
-                i = sTV_DecorationsBuffer[decoration];
-                sTV_DecorationsBuffer[decoration] = sTV_DecorationsBuffer[j];
-                sTV_DecorationsBuffer[j] = i;
+                i = crate::gl!(sTV_DecorationsBuffer[decoration]);
+                crate::gl!(
+                    sTV_DecorationsBuffer[decoration] = crate::gl!(sTV_DecorationsBuffer[j])
+                );
+                crate::gl!(sTV_DecorationsBuffer[j] = i);
                 k += 1;
             }
             i = 0;
             while i < (*show).secretBaseVisit.numDecorations {
-                (*show).secretBaseVisit.decorations[i] = sTV_DecorationsBuffer[i];
+                (*show).secretBaseVisit.decorations[i] = crate::gl!(sTV_DecorationsBuffer[i]);
                 i += 1;
             }
         }
@@ -1675,62 +1824,70 @@ unsafe fn SecretBaseVisit_CalculatePartyData(show: *mut TVShow) {
     let mut i: u8 = 0;
     let mut numPokemon: u8 = 0;
     while i < PARTY_SIZE as u8 {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) != SPECIES_NONE as u32
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0
         {
-            sTV_SecretBaseVisitMonsTemp[numPokemon].level =
-                GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) as u8;
-            sTV_SecretBaseVisitMonsTemp[numPokemon].species =
-                GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as u16;
+            crate::gl!(
+                sTV_SecretBaseVisitMonsTemp[numPokemon].level =
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_LEVEL) as u8
+            );
+            crate::gl!(
+                sTV_SecretBaseVisitMonsTemp[numPokemon].species =
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) as u16
+            );
             numMoves = 0;
-            r#move = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MOVE1) as u16;
+            r#move = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_MOVE1) as u16;
             if r#move != MOVE_NONE {
-                sTV_SecretBaseVisitMovesTemp[numMoves] = r#move;
+                crate::gl!(sTV_SecretBaseVisitMovesTemp[numMoves] = r#move);
                 numMoves += 1;
             }
-            r#move = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MOVE2) as u16;
+            r#move = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_MOVE2) as u16;
             if r#move != MOVE_NONE {
-                sTV_SecretBaseVisitMovesTemp[numMoves] = r#move;
+                crate::gl!(sTV_SecretBaseVisitMovesTemp[numMoves] = r#move);
                 numMoves += 1;
             }
-            r#move = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MOVE3) as u16;
+            r#move = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_MOVE3) as u16;
             if r#move != MOVE_NONE {
-                sTV_SecretBaseVisitMovesTemp[numMoves] = r#move;
+                crate::gl!(sTV_SecretBaseVisitMovesTemp[numMoves] = r#move);
                 numMoves += 1;
             }
-            r#move = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MOVE4) as u16;
+            r#move = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_MOVE4) as u16;
             if r#move != MOVE_NONE {
-                sTV_SecretBaseVisitMovesTemp[numMoves] = r#move;
+                crate::gl!(sTV_SecretBaseVisitMovesTemp[numMoves] = r#move);
                 numMoves += 1;
             }
-            sTV_SecretBaseVisitMonsTemp[numPokemon].r#move =
-                sTV_SecretBaseVisitMovesTemp[rem_i32(Random() as i32, numMoves as i32)];
+            crate::gl!(
+                sTV_SecretBaseVisitMonsTemp[numPokemon].r#move = {
+                    let gl_i0 = rem_i32(Random() as i32, numMoves as i32);
+                    crate::gl!(sTV_SecretBaseVisitMovesTemp[gl_i0])
+                }
+            );
             numPokemon += 1;
         }
         i += 1;
     }
     let mut sum: u16 = 0;
     for i in 0..numPokemon {
-        sum += sTV_SecretBaseVisitMonsTemp[i].level as u16;
+        sum += crate::gl!(sTV_SecretBaseVisitMonsTemp[i].level) as u16;
     }
     (*show).secretBaseVisit.avgLevel = div_i32(sum as i32, numPokemon as i32) as u8;
     let j: u16 = rem_i32(Random() as i32, numPokemon as i32) as u16;
-    (*show).secretBaseVisit.species = sTV_SecretBaseVisitMonsTemp[j].species;
-    (*show).secretBaseVisit.r#move = sTV_SecretBaseVisitMonsTemp[j].r#move;
+    (*show).secretBaseVisit.species = crate::gl!(sTV_SecretBaseVisitMonsTemp[j].species);
+    (*show).secretBaseVisit.r#move = crate::gl!(sTV_SecretBaseVisitMonsTemp[j].r#move);
 }
 pub unsafe fn TryPutSecretBaseVisitOnAir() {
     let mut show: *mut TVShow = null_mut();
     IsRecordMixShowAlreadySpawned(TVSHOW_SECRET_BASE_VISIT, TRUE);
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).secretBaseVisit.kind = TVSHOW_SECRET_BASE_VISIT;
         (*show).secretBaseVisit.active = FALSE;
         StringCopy(
             (*show).secretBaseVisit.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         SecretBaseVisit_CalculateDecorationData(show);
         SecretBaseVisit_CalculatePartyData(show);
@@ -1742,27 +1899,27 @@ pub unsafe fn TryPutBreakingNewsOnAir() {
     let mut show: *mut TVShow = null_mut();
     let mut balls: u16 = 0;
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 && IsRecordMixShowAlreadySpawned(TVSHOW_BREAKING_NEWS, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).breakingNews.kind = TVSHOW_BREAKING_NEWS;
         (*show).breakingNews.active = FALSE;
         balls = 0;
         for i in 0..11u8 {
-            balls += gBattleResults.catchAttempts[i] as u16;
+            balls += crate::gl!(gBattleResults.catchAttempts[i]) as u16;
         }
-        if gBattleResults.usedMasterBall() != 0 {
+        if (*gBattleResults.as_ptr()).usedMasterBall() != 0 {
             balls += 1;
         }
-        (*show).breakingNews.location = gMapHeader.regionMapSectionId;
+        (*show).breakingNews.location = crate::gl!(gMapHeader.regionMapSectionId);
         StringCopy(
             (*show).breakingNews.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
-        (*show).breakingNews.poke1Species = gBattleResults.playerMon1Species;
-        match gBattleOutcome {
+        (*show).breakingNews.poke1Species = crate::gl!(gBattleResults.playerMon1Species);
+        match gBattleOutcome.get() {
             B_OUTCOME_LOST | B_OUTCOME_DREW => {
                 (*show).breakingNews.kind = TVSHOW_OFF_AIR;
                 return;
@@ -1781,18 +1938,19 @@ pub unsafe fn TryPutBreakingNewsOnAir() {
             }
             _ => {}
         }
-        (*show).breakingNews.lastOpponentSpecies = gBattleResults.lastOpponentSpecies;
+        (*show).breakingNews.lastOpponentSpecies = crate::gl!(gBattleResults.lastOpponentSpecies);
         match (*show).breakingNews.outcome {
             0 => {
-                if gBattleResults.usedMasterBall() != 0 {
+                if (*gBattleResults.as_ptr()).usedMasterBall() != 0 {
                     (*show).breakingNews.caughtMonBall = ITEM_MASTER_BALL;
                 } else {
-                    (*show).breakingNews.caughtMonBall = gBattleResults.caughtMonBall() as u16;
+                    (*show).breakingNews.caughtMonBall =
+                        (*gBattleResults.as_ptr()).caughtMonBall() as u16;
                 }
                 (*show).breakingNews.balls = balls;
             }
             1 => {
-                (*show).breakingNews.lastUsedMove = gBattleResults.lastUsedMovePlayer;
+                (*show).breakingNews.lastUsedMove = crate::gl!(gBattleResults.lastUsedMovePlayer);
             }
             2 | 3 => {}
             _ => {}
@@ -1805,16 +1963,16 @@ pub unsafe fn TryPutBreakingNewsOnAir() {
 pub unsafe fn TryPutLotteryWinnerReportOnAir() {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 && IsRecordMixShowAlreadySpawned(TVSHOW_LOTTO_WINNER, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).lottoWinner.kind = TVSHOW_LOTTO_WINNER;
         (*show).lottoWinner.active = FALSE;
         StringCopy(
             (*show).lottoWinner.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         (*show).lottoWinner.whichPrize = 4 - gSpecialVar_0x8004 as u8;
         (*show).lottoWinner.item = *(&raw const crate::ffi::gSpecialVar_0x8005)
@@ -1834,17 +1992,17 @@ pub unsafe fn TryPutBattleSeminarOnAir(
     let mut show: *mut TVShow = null_mut();
     let mut j: u8 = 0;
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1
         && IsRecordMixShowAlreadySpawned(TVSHOW_BATTLE_SEMINAR, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).battleSeminar.kind = TVSHOW_BATTLE_SEMINAR;
         (*show).battleSeminar.active = FALSE;
         StringCopy(
             (*show).battleSeminar.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         (*show).battleSeminar.foeSpecies = foeSpecies;
         (*show).battleSeminar.species = species;
@@ -1866,17 +2024,17 @@ pub unsafe fn TryPutBattleSeminarOnAir(
 pub unsafe fn TryPutSafariFanClubOnAir(monsCaught: u8, pokeblocksUsed: u8) {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1
         && IsRecordMixShowAlreadySpawned(TVSHOW_SAFARI_FAN_CLUB, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).safariFanClub.kind = TVSHOW_SAFARI_FAN_CLUB;
         (*show).safariFanClub.active = FALSE;
         StringCopy(
             (*show).safariFanClub.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         (*show).safariFanClub.monsCaught = monsCaught;
         (*show).safariFanClub.pokeblocksUsed = pokeblocksUsed;
@@ -1888,15 +2046,15 @@ pub unsafe fn TryPutSafariFanClubOnAir(monsCaught: u8, pokeblocksUsed: u8) {
 pub unsafe fn TryPutSpotTheCutiesOnAir(pokemon: *mut Pokemon, ribbonMonDataIdx: u8) {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 && IsRecordMixShowAlreadySpawned(TVSHOW_CUTIES, FALSE) != 1 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).cuties.kind = TVSHOW_CUTIES;
         (*show).cuties.active = FALSE;
         StringCopy(
             (*show).cuties.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         GetMonData3(
             pokemon,
@@ -1997,20 +2155,20 @@ unsafe fn MonDataIdxToRibbon(monDataIdx: u8) -> u8 {
 pub unsafe fn TryPutTrainerFanClubOnAir() {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1
         && IsRecordMixShowAlreadySpawned(TVSHOW_TRAINER_FAN_CLUB, FALSE) != 1
     {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).trainerFanClub.kind = TVSHOW_TRAINER_FAN_CLUB;
         (*show).trainerFanClub.active = FALSE;
         StringCopy(
             (*show).trainerFanClub.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
-        (*show).trainerFanClub.words[0] = (*gSaveBlock1Ptr).easyChatProfile[0];
-        (*show).trainerFanClub.words[1] = (*gSaveBlock1Ptr).easyChatProfile[1];
+        (*show).trainerFanClub.words[0] = (*crate::gl!(gSaveBlock1Ptr)).easyChatProfile[0];
+        (*show).trainerFanClub.words[1] = (*crate::gl!(gSaveBlock1Ptr)).easyChatProfile[1];
         StorePlayerIdInRecordMixShow(show);
         (*show).trainerFanClub.language = gGameLanguage;
     }
@@ -2018,7 +2176,7 @@ pub unsafe fn TryPutTrainerFanClubOnAir() {
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldHideFanClubInterviewer() -> u8 {
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() == -1 {
         return TRUE;
@@ -2027,7 +2185,7 @@ pub unsafe fn ShouldHideFanClubInterviewer() -> u8 {
     if gSpecialVar_Result == TRUE as u16 {
         return TRUE;
     }
-    if (*gSaveBlock1Ptr).linkBattleRecords.entries[0].name[0] == EOS {
+    if (*crate::gl!(gSaveBlock1Ptr)).linkBattleRecords.entries[0].name[0] == EOS {
         return TRUE;
     }
     FALSE
@@ -2036,21 +2194,24 @@ pub unsafe fn ShouldAirFrontierTVShow() -> u8 {
     let mut playerId: u32 = 0;
     let mut shows: *mut TVShow = null_mut();
     if IsRecordMixShowAlreadySpawned(TVSHOW_FRONTIER, FALSE) == TRUE {
-        shows = (*gSaveBlock1Ptr).tvShows.as_mut_ptr();
+        shows = (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr();
         playerId = GetPlayerIDAsU32();
         for showIdx in NUM_NORMAL_TVSHOW_SLOTS..LAST_TVSHOW_IDX {
             if (*shows.at(showIdx)).common.kind == TVSHOW_FRONTIER
                 && playerId & 0xFF == (*shows.at(showIdx)).common.trainerIdLo as u32
                 && playerId >> 8 & 0xFF == (*shows.at(showIdx)).common.trainerIdHi as u32
             {
-                DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), showIdx);
-                CompactTVShowArray((*gSaveBlock1Ptr).tvShows.as_mut_ptr());
+                DeleteTVShowInArrayByIdx(
+                    (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
+                    showIdx,
+                );
+                CompactTVShowArray((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr());
                 return TRUE;
             }
         }
     }
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() == -1 {
         return FALSE;
@@ -2060,15 +2221,15 @@ pub unsafe fn ShouldAirFrontierTVShow() -> u8 {
 pub unsafe fn TryPutFrontierTVShowOnAir(winStreak: u16, facilityAndMode: u8) {
     let mut show: *mut TVShow = null_mut();
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).frontier.kind = TVSHOW_FRONTIER;
         (*show).frontier.active = FALSE;
         StringCopy(
             (*show).frontier.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         (*show).frontier.winStreak = winStreak;
         (*show).frontier.facilityAndMode = facilityAndMode;
@@ -2083,39 +2244,66 @@ pub unsafe fn TryPutFrontierTVShowOnAir(winStreak: u16, facilityAndMode: u8) {
             | FRONTIER_SHOW_PALACE_SINGLES
             | FRONTIER_SHOW_PALACE_DOUBLES
             | FRONTIER_SHOW_PYRAMID => {
-                (*show).frontier.species1 =
-                    GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SPECIES, null_mut()) as u16;
-                (*show).frontier.species2 =
-                    GetMonData3(&raw mut gPlayerParty[1], MON_DATA_SPECIES, null_mut()) as u16;
-                (*show).frontier.species3 =
-                    GetMonData3(&raw mut gPlayerParty[2], MON_DATA_SPECIES, null_mut()) as u16;
-            }
-            FRONTIER_SHOW_TOWER_DOUBLES => {
-                (*show).frontier.species1 =
-                    GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SPECIES, null_mut()) as u16;
-                (*show).frontier.species2 =
-                    GetMonData3(&raw mut gPlayerParty[1], MON_DATA_SPECIES, null_mut()) as u16;
-                (*show).frontier.species3 =
-                    GetMonData3(&raw mut gPlayerParty[2], MON_DATA_SPECIES, null_mut()) as u16;
-                (*show).frontier.species4 =
-                    GetMonData3(&raw mut gPlayerParty[3], MON_DATA_SPECIES, null_mut()) as u16;
-            }
-            FRONTIER_SHOW_TOWER_MULTIS => {
-                (*show).frontier.species1 =
-                    GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SPECIES, null_mut()) as u16;
-                (*show).frontier.species2 =
-                    GetMonData3(&raw mut gPlayerParty[1], MON_DATA_SPECIES, null_mut()) as u16;
-            }
-            FRONTIER_SHOW_TOWER_LINK_MULTIS => {
                 (*show).frontier.species1 = GetMonData3(
-                    &raw mut (*gSaveBlock1Ptr).playerParty
-                        [(*gSaveBlock2Ptr).frontier.selectedPartyMons[0] as i32 - 1],
+                    crate::gl!(&raw gPlayerParty[0]),
                     MON_DATA_SPECIES,
                     null_mut(),
                 ) as u16;
                 (*show).frontier.species2 = GetMonData3(
-                    &raw mut (*gSaveBlock1Ptr).playerParty
-                        [(*gSaveBlock2Ptr).frontier.selectedPartyMons[1] as i32 - 1],
+                    crate::gl!(&raw gPlayerParty[1]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+                (*show).frontier.species3 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[2]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+            }
+            FRONTIER_SHOW_TOWER_DOUBLES => {
+                (*show).frontier.species1 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[0]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+                (*show).frontier.species2 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[1]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+                (*show).frontier.species3 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[2]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+                (*show).frontier.species4 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[3]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+            }
+            FRONTIER_SHOW_TOWER_MULTIS => {
+                (*show).frontier.species1 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[0]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+                (*show).frontier.species2 = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[1]),
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+            }
+            FRONTIER_SHOW_TOWER_LINK_MULTIS => {
+                (*show).frontier.species1 = GetMonData3(
+                    &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty
+                        [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[0] as i32 - 1],
+                    MON_DATA_SPECIES,
+                    null_mut(),
+                ) as u16;
+                (*show).frontier.species2 = GetMonData3(
+                    &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty
+                        [(*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[1] as i32 - 1],
                     MON_DATA_SPECIES,
                     null_mut(),
                 ) as u16;
@@ -2131,15 +2319,15 @@ pub unsafe fn TryPutSecretBaseSecretsOnAir() {
     let mut strbuf: CArray<u8, 32> = zeroed();
     if IsRecordMixShowAlreadySpawned(TVSHOW_SECRET_BASE_SECRETS, FALSE) != TRUE {
         sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-            (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
         ));
         if sCurTVShowSlot.get() != -1 {
-            show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+            show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
             (*show).secretBaseSecrets.kind = TVSHOW_SECRET_BASE_SECRETS;
             (*show).secretBaseSecrets.active = FALSE;
             StringCopy(
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
             (*show).secretBaseSecrets.stepsInBase = VarGet(VAR_SECRET_BASE_STEP_COUNTER);
             CopyCurSecretBaseOwnerName_StrVar1();
@@ -2155,13 +2343,15 @@ pub unsafe fn TryPutSecretBaseSecretsOnAir() {
             StorePlayerIdInRecordMixShow(show);
             (*show).secretBaseSecrets.language = gGameLanguage;
             if (*show).secretBaseSecrets.language == LANGUAGE_JAPANESE
-                || (*gSaveBlock1Ptr).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].language
+                || (*crate::gl!(gSaveBlock1Ptr)).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)]
+                    .language
                     == LANGUAGE_JAPANESE
             {
                 (*show).secretBaseSecrets.baseOwnersNameLanguage = LANGUAGE_JAPANESE;
             } else {
-                (*show).secretBaseSecrets.baseOwnersNameLanguage =
-                    (*gSaveBlock1Ptr).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].language;
+                (*show).secretBaseSecrets.baseOwnersNameLanguage = (*crate::gl!(gSaveBlock1Ptr))
+                    .secretBases[VarGet(VAR_CURRENT_SECRET_BASE)]
+                .language;
             }
         }
     }
@@ -2181,15 +2371,15 @@ unsafe fn TryPutNumberOneOnAir(actionIdx: u8) {
     let mut show: *mut TVShow = null_mut();
     IsRecordMixShowAlreadySpawned(TVSHOW_NUMBER_ONE, TRUE);
     sCurTVShowSlot.set(FindFirstEmptyRecordMixTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     if sCurTVShowSlot.get() != -1 {
-        show = &raw mut (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()];
+        show = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()];
         (*show).numberOne.kind = TVSHOW_NUMBER_ONE;
         (*show).numberOne.active = FALSE;
         StringCopy(
             (*show).numberOne.playerName.as_mut_ptr(),
-            (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         );
         (*show).numberOne.actionIdx = actionIdx;
         (*show).numberOne.count = VarGet(sNumberOneVarsAndThresholds[actionIdx][0]);
@@ -2229,14 +2419,16 @@ pub unsafe fn IncrementDailyBattlePoints(delta: u16) {
 unsafe fn TryPutRandomPokeNewsOnAir() {
     if FlagGet(FLAG_SYS_GAME_CLEAR) != 0 {
         sCurTVShowSlot.set(GetFirstEmptyPokeNewsSlot(
-            (*gSaveBlock1Ptr).pokeNews.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).pokeNews.as_mut_ptr(),
         ));
         if sCurTVShowSlot.get() != -1 && BernoulliTrial(655) != 1 {
             let newsKind: u8 = (Random() as i32 % 4) as u8 + 1;
             if IsAddingPokeNewsDisallowed(newsKind) != TRUE {
-                (*gSaveBlock1Ptr).pokeNews[sCurTVShowSlot.get()].kind = newsKind;
-                (*gSaveBlock1Ptr).pokeNews[sCurTVShowSlot.get()].dayCountdown = POKENEWS_COUNTDOWN;
-                (*gSaveBlock1Ptr).pokeNews[sCurTVShowSlot.get()].state = POKENEWS_STATE_UPCOMING;
+                (*crate::gl!(gSaveBlock1Ptr)).pokeNews[sCurTVShowSlot.get()].kind = newsKind;
+                (*crate::gl!(gSaveBlock1Ptr)).pokeNews[sCurTVShowSlot.get()].dayCountdown =
+                    POKENEWS_COUNTDOWN;
+                (*crate::gl!(gSaveBlock1Ptr)).pokeNews[sCurTVShowSlot.get()].state =
+                    POKENEWS_STATE_UPCOMING;
             }
         }
     }
@@ -2255,16 +2447,17 @@ unsafe fn ClearPokeNews() {
     }
 }
 unsafe fn ClearPokeNewsBySlot(i: u8) {
-    (*gSaveBlock1Ptr).pokeNews[i].kind = POKENEWS_NONE;
-    (*gSaveBlock1Ptr).pokeNews[i].state = POKENEWS_STATE_INACTIVE;
-    (*gSaveBlock1Ptr).pokeNews[i].dayCountdown = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind = POKENEWS_NONE;
+    (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state = POKENEWS_STATE_INACTIVE;
+    (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].dayCountdown = 0;
 }
 unsafe fn CompactPokeNews() {
     for i in 0..15u8 {
-        if (*gSaveBlock1Ptr).pokeNews[i].kind == POKENEWS_NONE {
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind == POKENEWS_NONE {
             for j in (i + 1)..POKE_NEWS_COUNT {
-                if (*gSaveBlock1Ptr).pokeNews[j].kind != POKENEWS_NONE {
-                    (*gSaveBlock1Ptr).pokeNews[i] = (*gSaveBlock1Ptr).pokeNews[j];
+                if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[j].kind != POKENEWS_NONE {
+                    (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i] =
+                        (*crate::gl!(gSaveBlock1Ptr)).pokeNews[j];
                     ClearPokeNewsBySlot(j);
                     break;
                 }
@@ -2274,9 +2467,9 @@ unsafe fn CompactPokeNews() {
 }
 unsafe fn FindAnyPokeNewsOnTheAir() -> u8 {
     for i in 0..POKE_NEWS_COUNT {
-        if (*gSaveBlock1Ptr).pokeNews[i].kind != POKENEWS_NONE
-            && (*gSaveBlock1Ptr).pokeNews[i].state == POKENEWS_STATE_UPCOMING
-            && (*gSaveBlock1Ptr).pokeNews[i].dayCountdown < 3
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind != POKENEWS_NONE
+            && (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state == POKENEWS_STATE_UPCOMING
+            && (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].dayCountdown < 3
         {
             return i;
         }
@@ -2289,23 +2482,29 @@ pub unsafe fn DoPokeNews() {
     if i == 0xFF {
         gSpecialVar_Result = FALSE as u16;
     } else {
-        if (*gSaveBlock1Ptr).pokeNews[i].dayCountdown == 0 {
-            (*gSaveBlock1Ptr).pokeNews[i].state = POKENEWS_STATE_ACTIVE;
-            if gLocalTime.hours < 20 {
-                ShowFieldMessage(sPokeNewsTextGroup_Ongoing[(*gSaveBlock1Ptr).pokeNews[i].kind]);
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].dayCountdown == 0 {
+            (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state = POKENEWS_STATE_ACTIVE;
+            if crate::gl!(gLocalTime.hours) < 20 {
+                ShowFieldMessage(
+                    sPokeNewsTextGroup_Ongoing[(*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind],
+                );
             } else {
-                ShowFieldMessage(sPokeNewsTextGroup_Ending[(*gSaveBlock1Ptr).pokeNews[i].kind]);
+                ShowFieldMessage(
+                    sPokeNewsTextGroup_Ending[(*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind],
+                );
             }
         } else {
-            let dayCountdown: u16 = (*gSaveBlock1Ptr).pokeNews[i].dayCountdown;
+            let dayCountdown: u16 = (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].dayCountdown;
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
                 dayCountdown as i32,
                 STR_CONV_MODE_LEFT_ALIGN,
                 1,
             );
-            (*gSaveBlock1Ptr).pokeNews[i].state = POKENEWS_STATE_INACTIVE;
-            ShowFieldMessage(sPokeNewsTextGroup_Upcoming[(*gSaveBlock1Ptr).pokeNews[i].kind]);
+            (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state = POKENEWS_STATE_INACTIVE;
+            ShowFieldMessage(
+                sPokeNewsTextGroup_Upcoming[(*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind],
+            );
         }
         gSpecialVar_Result = TRUE as u16;
     }
@@ -2315,8 +2514,8 @@ pub unsafe fn IsPokeNewsActive(newsKind: u8) -> u8 {
         return FALSE;
     }
     for i in 0..POKE_NEWS_COUNT {
-        if (*gSaveBlock1Ptr).pokeNews[i].kind == newsKind {
-            if (*gSaveBlock1Ptr).pokeNews[i].state == POKENEWS_STATE_ACTIVE
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind == newsKind {
+            if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state == POKENEWS_STATE_ACTIVE
                 && ShouldApplyPokeNewsEffect(newsKind) != 0
             {
                 return TRUE;
@@ -2329,8 +2528,8 @@ pub unsafe fn IsPokeNewsActive(newsKind: u8) -> u8 {
 unsafe fn ShouldApplyPokeNewsEffect(newsKind: u8) -> u8 {
     match newsKind {
         POKENEWS_SLATEPORT => {
-            if (*gSaveBlock1Ptr).location.mapGroup == 0
-                && (*gSaveBlock1Ptr).location.mapNum == 1
+            if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 0
+                && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 1
                 && gSpecialVar_LastTalked == LOCALID_SLATEPORT_ENERGY_GURU
             {
                 return TRUE;
@@ -2338,7 +2537,8 @@ unsafe fn ShouldApplyPokeNewsEffect(newsKind: u8) -> u8 {
             return FALSE;
         }
         POKENEWS_LILYCOVE => {
-            if (*gSaveBlock1Ptr).location.mapGroup == 13 && (*gSaveBlock1Ptr).location.mapNum == 21
+            if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 13
+                && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 21
             {
                 return TRUE;
             }
@@ -2353,7 +2553,7 @@ unsafe fn IsAddingPokeNewsDisallowed(newsKind: u8) -> u8 {
         return TRUE;
     }
     for i in 0..POKE_NEWS_COUNT {
-        if (*gSaveBlock1Ptr).pokeNews[i].kind == newsKind {
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind == newsKind {
             return TRUE;
         }
     }
@@ -2361,16 +2561,16 @@ unsafe fn IsAddingPokeNewsDisallowed(newsKind: u8) -> u8 {
 }
 unsafe fn UpdatePokeNewsCountdown(days: u16) {
     for i in 0..POKE_NEWS_COUNT {
-        if (*gSaveBlock1Ptr).pokeNews[i].kind != POKENEWS_NONE {
-            if (*gSaveBlock1Ptr).pokeNews[i].dayCountdown < days {
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind != POKENEWS_NONE {
+            if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].dayCountdown < days {
                 ClearPokeNewsBySlot(i);
             } else {
-                if (*gSaveBlock1Ptr).pokeNews[i].state == POKENEWS_STATE_INACTIVE
+                if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state == POKENEWS_STATE_INACTIVE
                     && FlagGet(FLAG_SYS_GAME_CLEAR) == TRUE
                 {
-                    (*gSaveBlock1Ptr).pokeNews[i].state = POKENEWS_STATE_UPCOMING;
+                    (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state = POKENEWS_STATE_UPCOMING;
                 }
-                (*gSaveBlock1Ptr).pokeNews[i].dayCountdown -= days;
+                (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].dayCountdown -= days;
             }
         }
     }
@@ -2451,7 +2651,7 @@ pub unsafe fn CopyContestCategoryToStringVar(varIdx: u8, category: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetContestCategoryStringVarForInterview() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -2508,7 +2708,7 @@ unsafe fn SmartShopper_BufferPurchaseTotal(varIdx: u8, show: *mut TVShow) {
     }
 }
 unsafe fn IsRecordMixShowAlreadySpawned(kind: u8, delete: u8) -> u8 {
-    let shows: *mut TVShow = (*gSaveBlock1Ptr).tvShows.as_mut_ptr();
+    let shows: *mut TVShow = (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr();
     let playerId: u32 = GetPlayerIDAsU32();
     for i in NUM_NORMAL_TVSHOW_SLOTS..LAST_TVSHOW_IDX {
         if (*shows.at(i)).common.kind == kind
@@ -2516,36 +2716,42 @@ unsafe fn IsRecordMixShowAlreadySpawned(kind: u8, delete: u8) -> u8 {
             && playerId >> 8 & 0xFF == (*shows.at(i)).common.trainerIdHi as u32
         {
             if delete == TRUE {
-                DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), i);
-                CompactTVShowArray((*gSaveBlock1Ptr).tvShows.as_mut_ptr());
+                DeleteTVShowInArrayByIdx((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(), i);
+                CompactTVShowArray((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr());
             }
             return TRUE;
         }
     }
     FALSE
 }
-unsafe fn SortPurchasesByQuantity() {
+fn SortPurchasesByQuantity() {
     for i in 0..2u8 {
         for j in (i + 1)..SMARTSHOPPER_NUM_ITEMS {
-            if gMartPurchaseHistory[i].quantity < gMartPurchaseHistory[j].quantity {
-                let tempItemId: u16 = gMartPurchaseHistory[i].itemId;
-                let tempQuantity: u16 = gMartPurchaseHistory[i].quantity;
-                gMartPurchaseHistory[i].itemId = gMartPurchaseHistory[j].itemId;
-                gMartPurchaseHistory[i].quantity = gMartPurchaseHistory[j].quantity;
-                gMartPurchaseHistory[j].itemId = tempItemId;
-                gMartPurchaseHistory[j].quantity = tempQuantity;
+            if crate::gl!(gMartPurchaseHistory[i].quantity)
+                < crate::gl!(gMartPurchaseHistory[j].quantity)
+            {
+                let tempItemId: u16 = crate::gl!(gMartPurchaseHistory[i].itemId);
+                let tempQuantity: u16 = crate::gl!(gMartPurchaseHistory[i].quantity);
+                crate::gl!(
+                    gMartPurchaseHistory[i].itemId = crate::gl!(gMartPurchaseHistory[j].itemId)
+                );
+                crate::gl!(
+                    gMartPurchaseHistory[i].quantity = crate::gl!(gMartPurchaseHistory[j].quantity)
+                );
+                crate::gl!(gMartPurchaseHistory[j].itemId = tempItemId);
+                crate::gl!(gMartPurchaseHistory[j].quantity = tempQuantity);
             }
         }
     }
 }
 unsafe fn TryReplaceOldTVShowOfKind(kind: u8) {
     for i in 0..NUM_NORMAL_TVSHOW_SLOTS {
-        if (*gSaveBlock1Ptr).tvShows[i].common.kind == kind {
-            if (*gSaveBlock1Ptr).tvShows[i].common.active == TRUE {
+        if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind == kind {
+            if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.active == TRUE {
                 gSpecialVar_Result = TRUE as u16;
             } else {
-                DeleteTVShowInArrayByIdx((*gSaveBlock1Ptr).tvShows.as_mut_ptr(), i);
-                CompactTVShowArray((*gSaveBlock1Ptr).tvShows.as_mut_ptr());
+                DeleteTVShowInArrayByIdx((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(), i);
+                CompactTVShowArray((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr());
                 Script_FindFirstEmptyNormalTVShowSlot();
             }
             return;
@@ -2600,7 +2806,10 @@ unsafe fn InterviewBefore_FanClubLetter() {
             gStringVar1.as_mut_ptr(),
             (*(&raw const crate::data::data_tables::gSpeciesNames)
                 .cast::<CArray<CArray<u8, 11>, 0>>())[GetMonData3(
-                &raw mut gPlayerParty[GetLeadMonIndex()],
+                {
+                    let gl_i14 = GetLeadMonIndex();
+                    crate::gl!(&raw gPlayerParty[gl_i14])
+                },
                 MON_DATA_SPECIES,
                 null_mut(),
             )]
@@ -2608,7 +2817,7 @@ unsafe fn InterviewBefore_FanClubLetter() {
             .cast_mut(),
         );
         InitializeEasyChatWordArray(
-            (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()]
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()]
                 .fanclubLetter
                 .words
                 .as_mut_ptr(),
@@ -2620,7 +2829,7 @@ unsafe fn InterviewBefore_RecentHappenings() {
     TryReplaceOldTVShowOfKind(TVSHOW_RECENT_HAPPENINGS);
     if gSpecialVar_Result == 0 {
         InitializeEasyChatWordArray(
-            (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()]
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()]
                 .recentHappenings
                 .words
                 .as_mut_ptr(),
@@ -2635,7 +2844,10 @@ unsafe fn InterviewBefore_PkmnFanClubOpinions() {
             gStringVar1.as_mut_ptr(),
             (*(&raw const crate::data::data_tables::gSpeciesNames)
                 .cast::<CArray<CArray<u8, 11>, 0>>())[GetMonData3(
-                &raw mut gPlayerParty[GetLeadMonIndex()],
+                {
+                    let gl_i15 = GetLeadMonIndex();
+                    crate::gl!(&raw gPlayerParty[gl_i15])
+                },
                 MON_DATA_SPECIES,
                 null_mut(),
             )]
@@ -2643,13 +2855,16 @@ unsafe fn InterviewBefore_PkmnFanClubOpinions() {
             .cast_mut(),
         );
         GetMonData3(
-            &raw mut gPlayerParty[GetLeadMonIndex()],
+            {
+                let gl_i16 = GetLeadMonIndex();
+                crate::gl!(&raw gPlayerParty[gl_i16])
+            },
             MON_DATA_NICKNAME,
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
         );
-        StringGet_Nickname(gStringVar2.as_mut_ptr());
+        StringGet_Nickname((*gStringVar2.as_ptr()).as_mut_ptr());
         InitializeEasyChatWordArray(
-            (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()]
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()]
                 .fanclubOpinions
                 .words
                 .as_mut_ptr(),
@@ -2667,7 +2882,7 @@ unsafe fn InterviewBefore_BravoTrainerPkmnProfile() {
     TryReplaceOldTVShowOfKind(TVSHOW_BRAVO_TRAINER_POKEMON_PROFILE);
     if gSpecialVar_Result == 0 {
         InitializeEasyChatWordArray(
-            (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()]
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()]
                 .bravoTrainer
                 .words
                 .as_mut_ptr(),
@@ -2685,7 +2900,7 @@ unsafe fn InterviewBefore_BravoTrainerBTProfile() {
     TryReplaceOldTVShowOfKind(TVSHOW_BRAVO_TRAINER_BATTLE_TOWER_PROFILE);
     if gSpecialVar_Result == 0 {
         InitializeEasyChatWordArray(
-            (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()]
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()]
                 .bravoTrainerTower
                 .words
                 .as_mut_ptr(),
@@ -2697,7 +2912,7 @@ unsafe fn InterviewBefore_FanClubSpecial() {
     TryReplaceOldTVShowOfKind(TVSHOW_FAN_CLUB_SPECIAL);
     if gSpecialVar_Result == 0 {
         InitializeEasyChatWordArray(
-            (*gSaveBlock1Ptr).tvShows[sCurTVShowSlot.get()]
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[sCurTVShowSlot.get()]
                 .fanClubSpecial
                 .words
                 .as_mut_ptr(),
@@ -2707,7 +2922,7 @@ unsafe fn InterviewBefore_FanClubSpecial() {
 }
 unsafe fn IsPartyMonNicknamedOrNotEnglish(monIdx: u8) -> u8 {
     let mut language: u8 = 0;
-    let pokemon: *mut Pokemon = &raw mut gPlayerParty[monIdx];
+    let pokemon: *mut Pokemon = crate::gl!(&raw gPlayerParty[monIdx]);
     GetMonData3(pokemon, MON_DATA_NICKNAME, gStringVar1.as_mut_ptr());
     language = GetMonData3(pokemon, MON_DATA_LANGUAGE, &raw mut language) as u8;
     if language == GAME_LANGUAGE
@@ -2792,7 +3007,7 @@ unsafe fn GetRandomDifferentSpeciesSeenByPlayer(excludedSpecies: u16) -> u16 {
 }
 unsafe fn Script_FindFirstEmptyNormalTVShowSlot() {
     sCurTVShowSlot.set(FindFirstEmptyNormalTVShowSlot(
-        (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
     ));
     gSpecialVar_0x8006 = sCurTVShowSlot.get() as u16;
     if sCurTVShowSlot.get() == -1 {
@@ -2834,7 +3049,10 @@ unsafe fn GetRandomWordFromShow(show: *mut TVShow) {
         }
         i += 1;
     }
-    CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).fanclubLetter.words[i]);
+    CopyEasyChatWord(
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        (*show).fanclubLetter.words[i],
+    );
 }
 unsafe fn GetRandomNameRaterStateFromName(show: *mut TVShow) -> u8 {
     let mut nameSum: u16 = 0;
@@ -2920,7 +3138,7 @@ unsafe fn GetNicknameSubstring(
 #[unsafe(no_mangle)]
 pub unsafe fn IsTVShowAlreadyInQueue() -> u8 {
     for i in 0..NUM_NORMAL_TVSHOW_SLOTS {
-        if (*gSaveBlock1Ptr).tvShows[i].common.kind as u16 == gSpecialVar_0x8004 {
+        if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind as u16 == gSpecialVar_0x8004 {
             return TRUE;
         }
     }
@@ -2929,13 +3147,20 @@ pub unsafe fn IsTVShowAlreadyInQueue() -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn TryPutNameRaterShowOnTheAir() -> u8 {
     GetMonData3(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i17 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i17])
+        },
         MON_DATA_NICKNAME,
         gStringVar1.as_mut_ptr(),
     );
-    if StringCompare(gStringVar3.as_mut_ptr(), gStringVar1.as_mut_ptr()) == 0 {
+    if StringCompare(
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        gStringVar1.as_mut_ptr(),
+    ) == 0
+    {
         return FALSE;
     }
     PutNameRaterShowOnTheAir();
@@ -2944,38 +3169,51 @@ pub unsafe fn TryPutNameRaterShowOnTheAir() -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn ChangePokemonNickname() {
     GetMonData3(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i18 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i18])
+        },
         MON_DATA_NICKNAME,
-        gStringVar3.as_mut_ptr(),
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
     );
     GetMonData3(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i19 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i19])
+        },
         MON_DATA_NICKNAME,
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
     );
     DoNamingScreen(
         NAMING_SCREEN_NICKNAME,
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         GetMonData3(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i20 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i20])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16,
-        GetMonGender(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+        GetMonGender({
+            let gl_i21 = *(&raw const crate::ffi::gSpecialVar_0x8004)
                 .cast::<u16>()
-                .cast_mut()],
-        ) as u16,
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i21])
+        }) as u16,
         GetMonData3(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i22 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i22])
+            },
             MON_DATA_PERSONALITY,
             null_mut(),
         ),
@@ -2984,11 +3222,14 @@ pub unsafe fn ChangePokemonNickname() {
 }
 pub unsafe fn ChangePokemonNickname_CB() {
     SetMonData(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i23 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i23])
+        },
         MON_DATA_NICKNAME,
-        gStringVar2.as_mut_ptr() as *mut c_void,
+        (*gStringVar2.as_ptr()).as_mut_ptr() as *mut c_void,
     );
     CB2_ReturnToFieldContinueScriptPlayMapMusic();
 }
@@ -2996,11 +3237,19 @@ pub unsafe fn ChangePokemonNickname_CB() {
 pub unsafe fn ChangeBoxPokemonNickname() {
     let boxMon: *mut BoxPokemon =
         GetBoxedMonPtr(gSpecialVar_MonBoxId as u8, gSpecialVar_MonBoxPos as u8);
-    GetBoxMonData3(boxMon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
-    GetBoxMonData3(boxMon, MON_DATA_NICKNAME, gStringVar2.as_mut_ptr());
+    GetBoxMonData3(
+        boxMon,
+        MON_DATA_NICKNAME,
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+    );
+    GetBoxMonData3(
+        boxMon,
+        MON_DATA_NICKNAME,
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+    );
     DoNamingScreen(
         NAMING_SCREEN_NICKNAME,
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         GetBoxMonData3(boxMon, MON_DATA_SPECIES, null_mut()) as u16,
         GetBoxMonGender(boxMon) as u16,
         GetBoxMonData3(boxMon, MON_DATA_PERSONALITY, null_mut()),
@@ -3011,16 +3260,19 @@ pub(crate) unsafe fn ChangeBoxPokemonNickname_CB() {
     SetBoxMonNickAt(
         gSpecialVar_MonBoxId as u8,
         gSpecialVar_MonBoxPos as u8,
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
     );
     CB2_ReturnToFieldContinueScriptPlayMapMusic();
 }
 #[unsafe(no_mangle)]
 pub unsafe fn BufferMonNickname() {
     GetMonData3(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i24 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i24])
+        },
         MON_DATA_NICKNAME,
         gStringVar1.as_mut_ptr(),
     );
@@ -3030,9 +3282,12 @@ pub unsafe fn BufferMonNickname() {
 pub unsafe fn IsMonOTIDNotPlayers() {
     if GetPlayerIDAsU32()
         == GetMonData3(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i25 = *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i25])
+            },
             MON_DATA_OT_ID,
             null_mut(),
         )
@@ -3058,22 +3313,22 @@ unsafe fn GetTVGroupByShowId(kind: u8) -> u8 {
     TVGROUP_NONE
 }
 pub unsafe fn GetPlayerIDAsU32() -> u32 {
-    ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24
-        | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-        | (*gSaveBlock2Ptr).playerTrainerId[0] as u32
+    ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+        | (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CheckForPlayersHouseNews() -> u8 {
-    if (*gSaveBlock1Ptr).location.mapGroup != 1 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup != 1 {
         return PLAYERS_HOUSE_TV_NONE;
     }
-    if (*gSaveBlock2Ptr).playerGender == MALE {
-        if (*gSaveBlock1Ptr).location.mapNum != 0 {
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
+        if (*crate::gl!(gSaveBlock1Ptr)).location.mapNum != 0 {
             return PLAYERS_HOUSE_TV_NONE;
         }
     } else {
-        if (*gSaveBlock1Ptr).location.mapNum != 2 {
+        if (*crate::gl!(gSaveBlock1Ptr)).location.mapNum != 2 {
             return PLAYERS_HOUSE_TV_NONE;
         }
     }
@@ -3087,9 +3342,9 @@ pub unsafe fn CheckForPlayersHouseNews() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetMomOrDadStringForTVMessage() {
-    if (*gSaveBlock1Ptr).location.mapGroup == 1 {
-        if (*gSaveBlock2Ptr).playerGender == MALE {
-            if (*gSaveBlock1Ptr).location.mapNum == 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 1 {
+        if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
+            if (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 0 {
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Mom).cast::<CArray<u8, 0>>())
@@ -3099,7 +3354,7 @@ pub unsafe fn GetMomOrDadStringForTVMessage() {
                 VarSet(VAR_TEMP_3, 1);
             }
         } else {
-            if (*gSaveBlock1Ptr).location.mapNum == 2 {
+            if (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 2 {
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Mom).cast::<CArray<u8, 0>>())
@@ -3164,8 +3419,8 @@ pub unsafe fn HideBattleTowerReporter() {
     VarSet(VAR_BRAVO_TRAINER_BATTLE_TOWER_ON, 0);
     RemoveObjectEventByLocalIdAndMap(
         LOCALID_TOWER_LOBBY_REPORTER,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
     );
     FlagSet(FLAG_HIDE_BATTLE_TOWER_REPORTER);
 }
@@ -3186,11 +3441,11 @@ pub unsafe fn ReceiveTvShowsData(src: *mut c_void, size: u32, playersLinkId: u8)
         rmBuffer = rmBuffer2;
         i = 0;
         while i < GetLinkPlayerCount() {
-            version = gLinkPlayers[i].version as u8 as u16;
+            version = crate::gl!(gLinkPlayers[i].version) as u8 as u16;
             if version == VERSION_RUBY as u16 || version == VERSION_SAPPHIRE as u16 {
                 TranslateRubyShows((*rmBuffer)[i].as_mut_ptr());
             } else if version == VERSION_EMERALD as u16
-                && gLinkPlayers[i].language == LANGUAGE_JAPANESE as u16
+                && crate::gl!(gLinkPlayers[i].language) == LANGUAGE_JAPANESE as u16
             {
                 TranslateJapaneseEmeraldShows((*rmBuffer)[i].as_mut_ptr());
             }
@@ -3199,7 +3454,7 @@ pub unsafe fn ReceiveTvShowsData(src: *mut c_void, size: u32, playersLinkId: u8)
         match playersLinkId {
             0 => {
                 SetMixedTVShows(
-                    (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
                     (*rmBuffer)[1].as_mut_ptr(),
                     (*rmBuffer)[2].as_mut_ptr(),
                     (*rmBuffer)[3].as_mut_ptr(),
@@ -3208,7 +3463,7 @@ pub unsafe fn ReceiveTvShowsData(src: *mut c_void, size: u32, playersLinkId: u8)
             1 => {
                 SetMixedTVShows(
                     (*rmBuffer)[0].as_mut_ptr(),
-                    (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
                     (*rmBuffer)[2].as_mut_ptr(),
                     (*rmBuffer)[3].as_mut_ptr(),
                 );
@@ -3217,7 +3472,7 @@ pub unsafe fn ReceiveTvShowsData(src: *mut c_void, size: u32, playersLinkId: u8)
                 SetMixedTVShows(
                     (*rmBuffer)[0].as_mut_ptr(),
                     (*rmBuffer)[1].as_mut_ptr(),
-                    (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
                     (*rmBuffer)[3].as_mut_ptr(),
                 );
             }
@@ -3226,14 +3481,14 @@ pub unsafe fn ReceiveTvShowsData(src: *mut c_void, size: u32, playersLinkId: u8)
                     (*rmBuffer)[0].as_mut_ptr(),
                     (*rmBuffer)[1].as_mut_ptr(),
                     (*rmBuffer)[2].as_mut_ptr(),
-                    (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
                 );
             }
             _ => {}
         }
-        CompactTVShowArray((*gSaveBlock1Ptr).tvShows.as_mut_ptr());
+        CompactTVShowArray((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr());
         DeleteExcessMixedShows();
-        CompactTVShowArray((*gSaveBlock1Ptr).tvShows.as_mut_ptr());
+        CompactTVShowArray((*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr());
         DeactivateShowsWithUnseenSpecies();
         DeactivateGameCompleteShowsIfNotUnlocked();
         Free(rmBuffer2 as *mut c_void);
@@ -3399,107 +3654,145 @@ unsafe fn FindInactiveShowInArray(tvShows: *mut TVShow) -> i8 {
 unsafe fn DeactivateShowsWithUnseenSpecies() {
     let mut species: u16 = 0;
     for i in 0..(LAST_TVSHOW_IDX as u16) {
-        match (*gSaveBlock1Ptr).tvShows[i].common.kind {
+        match (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind {
             TVSHOW_CONTEST_LIVE_UPDATES => {
-                species = (*gSaveBlock1Ptr).tvShows[i]
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
                     .contestLiveUpdates
                     .winningSpecies;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i]
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
                     .contestLiveUpdates
                     .losingSpecies;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_BATTLE_UPDATE => {
-                species = (*gSaveBlock1Ptr).tvShows[i].battleUpdate.speciesPlayer;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .battleUpdate
+                    .speciesPlayer;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].battleUpdate.speciesOpponent;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .battleUpdate
+                    .speciesOpponent;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_FAN_CLUB_LETTER => {
-                species = (*gSaveBlock1Ptr).tvShows[i].fanclubLetter.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .fanclubLetter
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_PKMN_FAN_CLUB_OPINIONS => {
-                species = (*gSaveBlock1Ptr).tvShows[i].fanclubOpinions.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .fanclubOpinions
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_DUMMY => {
-                species = (*gSaveBlock1Ptr).tvShows[i].dummy.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].dummy.species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_NAME_RATER_SHOW => {
-                species = (*gSaveBlock1Ptr).tvShows[i].nameRaterShow.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .nameRaterShow
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].nameRaterShow.randomSpecies;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .nameRaterShow
+                    .randomSpecies;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_BRAVO_TRAINER_POKEMON_PROFILE => {
-                species = (*gSaveBlock1Ptr).tvShows[i].bravoTrainer.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .bravoTrainer
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_BRAVO_TRAINER_BATTLE_TOWER_PROFILE => {
-                species = (*gSaveBlock1Ptr).tvShows[i].bravoTrainerTower.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .bravoTrainerTower
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i]
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
                     .bravoTrainerTower
                     .defeatedSpecies;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_POKEMON_TODAY_CAUGHT => {
-                species = (*gSaveBlock1Ptr).tvShows[i].pokemonToday.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .pokemonToday
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_POKEMON_TODAY_FAILED => {
-                species = (*gSaveBlock1Ptr).tvShows[i].pokemonTodayFailed.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .pokemonTodayFailed
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].pokemonTodayFailed.species2;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .pokemonTodayFailed
+                    .species2;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_FISHING_ADVICE => {
-                species = (*gSaveBlock1Ptr).tvShows[i].pokemonAngler.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .pokemonAngler
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_WORLD_OF_MASTERS => {
-                species = (*gSaveBlock1Ptr).tvShows[i].worldOfMasters.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .worldOfMasters
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].worldOfMasters.caughtPoke;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .worldOfMasters
+                    .caughtPoke;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_BREAKING_NEWS => {
-                species = (*gSaveBlock1Ptr).tvShows[i]
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
                     .breakingNews
                     .lastOpponentSpecies;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].breakingNews.poke1Species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .breakingNews
+                    .poke1Species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_SECRET_BASE_VISIT => {
-                species = (*gSaveBlock1Ptr).tvShows[i].secretBaseVisit.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .secretBaseVisit
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_BATTLE_SEMINAR => {
-                species = (*gSaveBlock1Ptr).tvShows[i].battleSeminar.species;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .battleSeminar
+                    .species;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].battleSeminar.foeSpecies;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .battleSeminar
+                    .foeSpecies;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
             }
             TVSHOW_FRONTIER => {
-                species = (*gSaveBlock1Ptr).tvShows[i].frontier.species1;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].frontier.species1;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].frontier.species2;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].frontier.species2;
                 DeactivateShowIfNotSeenSpecies(species, i as u8);
-                species = (*gSaveBlock1Ptr).tvShows[i].frontier.facilityAndMode as u16;
+                species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i]
+                    .frontier
+                    .facilityAndMode as u16;
                 match species {
                     3 | 4 => {}
                     1 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 => {
-                        species = (*gSaveBlock1Ptr).tvShows[i].frontier.species3;
+                        species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].frontier.species3;
                         DeactivateShowIfNotSeenSpecies(species, i as u8);
                     }
                     2 => {
-                        species = (*gSaveBlock1Ptr).tvShows[i].frontier.species3;
+                        species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].frontier.species3;
                         DeactivateShowIfNotSeenSpecies(species, i as u8);
-                        species = (*gSaveBlock1Ptr).tvShows[i].frontier.species4;
+                        species = (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].frontier.species4;
                         DeactivateShowIfNotSeenSpecies(species, i as u8);
                     }
                     _ => {}
@@ -3529,43 +3822,46 @@ unsafe fn DeactivateShowsWithUnseenSpecies() {
     }
 }
 unsafe fn DeactivateShow(showIdx: u8) {
-    (*gSaveBlock1Ptr).tvShows[showIdx].common.active = FALSE;
+    (*crate::gl!(gSaveBlock1Ptr)).tvShows[showIdx].common.active = FALSE;
 }
 unsafe fn DeactivateShowIfNotSeenSpecies(species: u16, showIdx: u8) {
     if GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_SEEN) == 0 {
-        (*gSaveBlock1Ptr).tvShows[showIdx].common.active = FALSE;
+        (*crate::gl!(gSaveBlock1Ptr)).tvShows[showIdx].common.active = FALSE;
     }
 }
 unsafe fn DeactivateGameCompleteShowsIfNotUnlocked() {
     if FlagGet(FLAG_SYS_GAME_CLEAR) != TRUE {
         for i in 0..(LAST_TVSHOW_IDX as u16) {
-            if (*gSaveBlock1Ptr).tvShows[i].common.kind == TVSHOW_BRAVO_TRAINER_BATTLE_TOWER_PROFILE
+            if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind
+                == TVSHOW_BRAVO_TRAINER_BATTLE_TOWER_PROFILE
             {
-                (*gSaveBlock1Ptr).tvShows[i].common.active = FALSE;
-            } else if (*gSaveBlock1Ptr).tvShows[i].common.kind == TVSHOW_MASS_OUTBREAK {
-                (*gSaveBlock1Ptr).tvShows[i].common.active = FALSE;
+                (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.active = FALSE;
+            } else if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind == TVSHOW_MASS_OUTBREAK {
+                (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.active = FALSE;
             }
         }
     }
 }
 pub unsafe fn DeactivateAllNormalTVShows() {
     for i in 0..NUM_NORMAL_TVSHOW_SLOTS {
-        if GetTVGroupByShowId((*gSaveBlock1Ptr).tvShows[i].common.kind) == TVGROUP_NORMAL {
-            (*gSaveBlock1Ptr).tvShows[i].common.active = FALSE;
+        if GetTVGroupByShowId((*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind)
+            == TVGROUP_NORMAL
+        {
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.active = FALSE;
         }
     }
 }
 unsafe fn DeleteExcessMixedShows() {
     let mut numEmptyMixSlots: i8 = 0;
     for i in (NUM_NORMAL_TVSHOW_SLOTS as i8)..(LAST_TVSHOW_IDX as i8) {
-        if (*gSaveBlock1Ptr).tvShows[i].common.kind == TVSHOW_OFF_AIR {
+        if (*crate::gl!(gSaveBlock1Ptr)).tvShows[i].common.kind == TVSHOW_OFF_AIR {
             numEmptyMixSlots += 1;
         }
     }
     let mut i: i8 = 0;
     while (i as i32) < NUM_NORMAL_TVSHOW_SLOTS as i32 - numEmptyMixSlots as i32 {
         DeleteTVShowInArrayByIdx(
-            (*gSaveBlock1Ptr).tvShows.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).tvShows.as_mut_ptr(),
             i as u8 + NUM_NORMAL_TVSHOW_SLOTS,
         );
         i += 1;
@@ -3587,7 +3883,7 @@ pub unsafe fn ReceivePokeNewsData(src: *mut c_void, size: u32, playersLinkId: u8
         match playersLinkId {
             0 => {
                 SetMixedPokeNews(
-                    (*gSaveBlock1Ptr).pokeNews.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).pokeNews.as_mut_ptr(),
                     (*rmBuffer)[1].as_mut_ptr(),
                     (*rmBuffer)[2].as_mut_ptr(),
                     (*rmBuffer)[3].as_mut_ptr(),
@@ -3596,7 +3892,7 @@ pub unsafe fn ReceivePokeNewsData(src: *mut c_void, size: u32, playersLinkId: u8
             1 => {
                 SetMixedPokeNews(
                     (*rmBuffer)[0].as_mut_ptr(),
-                    (*gSaveBlock1Ptr).pokeNews.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).pokeNews.as_mut_ptr(),
                     (*rmBuffer)[2].as_mut_ptr(),
                     (*rmBuffer)[3].as_mut_ptr(),
                 );
@@ -3605,7 +3901,7 @@ pub unsafe fn ReceivePokeNewsData(src: *mut c_void, size: u32, playersLinkId: u8
                 SetMixedPokeNews(
                     (*rmBuffer)[0].as_mut_ptr(),
                     (*rmBuffer)[1].as_mut_ptr(),
-                    (*gSaveBlock1Ptr).pokeNews.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).pokeNews.as_mut_ptr(),
                     (*rmBuffer)[3].as_mut_ptr(),
                 );
             }
@@ -3614,7 +3910,7 @@ pub unsafe fn ReceivePokeNewsData(src: *mut c_void, size: u32, playersLinkId: u8
                     (*rmBuffer)[0].as_mut_ptr(),
                     (*rmBuffer)[1].as_mut_ptr(),
                     (*rmBuffer)[2].as_mut_ptr(),
-                    (*gSaveBlock1Ptr).pokeNews.as_mut_ptr(),
+                    (*crate::gl!(gSaveBlock1Ptr)).pokeNews.as_mut_ptr(),
                 );
             }
             _ => {}
@@ -3695,7 +3991,7 @@ unsafe fn GetPokeNewsSlotIfActive(pokeNews: *mut PokeNews, idx: u8) -> i8 {
 }
 unsafe fn ClearInvalidPokeNews() {
     for i in 0..POKE_NEWS_COUNT {
-        if (*gSaveBlock1Ptr).pokeNews[i].kind > POKENEWS_BLENDMASTER {
+        if (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].kind > POKENEWS_BLENDMASTER {
             ClearPokeNewsBySlot(i);
         }
     }
@@ -3704,7 +4000,7 @@ unsafe fn ClearInvalidPokeNews() {
 unsafe fn ClearPokeNewsIfGameNotComplete() {
     if FlagGet(FLAG_SYS_GAME_CLEAR) != TRUE {
         for i in 0..POKE_NEWS_COUNT {
-            (*gSaveBlock1Ptr).pokeNews[i].state = POKENEWS_STATE_INACTIVE;
+            (*crate::gl!(gSaveBlock1Ptr)).pokeNews[i].state = POKENEWS_STATE_INACTIVE;
         }
     }
 }
@@ -4035,14 +4331,14 @@ pub unsafe fn SanitizeTVShowLocationsForRuby(shows: *mut TVShow) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoTVShow() {
-    if (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
+    if (*crate::gl!(gSaveBlock1Ptr)).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
         .cast::<u16>()
         .cast_mut()]
     .common
     .active
         != 0
     {
-        match (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
+        match (*crate::gl!(gSaveBlock1Ptr)).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()]
         .common
@@ -4149,7 +4445,7 @@ pub unsafe fn DoTVShow() {
     }
 }
 unsafe fn DoTVShowBravoTrainerPokemonProfile() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4186,7 +4482,7 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).bravoTrainer.pokemonNickname.as_mut_ptr(),
                 (*show).bravoTrainer.pokemonNameLanguage as i32,
             );
@@ -4211,7 +4507,10 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
                 (*show).bravoTrainer.playerName.as_mut_ptr(),
                 (*show).bravoTrainer.language as i32,
             );
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).bravoTrainer.words[0]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).bravoTrainer.words[0],
+            );
             ConvertIntToDecimalString(2, (*show).bravoTrainer.contestResult() as i32 + 1);
             sTVShowState.set(5);
         }
@@ -4221,7 +4520,10 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
                 (*show).bravoTrainer.playerName.as_mut_ptr(),
                 (*show).bravoTrainer.language as i32,
             );
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).bravoTrainer.words[0]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).bravoTrainer.words[0],
+            );
             ConvertIntToDecimalString(2, (*show).bravoTrainer.contestResult() as i32 + 1);
             sTVShowState.set(5);
         }
@@ -4232,7 +4534,10 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
                 (*show).bravoTrainer.language as i32,
             );
             CopyContestCategoryToStringVar(1, (*show).bravoTrainer.contestCategory());
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).bravoTrainer.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).bravoTrainer.words[1],
+            );
             if (*show).bravoTrainer.r#move != 0 {
                 sTVShowState.set(6);
             } else {
@@ -4248,13 +4553,16 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).bravoTrainer.r#move]
                     .as_ptr()
                     .cast_mut(),
             );
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).bravoTrainer.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).bravoTrainer.words[1],
+            );
             sTVShowState.set(7);
         }
         7 => {
@@ -4264,7 +4572,7 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
                 (*show).bravoTrainer.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).bravoTrainer.species]
                     .as_ptr()
@@ -4287,7 +4595,7 @@ unsafe fn DoTVShowBravoTrainerPokemonProfile() {
     ShowFieldMessage(sTVBravoTrainerTextGroup[state]);
 }
 unsafe fn DoTVShowBravoTrainerBattleTower() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4301,7 +4609,7 @@ unsafe fn DoTVShowBravoTrainerBattleTower() {
                 (*show).bravoTrainerTower.playerLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).bravoTrainerTower.species]
                     .as_ptr()
@@ -4356,7 +4664,7 @@ unsafe fn DoTVShowBravoTrainerBattleTower() {
                 (*show).bravoTrainerTower.opponentLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).bravoTrainerTower.defeatedSpecies]
@@ -4376,7 +4684,7 @@ unsafe fn DoTVShowBravoTrainerBattleTower() {
                 (*show).bravoTrainerTower.opponentLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).bravoTrainerTower.defeatedSpecies]
@@ -4427,12 +4735,12 @@ unsafe fn DoTVShowBravoTrainerBattleTower() {
         BRAVOTOWER_STATE_RESPONSE_SATISFIED | BRAVOTOWER_STATE_RESPONSE_UNSATISFIED => {
             CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*show).bravoTrainerTower.words[0]);
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).bravoTrainerTower.playerName.as_mut_ptr(),
                 (*show).bravoTrainerTower.playerLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).bravoTrainerTower.opponentName.as_mut_ptr(),
                 (*show).bravoTrainerTower.opponentLanguage as i32,
             );
@@ -4445,7 +4753,7 @@ unsafe fn DoTVShowBravoTrainerBattleTower() {
                 (*show).bravoTrainerTower.playerLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).bravoTrainerTower.species]
                     .as_ptr()
@@ -4458,7 +4766,7 @@ unsafe fn DoTVShowBravoTrainerBattleTower() {
     ShowFieldMessage(sTVBravoTrainerBattleTowerTextGroup[state]);
 }
 unsafe fn DoTVShowTodaysSmartShopper() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4472,7 +4780,7 @@ unsafe fn DoTVShowTodaysSmartShopper() {
                 (*show).smartshopperShow.language as i32,
             );
             GetMapName(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).smartshopperShow.shopLocation as u16,
                 0,
             );
@@ -4489,7 +4797,7 @@ unsafe fn DoTVShowTodaysSmartShopper() {
                 (*show).smartshopperShow.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).smartshopperShow.itemIds[0]),
             );
             ConvertIntToDecimalString(2, (*show).smartshopperShow.itemAmounts[0] as i32);
@@ -4517,7 +4825,7 @@ unsafe fn DoTVShowTodaysSmartShopper() {
         }
         SMARTSHOPPER_STATE_SECOND_ITEM => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).smartshopperShow.itemIds[1]),
             );
             ConvertIntToDecimalString(2, (*show).smartshopperShow.itemAmounts[1] as i32);
@@ -4531,7 +4839,7 @@ unsafe fn DoTVShowTodaysSmartShopper() {
         }
         SMARTSHOPPER_STATE_THIRD_ITEM => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).smartshopperShow.itemIds[2]),
             );
             ConvertIntToDecimalString(2, (*show).smartshopperShow.itemAmounts[2] as i32);
@@ -4566,7 +4874,7 @@ unsafe fn DoTVShowTodaysSmartShopper() {
                 (*show).smartshopperShow.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).smartshopperShow.itemIds[0]),
             );
             if (*show).smartshopperShow.priceReduced == TRUE {
@@ -4588,7 +4896,7 @@ unsafe fn DoTVShowTodaysSmartShopper() {
     ShowFieldMessage(sTVTodaysSmartShopperTextGroup[state]);
 }
 unsafe fn DoTVShowTheNameRaterShow() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4604,14 +4912,14 @@ unsafe fn DoTVShowTheNameRaterShow() {
                 (*show).nameRaterShow.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).nameRaterShow.species]
                     .as_ptr()
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).nameRaterShow.pokemonName.as_mut_ptr(),
                 (*show).nameRaterShow.pokemonNameLanguage as i32,
             );
@@ -4674,7 +4982,7 @@ unsafe fn DoTVShowTheNameRaterShow() {
         if sw1 == 15 {
             GetNicknameSubstring(0, 0, 2, 1, 0, show);
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).nameRaterShow.species]
                     .as_ptr()
@@ -4693,7 +5001,7 @@ unsafe fn DoTVShowTheNameRaterShow() {
         if sw1 == 17 {
             GetNicknameSubstring(0, 0, 2, 1, 0, show);
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).nameRaterShow.randomSpecies]
                     .as_ptr()
@@ -4721,7 +5029,7 @@ unsafe fn DoTVShowTheNameRaterShow() {
     ShowFieldMessage(sTVNameRaterTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4735,14 +5043,14 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
                 (*show).pokemonToday.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonToday.species]
                     .as_ptr()
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).pokemonToday.nickname.as_mut_ptr(),
                 (*show).pokemonToday.language2 as i32,
             );
@@ -4757,7 +5065,7 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
         }
         2 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).pokemonToday.ball as u16),
             );
             ConvertIntToDecimalString(2, (*show).pokemonToday.nBallsUsed as i32);
@@ -4774,14 +5082,14 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
                 (*show).pokemonToday.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonToday.species]
                     .as_ptr()
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).pokemonToday.nickname.as_mut_ptr(),
                 (*show).pokemonToday.language2 as i32,
             );
@@ -4797,7 +5105,7 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
                 (*show).pokemonToday.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonToday.species]
                     .as_ptr()
@@ -4812,14 +5120,14 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
                 (*show).pokemonToday.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonToday.species]
                     .as_ptr()
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).pokemonToday.nickname.as_mut_ptr(),
                 (*show).pokemonToday.language2 as i32,
             );
@@ -4837,7 +5145,7 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).pokemonToday.nickname.as_mut_ptr(),
                 (*show).pokemonToday.language2 as i32,
             );
@@ -4853,7 +5161,7 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).pokemonToday.nickname.as_mut_ptr(),
                 (*show).pokemonToday.language2 as i32,
             );
@@ -4867,7 +5175,7 @@ unsafe fn DoTVShowPokemonTodaySuccessfulCapture() {
     ShowFieldMessage(sTVPokemonTodaySuccessfulTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonTodayFailedCapture() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4881,7 +5189,7 @@ unsafe fn DoTVShowPokemonTodayFailedCapture() {
                 (*show).pokemonTodayFailed.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonTodayFailed.species]
                     .as_ptr()
@@ -4896,12 +5204,12 @@ unsafe fn DoTVShowPokemonTodayFailedCapture() {
                 (*show).pokemonTodayFailed.language as i32,
             );
             GetMapName(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).pokemonTodayFailed.location as u16,
                 0,
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonTodayFailed.species2]
                     .as_ptr()
@@ -4943,7 +5251,7 @@ unsafe fn DoTVShowPokemonTodayFailedCapture() {
 }
 unsafe fn DoTVShowPokemonFanClubLetter() {
     let mut rval: u16 = 0;
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -4957,7 +5265,7 @@ unsafe fn DoTVShowPokemonFanClubLetter() {
                 (*show).fanclubLetter.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).fanclubLetter.species]
                     .as_ptr()
@@ -5018,7 +5326,7 @@ unsafe fn DoTVShowPokemonFanClubLetter() {
     ShowFieldMessage(sTVFanClubTextGroup[state]);
 }
 unsafe fn DoTVShowRecentHappenings() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -5062,7 +5370,7 @@ unsafe fn DoTVShowRecentHappenings() {
     ShowFieldMessage(sTVRecentHappeninssTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonFanClubOpinions() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -5076,14 +5384,14 @@ unsafe fn DoTVShowPokemonFanClubOpinions() {
                 (*show).fanclubOpinions.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).fanclubOpinions.species]
                     .as_ptr()
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).fanclubOpinions.nickname.as_mut_ptr(),
                 (*show).fanclubOpinions.pokemonNameLanguage as i32,
             );
@@ -5096,13 +5404,16 @@ unsafe fn DoTVShowPokemonFanClubOpinions() {
                 (*show).fanclubOpinions.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).fanclubOpinions.species]
                     .as_ptr()
                     .cast_mut(),
             );
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).fanclubOpinions.words[0]);
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).fanclubOpinions.words[0],
+            );
             sTVShowState.set(4);
         }
         4 => {
@@ -5111,7 +5422,10 @@ unsafe fn DoTVShowPokemonFanClubOpinions() {
                 (*show).fanclubOpinions.playerName.as_mut_ptr(),
                 (*show).fanclubOpinions.language as i32,
             );
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).fanclubOpinions.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).fanclubOpinions.words[1],
+            );
             TVShowDone();
         }
         _ => {}
@@ -5120,7 +5434,7 @@ unsafe fn DoTVShowPokemonFanClubOpinions() {
 }
 fn DoTVShowDummiedOut() {}
 unsafe fn DoTVShowPokemonNewsMassOutbreak() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -5130,7 +5444,7 @@ unsafe fn DoTVShowPokemonNewsMassOutbreak() {
         0,
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
             [(*show).massOutbreak.species]
             .as_ptr()
@@ -5141,7 +5455,7 @@ unsafe fn DoTVShowPokemonNewsMassOutbreak() {
     ShowFieldMessage(sTVMassOutbreakTextGroup[sTVShowState.get()]);
 }
 unsafe fn DoTVShowPokemonContestLiveUpdates() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -5154,7 +5468,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                 (*show).contestLiveUpdates.category,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5162,7 +5476,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).contestLiveUpdates.winningTrainerName.as_mut_ptr(),
                 (*show).contestLiveUpdates.winningTrainerLanguage as i32,
             );
@@ -5183,7 +5497,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_WON_BOTH_ROUNDS => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5220,7 +5534,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_BETTER_ROUND2 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5257,7 +5571,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_EQUAL_ROUNDS => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5265,7 +5579,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).contestLiveUpdates.winningTrainerName.as_mut_ptr(),
                 (*show).contestLiveUpdates.winningTrainerLanguage as i32,
             );
@@ -5342,7 +5656,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                 _ => {}
             }
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5379,7 +5693,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_GOT_NERVOUS => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5390,7 +5704,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_STARTLED_OTHER => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5401,7 +5715,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_USED_COMBO => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5412,7 +5726,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_EXCITING_APPEAL => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5440,7 +5754,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_COOL => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5451,7 +5765,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_BEAUTIFUL => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5462,7 +5776,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_CUTE => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5473,7 +5787,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_SMART => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5484,7 +5798,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_TOUGH => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5495,7 +5809,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_VERY_EXCITING_APPEAL => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5523,7 +5837,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_VERY_COOL => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5534,7 +5848,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_VERY_BEAUTIFUL => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5545,7 +5859,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_VERY_CUTE => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5556,7 +5870,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_VERY_SMART => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5567,7 +5881,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_VERY_TOUGH => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5578,7 +5892,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_TOOK_BREAK => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5589,7 +5903,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_GOT_STARTLED => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5600,7 +5914,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
         }
         CONTESTLIVE_STATE_USED_MOVE => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5608,7 +5922,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).contestLiveUpdates.r#move]
                     .as_ptr()
@@ -5626,12 +5940,12 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).contestLiveUpdates.losingTrainerName.as_mut_ptr(),
                 (*show).contestLiveUpdates.losingTrainerLanguage as i32,
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).contestLiveUpdates.losingSpecies]
                     .as_ptr()
@@ -5682,7 +5996,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                 (*show).contestLiveUpdates.losingTrainerLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).contestLiveUpdates.losingSpecies]
                     .as_ptr()
@@ -5700,7 +6014,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                 (*show).contestLiveUpdates.winningTrainerLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5708,7 +6022,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                     .cast_mut(),
             );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).contestLiveUpdates.losingTrainerName.as_mut_ptr(),
                 (*show).contestLiveUpdates.losingTrainerLanguage as i32,
             );
@@ -5732,7 +6046,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
                 (*show).contestLiveUpdates.winningTrainerLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())
                     [(*show).contestLiveUpdates.winningSpecies]
@@ -5746,7 +6060,7 @@ unsafe fn DoTVShowPokemonContestLiveUpdates() {
     ShowFieldMessage(sTVContestLiveUpdatesTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonBattleUpdate() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -5769,20 +6083,20 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.language as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentName.as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentLanguage as i32,
             );
             if (*show).battleUpdate.battleType == 0 {
                 StringCopy(
-                    gStringVar3.as_mut_ptr(),
+                    (*gStringVar3.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Single).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             } else {
                 StringCopy(
-                    gStringVar3.as_mut_ptr(),
+                    (*gStringVar3.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Double).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
@@ -5797,14 +6111,14 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleUpdate.speciesPlayer]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleUpdate.r#move]
                     .as_ptr()
@@ -5819,7 +6133,7 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.linkOpponentLanguage as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleUpdate.speciesOpponent]
                     .as_ptr()
@@ -5834,7 +6148,7 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.language as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentName.as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentLanguage as i32,
             );
@@ -5847,7 +6161,7 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.language as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentName.as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentLanguage as i32,
             );
@@ -5860,14 +6174,14 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleUpdate.speciesPlayer]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleUpdate.r#move]
                     .as_ptr()
@@ -5882,12 +6196,12 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
                 (*show).battleUpdate.language as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentName.as_mut_ptr(),
                 (*show).battleUpdate.linkOpponentLanguage as i32,
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleUpdate.speciesOpponent]
                     .as_ptr()
@@ -5900,7 +6214,7 @@ unsafe fn DoTVShowPokemonBattleUpdate() {
     ShowFieldMessage(sTVPokemonBattleUpdateTextGroup[state]);
 }
 unsafe fn DoTVShow3CheersForPokeblocks() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -5965,28 +6279,28 @@ unsafe fn DoTVShow3CheersForPokeblocks() {
             }
             if (*show).threeCheers.sheen > 24 {
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Excellent).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             } else if (*show).threeCheers.sheen > 22 {
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_VeryGood).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             } else {
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Good).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             }
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).threeCheers.playerName.as_mut_ptr(),
                 (*show).threeCheers.language as i32,
             );
@@ -6046,28 +6360,28 @@ unsafe fn DoTVShow3CheersForPokeblocks() {
             }
             if (*show).threeCheers.sheen > 16 {
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_SoSo).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             } else if (*show).threeCheers.sheen > 13 {
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_Bad).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             } else {
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_TheWorst).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
             }
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).threeCheers.playerName.as_mut_ptr(),
                 (*show).threeCheers.language as i32,
             );
@@ -6080,7 +6394,7 @@ unsafe fn DoTVShow3CheersForPokeblocks() {
                 (*show).threeCheers.worstBlenderLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).threeCheers.playerName.as_mut_ptr(),
                 (*show).threeCheers.language as i32,
             );
@@ -6101,10 +6415,10 @@ pub unsafe fn DoTVShowInSearchOfTrainers() {
         0 => {
             GetMapName(
                 gStringVar1.as_mut_ptr(),
-                (*gSaveBlock1Ptr).gabbyAndTyData.mapnum as u16,
+                (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mapnum as u16,
                 0,
             );
-            if (*gSaveBlock1Ptr).gabbyAndTyData.battleNum > 1 {
+            if (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.battleNum > 1 {
                 sTVShowState.set(1);
             } else {
                 sTVShowState.set(2);
@@ -6114,13 +6428,29 @@ pub unsafe fn DoTVShowInSearchOfTrainers() {
             sTVShowState.set(2);
         }
         2 => {
-            if (*gSaveBlock1Ptr).gabbyAndTyData.battleTookMoreThanOneTurn() == 0 {
+            if (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .battleTookMoreThanOneTurn()
+                == 0
+            {
                 sTVShowState.set(4);
-            } else if (*gSaveBlock1Ptr).gabbyAndTyData.playerThrewABall() != 0 {
+            } else if (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .playerThrewABall()
+                != 0
+            {
                 sTVShowState.set(5);
-            } else if (*gSaveBlock1Ptr).gabbyAndTyData.playerUsedHealingItem() != 0 {
+            } else if (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .playerUsedHealingItem()
+                != 0
+            {
                 sTVShowState.set(6);
-            } else if (*gSaveBlock1Ptr).gabbyAndTyData.playerLostAMon() != 0 {
+            } else if (*crate::gl!(gSaveBlock1Ptr))
+                .gabbyAndTyData
+                .playerLostAMon()
+                != 0
+            {
                 sTVShowState.set(7);
             } else {
                 sTVShowState.set(3);
@@ -6130,22 +6460,24 @@ pub unsafe fn DoTVShowInSearchOfTrainers() {
             StringCopy(
                 gStringVar1.as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gSaveBlock1Ptr).gabbyAndTyData.mon1]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon1]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())
-                    [(*gSaveBlock1Ptr).gabbyAndTyData.lastMove]
+                    [(*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.lastMove]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gSaveBlock1Ptr).gabbyAndTyData.mon2]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon2]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -6157,19 +6489,21 @@ pub unsafe fn DoTVShowInSearchOfTrainers() {
         8 => {
             CopyEasyChatWord(
                 gStringVar1.as_mut_ptr(),
-                (*gSaveBlock1Ptr).gabbyAndTyData.quote[0],
+                (*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.quote[0],
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gSaveBlock1Ptr).gabbyAndTyData.mon1]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon1]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gSaveBlock1Ptr).gabbyAndTyData.mon2]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gSaveBlock1Ptr)).gabbyAndTyData.mon2]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -6182,7 +6516,7 @@ pub unsafe fn DoTVShowInSearchOfTrainers() {
     ShowFieldMessage(sTVInSearchOfTrainersTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonAngler() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6201,7 +6535,7 @@ unsafe fn DoTVShowPokemonAngler() {
                 (*show).pokemonAngler.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonAngler.species]
                     .as_ptr()
@@ -6217,7 +6551,7 @@ unsafe fn DoTVShowPokemonAngler() {
                 (*show).pokemonAngler.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).pokemonAngler.species]
                     .as_ptr()
@@ -6231,7 +6565,7 @@ unsafe fn DoTVShowPokemonAngler() {
     ShowFieldMessage(sTVPokemonAnglerTextGroup[state]);
 }
 unsafe fn DoTVShowTheWorldOfMasters() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6265,12 +6599,12 @@ unsafe fn DoTVShowTheWorldOfMasters() {
                 (*show).worldOfMasters.language as i32,
             );
             GetMapName(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).worldOfMasters.location as u16,
                 0,
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).worldOfMasters.caughtPoke]
                     .as_ptr()
@@ -6283,7 +6617,7 @@ unsafe fn DoTVShowTheWorldOfMasters() {
     ShowFieldMessage(sTVWorldOfMastersTextGroup[state]);
 }
 unsafe fn DoTVShowTodaysRivalTrainer() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6314,7 +6648,7 @@ unsafe fn DoTVShowTodaysRivalTrainer() {
             );
             ConvertIntToDecimalString(1, (*show).rivalTrainer.dexCount as i32);
             GetMapName(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).rivalTrainer.location as u16,
                 0,
             );
@@ -6423,7 +6757,7 @@ unsafe fn DoTVShowTodaysRivalTrainer() {
     ShowFieldMessage(sTVTodaysRivalTrainerTextGroup[state]);
 }
 unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6432,7 +6766,10 @@ unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
     match state {
         TRENDWATCHER_STATE_INTRO => {
             CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*show).trendWatcher.words[0]);
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).trendWatcher.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).trendWatcher.words[1],
+            );
             if (*show).trendWatcher.gender == MALE {
                 sTVShowState.set(TRENDWATCHER_STATE_TAUGHT_MALE);
             } else {
@@ -6441,9 +6778,12 @@ unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
         }
         TRENDWATCHER_STATE_TAUGHT_MALE | TRENDWATCHER_STATE_TAUGHT_FEMALE => {
             CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*show).trendWatcher.words[0]);
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).trendWatcher.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).trendWatcher.words[1],
+            );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).trendWatcher.playerName.as_mut_ptr(),
                 (*show).trendWatcher.language as i32,
             );
@@ -6451,7 +6791,10 @@ unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
         }
         TRENDWATCHER_STATE_PHRASE_HOPELESS => {
             CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*show).trendWatcher.words[0]);
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).trendWatcher.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).trendWatcher.words[1],
+            );
             if (*show).trendWatcher.gender == MALE {
                 sTVShowState.set(TRENDWATCHER_STATE_BIGGER_MALE);
             } else {
@@ -6460,9 +6803,12 @@ unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
         }
         TRENDWATCHER_STATE_BIGGER_MALE | TRENDWATCHER_STATE_BIGGER_FEMALE => {
             CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*show).trendWatcher.words[0]);
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).trendWatcher.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).trendWatcher.words[1],
+            );
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).trendWatcher.playerName.as_mut_ptr(),
                 (*show).trendWatcher.language as i32,
             );
@@ -6470,7 +6816,10 @@ unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
         }
         TRENDWATCHER_STATE_OUTRO => {
             CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*show).trendWatcher.words[0]);
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).trendWatcher.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).trendWatcher.words[1],
+            );
             TVShowDone();
         }
         _ => {}
@@ -6478,7 +6827,7 @@ unsafe fn DoTVShowDewfordTrendWatcherNetwork() {
     ShowFieldMessage(sTVDewfordTrendWatcherNetworkTextGroup[state]);
 }
 unsafe fn DoTVShowHoennTreasureInvestigators() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6511,12 +6860,12 @@ unsafe fn DoTVShowHoennTreasureInvestigators() {
                 GetItemName((*show).treasureInvestigators.item),
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).treasureInvestigators.playerName.as_mut_ptr(),
                 (*show).treasureInvestigators.language as i32,
             );
             GetMapName(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).treasureInvestigators.location as u16,
                 0,
             );
@@ -6528,7 +6877,7 @@ unsafe fn DoTVShowHoennTreasureInvestigators() {
                 GetItemName((*show).treasureInvestigators.item),
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).treasureInvestigators.playerName.as_mut_ptr(),
                 (*show).treasureInvestigators.language as i32,
             );
@@ -6539,7 +6888,7 @@ unsafe fn DoTVShowHoennTreasureInvestigators() {
     ShowFieldMessage(sTVHoennTreasureInvestisatorsTextGroup[state]);
 }
 unsafe fn DoTVShowFindThatGamer() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6555,7 +6904,7 @@ unsafe fn DoTVShowFindThatGamer() {
             match (*show).findThatGamer.whichGame {
                 0 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Slots).cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
@@ -6563,7 +6912,7 @@ unsafe fn DoTVShowFindThatGamer() {
                 }
                 1 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Roulette)
                             .cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -6587,7 +6936,7 @@ unsafe fn DoTVShowFindThatGamer() {
             match (*show).findThatGamer.whichGame {
                 0 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Slots).cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
@@ -6595,7 +6944,7 @@ unsafe fn DoTVShowFindThatGamer() {
                 }
                 1 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Roulette)
                             .cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -6616,7 +6965,7 @@ unsafe fn DoTVShowFindThatGamer() {
             match (*show).findThatGamer.whichGame {
                 0 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Slots).cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
@@ -6624,7 +6973,7 @@ unsafe fn DoTVShowFindThatGamer() {
                 }
                 1 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Roulette)
                             .cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -6645,7 +6994,7 @@ unsafe fn DoTVShowFindThatGamer() {
             match (*show).findThatGamer.whichGame {
                 0 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Roulette)
                             .cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -6654,7 +7003,7 @@ unsafe fn DoTVShowFindThatGamer() {
                 }
                 1 => {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::strings::gText_Slots).cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
@@ -6669,7 +7018,7 @@ unsafe fn DoTVShowFindThatGamer() {
     ShowFieldMessage(sTVFindThatGamerTextGroup[state]);
 }
 unsafe fn DoTVShowBreakingNewsTV() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6690,14 +7039,14 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.lastOpponentSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             GetMapName(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).breakingNews.location as u16,
                 0,
             );
@@ -6710,14 +7059,14 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.lastOpponentSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.poke1Species]
                     .as_ptr()
@@ -6728,7 +7077,7 @@ unsafe fn DoTVShowBreakingNewsTV() {
         3 => {
             ConvertIntToDecimalString(0, (*show).breakingNews.balls as i32);
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).breakingNews.caughtMonBall),
             );
             sTVShowState.set(4);
@@ -6740,7 +7089,7 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             GetMapName(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).breakingNews.location as u16,
                 0,
             );
@@ -6753,14 +7102,14 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.lastOpponentSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             GetMapName(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).breakingNews.location as u16,
                 0,
             );
@@ -6773,14 +7122,14 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.lastOpponentSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.poke1Species]
                     .as_ptr()
@@ -6812,7 +7161,7 @@ unsafe fn DoTVShowBreakingNewsTV() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.poke1Species]
                     .as_ptr()
@@ -6827,14 +7176,14 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.lastOpponentSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.poke1Species]
                     .as_ptr()
@@ -6849,7 +7198,7 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             GetMapName(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).breakingNews.location as u16,
                 0,
             );
@@ -6862,14 +7211,14 @@ unsafe fn DoTVShowBreakingNewsTV() {
                 (*show).breakingNews.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).breakingNews.lastOpponentSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             GetMapName(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).breakingNews.location as u16,
                 0,
             );
@@ -6888,7 +7237,7 @@ unsafe fn DoTVShowBreakingNewsTV() {
     ShowFieldMessage(sTVBreakingNewsTextGroup[state]);
 }
 unsafe fn DoTVShowSecretBaseVisit() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -6909,7 +7258,7 @@ unsafe fn DoTVShowSecretBaseVisit() {
         }
         1 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::decoration::gDecorations)
                     .cast::<CArray<Decoration, 0>>())[(*show).secretBaseVisit.decorations[0]]
                     .name
@@ -6924,7 +7273,7 @@ unsafe fn DoTVShowSecretBaseVisit() {
         }
         3 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::decoration::gDecorations)
                     .cast::<CArray<Decoration, 0>>())[(*show).secretBaseVisit.decorations[1]]
                     .name
@@ -6946,7 +7295,7 @@ unsafe fn DoTVShowSecretBaseVisit() {
         }
         5 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::decoration::gDecorations)
                     .cast::<CArray<Decoration, 0>>())[(*show).secretBaseVisit.decorations[2]]
                     .name
@@ -6954,7 +7303,7 @@ unsafe fn DoTVShowSecretBaseVisit() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::decoration::gDecorations)
                     .cast::<CArray<Decoration, 0>>())[(*show).secretBaseVisit.decorations[3]]
                     .name
@@ -6965,7 +7314,7 @@ unsafe fn DoTVShowSecretBaseVisit() {
         }
         6 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::decoration::gDecorations)
                     .cast::<CArray<Decoration, 0>>())[(*show).secretBaseVisit.decorations[2]]
                     .name
@@ -7000,14 +7349,14 @@ unsafe fn DoTVShowSecretBaseVisit() {
                 (*show).secretBaseVisit.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).secretBaseVisit.species]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).secretBaseVisit.r#move]
                     .as_ptr()
@@ -7023,7 +7372,7 @@ unsafe fn DoTVShowSecretBaseVisit() {
     ShowFieldMessage(sTVSecretBaseVisitTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonLotteryWinnerFlashReport() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7036,42 +7385,42 @@ unsafe fn DoTVShowPokemonLotteryWinnerFlashReport() {
     );
     if (*show).lottoWinner.whichPrize == 0 {
         StringCopy(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_Jackpot).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else if (*show).lottoWinner.whichPrize == 1 {
         StringCopy(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_First).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else if (*show).lottoWinner.whichPrize == 2 {
         StringCopy(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_Second).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else {
         StringCopy(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_Third).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     }
     StringCopy(
-        gStringVar3.as_mut_ptr(),
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
         GetItemName((*show).lottoWinner.item),
     );
     TVShowDone();
     ShowFieldMessage(sTVPokemonLotteryWinnerFlashReportTextGroup[state]);
 }
 unsafe fn DoTVShowThePokemonBattleSeminar() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7085,14 +7434,14 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
                 (*show).battleSeminar.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleSeminar.species]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleSeminar.foeSpecies]
                     .as_ptr()
@@ -7107,14 +7456,14 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
                 (*show).battleSeminar.language as i32,
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).battleSeminar.foeSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleSeminar.r#move]
                     .as_ptr()
@@ -7154,14 +7503,14 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleSeminar.otherMoves[1]]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleSeminar.otherMoves[2]]
                     .as_ptr()
@@ -7178,7 +7527,7 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleSeminar.otherMoves[1]]
                     .as_ptr()
@@ -7188,7 +7537,7 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
         }
         5 => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleSeminar.otherMoves[0]]
                     .as_ptr()
@@ -7205,7 +7554,7 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())[(*show).battleSeminar.r#move]
                     .as_ptr()
@@ -7218,7 +7567,7 @@ unsafe fn DoTVShowThePokemonBattleSeminar() {
     ShowFieldMessage(sTVThePokemonBattleSeminarTextGroup[state]);
 }
 unsafe fn DoTVShowTrainerFanClubSpecial() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7232,11 +7581,14 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
                 (*show).fanClubSpecial.idolNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).fanClubSpecial.playerName.as_mut_ptr(),
                 (*show).fanClubSpecial.language as i32,
             );
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).fanClubSpecial.words[0]);
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).fanClubSpecial.words[0],
+            );
             if (*show).fanClubSpecial.score >= 90 {
                 sTVShowState.set(1);
             } else if (*show).fanClubSpecial.score >= 70 {
@@ -7254,7 +7606,7 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
                 (*show).fanClubSpecial.idolNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).fanClubSpecial.playerName.as_mut_ptr(),
                 (*show).fanClubSpecial.language as i32,
             );
@@ -7268,7 +7620,7 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
                 (*show).fanClubSpecial.idolNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).fanClubSpecial.playerName.as_mut_ptr(),
                 (*show).fanClubSpecial.language as i32,
             );
@@ -7282,7 +7634,7 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
                 (*show).fanClubSpecial.idolNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).fanClubSpecial.playerName.as_mut_ptr(),
                 (*show).fanClubSpecial.language as i32,
             );
@@ -7296,7 +7648,7 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
                 (*show).fanClubSpecial.idolNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).fanClubSpecial.playerName.as_mut_ptr(),
                 (*show).fanClubSpecial.language as i32,
             );
@@ -7310,11 +7662,14 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
                 (*show).fanClubSpecial.idolNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).fanClubSpecial.playerName.as_mut_ptr(),
                 (*show).fanClubSpecial.language as i32,
             );
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).fanClubSpecial.words[0]);
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).fanClubSpecial.words[0],
+            );
             TVShowDone();
         }
         _ => {}
@@ -7323,7 +7678,7 @@ unsafe fn DoTVShowTrainerFanClubSpecial() {
 }
 unsafe fn DoTVShowTrainerFanClub() {
     let mut playerId: u32 = 0;
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7408,8 +7763,14 @@ unsafe fn DoTVShowTrainerFanClub() {
                 (*show).trainerFanClub.playerName.as_mut_ptr(),
                 (*show).trainerFanClub.language as i32,
             );
-            CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*show).trainerFanClub.words[0]);
-            CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*show).trainerFanClub.words[1]);
+            CopyEasyChatWord(
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
+                (*show).trainerFanClub.words[0],
+            );
+            CopyEasyChatWord(
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*show).trainerFanClub.words[1],
+            );
             TVShowDone();
         }
         _ => {}
@@ -7417,7 +7778,7 @@ unsafe fn DoTVShowTrainerFanClub() {
     ShowFieldMessage(sTVTrainerFanClubTextGroup[state]);
 }
 unsafe fn DoTVShowSpotTheCuties() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7431,7 +7792,7 @@ unsafe fn DoTVShowSpotTheCuties() {
                 (*show).cuties.language as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).cuties.nickname.as_mut_ptr(),
                 (*show).cuties.pokemonNameLanguage as i32,
             );
@@ -7452,7 +7813,7 @@ unsafe fn DoTVShowSpotTheCuties() {
                 (*show).cuties.language as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).cuties.nickname.as_mut_ptr(),
                 (*show).cuties.pokemonNameLanguage as i32,
             );
@@ -7461,7 +7822,7 @@ unsafe fn DoTVShowSpotTheCuties() {
         }
         SPOTCUTIES_STATE_RIBBON_INTRO => {
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).cuties.nickname.as_mut_ptr(),
                 (*show).cuties.pokemonNameLanguage as i32,
             );
@@ -7513,7 +7874,7 @@ unsafe fn DoTVShowSpotTheCuties() {
         | SPOTCUTIES_STATE_RIBBON_ARTIST
         | SPOTCUTIES_STATE_RIBBON_EFFORT => {
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).cuties.nickname.as_mut_ptr(),
                 (*show).cuties.pokemonNameLanguage as i32,
             );
@@ -7527,7 +7888,7 @@ unsafe fn DoTVShowSpotTheCuties() {
     ShowFieldMessage(sTVCutiesTextGroup[state]);
 }
 unsafe fn DoTVShowPokemonNewsBattleFrontier() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7702,14 +8063,14 @@ unsafe fn DoTVShowPokemonNewsBattleFrontier() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).frontier.species2]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).frontier.species3]
                     .as_ptr()
@@ -7726,7 +8087,7 @@ unsafe fn DoTVShowPokemonNewsBattleFrontier() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).frontier.species2]
                     .as_ptr()
@@ -7743,14 +8104,14 @@ unsafe fn DoTVShowPokemonNewsBattleFrontier() {
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).frontier.species2]
                     .as_ptr()
                     .cast_mut(),
             );
             StringCopy(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
                     .cast::<CArray<CArray<u8, 11>, 0>>())[(*show).frontier.species3]
                     .as_ptr()
@@ -7781,7 +8142,7 @@ unsafe fn DoTVShowPokemonNewsBattleFrontier() {
     ShowFieldMessage(sTVPokemonNewsBattleFrontierTextGroup[state]);
 }
 unsafe fn DoTVShowWhatsNo1InHoennToday() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7917,7 +8278,7 @@ unsafe fn SecretBaseSecrets_GetStateByFlagNumber(show: *mut TVShow, flagId: u8) 
 }
 unsafe fn DoTVShowSecretBaseSecrets() {
     let mut numActions: u8 = 0;
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -7931,7 +8292,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 (*show).secretBaseSecrets.baseOwnersNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
                 (*show).secretBaseSecrets.language as i32,
             );
@@ -7940,17 +8301,19 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 sTVShowState.set(SBSECRETS_STATE_NOTHING_USED1);
             } else {
                 (*show).secretBaseSecrets.savedState = SBSECRETS_STATE_DO_NEXT1;
-                sTVSecretBaseSecretsRandomValues[0] =
-                    rem_i32(Random() as i32, numActions as i32) as u8;
+                crate::gl!(
+                    sTVSecretBaseSecretsRandomValues[0] =
+                        rem_i32(Random() as i32, numActions as i32) as u8
+                );
                 sTVShowState.set(SecretBaseSecrets_GetStateByFlagNumber(
                     show,
-                    sTVSecretBaseSecretsRandomValues[0],
+                    crate::gl!(sTVSecretBaseSecretsRandomValues[0]),
                 ));
             }
         }
         SBSECRETS_STATE_DO_NEXT1 => {
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
                 (*show).secretBaseSecrets.language as i32,
             );
@@ -7961,7 +8324,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 }
                 2 => {
                     (*show).secretBaseSecrets.savedState = SBSECRETS_STATE_DO_NEXT2;
-                    if sTVSecretBaseSecretsRandomValues[0] == 0 {
+                    if crate::gl!(sTVSecretBaseSecretsRandomValues[0]) == 0 {
                         sTVShowState.set(SecretBaseSecrets_GetStateByFlagNumber(show, 1));
                     } else {
                         sTVShowState.set(SecretBaseSecrets_GetStateByFlagNumber(show, 0));
@@ -7969,10 +8332,12 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 }
                 _ => {
                     for i in 0..0xFFFF {
-                        sTVSecretBaseSecretsRandomValues[1] =
-                            rem_i32(Random() as i32, numActions as i32) as u8;
-                        if sTVSecretBaseSecretsRandomValues[1]
-                            != sTVSecretBaseSecretsRandomValues[0]
+                        crate::gl!(
+                            sTVSecretBaseSecretsRandomValues[1] =
+                                rem_i32(Random() as i32, numActions as i32) as u8
+                        );
+                        if crate::gl!(sTVSecretBaseSecretsRandomValues[1])
+                            != crate::gl!(sTVSecretBaseSecretsRandomValues[0])
                         {
                             break;
                         }
@@ -7980,14 +8345,14 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                     (*show).secretBaseSecrets.savedState = SBSECRETS_STATE_DO_NEXT2;
                     sTVShowState.set(SecretBaseSecrets_GetStateByFlagNumber(
                         show,
-                        sTVSecretBaseSecretsRandomValues[1],
+                        crate::gl!(sTVSecretBaseSecretsRandomValues[1]),
                     ));
                 }
             }
         }
         SBSECRETS_STATE_DO_NEXT2 => {
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
                 (*show).secretBaseSecrets.language as i32,
             );
@@ -7996,11 +8361,14 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 sTVShowState.set(SBSECRETS_STATE_NOTHING_USED2);
             } else {
                 for i in 0..0xFFFF {
-                    sTVSecretBaseSecretsRandomValues[2] =
-                        rem_i32(Random() as i32, numActions as i32) as u8;
-                    if sTVSecretBaseSecretsRandomValues[2] != sTVSecretBaseSecretsRandomValues[0]
-                        && sTVSecretBaseSecretsRandomValues[2]
-                            != sTVSecretBaseSecretsRandomValues[1]
+                    crate::gl!(
+                        sTVSecretBaseSecretsRandomValues[2] =
+                            rem_i32(Random() as i32, numActions as i32) as u8
+                    );
+                    if crate::gl!(sTVSecretBaseSecretsRandomValues[2])
+                        != crate::gl!(sTVSecretBaseSecretsRandomValues[0])
+                        && crate::gl!(sTVSecretBaseSecretsRandomValues[2])
+                            != crate::gl!(sTVSecretBaseSecretsRandomValues[1])
                     {
                         break;
                     }
@@ -8008,7 +8376,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 (*show).secretBaseSecrets.savedState = SBSECRETS_STATE_TOOK_X_STEPS;
                 sTVShowState.set(SecretBaseSecrets_GetStateByFlagNumber(
                     show,
-                    sTVSecretBaseSecretsRandomValues[2],
+                    crate::gl!(sTVSecretBaseSecretsRandomValues[2]),
                 ));
             }
         }
@@ -8019,7 +8387,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 (*show).secretBaseSecrets.baseOwnersNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
                 (*show).secretBaseSecrets.language as i32,
             );
@@ -8039,7 +8407,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 (*show).secretBaseSecrets.baseOwnersNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
                 (*show).secretBaseSecrets.language as i32,
             );
@@ -8052,7 +8420,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
                 (*show).secretBaseSecrets.baseOwnersNameLanguage as i32,
             );
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).secretBaseSecrets.playerName.as_mut_ptr(),
                 (*show).secretBaseSecrets.language as i32,
             );
@@ -8069,7 +8437,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
         }
         SBSECRETS_STATE_USED_BAG => {
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 GetItemName((*show).secretBaseSecrets.item),
             );
             sTVShowState.set((*show).secretBaseSecrets.savedState);
@@ -8089,7 +8457,7 @@ unsafe fn DoTVShowSecretBaseSecrets() {
     ShowFieldMessage(sTVSecretBaseSecretsTextGroup[state]);
 }
 unsafe fn DoTVShowSafariFanClub() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -8181,7 +8549,7 @@ unsafe fn DoTVShowSafariFanClub() {
     ShowFieldMessage(sTVSafariFanClubTextGroup[state]);
 }
 unsafe fn DoTVShowLilycoveContestLady() {
-    let show: *mut TVShow = &raw mut (*gSaveBlock1Ptr).tvShows
+    let show: *mut TVShow = &raw mut (*crate::gl!(gSaveBlock1Ptr)).tvShows
         [*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
             .cast_mut()];
@@ -8207,14 +8575,14 @@ unsafe fn DoTVShowLilycoveContestLady() {
         if sw1 == CONTESTLADYLIVE_STATE_WON || sw1 == CONTESTLADYLIVE_STATE_LOST {
             fall = true;
             TVShowConvertInternationalString(
-                gStringVar3.as_mut_ptr(),
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
                 (*show).contestLady.playerName.as_mut_ptr(),
                 (*show).contestLady.language as i32,
             );
         }
         if fall || sw1 == CONTESTLADYLIVE_STATE_LOST_BADLY {
             TVShowConvertInternationalString(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*show).contestLady.nickname.as_mut_ptr(),
                 (*show).contestLady.pokemonNameLanguage as i32,
             );
@@ -8227,7 +8595,7 @@ unsafe fn DoTVShowLilycoveContestLady() {
 unsafe fn TVShowDone() {
     gSpecialVar_Result = TRUE as u16;
     sTVShowState.set(0);
-    (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
+    (*crate::gl!(gSaveBlock1Ptr)).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8004)
         .cast::<u16>()
         .cast_mut()]
     .common

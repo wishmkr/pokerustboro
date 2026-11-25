@@ -75,13 +75,14 @@ const _: () = {
 static sTrainerHillTrainerTemplates_JP: Table<CArray<TrainerHillTrainer, 4>> =
     Table((&raw const crate::data::ereader_helpers::sTrainerHillTrainerTemplates_JP).cast());
 
-pub(crate) static mut sSendRecvMgr: SendRecvMgr = unsafe { zeroed() };
+pub(crate) static sSendRecvMgr: crate::global::Global<SendRecvMgr> =
+    crate::global::Global::new(unsafe { zeroed() });
 pub(crate) static sJoyNewOrRepeated: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sJoyNew: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sSendRecvStatus: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sCounter1: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sCounter2: crate::global::Global<u32> = crate::global::Global::new(0);
-pub(crate) static mut sSavedIme: u16 = 0;
+pub(crate) static sSavedIme: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sSavedIe: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sSavedTm3Cnt: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sSavedSioCnt: crate::global::Global<u16> = crate::global::Global::new(0);
@@ -94,21 +95,21 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `VBlankIntrWait` with this module's view of its types.
 #[inline]
-unsafe fn VBlankIntrWait() {
+fn VBlankIntrWait() {
     unsafe {
         crate::syscall::VBlankIntrWait();
     }
 }
 
 unsafe fn GetTrainerHillUnkVal() -> u8 {
-    (((*gSaveBlock1Ptr).trainerHill.unused as i32 + 1) % 256) as u8
+    (((*crate::gl!(gSaveBlock1Ptr)).trainerHill.unused as i32 + 1) % 256) as u8
 }
 unsafe fn ValidateTrainerChecksum(hillTrainer: *mut EReaderTrainerHillTrainer) -> u32 {
     let checksum: i32 = CalcByteArraySum(hillTrainer as *mut u8, 624) as i32;
@@ -216,7 +217,7 @@ pub unsafe fn EReader_Send(size: i32, src: *mut c_void) -> i32 {
     loop {
         GetKeyInput();
         if sJoyNew.get() as i32 & B_BUTTON != 0 {
-            gShouldAdvanceLinkState = 2;
+            gShouldAdvanceLinkState.set(2);
         }
         sendStatus = EReaderHandleTransfer(1, size as u32, src, null_mut());
         sSendRecvStatus.set(sendStatus as u16);
@@ -232,7 +233,7 @@ pub unsafe fn EReader_Send(size: i32, src: *mut c_void) -> i32 {
             result = 2;
             break;
         } else {
-            gShouldAdvanceLinkState = 0;
+            gShouldAdvanceLinkState.set(0);
             VBlankIntrWait();
         }
     }
@@ -242,7 +243,7 @@ pub unsafe fn EReader_Send(size: i32, src: *mut c_void) -> i32 {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut sSendRecvMgr as *mut c_void,
+                crate::gl!(&raw sSendRecvMgr) as *mut c_void,
                 0x5000006,
             );
         }
@@ -257,7 +258,7 @@ pub unsafe fn EReader_Recv(dest: *mut c_void) -> i32 {
     loop {
         GetKeyInput();
         if sJoyNew.get() as i32 & B_BUTTON != 0 {
-            gShouldAdvanceLinkState = 2;
+            gShouldAdvanceLinkState.set(2);
         }
         recvStatus = EReaderHandleTransfer(0, 0, null_mut(), dest);
         sSendRecvStatus.set(recvStatus as u16);
@@ -273,7 +274,7 @@ pub unsafe fn EReader_Recv(dest: *mut c_void) -> i32 {
             result = 2;
             break;
         } else {
-            gShouldAdvanceLinkState = 0;
+            gShouldAdvanceLinkState.set(0);
             VBlankIntrWait();
         }
     }
@@ -283,7 +284,7 @@ pub unsafe fn EReader_Recv(dest: *mut c_void) -> i32 {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut sSendRecvMgr as *mut c_void,
+                crate::gl!(&raw sSendRecvMgr) as *mut c_void,
                 0x5000006,
             );
         }
@@ -321,14 +322,14 @@ unsafe fn OpenSerialMulti() {
         (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_SERIAL,
     );
     volatile_write(67109384_usize as *mut u16, 1);
-    if sSendRecvMgr.state == 0 {
+    if crate::gl!(sSendRecvMgr.state) == 0 {
         {
             {
                 let mut tmp: u32 = 0;
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    &raw mut sSendRecvMgr as *mut c_void,
+                    crate::gl!(&raw sSendRecvMgr) as *mut c_void,
                     0x5000006,
                 );
             }
@@ -342,7 +343,7 @@ unsafe fn OpenSerial32() {
         67109160_usize as *mut u16,
         (67109160_usize as *mut u16).read_volatile() | SIO_MULTI_SD as u16,
     );
-    gShouldAdvanceLinkState = 0;
+    gShouldAdvanceLinkState.set(0);
     sCounter1.set(0);
     sCounter2.set(0);
 }
@@ -353,21 +354,21 @@ pub unsafe fn EReaderHandleTransfer(
     recvBuffer: *mut c_void,
 ) -> i32 {
     'l1: {
-        let sw1: u8 = sSendRecvMgr.state;
+        let sw1: u8 = crate::gl!(sSendRecvMgr.state);
         let mut fall = false;
         if sw1 == EREADER_XFR_STATE_INIT {
             OpenSerialMulti();
-            sSendRecvMgr.xferState = EREADER_XFER_EXE;
-            sSendRecvMgr.state = EREADER_XFR_STATE_HANDSHAKE;
+            crate::gl!(sSendRecvMgr.xferState = EREADER_XFER_EXE);
+            crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_HANDSHAKE);
             break 'l1;
         }
         if sw1 == EREADER_XFR_STATE_HANDSHAKE {
             if DetermineSendRecvState(mode) != 0 {
                 EnableSio();
             }
-            if gShouldAdvanceLinkState == 2 {
-                sSendRecvMgr.cancellationReason = EREADER_CANCEL_KEY;
-                sSendRecvMgr.state = EREADER_XFR_STATE_DONE;
+            if gShouldAdvanceLinkState.get() == 2 {
+                crate::gl!(sSendRecvMgr.cancellationReason = EREADER_CANCEL_KEY);
+                crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_DONE);
             }
             break 'l1;
         }
@@ -375,26 +376,26 @@ pub unsafe fn EReaderHandleTransfer(
             fall = true;
             OpenSerial32();
             SetUpTransferManager(size, data, recvBuffer);
-            sSendRecvMgr.state = EREADER_XFR_STATE_TRANSFER;
+            crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_TRANSFER);
         }
         if fall || sw1 == EREADER_XFR_STATE_TRANSFER {
-            if gShouldAdvanceLinkState == 2 {
-                sSendRecvMgr.cancellationReason = EREADER_CANCEL_KEY;
-                sSendRecvMgr.state = EREADER_XFR_STATE_DONE;
+            if gShouldAdvanceLinkState.get() == 2 {
+                crate::gl!(sSendRecvMgr.cancellationReason = EREADER_CANCEL_KEY);
+                crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_DONE);
             } else {
                 sCounter1.set(sCounter1.get() + 1);
                 sCounter2.set(sCounter2.get() + 1);
-                if sSendRecvMgr.isParent == 0 && sCounter2.get() > 60 {
-                    sSendRecvMgr.cancellationReason = EREADER_CANCEL_TIMEOUT;
-                    sSendRecvMgr.state = EREADER_XFR_STATE_DONE;
+                if crate::gl!(sSendRecvMgr.isParent) == 0 && sCounter2.get() > 60 {
+                    crate::gl!(sSendRecvMgr.cancellationReason = EREADER_CANCEL_TIMEOUT);
+                    crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_DONE);
                 }
-                if sSendRecvMgr.xferState != EREADER_XFER_CHK {
-                    if sSendRecvMgr.isParent != 0 && sCounter1.get() > 2 {
+                if crate::gl!(sSendRecvMgr.xferState) != EREADER_XFER_CHK {
+                    if crate::gl!(sSendRecvMgr.isParent) != 0 && sCounter1.get() > 2 {
                         EnableSio();
-                        sSendRecvMgr.xferState = EREADER_XFER_CHK;
+                        crate::gl!(sSendRecvMgr.xferState = EREADER_XFER_CHK);
                     } else {
                         EnableSio();
-                        sSendRecvMgr.xferState = EREADER_XFER_CHK;
+                        crate::gl!(sSendRecvMgr.xferState = EREADER_XFER_CHK);
                     }
                 }
             }
@@ -402,11 +403,11 @@ pub unsafe fn EReaderHandleTransfer(
         }
         if sw1 == EREADER_XFR_STATE_TRANSFER_DONE {
             OpenSerialMulti();
-            sSendRecvMgr.state = EREADER_XFR_STATE_CHECKSUM;
+            crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_CHECKSUM);
             break 'l1;
         }
         if sw1 == EREADER_XFR_STATE_CHECKSUM {
-            if sSendRecvMgr.isParent == TRUE && sCounter1.get() > 2 {
+            if crate::gl!(sSendRecvMgr.isParent) == TRUE && sCounter1.get() > 2 {
                 EnableSio();
             }
             if ({
@@ -414,22 +415,22 @@ pub unsafe fn EReaderHandleTransfer(
                 sCounter1.get()
             }) > 60
             {
-                sSendRecvMgr.cancellationReason = EREADER_CANCEL_TIMEOUT;
-                sSendRecvMgr.state = EREADER_XFR_STATE_DONE;
+                crate::gl!(sSendRecvMgr.cancellationReason = EREADER_CANCEL_TIMEOUT);
+                crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_DONE);
             }
             break 'l1;
         }
         if sw1 == EREADER_XFR_STATE_DONE {
-            if sSendRecvMgr.xferState != 0 {
+            if crate::gl!(sSendRecvMgr.xferState) != 0 {
                 CloseSerial();
-                sSendRecvMgr.xferState = 0;
+                crate::gl!(sSendRecvMgr.xferState = 0);
             }
             break 'l1;
         }
     }
-    (sSendRecvMgr.xferState as i32)
-        | (sSendRecvMgr.cancellationReason as i32) << 2
-        | (sSendRecvMgr.checksumResult as i32) << 4
+    (crate::gl!(sSendRecvMgr.xferState) as i32)
+        | (crate::gl!(sSendRecvMgr.cancellationReason) as i32) << 2
+        | (crate::gl!(sSendRecvMgr.checksumResult) as i32) << 4
 }
 unsafe fn DetermineSendRecvState(mode: u8) -> u16 {
     let mut resp: u16 = 0;
@@ -437,33 +438,33 @@ unsafe fn DetermineSendRecvState(mode: u8) -> u16 {
         && mode != 0
     {
         resp = ({
-            sSendRecvMgr.isParent = TRUE;
-            sSendRecvMgr.isParent
+            crate::gl!(sSendRecvMgr.isParent = TRUE);
+            crate::gl!(sSendRecvMgr.isParent)
         }) as u16;
     } else {
         resp = ({
-            sSendRecvMgr.isParent = FALSE;
-            sSendRecvMgr.isParent
+            crate::gl!(sSendRecvMgr.isParent = FALSE);
+            crate::gl!(sSendRecvMgr.isParent)
         }) as u16;
     }
     resp
 }
 unsafe fn SetUpTransferManager(size: u32, data: *mut c_void, recvBuffer: *mut c_void) {
-    if sSendRecvMgr.isParent != 0 {
+    if crate::gl!(sSendRecvMgr.isParent) != 0 {
         volatile_write(
             67109160_usize as *mut u16,
             (67109160_usize as *mut u16).read_volatile() | SIO_38400_BPS,
         );
-        sSendRecvMgr.data = data as *mut u32;
+        crate::gl!(sSendRecvMgr.data = data as *mut u32);
         volatile_write(67109152_usize as *mut u32, size);
-        sSendRecvMgr.size = (size / 4) as i32 + 1;
+        crate::gl!(sSendRecvMgr.size = (size / 4) as i32 + 1);
         StartTm3();
     } else {
         volatile_write(
             67109160_usize as *mut u16,
             (67109160_usize as *mut u16).read_volatile(),
         );
-        sSendRecvMgr.data = recvBuffer as *mut u32;
+        crate::gl!(sSendRecvMgr.data = recvBuffer as *mut u32);
     }
 }
 unsafe fn StartTm3() {
@@ -485,7 +486,7 @@ pub unsafe extern "C" fn EReaderHelper_SerialCallback() {
     let mut cnt2: u16 = 0;
     let mut recv32: u32 = 0;
     let mut recv: CArray<u16, 4> = zeroed();
-    match sSendRecvMgr.state {
+    match crate::gl!(sSendRecvMgr.state) {
         EREADER_XFR_STATE_HANDSHAKE => {
             volatile_write(67109162_usize as *mut u16, EREADER_HANDSHAKE);
             *(recv.as_mut_ptr() as *mut u64) = (67109152_usize as *mut u64).read_volatile();
@@ -499,43 +500,57 @@ pub unsafe extern "C" fn EReaderHelper_SerialCallback() {
                 }
             }
             if cnt1 == 2 && cnt2 == 0 {
-                sSendRecvMgr.state = 2;
+                crate::gl!(sSendRecvMgr.state = 2);
             }
         }
         EREADER_XFR_STATE_TRANSFER => {
             recv32 = (67109152_usize as *mut u32).read_volatile();
-            if sSendRecvMgr.cursor == 0 && sSendRecvMgr.isParent == 0 {
-                sSendRecvMgr.size = (recv32 / 4) as i32 + 1;
+            if crate::gl!(sSendRecvMgr.cursor) == 0 && crate::gl!(sSendRecvMgr.isParent) == 0 {
+                crate::gl!(sSendRecvMgr.size = (recv32 / 4) as i32 + 1);
             }
-            if sSendRecvMgr.isParent == TRUE {
-                if sSendRecvMgr.cursor < sSendRecvMgr.size {
+            if crate::gl!(sSendRecvMgr.isParent) == TRUE {
+                if crate::gl!(sSendRecvMgr.cursor) < crate::gl!(sSendRecvMgr.size) {
                     volatile_write(
                         67109152_usize as *mut u32,
-                        *sSendRecvMgr.data.at(sSendRecvMgr.cursor),
+                        *(*sSendRecvMgr.as_ptr())
+                            .data
+                            .at(crate::gl!(sSendRecvMgr.cursor)),
                     );
-                    sSendRecvMgr.checksum += *sSendRecvMgr.data.at(sSendRecvMgr.cursor) as i32;
+                    crate::gl!(
+                        sSendRecvMgr.checksum += *(*sSendRecvMgr.as_ptr())
+                            .data
+                            .at(crate::gl!(sSendRecvMgr.cursor))
+                            as i32
+                    );
                 } else {
-                    volatile_write(67109152_usize as *mut u32, sSendRecvMgr.checksum as u32);
+                    volatile_write(
+                        67109152_usize as *mut u32,
+                        crate::gl!(sSendRecvMgr.checksum) as u32,
+                    );
                 }
             } else {
-                if sSendRecvMgr.cursor > 0 && sSendRecvMgr.cursor < sSendRecvMgr.size + 1 {
-                    *sSendRecvMgr.data.at(sSendRecvMgr.cursor - 1) = recv32;
-                    sSendRecvMgr.checksum += recv32 as i32;
-                } else if sSendRecvMgr.cursor != 0 {
-                    if sSendRecvMgr.checksum as u32 == recv32 {
-                        sSendRecvMgr.checksumResult = EREADER_CHECKSUM_OK;
+                if crate::gl!(sSendRecvMgr.cursor) > 0
+                    && crate::gl!(sSendRecvMgr.cursor) < crate::gl!(sSendRecvMgr.size) + 1
+                {
+                    *(*sSendRecvMgr.as_ptr())
+                        .data
+                        .at(crate::gl!(sSendRecvMgr.cursor) - 1) = recv32;
+                    crate::gl!(sSendRecvMgr.checksum += recv32 as i32);
+                } else if crate::gl!(sSendRecvMgr.cursor) != 0 {
+                    if crate::gl!(sSendRecvMgr.checksum) as u32 == recv32 {
+                        crate::gl!(sSendRecvMgr.checksumResult = EREADER_CHECKSUM_OK);
                     } else {
-                        sSendRecvMgr.checksumResult = EREADER_CHECKSUM_ERR;
+                        crate::gl!(sSendRecvMgr.checksumResult = EREADER_CHECKSUM_ERR);
                     }
                 }
                 sCounter2.set(0);
             }
             if ({
-                sSendRecvMgr.cursor += 1;
-                sSendRecvMgr.cursor
-            }) < sSendRecvMgr.size + 2
+                crate::gl!(sSendRecvMgr.cursor += 1);
+                crate::gl!(sSendRecvMgr.cursor)
+            }) < crate::gl!(sSendRecvMgr.size) + 2
             {
-                if sSendRecvMgr.isParent != 0 {
+                if crate::gl!(sSendRecvMgr.isParent) != 0 {
                     volatile_write(
                         67109134_usize as *mut u16,
                         (67109134_usize as *mut u16).read_volatile() | TIMER_ENABLE,
@@ -544,15 +559,15 @@ pub unsafe extern "C" fn EReaderHelper_SerialCallback() {
                     EnableSio();
                 }
             } else {
-                sSendRecvMgr.state = EREADER_XFR_STATE_TRANSFER_DONE;
+                crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_TRANSFER_DONE);
                 sCounter1.set(0);
             }
         }
         EREADER_XFR_STATE_CHECKSUM => {
-            if sSendRecvMgr.isParent == 0 {
+            if crate::gl!(sSendRecvMgr.isParent) == 0 {
                 volatile_write(
                     67109162_usize as *mut u16,
-                    sSendRecvMgr.checksumResult as u16,
+                    crate::gl!(sSendRecvMgr.checksumResult) as u16,
                 );
             }
             volatile_write(
@@ -560,10 +575,10 @@ pub unsafe extern "C" fn EReaderHelper_SerialCallback() {
                 (67109152_usize as *mut u64).read_volatile(),
             );
             if recv[1] == 1 || recv[1] == EREADER_CHECKSUM_ERR as u16 {
-                if sSendRecvMgr.isParent == TRUE {
-                    sSendRecvMgr.checksumResult = recv[1] as u8;
+                if crate::gl!(sSendRecvMgr.isParent) == TRUE {
+                    crate::gl!(sSendRecvMgr.checksumResult = recv[1] as u8);
                 }
-                sSendRecvMgr.state = EREADER_XFR_STATE_DONE;
+                crate::gl!(sSendRecvMgr.state = EREADER_XFR_STATE_DONE);
             }
         }
         _ => {}
@@ -588,14 +603,14 @@ unsafe fn GetKeyInput() {
     sJoyNewOrRepeated.set(rawKeys as u16);
 }
 pub unsafe fn EReaderHelper_SaveRegsState() {
-    sSavedIme = (67109384_usize as *mut u16).read_volatile();
+    sSavedIme.set((67109384_usize as *mut u16).read_volatile());
     sSavedIe.set((0x4000200_usize as *mut u16).read_volatile());
     sSavedTm3Cnt.set((67109134_usize as *mut u16).read_volatile());
     sSavedSioCnt.set((67109160_usize as *mut u16).read_volatile());
     sSavedRCnt.set((67109172_usize as *mut u16).read_volatile());
 }
 pub unsafe fn EReaderHelper_RestoreRegsState() {
-    volatile_write(67109384_usize as *mut u16, sSavedIme);
+    volatile_write(67109384_usize as *mut u16, sSavedIme.get());
     volatile_write(0x4000200_usize as *mut u16, sSavedIe.get());
     volatile_write(67109134_usize as *mut u16, sSavedTm3Cnt.get());
     volatile_write(67109160_usize as *mut u16, sSavedSioCnt.get());
@@ -608,7 +623,7 @@ pub unsafe fn EReaderHelper_ClearSendRecvMgr() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut sSendRecvMgr as *mut c_void,
+                crate::gl!(&raw sSendRecvMgr) as *mut c_void,
                 0x5000006,
             );
         }

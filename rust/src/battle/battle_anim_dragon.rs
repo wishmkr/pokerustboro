@@ -39,7 +39,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `ScanlineEffect_SetParams` with this module's view of its types.
 #[inline]
-unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
     unsafe {
         crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
     }
@@ -151,14 +151,16 @@ const _: () = {
     assert!(offset_of!(Anon5, y) == 8);
 };
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnusedOverheatData: Aligned<CArray<u16, 7>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sUnusedOverheatData: crate::global::Global<Aligned<CArray<u16, 7>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 pub(crate) unsafe fn AnimOutrageFlame(sprite: *mut Sprite) {
-    let cmd: *mut Anon1 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon1;
-    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
-    (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+    let cmd: *mut Anon1 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon1;
+    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_X_2) as i16;
+    (*sprite).y =
+        GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
         (*sprite).x -= (*cmd).x;
         (*cmd).xVelocity = -(*cmd).xVelocity;
         (*cmd).yVelocity = -(*cmd).yVelocity;
@@ -175,11 +177,12 @@ pub(crate) unsafe fn AnimOutrageFlame(sprite: *mut Sprite) {
     (*sprite).callback = Some(TranslateSpriteLinearAndFlicker);
 }
 unsafe fn StartDragonFireTranslation(sprite: *mut Sprite) {
-    let cmd: *mut Anon2 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon2;
+    let cmd: *mut Anon2 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon2;
     SetSpriteCoordsToAnimAttackerCoords(sprite);
-    (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
-    (*sprite).data[4] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+    (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
+    (*sprite).data[4] =
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
         (*sprite).x -= (*cmd).initialY;
         (*sprite).y += (*cmd).initialY;
         (*sprite).data[2] -= (*cmd).targetX;
@@ -196,13 +199,13 @@ unsafe fn StartDragonFireTranslation(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroySpriteAndMatrix));
 }
 pub(crate) unsafe fn AnimDragonRageFirePlume(sprite: *mut Sprite) {
-    let cmd: *mut Anon3 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon3;
+    let cmd: *mut Anon3 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon3;
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
-        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X) as i16;
-        (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y) as i16;
+        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_X) as i16;
+        (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_Y) as i16;
     } else {
-        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X) as i16;
-        (*sprite).y = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y) as i16;
+        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X) as i16;
+        (*sprite).y = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y) as i16;
     }
     SetAnimSpriteInitialXOffset(sprite, (*cmd).x);
     (*sprite).y += (*cmd).y;
@@ -210,20 +213,23 @@ pub(crate) unsafe fn AnimDragonRageFirePlume(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroySpriteAndMatrix));
 }
 pub(crate) unsafe fn AnimDragonFireToTarget(sprite: *mut Sprite) {
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
         StartSpriteAffineAnim(sprite, 1);
     }
     StartDragonFireTranslation(sprite);
 }
 pub(crate) unsafe fn AnimDragonDanceOrb(sprite: *mut Sprite) {
-    let cmd: *mut Anon4 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon4;
-    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
-    (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    let cmd: *mut Anon4 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon4;
+    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_X_2) as i16;
+    (*sprite).y =
+        GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
     (*sprite).data[4] = 0;
     (*sprite).data[5] = 1;
     (*sprite).data[6] = (*cmd).angle;
-    let r5: u16 = GetBattlerSpriteCoordAttr(gBattlerAttacker, BATTLER_COORD_ATTR_HEIGHT) as u16;
-    let r0: u16 = GetBattlerSpriteCoordAttr(gBattlerAttacker, BATTLER_COORD_ATTR_WIDTH) as u16;
+    let r5: u16 =
+        GetBattlerSpriteCoordAttr(gBattlerAttacker.get(), BATTLER_COORD_ATTR_HEIGHT) as u16;
+    let r0: u16 =
+        GetBattlerSpriteCoordAttr(gBattlerAttacker.get(), BATTLER_COORD_ATTR_WIDTH) as u16;
     if r5 > r0 {
         (*sprite).data[7] = (r5 as i32 / 2) as i16;
     } else {
@@ -305,17 +311,17 @@ pub(crate) unsafe fn AnimDragonDanceOrb_Step(sprite: *mut Sprite) {
 pub unsafe fn AnimTask_DragonDanceWaver(taskId: u8) {
     let mut scanlineParams: ScanlineEffectParams = zeroed();
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
-    if GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker) == 1 {
+    if GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker.get()) == 1 {
         scanlineParams.dmaDest = 67108884_usize as *mut u16 as *mut c_void;
-        (*task).data[2] = gBattle_BG1_X as i16;
+        (*task).data[2] = gBattle_BG1_X.get() as i16;
     } else {
         scanlineParams.dmaDest = 67108888_usize as *mut u16 as *mut c_void;
-        (*task).data[2] = gBattle_BG2_X as i16;
+        (*task).data[2] = gBattle_BG2_X.get() as i16;
     }
     scanlineParams.dmaControl = 0xa2600001;
     scanlineParams.initState = 1;
     scanlineParams.unused9 = 0;
-    let y: u8 = GetBattlerYCoordWithElevation(gBattleAnimAttacker);
+    let y: u8 = GetBattlerYCoordWithElevation(gBattleAnimAttacker.get());
     (*task).data[3] = y as i16 - 32;
     (*task).data[4] = y as i16 + 32;
     if (*task).data[3] < 0 {
@@ -323,10 +329,10 @@ pub unsafe fn AnimTask_DragonDanceWaver(taskId: u8) {
     }
     let mut i: u16 = (*task).data[3] as u16;
     while i as i32 <= (*task).data[4] as i32 {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][i] = (*task).data[2] as u16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = (*task).data[2] as u16;
         i += 1;
@@ -382,7 +388,7 @@ pub(crate) unsafe fn AnimTask_DragonDanceWaver_Step(taskId: u8) {
             UpdateDragonDanceScanlineEffect(task);
         }
         3 => {
-            (*(&raw const crate::scanline_effect::gScanlineEffect)
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                 .cast::<ScanlineEffect>()
                 .cast_mut())
             .state = 3;
@@ -398,11 +404,12 @@ unsafe fn UpdateDragonDanceScanlineEffect(task: *mut Task) {
     let mut sineIndex: u16 = (*task).data[5] as u16;
     let mut i: u16 = (*task).data[3] as u16;
     while i as i32 <= (*task).data[4] as i32 {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-            .cast::<ScanlineEffect>()
-            .cast_mut())
+            .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+            .cast_const())
+        .cast::<ScanlineEffect>()
+        .cast_mut())
         .srcBuffer][i] = (((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
             [sineIndex] as i32
             * (*task).data[6] as i32)
@@ -414,11 +421,12 @@ unsafe fn UpdateDragonDanceScanlineEffect(task: *mut Task) {
     (*task).data[5] = ((*task).data[5] + 9) & 0xFF;
 }
 pub(crate) unsafe fn AnimOverheatFlame(sprite: *mut Sprite) {
-    let cmd: *mut Anon5 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon5;
+    let cmd: *mut Anon5 = (*gBattleAnimArgs.as_ptr()).as_mut_ptr() as *mut c_void as *mut Anon5;
     let yAmplitude: i32 = (*cmd).unk2 as i32 * 3 / 5;
-    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
-    (*sprite).y =
-        GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16 + (*cmd).y;
+    (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_X_2) as i16;
+    (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker.get(), BATTLER_COORD_Y_PIC_OFFSET)
+        as i16
+        + (*cmd).y;
     (*sprite).data[1] = Cos((*cmd).unk1, (*cmd).unk2);
     (*sprite).data[2] = Sin((*cmd).unk1, yAmplitude as i16);
     (*sprite).x += (*sprite).data[1] * (*cmd).speed;
@@ -426,7 +434,7 @@ pub(crate) unsafe fn AnimOverheatFlame(sprite: *mut Sprite) {
     (*sprite).data[3] = (*cmd).duration;
     (*sprite).callback = Some(AnimOverheatFlame_Step);
     for i in 0..7i32 {
-        sUnusedOverheatData[i] = (*sprite).data[i] as u16;
+        crate::gl!(sUnusedOverheatData[i] = (*sprite).data[i] as u16);
     }
 }
 pub(crate) unsafe fn AnimOverheatFlame_Step(sprite: *mut Sprite) {

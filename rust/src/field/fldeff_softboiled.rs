@@ -65,9 +65,7 @@ unsafe fn Task_HandleChooseMonInput(a0: u8) {
 /// `ScheduleBgCopyTilemapToVram` with this module's view of its types.
 #[inline]
 unsafe fn ScheduleBgCopyTilemapToVram(a0: u8) {
-    unsafe {
-        crate::menu::ScheduleBgCopyTilemapToVram(a0);
-    }
+    crate::menu::ScheduleBgCopyTilemapToVram(a0);
 }
 /// `ClearStdWindowAndFrameToTransparent` with this module's view of its types.
 #[inline]
@@ -87,7 +85,7 @@ unsafe fn ClearWindowTilemap(a0: u8) {
 #[inline]
 unsafe fn party_menu_byte(offset: usize) -> u8 {
     unsafe {
-        (&raw const (*(&raw const crate::party_menu::gPartyMenu)
+        (&raw const (*(crate::gl!(&raw @at crate::party_menu::gPartyMenu;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(offset)
@@ -98,7 +96,7 @@ unsafe fn party_menu_byte(offset: usize) -> u8 {
 #[inline]
 unsafe fn set_party_menu_byte(offset: usize, value: u8) {
     unsafe {
-        (&raw mut (*(&raw const crate::party_menu::gPartyMenu)
+        (&raw mut (*(crate::gl!(&raw @at crate::party_menu::gPartyMenu;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(offset)

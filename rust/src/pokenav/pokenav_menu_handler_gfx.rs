@@ -139,7 +139,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `ScanlineEffect_SetParams` with this module's view of its types.
 #[inline]
-unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
     unsafe {
         crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
     }
@@ -283,7 +283,7 @@ static sPokenavOptionsSpriteSheets: Table<CArray<CompressedSpriteSheet, 2>> =
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -291,9 +291,9 @@ unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 
 unsafe fn AreAnyTrainerRematchesNearby() -> u32 {
     for i in 0..REMATCH_TABLE_ENTRIES {
-        if GetMatchTableMapSectionId(i) == gMapHeader.regionMapSectionId
+        if GetMatchTableMapSectionId(i) == crate::gl!(gMapHeader.regionMapSectionId)
             && IsRematchEntryRegistered(i) != 0
-            && (*gSaveBlock1Ptr).trainerRematches[i] != 0
+            && (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[i] != 0
         {
             return TRUE as u32;
         }
@@ -825,8 +825,8 @@ unsafe fn CreateMenuOptionSprites() {
                 20 * i as i16 + 40,
                 3,
             );
-            (*gfx).iconSprites[i][j] = &raw mut gSprites[spriteId];
-            gSprites[spriteId].x2 = 32 * j as i16;
+            (*gfx).iconSprites[i][j] = crate::gl!(&raw gSprites[spriteId]);
+            crate::gl!(gSprites[spriteId].x2 = 32 * j as i16);
         }
     }
 }
@@ -1112,7 +1112,7 @@ unsafe fn CreateMatchCallBlueLightSprite() {
         0x60,
         4,
     );
-    (*gfx).blueLightSprite = &raw mut gSprites[spriteId];
+    (*gfx).blueLightSprite = crate::gl!(&raw gSprites[spriteId]);
     if AreAnyTrainerRematchesNearby() != 0 {
         (*(*gfx).blueLightSprite).callback = Some(SpriteCB_BlinkingBlueLight);
     } else {
@@ -1303,9 +1303,10 @@ unsafe fn SetMenuOptionGlow() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0]
                     .as_mut_ptr() as *mut c_void,
                 0x10000a0,
             );
@@ -1317,9 +1318,10 @@ unsafe fn SetMenuOptionGlow() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as *mut c_void,
                 0x10000a0,
             );
@@ -1331,7 +1333,7 @@ unsafe fn SetMenuOptionGlow() {
             volatile_write(&raw mut tmp, 29424);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[0][r4] as *mut c_void,
                 0x1000010,
@@ -1344,7 +1346,7 @@ unsafe fn SetMenuOptionGlow() {
             volatile_write(&raw mut tmp, 29424);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[1][r4] as *mut c_void,
                 0x1000010,

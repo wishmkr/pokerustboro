@@ -60,7 +60,7 @@ unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *
 }
 /// `CopyRectToBgTilemapBufferRect` with this module's view of its types.
 #[inline]
-unsafe fn CopyRectToBgTilemapBufferRect(
+fn CopyRectToBgTilemapBufferRect(
     a0: u8,
     a1: *mut c_void,
     a2: u8,
@@ -107,7 +107,7 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `LoadSpritePalette` with this module's view of its types.
@@ -358,10 +358,12 @@ static sSpriteSheet_StampShadow: Table<CompressedSpriteSheet> =
 static sSpriteTemplate_StampShadow: Table<SpriteTemplate> =
     Table((&raw const crate::data::mystery_gift_view::sSpriteTemplate_StampShadow).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sWonderCardData: *mut WonderCardData = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sWonderNewsData: *mut WonderNewsData = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sWonderCardData: crate::global::Global<*mut WonderCardData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sWonderNewsData: crate::global::Global<*mut WonderNewsData> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -370,12 +372,12 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -385,40 +387,40 @@ pub unsafe fn WonderCard_Init(card: *mut WonderCard, metadata: *mut WonderCardMe
     if card.is_null() || metadata.is_null() {
         return FALSE as u32;
     }
-    sWonderCardData = AllocZeroed(5212) as *mut WonderCardData;
-    if sWonderCardData.is_null() {
+    crate::gl!(sWonderCardData = AllocZeroed(5212) as *mut WonderCardData);
+    if (*sWonderCardData.as_ptr()).is_null() {
         return FALSE as u32;
     }
-    (*sWonderCardData).card = *card;
-    (*sWonderCardData).cardMetadata = *metadata;
-    if (*sWonderCardData).card.bgType() >= NUM_WONDER_BGS {
-        (*sWonderCardData).card.set_bgType(0);
+    (*crate::gl!(sWonderCardData)).card = *card;
+    (*crate::gl!(sWonderCardData)).cardMetadata = *metadata;
+    if (*crate::gl!(sWonderCardData)).card.bgType() >= NUM_WONDER_BGS {
+        (*crate::gl!(sWonderCardData)).card.set_bgType(0);
     }
-    if (*sWonderCardData).card.r#type() >= CARD_TYPE_COUNT {
-        (*sWonderCardData).card.set_type(0);
+    if (*crate::gl!(sWonderCardData)).card.r#type() >= CARD_TYPE_COUNT {
+        (*crate::gl!(sWonderCardData)).card.set_type(0);
     }
-    if (*sWonderCardData).card.maxStamps > MAX_STAMP_CARD_STAMPS {
-        (*sWonderCardData).card.maxStamps = 0;
+    if (*crate::gl!(sWonderCardData)).card.maxStamps > MAX_STAMP_CARD_STAMPS {
+        (*crate::gl!(sWonderCardData)).card.maxStamps = 0;
     }
-    (*sWonderCardData).gfx =
-        (&raw const sCardGraphics[(*sWonderCardData).card.bgType()]).cast_mut();
+    (*crate::gl!(sWonderCardData)).gfx =
+        (&raw const sCardGraphics[(*crate::gl!(sWonderCardData)).card.bgType()]).cast_mut();
     TRUE as u32
 }
 pub unsafe fn WonderCard_Destroy() {
-    if !sWonderCardData.is_null() {
-        *sWonderCardData = {
+    if !(*sWonderCardData.as_ptr()).is_null() {
+        *crate::gl!(sWonderCardData) = {
             let lit1: WonderCardData = zeroed();
             lit1
         };
-        Free(sWonderCardData as *mut c_void);
-        sWonderCardData = null_mut();
+        Free(crate::gl!(sWonderCardData) as *mut c_void);
+        crate::gl!(sWonderCardData = null_mut());
     }
 }
 pub unsafe fn WonderCard_Enter() -> i32 {
-    if sWonderCardData.is_null() {
+    if (*sWonderCardData.as_ptr()).is_null() {
         return -1;
     }
-    match (*sWonderCardData).enterExitState {
+    match (*crate::gl!(sWonderCardData)).enterExitState {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         }
@@ -457,16 +459,16 @@ pub unsafe fn WonderCard_Enter() -> i32 {
             CopyBgTilemapBufferToVram(2);
             DecompressAndCopyTileDataToVram(
                 2,
-                (*(*sWonderCardData).gfx).tiles as *mut c_void,
+                (*(*crate::gl!(sWonderCardData)).gfx).tiles as *mut c_void,
                 0,
                 0x008,
                 0,
             );
-            (*sWonderCardData).windowIds[0] =
+            (*crate::gl!(sWonderCardData)).windowIds[0] =
                 AddWindow((&raw const sCard_WindowTemplates[0]).cast_mut());
-            (*sWonderCardData).windowIds[1] =
+            (*crate::gl!(sWonderCardData)).windowIds[1] =
                 AddWindow((&raw const sCard_WindowTemplates[1]).cast_mut());
-            (*sWonderCardData).windowIds[2] =
+            (*crate::gl!(sWonderCardData)).windowIds[2] =
                 AddWindow((&raw const sCard_WindowTemplates[2]).cast_mut());
         }
         3 => {
@@ -474,15 +476,19 @@ pub unsafe fn WonderCard_Enter() -> i32 {
                 return 0;
             }
             LoadPalette(GetTextWindowPalette(1) as *mut c_void, 32, 32);
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-            LoadPalette((*(*sWonderCardData).gfx).pal as *mut c_void, 16, 32);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+            LoadPalette(
+                (*(*crate::gl!(sWonderCardData)).gfx).pal as *mut c_void,
+                16,
+                32,
+            );
             LZ77UnCompWram(
-                (*(*sWonderCardData).gfx).map,
-                (*sWonderCardData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*(*crate::gl!(sWonderCardData)).gfx).map,
+                (*crate::gl!(sWonderCardData)).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
             );
             CopyRectToBgTilemapBufferRect(
                 2,
-                (*sWonderCardData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sWonderCardData)).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
                 0,
                 0,
                 DISPLAY_TILE_WIDTH,
@@ -512,7 +518,7 @@ pub unsafe fn WonderCard_Enter() -> i32 {
         7 => {
             ShowBg(1);
             ShowBg(2);
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             CreateCardSprites();
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             UpdatePaletteFade();
@@ -521,18 +527,18 @@ pub unsafe fn WonderCard_Enter() -> i32 {
             if UpdatePaletteFade() != 0 {
                 return 0;
             }
-            (*sWonderCardData).enterExitState = 0;
+            (*crate::gl!(sWonderCardData)).enterExitState = 0;
             return 1;
         }
     }
-    (*sWonderCardData).enterExitState += 1;
+    (*crate::gl!(sWonderCardData)).enterExitState += 1;
     0
 }
 pub unsafe fn WonderCard_Exit(useCancel: u32) -> i32 {
-    if sWonderCardData.is_null() {
+    if (*sWonderCardData.as_ptr()).is_null() {
         return -1;
     }
-    match (*sWonderCardData).enterExitState {
+    match (*crate::gl!(sWonderCardData)).enterExitState {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         }
@@ -573,16 +579,16 @@ pub unsafe fn WonderCard_Exit(useCancel: u32) -> i32 {
         3 => {
             HideBg(1);
             HideBg(2);
-            RemoveWindow((*sWonderCardData).windowIds[2] as u8);
-            RemoveWindow((*sWonderCardData).windowIds[1] as u8);
-            RemoveWindow((*sWonderCardData).windowIds[0] as u8);
+            RemoveWindow((*crate::gl!(sWonderCardData)).windowIds[2] as u8);
+            RemoveWindow((*crate::gl!(sWonderCardData)).windowIds[1] as u8);
+            RemoveWindow((*crate::gl!(sWonderCardData)).windowIds[0] as u8);
         }
         4 => {
             DestroyCardSprites();
             FreeMonIconPalettes();
         }
         5 => {
-            PrintMysteryGiftOrEReaderHeader(gGiftIsFromEReader, useCancel);
+            PrintMysteryGiftOrEReaderHeader(gGiftIsFromEReader.get(), useCancel);
             CopyBgTilemapBufferToVram(0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
         }
@@ -590,92 +596,107 @@ pub unsafe fn WonderCard_Exit(useCancel: u32) -> i32 {
             if UpdatePaletteFade() != 0 {
                 return 0;
             }
-            (*sWonderCardData).enterExitState = 0;
+            (*crate::gl!(sWonderCardData)).enterExitState = 0;
             return 1;
         }
     }
-    (*sWonderCardData).enterExitState += 1;
+    (*crate::gl!(sWonderCardData)).enterExitState += 1;
     0
 }
 unsafe fn BufferCardText() {
     let mut charsUntilStat: u16 = 0;
     let mut stats: CArray<u16, 3> = CArray([0, 0, 0]);
     memcpy(
-        (*sWonderCardData).titleText.as_mut_ptr(),
-        (*sWonderCardData).card.titleText.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData)).titleText.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData)).card.titleText.as_mut_ptr(),
         WONDER_CARD_TEXT_LENGTH,
     );
-    (*sWonderCardData).titleText[40] = EOS;
+    (*crate::gl!(sWonderCardData)).titleText[40] = EOS;
     memcpy(
-        (*sWonderCardData).subtitleText.as_mut_ptr(),
-        (*sWonderCardData).card.subtitleText.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData)).subtitleText.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData))
+            .card
+            .subtitleText
+            .as_mut_ptr(),
         WONDER_CARD_TEXT_LENGTH,
     );
-    (*sWonderCardData).subtitleText[40] = EOS;
-    if (*sWonderCardData).card.idNumber > 0xf423f {
-        (*sWonderCardData).card.idNumber = 0xf423f;
+    (*crate::gl!(sWonderCardData)).subtitleText[40] = EOS;
+    if (*crate::gl!(sWonderCardData)).card.idNumber > 0xf423f {
+        (*crate::gl!(sWonderCardData)).card.idNumber = 0xf423f;
     }
     ConvertIntToDecimalStringN(
-        (*sWonderCardData).idNumberText.as_mut_ptr(),
-        (*sWonderCardData).card.idNumber as i32,
+        (*crate::gl!(sWonderCardData)).idNumberText.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData)).card.idNumber as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         6,
     );
     let mut i: u16 = 0;
     while i < WONDER_CARD_BODY_TEXT_LINES {
         memcpy(
-            (*sWonderCardData).bodyText[i].as_mut_ptr(),
-            (*sWonderCardData).card.bodyText[i].as_mut_ptr(),
+            (*crate::gl!(sWonderCardData)).bodyText[i].as_mut_ptr(),
+            (*crate::gl!(sWonderCardData)).card.bodyText[i].as_mut_ptr(),
             WONDER_CARD_TEXT_LENGTH,
         );
-        (*sWonderCardData).bodyText[i][40] = EOS;
+        (*crate::gl!(sWonderCardData)).bodyText[i][40] = EOS;
         i += 1;
     }
     memcpy(
-        (*sWonderCardData).footerLine1Text.as_mut_ptr(),
-        (*sWonderCardData).card.footerLine1Text.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData)).footerLine1Text.as_mut_ptr(),
+        (*crate::gl!(sWonderCardData))
+            .card
+            .footerLine1Text
+            .as_mut_ptr(),
         WONDER_CARD_TEXT_LENGTH,
     );
-    (*sWonderCardData).footerLine1Text[40] = EOS;
-    match (*sWonderCardData).card.r#type() {
+    (*crate::gl!(sWonderCardData)).footerLine1Text[40] = EOS;
+    match (*crate::gl!(sWonderCardData)).card.r#type() {
         CARD_TYPE_GIFT => {
             memcpy(
-                (*sWonderCardData).giftText.as_mut_ptr(),
-                (*sWonderCardData).card.footerLine2Text.as_mut_ptr(),
+                (*crate::gl!(sWonderCardData)).giftText.as_mut_ptr(),
+                (*crate::gl!(sWonderCardData))
+                    .card
+                    .footerLine2Text
+                    .as_mut_ptr(),
                 WONDER_CARD_TEXT_LENGTH,
             );
-            (*sWonderCardData).giftText[40] = EOS;
+            (*crate::gl!(sWonderCardData)).giftText[40] = EOS;
         }
         CARD_TYPE_STAMP => {
-            (*sWonderCardData).giftText[0] = EOS;
+            (*crate::gl!(sWonderCardData)).giftText[0] = EOS;
         }
         CARD_TYPE_LINK_STAT => {
-            (*sWonderCardData).giftText[0] = EOS;
-            stats[0] = (if (*sWonderCardData).cardMetadata.battlesWon < MAX_WONDER_CARD_STAT {
-                (*sWonderCardData).cardMetadata.battlesWon as i32
+            (*crate::gl!(sWonderCardData)).giftText[0] = EOS;
+            stats[0] =
+                (if (*crate::gl!(sWonderCardData)).cardMetadata.battlesWon < MAX_WONDER_CARD_STAT {
+                    (*crate::gl!(sWonderCardData)).cardMetadata.battlesWon as i32
+                } else {
+                    MAX_WONDER_CARD_STAT as i32
+                }) as u16;
+            stats[1] = (if (*crate::gl!(sWonderCardData)).cardMetadata.battlesLost
+                < MAX_WONDER_CARD_STAT
+            {
+                (*crate::gl!(sWonderCardData)).cardMetadata.battlesLost as i32
             } else {
                 MAX_WONDER_CARD_STAT as i32
             }) as u16;
-            stats[1] = (if (*sWonderCardData).cardMetadata.battlesLost < MAX_WONDER_CARD_STAT {
-                (*sWonderCardData).cardMetadata.battlesLost as i32
-            } else {
-                MAX_WONDER_CARD_STAT as i32
-            }) as u16;
-            stats[2] = (if (*sWonderCardData).cardMetadata.numTrades < MAX_WONDER_CARD_STAT {
-                (*sWonderCardData).cardMetadata.numTrades as i32
-            } else {
-                MAX_WONDER_CARD_STAT as i32
-            }) as u16;
+            stats[2] =
+                (if (*crate::gl!(sWonderCardData)).cardMetadata.numTrades < MAX_WONDER_CARD_STAT {
+                    (*crate::gl!(sWonderCardData)).cardMetadata.numTrades as i32
+                } else {
+                    MAX_WONDER_CARD_STAT as i32
+                }) as u16;
             for i in 0..8u16 {
                 memset(
-                    (*sWonderCardData).statTextData[i]
+                    (*crate::gl!(sWonderCardData)).statTextData[i]
                         .statNumberText
                         .as_mut_ptr(),
                     EOS as i32,
                     4,
                 );
                 memset(
-                    (*sWonderCardData).statTextData[i].statText.as_mut_ptr(),
+                    (*crate::gl!(sWonderCardData)).statTextData[i]
+                        .statText
+                        .as_mut_ptr(),
                     EOS as i32,
                     41,
                 );
@@ -683,27 +704,32 @@ unsafe fn BufferCardText() {
             i = 0;
             charsUntilStat = 0;
             while i < WONDER_CARD_TEXT_LENGTH as u16 {
-                if (*sWonderCardData).card.footerLine2Text[i] != CHAR_DYNAMIC {
-                    (*sWonderCardData).statTextData[(*sWonderCardData).statFooterWidth].statText
-                        [charsUntilStat] = (*sWonderCardData).card.footerLine2Text[i];
+                if (*crate::gl!(sWonderCardData)).card.footerLine2Text[i] != CHAR_DYNAMIC {
+                    (*crate::gl!(sWonderCardData)).statTextData
+                        [(*crate::gl!(sWonderCardData)).statFooterWidth]
+                        .statText[charsUntilStat] =
+                        (*crate::gl!(sWonderCardData)).card.footerLine2Text[i];
                     charsUntilStat += 1;
                 } else {
-                    let id: u8 = (*sWonderCardData).card.footerLine2Text[i as i32 + 1];
+                    let id: u8 = (*crate::gl!(sWonderCardData)).card.footerLine2Text[i as i32 + 1];
                     if id >= 3 {
                         i += 2;
                     } else {
                         ConvertIntToDecimalStringN(
-                            (*sWonderCardData).statTextData[(*sWonderCardData).statFooterWidth]
+                            (*crate::gl!(sWonderCardData)).statTextData
+                                [(*crate::gl!(sWonderCardData)).statFooterWidth]
                                 .statNumberText
                                 .as_mut_ptr(),
                             stats[id] as i32,
                             STR_CONV_MODE_LEADING_ZEROS,
                             3,
                         );
-                        (*sWonderCardData).statTextData[(*sWonderCardData).statFooterWidth].width =
-                            (*sWonderCardData).card.footerLine2Text[i as i32 + 2];
-                        (*sWonderCardData).statFooterWidth += 1;
-                        if (*sWonderCardData).statFooterWidth >= 8 {
+                        (*crate::gl!(sWonderCardData)).statTextData
+                            [(*crate::gl!(sWonderCardData)).statFooterWidth]
+                            .width =
+                            (*crate::gl!(sWonderCardData)).card.footerLine2Text[i as i32 + 2];
+                        (*crate::gl!(sWonderCardData)).statFooterWidth += 1;
+                        if (*crate::gl!(sWonderCardData)).statFooterWidth >= 8 {
                             break;
                         }
                         charsUntilStat = 0;
@@ -718,7 +744,7 @@ unsafe fn BufferCardText() {
 }
 unsafe fn DrawCardWindow(whichWindow: u8) {
     let mut i: i8 = 0;
-    let windowId: i32 = (*sWonderCardData).windowIds[whichWindow] as i32;
+    let windowId: i32 = (*crate::gl!(sWonderCardData)).windowIds[whichWindow] as i32;
     PutWindowTilemap(windowId as u8);
     FillWindowPixelBuffer(windowId as u8, 0);
     'l1: {
@@ -729,16 +755,16 @@ unsafe fn DrawCardWindow(whichWindow: u8) {
                     FONT_SHORT_COPY_1,
                     0,
                     1,
-                    sCard_TextColorTable[(*(*sWonderCardData).gfx).titleTextPal()]
+                    sCard_TextColorTable[(*(*crate::gl!(sWonderCardData)).gfx).titleTextPal()]
                         .as_ptr()
                         .cast_mut(),
                     0,
-                    (*sWonderCardData).titleText.as_mut_ptr(),
+                    (*crate::gl!(sWonderCardData)).titleText.as_mut_ptr(),
                 );
                 let mut x: i32 = 160
                     - GetStringWidth(
                         FONT_SHORT_COPY_1,
-                        (*sWonderCardData).subtitleText.as_mut_ptr(),
+                        (*crate::gl!(sWonderCardData)).subtitleText.as_mut_ptr(),
                         GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i16,
                     );
                 if x < 0 {
@@ -749,23 +775,23 @@ unsafe fn DrawCardWindow(whichWindow: u8) {
                     FONT_SHORT_COPY_1,
                     x as u8,
                     17,
-                    sCard_TextColorTable[(*(*sWonderCardData).gfx).titleTextPal()]
+                    sCard_TextColorTable[(*(*crate::gl!(sWonderCardData)).gfx).titleTextPal()]
                         .as_ptr()
                         .cast_mut(),
                     0,
-                    (*sWonderCardData).subtitleText.as_mut_ptr(),
+                    (*crate::gl!(sWonderCardData)).subtitleText.as_mut_ptr(),
                 );
-                if (*sWonderCardData).card.idNumber != 0 {
+                if (*crate::gl!(sWonderCardData)).card.idNumber != 0 {
                     AddTextPrinterParameterized3(
                         windowId as u8,
                         FONT_NORMAL,
                         166,
                         17,
-                        sCard_TextColorTable[(*(*sWonderCardData).gfx).titleTextPal()]
+                        sCard_TextColorTable[(*(*crate::gl!(sWonderCardData)).gfx).titleTextPal()]
                             .as_ptr()
                             .cast_mut(),
                         0,
-                        (*sWonderCardData).idNumberText.as_mut_ptr(),
+                        (*crate::gl!(sWonderCardData)).idNumberText.as_mut_ptr(),
                     );
                 }
                 break 'l1;
@@ -777,11 +803,11 @@ unsafe fn DrawCardWindow(whichWindow: u8) {
                         FONT_SHORT_COPY_1,
                         0,
                         16 * i as u8 + 2,
-                        sCard_TextColorTable[(*(*sWonderCardData).gfx).bodyTextPal()]
+                        sCard_TextColorTable[(*(*crate::gl!(sWonderCardData)).gfx).bodyTextPal()]
                             .as_ptr()
                             .cast_mut(),
                         0,
-                        (*sWonderCardData).bodyText[i].as_mut_ptr(),
+                        (*crate::gl!(sWonderCardData)).bodyText[i].as_mut_ptr(),
                     );
                     i += 1;
                 }
@@ -791,47 +817,54 @@ unsafe fn DrawCardWindow(whichWindow: u8) {
                     windowId as u8,
                     FONT_SHORT_COPY_1,
                     0,
-                    sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()],
-                    sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
+                    sCard_FooterTextOffsets[(*crate::gl!(sWonderCardData)).card.r#type()],
+                    sCard_TextColorTable[(*(*crate::gl!(sWonderCardData)).gfx).footerTextPal()]
                         .as_ptr()
                         .cast_mut(),
                     0,
-                    (*sWonderCardData).footerLine1Text.as_mut_ptr(),
+                    (*crate::gl!(sWonderCardData)).footerLine1Text.as_mut_ptr(),
                 );
-                if (*sWonderCardData).card.r#type() != CARD_TYPE_LINK_STAT {
+                if (*crate::gl!(sWonderCardData)).card.r#type() != CARD_TYPE_LINK_STAT {
                     AddTextPrinterParameterized3(
                         windowId as u8,
                         FONT_SHORT_COPY_1,
                         0,
-                        16 + sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()],
-                        sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
+                        16 + sCard_FooterTextOffsets[(*crate::gl!(sWonderCardData)).card.r#type()],
+                        sCard_TextColorTable[(*(*crate::gl!(sWonderCardData)).gfx).footerTextPal()]
                             .as_ptr()
                             .cast_mut(),
                         0,
-                        (*sWonderCardData).giftText.as_mut_ptr(),
+                        (*crate::gl!(sWonderCardData)).giftText.as_mut_ptr(),
                     );
                 } else {
                     let mut x: i32 = 0;
-                    let y: i32 =
-                        sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()] as i32 + 16;
+                    let y: i32 = sCard_FooterTextOffsets
+                        [(*crate::gl!(sWonderCardData)).card.r#type()]
+                        as i32
+                        + 16;
                     let spacing: i32 =
                         GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i32;
-                    while (i as i32) < (*sWonderCardData).statFooterWidth as i32 {
+                    while (i as i32) < (*crate::gl!(sWonderCardData)).statFooterWidth as i32 {
                         AddTextPrinterParameterized3(
                             windowId as u8,
                             FONT_SHORT_COPY_1,
                             x as u8,
                             y as u8,
-                            sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
-                                .as_ptr()
-                                .cast_mut(),
+                            sCard_TextColorTable
+                                [(*(*crate::gl!(sWonderCardData)).gfx).footerTextPal()]
+                            .as_ptr()
+                            .cast_mut(),
                             0,
-                            (*sWonderCardData).statTextData[i].statText.as_mut_ptr(),
+                            (*crate::gl!(sWonderCardData)).statTextData[i]
+                                .statText
+                                .as_mut_ptr(),
                         );
-                        if (*sWonderCardData).statTextData[i].statNumberText[0] != EOS {
+                        if (*crate::gl!(sWonderCardData)).statTextData[i].statNumberText[0] != EOS {
                             x += GetStringWidth(
                                 FONT_SHORT_COPY_1,
-                                (*sWonderCardData).statTextData[i].statText.as_mut_ptr(),
+                                (*crate::gl!(sWonderCardData)).statTextData[i]
+                                    .statText
+                                    .as_mut_ptr(),
                                 spacing as i16,
                             );
                             AddTextPrinterParameterized3(
@@ -839,21 +872,22 @@ unsafe fn DrawCardWindow(whichWindow: u8) {
                                 FONT_SHORT_COPY_1,
                                 x as u8,
                                 y as u8,
-                                sCard_TextColorTable[(*(*sWonderCardData).gfx).footerTextPal()]
-                                    .as_ptr()
-                                    .cast_mut(),
+                                sCard_TextColorTable
+                                    [(*(*crate::gl!(sWonderCardData)).gfx).footerTextPal()]
+                                .as_ptr()
+                                .cast_mut(),
                                 0,
-                                (*sWonderCardData).statTextData[i]
+                                (*crate::gl!(sWonderCardData)).statTextData[i]
                                     .statNumberText
                                     .as_mut_ptr(),
                             );
                             x += GetStringWidth(
                                 FONT_SHORT_COPY_1,
-                                (*sWonderCardData).statTextData[i]
+                                (*crate::gl!(sWonderCardData)).statTextData[i]
                                     .statNumberText
                                     .as_mut_ptr(),
                                 spacing as i16,
-                            ) + (*sWonderCardData).statTextData[i].width as i32;
+                            ) + (*crate::gl!(sWonderCardData)).statTextData[i].width as i32;
                         }
                         i += 1;
                     }
@@ -866,39 +900,43 @@ unsafe fn DrawCardWindow(whichWindow: u8) {
 }
 unsafe fn CreateCardSprites() {
     let mut i: u8 = 0;
-    (*sWonderCardData).monIconSpriteId = SPRITE_NONE;
-    if (*sWonderCardData).cardMetadata.iconSpecies != SPECIES_NONE {
-        (*sWonderCardData).monIconSpriteId = CreateMonIconNoPersonality(
-            GetIconSpeciesNoPersonality((*sWonderCardData).cardMetadata.iconSpecies),
+    (*crate::gl!(sWonderCardData)).monIconSpriteId = SPRITE_NONE;
+    if (*crate::gl!(sWonderCardData)).cardMetadata.iconSpecies != SPECIES_NONE {
+        (*crate::gl!(sWonderCardData)).monIconSpriteId = CreateMonIconNoPersonality(
+            GetIconSpeciesNoPersonality((*crate::gl!(sWonderCardData)).cardMetadata.iconSpecies),
             Some(SpriteCallbackDummy),
             220,
             20,
             0,
             0,
         );
-        gSprites[(*sWonderCardData).monIconSpriteId]
+        (*gSprites.as_ptr())[(*crate::gl!(sWonderCardData)).monIconSpriteId]
             .oam
             .set_priority(2);
     }
-    if (*sWonderCardData).card.maxStamps != 0 && (*sWonderCardData).card.r#type() == CARD_TYPE_STAMP
+    if (*crate::gl!(sWonderCardData)).card.maxStamps != 0
+        && (*crate::gl!(sWonderCardData)).card.r#type() == CARD_TYPE_STAMP
     {
         LoadCompressedSpriteSheetUsingHeap((&raw const *sSpriteSheet_StampShadow).cast_mut());
         LoadSpritePalette(
-            (&raw const sSpritePalettes_StampShadow[(*(*sWonderCardData).gfx).stampShadowPal()])
+            (&raw const sSpritePalettes_StampShadow
+                [(*(*crate::gl!(sWonderCardData)).gfx).stampShadowPal()])
                 .cast_mut(),
         );
-        while i < (*sWonderCardData).card.maxStamps {
-            (*sWonderCardData).stampSpriteIds[i][0] = SPRITE_NONE;
-            (*sWonderCardData).stampSpriteIds[i][1] = SPRITE_NONE;
-            (*sWonderCardData).stampSpriteIds[i][0] = CreateSprite(
+        while i < (*crate::gl!(sWonderCardData)).card.maxStamps {
+            (*crate::gl!(sWonderCardData)).stampSpriteIds[i][0] = SPRITE_NONE;
+            (*crate::gl!(sWonderCardData)).stampSpriteIds[i][1] = SPRITE_NONE;
+            (*crate::gl!(sWonderCardData)).stampSpriteIds[i][0] = CreateSprite(
                 (&raw const *sSpriteTemplate_StampShadow).cast_mut(),
                 216 - 32 * i as i16,
                 144,
                 8,
             );
-            if (*sWonderCardData).cardMetadata.stampData[0][i] != 0 {
-                (*sWonderCardData).stampSpriteIds[i][1] = CreateMonIconNoPersonality(
-                    GetIconSpeciesNoPersonality((*sWonderCardData).cardMetadata.stampData[0][i]),
+            if (*crate::gl!(sWonderCardData)).cardMetadata.stampData[0][i] != 0 {
+                (*crate::gl!(sWonderCardData)).stampSpriteIds[i][1] = CreateMonIconNoPersonality(
+                    GetIconSpeciesNoPersonality(
+                        (*crate::gl!(sWonderCardData)).cardMetadata.stampData[0][i],
+                    ),
                     Some(SpriteCallbackDummy),
                     216 - 32 * i as i16,
                     136,
@@ -912,19 +950,27 @@ unsafe fn CreateCardSprites() {
 }
 unsafe fn DestroyCardSprites() {
     let mut i: u8 = 0;
-    if (*sWonderCardData).monIconSpriteId != SPRITE_NONE {
-        FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sWonderCardData).monIconSpriteId]);
+    if (*crate::gl!(sWonderCardData)).monIconSpriteId != SPRITE_NONE {
+        FreeAndDestroyMonIconSprite({
+            let gl_i0 = (*crate::gl!(sWonderCardData)).monIconSpriteId;
+            crate::gl!(&raw gSprites[gl_i0])
+        });
     }
-    if (*sWonderCardData).card.maxStamps != 0 && (*sWonderCardData).card.r#type() == CARD_TYPE_STAMP
+    if (*crate::gl!(sWonderCardData)).card.maxStamps != 0
+        && (*crate::gl!(sWonderCardData)).card.r#type() == CARD_TYPE_STAMP
     {
-        while i < (*sWonderCardData).card.maxStamps {
-            if (*sWonderCardData).stampSpriteIds[i][0] != SPRITE_NONE {
-                DestroySprite(&raw mut gSprites[(*sWonderCardData).stampSpriteIds[i][0]]);
+        while i < (*crate::gl!(sWonderCardData)).card.maxStamps {
+            if (*crate::gl!(sWonderCardData)).stampSpriteIds[i][0] != SPRITE_NONE {
+                DestroySprite({
+                    let gl_i1 = (*crate::gl!(sWonderCardData)).stampSpriteIds[i][0];
+                    crate::gl!(&raw gSprites[gl_i1])
+                });
             }
-            if (*sWonderCardData).stampSpriteIds[i][1] != SPRITE_NONE {
-                FreeAndDestroyMonIconSprite(
-                    &raw mut gSprites[(*sWonderCardData).stampSpriteIds[i][1]],
-                );
+            if (*crate::gl!(sWonderCardData)).stampSpriteIds[i][1] != SPRITE_NONE {
+                FreeAndDestroyMonIconSprite({
+                    let gl_i2 = (*crate::gl!(sWonderCardData)).stampSpriteIds[i][1];
+                    crate::gl!(&raw gSprites[gl_i2])
+                });
             }
             i += 1;
         }
@@ -936,33 +982,34 @@ pub unsafe fn WonderNews_Init(news: *mut WonderNews) -> u32 {
     if news.is_null() {
         return FALSE as u32;
     }
-    sWonderNewsData = AllocZeroed(5028) as *mut WonderNewsData;
-    if sWonderNewsData.is_null() {
+    crate::gl!(sWonderNewsData = AllocZeroed(5028) as *mut WonderNewsData);
+    if (*sWonderNewsData.as_ptr()).is_null() {
         return FALSE as u32;
     }
-    (*sWonderNewsData).news = *news;
-    if (*sWonderNewsData).news.bgType >= NUM_WONDER_BGS {
-        (*sWonderNewsData).news.bgType = 0;
+    (*crate::gl!(sWonderNewsData)).news = *news;
+    if (*crate::gl!(sWonderNewsData)).news.bgType >= NUM_WONDER_BGS {
+        (*crate::gl!(sWonderNewsData)).news.bgType = 0;
     }
-    (*sWonderNewsData).gfx = (&raw const sNewsGraphics[(*sWonderNewsData).news.bgType]).cast_mut();
-    (*sWonderNewsData).arrowTaskId = TASK_NONE;
+    (*crate::gl!(sWonderNewsData)).gfx =
+        (&raw const sNewsGraphics[(*crate::gl!(sWonderNewsData)).news.bgType]).cast_mut();
+    (*crate::gl!(sWonderNewsData)).arrowTaskId = TASK_NONE;
     TRUE as u32
 }
 pub unsafe fn WonderNews_Destroy() {
-    if !sWonderNewsData.is_null() {
-        *sWonderNewsData = {
+    if !(*sWonderNewsData.as_ptr()).is_null() {
+        *crate::gl!(sWonderNewsData) = {
             let lit1: WonderNewsData = zeroed();
             lit1
         };
-        Free(sWonderNewsData as *mut c_void);
-        sWonderNewsData = null_mut();
+        Free(crate::gl!(sWonderNewsData) as *mut c_void);
+        crate::gl!(sWonderNewsData = null_mut());
     }
 }
 pub unsafe fn WonderNews_Enter() -> i32 {
-    if sWonderNewsData.is_null() {
+    if (*sWonderNewsData.as_ptr()).is_null() {
         return -1;
     }
-    match (*sWonderNewsData).enterExitState() {
+    match (*crate::gl!(sWonderNewsData)).enterExitState() {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         }
@@ -1019,14 +1066,14 @@ pub unsafe fn WonderNews_Enter() -> i32 {
             CopyBgTilemapBufferToVram(3);
             DecompressAndCopyTileDataToVram(
                 3,
-                (*(*sWonderNewsData).gfx).tiles as *mut c_void,
+                (*(*crate::gl!(sWonderNewsData)).gfx).tiles as *mut c_void,
                 0,
                 8,
                 0,
             );
-            (*sWonderNewsData).windowIds[0] =
+            (*crate::gl!(sWonderNewsData)).windowIds[0] =
                 AddWindow((&raw const sNews_WindowTemplates[0]).cast_mut());
-            (*sWonderNewsData).windowIds[1] =
+            (*crate::gl!(sWonderNewsData)).windowIds[1] =
                 AddWindow((&raw const sNews_WindowTemplates[1]).cast_mut());
         }
         3 => {
@@ -1034,15 +1081,19 @@ pub unsafe fn WonderNews_Enter() -> i32 {
                 return 0;
             }
             LoadPalette(GetTextWindowPalette(1) as *mut c_void, 32, 32);
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-            LoadPalette((*(*sWonderNewsData).gfx).pal as *mut c_void, 16, 32);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+            LoadPalette(
+                (*(*crate::gl!(sWonderNewsData)).gfx).pal as *mut c_void,
+                16,
+                32,
+            );
             LZ77UnCompWram(
-                (*(*sWonderNewsData).gfx).map,
-                (*sWonderNewsData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*(*crate::gl!(sWonderNewsData)).gfx).map,
+                (*crate::gl!(sWonderNewsData)).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
             );
             CopyRectToBgTilemapBufferRect(
                 1,
-                (*sWonderNewsData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sWonderNewsData)).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
                 0,
                 0,
                 DISPLAY_TILE_WIDTH,
@@ -1057,7 +1108,7 @@ pub unsafe fn WonderNews_Enter() -> i32 {
             );
             CopyRectToBgTilemapBufferRect(
                 3,
-                (*sWonderNewsData).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sWonderNewsData)).bgTilemapBuffer.as_mut_ptr() as *mut c_void,
                 0,
                 3,
                 DISPLAY_TILE_WIDTH,
@@ -1085,10 +1136,10 @@ pub unsafe fn WonderNews_Enter() -> i32 {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-            (*sWonderNewsData).arrowTaskId = AddScrollIndicatorArrowPair(
-                &raw mut (*sWonderNewsData).arrowsTemplate,
-                &raw mut (*sWonderNewsData).scrollOffset,
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+            (*crate::gl!(sWonderNewsData)).arrowTaskId = AddScrollIndicatorArrowPair(
+                &raw mut (*crate::gl!(sWonderNewsData)).arrowsTemplate,
+                &raw mut (*crate::gl!(sWonderNewsData)).scrollOffset,
             );
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             UpdatePaletteFade();
@@ -1097,18 +1148,19 @@ pub unsafe fn WonderNews_Enter() -> i32 {
             if UpdatePaletteFade() != 0 {
                 return 0;
             }
-            (*sWonderNewsData).set_enterExitState(0);
+            (*crate::gl!(sWonderNewsData)).set_enterExitState(0);
             return 1;
         }
     }
-    (*sWonderNewsData).set_enterExitState((*sWonderNewsData).enterExitState() + 1);
+    (*crate::gl!(sWonderNewsData))
+        .set_enterExitState((*crate::gl!(sWonderNewsData)).enterExitState() + 1);
     0
 }
 pub unsafe fn WonderNews_Exit(useCancel: u32) -> i32 {
-    if sWonderNewsData.is_null() {
+    if (*sWonderNewsData.as_ptr()).is_null() {
         return -1;
     }
-    match (*sWonderNewsData).enterExitState() {
+    match (*crate::gl!(sWonderNewsData)).enterExitState() {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         }
@@ -1150,19 +1202,19 @@ pub unsafe fn WonderNews_Exit(useCancel: u32) -> i32 {
         3 => {
             HideBg(1);
             HideBg(2);
-            RemoveWindow((*sWonderNewsData).windowIds[1] as u8);
-            RemoveWindow((*sWonderNewsData).windowIds[0] as u8);
+            RemoveWindow((*crate::gl!(sWonderNewsData)).windowIds[1] as u8);
+            RemoveWindow((*crate::gl!(sWonderNewsData)).windowIds[0] as u8);
         }
         4 => {
             ChangeBgY(2, 0, BG_COORD_SET);
             ChangeBgY(3, 0, BG_COORD_SET);
-            if (*sWonderNewsData).arrowTaskId != TASK_NONE {
-                RemoveScrollIndicatorArrowPair((*sWonderNewsData).arrowTaskId);
-                (*sWonderNewsData).arrowTaskId = TASK_NONE;
+            if (*crate::gl!(sWonderNewsData)).arrowTaskId != TASK_NONE {
+                RemoveScrollIndicatorArrowPair((*crate::gl!(sWonderNewsData)).arrowTaskId);
+                (*crate::gl!(sWonderNewsData)).arrowTaskId = TASK_NONE;
             }
         }
         5 => {
-            PrintMysteryGiftOrEReaderHeader(gGiftIsFromEReader, useCancel);
+            PrintMysteryGiftOrEReaderHeader(gGiftIsFromEReader.get(), useCancel);
             MG_DrawCheckerboardPattern(3);
             CopyBgTilemapBufferToVram(0);
             CopyBgTilemapBufferToVram(3);
@@ -1172,31 +1224,34 @@ pub unsafe fn WonderNews_Exit(useCancel: u32) -> i32 {
             if UpdatePaletteFade() != 0 {
                 return 0;
             }
-            (*sWonderNewsData).set_enterExitState(0);
+            (*crate::gl!(sWonderNewsData)).set_enterExitState(0);
             return 1;
         }
     }
-    (*sWonderNewsData).set_enterExitState((*sWonderNewsData).enterExitState() + 1);
+    (*crate::gl!(sWonderNewsData))
+        .set_enterExitState((*crate::gl!(sWonderNewsData)).enterExitState() + 1);
     0
 }
 pub unsafe fn WonderNews_RemoveScrollIndicatorArrowPair() {
-    if (*sWonderNewsData).arrowsRemoved() == 0 && (*sWonderNewsData).arrowTaskId != TASK_NONE {
-        RemoveScrollIndicatorArrowPair((*sWonderNewsData).arrowTaskId);
-        (*sWonderNewsData).arrowTaskId = TASK_NONE;
-        (*sWonderNewsData).set_arrowsRemoved(TRUE);
+    if (*crate::gl!(sWonderNewsData)).arrowsRemoved() == 0
+        && (*crate::gl!(sWonderNewsData)).arrowTaskId != TASK_NONE
+    {
+        RemoveScrollIndicatorArrowPair((*crate::gl!(sWonderNewsData)).arrowTaskId);
+        (*crate::gl!(sWonderNewsData)).arrowTaskId = TASK_NONE;
+        (*crate::gl!(sWonderNewsData)).set_arrowsRemoved(TRUE);
     }
 }
 pub unsafe fn WonderNews_AddScrollIndicatorArrowPair() {
-    if (*sWonderNewsData).arrowsRemoved() != 0 {
-        (*sWonderNewsData).arrowTaskId = AddScrollIndicatorArrowPair(
-            &raw mut (*sWonderNewsData).arrowsTemplate,
-            &raw mut (*sWonderNewsData).scrollOffset,
+    if (*crate::gl!(sWonderNewsData)).arrowsRemoved() != 0 {
+        (*crate::gl!(sWonderNewsData)).arrowTaskId = AddScrollIndicatorArrowPair(
+            &raw mut (*crate::gl!(sWonderNewsData)).arrowsTemplate,
+            &raw mut (*crate::gl!(sWonderNewsData)).scrollOffset,
         );
-        (*sWonderNewsData).set_arrowsRemoved(FALSE);
+        (*crate::gl!(sWonderNewsData)).set_arrowsRemoved(FALSE);
     }
 }
 pub unsafe fn WonderNews_GetInput(input: u16) -> u32 {
-    if (*sWonderNewsData).scrolling() != 0 {
+    if (*crate::gl!(sWonderNewsData)).scrolling() != 0 {
         UpdateNewsScroll();
         return NEWS_INPUT_NONE;
     }
@@ -1208,31 +1263,33 @@ pub unsafe fn WonderNews_GetInput(input: u16) -> u32 {
             return NEWS_INPUT_B;
         }
         64 => {
-            if (*sWonderNewsData).scrollOffset == 0 {
+            if (*crate::gl!(sWonderNewsData)).scrollOffset == 0 {
                 return NEWS_INPUT_NONE;
             }
-            if (*sWonderNewsData).arrowsRemoved() != 0 {
+            if (*crate::gl!(sWonderNewsData)).arrowsRemoved() != 0 {
                 return NEWS_INPUT_NONE;
             }
-            (*sWonderNewsData).set_scrollingDown(FALSE);
+            (*crate::gl!(sWonderNewsData)).set_scrollingDown(FALSE);
         }
         128 => {
-            if (*sWonderNewsData).scrollOffset == (*sWonderNewsData).scrollEnd {
+            if (*crate::gl!(sWonderNewsData)).scrollOffset
+                == (*crate::gl!(sWonderNewsData)).scrollEnd
+            {
                 return NEWS_INPUT_NONE;
             }
-            if (*sWonderNewsData).arrowsRemoved() != 0 {
+            if (*crate::gl!(sWonderNewsData)).arrowsRemoved() != 0 {
                 return NEWS_INPUT_NONE;
             }
-            (*sWonderNewsData).set_scrollingDown(TRUE);
+            (*crate::gl!(sWonderNewsData)).set_scrollingDown(TRUE);
         }
         _ => {
             return NEWS_INPUT_NONE;
         }
     }
-    (*sWonderNewsData).set_scrolling(TRUE);
-    (*sWonderNewsData).set_scrollIncrement(2);
-    (*sWonderNewsData).set_scrollTotal(0);
-    if (*sWonderNewsData).scrollingDown() == 0 {
+    (*crate::gl!(sWonderNewsData)).set_scrolling(TRUE);
+    (*crate::gl!(sWonderNewsData)).set_scrollIncrement(2);
+    (*crate::gl!(sWonderNewsData)).set_scrollTotal(0);
+    if (*crate::gl!(sWonderNewsData)).scrollingDown() == 0 {
         return NEWS_INPUT_SCROLL_UP;
     } else {
         return NEWS_INPUT_SCROLL_DOWN;
@@ -1244,85 +1301,95 @@ pub unsafe fn WonderNews_GetInput(input: u16) -> u32 {
 }
 unsafe fn BufferNewsText() {
     memcpy(
-        (*sWonderNewsData).titleText.as_mut_ptr(),
-        (*sWonderNewsData).news.titleText.as_mut_ptr(),
+        (*crate::gl!(sWonderNewsData)).titleText.as_mut_ptr(),
+        (*crate::gl!(sWonderNewsData)).news.titleText.as_mut_ptr(),
         WONDER_NEWS_TEXT_LENGTH,
     );
-    (*sWonderNewsData).titleText[40] = EOS;
+    (*crate::gl!(sWonderNewsData)).titleText[40] = EOS;
     for i in 0..WONDER_NEWS_BODY_TEXT_LINES {
         memcpy(
-            (*sWonderNewsData).bodyText[i].as_mut_ptr(),
-            (*sWonderNewsData).news.bodyText[i].as_mut_ptr(),
+            (*crate::gl!(sWonderNewsData)).bodyText[i].as_mut_ptr(),
+            (*crate::gl!(sWonderNewsData)).news.bodyText[i].as_mut_ptr(),
             WONDER_NEWS_TEXT_LENGTH,
         );
-        (*sWonderNewsData).bodyText[i][40] = EOS;
-        if i > 7 && (*sWonderNewsData).bodyText[i][0] != EOS {
-            (*sWonderNewsData).scrollEnd += 1;
+        (*crate::gl!(sWonderNewsData)).bodyText[i][40] = EOS;
+        if i > 7 && (*crate::gl!(sWonderNewsData)).bodyText[i][0] != EOS {
+            (*crate::gl!(sWonderNewsData)).scrollEnd += 1;
         }
     }
-    (*sWonderNewsData).arrowsTemplate = *sNews_ArrowsTemplate;
-    (*sWonderNewsData).arrowsTemplate.fullyDownThreshold = (*sWonderNewsData).scrollEnd;
+    (*crate::gl!(sWonderNewsData)).arrowsTemplate = *sNews_ArrowsTemplate;
+    (*crate::gl!(sWonderNewsData))
+        .arrowsTemplate
+        .fullyDownThreshold = (*crate::gl!(sWonderNewsData)).scrollEnd;
 }
 unsafe fn DrawNewsWindows() {
-    PutWindowTilemap((*sWonderNewsData).windowIds[0] as u8);
-    PutWindowTilemap((*sWonderNewsData).windowIds[1] as u8);
-    FillWindowPixelBuffer((*sWonderNewsData).windowIds[0] as u8, 0);
-    FillWindowPixelBuffer((*sWonderNewsData).windowIds[1] as u8, 0);
+    PutWindowTilemap((*crate::gl!(sWonderNewsData)).windowIds[0] as u8);
+    PutWindowTilemap((*crate::gl!(sWonderNewsData)).windowIds[1] as u8);
+    FillWindowPixelBuffer((*crate::gl!(sWonderNewsData)).windowIds[0] as u8, 0);
+    FillWindowPixelBuffer((*crate::gl!(sWonderNewsData)).windowIds[1] as u8, 0);
     let mut x: i32 =
         (224 - GetStringWidth(
             FONT_SHORT_COPY_1,
-            (*sWonderNewsData).titleText.as_mut_ptr(),
+            (*crate::gl!(sWonderNewsData)).titleText.as_mut_ptr(),
             GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i16,
         )) / 2;
     if x < 0 {
         x = 0;
     }
     AddTextPrinterParameterized3(
-        (*sWonderNewsData).windowIds[0] as u8,
+        (*crate::gl!(sWonderNewsData)).windowIds[0] as u8,
         FONT_SHORT_COPY_1,
         x as u8,
         6,
-        sNews_TextColorTable[(*(*sWonderNewsData).gfx).titleTextPal()]
+        sNews_TextColorTable[(*(*crate::gl!(sWonderNewsData)).gfx).titleTextPal()]
             .as_ptr()
             .cast_mut(),
         0,
-        (*sWonderNewsData).titleText.as_mut_ptr(),
+        (*crate::gl!(sWonderNewsData)).titleText.as_mut_ptr(),
     );
     for i in 0..WONDER_NEWS_BODY_TEXT_LINES {
         AddTextPrinterParameterized3(
-            (*sWonderNewsData).windowIds[1] as u8,
+            (*crate::gl!(sWonderNewsData)).windowIds[1] as u8,
             FONT_SHORT_COPY_1,
             0,
             16 * i + 2,
-            sNews_TextColorTable[(*(*sWonderNewsData).gfx).bodyTextPal()]
+            sNews_TextColorTable[(*(*crate::gl!(sWonderNewsData)).gfx).bodyTextPal()]
                 .as_ptr()
                 .cast_mut(),
             0,
-            (*sWonderNewsData).bodyText[i].as_mut_ptr(),
+            (*crate::gl!(sWonderNewsData)).bodyText[i].as_mut_ptr(),
         );
     }
-    CopyWindowToVram((*sWonderNewsData).windowIds[0] as u8, COPYWIN_FULL);
-    CopyWindowToVram((*sWonderNewsData).windowIds[1] as u8, COPYWIN_FULL);
+    CopyWindowToVram(
+        (*crate::gl!(sWonderNewsData)).windowIds[0] as u8,
+        COPYWIN_FULL,
+    );
+    CopyWindowToVram(
+        (*crate::gl!(sWonderNewsData)).windowIds[1] as u8,
+        COPYWIN_FULL,
+    );
 }
 unsafe fn UpdateNewsScroll() {
-    let mut bgMove: u16 = (*sWonderNewsData).scrollIncrement() as u16;
+    let mut bgMove: u16 = (*crate::gl!(sWonderNewsData)).scrollIncrement() as u16;
     bgMove *= 256;
-    if (*sWonderNewsData).scrollingDown() != 0 {
+    if (*crate::gl!(sWonderNewsData)).scrollingDown() != 0 {
         ChangeBgY(2, bgMove as i32, BG_COORD_ADD);
         ChangeBgY(3, bgMove as i32, BG_COORD_ADD);
     } else {
         ChangeBgY(2, bgMove as i32, BG_COORD_SUB);
         ChangeBgY(3, bgMove as i32, BG_COORD_SUB);
     }
-    (*sWonderNewsData)
-        .set_scrollTotal((*sWonderNewsData).scrollTotal() + (*sWonderNewsData).scrollIncrement());
-    if (*sWonderNewsData).scrollTotal() > 15 {
-        if (*sWonderNewsData).scrollingDown() != 0 {
-            (*sWonderNewsData).scrollOffset += 1;
+    (*crate::gl!(sWonderNewsData)).set_scrollTotal(
+        (*crate::gl!(sWonderNewsData)).scrollTotal()
+            + (*crate::gl!(sWonderNewsData)).scrollIncrement(),
+    );
+    if (*crate::gl!(sWonderNewsData)).scrollTotal() > 15 {
+        if (*crate::gl!(sWonderNewsData)).scrollingDown() != 0 {
+            (*crate::gl!(sWonderNewsData)).scrollOffset += 1;
         } else {
-            (*sWonderNewsData).scrollOffset -= 1;
+            (*crate::gl!(sWonderNewsData)).scrollOffset -= 1;
         }
-        (*sWonderNewsData).set_scrolling(FALSE);
-        (*sWonderNewsData).set_scrollTotal(0);
+        (*crate::gl!(sWonderNewsData)).set_scrolling(FALSE);
+        (*crate::gl!(sWonderNewsData)).set_scrollTotal(0);
     }
 }

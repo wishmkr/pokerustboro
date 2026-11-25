@@ -47,8 +47,8 @@ const tLastCry: usize = 10;
 
 #[unsafe(no_mangle)]
 pub unsafe fn SoundTask_FireBlast(taskId: u8) {
-    task_set(taskId, 0, gBattleAnimArgs[0]);
-    task_set(taskId, 1, gBattleAnimArgs[1]);
+    task_set(taskId, 0, crate::gl!(gBattleAnimArgs[0]));
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
     let pan1: i8 = BattleAnimAdjustPanning(SOUND_PAN_ATTACKER);
     let pan2: i8 = BattleAnimAdjustPanning(SOUND_PAN_TARGET);
     let panIncrement: i8 = CalculatePanIncrement(pan1 as i16, pan2 as i16, 2) as i8;
@@ -102,13 +102,13 @@ pub(crate) unsafe fn SoundTask_FireBlast_Step2(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SoundTask_LoopSEAdjustPanning(taskId: u8) {
-    let songId: u16 = gBattleAnimArgs[0] as u16;
-    let mut targetPan: i8 = gBattleAnimArgs[2] as i8;
-    let mut panIncrement: i8 = gBattleAnimArgs[3] as i8;
-    let r10: u8 = gBattleAnimArgs[4] as u8;
-    let r7: u8 = gBattleAnimArgs[5] as u8;
-    let r9: u8 = gBattleAnimArgs[6] as u8;
-    let sourcePan: i8 = BattleAnimAdjustPanning(gBattleAnimArgs[1] as i8);
+    let songId: u16 = crate::gl!(gBattleAnimArgs[0]) as u16;
+    let mut targetPan: i8 = crate::gl!(gBattleAnimArgs[2]) as i8;
+    let mut panIncrement: i8 = crate::gl!(gBattleAnimArgs[3]) as i8;
+    let r10: u8 = crate::gl!(gBattleAnimArgs[4]) as u8;
+    let r7: u8 = crate::gl!(gBattleAnimArgs[5]) as u8;
+    let r9: u8 = crate::gl!(gBattleAnimArgs[6]) as u8;
+    let sourcePan: i8 = BattleAnimAdjustPanning(crate::gl!(gBattleAnimArgs[1]) as i8);
     targetPan = BattleAnimAdjustPanning(targetPan);
     panIncrement =
         CalculatePanIncrement(sourcePan as i16, targetPan as i16, panIncrement as i16) as i8;
@@ -165,24 +165,24 @@ pub unsafe fn SoundTask_PlayCryHighPitch(taskId: u8) {
     let mut species: u16 = 0;
     let pan: i8 = BattleAnimAdjustPanning(SOUND_PAN_ATTACKER);
     if IsContest() != 0 {
-        if gBattleAnimArgs[0] == 0 {
-            species = (*(*gContestResources).moveAnim).species;
+        if crate::gl!(gBattleAnimArgs[0]) == 0 {
+            species = (*(*crate::gl!(gContestResources)).moveAnim).species;
         } else {
             DestroyAnimVisualTask(taskId);
         }
     } else {
         let mut battler: u8 = 0;
-        if gBattleAnimArgs[0] == 0 {
-            battler = gBattleAnimAttacker;
-        } else if gBattleAnimArgs[0] == ANIM_TARGET as i16 {
-            battler = gBattleAnimTarget;
-        } else if gBattleAnimArgs[0] == ANIM_ATK_PARTNER as i16 {
-            battler = gBattleAnimAttacker ^ 2;
+        if crate::gl!(gBattleAnimArgs[0]) == 0 {
+            battler = gBattleAnimAttacker.get();
+        } else if crate::gl!(gBattleAnimArgs[0]) == ANIM_TARGET as i16 {
+            battler = gBattleAnimTarget.get();
+        } else if crate::gl!(gBattleAnimArgs[0]) == ANIM_ATK_PARTNER as i16 {
+            battler = gBattleAnimAttacker.get() ^ 2;
         } else {
-            battler = gBattleAnimTarget ^ 2;
+            battler = gBattleAnimTarget.get() ^ 2;
         }
-        if (gBattleAnimArgs[0] == ANIM_TARGET as i16
-            || gBattleAnimArgs[0] == ANIM_DEF_PARTNER as i16)
+        if (crate::gl!(gBattleAnimArgs[0]) == ANIM_TARGET as i16
+            || crate::gl!(gBattleAnimArgs[0]) == ANIM_DEF_PARTNER as i16)
             && IsBattlerSpriteVisible(battler) == 0
         {
             DestroyAnimVisualTask(taskId);
@@ -190,12 +190,12 @@ pub unsafe fn SoundTask_PlayCryHighPitch(taskId: u8) {
         }
         if GetBattlerSide(battler) != B_SIDE_PLAYER {
             species = GetMonData2(
-                &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+                &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                 MON_DATA_SPECIES,
             ) as u16;
         } else {
             species = GetMonData2(
-                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                 MON_DATA_SPECIES,
             ) as u16;
         }
@@ -210,24 +210,24 @@ pub unsafe fn SoundTask_PlayDoubleCry(taskId: u8) {
     let mut species: u16 = 0;
     let pan: i8 = BattleAnimAdjustPanning(SOUND_PAN_ATTACKER);
     if IsContest() != 0 {
-        if gBattleAnimArgs[0] == 0 {
-            species = (*(*gContestResources).moveAnim).species;
+        if crate::gl!(gBattleAnimArgs[0]) == 0 {
+            species = (*(*crate::gl!(gContestResources)).moveAnim).species;
         } else {
             DestroyAnimVisualTask(taskId);
         }
     } else {
         let mut battler: u8 = 0;
-        if gBattleAnimArgs[0] == 0 {
-            battler = gBattleAnimAttacker;
-        } else if gBattleAnimArgs[0] == ANIM_TARGET as i16 {
-            battler = gBattleAnimTarget;
-        } else if gBattleAnimArgs[0] == ANIM_ATK_PARTNER as i16 {
-            battler = gBattleAnimAttacker ^ 2;
+        if crate::gl!(gBattleAnimArgs[0]) == 0 {
+            battler = gBattleAnimAttacker.get();
+        } else if crate::gl!(gBattleAnimArgs[0]) == ANIM_TARGET as i16 {
+            battler = gBattleAnimTarget.get();
+        } else if crate::gl!(gBattleAnimArgs[0]) == ANIM_ATK_PARTNER as i16 {
+            battler = gBattleAnimAttacker.get() ^ 2;
         } else {
-            battler = gBattleAnimTarget ^ 2;
+            battler = gBattleAnimTarget.get() ^ 2;
         }
-        if (gBattleAnimArgs[0] == ANIM_TARGET as i16
-            || gBattleAnimArgs[0] == ANIM_DEF_PARTNER as i16)
+        if (crate::gl!(gBattleAnimArgs[0]) == ANIM_TARGET as i16
+            || crate::gl!(gBattleAnimArgs[0]) == ANIM_DEF_PARTNER as i16)
             && IsBattlerSpriteVisible(battler) == 0
         {
             DestroyAnimVisualTask(taskId);
@@ -235,21 +235,21 @@ pub unsafe fn SoundTask_PlayDoubleCry(taskId: u8) {
         }
         if GetBattlerSide(battler) != B_SIDE_PLAYER {
             species = GetMonData2(
-                &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
+                &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                 MON_DATA_SPECIES,
             ) as u16;
         } else {
             species = GetMonData2(
-                &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+                &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
                 MON_DATA_SPECIES,
             ) as u16;
         }
     }
-    task_set(taskId, 0, gBattleAnimArgs[1]);
+    task_set(taskId, 0, crate::gl!(gBattleAnimArgs[1]));
     task_set(taskId, 1, species as i16);
     task_set(taskId, 2, pan as i16);
     if species != SPECIES_NONE {
-        if gBattleAnimArgs[1] == DOUBLE_CRY_GROWL {
+        if crate::gl!(gBattleAnimArgs[1]) == DOUBLE_CRY_GROWL {
             PlayCry_ByMode(species, pan, CRY_MODE_GROWL_1);
         } else {
             PlayCry_ByMode(species, pan, CRY_MODE_ROAR_1);
@@ -291,12 +291,15 @@ pub unsafe fn SoundTask_WaitForCry(taskId: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn SoundTask_PlayCryWithEcho(taskId: u8) {
     let mut species: u16 = 0;
-    task_set(taskId, tLastCry, gBattleAnimArgs[0]);
+    task_set(taskId, tLastCry, crate::gl!(gBattleAnimArgs[0]));
     let pan: i8 = BattleAnimAdjustPanning(SOUND_PAN_ATTACKER);
     if IsContest() != 0 {
-        species = (*(*gContestResources).moveAnim).species;
+        species = (*(*crate::gl!(gContestResources)).moveAnim).species;
     } else {
-        species = gAnimBattlerSpecies[gBattleAnimAttacker];
+        species = {
+            let gl_i0 = gBattleAnimAttacker.get();
+            crate::gl!(gAnimBattlerSpecies[gl_i0])
+        };
     }
     task_set(taskId, tSpecies, species as i16);
     task_set(taskId, tPan, pan as i16);
@@ -346,24 +349,24 @@ pub(crate) unsafe fn SoundTask_PlayCryWithEcho_Step(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SoundTask_PlaySE1WithPanning(taskId: u8) {
-    let songId: u16 = gBattleAnimArgs[0] as u16;
-    let pan: i8 = BattleAnimAdjustPanning(gBattleAnimArgs[1] as i8);
+    let songId: u16 = crate::gl!(gBattleAnimArgs[0]) as u16;
+    let pan: i8 = BattleAnimAdjustPanning(crate::gl!(gBattleAnimArgs[1]) as i8);
     PlaySE1WithPanning(songId, pan);
     DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SoundTask_PlaySE2WithPanning(taskId: u8) {
-    let songId: u16 = gBattleAnimArgs[0] as u16;
-    let pan: i8 = BattleAnimAdjustPanning(gBattleAnimArgs[1] as i8);
+    let songId: u16 = crate::gl!(gBattleAnimArgs[0]) as u16;
+    let pan: i8 = BattleAnimAdjustPanning(crate::gl!(gBattleAnimArgs[1]) as i8);
     PlaySE2WithPanning(songId, pan);
     DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SoundTask_AdjustPanningVar(taskId: u8) {
-    let mut targetPan: i8 = gBattleAnimArgs[1] as i8;
-    let mut panIncrement: i8 = gBattleAnimArgs[2] as i8;
-    let r9: u16 = gBattleAnimArgs[3] as u16;
-    let sourcePan: i8 = BattleAnimAdjustPanning(gBattleAnimArgs[0] as i8);
+    let mut targetPan: i8 = crate::gl!(gBattleAnimArgs[1]) as i8;
+    let mut panIncrement: i8 = crate::gl!(gBattleAnimArgs[2]) as i8;
+    let r9: u16 = crate::gl!(gBattleAnimArgs[3]) as u16;
+    let sourcePan: i8 = BattleAnimAdjustPanning(crate::gl!(gBattleAnimArgs[0]) as i8);
     targetPan = BattleAnimAdjustPanning(targetPan);
     panIncrement =
         CalculatePanIncrement(sourcePan as i16, targetPan as i16, panIncrement as i16) as i8;
@@ -376,7 +379,7 @@ pub unsafe fn SoundTask_AdjustPanningVar(taskId: u8) {
     task_set_func(taskId, Some(SoundTask_AdjustPanningVar_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
-pub(crate) unsafe fn SoundTask_AdjustPanningVar_Step(taskId: u8) {
+pub(crate) fn SoundTask_AdjustPanningVar_Step(taskId: u8) {
     let panIncrement: u16 = task_get(taskId, 3) as u16;
     if ({
         let t1 = task_get(taskId, 10);
@@ -393,7 +396,7 @@ pub(crate) unsafe fn SoundTask_AdjustPanningVar_Step(taskId: u8) {
             KeepPanInRange(task_get(taskId, 11), oldPan as i32),
         );
     }
-    gAnimCustomPanning = task_get(taskId, 11) as u8;
+    gAnimCustomPanning.set(task_get(taskId, 11) as u8);
     if task_get(taskId, 11) == task_get(taskId, 2) {
         DestroyAnimVisualTask(taskId);
     }

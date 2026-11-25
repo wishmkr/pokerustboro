@@ -233,72 +233,78 @@ pub static gDummySpriteTemplate: SpriteTemplate = SpriteTemplate {
 // ------------------------------------------------------------------- state
 
 // iwram bss
-static mut SPRITE_TILE_RANGE_TAGS: [u16; MAX_SPRITES] = [0; MAX_SPRITES];
-static mut SPRITE_TILE_RANGES: [[u16; 2]; MAX_SPRITES] = [[0; 2]; MAX_SPRITES];
-static mut AFFINE_ANIM_STATES: AffineAnimStateStorage =
-    AffineAnimStateStorage([[0; AAS_SIZE]; OAM_MATRIX_COUNT]);
-static mut SPRITE_PALETTE_TAGS: [u16; 16] = [0; 16];
+static SPRITE_TILE_RANGE_TAGS: crate::global::Global<[u16; MAX_SPRITES]> =
+    crate::global::Global::new([0; MAX_SPRITES]);
+static SPRITE_TILE_RANGES: crate::global::Global<[[u16; 2]; MAX_SPRITES]> =
+    crate::global::Global::new([[0; 2]; MAX_SPRITES]);
+static AFFINE_ANIM_STATES: crate::global::Global<AffineAnimStateStorage> =
+    crate::global::Global::new(AffineAnimStateStorage([[0; AAS_SIZE]; OAM_MATRIX_COUNT]));
+static SPRITE_PALETTE_TAGS: crate::global::Global<[u16; 16]> = crate::global::Global::new([0; 16]);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gOamMatrixAllocBitmap: crate::global::Global<u32> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gReservedSpritePaletteCount: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gReservedSpritePaletteCount: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 /// The sprites, and one more (MAX_SPRITES + 1) that stays unused, as in C.
-pub static mut gSprites: crate::c::CArray<crate::types::Sprite, 65> =
-    unsafe { core::mem::zeroed() };
+pub static gSprites: crate::global::Global<crate::c::CArray<crate::types::Sprite, 65>> =
+    crate::global::Global::new(unsafe { core::mem::zeroed() });
 const _: () = assert!(MAX_SPRITES + 1 == 65);
 
-#[unsafe(link_section = "ewram_data")]
-static mut SPRITE_PRIORITIES: [u16; MAX_SPRITES] = [0; MAX_SPRITES];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static SPRITE_PRIORITIES: crate::global::Global<[u16; MAX_SPRITES]> =
+    crate::global::Global::new([0; MAX_SPRITES]);
 
-#[unsafe(link_section = "ewram_data")]
-static mut SPRITE_ORDER: crate::ffi::Align4<[u8; MAX_SPRITES]> =
-    crate::ffi::Align4([0; MAX_SPRITES]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static SPRITE_ORDER: crate::global::Global<crate::ffi::Align4<[u8; MAX_SPRITES]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; MAX_SPRITES]));
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static SHOULD_PROCESS_SPRITE_COPY_REQUESTS: crate::global::Global<u8> =
     crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static SPRITE_COPY_REQUEST_COUNT: crate::global::Global<u8> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
-static mut SPRITE_COPY_REQUESTS: SpriteCopyRequestStorage =
-    SpriteCopyRequestStorage([[0; COPY_REQUEST_STRIDE]; MAX_SPRITE_COPY_REQUESTS]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static SPRITE_COPY_REQUESTS: crate::global::Global<SpriteCopyRequestStorage> =
+    crate::global::Global::new(SpriteCopyRequestStorage(
+        [[0; COPY_REQUEST_STRIDE]; MAX_SPRITE_COPY_REQUESTS],
+    ));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gOamLimit: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gOamLimit: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gReservedSpriteTileCount: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gReservedSpriteTileCount: crate::global::Global<u16> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
-static mut SPRITE_TILE_ALLOC_BITMAP: crate::ffi::Align4<[u8; 128]> = crate::ffi::Align4([0; 128]);
-
-#[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSpriteCoordOffsetX: i16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static SPRITE_TILE_ALLOC_BITMAP: crate::global::Global<crate::ffi::Align4<[u8; 128]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; 128]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSpriteCoordOffsetY: i16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSpriteCoordOffsetX: crate::global::Global<i16> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gOamMatrices: crate::ffi::Align4<[[i16; 4]; OAM_MATRIX_COUNT]> =
-    crate::ffi::Align4([[0; 4]; OAM_MATRIX_COUNT]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSpriteCoordOffsetY: crate::global::Global<i16> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAffineAnimsDisabled: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gOamMatrices: crate::global::Global<crate::ffi::Align4<[[i16; 4]; OAM_MATRIX_COUNT]>> =
+    crate::global::Global::new(crate::ffi::Align4([[0; 4]; OAM_MATRIX_COUNT]));
+
+#[unsafe(no_mangle)]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAffineAnimsDisabled: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `ObjAffineSet` with this module's view of its types.
 #[inline]
@@ -319,7 +325,11 @@ unsafe fn LoadPalette(a0: *const c_void, a1: u16, a2: u16) {
 
 #[inline]
 unsafe fn sprite_at(index: usize) -> *mut u8 {
-    unsafe { (&raw mut gSprites).cast::<u8>().add(index * SPRITE_SIZE) }
+    unsafe {
+        (crate::gl!(&raw gSprites))
+            .cast::<u8>()
+            .add(index * SPRITE_SIZE)
+    }
 }
 
 #[inline]
@@ -426,13 +436,13 @@ unsafe fn oam_y(sprite: *mut u8) -> i16 {
 
 #[inline]
 unsafe fn matrix(index: usize) -> *mut i16 {
-    unsafe { (&raw mut gOamMatrices).cast::<i16>().add(index * 4) }
+    unsafe { (crate::gl!(&raw gOamMatrices)).cast::<i16>().add(index * 4) }
 }
 
 #[inline]
 unsafe fn affine_state(matrix_num: u8) -> *mut u8 {
     unsafe {
-        (&raw mut AFFINE_ANIM_STATES)
+        (crate::gl!(&raw AFFINE_ANIM_STATES))
             .cast::<AffineAnimStateStorage>()
             .cast::<u8>()
             .add(matrix_num as usize * AAS_SIZE)
@@ -442,7 +452,9 @@ unsafe fn affine_state(matrix_num: u8) -> *mut u8 {
 #[inline]
 unsafe fn oam_buffer_entry(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_OAM_BUFFER + index * 8)
     }
 }
@@ -451,7 +463,7 @@ unsafe fn oam_buffer_entry(index: usize) -> *mut u8 {
 #[inline]
 unsafe fn tile_is_allocated(n: u16) -> bool {
     let byte = unsafe {
-        (&raw const SPRITE_TILE_ALLOC_BITMAP)
+        (crate::gl!(&raw SPRITE_TILE_ALLOC_BITMAP).cast_const())
             .cast::<u8>()
             .add(n as usize / 8)
             .read_volatile()
@@ -462,7 +474,7 @@ unsafe fn tile_is_allocated(n: u16) -> bool {
 #[inline]
 unsafe fn alloc_tile(n: u16) {
     let slot = unsafe {
-        (&raw mut SPRITE_TILE_ALLOC_BITMAP)
+        (crate::gl!(&raw SPRITE_TILE_ALLOC_BITMAP))
             .cast::<u8>()
             .add(n as usize / 8)
     };
@@ -472,7 +484,7 @@ unsafe fn alloc_tile(n: u16) {
 #[inline]
 unsafe fn free_tile(n: u16) {
     let slot = unsafe {
-        (&raw mut SPRITE_TILE_ALLOC_BITMAP)
+        (crate::gl!(&raw SPRITE_TILE_ALLOC_BITMAP))
             .cast::<u8>()
             .add(n as usize / 8)
     };
@@ -509,11 +521,11 @@ pub unsafe fn ResetSpriteData() {
     unsafe { ClearSpriteCopyRequests() };
     unsafe { ResetAffineAnimData() };
     unsafe { FreeSpriteTileRanges() };
-    unsafe { (&raw mut gOamLimit).write_volatile(64) };
-    unsafe { (&raw mut gReservedSpriteTileCount).write_volatile(0) };
+    unsafe { (gOamLimit.as_ptr()).write_volatile(64) };
+    unsafe { (gReservedSpriteTileCount.as_ptr()).write_volatile(0) };
     unsafe { AllocSpriteTiles(0) };
-    unsafe { (&raw mut gSpriteCoordOffsetX).write_volatile(0) };
-    unsafe { (&raw mut gSpriteCoordOffsetY).write_volatile(0) };
+    unsafe { (gSpriteCoordOffsetX.as_ptr()).write_volatile(0) };
+    unsafe { (gSpriteCoordOffsetY.as_ptr()).write_volatile(0) };
 }
 
 #[unsafe(no_mangle)]
@@ -541,7 +553,9 @@ pub unsafe fn BuildOamBuffer() {
 
     // OAM loading is suppressed while the buffer is rebuilt.
     let disabled_slot = unsafe {
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_OAM_LOAD_DISABLED_BYTE)
     };
     let saved = unsafe { disabled_slot.read_volatile() };
@@ -556,8 +570,8 @@ pub unsafe fn BuildOamBuffer() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn UpdateOamCoords() {
-    let offset_x = unsafe { (&raw const gSpriteCoordOffsetX).read_volatile() };
-    let offset_y = unsafe { (&raw const gSpriteCoordOffsetY).read_volatile() };
+    let offset_x = unsafe { (gSpriteCoordOffsetX.as_ptr().cast_const()).read_volatile() };
+    let offset_y = unsafe { (gSpriteCoordOffsetY.as_ptr().cast_const()).read_volatile() };
 
     for i in 0..MAX_SPRITES {
         let sprite = unsafe { sprite_at(i) };
@@ -598,7 +612,7 @@ pub unsafe fn BuildSpritePriorities() {
         let priority = u16::from(unsafe { u8_at(sprite, S_SUBPRIORITY) })
             | (u16::from(unsafe { oam_priority(sprite) }) << 8);
         unsafe {
-            (&raw mut SPRITE_PRIORITIES)
+            (crate::gl!(&raw SPRITE_PRIORITIES))
                 .cast::<u16>()
                 .add(i)
                 .write_volatile(priority)
@@ -609,7 +623,7 @@ pub unsafe fn BuildSpritePriorities() {
 #[inline]
 unsafe fn sprite_order(index: usize) -> u8 {
     unsafe {
-        (&raw const SPRITE_ORDER)
+        (crate::gl!(&raw SPRITE_ORDER).cast_const())
             .cast::<u8>()
             .add(index)
             .read_volatile()
@@ -619,7 +633,7 @@ unsafe fn sprite_order(index: usize) -> u8 {
 #[inline]
 unsafe fn set_sprite_order(index: usize, value: u8) {
     unsafe {
-        (&raw mut SPRITE_ORDER)
+        (crate::gl!(&raw SPRITE_ORDER))
             .cast::<u8>()
             .add(index)
             .write_volatile(value)
@@ -629,7 +643,7 @@ unsafe fn set_sprite_order(index: usize, value: u8) {
 #[inline]
 unsafe fn sprite_priority(index: usize) -> u16 {
     unsafe {
-        (&raw const SPRITE_PRIORITIES)
+        (crate::gl!(&raw SPRITE_PRIORITIES).cast_const())
             .cast::<u16>()
             .add(index)
             .read_volatile()
@@ -720,7 +734,7 @@ pub unsafe fn AddSpritesToOamBuffer() {
     }
 
     // Park the unused entries off-screen.
-    let limit = unsafe { (&raw const gOamLimit).read_volatile() };
+    let limit = unsafe { (gOamLimit.as_ptr().cast_const()).read_volatile() };
     while oam_index < limit {
         unsafe {
             core::ptr::copy_nonoverlapping(
@@ -943,7 +957,9 @@ pub unsafe fn ResetOamRange(start: u8, end: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn LoadOam() {
     let disabled = unsafe {
-        (&raw const (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_OAM_LOAD_DISABLED_BYTE)
             .read_volatile()
     };
@@ -955,7 +971,7 @@ pub unsafe fn LoadOam() {
 #[inline]
 unsafe fn copy_request(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut SPRITE_COPY_REQUESTS)
+        (crate::gl!(&raw SPRITE_COPY_REQUESTS))
             .cast::<SpriteCopyRequestStorage>()
             .cast::<u8>()
             .add(index * COPY_REQUEST_STRIDE)
@@ -1050,7 +1066,7 @@ pub unsafe fn CalcCenterToCornerVec(sprite: *mut u8, shape: u8, size: u8, affine
 
 #[unsafe(no_mangle)]
 pub unsafe fn AllocSpriteTiles(tile_count: u16) -> i16 {
-    let reserved = unsafe { (&raw const gReservedSpriteTileCount).read_volatile() };
+    let reserved = unsafe { (gReservedSpriteTileCount.as_ptr().cast_const()).read_volatile() };
 
     if tile_count == 0 {
         // Free every unreserved tile.
@@ -1105,7 +1121,11 @@ pub unsafe fn AllocSpriteTiles(tile_count: u16) -> i16 {
 pub unsafe fn SpriteTileAllocBitmapOp(bit: u16, op: u8) -> u8 {
     let index = (bit / 8) as usize;
     let shift = (bit % 8) as u8;
-    let slot = unsafe { (&raw mut SPRITE_TILE_ALLOC_BITMAP).cast::<u8>().add(index) };
+    let slot = unsafe {
+        (crate::gl!(&raw SPRITE_TILE_ALLOC_BITMAP))
+            .cast::<u8>()
+            .add(index)
+    };
 
     match op {
         0 => {
@@ -1247,7 +1267,7 @@ pub unsafe fn AnimateSprite(sprite: *mut u8) {
         unsafe { continue_anim(sprite) };
     }
 
-    if unsafe { (&raw const gAffineAnimsDisabled).read_volatile() } != 0 {
+    if unsafe { (gAffineAnimsDisabled.as_ptr().cast_const()).read_volatile() } != 0 {
         return;
     }
 
@@ -1918,7 +1938,7 @@ pub unsafe fn SetSpriteSheetFrameTileNum(sprite: *mut u8) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn ResetAffineAnimData() {
-    unsafe { (&raw mut gAffineAnimsDisabled).write_volatile(0) };
+    unsafe { (gAffineAnimsDisabled.as_ptr()).write_volatile(0) };
     unsafe { (gOamMatrixAllocBitmap.as_ptr()).write_volatile(0) };
     unsafe { ResetOamMatrices() };
     for i in 0..OAM_MATRIX_COUNT {
@@ -2030,7 +2050,7 @@ pub unsafe fn FreeSpriteTilesByTag(tag: u16) {
     }
 
     let range = unsafe {
-        (&raw const SPRITE_TILE_RANGES)
+        (crate::gl!(&raw SPRITE_TILE_RANGES).cast_const())
             .cast::<u16>()
             .add(index as usize * 2)
     };
@@ -2044,7 +2064,7 @@ pub unsafe fn FreeSpriteTilesByTag(tag: u16) {
     }
 
     unsafe {
-        (&raw mut SPRITE_TILE_RANGE_TAGS)
+        (crate::gl!(&raw SPRITE_TILE_RANGE_TAGS))
             .cast::<u16>()
             .add(index as usize)
             .write_volatile(TAG_NONE)
@@ -2055,12 +2075,16 @@ pub unsafe fn FreeSpriteTilesByTag(tag: u16) {
 pub unsafe fn FreeSpriteTileRanges() {
     for i in 0..MAX_SPRITES {
         unsafe {
-            (&raw mut SPRITE_TILE_RANGE_TAGS)
+            (crate::gl!(&raw SPRITE_TILE_RANGE_TAGS))
                 .cast::<u16>()
                 .add(i)
                 .write_volatile(TAG_NONE)
         };
-        let range = unsafe { (&raw mut SPRITE_TILE_RANGES).cast::<u16>().add(i * 2) };
+        let range = unsafe {
+            (crate::gl!(&raw SPRITE_TILE_RANGES))
+                .cast::<u16>()
+                .add(i * 2)
+        };
         unsafe { range.write_volatile(0) };
         unsafe { range.add(1).write_volatile(0) };
     }
@@ -2073,7 +2097,7 @@ pub unsafe fn GetSpriteTileStartByTag(tag: u16) -> u16 {
         return 0xffff;
     }
     unsafe {
-        (&raw const SPRITE_TILE_RANGES)
+        (crate::gl!(&raw SPRITE_TILE_RANGES).cast_const())
             .cast::<u16>()
             .add(index as usize * 2)
             .read_volatile()
@@ -2084,7 +2108,7 @@ pub unsafe fn GetSpriteTileStartByTag(tag: u16) -> u16 {
 pub unsafe fn IndexOfSpriteTileTag(tag: u16) -> u8 {
     for i in 0..MAX_SPRITES {
         let stored = unsafe {
-            (&raw const SPRITE_TILE_RANGE_TAGS)
+            (crate::gl!(&raw SPRITE_TILE_RANGE_TAGS).cast_const())
                 .cast::<u16>()
                 .add(i)
                 .read_volatile()
@@ -2100,13 +2124,13 @@ pub unsafe fn IndexOfSpriteTileTag(tag: u16) -> u8 {
 pub unsafe fn GetSpriteTileTagByTileStart(start: u16) -> u16 {
     for i in 0..MAX_SPRITES {
         let tag = unsafe {
-            (&raw const SPRITE_TILE_RANGE_TAGS)
+            (crate::gl!(&raw SPRITE_TILE_RANGE_TAGS).cast_const())
                 .cast::<u16>()
                 .add(i)
                 .read_volatile()
         };
         let range_start = unsafe {
-            (&raw const SPRITE_TILE_RANGES)
+            (crate::gl!(&raw SPRITE_TILE_RANGES).cast_const())
                 .cast::<u16>()
                 .add(i * 2)
                 .read_volatile()
@@ -2122,13 +2146,13 @@ pub unsafe fn GetSpriteTileTagByTileStart(start: u16) -> u16 {
 pub unsafe fn AllocSpriteTileRange(tag: u16, start: u16, count: u16) {
     let free_index = unsafe { IndexOfSpriteTileTag(TAG_NONE) } as usize;
     unsafe {
-        (&raw mut SPRITE_TILE_RANGE_TAGS)
+        (crate::gl!(&raw SPRITE_TILE_RANGE_TAGS))
             .cast::<u16>()
             .add(free_index)
             .write_volatile(tag)
     };
     let range = unsafe {
-        (&raw mut SPRITE_TILE_RANGES)
+        (crate::gl!(&raw SPRITE_TILE_RANGES))
             .cast::<u16>()
             .add(free_index * 2)
     };
@@ -2138,10 +2162,10 @@ pub unsafe fn AllocSpriteTileRange(tag: u16, start: u16, count: u16) {
 
 #[unsafe(no_mangle)]
 pub unsafe fn FreeAllSpritePalettes() {
-    unsafe { (&raw mut gReservedSpritePaletteCount).write_volatile(0) };
+    unsafe { (gReservedSpritePaletteCount.as_ptr()).write_volatile(0) };
     for i in 0..16 {
         unsafe {
-            (&raw mut SPRITE_PALETTE_TAGS)
+            (crate::gl!(&raw SPRITE_PALETTE_TAGS))
                 .cast::<u16>()
                 .add(i)
                 .write_volatile(TAG_NONE)
@@ -2163,7 +2187,7 @@ pub unsafe fn LoadSpritePalette(palette: *const u8) -> u8 {
     }
 
     unsafe {
-        (&raw mut SPRITE_PALETTE_TAGS)
+        (crate::gl!(&raw SPRITE_PALETTE_TAGS))
             .cast::<u16>()
             .add(index as usize)
             .write_volatile(tag)
@@ -2201,7 +2225,7 @@ pub unsafe fn AllocSpritePalette(tag: u16) -> u8 {
         return 0xff;
     }
     unsafe {
-        (&raw mut SPRITE_PALETTE_TAGS)
+        (crate::gl!(&raw SPRITE_PALETTE_TAGS))
             .cast::<u16>()
             .add(index as usize)
             .write_volatile(tag)
@@ -2211,11 +2235,11 @@ pub unsafe fn AllocSpritePalette(tag: u16) -> u8 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn IndexOfSpritePaletteTag(tag: u16) -> u8 {
-    let reserved = unsafe { (&raw const gReservedSpritePaletteCount).read_volatile() };
+    let reserved = unsafe { (gReservedSpritePaletteCount.as_ptr().cast_const()).read_volatile() };
     let mut i = reserved as usize;
     while i < 16 {
         let stored = unsafe {
-            (&raw const SPRITE_PALETTE_TAGS)
+            (crate::gl!(&raw SPRITE_PALETTE_TAGS).cast_const())
                 .cast::<u16>()
                 .add(i)
                 .read_volatile()
@@ -2231,7 +2255,7 @@ pub unsafe fn IndexOfSpritePaletteTag(tag: u16) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn GetSpritePaletteTagByPaletteNum(palette_num: u8) -> u16 {
     unsafe {
-        (&raw const SPRITE_PALETTE_TAGS)
+        (crate::gl!(&raw SPRITE_PALETTE_TAGS).cast_const())
             .cast::<u16>()
             .add(palette_num as usize)
             .read_volatile()
@@ -2243,7 +2267,7 @@ pub unsafe fn FreeSpritePaletteByTag(tag: u16) {
     let index = unsafe { IndexOfSpritePaletteTag(tag) };
     if index != 0xff {
         unsafe {
-            (&raw mut SPRITE_PALETTE_TAGS)
+            (crate::gl!(&raw SPRITE_PALETTE_TAGS))
                 .cast::<u16>()
                 .add(index as usize)
                 .write_volatile(TAG_NONE)
@@ -2280,7 +2304,7 @@ unsafe fn subsprite_mode(sprite: *mut u8) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn AddSpriteToOamBuffer(sprite: *mut u8, oam_index: *mut u8) -> u8 {
     let index = unsafe { oam_index.read() };
-    if index >= unsafe { (&raw const gOamLimit).read_volatile() } {
+    if index >= unsafe { (gOamLimit.as_ptr().cast_const()).read_volatile() } {
         return 1;
     }
 
@@ -2302,7 +2326,7 @@ pub unsafe fn AddSubspritesToOamBuffer(
     dest_oam: *mut u8,
     oam_index: *mut u8,
 ) -> u8 {
-    let limit = unsafe { (&raw const gOamLimit).read_volatile() };
+    let limit = unsafe { (gOamLimit.as_ptr().cast_const()).read_volatile() };
     if unsafe { oam_index.read() } >= limit {
         return 1;
     }

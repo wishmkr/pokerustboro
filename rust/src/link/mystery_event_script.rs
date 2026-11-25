@@ -47,9 +47,9 @@ const FLAG_SET_CAUGHT: u8 = 3;
 const SB2_EREADER_TRAINER: usize = 0xbec;
 const EREADER_TRAINER_SIZE: usize = 0xbc;
 
-#[unsafe(link_section = "ewram_data")]
-static mut CONTEXT: crate::ffi::Align4<[u8; SCRIPT_CONTEXT_SIZE]> =
-    crate::ffi::Align4([0; SCRIPT_CONTEXT_SIZE]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static CONTEXT: crate::global::Global<crate::ffi::Align4<[u8; SCRIPT_CONTEXT_SIZE]>> =
+    crate::global::Global::new(crate::ffi::Align4([0; SCRIPT_CONTEXT_SIZE]));
 
 /// `InitScriptContext` with this module's view of its types.
 #[inline]
@@ -175,7 +175,7 @@ unsafe fn EnableResetRTC() {
 
 #[inline]
 fn context() -> *mut u8 {
-    (&raw mut CONTEXT).cast()
+    (crate::gl!(&raw CONTEXT)).cast()
 }
 
 #[inline]
@@ -265,7 +265,7 @@ pub unsafe fn SetMysteryEventScriptStatus(status: u32) {
 #[inline]
 unsafe fn gift() -> *mut u8 {
     unsafe {
-        (&raw const gSaveBlock1Ptr)
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB1_RECORD_MIXING_GIFT)
@@ -373,13 +373,13 @@ pub unsafe fn MEScrCmd_setenigmaberry(ctx: *mut u8) -> u8 {
     let had_berry = unsafe { IsEnigmaBerryValid() } != 0;
     let berry = unsafe { read_pointer(ctx) };
     let name = unsafe {
-        (&raw const gSaveBlock1Ptr)
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB1_ENIGMA_BERRY_NAME)
     };
     let var1 = (&raw mut gStringVar1).cast::<u8>();
-    let var2 = (&raw mut gStringVar2).cast::<u8>();
+    let var2 = (crate::gl!(&raw gStringVar2)).cast::<u8>();
     unsafe { StringCopyN(var1, name, BERRY_NAME_LENGTH + 1) };
     unsafe { SetEnigmaBerry(berry) };
     unsafe { StringCopyN(var2, name, BERRY_NAME_LENGTH + 1) };
@@ -488,7 +488,7 @@ pub unsafe fn MEScrCmd_givepokemon(ctx: *mut u8) -> u8 {
     };
     unsafe { StringCopyN((&raw mut gStringVar1).cast(), name, POKEMON_NAME_LENGTH + 1) };
 
-    if unsafe { (&raw const gPlayerPartyCount).read() } == PARTY_SIZE {
+    if unsafe { (gPlayerPartyCount.as_ptr().cast_const()).read() } == PARTY_SIZE {
         unsafe {
             expand(&raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventFullParty).cast::<u8>()))
         };
@@ -497,7 +497,7 @@ pub unsafe fn MEScrCmd_givepokemon(ctx: *mut u8) -> u8 {
     }
 
     let last = unsafe {
-        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+        (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .cast::<u8>()
@@ -532,7 +532,7 @@ pub unsafe fn MEScrCmd_givepokemon(ctx: *mut u8) -> u8 {
 pub unsafe fn MEScrCmd_addtrainer(ctx: *mut u8) -> u8 {
     let source = unsafe { read_pointer(ctx) };
     let dest = unsafe {
-        (&raw const gSaveBlock2Ptr)
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB2_EREADER_TRAINER)

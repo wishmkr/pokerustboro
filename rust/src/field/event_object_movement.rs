@@ -86,7 +86,7 @@ unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
 }
 /// `ChangeSpriteAffineAnimIfDifferent` with this module's view of its types.
 #[inline]
-unsafe fn ChangeSpriteAffineAnimIfDifferent(a0: *mut Sprite, a1: u8) {
+fn ChangeSpriteAffineAnimIfDifferent(a0: *mut Sprite, a1: u8) {
     unsafe {
         crate::sprite::ChangeSpriteAffineAnimIfDifferent(a0 as _, a1);
     }
@@ -98,7 +98,7 @@ unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -155,7 +155,7 @@ unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
 }
 /// `StartSpriteAffineAnimIfDifferent` with this module's view of its types.
 #[inline]
-unsafe fn StartSpriteAffineAnimIfDifferent(a0: *mut Sprite, a1: u8) {
+fn StartSpriteAffineAnimIfDifferent(a0: *mut Sprite, a1: u8) {
     unsafe {
         crate::sprite::StartSpriteAffineAnimIfDifferent(a0 as _, a1);
     }
@@ -765,13 +765,14 @@ static sStepAnimTables: Table<CArray<StepAnimTable, 8>> =
 static sStepTimes: Table<CArray<i16, 5>> =
     Table((&raw const crate::data::event_object_movement::sStepTimes).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurrentReflectionType: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurrentSpecialObjectPaletteTag: crate::global::Global<u16> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLockedAnimObjectEvents: *mut LockedAnimObjectEvents = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sLockedAnimObjectEvents: crate::global::Global<*mut LockedAnimObjectEvents> =
+    crate::global::Global::new(null_mut());
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -797,7 +798,7 @@ unsafe fn ClearObjectEvent(objectEvent: *mut ObjectEvent) {
 }
 unsafe fn ClearAllObjectEvents() {
     for i in 0..OBJECT_EVENTS_COUNT {
-        ClearObjectEvent(&raw mut gObjectEvents[i]);
+        ClearObjectEvent(crate::gl!(&raw gObjectEvents[i]));
     }
 }
 pub unsafe fn ResetObjectEvents() {
@@ -808,20 +809,24 @@ pub unsafe fn ResetObjectEvents() {
 }
 unsafe fn CreateReflectionEffectSprites() {
     let mut spriteId: u8 = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[21], 0, 0, 31);
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId], 0);
-    gSprites[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    InitSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]));
+    StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), 0);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[21], 0, 0, 31);
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId], 1);
-    gSprites[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    InitSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]));
+    StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), 1);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
 }
 pub unsafe fn GetFirstInactiveObjectEventId() -> u8 {
     let mut i: u8 = 0;
     while i < OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() == 0 {
+        if (*gObjectEvents.as_ptr())[i].active() == 0 {
             break;
         }
         i += 1;
@@ -856,9 +861,9 @@ pub unsafe fn TryGetObjectEventIdByLocalIdAndMap(
 pub unsafe fn GetObjectEventIdByXY(x: i16, y: i16) -> u8 {
     let mut i: u8 = 0;
     while i < OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0
-            && gObjectEvents[i].currentCoords.x == x
-            && gObjectEvents[i].currentCoords.y == y
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && crate::gl!(gObjectEvents[i].currentCoords.x) == x
+            && crate::gl!(gObjectEvents[i].currentCoords.y) == y
         {
             break;
         }
@@ -868,10 +873,10 @@ pub unsafe fn GetObjectEventIdByXY(x: i16, y: i16) -> u8 {
 }
 unsafe fn GetObjectEventIdByLocalIdAndMapInternal(localId: u8, mapNum: u8, mapGroupId: u8) -> u8 {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0
-            && gObjectEvents[i].localId == localId
-            && gObjectEvents[i].mapNum == mapNum
-            && gObjectEvents[i].mapGroup == mapGroupId
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && crate::gl!(gObjectEvents[i].localId) == localId
+            && crate::gl!(gObjectEvents[i].mapNum) == mapNum
+            && crate::gl!(gObjectEvents[i].mapGroup) == mapGroupId
         {
             return i;
         }
@@ -880,7 +885,9 @@ unsafe fn GetObjectEventIdByLocalIdAndMapInternal(localId: u8, mapNum: u8, mapGr
 }
 unsafe fn GetObjectEventIdByLocalId(localId: u8) -> u8 {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0 && gObjectEvents[i].localId == localId {
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && crate::gl!(gObjectEvents[i].localId) == localId
+        {
             return i;
         }
     }
@@ -903,7 +910,7 @@ unsafe fn InitObjectEventStateFromTemplate(
     {
         return OBJECT_EVENTS_COUNT;
     }
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     ClearObjectEvent(objectEvent);
     x = (*template).x + MAP_OFFSET as i16;
     y = (*template).y + MAP_OFFSET as i16;
@@ -952,21 +959,21 @@ unsafe fn InitObjectEventStateFromTemplate(
 pub unsafe fn Unref_TryInitLocalObjectEvent(localId: u8) -> u8 {
     let mut objectEventCount: u8 = 0;
     let mut template: *mut ObjectEventTemplate = null_mut();
-    if !gMapHeader.events.is_null() {
+    if !(*gMapHeader.as_ptr()).events.is_null() {
         if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
             objectEventCount = GetNumBattlePyramidObjectEvents();
         } else if InTrainerHill() != 0 {
             objectEventCount = HILL_TRAINERS_PER_FLOOR;
         } else {
-            objectEventCount = (*gMapHeader.events).objectEventCount;
+            objectEventCount = (*crate::gl!(gMapHeader.events)).objectEventCount;
         }
         for i in 0..objectEventCount {
-            template = &raw mut (*gSaveBlock1Ptr).objectEventTemplates[i];
+            template = &raw mut (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i];
             if (*template).localId == localId && FlagGet((*template).flagId) == 0 {
                 return InitObjectEventStateFromTemplate(
                     template,
-                    (*gSaveBlock1Ptr).location.mapNum as u8,
-                    (*gSaveBlock1Ptr).location.mapGroup as u8,
+                    (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                    (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                 );
             }
         }
@@ -980,10 +987,10 @@ unsafe fn GetAvailableObjectEventId(
     objectEventId: *mut u8,
 ) -> u8 {
     let mut i: u8 = 0;
-    while i < OBJECT_EVENTS_COUNT && gObjectEvents[i].active() != 0 {
-        if gObjectEvents[i].localId as u16 == localId
-            && gObjectEvents[i].mapNum == mapNum
-            && gObjectEvents[i].mapGroup == mapGroup
+    while i < OBJECT_EVENTS_COUNT && (*gObjectEvents.as_ptr())[i].active() != 0 {
+        if crate::gl!(gObjectEvents[i].localId) as u16 == localId
+            && crate::gl!(gObjectEvents[i].mapNum) == mapNum
+            && crate::gl!(gObjectEvents[i].mapGroup) == mapGroup
         {
             return TRUE;
         }
@@ -994,10 +1001,10 @@ unsafe fn GetAvailableObjectEventId(
     }
     *objectEventId = i;
     while i < OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0
-            && gObjectEvents[i].localId as u16 == localId
-            && gObjectEvents[i].mapNum == mapNum
-            && gObjectEvents[i].mapGroup == mapGroup
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && crate::gl!(gObjectEvents[i].localId) as u16 == localId
+            && crate::gl!(gObjectEvents[i].mapNum) == mapNum
+            && crate::gl!(gObjectEvents[i].mapGroup) == mapGroup
         {
             return TRUE;
         }
@@ -1013,19 +1020,25 @@ pub unsafe fn RemoveObjectEventByLocalIdAndMap(localId: u8, mapNum: u8, mapGroup
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
         FlagSet(GetObjectEventFlagIdByObjectEventId(objectEventId));
-        RemoveObjectEvent(&raw mut gObjectEvents[objectEventId]);
+        RemoveObjectEvent(crate::gl!(&raw gObjectEvents[objectEventId]));
     }
 }
 unsafe fn RemoveObjectEventInternal(objectEvent: *mut ObjectEvent) {
     let mut image: SpriteFrameImage = zeroed();
     image.size = (*GetObjectEventGraphicsInfo((*objectEvent).graphicsId)).size;
-    gSprites[(*objectEvent).spriteId].images = &raw mut image;
-    DestroySprite(&raw mut gSprites[(*objectEvent).spriteId]);
+    {
+        let gl_i0 = (*objectEvent).spriteId;
+        crate::gl!(gSprites[gl_i0].images = &raw mut image)
+    };
+    DestroySprite({
+        let gl_i1 = (*objectEvent).spriteId;
+        crate::gl!(&raw gSprites[gl_i1])
+    });
 }
 pub unsafe fn RemoveAllObjectEventsExceptPlayer() {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if i != gPlayerAvatar.objectEventId {
-            RemoveObjectEvent(&raw mut gObjectEvents[i]);
+        if i != crate::gl!(gPlayerAvatar.objectEventId) {
+            RemoveObjectEvent(crate::gl!(&raw gObjectEvents[i]));
         }
     }
 }
@@ -1042,7 +1055,7 @@ unsafe fn TrySetupObjectEventSprite(
     if objectEventId == OBJECT_EVENTS_COUNT {
         return OBJECT_EVENTS_COUNT;
     }
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let graphicsInfo: *mut ObjectEventGraphicsInfo =
         GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
     paletteSlot = (*graphicsInfo).paletteSlot();
@@ -1060,10 +1073,10 @@ unsafe fn TrySetupObjectEventSprite(
     (*spriteTemplate).paletteTag = TAG_NONE;
     let spriteId: u8 = CreateSprite(spriteTemplate, 0, 0, 0);
     if spriteId == MAX_SPRITES {
-        gObjectEvents[objectEventId].set_active(FALSE as u32);
+        (*gObjectEvents.as_ptr())[objectEventId].set_active(FALSE as u32);
         return OBJECT_EVENTS_COUNT;
     }
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     GetMapCoordsFromSpritePos(
         (*objectEvent).currentCoords.x + cameraX,
         (*objectEvent).currentCoords.y + cameraY,
@@ -1119,10 +1132,16 @@ unsafe fn TrySpawnObjectEventTemplate(
     if objectEventId == OBJECT_EVENTS_COUNT {
         return OBJECT_EVENTS_COUNT;
     }
-    gSprites[gObjectEvents[objectEventId].spriteId].images = (*graphicsInfo).images;
+    {
+        let gl_i2 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+        crate::gl!(gSprites[gl_i2].images = (*graphicsInfo).images)
+    };
     if !subspriteTables.is_null() {
         SetSubspriteTables(
-            &raw mut gSprites[gObjectEvents[objectEventId].spriteId],
+            {
+                let gl_i3 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+                crate::gl!(&raw gSprites[gl_i3])
+            },
             subspriteTables,
         );
     }
@@ -1134,8 +1153,8 @@ pub unsafe fn SpawnSpecialObjectEvent(objectEventTemplate: *mut ObjectEventTempl
     GetObjectEventMovingCameraOffset(&raw mut cameraX, &raw mut cameraY);
     TrySpawnObjectEventTemplate(
         objectEventTemplate,
-        (*gSaveBlock1Ptr).location.mapNum as u8,
-        (*gSaveBlock1Ptr).location.mapGroup as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
         cameraX,
         cameraY,
     )
@@ -1239,7 +1258,7 @@ pub unsafe fn CreateObjectGraphicsSprite(
     let spriteId: u8 = CreateSprite(spriteTemplate, x, y, subpriority);
     Free(spriteTemplate as *mut c_void);
     if spriteId != MAX_SPRITES && !subspriteTables.is_null() {
-        sprite = &raw mut gSprites[spriteId];
+        sprite = crate::gl!(&raw gSprites[spriteId]);
         SetSubspriteTables(sprite, subspriteTables);
         (*sprite).set_subspriteMode(SUBSPRITES_IGNORE_PRIORITY);
     }
@@ -1269,7 +1288,7 @@ pub unsafe fn CreateVirtualObject(
     SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 16);
     let spriteId: u8 = CreateSpriteAtEnd(&raw mut spriteTemplate, x, y, 0);
     if spriteId != MAX_SPRITES {
-        sprite = &raw mut gSprites[spriteId];
+        sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).centerToCornerVecX = -(((*graphicsInfo).width >> 1) as i8);
         (*sprite).centerToCornerVecY = -(((*graphicsInfo).height >> 1) as i8);
         (*sprite).y += (*sprite).centerToCornerVecY as i16;
@@ -1307,21 +1326,21 @@ pub unsafe fn CreateVirtualObject(
 }
 pub unsafe fn TrySpawnObjectEvents(cameraX: i16, cameraY: i16) {
     let mut objectCount: u8 = 0;
-    if !gMapHeader.events.is_null() {
-        let left: i16 = (*gSaveBlock1Ptr).pos.x - 2;
-        let right: i16 = (*gSaveBlock1Ptr).pos.x + MAP_OFFSET_W as i16 + 2;
-        let top: i16 = (*gSaveBlock1Ptr).pos.y;
-        let bottom: i16 = (*gSaveBlock1Ptr).pos.y + MAP_OFFSET_H as i16 + 2;
+    if !(*gMapHeader.as_ptr()).events.is_null() {
+        let left: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x - 2;
+        let right: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x + MAP_OFFSET_W as i16 + 2;
+        let top: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y;
+        let bottom: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y + MAP_OFFSET_H as i16 + 2;
         if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
             objectCount = GetNumBattlePyramidObjectEvents();
         } else if InTrainerHill() != 0 {
             objectCount = HILL_TRAINERS_PER_FLOOR;
         } else {
-            objectCount = (*gMapHeader.events).objectEventCount;
+            objectCount = (*crate::gl!(gMapHeader.events)).objectEventCount;
         }
         for i in 0..objectCount {
             let template: *mut ObjectEventTemplate =
-                &raw mut (*gSaveBlock1Ptr).objectEventTemplates[i];
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i];
             let npcX: i16 = (*template).x + MAP_OFFSET as i16;
             let npcY: i16 = (*template).y + MAP_OFFSET as i16;
             if top <= npcY
@@ -1332,8 +1351,8 @@ pub unsafe fn TrySpawnObjectEvents(cameraX: i16, cameraY: i16) {
             {
                 TrySpawnObjectEventTemplate(
                     template,
-                    (*gSaveBlock1Ptr).location.mapNum as u8,
-                    (*gSaveBlock1Ptr).location.mapGroup as u8,
+                    (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                    (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                     cameraX,
                     cameraY,
                 );
@@ -1346,13 +1365,14 @@ pub unsafe fn RemoveObjectEventsOutsideView() {
     for i in 0..OBJECT_EVENTS_COUNT {
         isActiveLinkPlayer = 0;
         for j in 0..4u8 {
-            if gLinkPlayerObjectEvents[j].active != 0 && i == gLinkPlayerObjectEvents[j].objEventId
+            if crate::gl!(gLinkPlayerObjectEvents[j].active) != 0
+                && i == crate::gl!(gLinkPlayerObjectEvents[j].objEventId)
             {
                 isActiveLinkPlayer = TRUE;
             }
         }
         if isActiveLinkPlayer == 0 {
-            let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[i];
+            let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[i]);
             if (*objectEvent).active() != 0 && (*objectEvent).isPlayer() == 0 {
                 RemoveObjectEventIfOutsideView(objectEvent);
             }
@@ -1360,10 +1380,10 @@ pub unsafe fn RemoveObjectEventsOutsideView() {
     }
 }
 unsafe fn RemoveObjectEventIfOutsideView(objectEvent: *mut ObjectEvent) {
-    let left: i16 = (*gSaveBlock1Ptr).pos.x - 2;
-    let right: i16 = (*gSaveBlock1Ptr).pos.x + 17;
-    let top: i16 = (*gSaveBlock1Ptr).pos.y;
-    let bottom: i16 = (*gSaveBlock1Ptr).pos.y + 16;
+    let left: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x - 2;
+    let right: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x + 17;
+    let top: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y;
+    let bottom: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y + 16;
     if (*objectEvent).currentCoords.x >= left
         && (*objectEvent).currentCoords.x <= right
         && (*objectEvent).currentCoords.y >= top
@@ -1383,7 +1403,7 @@ unsafe fn RemoveObjectEventIfOutsideView(objectEvent: *mut ObjectEvent) {
 pub unsafe fn SpawnObjectEventsOnReturnToField(x: i16, y: i16) {
     ClearPlayerAvatarInfo();
     for i in 0..OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0 {
+        if (*gObjectEvents.as_ptr())[i].active() != 0 {
             SpawnObjectEventOnReturnToField(i, x, y);
         }
     }
@@ -1395,13 +1415,13 @@ unsafe fn SpawnObjectEventOnReturnToField(objectEventId: u8, x: i16, y: i16) {
     let mut spriteTemplate: SpriteTemplate = zeroed();
     let mut spriteFrameImage: SpriteFrameImage = zeroed();
     for i in 0..4u8 {
-        if gLinkPlayerObjectEvents[i].active != 0
-            && objectEventId == gLinkPlayerObjectEvents[i].objEventId
+        if crate::gl!(gLinkPlayerObjectEvents[i].active) != 0
+            && objectEventId == crate::gl!(gLinkPlayerObjectEvents[i].objEventId)
         {
             return;
         }
     }
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let mut subspriteTables: *mut SubspriteTable = null_mut();
     let graphicsInfo: *mut ObjectEventGraphicsInfo =
         GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
@@ -1432,7 +1452,7 @@ unsafe fn SpawnObjectEventOnReturnToField(objectEventId: u8, x: i16, y: i16) {
     spriteTemplate.paletteTag = TAG_NONE;
     let i: u8 = CreateSprite(&raw mut spriteTemplate, 0, 0, 0);
     if i != MAX_SPRITES {
-        sprite = &raw mut gSprites[i];
+        sprite = crate::gl!(&raw gSprites[i]);
         GetMapCoordsFromSpritePos(
             x + (*objectEvent).currentCoords.x,
             y + (*objectEvent).currentCoords.y,
@@ -1477,12 +1497,14 @@ unsafe fn ResetObjectEventFldEffData(objectEvent: *mut ObjectEvent) {
     ObjectEventClearHeldMovement(objectEvent);
 }
 unsafe fn SetPlayerAvatarObjectEventIdAndObjectId(objectEventId: u8, spriteId: u8) {
-    gPlayerAvatar.objectEventId = objectEventId;
-    gPlayerAvatar.spriteId = spriteId;
-    gPlayerAvatar.gender =
-        GetPlayerAvatarGenderByGraphicsId(gObjectEvents[objectEventId].graphicsId);
+    crate::gl!(gPlayerAvatar.objectEventId = objectEventId);
+    crate::gl!(gPlayerAvatar.spriteId = spriteId);
+    crate::gl!(
+        gPlayerAvatar.gender =
+            GetPlayerAvatarGenderByGraphicsId(crate::gl!(gObjectEvents[objectEventId].graphicsId))
+    );
     SetPlayerAvatarExtraStateTransition(
-        gObjectEvents[objectEventId].graphicsId,
+        crate::gl!(gObjectEvents[objectEventId].graphicsId),
         PLAYER_AVATAR_FLAG_CONTROLLABLE,
     );
 }
@@ -1490,7 +1512,10 @@ unsafe fn SetPlayerAvatarObjectEventIdAndObjectId(objectEventId: u8, spriteId: u
 pub unsafe fn ObjectEventSetGraphicsId(objectEvent: *mut ObjectEvent, graphicsId: u8) {
     let mut paletteSlot: u8 = 0;
     let graphicsInfo: *mut ObjectEventGraphicsInfo = GetObjectEventGraphicsInfo(graphicsId);
-    let sprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i4 = (*objectEvent).spriteId;
+        crate::gl!(&raw gSprites[gl_i4])
+    };
     paletteSlot = (*graphicsInfo).paletteSlot();
     if paletteSlot == PALSLOT_PLAYER {
         PatchObjectPalette((*graphicsInfo).paletteTag, (*graphicsInfo).paletteSlot());
@@ -1533,28 +1558,40 @@ pub unsafe fn ObjectEventSetGraphicsIdByLocalIdAndMap(
 ) {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        ObjectEventSetGraphicsId(&raw mut gObjectEvents[objectEventId], graphicsId);
+        ObjectEventSetGraphicsId(crate::gl!(&raw gObjectEvents[objectEventId]), graphicsId);
     }
 }
 pub unsafe fn ObjectEventTurn(objectEvent: *mut ObjectEvent, direction: u8) {
     SetObjectEventDirection(objectEvent, direction);
     if (*objectEvent).inanimate() == 0 {
         StartSpriteAnim(
-            &raw mut gSprites[(*objectEvent).spriteId],
+            {
+                let gl_i5 = (*objectEvent).spriteId;
+                crate::gl!(&raw gSprites[gl_i5])
+            },
             GetFaceDirectionAnimNum((*objectEvent).facingDirection() as u8),
         );
-        SeekSpriteAnim(&raw mut gSprites[(*objectEvent).spriteId], 0);
+        SeekSpriteAnim(
+            {
+                let gl_i6 = (*objectEvent).spriteId;
+                crate::gl!(&raw gSprites[gl_i6])
+            },
+            0,
+        );
     }
 }
 pub unsafe fn ObjectEventTurnByLocalIdAndMap(localId: u8, mapNum: u8, mapGroup: u8, direction: u8) {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        ObjectEventTurn(&raw mut gObjectEvents[objectEventId], direction);
+        ObjectEventTurn(crate::gl!(&raw gObjectEvents[objectEventId]), direction);
     }
 }
 pub unsafe fn PlayerObjectTurn(playerAvatar: *mut PlayerAvatar, direction: u8) {
     ObjectEventTurn(
-        &raw mut gObjectEvents[(*playerAvatar).objectEventId],
+        {
+            let gl_i0 = (*playerAvatar).objectEventId;
+            crate::gl!(&raw gObjectEvents[gl_i0])
+        },
         direction,
     );
 }
@@ -1605,7 +1642,7 @@ unsafe fn SetObjectEventDynamicGraphicsId(objectEvent: *mut ObjectEvent) {
 pub unsafe fn SetObjectInvisibility(localId: u8, mapNum: u8, mapGroup: u8, invisible: u8) {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        gObjectEvents[objectEventId].set_invisible(invisible as u32);
+        (*gObjectEvents.as_ptr())[objectEventId].set_invisible(invisible as u32);
     }
 }
 pub unsafe fn ObjectEventGetLocalIdAndMap(
@@ -1622,7 +1659,7 @@ pub unsafe fn AllowObjectAtPosTriggerGroundEffects(x: i16, y: i16) {
     let mut objectEvent: *mut ObjectEvent = null_mut();
     let objectEventId: u8 = GetObjectEventIdByXY(x, y);
     if objectEventId != OBJECT_EVENTS_COUNT {
-        objectEvent = &raw mut gObjectEvents[objectEventId];
+        objectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
         (*objectEvent).set_triggerGroundEffectsOnMove(TRUE as u32);
     }
 }
@@ -1631,8 +1668,11 @@ pub unsafe fn SetObjectSubpriority(localId: u8, mapNum: u8, mapGroup: u8, subpri
     let mut objectEvent: *mut ObjectEvent = null_mut();
     let mut sprite: *mut Sprite = null_mut();
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        objectEvent = &raw mut gObjectEvents[objectEventId];
-        sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        objectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
+        sprite = {
+            let gl_i7 = (*objectEvent).spriteId;
+            crate::gl!(&raw gSprites[gl_i7])
+        };
         (*objectEvent).set_fixedPriority(TRUE as u32);
         (*sprite).subpriority = subpriority;
     }
@@ -1641,7 +1681,7 @@ pub unsafe fn ResetObjectSubpriority(localId: u8, mapNum: u8, mapGroup: u8) {
     let mut objectEventId: u8 = 0;
     let mut objectEvent: *mut ObjectEvent = null_mut();
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        objectEvent = &raw mut gObjectEvents[objectEventId];
+        objectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
         (*objectEvent).set_fixedPriority(FALSE as u32);
         (*objectEvent).set_triggerGroundEffectsOnMove(TRUE as u32);
     }
@@ -1657,14 +1697,17 @@ pub unsafe fn SetObjectEventSpritePosByLocalIdAndMap(
     let mut objectEventId: u8 = 0;
     let mut sprite: *mut Sprite = null_mut();
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        sprite = &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+        sprite = {
+            let gl_i8 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(&raw gSprites[gl_i8])
+        };
         (*sprite).x2 = x;
         (*sprite).y2 = y;
     }
 }
 pub unsafe fn FreeAndReserveObjectSpritePalettes() {
     FreeAllSpritePalettes();
-    gReservedSpritePaletteCount = OBJ_PALSLOT_COUNT;
+    gReservedSpritePaletteCount.set(OBJ_PALSLOT_COUNT);
 }
 unsafe fn LoadObjectEventPalette(paletteTag: u16) {
     let i: u16 = FindObjectEventPaletteIndexByTag(paletteTag) as u16;
@@ -1765,7 +1808,10 @@ unsafe fn SetObjectEventCoords(objectEvent: *mut ObjectEvent, x: i16, y: i16) {
     (*objectEvent).currentCoords.y = y;
 }
 pub unsafe fn MoveObjectEventToMapCoords(objectEvent: *mut ObjectEvent, x: i16, y: i16) {
-    let sprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i9 = (*objectEvent).spriteId;
+        crate::gl!(&raw gSprites[gl_i9])
+    };
     let graphicsInfo: *mut ObjectEventGraphicsInfo =
         GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
     SetObjectEventCoords(objectEvent, x, y);
@@ -1795,7 +1841,7 @@ pub unsafe fn TryMoveObjectEventToMapCoords(
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
         x += MAP_OFFSET as i16;
         y += MAP_OFFSET as i16;
-        MoveObjectEventToMapCoords(&raw mut gObjectEvents[objectEventId], x, y);
+        MoveObjectEventToMapCoords(crate::gl!(&raw gObjectEvents[objectEventId]), x, y);
     }
 }
 pub unsafe fn ShiftStillObjectEventCoords(objectEvent: *mut ObjectEvent) {
@@ -1808,17 +1854,17 @@ pub unsafe fn ShiftStillObjectEventCoords(objectEvent: *mut ObjectEvent) {
 pub unsafe fn UpdateObjectEventCoordsForCameraUpdate() {
     let mut dx: i16 = 0;
     let mut dy: i16 = 0;
-    if gCamera.active() != 0 {
-        dx = gCamera.x as i16;
-        dy = gCamera.y as i16;
+    if (*gCamera.as_ptr()).active() != 0 {
+        dx = crate::gl!(gCamera.x) as i16;
+        dy = crate::gl!(gCamera.y) as i16;
         for i in 0..OBJECT_EVENTS_COUNT {
-            if gObjectEvents[i].active() != 0 {
-                gObjectEvents[i].initialCoords.x -= dx;
-                gObjectEvents[i].initialCoords.y -= dy;
-                gObjectEvents[i].currentCoords.x -= dx;
-                gObjectEvents[i].currentCoords.y -= dy;
-                gObjectEvents[i].previousCoords.x -= dx;
-                gObjectEvents[i].previousCoords.y -= dy;
+            if (*gObjectEvents.as_ptr())[i].active() != 0 {
+                crate::gl!(gObjectEvents[i].initialCoords.x -= dx);
+                crate::gl!(gObjectEvents[i].initialCoords.y -= dy);
+                crate::gl!(gObjectEvents[i].currentCoords.x -= dx);
+                crate::gl!(gObjectEvents[i].currentCoords.y -= dy);
+                crate::gl!(gObjectEvents[i].previousCoords.x -= dx);
+                crate::gl!(gObjectEvents[i].previousCoords.y -= dy);
             }
         }
     }
@@ -1826,10 +1872,10 @@ pub unsafe fn UpdateObjectEventCoordsForCameraUpdate() {
 #[unsafe(no_mangle)]
 pub unsafe fn GetObjectEventIdByPosition(x: u16, y: u16, elevation: u8) -> u8 {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0
-            && gObjectEvents[i].currentCoords.x as i32 == x as i32
-            && gObjectEvents[i].currentCoords.y as i32 == y as i32
-            && ObjectEventDoesElevationMatch(&raw mut gObjectEvents[i], elevation) != 0
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && crate::gl!(gObjectEvents[i].currentCoords.x) as i32 == x as i32
+            && crate::gl!(gObjectEvents[i].currentCoords.y) as i32 == y as i32
+            && ObjectEventDoesElevationMatch(crate::gl!(&raw gObjectEvents[i]), elevation) != 0
         {
             return i;
         }
@@ -1852,8 +1898,8 @@ pub unsafe fn UpdateObjectEventsForCameraUpdate(x: i16, y: i16) {
 }
 pub unsafe fn AddCameraObject(followSpriteId: u8) -> u8 {
     let spriteId: u8 = CreateSprite((&raw const *sCameraSpriteTemplate).cast_mut(), 0, 0, 4);
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    gSprites[spriteId].data[0] = followSpriteId as i16;
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    crate::gl!(gSprites[spriteId].data[0] = followSpriteId as i16);
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_CameraObject(sprite: *mut Sprite) {
@@ -1866,32 +1912,51 @@ pub(crate) unsafe fn SpriteCB_CameraObject(sprite: *mut Sprite) {
     callbacks[(*sprite).data[1]].unwrap_unchecked()(sprite);
 }
 pub(crate) unsafe fn CameraObject_Init(sprite: *mut Sprite) {
-    (*sprite).x = gSprites[(*sprite).data[0]].x;
-    (*sprite).y = gSprites[(*sprite).data[0]].y;
+    (*sprite).x = {
+        let gl_i10 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i10].x)
+    };
+    (*sprite).y = {
+        let gl_i11 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i11].y)
+    };
     (*sprite).set_invisible(TRUE as u16);
     (*sprite).data[1] = CAMERA_STATE_MOVE;
     CameraObject_UpdateMove(sprite);
 }
 pub(crate) unsafe fn CameraObject_UpdateMove(sprite: *mut Sprite) {
-    let x: i16 = gSprites[(*sprite).data[0]].x;
-    let y: i16 = gSprites[(*sprite).data[0]].y;
+    let x: i16 = {
+        let gl_i12 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i12].x)
+    };
+    let y: i16 = {
+        let gl_i13 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i13].y)
+    };
     (*sprite).data[2] = x - (*sprite).x;
     (*sprite).data[3] = y - (*sprite).y;
     (*sprite).x = x;
     (*sprite).y = y;
 }
 pub(crate) unsafe fn CameraObject_UpdateFrozen(sprite: *mut Sprite) {
-    (*sprite).x = gSprites[(*sprite).data[0]].x;
-    (*sprite).y = gSprites[(*sprite).data[0]].y;
+    (*sprite).x = {
+        let gl_i14 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i14].x)
+    };
+    (*sprite).y = {
+        let gl_i15 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i15].y)
+    };
     (*sprite).data[2] = 0;
     (*sprite).data[3] = 0;
 }
 unsafe fn FindCameraSprite() -> *mut Sprite {
     for i in 0..MAX_SPRITES {
-        if gSprites[i].inUse() != 0
-            && gSprites[i].callback == Some(SpriteCB_CameraObject as unsafe fn(*mut Sprite))
+        if (*gSprites.as_ptr())[i].inUse() != 0
+            && crate::gl!(gSprites[i].callback)
+                == Some(SpriteCB_CameraObject as unsafe fn(*mut Sprite))
         {
-            return &raw mut gSprites[i];
+            return crate::gl!(&raw gSprites[i]);
         }
     }
     null_mut()
@@ -1927,11 +1992,11 @@ pub unsafe fn CameraObjectFreeze() {
 pub unsafe fn CopySprite(sprite: *mut Sprite, x: i16, y: i16, subpriority: u8) -> u8 {
     let mut i: u8 = 0;
     while i < MAX_SPRITES {
-        if gSprites[i].inUse() == 0 {
-            gSprites[i] = *sprite;
-            gSprites[i].x = x;
-            gSprites[i].y = y;
-            gSprites[i].subpriority = subpriority;
+        if (*gSprites.as_ptr())[i].inUse() == 0 {
+            crate::gl!(gSprites[i] = *sprite);
+            crate::gl!(gSprites[i].x = x);
+            crate::gl!(gSprites[i].y = y);
+            crate::gl!(gSprites[i].subpriority = subpriority);
             break;
         }
         i += 1;
@@ -1941,11 +2006,11 @@ pub unsafe fn CopySprite(sprite: *mut Sprite, x: i16, y: i16, subpriority: u8) -
 pub unsafe fn CreateCopySpriteAt(sprite: *mut Sprite, x: i16, y: i16, subpriority: u8) -> u8 {
     let mut i: i16 = 63;
     while i > -1 {
-        if gSprites[i].inUse() == 0 {
-            gSprites[i] = *sprite;
-            gSprites[i].x = x;
-            gSprites[i].y = y;
-            gSprites[i].subpriority = subpriority;
+        if (*gSprites.as_ptr())[i].inUse() == 0 {
+            crate::gl!(gSprites[i] = *sprite);
+            crate::gl!(gSprites[i].x = x);
+            crate::gl!(gSprites[i].y = y);
+            crate::gl!(gSprites[i].subpriority = subpriority);
             return i as u8;
         }
         i -= 1;
@@ -1970,9 +2035,9 @@ unsafe fn GetObjectEventScriptPointerByLocalIdAndMap(
 }
 pub unsafe fn GetObjectEventScriptPointerByObjectEventId(objectEventId: u8) -> *mut u8 {
     GetObjectEventScriptPointerByLocalIdAndMap(
-        gObjectEvents[objectEventId].localId,
-        gObjectEvents[objectEventId].mapNum,
-        gObjectEvents[objectEventId].mapGroup,
+        crate::gl!(gObjectEvents[objectEventId].localId),
+        crate::gl!(gObjectEvents[objectEventId].mapNum),
+        crate::gl!(gObjectEvents[objectEventId].mapGroup),
     )
 }
 unsafe fn GetObjectEventFlagIdByLocalIdAndMap(localId: u8, mapNum: u8, mapGroup: u8) -> u16 {
@@ -1985,9 +2050,9 @@ unsafe fn GetObjectEventFlagIdByLocalIdAndMap(localId: u8, mapNum: u8, mapGroup:
 }
 unsafe fn GetObjectEventFlagIdByObjectEventId(objectEventId: u8) -> u16 {
     GetObjectEventFlagIdByLocalIdAndMap(
-        gObjectEvents[objectEventId].localId,
-        gObjectEvents[objectEventId].mapNum,
-        gObjectEvents[objectEventId].mapGroup,
+        crate::gl!(gObjectEvents[objectEventId].localId),
+        crate::gl!(gObjectEvents[objectEventId].mapNum),
+        crate::gl!(gObjectEvents[objectEventId].mapGroup),
     )
 }
 unsafe fn GetObjectTrainerTypeByLocalIdAndMap(localId: u8, mapNum: u8, mapGroup: u8) -> u8 {
@@ -1995,10 +2060,10 @@ unsafe fn GetObjectTrainerTypeByLocalIdAndMap(localId: u8, mapNum: u8, mapGroup:
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) != 0 {
         return 0xFF;
     }
-    gObjectEvents[objectEventId].trainerType
+    crate::gl!(gObjectEvents[objectEventId].trainerType)
 }
-unsafe fn GetObjectTrainerTypeByObjectEventId(objectEventId: u8) -> u8 {
-    gObjectEvents[objectEventId].trainerType
+fn GetObjectTrainerTypeByObjectEventId(objectEventId: u8) -> u8 {
+    crate::gl!(gObjectEvents[objectEventId].trainerType)
 }
 pub unsafe fn GetObjectEventBerryTreeIdByLocalIdAndMap(
     localId: u8,
@@ -2009,10 +2074,10 @@ pub unsafe fn GetObjectEventBerryTreeIdByLocalIdAndMap(
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) != 0 {
         return 0xFF;
     }
-    gObjectEvents[objectEventId].trainerRange_berryTreeId
+    crate::gl!(gObjectEvents[objectEventId].trainerRange_berryTreeId)
 }
 pub unsafe fn GetObjectEventBerryTreeId(objectEventId: u8) -> u8 {
-    gObjectEvents[objectEventId].trainerRange_berryTreeId
+    crate::gl!(gObjectEvents[objectEventId].trainerRange_berryTreeId)
 }
 unsafe fn GetObjectEventTemplateByLocalIdAndMap(
     localId: u8,
@@ -2022,11 +2087,13 @@ unsafe fn GetObjectEventTemplateByLocalIdAndMap(
     let mut templates: *mut ObjectEventTemplate = null_mut();
     let mut mapHeader: *mut MapHeader = null_mut();
     let mut count: u8 = 0;
-    if (*gSaveBlock1Ptr).location.mapNum as i32 == mapNum as i32
-        && (*gSaveBlock1Ptr).location.mapGroup as i32 == mapGroup as i32
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as i32 == mapNum as i32
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as i32 == mapGroup as i32
     {
-        templates = (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
-        count = (*gMapHeader.events).objectEventCount;
+        templates = (*crate::gl!(gSaveBlock1Ptr))
+            .objectEventTemplates
+            .as_mut_ptr();
+        count = (*crate::gl!(gMapHeader.events)).objectEventCount;
     } else {
         mapHeader = Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16);
         templates = (*(*mapHeader).events).objectEvents;
@@ -2049,14 +2116,14 @@ unsafe fn FindObjectEventTemplateByLocalId(
 pub unsafe fn GetBaseTemplateForObjectEvent(
     objectEvent: *mut ObjectEvent,
 ) -> *mut ObjectEventTemplate {
-    if (*objectEvent).mapNum as i32 != (*gSaveBlock1Ptr).location.mapNum as i32
-        || (*objectEvent).mapGroup as i32 != (*gSaveBlock1Ptr).location.mapGroup as i32
+    if (*objectEvent).mapNum as i32 != (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as i32
+        || (*objectEvent).mapGroup as i32 != (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as i32
     {
         return null_mut();
     }
     for i in 0..OBJECT_EVENT_TEMPLATES_COUNT {
-        if (*objectEvent).localId == (*gSaveBlock1Ptr).objectEventTemplates[i].localId {
-            return &raw mut (*gSaveBlock1Ptr).objectEventTemplates[i];
+        if (*objectEvent).localId == (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i].localId {
+            return &raw mut (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[i];
         }
     }
     null_mut()
@@ -2086,7 +2153,7 @@ pub unsafe fn TryOverrideTemplateCoordsForObjectEvent(
 pub unsafe fn TryOverrideObjectEventTemplateCoords(localId: u8, mapNum: u8, mapGroup: u8) {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        OverrideTemplateCoordsForObjectEvent(&raw mut gObjectEvents[objectEventId]);
+        OverrideTemplateCoordsForObjectEvent(crate::gl!(&raw gObjectEvents[objectEventId]));
     }
 }
 pub unsafe fn OverrideSecretBaseDecorationSpriteScript(
@@ -2100,7 +2167,7 @@ pub unsafe fn OverrideSecretBaseDecorationSpriteScript(
         match decorationCategory {
             DECORCAT_DOLL => {
                 OverrideObjectEventTemplateScript(
-                    &raw mut gObjectEvents[objectEventId],
+                    crate::gl!(&raw gObjectEvents[objectEventId]),
                     (*crate::asmdata::SecretBase_EventScript_DollInteract.cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
@@ -2108,7 +2175,7 @@ pub unsafe fn OverrideSecretBaseDecorationSpriteScript(
             }
             DECORCAT_CUSHION => {
                 OverrideObjectEventTemplateScript(
-                    &raw mut gObjectEvents[objectEventId],
+                    crate::gl!(&raw gObjectEvents[objectEventId]),
                     (*crate::asmdata::SecretBase_EventScript_CushionInteract
                         .cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -2129,7 +2196,7 @@ pub unsafe fn InitObjectEventPalettes(reflectionType: u8) {
             PALSLOT_PLAYER,
             6,
         );
-        gReservedSpritePaletteCount = 8;
+        gReservedSpritePaletteCount.set(8);
     } else {
         PatchObjectPaletteRange(
             sObjectPaletteTagSets[sCurrentReflectionType.get()],
@@ -2155,7 +2222,10 @@ pub unsafe fn GetObjectPaletteTag(palSlot: u8) -> u16 {
 }
 pub unsafe fn MovementType_None(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i1 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i1])
+        },
         sprite,
         Some(MovementType_None_callback),
     );
@@ -2165,7 +2235,10 @@ pub(crate) fn MovementType_None_callback(objectEvent: *mut ObjectEvent, sprite: 
 }
 pub unsafe fn MovementType_WanderAround(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i2 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i2])
+        },
         sprite,
         Some(MovementType_WanderAround_callback),
     );
@@ -2422,7 +2495,10 @@ pub unsafe fn TryGetTrainerEncounterDirection(
 }
 pub unsafe fn MovementType_LookAround(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i3 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i3])
+        },
         sprite,
         Some(MovementType_LookAround_callback),
     );
@@ -2494,7 +2570,10 @@ pub unsafe fn MovementType_LookAround_Step4(
 }
 pub unsafe fn MovementType_WanderUpAndDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i4 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i4])
+        },
         sprite,
         Some(MovementType_WanderUpAndDown_callback),
     );
@@ -2589,7 +2668,10 @@ pub unsafe fn MovementType_WanderUpAndDown_Step6(
 }
 pub unsafe fn MovementType_WanderLeftAndRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i5 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i5])
+        },
         sprite,
         Some(MovementType_WanderLeftAndRight_callback),
     );
@@ -2684,7 +2766,10 @@ pub unsafe fn MovementType_WanderLeftAndRight_Step6(
 }
 pub unsafe fn MovementType_FaceDirection(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i6 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i6])
+        },
         sprite,
         Some(MovementType_FaceDirection_callback),
     );
@@ -2726,7 +2811,10 @@ pub unsafe fn MovementType_FaceDirection_Step2(
     FALSE
 }
 pub unsafe fn MovementType_BerryTreeGrowth(sprite: *mut Sprite) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[(*sprite).data[sObjEventId]];
+    let objectEvent: *mut ObjectEvent = {
+        let gl_i7 = (*sprite).data[sObjEventId];
+        crate::gl!(&raw gObjectEvents[gl_i7])
+    };
     if (*sprite).data[sBerryTreeFlags] as i32 & BERRY_FLAG_SET_GFX == 0 {
         SetBerryTreeGraphics(objectEvent, sprite);
         (*sprite).data[sBerryTreeFlags] |= BERRY_FLAG_SET_GFX as i16;
@@ -2752,10 +2840,10 @@ pub unsafe fn MovementType_BerryTreeGrowth_Normal(
     let mut berryStage: u8 = GetStageByBerryTreeId((*objectEvent).trainerRange_berryTreeId);
     if berryStage == BERRY_STAGE_NO_BERRY {
         if (*sprite).data[sBerryTreeFlags] as i32 & 4 == 0 && (*sprite).animNum == 4 {
-            gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32;
-            gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32;
-            gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1;
-            gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+            crate::gl!(gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32);
+            crate::gl!(gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32);
+            crate::gl!(gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1);
+            crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
             FieldEffectStart(FLDEFF_BERRY_TREE_GROWTH_SPARKLE);
             (*sprite).animNum = berryStage;
         }
@@ -2791,10 +2879,10 @@ pub unsafe fn MovementType_BerryTreeGrowth_SparkleStart(
     (*sprite).data[sTypeFuncId] = BERRYTREEFUNC_SPARKLE;
     (*sprite).data[2] = 0;
     (*sprite).data[sBerryTreeFlags] |= BERRY_FLAG_SPARKLING;
-    gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1;
-    gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1);
+    crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
     FieldEffectStart(FLDEFF_BERRY_TREE_GROWTH_SPARKLE);
     TRUE
 }
@@ -2829,7 +2917,10 @@ pub unsafe fn MovementType_BerryTreeGrowth_SparkleEnd(
 }
 pub unsafe fn MovementType_FaceDownAndUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i8 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i8])
+        },
         sprite,
         Some(MovementType_FaceDownAndUp_callback),
     );
@@ -2901,7 +2992,10 @@ pub unsafe fn MovementType_FaceDownAndUp_Step4(
 }
 pub unsafe fn MovementType_FaceLeftAndRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i9 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i9])
+        },
         sprite,
         Some(MovementType_FaceLeftAndRight_callback),
     );
@@ -2973,7 +3067,10 @@ pub unsafe fn MovementType_FaceLeftAndRight_Step4(
 }
 pub unsafe fn MovementType_FaceUpAndLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i10 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i10])
+        },
         sprite,
         Some(MovementType_FaceUpAndLeft_callback),
     );
@@ -3045,7 +3142,10 @@ pub unsafe fn MovementType_FaceUpAndLeft_Step4(
 }
 pub unsafe fn MovementType_FaceUpAndRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i11 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i11])
+        },
         sprite,
         Some(MovementType_FaceUpAndRight_callback),
     );
@@ -3117,7 +3217,10 @@ pub unsafe fn MovementType_FaceUpAndRight_Step4(
 }
 pub unsafe fn MovementType_FaceDownAndLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i12 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i12])
+        },
         sprite,
         Some(MovementType_FaceDownAndLeft_callback),
     );
@@ -3189,7 +3292,10 @@ pub unsafe fn MovementType_FaceDownAndLeft_Step4(
 }
 pub unsafe fn MovementType_FaceDownAndRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i13 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i13])
+        },
         sprite,
         Some(MovementType_FaceDownAndRight_callback),
     );
@@ -3261,7 +3367,10 @@ pub unsafe fn MovementType_FaceDownAndRight_Step4(
 }
 pub unsafe fn MovementType_FaceDownUpAndLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i14 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i14])
+        },
         sprite,
         Some(MovementType_FaceDownUpAndLeft_callback),
     );
@@ -3334,7 +3443,10 @@ pub unsafe fn MovementType_FaceDownUpAndLeft_Step4(
 }
 pub unsafe fn MovementType_FaceDownUpAndRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i15 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i15])
+        },
         sprite,
         Some(MovementType_FaceDownUpAndRight_callback),
     );
@@ -3407,7 +3519,10 @@ pub unsafe fn MovementType_FaceDownUpAndRight_Step4(
 }
 pub unsafe fn MovementType_FaceUpRightAndLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i16 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i16])
+        },
         sprite,
         Some(MovementType_FaceUpRightAndLeft_callback),
     );
@@ -3479,7 +3594,10 @@ pub unsafe fn MovementType_FaceUpLeftAndRight_Step4(
 }
 pub unsafe fn MovementType_FaceDownRightAndLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i17 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i17])
+        },
         sprite,
         Some(MovementType_FaceDownRightAndLeft_callback),
     );
@@ -3554,7 +3672,10 @@ pub unsafe fn MovementType_FaceDownLeftAndRight_Step4(
 }
 pub unsafe fn MovementType_RotateCounterclockwise(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i18 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i18])
+        },
         sprite,
         Some(MovementType_RotateCounterclockwise_callback),
     );
@@ -3620,7 +3741,10 @@ pub unsafe fn MovementType_RotateCounterclockwise_Step3(
 }
 pub unsafe fn MovementType_RotateClockwise(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i19 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i19])
+        },
         sprite,
         Some(MovementType_RotateClockwise_callback),
     );
@@ -3683,7 +3807,10 @@ pub unsafe fn MovementType_RotateClockwise_Step3(
 }
 pub unsafe fn MovementType_WalkBackAndForth(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i20 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i20])
+        },
         sprite,
         Some(MovementType_WalkBackAndForth_callback),
     );
@@ -3817,7 +3944,10 @@ pub unsafe fn MovementType_WalkSequence_Step2(
 }
 pub unsafe fn MovementType_WalkSequenceUpRightLeftDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i21 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i21])
+        },
         sprite,
         Some(MovementType_WalkSequenceUpRightLeftDown_callback),
     );
@@ -3850,7 +3980,10 @@ pub unsafe fn MovementType_WalkSequenceUpRightLeftDown_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceRightLeftDownUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i22 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i22])
+        },
         sprite,
         Some(MovementType_WalkSequenceRightLeftDownUp_callback),
     );
@@ -3883,7 +4016,10 @@ pub unsafe fn MovementType_WalkSequenceRightLeftDownUp_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceDownUpRightLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i23 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i23])
+        },
         sprite,
         Some(MovementType_WalkSequenceDownUpRightLeft_callback),
     );
@@ -3916,7 +4052,10 @@ pub unsafe fn MovementType_WalkSequenceDownUpRightLeft_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceLeftDownUpRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i24 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i24])
+        },
         sprite,
         Some(MovementType_WalkSequenceLeftDownUpRight_callback),
     );
@@ -3949,7 +4088,10 @@ pub unsafe fn MovementType_WalkSequenceLeftDownUpRight_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceUpLeftRightDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i25 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i25])
+        },
         sprite,
         Some(MovementType_WalkSequenceUpLeftRightDown_callback),
     );
@@ -3982,7 +4124,10 @@ pub unsafe fn MovementType_WalkSequenceUpLeftRightDown_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceLeftRightDownUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i26 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i26])
+        },
         sprite,
         Some(MovementType_WalkSequenceLeftRightDownUp_callback),
     );
@@ -4015,7 +4160,10 @@ pub unsafe fn MovementType_WalkSequenceLeftRightDownUp_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceDownUpLeftRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i27 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i27])
+        },
         sprite,
         Some(MovementType_WalkSequenceDownUpLeftRight_callback),
     );
@@ -4048,7 +4196,10 @@ pub unsafe fn MovementType_WalkSequenceDownUpLeftRight_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceRightDownUpLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i28 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i28])
+        },
         sprite,
         Some(MovementType_WalkSequenceRightDownUpLeft_callback),
     );
@@ -4081,7 +4232,10 @@ pub unsafe fn MovementType_WalkSequenceRightDownUpLeft_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceLeftUpDownRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i29 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i29])
+        },
         sprite,
         Some(MovementType_WalkSequenceLeftUpDownRight_callback),
     );
@@ -4114,7 +4268,10 @@ pub unsafe fn MovementType_WalkSequenceLeftUpDownRight_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceUpDownRightLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i30 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i30])
+        },
         sprite,
         Some(MovementType_WalkSequenceUpDownRightLeft_callback),
     );
@@ -4147,7 +4304,10 @@ pub unsafe fn MovementType_WalkSequenceUpDownRightLeft_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceRightLeftUpDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i31 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i31])
+        },
         sprite,
         Some(MovementType_WalkSequenceRightLeftUpDown_callback),
     );
@@ -4180,7 +4340,10 @@ pub unsafe fn MovementType_WalkSequenceRightLeftUpDown_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceDownRightLeftUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i32 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i32])
+        },
         sprite,
         Some(MovementType_WalkSequenceDownRightLeftUp_callback),
     );
@@ -4213,7 +4376,10 @@ pub unsafe fn MovementType_WalkSequenceDownRightLeftUp_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceRightUpDownLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i33 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i33])
+        },
         sprite,
         Some(MovementType_WalkSequenceRightUpDownLeft_callback),
     );
@@ -4246,7 +4412,10 @@ pub unsafe fn MovementType_WalkSequenceRightUpDownLeft_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceUpDownLeftRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i34 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i34])
+        },
         sprite,
         Some(MovementType_WalkSequenceUpDownLeftRight_callback),
     );
@@ -4279,7 +4448,10 @@ pub unsafe fn MovementType_WalkSequenceUpDownLeftRight_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceLeftRightUpDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i35 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i35])
+        },
         sprite,
         Some(MovementType_WalkSequenceLeftRightUpDown_callback),
     );
@@ -4312,7 +4484,10 @@ pub unsafe fn MovementType_WalkSequenceLeftRightUpDown_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceDownLeftRightUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i36 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i36])
+        },
         sprite,
         Some(MovementType_WalkSequenceDownLeftRightUp_callback),
     );
@@ -4345,7 +4520,10 @@ pub unsafe fn MovementType_WalkSequenceDownLeftRightUp_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceUpLeftDownRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i37 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i37])
+        },
         sprite,
         Some(MovementType_WalkSequenceUpLeftDownRight_callback),
     );
@@ -4378,7 +4556,10 @@ pub unsafe fn MovementType_WalkSequenceUpLeftDownRight_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceDownRightUpLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i38 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i38])
+        },
         sprite,
         Some(MovementType_WalkSequenceDownRightUpLeft_callback),
     );
@@ -4411,7 +4592,10 @@ pub unsafe fn MovementType_WalkSequenceDownRightUpLeft_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceLeftDownRightUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i39 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i39])
+        },
         sprite,
         Some(MovementType_WalkSequenceLeftDownRightUp_callback),
     );
@@ -4444,7 +4628,10 @@ pub unsafe fn MovementType_WalkSequenceLeftDownRightUp_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceRightUpLeftDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i40 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i40])
+        },
         sprite,
         Some(MovementType_WalkSequenceRightUpLeftDown_callback),
     );
@@ -4477,7 +4664,10 @@ pub unsafe fn MovementType_WalkSequenceRightUpLeftDown_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceUpRightDownLeft(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i41 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i41])
+        },
         sprite,
         Some(MovementType_WalkSequenceUpRightDownLeft_callback),
     );
@@ -4510,7 +4700,10 @@ pub unsafe fn MovementType_WalkSequenceUpRightDownLeft_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceDownLeftUpRight(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i42 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i42])
+        },
         sprite,
         Some(MovementType_WalkSequenceDownLeftUpRight_callback),
     );
@@ -4543,7 +4736,10 @@ pub unsafe fn MovementType_WalkSequenceDownLeftUpRight_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceLeftUpRightDown(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i43 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i43])
+        },
         sprite,
         Some(MovementType_WalkSequenceLeftUpRightDown_callback),
     );
@@ -4576,7 +4772,10 @@ pub unsafe fn MovementType_WalkSequenceLeftUpRightDown_Step1(
 }
 pub unsafe fn MovementType_WalkSequenceRightDownLeftUp(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i44 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i44])
+        },
         sprite,
         Some(MovementType_WalkSequenceRightDownLeftUp_callback),
     );
@@ -4609,7 +4808,10 @@ pub unsafe fn MovementType_WalkSequenceRightDownLeftUp_Step1(
 }
 pub unsafe fn MovementType_CopyPlayer(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i45 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i45])
+        },
         sprite,
         Some(MovementType_CopyPlayer_callback),
     );
@@ -4635,8 +4837,9 @@ pub unsafe fn MovementType_CopyPlayer_Step1(
     objectEvent: *mut ObjectEvent,
     sprite: *mut Sprite,
 ) -> u8 {
-    if gObjectEvents[gPlayerAvatar.objectEventId].movementActionId == MOVEMENT_ACTION_NONE
-        || gPlayerAvatar.tileTransitionState == T_TILE_CENTER
+    if (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].movementActionId
+        == MOVEMENT_ACTION_NONE
+        || crate::gl!(gPlayerAvatar.tileTransitionState) == T_TILE_CENTER
     {
         return FALSE;
     }
@@ -4918,7 +5121,10 @@ pub unsafe fn CopyablePlayerMovement_Jump2(
 }
 pub unsafe fn MovementType_CopyPlayerInGrass(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i46 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i46])
+        },
         sprite,
         Some(MovementType_CopyPlayerInGrass_callback),
     );
@@ -4933,8 +5139,9 @@ pub unsafe fn MovementType_CopyPlayerInGrass_Step1(
     objectEvent: *mut ObjectEvent,
     sprite: *mut Sprite,
 ) -> u8 {
-    if gObjectEvents[gPlayerAvatar.objectEventId].movementActionId == MOVEMENT_ACTION_NONE
-        || gPlayerAvatar.tileTransitionState == T_TILE_CENTER
+    if (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].movementActionId
+        == MOVEMENT_ACTION_NONE
+        || crate::gl!(gPlayerAvatar.tileTransitionState) == T_TILE_CENTER
     {
         return FALSE;
     }
@@ -4946,22 +5153,28 @@ pub unsafe fn MovementType_CopyPlayerInGrass_Step1(
     )
 }
 pub unsafe fn MovementType_TreeDisguise(sprite: *mut Sprite) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[(*sprite).data[sObjEventId]];
+    let objectEvent: *mut ObjectEvent = {
+        let gl_i47 = (*sprite).data[sObjEventId];
+        crate::gl!(&raw gObjectEvents[gl_i47])
+    };
     if (*objectEvent).directionSequenceIndex == 0
         || (*objectEvent).directionSequenceIndex == 1 && (*sprite).data[7] == 0
     {
         ObjectEventGetLocalIdAndMap(
             objectEvent,
-            &raw mut gFieldEffectArguments[0] as *mut c_void,
-            &raw mut gFieldEffectArguments[1] as *mut c_void,
-            &raw mut gFieldEffectArguments[2] as *mut c_void,
+            crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+            crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+            crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
         );
         (*objectEvent).fieldEffectSpriteId = FieldEffectStart(FLDEFF_TREE_DISGUISE) as u8;
         (*objectEvent).directionSequenceIndex = 1;
         (*sprite).data[7] += 1;
     }
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[sObjEventId]],
+        {
+            let gl_i48 = (*sprite).data[sObjEventId];
+            crate::gl!(&raw gObjectEvents[gl_i48])
+        },
         sprite,
         Some(MovementType_Disguise_Callback),
     );
@@ -4974,35 +5187,44 @@ pub(crate) unsafe fn MovementType_Disguise_Callback(
     FALSE
 }
 pub unsafe fn MovementType_MountainDisguise(sprite: *mut Sprite) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[(*sprite).data[sObjEventId]];
+    let objectEvent: *mut ObjectEvent = {
+        let gl_i49 = (*sprite).data[sObjEventId];
+        crate::gl!(&raw gObjectEvents[gl_i49])
+    };
     if (*objectEvent).directionSequenceIndex == 0
         || (*objectEvent).directionSequenceIndex == 1 && (*sprite).data[7] == 0
     {
         ObjectEventGetLocalIdAndMap(
             objectEvent,
-            &raw mut gFieldEffectArguments[0] as *mut c_void,
-            &raw mut gFieldEffectArguments[1] as *mut c_void,
-            &raw mut gFieldEffectArguments[2] as *mut c_void,
+            crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+            crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+            crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
         );
         (*objectEvent).fieldEffectSpriteId = FieldEffectStart(FLDEFF_MOUNTAIN_DISGUISE) as u8;
         (*objectEvent).directionSequenceIndex = 1;
         (*sprite).data[7] += 1;
     }
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[sObjEventId]],
+        {
+            let gl_i50 = (*sprite).data[sObjEventId];
+            crate::gl!(&raw gObjectEvents[gl_i50])
+        },
         sprite,
         Some(MovementType_Disguise_Callback),
     );
 }
 pub unsafe fn MovementType_Buried(sprite: *mut Sprite) {
     if (*sprite).data[7] == 0 {
-        gObjectEvents[(*sprite).data[sObjEventId]].set_fixedPriority(TRUE as u32);
+        (*gObjectEvents.as_ptr())[(*sprite).data[sObjEventId]].set_fixedPriority(TRUE as u32);
         (*sprite).set_subspriteMode(SUBSPRITES_IGNORE_PRIORITY);
         (*sprite).oam.set_priority(3);
         (*sprite).data[7] += 1;
     }
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[sObjEventId]],
+        {
+            let gl_i51 = (*sprite).data[sObjEventId];
+            crate::gl!(&raw gObjectEvents[gl_i51])
+        },
         sprite,
         Some(MovementType_Buried_Callback),
     );
@@ -5028,7 +5250,10 @@ pub unsafe fn MovementType_MoveInPlace_Step1(
 }
 pub unsafe fn MovementType_WalkInPlace(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i52 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i52])
+        },
         sprite,
         Some(MovementType_WalkInPlace_callback),
     );
@@ -5054,7 +5279,10 @@ pub unsafe fn MovementType_WalkInPlace_Step0(
 }
 pub unsafe fn MovementType_WalkSlowlyInPlace(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i53 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i53])
+        },
         sprite,
         Some(MovementType_WalkSlowlyInPlace_callback),
     );
@@ -5080,7 +5308,10 @@ pub unsafe fn MovementType_WalkSlowlyInPlace_Step0(
 }
 pub unsafe fn MovementType_JogInPlace(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i54 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i54])
+        },
         sprite,
         Some(MovementType_JogInPlace_callback),
     );
@@ -5106,7 +5337,10 @@ pub unsafe fn MovementType_JogInPlace_Step0(
 }
 pub unsafe fn MovementType_RunInPlace(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i55 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i55])
+        },
         sprite,
         Some(MovementType_RunInPlace_callback),
     );
@@ -5132,7 +5366,10 @@ pub unsafe fn MovementType_RunInPlace_Step0(
 }
 pub unsafe fn MovementType_Invisible(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
-        &raw mut gObjectEvents[(*sprite).data[0]],
+        {
+            let gl_i56 = (*sprite).data[0];
+            crate::gl!(&raw gObjectEvents[gl_i56])
+        },
         sprite,
         Some(MovementType_Invisible_callback),
     );
@@ -5215,13 +5452,13 @@ pub unsafe fn GetAcroUnusedActionDirectionAnimNum(direction: u8) -> u8 {
 pub unsafe fn GetAcroWheeliePedalDirectionAnimNum(direction: u8) -> u8 {
     sAcroWheeliePedalDirectionAnimNums[direction]
 }
-pub unsafe fn GetFishingDirectionAnimNum(direction: u8) -> u8 {
+pub fn GetFishingDirectionAnimNum(direction: u8) -> u8 {
     sFishingDirectionAnimNums[direction]
 }
-pub unsafe fn GetFishingNoCatchDirectionAnimNum(direction: u8) -> u8 {
+pub fn GetFishingNoCatchDirectionAnimNum(direction: u8) -> u8 {
     sFishingNoCatchDirectionAnimNums[direction]
 }
-pub unsafe fn GetFishingBiteDirectionAnimNum(direction: u8) -> u8 {
+pub fn GetFishingBiteDirectionAnimNum(direction: u8) -> u8 {
     sFishingBiteDirectionAnimNums[direction]
 }
 pub unsafe fn GetRunningDirectionAnimNum(direction: u8) -> u8 {
@@ -5287,8 +5524,15 @@ pub unsafe fn SetTrainerMovementType(objectEvent: *mut ObjectEvent, movementType
     (*objectEvent).movementType = movementType;
     (*objectEvent).directionSequenceIndex = 0;
     (*objectEvent).playerCopyableMovement = 0;
-    gSprites[(*objectEvent).spriteId].callback = sMovementTypeCallbacks[movementType];
-    gSprites[(*objectEvent).spriteId].data[sTypeFuncId] = 0;
+    {
+        let gl_i16 = (*objectEvent).spriteId;
+        crate::gl!(gSprites[gl_i16].callback = sMovementTypeCallbacks[movementType])
+    };
+    {
+        let gl_i17 = (*objectEvent).spriteId;
+        let gl_i18 = sTypeFuncId;
+        crate::gl!(gSprites[gl_i17].data[gl_i18] = 0)
+    };
 }
 pub unsafe fn GetTrainerFacingDirectionMovementType(direction: u8) -> u8 {
     gTrainerFacingDirectionMovementTypes[direction]
@@ -5389,7 +5633,7 @@ unsafe fn IsMetatileDirectionallyImpassable(
 unsafe fn DoesObjectCollideWithObjectAt(objectEvent: *mut ObjectEvent, x: i16, y: i16) -> u8 {
     let mut curObject: *mut ObjectEvent = null_mut();
     for i in 0..OBJECT_EVENTS_COUNT {
-        curObject = &raw mut gObjectEvents[i];
+        curObject = crate::gl!(&raw gObjectEvents[i]);
         if (*curObject).active() != 0
             && curObject != objectEvent
             && ((*curObject).currentCoords.x == x && (*curObject).currentCoords.y == y
@@ -5407,7 +5651,11 @@ unsafe fn DoesObjectCollideWithObjectAt(objectEvent: *mut ObjectEvent, x: i16, y
 pub unsafe fn IsBerryTreeSparkling(localId: u8, mapNum: u8, mapGroup: u8) -> u8 {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0
-        && gSprites[gObjectEvents[objectEventId].spriteId].data[sBerryTreeFlags] as i32
+        && ({
+            let gl_i19 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            let gl_i20 = sBerryTreeFlags;
+            crate::gl!(gSprites[gl_i19].data[gl_i20])
+        }) as i32
             & BERRY_FLAG_SPARKLING as i32
             != 0
     {
@@ -5418,8 +5666,11 @@ pub unsafe fn IsBerryTreeSparkling(localId: u8, mapNum: u8, mapGroup: u8) -> u8 
 pub unsafe fn SetBerryTreeJustPicked(localId: u8, mapNum: u8, mapGroup: u8) {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &raw mut objectEventId) == 0 {
-        gSprites[gObjectEvents[objectEventId].spriteId].data[sBerryTreeFlags] |=
-            BERRY_FLAG_JUST_PICKED;
+        {
+            let gl_i21 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            let gl_i22 = sBerryTreeFlags;
+            crate::gl!(gSprites[gl_i21].data[gl_i22] |= BERRY_FLAG_JUST_PICKED)
+        };
     }
 }
 pub unsafe fn MoveCoords(direction: u8, x: *mut i16, y: *mut i16) {
@@ -5448,28 +5699,28 @@ unsafe fn MoveCoordsInDirection(dir: u32, x: *mut i16, y: *mut i16, deltaX: i16,
     }
 }
 pub unsafe fn GetMapCoordsFromSpritePos(x: i16, y: i16, destX: *mut i16, destY: *mut i16) {
-    *destX = (x - (*gSaveBlock1Ptr).pos.x) << 4;
-    *destY = (y - (*gSaveBlock1Ptr).pos.y) << 4;
-    *destX -= gTotalCameraPixelOffsetX as i16;
-    *destY -= gTotalCameraPixelOffsetY as i16;
+    *destX = (x - (*crate::gl!(gSaveBlock1Ptr)).pos.x) << 4;
+    *destY = (y - (*crate::gl!(gSaveBlock1Ptr)).pos.y) << 4;
+    *destX -= gTotalCameraPixelOffsetX.get() as i16;
+    *destY -= gTotalCameraPixelOffsetY.get() as i16;
 }
 pub unsafe fn SetSpritePosToMapCoords(mapX: i16, mapY: i16, destX: *mut i16, destY: *mut i16) {
-    let mut dx: i16 = -(gTotalCameraPixelOffsetX as i16) - gFieldCamera.x as i16;
-    let mut dy: i16 = -(gTotalCameraPixelOffsetY as i16) - gFieldCamera.y as i16;
-    if gFieldCamera.x > 0 {
+    let mut dx: i16 = -(gTotalCameraPixelOffsetX.get() as i16) - crate::gl!(gFieldCamera.x) as i16;
+    let mut dy: i16 = -(gTotalCameraPixelOffsetY.get() as i16) - crate::gl!(gFieldCamera.y) as i16;
+    if crate::gl!(gFieldCamera.x) > 0 {
         dx += 16;
     }
-    if gFieldCamera.x < 0 {
+    if crate::gl!(gFieldCamera.x) < 0 {
         dx -= 16;
     }
-    if gFieldCamera.y > 0 {
+    if crate::gl!(gFieldCamera.y) > 0 {
         dy += 16;
     }
-    if gFieldCamera.y < 0 {
+    if crate::gl!(gFieldCamera.y) < 0 {
         dy -= 16;
     }
-    *destX = ((mapX - (*gSaveBlock1Ptr).pos.x) << 4) + dx;
-    *destY = ((mapY - (*gSaveBlock1Ptr).pos.y) << 4) + dy;
+    *destX = ((mapX - (*crate::gl!(gSaveBlock1Ptr)).pos.x) << 4) + dx;
+    *destY = ((mapY - (*crate::gl!(gSaveBlock1Ptr)).pos.y) << 4) + dy;
 }
 pub unsafe fn SetSpritePosToOffsetMapCoords(x: *mut i16, y: *mut i16, dx: i16, dy: i16) {
     SetSpritePosToMapCoords(*x, *y, x, y);
@@ -5479,16 +5730,16 @@ pub unsafe fn SetSpritePosToOffsetMapCoords(x: *mut i16, y: *mut i16, dx: i16, d
 unsafe fn GetObjectEventMovingCameraOffset(x: *mut i16, y: *mut i16) {
     *x = 0;
     *y = 0;
-    if gFieldCamera.x > 0 {
+    if crate::gl!(gFieldCamera.x) > 0 {
         *x += 1;
     }
-    if gFieldCamera.x < 0 {
+    if crate::gl!(gFieldCamera.x) < 0 {
         *x -= 1;
     }
-    if gFieldCamera.y > 0 {
+    if crate::gl!(gFieldCamera.y) > 0 {
         *y += 1;
     }
-    if gFieldCamera.y < 0 {
+    if crate::gl!(gFieldCamera.y) < 0 {
         *y -= 1;
     }
 }
@@ -5531,7 +5782,11 @@ pub unsafe fn ObjectEventSetHeldMovement(
     (*objectEvent).movementActionId = movementActionId;
     (*objectEvent).set_heldMovementActive(TRUE as u32);
     (*objectEvent).set_heldMovementFinished(FALSE as u32);
-    gSprites[(*objectEvent).spriteId].data[sActionFuncId] = 0;
+    {
+        let gl_i23 = (*objectEvent).spriteId;
+        let gl_i24 = sActionFuncId;
+        crate::gl!(gSprites[gl_i23].data[gl_i24] = 0)
+    };
     FALSE
 }
 pub unsafe fn ObjectEventForceSetHeldMovement(objectEvent: *mut ObjectEvent, movementActionId: u8) {
@@ -5548,8 +5803,16 @@ pub unsafe fn ObjectEventClearHeldMovement(objectEvent: *mut ObjectEvent) {
     (*objectEvent).movementActionId = MOVEMENT_ACTION_NONE;
     (*objectEvent).set_heldMovementActive(FALSE as u32);
     (*objectEvent).set_heldMovementFinished(FALSE as u32);
-    gSprites[(*objectEvent).spriteId].data[sTypeFuncId] = 0;
-    gSprites[(*objectEvent).spriteId].data[sActionFuncId] = 0;
+    {
+        let gl_i25 = (*objectEvent).spriteId;
+        let gl_i26 = sTypeFuncId;
+        crate::gl!(gSprites[gl_i25].data[gl_i26] = 0)
+    };
+    {
+        let gl_i27 = (*objectEvent).spriteId;
+        let gl_i28 = sActionFuncId;
+        crate::gl!(gSprites[gl_i27].data[gl_i28] = 0)
+    };
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ObjectEventCheckHeldMovementStatus(objectEvent: *mut ObjectEvent) -> u8 {
@@ -6072,7 +6335,7 @@ pub unsafe fn InitNpcForMovement(
     ShiftObjectEventCoords(objectEvent, x, y);
     SetSpriteDataForNormalStep(sprite, direction, speed);
     (*sprite).set_animPaused(FALSE);
-    if !sLockedAnimObjectEvents.is_null()
+    if !(*sLockedAnimObjectEvents.as_ptr()).is_null()
         && FindLockedObjectEventIndex(objectEvent) != OBJECT_EVENTS_COUNT
     {
         (*sprite).set_animPaused(TRUE);
@@ -7404,8 +7667,8 @@ pub unsafe fn MovementAction_FacePlayer_Step0(
             GetDirectionToFace(
                 (*objectEvent).currentCoords.x,
                 (*objectEvent).currentCoords.y,
-                gObjectEvents[playerObjectId].currentCoords.x,
-                gObjectEvents[playerObjectId].currentCoords.y,
+                crate::gl!(gObjectEvents[playerObjectId].currentCoords.x),
+                crate::gl!(gObjectEvents[playerObjectId].currentCoords.y),
             ),
         );
     }
@@ -7424,8 +7687,8 @@ pub unsafe fn MovementAction_FaceAwayPlayer_Step0(
             GetOppositeDirection(GetDirectionToFace(
                 (*objectEvent).currentCoords.x,
                 (*objectEvent).currentCoords.y,
-                gObjectEvents[playerObjectId].currentCoords.x,
-                gObjectEvents[playerObjectId].currentCoords.y,
+                crate::gl!(gObjectEvents[playerObjectId].currentCoords.x),
+                crate::gl!(gObjectEvents[playerObjectId].currentCoords.y),
             )),
         );
     }
@@ -7809,9 +8072,9 @@ pub unsafe fn MovementAction_EmoteExclamationMark_Step0(
 ) -> u8 {
     ObjectEventGetLocalIdAndMap(
         objectEvent,
-        &raw mut gFieldEffectArguments[0] as *mut c_void,
-        &raw mut gFieldEffectArguments[1] as *mut c_void,
-        &raw mut gFieldEffectArguments[2] as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
     );
     FieldEffectStart(FLDEFF_EXCLAMATION_MARK_ICON);
     (*sprite).data[sActionFuncId] = 1;
@@ -7823,9 +8086,9 @@ pub unsafe fn MovementAction_EmoteQuestionMark_Step0(
 ) -> u8 {
     ObjectEventGetLocalIdAndMap(
         objectEvent,
-        &raw mut gFieldEffectArguments[0] as *mut c_void,
-        &raw mut gFieldEffectArguments[1] as *mut c_void,
-        &raw mut gFieldEffectArguments[2] as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
     );
     FieldEffectStart(FLDEFF_QUESTION_MARK_ICON);
     (*sprite).data[sActionFuncId] = 1;
@@ -7837,9 +8100,9 @@ pub unsafe fn MovementAction_EmoteHeart_Step0(
 ) -> u8 {
     ObjectEventGetLocalIdAndMap(
         objectEvent,
-        &raw mut gFieldEffectArguments[0] as *mut c_void,
-        &raw mut gFieldEffectArguments[1] as *mut c_void,
-        &raw mut gFieldEffectArguments[2] as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
     );
     FieldEffectStart(FLDEFF_HEART_ICON);
     (*sprite).data[sActionFuncId] = 1;
@@ -8943,11 +9206,11 @@ unsafe fn UpdateObjectEventOffscreen(objectEvent: *mut ObjectEvent, sprite: *mut
         x = (*sprite).x as u16
             + (*sprite).x2 as u16
             + (*sprite).centerToCornerVecX as u16
-            + gSpriteCoordOffsetX as u16;
+            + gSpriteCoordOffsetX.get() as u16;
         y = (*sprite).y as u16
             + (*sprite).y2 as u16
             + (*sprite).centerToCornerVecY as u16
-            + gSpriteCoordOffsetY as u16;
+            + gSpriteCoordOffsetY.get() as u16;
     } else {
         x = (*sprite).x as u16 + (*sprite).x2 as u16 + (*sprite).centerToCornerVecX as u16;
         y = (*sprite).y as u16 + (*sprite).y2 as u16 + (*sprite).centerToCornerVecY as u16;
@@ -9292,9 +9555,10 @@ pub unsafe fn ObjectEventUpdateElevation(objEvent: *mut ObjectEvent) {
     }
 }
 pub unsafe fn SetObjectSubpriorityByElevation(elevation: u8, sprite: *mut Sprite, subpriority: u8) {
-    let mut y: u16 =
-        ((*sprite).y as u16 - (*sprite).centerToCornerVecY as u16 + gSpriteCoordOffsetY as u16 + 8)
-            & 0xFF;
+    let mut y: u16 = ((*sprite).y as u16 - (*sprite).centerToCornerVecY as u16
+        + gSpriteCoordOffsetY.get() as u16
+        + 8)
+        & 0xFF;
     y = (16 - (y >> 4)) << 1;
     (*sprite).subpriority = sElevationToSubpriority[elevation] + y as u8 + subpriority;
 }
@@ -9314,51 +9578,71 @@ fn AreElevationsCompatible(a: u8, b: u8) -> u8 {
     TRUE
 }
 pub unsafe fn GroundEffect_SpawnOnTallGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = 2;
-    gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32;
-    gFieldEffectArguments[5] = (*objEvent).mapGroup as i32;
-    gFieldEffectArguments[6] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i32) << 8
-        | (*gSaveBlock1Ptr).location.mapGroup as u8 as i32;
-    gFieldEffectArguments[7] = TRUE as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = 2);
+    crate::gl!(
+        gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32
+    );
+    crate::gl!(gFieldEffectArguments[5] = (*objEvent).mapGroup as i32);
+    crate::gl!(
+        gFieldEffectArguments[6] = ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 as i32)
+            << 8
+            | (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8 as i32
+    );
+    crate::gl!(gFieldEffectArguments[7] = TRUE as i32);
     FieldEffectStart(FLDEFF_TALL_GRASS);
 }
 pub unsafe fn GroundEffect_StepOnTallGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = 2;
-    gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32;
-    gFieldEffectArguments[5] = (*objEvent).mapGroup as i32;
-    gFieldEffectArguments[6] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i32) << 8
-        | (*gSaveBlock1Ptr).location.mapGroup as u8 as i32;
-    gFieldEffectArguments[7] = FALSE as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = 2);
+    crate::gl!(
+        gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32
+    );
+    crate::gl!(gFieldEffectArguments[5] = (*objEvent).mapGroup as i32);
+    crate::gl!(
+        gFieldEffectArguments[6] = ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 as i32)
+            << 8
+            | (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8 as i32
+    );
+    crate::gl!(gFieldEffectArguments[7] = FALSE as i32);
     FieldEffectStart(FLDEFF_TALL_GRASS);
 }
 pub unsafe fn GroundEffect_SpawnOnLongGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = 2;
-    gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32;
-    gFieldEffectArguments[5] = (*objEvent).mapGroup as i32;
-    gFieldEffectArguments[6] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i32) << 8
-        | (*gSaveBlock1Ptr).location.mapGroup as u8 as i32;
-    gFieldEffectArguments[7] = 1;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = 2);
+    crate::gl!(
+        gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32
+    );
+    crate::gl!(gFieldEffectArguments[5] = (*objEvent).mapGroup as i32);
+    crate::gl!(
+        gFieldEffectArguments[6] = ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 as i32)
+            << 8
+            | (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8 as i32
+    );
+    crate::gl!(gFieldEffectArguments[7] = 1);
     FieldEffectStart(FLDEFF_LONG_GRASS);
 }
 pub unsafe fn GroundEffect_StepOnLongGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = 2;
-    gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32;
-    gFieldEffectArguments[5] = (*objEvent).mapGroup as i32;
-    gFieldEffectArguments[6] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i32) << 8
-        | (*gSaveBlock1Ptr).location.mapGroup as u8 as i32;
-    gFieldEffectArguments[7] = 0;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = 2);
+    crate::gl!(
+        gFieldEffectArguments[4] = ((*objEvent).localId as i32) << 8 | (*objEvent).mapNum as i32
+    );
+    crate::gl!(gFieldEffectArguments[5] = (*objEvent).mapGroup as i32);
+    crate::gl!(
+        gFieldEffectArguments[6] = ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 as i32)
+            << 8
+            | (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8 as i32
+    );
+    crate::gl!(gFieldEffectArguments[7] = 0);
     FieldEffectStart(FLDEFF_LONG_GRASS);
 }
 pub unsafe fn GroundEffect_WaterReflection(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
@@ -9390,11 +9674,11 @@ pub(crate) unsafe fn DoTracksGroundEffect_Footprints(
     isDeepSand: u8,
 ) {
     let sandFootprints_FieldEffectData: CArray<u16, 2> = CArray([13, 24]);
-    gFieldEffectArguments[0] = (*objEvent).previousCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).previousCoords.y as i32;
-    gFieldEffectArguments[2] = 149;
-    gFieldEffectArguments[3] = 2;
-    gFieldEffectArguments[4] = (*objEvent).facingDirection() as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).previousCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).previousCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = 149);
+    crate::gl!(gFieldEffectArguments[3] = 2);
+    crate::gl!(gFieldEffectArguments[4] = (*objEvent).facingDirection() as i32);
     FieldEffectStart(sandFootprints_FieldEffectData[isDeepSand] as u8);
 }
 pub(crate) unsafe fn DoTracksGroundEffect_BikeTireTracks(
@@ -9405,13 +9689,15 @@ pub(crate) unsafe fn DoTracksGroundEffect_BikeTireTracks(
     if (*objEvent).currentCoords.x != (*objEvent).previousCoords.x
         || (*objEvent).currentCoords.y != (*objEvent).previousCoords.y
     {
-        gFieldEffectArguments[0] = (*objEvent).previousCoords.x as i32;
-        gFieldEffectArguments[1] = (*objEvent).previousCoords.y as i32;
-        gFieldEffectArguments[2] = 149;
-        gFieldEffectArguments[3] = 2;
-        gFieldEffectArguments[4] = bikeTireTracks_Transitions_0
-            [(*objEvent).previousMovementDirection][(*objEvent).facingDirection() as i32 - 5]
-            as i32;
+        crate::gl!(gFieldEffectArguments[0] = (*objEvent).previousCoords.x as i32);
+        crate::gl!(gFieldEffectArguments[1] = (*objEvent).previousCoords.y as i32);
+        crate::gl!(gFieldEffectArguments[2] = 149);
+        crate::gl!(gFieldEffectArguments[3] = 2);
+        crate::gl!(
+            gFieldEffectArguments[4] = bikeTireTracks_Transitions_0
+                [(*objEvent).previousMovementDirection][(*objEvent).facingDirection() as i32 - 5]
+                as i32
+        );
         FieldEffectStart(FLDEFF_BIKE_TIRE_TRACKS);
     }
 }
@@ -9425,10 +9711,10 @@ pub unsafe fn GroundEffect_SandHeap(objEvent: *mut ObjectEvent, sprite: *mut Spr
     StartFieldEffectForObjectEvent(FLDEFF_SAND_PILE, objEvent);
 }
 pub unsafe fn GroundEffect_JumpOnTallGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = 2;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = 2);
     FieldEffectStart(FLDEFF_JUMP_TALL_GRASS);
     let spriteId: u8 = FindTallGrassFieldEffectSpriteId(
         (*objEvent).localId,
@@ -9442,31 +9728,31 @@ pub unsafe fn GroundEffect_JumpOnTallGrass(objEvent: *mut ObjectEvent, sprite: *
     }
 }
 pub unsafe fn GroundEffect_JumpOnLongGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = 2;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = 2);
     FieldEffectStart(FLDEFF_JUMP_LONG_GRASS);
 }
 pub unsafe fn GroundEffect_JumpOnShallowWater(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
     FieldEffectStart(FLDEFF_JUMP_SMALL_SPLASH);
 }
 pub unsafe fn GroundEffect_JumpOnWater(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
     FieldEffectStart(FLDEFF_JUMP_BIG_SPLASH);
 }
 pub unsafe fn GroundEffect_JumpLandingDust(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32;
-    gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*objEvent).previousElevation() as i32);
+    crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
     FieldEffectStart(FLDEFF_DUST);
 }
 pub unsafe fn GroundEffect_ShortGrass(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
@@ -9476,8 +9762,8 @@ pub unsafe fn GroundEffect_HotSprings(objEvent: *mut ObjectEvent, sprite: *mut S
     StartFieldEffectForObjectEvent(FLDEFF_HOT_SPRINGS_WATER, objEvent);
 }
 pub unsafe fn GroundEffect_Seaweed(objEvent: *mut ObjectEvent, sprite: *mut Sprite) {
-    gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32);
     FieldEffectStart(FLDEFF_BUBBLES);
 }
 unsafe fn DoFlaggedGroundEffects(objEvent: *mut ObjectEvent, sprite: *mut Sprite, mut flags: u32) {
@@ -9554,13 +9840,14 @@ pub unsafe fn FreezeObjectEvent(objectEvent: *mut ObjectEvent) -> u8 {
         return TRUE;
     } else {
         (*objectEvent).set_frozen(TRUE as u32);
-        (*objectEvent)
-            .set_spriteAnimPausedBackup(gSprites[(*objectEvent).spriteId].animPaused() as u32);
-        (*objectEvent).set_spriteAffineAnimPausedBackup(
-            gSprites[(*objectEvent).spriteId].affineAnimPaused() as u32,
+        (*objectEvent).set_spriteAnimPausedBackup(
+            (*gSprites.as_ptr())[(*objectEvent).spriteId].animPaused() as u32,
         );
-        gSprites[(*objectEvent).spriteId].set_animPaused(TRUE);
-        gSprites[(*objectEvent).spriteId].set_affineAnimPaused(TRUE);
+        (*objectEvent).set_spriteAffineAnimPausedBackup(
+            (*gSprites.as_ptr())[(*objectEvent).spriteId].affineAnimPaused() as u32,
+        );
+        (*gSprites.as_ptr())[(*objectEvent).spriteId].set_animPaused(TRUE);
+        (*gSprites.as_ptr())[(*objectEvent).spriteId].set_affineAnimPaused(TRUE);
         return FALSE;
     }
     #[allow(unreachable_code)]
@@ -9571,17 +9858,21 @@ pub unsafe fn FreezeObjectEvent(objectEvent: *mut ObjectEvent) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn FreezeObjectEvents() {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0 && i != gPlayerAvatar.objectEventId {
-            FreezeObjectEvent(&raw mut gObjectEvents[i]);
+        if (*gObjectEvents.as_ptr())[i].active() != 0
+            && i != crate::gl!(gPlayerAvatar.objectEventId)
+        {
+            FreezeObjectEvent(crate::gl!(&raw gObjectEvents[i]));
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FreezeObjectEventsExceptOne(objectEventId: u8) {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if i != objectEventId && gObjectEvents[i].active() != 0 && i != gPlayerAvatar.objectEventId
+        if i != objectEventId
+            && (*gObjectEvents.as_ptr())[i].active() != 0
+            && i != crate::gl!(gPlayerAvatar.objectEventId)
         {
-            FreezeObjectEvent(&raw mut gObjectEvents[i]);
+            FreezeObjectEvent(crate::gl!(&raw gObjectEvents[i]));
         }
     }
 }
@@ -9589,17 +9880,17 @@ pub unsafe fn FreezeObjectEventsExceptOne(objectEventId: u8) {
 pub unsafe fn UnfreezeObjectEvent(objectEvent: *mut ObjectEvent) {
     if (*objectEvent).active() != 0 && (*objectEvent).frozen() != 0 {
         (*objectEvent).set_frozen(0);
-        gSprites[(*objectEvent).spriteId]
+        (*gSprites.as_ptr())[(*objectEvent).spriteId]
             .set_animPaused((*objectEvent).spriteAnimPausedBackup() as u8);
-        gSprites[(*objectEvent).spriteId]
+        (*gSprites.as_ptr())[(*objectEvent).spriteId]
             .set_affineAnimPaused((*objectEvent).spriteAffineAnimPausedBackup() as u8);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn UnfreezeObjectEvents() {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if gObjectEvents[i].active() != 0 {
-            UnfreezeObjectEvent(&raw mut gObjectEvents[i]);
+        if (*gObjectEvents.as_ptr())[i].active() != 0 {
+            UnfreezeObjectEvent(crate::gl!(&raw gObjectEvents[i]));
         }
     }
 }
@@ -9826,11 +10117,11 @@ pub unsafe fn UpdateObjectEventSpriteInvisibility(sprite: *mut Sprite, invisible
         x = (*sprite).x as u16
             + (*sprite).x2 as u16
             + (*sprite).centerToCornerVecX as u16
-            + gSpriteCoordOffsetX as u16;
+            + gSpriteCoordOffsetX.get() as u16;
         y = (*sprite).y as u16
             + (*sprite).y2 as u16
             + (*sprite).centerToCornerVecY as u16
-            + gSpriteCoordOffsetY as u16;
+            + gSpriteCoordOffsetY.get() as u16;
     } else {
         x = (*sprite).x as u16 + (*sprite).x2 as u16 + (*sprite).centerToCornerVecX as u16;
         y = (*sprite).y as u16 + (*sprite).y2 as u16 + (*sprite).centerToCornerVecY as u16;
@@ -9851,7 +10142,7 @@ pub(crate) unsafe fn SpriteCB_VirtualObject(sprite: *mut Sprite) {
 }
 unsafe fn DestroyVirtualObjects() {
     for i in 0..(MAX_SPRITES as i32) {
-        let sprite: *mut Sprite = &raw mut gSprites[i];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[i]);
         if (*sprite).inUse() != 0
             && (*sprite).callback == Some(SpriteCB_VirtualObject as unsafe fn(*mut Sprite))
         {
@@ -9861,7 +10152,7 @@ unsafe fn DestroyVirtualObjects() {
 }
 unsafe fn GetVirtualObjectSpriteId(virtualObjId: u8) -> i32 {
     for i in 0..(MAX_SPRITES as i32) {
-        let sprite: *mut Sprite = &raw mut gSprites[i];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[i]);
         if (*sprite).inUse() != 0
             && (*sprite).callback == Some(SpriteCB_VirtualObject as unsafe fn(*mut Sprite))
             && (*sprite).data[sVirtualObjId] as u8 == virtualObjId
@@ -9875,7 +10166,7 @@ pub unsafe fn TurnVirtualObject(virtualObjId: u8, direction: u8) {
     let spriteId: u8 = GetVirtualObjectSpriteId(virtualObjId) as u8;
     if spriteId != MAX_SPRITES {
         StartSpriteAnim(
-            &raw mut gSprites[spriteId],
+            crate::gl!(&raw gSprites[spriteId]),
             GetFaceDirectionAnimNum(direction),
         );
     }
@@ -9883,7 +10174,7 @@ pub unsafe fn TurnVirtualObject(virtualObjId: u8, direction: u8) {
 pub unsafe fn SetVirtualObjectGraphics(virtualObjId: u8, graphicsId: u8) {
     let spriteId: i32 = GetVirtualObjectSpriteId(virtualObjId);
     if spriteId != MAX_SPRITES as i32 {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         let graphicsInfo: *mut ObjectEventGraphicsInfo = GetObjectEventGraphicsInfo(graphicsId);
         let tileNum: u16 = (*sprite).oam.tileNum();
         (*sprite).oam = *(*graphicsInfo).oam;
@@ -9909,9 +10200,15 @@ pub unsafe fn SetVirtualObjectInvisibility(virtualObjId: u8, invisible: u32) {
         return;
     }
     if invisible != 0 {
-        gSprites[spriteId].data[sInvisible] = TRUE as i16;
+        {
+            let gl_i29 = sInvisible;
+            crate::gl!(gSprites[spriteId].data[gl_i29] = TRUE as i16)
+        };
     } else {
-        gSprites[spriteId].data[sInvisible] = FALSE as i16;
+        {
+            let gl_i30 = sInvisible;
+            crate::gl!(gSprites[spriteId].data[gl_i30] = FALSE as i16)
+        };
     }
 }
 pub unsafe fn IsVirtualObjectInvisible(virtualObjId: u8) -> u32 {
@@ -9919,13 +10216,22 @@ pub unsafe fn IsVirtualObjectInvisible(virtualObjId: u8) -> u32 {
     if spriteId == MAX_SPRITES {
         return FALSE as u32;
     }
-    (gSprites[spriteId].data[sInvisible] == TRUE as i16) as u32
+    (({
+        let gl_i31 = sInvisible;
+        crate::gl!(gSprites[spriteId].data[gl_i31])
+    }) == TRUE as i16) as u32
 }
 pub unsafe fn SetVirtualObjectSpriteAnim(virtualObjId: u8, animNum: u8) {
     let spriteId: u8 = GetVirtualObjectSpriteId(virtualObjId) as u8;
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[sAnimNum] = animNum as i16;
-        gSprites[spriteId].data[sAnimState] = 0;
+        {
+            let gl_i32 = sAnimNum;
+            crate::gl!(gSprites[spriteId].data[gl_i32] = animNum as i16)
+        };
+        {
+            let gl_i33 = sAnimState;
+            crate::gl!(gSprites[spriteId].data[gl_i33] = 0)
+        };
     }
 }
 unsafe fn MoveUnionRoomObjectUp(sprite: *mut Sprite) {
@@ -9985,7 +10291,11 @@ pub unsafe fn IsVirtualObjectAnimating(virtualObjId: u8) -> u32 {
     if spriteId == MAX_SPRITES {
         return FALSE as u32;
     }
-    if gSprites[spriteId].data[sAnimNum] != 0 {
+    if ({
+        let gl_i34 = sAnimNum;
+        crate::gl!(gSprites[spriteId].data[gl_i34])
+    }) != 0
+    {
         return TRUE as u32;
     }
     FALSE as u32
@@ -9996,9 +10306,9 @@ pub unsafe fn StartFieldEffectForObjectEvent(
 ) -> u32 {
     ObjectEventGetLocalIdAndMap(
         objectEvent,
-        &raw mut gFieldEffectArguments[0] as *mut c_void,
-        &raw mut gFieldEffectArguments[1] as *mut c_void,
-        &raw mut gFieldEffectArguments[2] as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
     );
     FieldEffectStart(fieldEffectId)
 }
@@ -10011,10 +10321,12 @@ unsafe fn DoShadowFieldEffect(objectEvent: *mut ObjectEvent) {
 unsafe fn DoRippleFieldEffect(objectEvent: *mut ObjectEvent, sprite: *mut Sprite) {
     let graphicsInfo: *mut ObjectEventGraphicsInfo =
         GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
-    gFieldEffectArguments[0] = (*sprite).x as i32;
-    gFieldEffectArguments[1] = (*sprite).y as i32 + ((*graphicsInfo).height >> 1) as i32 - 2;
-    gFieldEffectArguments[2] = 151;
-    gFieldEffectArguments[3] = 3;
+    crate::gl!(gFieldEffectArguments[0] = (*sprite).x as i32);
+    crate::gl!(
+        gFieldEffectArguments[1] = (*sprite).y as i32 + ((*graphicsInfo).height >> 1) as i32 - 2
+    );
+    crate::gl!(gFieldEffectArguments[2] = 151);
+    crate::gl!(gFieldEffectArguments[3] = 3);
     FieldEffectStart(FLDEFF_RIPPLE);
 }
 pub unsafe fn MovementAction_LockAnim_Step0(
@@ -10022,28 +10334,28 @@ pub unsafe fn MovementAction_LockAnim_Step0(
     sprite: *mut Sprite,
 ) -> u8 {
     let mut ableToStore: u32 = FALSE as u32;
-    if sLockedAnimObjectEvents.is_null() {
-        sLockedAnimObjectEvents = AllocZeroed(20) as *mut LockedAnimObjectEvents;
-        (*sLockedAnimObjectEvents).localIds[0] = (*objectEvent).localId;
-        (*sLockedAnimObjectEvents).count = 1;
+    if (*sLockedAnimObjectEvents.as_ptr()).is_null() {
+        crate::gl!(sLockedAnimObjectEvents = AllocZeroed(20) as *mut LockedAnimObjectEvents);
+        (*crate::gl!(sLockedAnimObjectEvents)).localIds[0] = (*objectEvent).localId;
+        (*crate::gl!(sLockedAnimObjectEvents)).count = 1;
         ableToStore = TRUE as u32;
     } else {
         let mut firstFreeSlot: u8 = OBJECT_EVENTS_COUNT;
         let mut found: u32 = FALSE as u32;
         for i in 0..OBJECT_EVENTS_COUNT {
             if firstFreeSlot == OBJECT_EVENTS_COUNT
-                && (*sLockedAnimObjectEvents).localIds[i] == LOCALID_NONE
+                && (*crate::gl!(sLockedAnimObjectEvents)).localIds[i] == LOCALID_NONE
             {
                 firstFreeSlot = i;
             }
-            if (*sLockedAnimObjectEvents).localIds[i] == (*objectEvent).localId {
+            if (*crate::gl!(sLockedAnimObjectEvents)).localIds[i] == (*objectEvent).localId {
                 found = TRUE as u32;
                 break;
             }
         }
         if found == 0 && firstFreeSlot != OBJECT_EVENTS_COUNT {
-            (*sLockedAnimObjectEvents).localIds[firstFreeSlot] = (*objectEvent).localId;
-            (*sLockedAnimObjectEvents).count += 1;
+            (*crate::gl!(sLockedAnimObjectEvents)).localIds[firstFreeSlot] = (*objectEvent).localId;
+            (*crate::gl!(sLockedAnimObjectEvents)).count += 1;
             ableToStore = TRUE as u32;
         }
     }
@@ -10061,17 +10373,17 @@ pub unsafe fn MovementAction_UnlockAnim_Step0(
     let mut ableToStore: u32 = 0;
     let mut index: u8 = 0;
     (*sprite).data[sActionFuncId] = 1;
-    if !sLockedAnimObjectEvents.is_null() {
+    if !(*sLockedAnimObjectEvents.as_ptr()).is_null() {
         ableToStore = FALSE as u32;
         index = FindLockedObjectEventIndex(objectEvent);
         if index != OBJECT_EVENTS_COUNT {
-            (*sLockedAnimObjectEvents).localIds[index] = LOCALID_NONE;
-            (*sLockedAnimObjectEvents).count -= 1;
+            (*crate::gl!(sLockedAnimObjectEvents)).localIds[index] = LOCALID_NONE;
+            (*crate::gl!(sLockedAnimObjectEvents)).count -= 1;
             ableToStore = TRUE as u32;
         }
-        if (*sLockedAnimObjectEvents).count == 0 {
-            Free(sLockedAnimObjectEvents as *mut c_void);
-            sLockedAnimObjectEvents = null_mut();
+        if (*crate::gl!(sLockedAnimObjectEvents)).count == 0 {
+            Free(crate::gl!(sLockedAnimObjectEvents) as *mut c_void);
+            crate::gl!(sLockedAnimObjectEvents = null_mut());
         }
         if ableToStore == TRUE as u32 {
             (*objectEvent).set_inanimate(
@@ -10085,7 +10397,7 @@ pub unsafe fn MovementAction_UnlockAnim_Step0(
 }
 pub unsafe fn FindLockedObjectEventIndex(objectEvent: *mut ObjectEvent) -> u8 {
     for i in 0..OBJECT_EVENTS_COUNT {
-        if (*sLockedAnimObjectEvents).localIds[i] == (*objectEvent).localId {
+        if (*crate::gl!(sLockedAnimObjectEvents)).localIds[i] == (*objectEvent).localId {
             return i;
         }
     }
@@ -10108,7 +10420,10 @@ pub(crate) unsafe fn ApplyLevitateMovement(taskId: u8) {
         &raw mut (*task).data[0] as *mut u16,
         &raw mut objectEvent as *mut u32,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i35 = (*objectEvent).spriteId;
+        crate::gl!(&raw gSprites[gl_i35])
+    };
     if (*task).data[2] as i32 & 3 == 0 {
         (*sprite).y2 += (*task).data[3];
     }
@@ -10131,10 +10446,10 @@ pub unsafe fn FreezeObjectEventsExceptTwo(objectEventId1: u8, objectEventId2: u8
     for i in 0..OBJECT_EVENTS_COUNT {
         if i != objectEventId1
             && i != objectEventId2
-            && gObjectEvents[i].active() != 0
-            && i != gPlayerAvatar.objectEventId
+            && (*gObjectEvents.as_ptr())[i].active() != 0
+            && i != crate::gl!(gPlayerAvatar.objectEventId)
         {
-            FreezeObjectEvent(&raw mut gObjectEvents[i]);
+            FreezeObjectEvent(crate::gl!(&raw gObjectEvents[i]));
         }
     }
 }

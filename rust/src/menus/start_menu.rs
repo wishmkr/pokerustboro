@@ -111,23 +111,19 @@ unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -175,29 +171,33 @@ static sWindowTemplate_SafariBalls: Table<WindowTemplate> =
 static sWindowTemplates_LinkBattleSave: Table<CArray<WindowTemplate, 2>> =
     Table((&raw const crate::data::start_menu::sWindowTemplates_LinkBattleSave).cast());
 
-#[unsafe(link_section = "common_data")]
-pub static mut gMenuCallback: Option<unsafe fn() -> u8> = None;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSafariBallsWindowId: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlePyramidFloorWindowId: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStartMenuCursorPos: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sNumStartMenuActions: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCurrentStartMenuActions: Aligned<CArray<u8, 9>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sInitStartMenuData: Aligned<CArray<i8, 2>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSaveDialogCallback: Option<unsafe fn() -> u8> = None;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSaveDialogTimer: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavingComplete: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSaveInfoWindowId: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMenuCallback: crate::global::Global<Option<unsafe fn() -> u8>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSafariBallsWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattlePyramidFloorWindowId: crate::global::Global<u8> =
+    crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sStartMenuCursorPos: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sNumStartMenuActions: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCurrentStartMenuActions: crate::global::Global<Aligned<CArray<u8, 9>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sInitStartMenuData: crate::global::Global<Aligned<CArray<i8, 2>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSaveDialogCallback: crate::global::Global<Option<unsafe fn() -> u8>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSaveDialogTimer: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSavingComplete: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSaveInfoWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -236,7 +236,7 @@ pub unsafe fn SetDexPokemonPokenavFlags() {
     FlagSet(FLAG_SYS_POKENAV_GET);
 }
 unsafe fn BuildStartMenuActions() {
-    sNumStartMenuActions = 0;
+    sNumStartMenuActions.set(0);
     if IsOverworldLinkActive() == TRUE as u32 {
         BuildLinkModeStartMenu();
     } else if InUnionRoom() == TRUE as u32 {
@@ -255,8 +255,8 @@ unsafe fn BuildStartMenuActions() {
 }
 unsafe fn AddStartMenuAction(action: u8) {
     AppendToList(
-        sCurrentStartMenuActions.as_mut_ptr(),
-        &raw mut sNumStartMenuActions,
+        (*sCurrentStartMenuActions.as_ptr()).as_mut_ptr(),
+        sNumStartMenuActions.as_ptr(),
         action,
     );
 }
@@ -328,12 +328,12 @@ unsafe fn BuildMultiPartnerRoomStartMenu() {
     AddStartMenuAction(MENU_ACTION_EXIT);
 }
 unsafe fn ShowSafariBallsWindow() {
-    sSafariBallsWindowId = AddWindow((&raw const *sWindowTemplate_SafariBalls).cast_mut()) as u8;
-    PutWindowTilemap(sSafariBallsWindowId);
-    DrawStdWindowFrame(sSafariBallsWindowId, FALSE);
+    sSafariBallsWindowId.set(AddWindow((&raw const *sWindowTemplate_SafariBalls).cast_mut()) as u8);
+    PutWindowTilemap(sSafariBallsWindowId.get());
+    DrawStdWindowFrame(sSafariBallsWindowId.get(), FALSE);
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
-        gNumSafariBalls as i32,
+        gNumSafariBalls.get() as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         2,
     );
@@ -344,7 +344,7 @@ unsafe fn ShowSafariBallsWindow() {
             .cast_mut(),
     );
     AddTextPrinterParameterized(
-        sSafariBallsWindowId,
+        sSafariBallsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         0,
@@ -352,21 +352,22 @@ unsafe fn ShowSafariBallsWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    CopyWindowToVram(sSafariBallsWindowId, COPYWIN_GFX);
+    CopyWindowToVram(sSafariBallsWindowId.get(), COPYWIN_GFX);
 }
 unsafe fn ShowPyramidFloorWindow() {
-    if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum == FRONTIER_STAGES_PER_CHALLENGE {
-        sBattlePyramidFloorWindowId =
-            AddWindow((&raw const *sWindowTemplate_PyramidPeak).cast_mut()) as u8;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum == FRONTIER_STAGES_PER_CHALLENGE
+    {
+        sBattlePyramidFloorWindowId
+            .set(AddWindow((&raw const *sWindowTemplate_PyramidPeak).cast_mut()) as u8);
     } else {
-        sBattlePyramidFloorWindowId =
-            AddWindow((&raw const *sWindowTemplate_PyramidFloor).cast_mut()) as u8;
+        sBattlePyramidFloorWindowId
+            .set(AddWindow((&raw const *sWindowTemplate_PyramidFloor).cast_mut()) as u8);
     }
-    PutWindowTilemap(sBattlePyramidFloorWindowId);
-    DrawStdWindowFrame(sBattlePyramidFloorWindowId, FALSE);
+    PutWindowTilemap(sBattlePyramidFloorWindowId.get());
+    DrawStdWindowFrame(sBattlePyramidFloorWindowId.get(), FALSE);
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        sPyramidFloorNames[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum],
+        sPyramidFloorNames[(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum],
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
@@ -375,7 +376,7 @@ unsafe fn ShowPyramidFloorWindow() {
             .cast_mut(),
     );
     AddTextPrinterParameterized(
-        sBattlePyramidFloorWindowId,
+        sBattlePyramidFloorWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         0,
@@ -383,37 +384,37 @@ unsafe fn ShowPyramidFloorWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    CopyWindowToVram(sBattlePyramidFloorWindowId, COPYWIN_GFX);
+    CopyWindowToVram(sBattlePyramidFloorWindowId.get(), COPYWIN_GFX);
 }
 unsafe fn RemoveExtraStartMenuWindows() {
     if GetSafariZoneFlag() != 0 {
-        ClearStdWindowAndFrameToTransparent(sSafariBallsWindowId, FALSE);
-        CopyWindowToVram(sSafariBallsWindowId, COPYWIN_GFX);
-        RemoveWindow(sSafariBallsWindowId);
+        ClearStdWindowAndFrameToTransparent(sSafariBallsWindowId.get(), FALSE);
+        CopyWindowToVram(sSafariBallsWindowId.get(), COPYWIN_GFX);
+        RemoveWindow(sSafariBallsWindowId.get());
     }
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
-        ClearStdWindowAndFrameToTransparent(sBattlePyramidFloorWindowId, FALSE);
-        RemoveWindow(sBattlePyramidFloorWindowId);
+        ClearStdWindowAndFrameToTransparent(sBattlePyramidFloorWindowId.get(), FALSE);
+        RemoveWindow(sBattlePyramidFloorWindowId.get());
     }
 }
 unsafe fn PrintStartMenuActions(pIndex: *mut i8, mut count: u32) -> u32 {
     let mut index: i8 = *pIndex;
     loop {
-        if sStartMenuItems[sCurrentStartMenuActions[index]]
+        if sStartMenuItems[crate::gl!(sCurrentStartMenuActions[index])]
             .func
             .u8_void
             == Some(StartMenuPlayerNameCallback as unsafe fn() -> u8)
         {
             PrintPlayerNameOnWindow(
                 GetStartMenuWindowId(),
-                sStartMenuItems[sCurrentStartMenuActions[index]].text,
+                sStartMenuItems[crate::gl!(sCurrentStartMenuActions[index])].text,
                 8,
                 ((index as u16) << 4) + 9,
             );
         } else {
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                sStartMenuItems[sCurrentStartMenuActions[index]].text,
+                sStartMenuItems[crate::gl!(sCurrentStartMenuActions[index])].text,
             );
             AddTextPrinterParameterized(
                 GetStartMenuWindowId(),
@@ -426,7 +427,7 @@ unsafe fn PrintStartMenuActions(pIndex: *mut i8, mut count: u32) -> u32 {
             );
         }
         index += 1;
-        if index as i32 >= sNumStartMenuActions as i32 {
+        if index as i32 >= sNumStartMenuActions.get() as i32 {
             *pIndex = index;
             return TRUE as u32;
         }
@@ -439,20 +440,20 @@ unsafe fn PrintStartMenuActions(pIndex: *mut i8, mut count: u32) -> u32 {
     FALSE as u32
 }
 unsafe fn InitStartMenuStep() -> u32 {
-    let state: i8 = sInitStartMenuData[0];
+    let state: i8 = crate::gl!(sInitStartMenuData[0]);
     match state {
         0 => {
-            sInitStartMenuData[0] += 1;
+            crate::gl!(sInitStartMenuData[0] += 1);
         }
         1 => {
             BuildStartMenuActions();
-            sInitStartMenuData[0] += 1;
+            crate::gl!(sInitStartMenuData[0] += 1);
         }
         2 => {
             LoadMessageBoxAndBorderGfx();
-            DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions), FALSE);
-            sInitStartMenuData[1] = 0;
-            sInitStartMenuData[0] += 1;
+            DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions.get()), FALSE);
+            crate::gl!(sInitStartMenuData[1] = 0);
+            crate::gl!(sInitStartMenuData[0] += 1);
         }
         3 => {
             if GetSafariZoneFlag() != 0 {
@@ -461,23 +462,23 @@ unsafe fn InitStartMenuStep() -> u32 {
             if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
                 ShowPyramidFloorWindow();
             }
-            sInitStartMenuData[0] += 1;
+            crate::gl!(sInitStartMenuData[0] += 1);
         }
         4 => {
-            if PrintStartMenuActions(&raw mut sInitStartMenuData[1], 2) != 0 {
-                sInitStartMenuData[0] += 1;
+            if PrintStartMenuActions(crate::gl!(&raw sInitStartMenuData[1]), 2) != 0 {
+                crate::gl!(sInitStartMenuData[0] += 1);
             }
         }
         5 => {
-            sStartMenuCursorPos = InitMenuNormal(
+            sStartMenuCursorPos.set(InitMenuNormal(
                 GetStartMenuWindowId(),
                 FONT_NORMAL,
                 0,
                 9,
                 16,
-                sNumStartMenuActions,
-                sStartMenuCursorPos,
-            );
+                sNumStartMenuActions.get(),
+                sStartMenuCursorPos.get(),
+            ));
             CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_MAP);
             return TRUE as u32;
         }
@@ -486,8 +487,8 @@ unsafe fn InitStartMenuStep() -> u32 {
     FALSE as u32
 }
 unsafe fn InitStartMenu() {
-    sInitStartMenuData[0] = 0;
-    sInitStartMenuData[1] = 0;
+    crate::gl!(sInitStartMenuData[0] = 0);
+    crate::gl!(sInitStartMenuData[1] = 0);
     while InitStartMenuStep() == 0 {}
 }
 pub(crate) unsafe fn StartMenuTask(taskId: u8) {
@@ -496,8 +497,8 @@ pub(crate) unsafe fn StartMenuTask(taskId: u8) {
     }
 }
 unsafe fn CreateStartMenuTask(followupFunc: Option<unsafe fn(u8)>) {
-    sInitStartMenuData[0] = 0;
-    sInitStartMenuData[1] = 0;
+    crate::gl!(sInitStartMenuData[0] = 0);
+    crate::gl!(sInitStartMenuData[1] = 0);
     let taskId: u8 = CreateTask(Some(StartMenuTask), 0x50);
     SetTaskFuncWithFollowupFunc(taskId, Some(StartMenuTask), followupFunc);
 }
@@ -508,10 +509,10 @@ pub(crate) unsafe fn FieldCB_ReturnToFieldStartMenu() -> u8 {
     ReturnToFieldOpenStartMenu();
     TRUE
 }
-pub unsafe fn ShowReturnToFieldStartMenu() {
-    sInitStartMenuData[0] = 0;
-    sInitStartMenuData[1] = 0;
-    gFieldCallback2 = Some(FieldCB_ReturnToFieldStartMenu);
+pub fn ShowReturnToFieldStartMenu() {
+    crate::gl!(sInitStartMenuData[0] = 0);
+    crate::gl!(sInitStartMenuData[1] = 0);
+    crate::gl!(gFieldCallback2 = Some(FieldCB_ReturnToFieldStartMenu));
 }
 pub unsafe fn Task_ShowStartMenu(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
@@ -520,10 +521,10 @@ pub unsafe fn Task_ShowStartMenu(taskId: u8) {
             if InUnionRoom() == TRUE as u32 {
                 SetUsingUnionRoomStartMenu();
             }
-            gMenuCallback = Some(HandleStartMenuInput);
+            crate::gl!(gMenuCallback = Some(HandleStartMenuInput));
             (*task).data[0] += 1;
         }
-        1 if gMenuCallback.unwrap_unchecked()() == TRUE => {
+        1 if (*gMenuCallback.as_ptr()).unwrap_unchecked()() == TRUE => {
             DestroyTask(taskId);
         }
         _ => {}
@@ -539,37 +540,47 @@ pub unsafe fn ShowStartMenu() {
     LockPlayerFieldControls();
 }
 pub(crate) unsafe fn HandleStartMenuInput() -> u8 {
-    if gMain.newKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         PlaySE(SE_SELECT);
-        sStartMenuCursorPos = Menu_MoveCursor(-1);
+        sStartMenuCursorPos.set(Menu_MoveCursor(-1));
     }
-    if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         PlaySE(SE_SELECT);
-        sStartMenuCursorPos = Menu_MoveCursor(1);
+        sStartMenuCursorPos.set(Menu_MoveCursor(1));
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        if sStartMenuItems[sCurrentStartMenuActions[sStartMenuCursorPos]]
-            .func
-            .u8_void
+        if sStartMenuItems[{
+            let gl_i0 = sStartMenuCursorPos.get();
+            crate::gl!(sCurrentStartMenuActions[gl_i0])
+        }]
+        .func
+        .u8_void
             == Some(StartMenuPokedexCallback as unsafe fn() -> u8)
             && GetNationalPokedexCount(FLAG_GET_SEEN) == 0
         {
             return FALSE;
         }
-        gMenuCallback = sStartMenuItems[sCurrentStartMenuActions[sStartMenuCursorPos]]
+        crate::gl!(
+            gMenuCallback = sStartMenuItems[{
+                let gl_i1 = sStartMenuCursorPos.get();
+                crate::gl!(sCurrentStartMenuActions[gl_i1])
+            }]
             .func
-            .u8_void;
-        if gMenuCallback != Some(StartMenuSaveCallback as unsafe fn() -> u8)
-            && gMenuCallback != Some(StartMenuExitCallback as unsafe fn() -> u8)
-            && gMenuCallback != Some(StartMenuSafariZoneRetireCallback as unsafe fn() -> u8)
-            && gMenuCallback != Some(StartMenuBattlePyramidRetireCallback as unsafe fn() -> u8)
+            .u8_void
+        );
+        if crate::gl!(gMenuCallback) != Some(StartMenuSaveCallback as unsafe fn() -> u8)
+            && crate::gl!(gMenuCallback) != Some(StartMenuExitCallback as unsafe fn() -> u8)
+            && crate::gl!(gMenuCallback)
+                != Some(StartMenuSafariZoneRetireCallback as unsafe fn() -> u8)
+            && crate::gl!(gMenuCallback)
+                != Some(StartMenuBattlePyramidRetireCallback as unsafe fn() -> u8)
         {
             FadeScreen(FADE_TO_BLACK, 0);
         }
         return FALSE;
     }
-    if gMain.newKeys as i32 & 10 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 10 != 0 {
         RemoveExtraStartMenuWindows();
         HideStartMenu();
         return TRUE;
@@ -577,7 +588,7 @@ pub(crate) unsafe fn HandleStartMenuInput() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn StartMenuPokedexCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         IncrementGameStat(GAME_STAT_CHECKED_POKEDEX);
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
@@ -588,7 +599,7 @@ pub(crate) unsafe fn StartMenuPokedexCallback() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn StartMenuPokemonCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
@@ -598,7 +609,7 @@ pub(crate) unsafe fn StartMenuPokemonCallback() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn StartMenuBagCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
@@ -608,7 +619,7 @@ pub(crate) unsafe fn StartMenuBagCallback() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn StartMenuPokeNavCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
@@ -618,7 +629,7 @@ pub(crate) unsafe fn StartMenuPokeNavCallback() -> u8 {
     FALSE
 }
 pub(crate) unsafe fn StartMenuPlayerNameCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
@@ -637,16 +648,16 @@ pub(crate) unsafe fn StartMenuSaveCallback() -> u8 {
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
         RemoveExtraStartMenuWindows();
     }
-    gMenuCallback = Some(SaveStartCallback);
+    crate::gl!(gMenuCallback = Some(SaveStartCallback));
     FALSE
 }
 pub(crate) unsafe fn StartMenuOptionCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
         SetMainCallback2(Some(CB2_InitOptionMenu));
-        gMain.savedCallback = Some(CB2_ReturnToFieldWithOpenMenu);
+        crate::gl!(gMain.savedCallback = Some(CB2_ReturnToFieldWithOpenMenu));
         return TRUE;
     }
     FALSE
@@ -663,16 +674,19 @@ pub(crate) unsafe fn StartMenuSafariZoneRetireCallback() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn StartMenuLinkModePlayerNameCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         CleanupOverworldWindowsAndTilemaps();
-        ShowTrainerCardInLink(gLocalLinkPlayerId, Some(CB2_ReturnToFieldWithOpenMenu));
+        ShowTrainerCardInLink(
+            gLocalLinkPlayerId.get(),
+            Some(CB2_ReturnToFieldWithOpenMenu),
+        );
         return TRUE;
     }
     FALSE
 }
-pub(crate) unsafe fn StartMenuBattlePyramidRetireCallback() -> u8 {
-    gMenuCallback = Some(BattlePyramidRetireStartCallback);
+pub(crate) fn StartMenuBattlePyramidRetireCallback() -> u8 {
+    crate::gl!(gMenuCallback = Some(BattlePyramidRetireStartCallback));
     FALSE
 }
 pub unsafe fn ShowBattlePyramidStartMenu() {
@@ -682,7 +696,7 @@ pub unsafe fn ShowBattlePyramidStartMenu() {
     LockPlayerFieldControls();
 }
 pub(crate) unsafe fn StartMenuBattlePyramidBagCallback() -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
@@ -693,7 +707,7 @@ pub(crate) unsafe fn StartMenuBattlePyramidBagCallback() -> u8 {
 }
 pub(crate) unsafe fn SaveStartCallback() -> u8 {
     InitSave();
-    gMenuCallback = Some(SaveCallback);
+    crate::gl!(gMenuCallback = Some(SaveCallback));
     FALSE
 }
 pub(crate) unsafe fn SaveCallback() -> u8 {
@@ -704,7 +718,7 @@ pub(crate) unsafe fn SaveCallback() -> u8 {
         SAVE_CANCELED => {
             ClearDialogWindowAndFrameToTransparent(0, 0);
             InitStartMenu();
-            gMenuCallback = Some(HandleStartMenuInput);
+            crate::gl!(gMenuCallback = Some(HandleStartMenuInput));
             return FALSE;
         }
         SAVE_SUCCESS | SAVE_ERROR => {
@@ -718,21 +732,21 @@ pub(crate) unsafe fn SaveCallback() -> u8 {
     }
     FALSE
 }
-pub(crate) unsafe fn BattlePyramidRetireStartCallback() -> u8 {
+pub(crate) fn BattlePyramidRetireStartCallback() -> u8 {
     InitBattlePyramidRetire();
-    gMenuCallback = Some(BattlePyramidRetireCallback);
+    crate::gl!(gMenuCallback = Some(BattlePyramidRetireCallback));
     FALSE
 }
 pub(crate) unsafe fn BattlePyramidRetireReturnCallback() -> u8 {
     InitStartMenu();
-    gMenuCallback = Some(HandleStartMenuInput);
+    crate::gl!(gMenuCallback = Some(HandleStartMenuInput));
     FALSE
 }
 pub(crate) unsafe fn BattlePyramidRetireCallback() -> u8 {
     match RunSaveCallback() {
         SAVE_SUCCESS => {
             RemoveExtraStartMenuWindows();
-            gMenuCallback = Some(BattlePyramidRetireReturnCallback);
+            crate::gl!(gMenuCallback = Some(BattlePyramidRetireReturnCallback));
             return FALSE;
         }
         SAVE_IN_PROGRESS => {
@@ -755,15 +769,15 @@ pub(crate) unsafe fn BattlePyramidRetireCallback() -> u8 {
 }
 unsafe fn InitSave() {
     SaveMapView();
-    sSaveDialogCallback = Some(SaveConfirmSaveCallback);
-    sSavingComplete = FALSE;
+    crate::gl!(sSaveDialogCallback = Some(SaveConfirmSaveCallback));
+    sSavingComplete.set(FALSE);
 }
 unsafe fn RunSaveCallback() -> u8 {
     if RunTextPrintersAndIsPrinter0Active() == TRUE as u16 {
         return SAVE_IN_PROGRESS;
     }
-    sSavingComplete = FALSE;
-    sSaveDialogCallback.unwrap_unchecked()()
+    sSavingComplete.set(FALSE);
+    (*sSaveDialogCallback.as_ptr()).unwrap_unchecked()()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SaveGame() {
@@ -774,8 +788,8 @@ unsafe fn ShowSaveMessage(message: *mut u8, saveCallback: Option<unsafe fn() -> 
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), message);
     LoadMessageBoxAndFrameGfx(0, TRUE);
     AddTextPrinterForMessage_2(TRUE);
-    sSavingComplete = TRUE;
-    sSaveDialogCallback = saveCallback;
+    sSavingComplete.set(TRUE);
+    crate::gl!(sSaveDialogCallback = saveCallback);
 }
 pub(crate) unsafe fn SaveGameTask(taskId: u8) {
     let status: u8 = RunSaveCallback();
@@ -800,24 +814,24 @@ unsafe fn HideSaveMessageWindow() {
 unsafe fn HideSaveInfoWindow() {
     RemoveSaveInfoWindow();
 }
-unsafe fn SaveStartTimer() {
-    sSaveDialogTimer = 60;
+fn SaveStartTimer() {
+    sSaveDialogTimer.set(60);
 }
 unsafe fn SaveSuccesTimer() -> u8 {
-    sSaveDialogTimer -= 1;
-    if gMain.heldKeys as i32 & A_BUTTON != 0 {
+    sSaveDialogTimer.set(sSaveDialogTimer.get() - (1));
+    if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return TRUE;
     }
-    if sSaveDialogTimer == 0 {
+    if sSaveDialogTimer.get() == 0 {
         return TRUE;
     }
     FALSE
 }
-unsafe fn SaveErrorTimer() -> u8 {
-    if sSaveDialogTimer != 0 {
-        sSaveDialogTimer -= 1;
-    } else if gMain.heldKeys as i32 & A_BUTTON != 0 {
+fn SaveErrorTimer() -> u8 {
+    if sSaveDialogTimer.get() != 0 {
+        sSaveDialogTimer.set(sSaveDialogTimer.get() - (1));
+    } else if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
         return TRUE;
     }
     FALSE
@@ -845,7 +859,7 @@ pub(crate) unsafe fn SaveConfirmSaveCallback() -> u8 {
 }
 pub(crate) unsafe fn SaveYesNoCallback() -> u8 {
     DisplayYesNoMenuDefaultYes();
-    sSaveDialogCallback = Some(SaveConfirmInputCallback);
+    crate::gl!(sSaveDialogCallback = Some(SaveConfirmInputCallback));
     SAVE_IN_PROGRESS
 }
 pub(crate) unsafe fn SaveConfirmInputCallback() -> u8 {
@@ -853,17 +867,17 @@ pub(crate) unsafe fn SaveConfirmInputCallback() -> u8 {
         let sw1: i8 = Menu_ProcessInputNoWrapClearOnChoose();
         let fall = false;
         if sw1 == 0 {
-            match gSaveFileStatus {
+            match gSaveFileStatus.get() {
                 0 | SAVE_STATUS_CORRUPT => {
-                    if gDifferentSaveFile == FALSE {
-                        sSaveDialogCallback = Some(SaveFileExistsCallback);
+                    if gDifferentSaveFile.get() == FALSE {
+                        crate::gl!(sSaveDialogCallback = Some(SaveFileExistsCallback));
                         return SAVE_IN_PROGRESS;
                     }
-                    sSaveDialogCallback = Some(SaveSavingMessageCallback);
+                    crate::gl!(sSaveDialogCallback = Some(SaveSavingMessageCallback));
                     return SAVE_IN_PROGRESS;
                 }
                 _ => {
-                    sSaveDialogCallback = Some(SaveFileExistsCallback);
+                    crate::gl!(sSaveDialogCallback = Some(SaveFileExistsCallback));
                     return SAVE_IN_PROGRESS;
                 }
             }
@@ -877,7 +891,7 @@ pub(crate) unsafe fn SaveConfirmInputCallback() -> u8 {
     SAVE_IN_PROGRESS
 }
 pub(crate) unsafe fn SaveFileExistsCallback() -> u8 {
-    if gDifferentSaveFile == TRUE {
+    if gDifferentSaveFile.get() == TRUE {
         ShowSaveMessage(
             (*crate::asmdata::gText_DifferentSaveFile.cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -896,18 +910,18 @@ pub(crate) unsafe fn SaveFileExistsCallback() -> u8 {
 }
 pub(crate) unsafe fn SaveConfirmOverwriteDefaultNoCallback() -> u8 {
     DisplayYesNoMenuWithDefault(1);
-    sSaveDialogCallback = Some(SaveOverwriteInputCallback);
+    crate::gl!(sSaveDialogCallback = Some(SaveOverwriteInputCallback));
     SAVE_IN_PROGRESS
 }
 pub(crate) unsafe fn SaveConfirmOverwriteCallback() -> u8 {
     DisplayYesNoMenuDefaultYes();
-    sSaveDialogCallback = Some(SaveOverwriteInputCallback);
+    crate::gl!(sSaveDialogCallback = Some(SaveOverwriteInputCallback));
     SAVE_IN_PROGRESS
 }
 pub(crate) unsafe fn SaveOverwriteInputCallback() -> u8 {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
-            sSaveDialogCallback = Some(SaveSavingMessageCallback);
+            crate::gl!(sSaveDialogCallback = Some(SaveSavingMessageCallback));
             return SAVE_IN_PROGRESS;
         }
         MENU_B_PRESSED | 1 => {
@@ -932,9 +946,9 @@ pub(crate) unsafe fn SaveDoSaveCallback() -> u8 {
     let mut saveStatus: u8 = 0;
     IncrementGameStat(GAME_STAT_SAVED_GAME);
     PausePyramidChallenge();
-    if gDifferentSaveFile == TRUE {
+    if gDifferentSaveFile.get() == TRUE {
         saveStatus = TrySavingData(SAVE_OVERWRITE_DIFFERENT_FILE);
-        gDifferentSaveFile = FALSE;
+        gDifferentSaveFile.set(FALSE);
     } else {
         saveStatus = TrySavingData(SAVE_NORMAL);
     }
@@ -959,7 +973,7 @@ pub(crate) unsafe fn SaveDoSaveCallback() -> u8 {
 pub(crate) unsafe fn SaveSuccessCallback() -> u8 {
     if IsTextPrinterActive(0) == 0 {
         PlaySE(SE_SAVE);
-        sSaveDialogCallback = Some(SaveReturnSuccessCallback);
+        crate::gl!(sSaveDialogCallback = Some(SaveReturnSuccessCallback));
     }
     SAVE_IN_PROGRESS
 }
@@ -978,7 +992,7 @@ pub(crate) unsafe fn SaveReturnSuccessCallback() -> u8 {
 pub(crate) unsafe fn SaveErrorCallback() -> u8 {
     if IsTextPrinterActive(0) == 0 {
         PlaySE(SE_BOO);
-        sSaveDialogCallback = Some(SaveReturnErrorCallback);
+        crate::gl!(sSaveDialogCallback = Some(SaveReturnErrorCallback));
     }
     SAVE_IN_PROGRESS
 }
@@ -994,9 +1008,9 @@ pub(crate) unsafe fn SaveReturnErrorCallback() -> u8 {
         0
     }
 }
-unsafe fn InitBattlePyramidRetire() {
-    sSaveDialogCallback = Some(BattlePyramidConfirmRetireCallback);
-    sSavingComplete = FALSE;
+fn InitBattlePyramidRetire() {
+    crate::gl!(sSaveDialogCallback = Some(BattlePyramidConfirmRetireCallback));
+    sSavingComplete.set(FALSE);
 }
 pub(crate) unsafe fn BattlePyramidConfirmRetireCallback() -> u8 {
     ClearStdWindowAndFrame(GetStartMenuWindowId(), FALSE);
@@ -1011,7 +1025,7 @@ pub(crate) unsafe fn BattlePyramidConfirmRetireCallback() -> u8 {
 }
 pub(crate) unsafe fn BattlePyramidRetireYesNoCallback() -> u8 {
     DisplayYesNoMenuWithDefault(1);
-    sSaveDialogCallback = Some(BattlePyramidRetireInputCallback);
+    crate::gl!(sSaveDialogCallback = Some(BattlePyramidRetireInputCallback));
     SAVE_IN_PROGRESS
 }
 pub(crate) unsafe fn BattlePyramidRetireInputCallback() -> u8 {
@@ -1127,7 +1141,7 @@ unsafe fn InitSaveWindowAfterLinkBattle(state: *mut u8) -> u32 {
     FALSE as u32
 }
 pub unsafe fn CB2_SetUpSaveAfterLinkBattle() {
-    if InitSaveWindowAfterLinkBattle(&raw mut gMain.state) != 0 {
+    if InitSaveWindowAfterLinkBattle(crate::gl!(&raw gMain.state)) != 0 {
         CreateTask(Some(Task_SaveAfterLinkBattle), 0x50);
         SetMainCallback2(Some(CB2_SaveAfterLinkBattle));
     }
@@ -1138,7 +1152,7 @@ pub(crate) unsafe fn CB2_SaveAfterLinkBattle() {
 }
 pub(crate) unsafe fn Task_SaveAfterLinkBattle(taskId: u8) {
     let state: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         match *state {
             0 => {
                 FillWindowPixelBuffer(0, 17);
@@ -1158,14 +1172,14 @@ pub(crate) unsafe fn Task_SaveAfterLinkBattle(taskId: u8) {
                 PutWindowTilemap(0);
                 CopyWindowToVram(0, COPYWIN_FULL);
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-                if gWirelessCommType != 0 && InUnionRoom() != 0 {
+                if gWirelessCommType.get() != 0 && InUnionRoom() != 0 {
                     if Link_AnyPartnersPlayingFRLG_JP() != 0 {
                         *state = 1;
                     } else {
                         *state = 5;
                     }
                 } else {
-                    gSoftResetDisabled = TRUE;
+                    gSoftResetDisabled.set(TRUE);
                     *state = 1;
                 }
             }
@@ -1178,7 +1192,7 @@ pub(crate) unsafe fn Task_SaveAfterLinkBattle(taskId: u8) {
                 if WriteSaveBlock1Sector() != 0 {
                     ClearContinueGameWarpStatus2();
                     *state = 3;
-                    gSoftResetDisabled = FALSE;
+                    gSoftResetDisabled.set(FALSE);
                 }
             }
             3 => {
@@ -1187,7 +1201,7 @@ pub(crate) unsafe fn Task_SaveAfterLinkBattle(taskId: u8) {
             }
             4 => {
                 FreeAllWindowBuffers();
-                SetMainCallback2(gMain.savedCallback);
+                SetMainCallback2(crate::gl!(gMain.savedCallback));
                 DestroyTask(taskId);
             }
             5 => {
@@ -1206,9 +1220,9 @@ unsafe fn ShowSaveInfoWindow() {
     if FlagGet(FLAG_SYS_POKEDEX_GET) == 0 {
         saveInfoWindow.height -= 2;
     }
-    sSaveInfoWindowId = AddWindow(&raw mut saveInfoWindow) as u8;
-    DrawStdWindowFrame(sSaveInfoWindowId, FALSE);
-    let gender: u8 = (*gSaveBlock2Ptr).playerGender;
+    sSaveInfoWindowId.set(AddWindow(&raw mut saveInfoWindow) as u8);
+    DrawStdWindowFrame(sSaveInfoWindowId.get(), FALSE);
+    let gender: u8 = (*crate::gl!(gSaveBlock2Ptr)).playerGender;
     let mut color: u8 = TEXT_COLOR_RED;
     if gender == MALE {
         color = TEXT_COLOR_BLUE;
@@ -1220,7 +1234,7 @@ unsafe fn ShowSaveInfoWindow() {
         TEXT_COLOR_GREEN,
     );
     AddTextPrinterParameterized(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         0,
@@ -1230,7 +1244,7 @@ unsafe fn ShowSaveInfoWindow() {
     );
     yOffset += 16;
     AddTextPrinterParameterized(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         FONT_NORMAL,
         (*(&raw const crate::data::strings::gText_SavingPlayer).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1244,14 +1258,14 @@ unsafe fn ShowSaveInfoWindow() {
     let mut xOffset: u32 =
         GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
     PrintPlayerNameOnWindow(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         gStringVar4.as_mut_ptr(),
         xOffset as u16,
         yOffset as u16,
     );
     yOffset += 16;
     AddTextPrinterParameterized(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         FONT_NORMAL,
         (*(&raw const crate::data::strings::gText_SavingBadges).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1264,7 +1278,7 @@ unsafe fn ShowSaveInfoWindow() {
     BufferSaveMenuText(SAVE_MENU_BADGES, gStringVar4.as_mut_ptr(), color);
     xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
     AddTextPrinterParameterized(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         xOffset as u8,
@@ -1275,7 +1289,7 @@ unsafe fn ShowSaveInfoWindow() {
     if FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE {
         yOffset += 16;
         AddTextPrinterParameterized(
-            sSaveInfoWindowId,
+            sSaveInfoWindowId.get(),
             FONT_NORMAL,
             (*(&raw const crate::data::strings::gText_SavingPokedex).cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -1289,7 +1303,7 @@ unsafe fn ShowSaveInfoWindow() {
         xOffset =
             GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
         AddTextPrinterParameterized(
-            sSaveInfoWindowId,
+            sSaveInfoWindowId.get(),
             FONT_NORMAL,
             gStringVar4.as_mut_ptr(),
             xOffset as u8,
@@ -1300,7 +1314,7 @@ unsafe fn ShowSaveInfoWindow() {
     }
     yOffset += 16;
     AddTextPrinterParameterized(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         FONT_NORMAL,
         (*(&raw const crate::data::strings::gText_SavingTime).cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -1313,7 +1327,7 @@ unsafe fn ShowSaveInfoWindow() {
     BufferSaveMenuText(SAVE_MENU_PLAY_TIME, gStringVar4.as_mut_ptr(), color);
     xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 0x70) as u32;
     AddTextPrinterParameterized(
-        sSaveInfoWindowId,
+        sSaveInfoWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         xOffset as u8,
@@ -1321,11 +1335,11 @@ unsafe fn ShowSaveInfoWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    CopyWindowToVram(sSaveInfoWindowId, COPYWIN_GFX);
+    CopyWindowToVram(sSaveInfoWindowId.get(), COPYWIN_GFX);
 }
 unsafe fn RemoveSaveInfoWindow() {
-    ClearStdWindowAndFrame(sSaveInfoWindowId, FALSE);
-    RemoveWindow(sSaveInfoWindowId);
+    ClearStdWindowAndFrame(sSaveInfoWindowId.get(), FALSE);
+    RemoveWindow(sSaveInfoWindowId.get());
 }
 pub(crate) unsafe fn Task_WaitForBattleTowerLinkSave(taskId: u8) {
     if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {

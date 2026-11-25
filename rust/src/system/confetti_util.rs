@@ -49,8 +49,8 @@ const WORK_COUNT: usize = 0;
 const WORK_ARRAY: usize = 4;
 const WORK_SIZE: usize = 8;
 
-#[unsafe(link_section = "ewram_data")]
-static mut WORK: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static WORK: crate::global::Global<*mut u8> = crate::global::Global::new(core::ptr::null_mut());
 
 /// `GetSpriteTileStartByTag` with this module's view of its types.
 #[inline]
@@ -70,12 +70,17 @@ unsafe fn IndexOfSpritePaletteTag(a0: u16) -> u8 {
 
 #[inline]
 unsafe fn work_count() -> u8 {
-    unsafe { WORK.add(WORK_COUNT).read_volatile() }
+    unsafe { (*WORK.as_ptr()).add(WORK_COUNT).read_volatile() }
 }
 
 #[inline]
 unsafe fn work_array() -> *mut u8 {
-    unsafe { WORK.add(WORK_ARRAY).cast::<*mut u8>().read_volatile() }
+    unsafe {
+        (*WORK.as_ptr())
+            .add(WORK_ARRAY)
+            .cast::<*mut u8>()
+            .read_volatile()
+    }
 }
 
 #[inline]
@@ -87,7 +92,9 @@ unsafe fn entry(index: usize) -> *mut u8 {
 #[inline]
 unsafe fn oam_slot(slot: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .add(MAIN_OAM_BUFFER_OFFSET + (slot + OAM_SLOT_BASE) * OAM_ENTRY_SIZE)
     }
 }
@@ -126,20 +133,25 @@ pub unsafe fn ConfettiUtil_Init(count: u8) -> u32 {
     }
     let count = count.min(MAX_CONFETTI);
 
-    unsafe { (&raw mut WORK).write(AllocZeroed(WORK_SIZE as u32)) };
-    if unsafe { (&raw const WORK).read() }.is_null() {
+    unsafe { (crate::gl!(&raw WORK)).write(AllocZeroed(WORK_SIZE as u32)) };
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null() {
         return 0;
     }
 
     let array = unsafe { AllocZeroed(u32::from(count) * CONFETTI_SIZE as u32) };
-    unsafe { WORK.add(WORK_ARRAY).cast::<*mut u8>().write(array) };
+    unsafe {
+        (*WORK.as_ptr())
+            .add(WORK_ARRAY)
+            .cast::<*mut u8>()
+            .write(array)
+    };
     if array.is_null() {
-        unsafe { Free(WORK) };
-        unsafe { (&raw mut WORK).write(core::ptr::null_mut()) };
+        unsafe { Free(crate::gl!(WORK)) };
+        unsafe { (crate::gl!(&raw WORK)).write(core::ptr::null_mut()) };
         return 0;
     }
 
-    unsafe { WORK.add(WORK_COUNT).write(count) };
+    unsafe { (*WORK.as_ptr()).add(WORK_COUNT).write(count) };
     let mut index = 0usize;
     while index < count as usize {
         let confetti = unsafe { entry(index) };
@@ -153,7 +165,7 @@ pub unsafe fn ConfettiUtil_Init(count: u8) -> u32 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn ConfettiUtil_Free() -> u32 {
-    if unsafe { (&raw const WORK).read() }.is_null() {
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null() {
         return 0;
     }
 
@@ -168,21 +180,24 @@ pub unsafe fn ConfettiUtil_Free() -> u32 {
     unsafe { core::ptr::write_bytes(array, 0, count * CONFETTI_SIZE) };
     unsafe { Free(array) };
     unsafe {
-        WORK.add(WORK_ARRAY)
+        (*WORK.as_ptr())
+            .add(WORK_ARRAY)
             .cast::<*mut u8>()
             .write(core::ptr::null_mut())
     };
 
-    unsafe { core::ptr::write_bytes(WORK, 0, WORK_SIZE) };
-    unsafe { Free(WORK) };
-    unsafe { (&raw mut WORK).write(core::ptr::null_mut()) };
+    unsafe { core::ptr::write_bytes(crate::gl!(WORK), 0, WORK_SIZE) };
+    unsafe { Free(crate::gl!(WORK)) };
+    unsafe { (crate::gl!(&raw WORK)).write(core::ptr::null_mut()) };
 
     1
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn ConfettiUtil_Update() -> u32 {
-    if unsafe { (&raw const WORK).read() }.is_null() || unsafe { work_array() }.is_null() {
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null()
+        || unsafe { work_array() }.is_null()
+    {
         return 0;
     }
 
@@ -270,7 +285,9 @@ unsafe fn set_anim_and_tile_num(confetti: *mut u8, anim_num: u8) -> u32 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn ConfettiUtil_SetCallback(id: u8, func: Option<ConfettiCallback>) -> u8 {
-    if unsafe { (&raw const WORK).read() }.is_null() || id >= unsafe { work_count() } {
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null()
+        || id >= unsafe { work_count() }
+    {
         return 0xff;
     }
     if unsafe { flags(id as usize) } & FLAG_ACTIVE == 0 {
@@ -288,7 +305,9 @@ pub unsafe fn ConfettiUtil_SetCallback(id: u8, func: Option<ConfettiCallback>) -
 
 #[unsafe(no_mangle)]
 pub unsafe fn ConfettiUtil_SetData(id: u8, data_array_id: u8, data_value: i16) -> u8 {
-    if unsafe { (&raw const WORK).read() }.is_null() || id >= unsafe { work_count() } {
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null()
+        || id >= unsafe { work_count() }
+    {
         return 0xff;
     }
     // The last data slot is reserved for a task id, hence the - 1.
@@ -317,7 +336,7 @@ pub unsafe fn ConfettiUtil_AddNew(
     anim_num: u8,
     priority: u8,
 ) -> u8 {
-    if unsafe { (&raw const WORK).read() }.is_null() || oam.is_null() {
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null() || oam.is_null() {
         return 0xff;
     }
 
@@ -371,7 +390,7 @@ pub unsafe fn ConfettiUtil_AddNew(
 #[unsafe(no_mangle)]
 pub unsafe fn ConfettiUtil_Remove(id: u8) -> u8 {
     // The original does not range-check `id` here, only the work block.
-    if unsafe { (&raw const WORK).read() }.is_null()
+    if unsafe { (crate::gl!(&raw WORK).cast_const()).read() }.is_null()
         || unsafe { flags(id as usize) } & FLAG_ACTIVE == 0
     {
         return 0xff;

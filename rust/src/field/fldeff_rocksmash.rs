@@ -109,7 +109,7 @@ unsafe fn GetPlayerFacingDirection() -> u8 {
 /// `GetPlayerAvatarGraphicsIdByCurrentState` with this module's view of its types.
 #[inline]
 unsafe fn GetPlayerAvatarGraphicsIdByCurrentState() -> u8 {
-    unsafe { crate::field_player_avatar::GetPlayerAvatarGraphicsIdByCurrentState() }
+    crate::field_player_avatar::GetPlayerAvatarGraphicsIdByCurrentState()
 }
 /// `StartSpriteAnim` with this module's view of its types.
 #[inline]
@@ -131,9 +131,7 @@ unsafe fn FieldEffectActiveListContains(a0: u8) -> u8 {
 /// `FieldEffectActiveListRemove` with this module's view of its types.
 #[inline]
 unsafe fn FieldEffectActiveListRemove(a0: u8) {
-    unsafe {
-        crate::field_effect::FieldEffectActiveListRemove(a0);
-    }
+    crate::field_effect::FieldEffectActiveListRemove(a0);
 }
 /// `IncrementGameStat` with this module's view of its types.
 #[inline]
@@ -182,9 +180,10 @@ unsafe fn ScriptContext_Enable() {
 #[inline]
 unsafe fn player_object_event_id() -> usize {
     unsafe {
-        (&raw const (*(&raw const crate::field_player_avatar::gPlayerAvatar)
-            .cast::<u8>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::field_player_avatar::gPlayerAvatar;)
+            .cast_const())
+        .cast::<u8>()
+        .cast_mut()))
             .add(PLAYER_AVATAR_OBJECT_EVENT_ID)
             .read_volatile() as usize
     }
@@ -193,9 +192,10 @@ unsafe fn player_object_event_id() -> usize {
 #[inline]
 unsafe fn player_sprite_id() -> usize {
     unsafe {
-        (&raw const (*(&raw const crate::field_player_avatar::gPlayerAvatar)
-            .cast::<u8>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::field_player_avatar::gPlayerAvatar;)
+            .cast_const())
+        .cast::<u8>()
+        .cast_mut()))
             .add(PLAYER_AVATAR_SPRITE_ID)
             .read_volatile() as usize
     }
@@ -204,7 +204,7 @@ unsafe fn player_sprite_id() -> usize {
 #[inline]
 unsafe fn set_prevent_step(value: u8) {
     unsafe {
-        (&raw mut (*(&raw const crate::field_player_avatar::gPlayerAvatar)
+        (&raw mut (*(crate::gl!(&raw @at crate::field_player_avatar::gPlayerAvatar;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(PLAYER_AVATAR_PREVENT_STEP)
@@ -215,9 +215,10 @@ unsafe fn set_prevent_step(value: u8) {
 #[inline]
 unsafe fn field_effect_argument(index: usize) -> i32 {
     unsafe {
-        (&raw const (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .add(index)
             .read()
@@ -227,9 +228,10 @@ unsafe fn field_effect_argument(index: usize) -> i32 {
 #[inline]
 unsafe fn set_field_effect_argument(index: usize, value: i32) {
     unsafe {
-        (&raw mut (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .add(index)
             .write(value)
@@ -240,13 +242,15 @@ unsafe fn set_field_effect_argument(index: usize, value: i32) {
 pub unsafe fn CheckObjectGraphicsInFrontOfPlayer(graphics_id: u8) -> u8 {
     unsafe {
         GetXYCoordsOneStepInFrontOfPlayer(
-            &raw mut (*(&raw const crate::fldeff_misc::gPlayerFacingPosition)
-                .cast::<MapPosition>()
-                .cast_mut())
+            &raw mut (*(crate::gl!(&raw @at crate::fldeff_misc::gPlayerFacingPosition;)
+                .cast_const())
+            .cast::<MapPosition>()
+            .cast_mut())
             .x,
-            &raw mut (*(&raw const crate::fldeff_misc::gPlayerFacingPosition)
-                .cast::<MapPosition>()
-                .cast_mut())
+            &raw mut (*(crate::gl!(&raw @at crate::fldeff_misc::gPlayerFacingPosition;)
+                .cast_const())
+            .cast::<MapPosition>()
+            .cast_mut())
             .y,
         )
     };
@@ -308,13 +312,15 @@ pub unsafe fn CheckObjectGraphicsInFrontOfPlayer(graphics_id: u8) -> u8 {
 pub unsafe fn CreateFieldMoveTask() -> u8 {
     unsafe {
         GetXYCoordsOneStepInFrontOfPlayer(
-            &raw mut (*(&raw const crate::fldeff_misc::gPlayerFacingPosition)
-                .cast::<MapPosition>()
-                .cast_mut())
+            &raw mut (*(crate::gl!(&raw @at crate::fldeff_misc::gPlayerFacingPosition;)
+                .cast_const())
+            .cast::<MapPosition>()
+            .cast_mut())
             .x,
-            &raw mut (*(&raw const crate::fldeff_misc::gPlayerFacingPosition)
-                .cast::<MapPosition>()
-                .cast_mut())
+            &raw mut (*(crate::gl!(&raw @at crate::fldeff_misc::gPlayerFacingPosition;)
+                .cast_const())
+            .cast::<MapPosition>()
+            .cast_mut())
             .y,
         )
     };
@@ -333,7 +339,8 @@ unsafe fn task_do_field_move_init(task_id: u8) {
     }
 
     let map_type = unsafe {
-        (&raw const (*(&raw const crate::fieldmap::gMapHeader).cast::<u8>()))
+        (&raw const (*(crate::gl!(&raw @at crate::fieldmap::gMapHeader;).cast_const())
+            .cast::<u8>()))
             .add(MAP_HEADER_MAP_TYPE)
             .read_volatile()
     };

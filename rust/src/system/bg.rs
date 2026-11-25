@@ -146,16 +146,18 @@ const ZEROED_BG_CONFIG2: BgConfig2 = BgConfig2 {
     bg_y: 0,
 };
 
-static mut BG_CONFIGS: [BgConfig; NUM_BACKGROUNDS] = [ZEROED_BG_CONFIG; NUM_BACKGROUNDS];
+static BG_CONFIGS: crate::global::Global<[BgConfig; NUM_BACKGROUNDS]> =
+    crate::global::Global::new([ZEROED_BG_CONFIG; NUM_BACKGROUNDS]);
 static BG_VISIBILITY_AND_MODE: crate::global::Global<u16> = crate::global::Global::new(0);
-static mut BG_CONFIGS2: [BgConfig2; NUM_BACKGROUNDS] =
-    [const { ZEROED_BG_CONFIG2 }; NUM_BACKGROUNDS];
+static BG_CONFIGS2: crate::global::Global<[BgConfig2; NUM_BACKGROUNDS]> =
+    crate::global::Global::new([const { ZEROED_BG_CONFIG2 }; NUM_BACKGROUNDS]);
 /// One bit per outstanding DMA3 request slot.
-static mut DMA_BUSY_BITFIELD: [u32; NUM_BACKGROUNDS] = [0; NUM_BACKGROUNDS];
+static DMA_BUSY_BITFIELD: crate::global::Global<[u32; NUM_BACKGROUNDS]> =
+    crate::global::Global::new([0; NUM_BACKGROUNDS]);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gWindowTileAutoAllocEnabled: u32 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gWindowTileAutoAllocEnabled: crate::global::Global<u32> = crate::global::Global::new(0);
 
 /// `BgAffineSet` with this module's view of its types.
 #[inline]
@@ -174,12 +176,12 @@ unsafe fn LZ77UnCompWram(a0: *const u32, a1: *mut c_void) {
 
 #[inline]
 unsafe fn config(bg: usize) -> *mut BgConfig {
-    unsafe { (&raw mut BG_CONFIGS).cast::<BgConfig>().add(bg) }
+    unsafe { (crate::gl!(&raw BG_CONFIGS)).cast::<BgConfig>().add(bg) }
 }
 
 #[inline]
 unsafe fn config2(bg: usize) -> *mut BgConfig2 {
-    unsafe { (&raw mut BG_CONFIGS2).cast::<BgConfig2>().add(bg) }
+    unsafe { (crate::gl!(&raw BG_CONFIGS2)).cast::<BgConfig2>().add(bg) }
 }
 
 #[inline]
@@ -410,13 +412,13 @@ pub unsafe fn ResetBgsAndClearDma3BusyFlags(leftover_frlg_variable: u32) {
     unsafe { ResetBgs() };
     for i in 0..NUM_BACKGROUNDS {
         unsafe {
-            (&raw mut DMA_BUSY_BITFIELD)
+            (crate::gl!(&raw DMA_BUSY_BITFIELD))
                 .cast::<u32>()
                 .add(i)
                 .write_volatile(0)
         };
     }
-    unsafe { (&raw mut gWindowTileAutoAllocEnabled).write_volatile(leftover_frlg_variable) };
+    unsafe { (gWindowTileAutoAllocEnabled.as_ptr()).write_volatile(leftover_frlg_variable) };
 }
 
 #[inline]
@@ -471,7 +473,7 @@ pub unsafe fn InitBgFromTemplate(template: *const u32) {
 #[inline]
 unsafe fn mark_dma_busy(cursor: u8) {
     let slot = unsafe {
-        (&raw mut DMA_BUSY_BITFIELD)
+        (crate::gl!(&raw DMA_BUSY_BITFIELD))
             .cast::<u32>()
             .add(cursor as usize / 0x20)
     };
@@ -495,7 +497,7 @@ pub unsafe fn LoadBgTiles(bg: u8, src: *const c_void, size: u16, dest_offset: u1
     }
     unsafe { mark_dma_busy(cursor) };
 
-    if unsafe { (&raw const gWindowTileAutoAllocEnabled).read_volatile() } == 1 {
+    if unsafe { (gWindowTileAutoAllocEnabled.as_ptr().cast_const()).read_volatile() } == 1 {
         unsafe {
             BgTileAllocOp(
                 i32::from(bg),
@@ -548,7 +550,11 @@ pub unsafe fn Unused_LoadBgPalette(bg: u8, src: *const c_void, size: u16, dest_o
 pub unsafe fn IsDma3ManagerBusyWithBgCopy() -> u8 {
     let mut i = 0usize;
     while i < 0x80 {
-        let slot = unsafe { (&raw mut DMA_BUSY_BITFIELD).cast::<u32>().add(i / 0x20) };
+        let slot = unsafe {
+            (crate::gl!(&raw DMA_BUSY_BITFIELD))
+                .cast::<u32>()
+                .add(i / 0x20)
+        };
         let bit = 1u32 << (i % 0x20);
         if unsafe { slot.read_volatile() } & bit != 0 {
             if unsafe { CheckForSpaceForDma3Request(i as i16) } == -1 {

@@ -119,30 +119,31 @@ static sItemUseCallbacks: Table<CArray<Option<unsafe fn()>, 3>> =
 static sUseTMHMYesNoFuncTable: Table<YesNoFuncTable> =
     Table((&raw const crate::data::item_use::sUseTMHMYesNoFuncTable).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sItemUseOnFieldCB: Option<unsafe fn(u8)> = None;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sItemUseOnFieldCB: crate::global::Global<Option<unsafe fn(u8)>> =
+    crate::global::Global::new(None);
 
 unsafe fn SetUpItemUseCallback(taskId: u8) {
     let mut r#type: u8 = 0;
-    if gSpecialVar_ItemId == ITEM_ENIGMA_BERRY {
+    if gSpecialVar_ItemId.get() == ITEM_ENIGMA_BERRY {
         r#type = task_get(taskId, tEnigmaBerryType) as u8 - 1;
     } else {
-        r#type = GetItemType(gSpecialVar_ItemId) - 1;
+        r#type = GetItemType(gSpecialVar_ItemId.get()) - 1;
     }
     if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
-        (*gBagMenu).newScreenCallback = sItemUseCallbacks[r#type];
+        (*crate::gl!(gBagMenu)).newScreenCallback = sItemUseCallbacks[r#type];
         Task_FadeAndCloseBagMenu(taskId);
     } else {
-        (*gPyramidBagMenu).newScreenCallback = sItemUseCallbacks[r#type];
+        (*crate::gl!(gPyramidBagMenu)).newScreenCallback = sItemUseCallbacks[r#type];
         CloseBattlePyramidBag(taskId);
     }
 }
 unsafe fn SetUpItemUseOnFieldCallback(taskId: u8) {
     if task_get(taskId, tUsingRegisteredKeyItem) != TRUE as i16 {
-        gFieldCallback = Some(FieldCB_UseItemOnField);
+        crate::gl!(gFieldCallback = Some(FieldCB_UseItemOnField));
         SetUpItemUseCallback(taskId);
     } else {
-        sItemUseOnFieldCB.unwrap_unchecked()(taskId);
+        (*sItemUseOnFieldCB.as_ptr()).unwrap_unchecked()(taskId);
     }
 }
 pub(crate) unsafe fn FieldCB_UseItemOnField() {
@@ -151,7 +152,7 @@ pub(crate) unsafe fn FieldCB_UseItemOnField() {
 }
 pub(crate) unsafe fn Task_CallItemUseOnFieldCallback(taskId: u8) {
     if IsWeatherNotFadingIn() == 1 {
-        sItemUseOnFieldCB.unwrap_unchecked()(taskId);
+        (*sItemUseOnFieldCB.as_ptr()).unwrap_unchecked()(taskId);
     }
 }
 unsafe fn DisplayCannotUseItemMessage(
@@ -224,11 +225,11 @@ pub fn CheckIfItemIsTMHMOrEvolutionStone(itemId: u16) -> u8 {
 }
 pub(crate) unsafe fn CB2_CheckMail() {
     let mut mail: Mail = zeroed();
-    mail.itemId = gSpecialVar_ItemId;
+    mail.itemId = gSpecialVar_ItemId.get();
     ReadMail(&raw mut mail, Some(CB2_ReturnToBagMenuPocket), FALSE);
 }
 pub unsafe fn ItemUseOutOfBattle_Mail(taskId: u8) {
-    (*gBagMenu).newScreenCallback = Some(CB2_CheckMail);
+    (*crate::gl!(gBagMenu)).newScreenCallback = Some(CB2_CheckMail);
     Task_FadeAndCloseBagMenu(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_Bike(taskId: u8) {
@@ -245,14 +246,14 @@ pub unsafe fn ItemUseOutOfBattle_Bike(taskId: u8) {
     {
         DisplayCannotDismountBikeMessage(taskId, *data.at(3) as u8);
     } else if Overworld_IsBikingAllowed() == TRUE as u32 && IsBikingDisallowedByPlayer() == 0 {
-        sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Bike);
+        crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Bike));
         SetUpItemUseOnFieldCallback(taskId);
     } else {
         DisplayDadsAdviceCannotUseItemMessage(taskId, *data.at(3) as u8);
     }
 }
 pub(crate) unsafe fn ItemUseOnFieldCB_Bike(taskId: u8) {
-    if GetItemSecondaryId(gSpecialVar_ItemId) == MACH_BIKE {
+    if GetItemSecondaryId(gSpecialVar_ItemId.get()) == MACH_BIKE {
         GetOnOffBike(PLAYER_AVATAR_FLAG_MACH_BIKE);
     } else {
         GetOnOffBike(PLAYER_AVATAR_FLAG_ACRO_BIKE);
@@ -290,7 +291,7 @@ unsafe fn CanFish() -> u32 {
 }
 pub unsafe fn ItemUseOutOfBattle_Rod(taskId: u8) {
     if CanFish() == TRUE as u32 {
-        sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Rod);
+        crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Rod));
         SetUpItemUseOnFieldCallback(taskId);
     } else {
         DisplayDadsAdviceCannotUseItemMessage(
@@ -300,16 +301,16 @@ pub unsafe fn ItemUseOutOfBattle_Rod(taskId: u8) {
     }
 }
 pub(crate) unsafe fn ItemUseOnFieldCB_Rod(taskId: u8) {
-    StartFishing(GetItemSecondaryId(gSpecialVar_ItemId));
+    StartFishing(GetItemSecondaryId(gSpecialVar_ItemId.get()));
     DestroyTask(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_Itemfinder(var: u8) {
     IncrementGameStat(GAME_STAT_USED_ITEMFINDER);
-    sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Itemfinder);
+    crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Itemfinder));
     SetUpItemUseOnFieldCallback(var);
 }
 pub(crate) unsafe fn ItemUseOnFieldCB_Itemfinder(taskId: u8) {
-    if ItemfinderCheckForHiddenItems(gMapHeader.events, taskId) == TRUE {
+    if ItemfinderCheckForHiddenItems(crate::gl!(gMapHeader.events), taskId) == TRUE {
         task_set_func(taskId, Some(Task_UseItemfinder));
     } else {
         DisplayItemMessageOnField(
@@ -419,14 +420,14 @@ unsafe fn IsHiddenItemPresentInConnection(connection: *mut MapConnection, x: i32
         }
         CONNECTION_SOUTH => {
             connectionX = x as i16 - 7 - (*connection).offset as i16;
-            connectionY = y as i16 - 7 - (*gMapHeader.mapLayout).height as i16;
+            connectionY = y as i16 - 7 - (*crate::gl!(gMapHeader.mapLayout)).height as i16;
         }
         CONNECTION_WEST => {
             connectionX = (*(*connectionHeader).mapLayout).width as i16 + (x as i16 - 7);
             connectionY = y as i16 - 7 - (*connection).offset as i16;
         }
         CONNECTION_EAST => {
-            connectionX = x as i16 - 7 - (*gMapHeader.mapLayout).width as i16;
+            connectionX = x as i16 - 7 - (*crate::gl!(gMapHeader.mapLayout)).width as i16;
             connectionY = y as i16 - 7 - (*connection).offset as i16;
         }
         _ => {
@@ -439,8 +440,8 @@ unsafe fn CheckForHiddenItemsInMapConnection(taskId: u8) {
     let mut playerX: i16 = 0;
     let mut playerY: i16 = 0;
     let mut y: i16 = 0;
-    let width: i16 = (*gMapHeader.mapLayout).width as i16 + MAP_OFFSET as i16;
-    let height: i16 = (*gMapHeader.mapLayout).height as i16 + MAP_OFFSET as i16;
+    let width: i16 = (*crate::gl!(gMapHeader.mapLayout)).width as i16 + MAP_OFFSET as i16;
+    let height: i16 = (*crate::gl!(gMapHeader.mapLayout)).height as i16 + MAP_OFFSET as i16;
     let var1: i16 = MAP_OFFSET as i16;
     let var2: i16 = MAP_OFFSET as i16;
     PlayerGetDestCoords(&raw mut playerX, &raw mut playerY);
@@ -546,21 +547,25 @@ unsafe fn GetDirectionToHiddenItem(itemDistanceX: i16, itemDistanceY: i16) -> u8
     }
 }
 unsafe fn PlayerFaceHiddenItem(direction: u8) {
-    ObjectEventClearHeldMovementIfFinished(
-        &raw mut gObjectEvents[GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0)],
-    );
-    ObjectEventClearHeldMovement(
-        &raw mut gObjectEvents[GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0)],
-    );
-    UnfreezeObjectEvent(
-        &raw mut gObjectEvents[GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0)],
-    );
+    ObjectEventClearHeldMovementIfFinished({
+        let gl_i0 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+        crate::gl!(&raw gObjectEvents[gl_i0])
+    });
+    ObjectEventClearHeldMovement({
+        let gl_i1 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+        crate::gl!(&raw gObjectEvents[gl_i1])
+    });
+    UnfreezeObjectEvent({
+        let gl_i2 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+        crate::gl!(&raw gObjectEvents[gl_i2])
+    });
     PlayerTurnInPlace(direction);
 }
 pub(crate) unsafe fn Task_HiddenItemNearby(taskId: u8) {
-    if ObjectEventCheckHeldMovementStatus(
-        &raw mut gObjectEvents[GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0)],
-    ) == TRUE
+    if ObjectEventCheckHeldMovementStatus({
+        let gl_i3 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+        crate::gl!(&raw gObjectEvents[gl_i3])
+    }) == TRUE
     {
         DisplayItemMessageOnField(
             taskId,
@@ -573,9 +578,10 @@ pub(crate) unsafe fn Task_HiddenItemNearby(taskId: u8) {
 }
 pub(crate) unsafe fn Task_StandingOnHiddenItem(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if ObjectEventCheckHeldMovementStatus(
-        &raw mut gObjectEvents[GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0)],
-    ) == TRUE
+    if ObjectEventCheckHeldMovementStatus({
+        let gl_i4 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+        crate::gl!(&raw gObjectEvents[gl_i4])
+    }) == TRUE
         || *data.at(2) == FALSE as i16
     {
         PlayerFaceHiddenItem(sClockwiseDirections[*data.at(5)]);
@@ -600,10 +606,10 @@ pub unsafe fn ItemUseOutOfBattle_PokeblockCase(taskId: u8) {
             task_get(taskId, tUsingRegisteredKeyItem) as u8,
         );
     } else if task_get(taskId, tUsingRegisteredKeyItem) != TRUE as i16 {
-        (*gBagMenu).newScreenCallback = Some(CB2_OpenPokeblockFromBag);
+        (*crate::gl!(gBagMenu)).newScreenCallback = Some(CB2_OpenPokeblockFromBag);
         Task_FadeAndCloseBagMenu(taskId);
     } else {
-        gFieldCallback = Some(FieldCB_ReturnToFieldNoScript);
+        crate::gl!(gFieldCallback = Some(FieldCB_ReturnToFieldNoScript));
         FadeScreen(FADE_TO_BLACK, 0);
         task_set_func(taskId, Some(Task_OpenRegisteredPokeblockCase));
     }
@@ -612,7 +618,7 @@ pub(crate) unsafe fn CB2_OpenPokeblockFromBag() {
     OpenPokeblockCase(PBLOCK_CASE_FIELD, Some(CB2_ReturnToBagMenuPocket));
 }
 pub(crate) unsafe fn Task_OpenRegisteredPokeblockCase(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         OpenPokeblockCase(PBLOCK_CASE_FIELD, Some(CB2_ReturnToField));
         DestroyTask(taskId);
@@ -676,16 +682,16 @@ pub unsafe fn ItemUseOutOfBattle_PowderJar(taskId: u8) {
 }
 pub unsafe fn ItemUseOutOfBattle_Berry(taskId: u8) {
     if IsPlayerFacingEmptyBerryTreePatch() == TRUE {
-        sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Berry);
-        gFieldCallback = Some(FieldCB_UseItemOnField);
-        (*gBagMenu).newScreenCallback = Some(CB2_ReturnToField);
+        crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_Berry));
+        crate::gl!(gFieldCallback = Some(FieldCB_UseItemOnField));
+        (*crate::gl!(gBagMenu)).newScreenCallback = Some(CB2_ReturnToField);
         Task_FadeAndCloseBagMenu(taskId);
     } else {
-        GetItemFieldFunc(gSpecialVar_ItemId).unwrap_unchecked()(taskId);
+        GetItemFieldFunc(gSpecialVar_ItemId.get()).unwrap_unchecked()(taskId);
     }
 }
 pub(crate) unsafe fn ItemUseOnFieldCB_Berry(taskId: u8) {
-    RemoveBagItem(gSpecialVar_ItemId, 1);
+    RemoveBagItem(gSpecialVar_ItemId.get(), 1);
     LockPlayerFieldControls();
     ScriptContext_SetupScript(
         (*crate::asmdata::BerryTree_EventScript_ItemUsePlantBerry.cast::<CArray<u8, 0>>())
@@ -696,10 +702,10 @@ pub(crate) unsafe fn ItemUseOnFieldCB_Berry(taskId: u8) {
 }
 pub unsafe fn ItemUseOutOfBattle_WailmerPail(taskId: u8) {
     if TryToWaterSudowoodo() == TRUE {
-        sItemUseOnFieldCB = Some(ItemUseOnFieldCB_WailmerPailSudowoodo);
+        crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_WailmerPailSudowoodo));
         SetUpItemUseOnFieldCallback(taskId);
     } else if TryToWaterBerryTree() == TRUE {
-        sItemUseOnFieldCB = Some(ItemUseOnFieldCB_WailmerPailBerry);
+        crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_WailmerPailBerry));
         SetUpItemUseOnFieldCallback(taskId);
     } else {
         DisplayDadsAdviceCannotUseItemMessage(
@@ -723,7 +729,9 @@ unsafe fn TryToWaterSudowoodo() -> u8 {
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
     let elevation: u8 = PlayerGetElevation();
     let objId: u8 = GetObjectEventIdByPosition(x as u16, y as u16, elevation);
-    if objId == OBJECT_EVENTS_COUNT || gObjectEvents[objId].graphicsId != OBJ_EVENT_GFX_SUDOWOODO {
+    if objId == OBJECT_EVENTS_COUNT
+        || crate::gl!(gObjectEvents[objId].graphicsId) != OBJ_EVENT_GFX_SUDOWOODO
+    {
         return FALSE;
     } else {
         return TRUE;
@@ -744,31 +752,31 @@ pub(crate) unsafe fn ItemUseOnFieldCB_WailmerPailSudowoodo(taskId: u8) {
     DestroyTask(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_Medicine(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_Medicine);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_Medicine));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_ReduceEV(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_ReduceEV);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_ReduceEV));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_SacredAsh(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_SacredAsh);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_SacredAsh));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_PPRecovery(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_PPRecovery);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_PPRecovery));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_PPUp(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_PPUp);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_PPUp));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_RareCandy(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_RareCandy);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_RareCandy));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseOutOfBattle_TMHM(taskId: u8) {
-    if gSpecialVar_ItemId >= ITEM_HM01 {
+    if gSpecialVar_ItemId.get() >= ITEM_HM01 {
         DisplayItemMessage(
             taskId,
             FONT_NORMAL,
@@ -793,11 +801,12 @@ pub(crate) unsafe fn BootUpSoundTMHM(taskId: u8) {
     task_set_func(taskId, Some(Task_ShowTMHMContainedMessage));
 }
 pub(crate) unsafe fn Task_ShowTMHMContainedMessage(taskId: u8) {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         StringCopy(
             gStringVar1.as_mut_ptr(),
             (*(&raw const crate::data::data_tables::gMoveNames)
-                .cast::<CArray<CArray<u8, 13>, 355>>())[ItemIdToBattleMoveId(gSpecialVar_ItemId)]
+                .cast::<CArray<CArray<u8, 13>, 355>>())
+                [ItemIdToBattleMoveId(gSpecialVar_ItemId.get())]
             .as_ptr()
             .cast_mut(),
         );
@@ -823,12 +832,15 @@ pub(crate) unsafe fn UseTMHMYesNo(taskId: u8) {
     );
 }
 pub(crate) unsafe fn UseTMHM(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_TMHM);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_TMHM));
     SetUpItemUseCallback(taskId);
 }
 unsafe fn RemoveUsedItem() {
-    RemoveBagItem(gSpecialVar_ItemId, 1);
-    CopyItemName(gSpecialVar_ItemId, gStringVar2.as_mut_ptr());
+    RemoveBagItem(gSpecialVar_ItemId.get(), 1);
+    CopyItemName(
+        gSpecialVar_ItemId.get(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+    );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_PlayerUsedVar2).cast::<CArray<u8, 0>>())
@@ -836,8 +848,8 @@ unsafe fn RemoveUsedItem() {
             .cast_mut(),
     );
     if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
-        UpdatePocketItemList(GetItemPocket(gSpecialVar_ItemId));
-        UpdatePocketListPosition(GetItemPocket(gSpecialVar_ItemId));
+        UpdatePocketItemList(GetItemPocket(gSpecialVar_ItemId.get()));
+        UpdatePocketListPosition(GetItemPocket(gSpecialVar_ItemId.get()));
     } else {
         UpdatePyramidBagList();
         UpdatePyramidBagCursorPos();
@@ -883,7 +895,7 @@ pub(crate) unsafe fn Task_UseRepel(taskId: u8) {
     if IsSEPlaying() == 0 {
         VarSet(
             VAR_REPEL_STEP_COUNT,
-            GetItemHoldEffectParam(gSpecialVar_ItemId) as u16,
+            GetItemHoldEffectParam(gSpecialVar_ItemId.get()) as u16,
         );
         RemoveUsedItem();
         if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
@@ -926,8 +938,11 @@ pub(crate) unsafe fn Task_UsedBlackWhiteFlute(taskId: u8) {
     }
 }
 pub unsafe fn ItemUseOutOfBattle_BlackWhiteFlute(taskId: u8) {
-    CopyItemName(gSpecialVar_ItemId, gStringVar2.as_mut_ptr());
-    if gSpecialVar_ItemId == ITEM_WHITE_FLUTE {
+    CopyItemName(
+        gSpecialVar_ItemId.get(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+    );
+    if gSpecialVar_ItemId.get() == ITEM_WHITE_FLUTE {
         FlagSet(FLAG_SYS_ENC_UP_ITEM);
         FlagClear(FLAG_SYS_ENC_DOWN_ITEM);
         StringExpandPlaceholders(
@@ -968,7 +983,7 @@ pub(crate) unsafe fn ItemUseOnFieldCB_EscapeRope(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CanUseDigOrEscapeRopeOnCurMap() -> u8 {
-    if gMapHeader.allowEscaping() != 0 {
+    if (*gMapHeader.as_ptr()).allowEscaping() != 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -980,7 +995,7 @@ pub unsafe fn CanUseDigOrEscapeRopeOnCurMap() -> u8 {
 }
 pub unsafe fn ItemUseOutOfBattle_EscapeRope(taskId: u8) {
     if CanUseDigOrEscapeRopeOnCurMap() == TRUE {
-        sItemUseOnFieldCB = Some(ItemUseOnFieldCB_EscapeRope);
+        crate::gl!(sItemUseOnFieldCB = Some(ItemUseOnFieldCB_EscapeRope));
         SetUpItemUseOnFieldCallback(taskId);
     } else {
         DisplayDadsAdviceCannotUseItemMessage(
@@ -990,12 +1005,12 @@ pub unsafe fn ItemUseOutOfBattle_EscapeRope(taskId: u8) {
     }
 }
 pub unsafe fn ItemUseOutOfBattle_EvolutionStone(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_EvolutionStone);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_EvolutionStone));
     SetUpItemUseCallback(taskId);
 }
 pub unsafe fn ItemUseInBattle_PokeBall(taskId: u8) {
     if IsPlayerPartyAndPokemonStorageFull() == FALSE {
-        RemoveBagItem(gSpecialVar_ItemId, 1);
+        RemoveBagItem(gSpecialVar_ItemId.get(), 1);
         if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
             Task_FadeAndCloseBagMenu(taskId);
         } else {
@@ -1021,7 +1036,7 @@ pub unsafe fn ItemUseInBattle_PokeBall(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_CloseStatIncreaseMessage(taskId: u8) {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
             Task_FadeAndCloseBagMenu(taskId);
         } else {
@@ -1036,28 +1051,31 @@ pub(crate) unsafe fn Task_UseStatIncreaseItem(taskId: u8) {
     }) > 7
     {
         PlaySE(SE_USE_ITEM);
-        RemoveBagItem(gSpecialVar_ItemId, 1);
+        RemoveBagItem(gSpecialVar_ItemId.get(), 1);
         if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
             DisplayItemMessage(
                 taskId,
                 FONT_NORMAL,
-                UseStatIncreaseItem(gSpecialVar_ItemId),
+                UseStatIncreaseItem(gSpecialVar_ItemId.get()),
                 Some(Task_CloseStatIncreaseMessage),
             );
         } else {
             DisplayItemMessageInBattlePyramid(
                 taskId,
-                UseStatIncreaseItem(gSpecialVar_ItemId),
+                UseStatIncreaseItem(gSpecialVar_ItemId.get()),
                 Some(Task_CloseStatIncreaseMessage),
             );
         }
     }
 }
 pub unsafe fn ItemUseInBattle_StatIncrease(taskId: u8) {
-    let partyId: u16 = gBattlerPartyIndexes[gBattlerInMenuId];
+    let partyId: u16 = {
+        let gl_i0 = gBattlerInMenuId.get();
+        crate::gl!(gBattlerPartyIndexes[gl_i0])
+    };
     if ExecuteTableBasedItemEffect(
-        &raw mut gPlayerParty[partyId],
-        gSpecialVar_ItemId,
+        crate::gl!(&raw gPlayerParty[partyId]),
+        gSpecialVar_ItemId.get(),
         partyId as u8,
         0,
     ) != 0
@@ -1087,27 +1105,27 @@ pub unsafe fn ItemUseInBattle_StatIncrease(taskId: u8) {
 }
 unsafe fn ItemUseInBattle_ShowPartyMenu(taskId: u8) {
     if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
-        (*gBagMenu).newScreenCallback = Some(ChooseMonForInBattleItem);
+        (*crate::gl!(gBagMenu)).newScreenCallback = Some(ChooseMonForInBattleItem);
         Task_FadeAndCloseBagMenu(taskId);
     } else {
-        (*gPyramidBagMenu).newScreenCallback = Some(ChooseMonForInBattleItem);
+        (*crate::gl!(gPyramidBagMenu)).newScreenCallback = Some(ChooseMonForInBattleItem);
         CloseBattlePyramidBag(taskId);
     }
 }
 pub unsafe fn ItemUseInBattle_Medicine(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_Medicine);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_Medicine));
     ItemUseInBattle_ShowPartyMenu(taskId);
 }
 pub unsafe fn ItemUseInBattle_SacredAsh(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_SacredAsh);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_SacredAsh));
     ItemUseInBattle_ShowPartyMenu(taskId);
 }
 pub unsafe fn ItemUseInBattle_PPRecovery(taskId: u8) {
-    gItemUseCB = Some(ItemUseCB_PPRecovery);
+    crate::gl!(gItemUseCB = Some(ItemUseCB_PPRecovery));
     ItemUseInBattle_ShowPartyMenu(taskId);
 }
 pub unsafe fn ItemUseInBattle_Escape(taskId: u8) {
-    if gBattleTypeFlags & BATTLE_TYPE_TRAINER == FALSE as u32 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER == FALSE as u32 {
         RemoveUsedItem();
         if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
             DisplayItemMessage(
@@ -1131,7 +1149,7 @@ pub unsafe fn ItemUseInBattle_Escape(taskId: u8) {
     }
 }
 pub unsafe fn ItemUseOutOfBattle_EnigmaBerry(taskId: u8) {
-    match GetItemEffectType(gSpecialVar_ItemId) {
+    match GetItemEffectType(gSpecialVar_ItemId.get()) {
         ITEM_EFFECT_HEAL_HP
         | ITEM_EFFECT_CURE_POISON
         | ITEM_EFFECT_CURE_SLEEP
@@ -1171,7 +1189,7 @@ pub unsafe fn ItemUseOutOfBattle_EnigmaBerry(taskId: u8) {
     }
 }
 pub unsafe fn ItemUseInBattle_EnigmaBerry(taskId: u8) {
-    match GetItemEffectType(gSpecialVar_ItemId) {
+    match GetItemEffectType(gSpecialVar_ItemId.get()) {
         ITEM_EFFECT_X_ITEM => {
             ItemUseInBattle_StatIncrease(taskId);
         }

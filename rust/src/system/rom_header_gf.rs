@@ -97,7 +97,7 @@ const fn game_name() -> [u8; 32] {
 // the C data tables it points at.
 #[cfg(not(test))]
 #[used]
-#[unsafe(link_section = ".text.gf_rom_header")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".text.gf_rom_header"))]
 static GF_ROM_HEADER: GfRomHeader = GfRomHeader {
     version: 3,  // GAME_VERSION (VERSION_EMERALD)
     language: 2, // GAME_LANGUAGE (LANGUAGE_ENGLISH)

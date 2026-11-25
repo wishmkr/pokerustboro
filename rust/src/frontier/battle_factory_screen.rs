@@ -105,14 +105,14 @@ unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -122,14 +122,14 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
@@ -475,29 +475,42 @@ static sSwap_SpriteSheets: Table<CArray<SpriteSheet, 10>> =
 static sSwap_WindowTemplates: Table<CArray<WindowTemplate, 10>> =
     Table((&raw const crate::data::battle_factory_screen::sSwap_WindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSelectMenuTilesetBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSelectMonPicBgTilesetBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSelectMenuTilemapBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSelectMonPicBgTilemapBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFactorySelectMons: *mut Pokemon = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSwapMenuTilesetBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSwapMonPicBgTilesetBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSwapMenuTilemapBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSwapMonPicBgTilemapBuffer: *mut u8 = null_mut();
-pub(crate) static mut sFactorySelectScreen: *mut FactorySelectScreen = null_mut();
-pub(crate) static mut sSwap_CurrentOptionFunc: Option<unsafe fn(u8)> = None;
-pub(crate) static mut sFactorySwapScreen: *mut FactorySwapScreen = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gFactorySelect_CurrentOptionFunc: Option<unsafe fn() -> u8> = None;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSelectMenuTilesetBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSelectMonPicBgTilesetBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSelectMenuTilemapBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSelectMonPicBgTilemapBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sFactorySelectMons: crate::global::Global<*mut Pokemon> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSwapMenuTilesetBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSwapMonPicBgTilesetBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSwapMenuTilemapBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSwapMonPicBgTilemapBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sFactorySelectScreen: crate::global::Global<*mut FactorySelectScreen> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sSwap_CurrentOptionFunc: crate::global::Global<Option<unsafe fn(u8)>> =
+    crate::global::Global::new(None);
+pub(crate) static sFactorySwapScreen: crate::global::Global<*mut FactorySwapScreen> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFactorySelect_CurrentOptionFunc: crate::global::Global<Option<unsafe fn() -> u8>> =
+    crate::global::Global::new(None);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -534,7 +547,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -578,16 +591,16 @@ pub(crate) unsafe fn VBlankCB_SelectScreen() {
     TransferPlttBuffer();
 }
 pub unsafe fn DoBattleFactorySelectScreen() {
-    sFactorySelectScreen = null_mut();
+    crate::gl!(sFactorySelectScreen = null_mut());
     SetMainCallback2(Some(CB2_InitSelectScreen));
 }
 pub(crate) unsafe fn CB2_InitSelectScreen() {
     let mut taskId: u8 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
-            if !sFactorySelectMons.is_null() {
-                Free(sFactorySelectMons as *mut c_void);
-                sFactorySelectMons = null_mut();
+            if !(*sFactorySelectMons.as_ptr()).is_null() {
+                Free(crate::gl!(sFactorySelectMons) as *mut c_void);
+                crate::gl!(sFactorySelectMons = null_mut());
             }
             SetHBlankCallback(None);
             SetVBlankCallback(None);
@@ -606,13 +619,13 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
             InitBgsFromTemplates(0, sSelect_BgTemplates.as_ptr().cast_mut(), 3);
             InitWindows(sSelect_WindowTemplates.as_ptr().cast_mut());
             DeactivateAllTextPrinters();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
-            sSelectMenuTilesetBuffer = Alloc(1088) as *mut u8;
-            sSelectMonPicBgTilesetBuffer = AllocZeroed(1088) as *mut u8;
-            sSelectMenuTilemapBuffer = Alloc(BG_SCREEN_SIZE) as *mut u8;
-            sSelectMonPicBgTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+            crate::gl!(sSelectMenuTilesetBuffer = Alloc(1088) as *mut u8);
+            crate::gl!(sSelectMonPicBgTilesetBuffer = AllocZeroed(1088) as *mut u8);
+            crate::gl!(sSelectMenuTilemapBuffer = Alloc(BG_SCREEN_SIZE) as *mut u8);
+            crate::gl!(sSelectMonPicBgTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8);
             ChangeBgX(0, 0, BG_COORD_SET);
             ChangeBgY(0, 0, BG_COORD_SET);
             ChangeBgX(1, 0, BG_COORD_SET);
@@ -629,7 +642,7 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
             SetGpuReg(REG_OFFSET_WIN1V, 0);
             SetGpuReg(REG_OFFSET_WININ, 0);
             SetGpuReg(REG_OFFSET_WINOUT, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ResetPaletteFade();
@@ -641,27 +654,37 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
                     .cast::<CArray<u16, 544>>())
                 .as_ptr()
                 .cast_mut() as *mut c_void,
-                sSelectMenuTilesetBuffer as *mut c_void,
+                crate::gl!(sSelectMenuTilesetBuffer) as *mut c_void,
                 544,
             );
             CpuSet(
                 sMonPicBg_Gfx.as_ptr().cast_mut() as *mut c_void,
-                sSelectMonPicBgTilesetBuffer as *mut c_void,
+                crate::gl!(sSelectMonPicBgTilesetBuffer) as *mut c_void,
                 48,
             );
-            LoadBgTiles(1, sSelectMenuTilesetBuffer as *mut c_void, 1088, 0);
-            LoadBgTiles(3, sSelectMonPicBgTilesetBuffer as *mut c_void, 96, 0);
+            LoadBgTiles(
+                1,
+                crate::gl!(sSelectMenuTilesetBuffer) as *mut c_void,
+                1088,
+                0,
+            );
+            LoadBgTiles(
+                3,
+                crate::gl!(sSelectMonPicBgTilesetBuffer) as *mut c_void,
+                96,
+                0,
+            );
             CpuSet(
                 (*(&raw const crate::data::graphics::gFrontierFactoryMenu_Tilemap)
                     .cast::<CArray<u16, 0>>())
                 .as_ptr()
                 .cast_mut() as *mut c_void,
-                sSelectMenuTilemapBuffer as *mut c_void,
+                crate::gl!(sSelectMenuTilemapBuffer) as *mut c_void,
                 1024,
             );
             LoadBgTilemap(
                 1,
-                sSelectMenuTilemapBuffer as *mut c_void,
+                crate::gl!(sSelectMenuTilemapBuffer) as *mut c_void,
                 BG_SCREEN_SIZE as u16,
                 0,
             );
@@ -675,14 +698,19 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
             );
             LoadPalette(sSelectText_Pal.as_ptr().cast_mut() as *mut c_void, 240, 8);
             LoadPalette(sSelectText_Pal.as_ptr().cast_mut() as *mut c_void, 224, 10);
-            if !sFactorySelectScreen.is_null() && (*sFactorySelectScreen).fromSummaryScreen != 0 {
-                gPlttBufferUnfaded[228] = (*sFactorySelectScreen).speciesNameColorBackup;
+            if !(*sFactorySelectScreen.as_ptr()).is_null()
+                && (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen != 0
+            {
+                crate::gl!(
+                    gPlttBufferUnfaded[228] =
+                        (*crate::gl!(sFactorySelectScreen)).speciesNameColorBackup
+                );
             }
             LoadPalette(sMonPicBg_Pal.as_ptr().cast_mut() as *mut c_void, 32, 4);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
-            SetBgTilemapBuffer(3, sSelectMonPicBgTilemapBuffer as *mut c_void);
+            SetBgTilemapBuffer(3, crate::gl!(sSelectMonPicBgTilemapBuffer) as *mut c_void);
             CopyToBgTilemapBufferRect(
                 3,
                 sMonPicBg_Tilemap.as_ptr().cast_mut() as *mut c_void,
@@ -708,7 +736,7 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
                 8,
             );
             CopyBgTilemapBufferToVram(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             LoadSpritePalettes(sSelect_SpritePalettes.as_ptr().cast_mut());
@@ -719,7 +747,9 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
             SetVBlankCallback(Some(VBlankCB_SelectScreen));
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             SetGpuReg(REG_OFFSET_DISPCNT, 4928);
-            if !sFactorySelectScreen.is_null() && (*sFactorySelectScreen).fromSummaryScreen != 0 {
+            if !(*sFactorySelectScreen.as_ptr()).is_null()
+                && (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen != 0
+            {
                 Select_SetWinRegs(88, 152, 32, 96);
                 ShowBg(3);
                 SetGpuReg(REG_OFFSET_BLDCNT, 4680);
@@ -727,45 +757,47 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
             } else {
                 HideBg(3);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
-            if !sFactorySelectScreen.is_null() && (*sFactorySelectScreen).fromSummaryScreen != 0 {
-                (*sFactorySelectScreen).cursorPos = gLastViewedMonIndex;
+            if !(*sFactorySelectScreen.as_ptr()).is_null()
+                && (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen != 0
+            {
+                (*crate::gl!(sFactorySelectScreen)).cursorPos = gLastViewedMonIndex.get();
             }
             Select_InitMonsData();
             Select_InitAllSprites();
-            if (*sFactorySelectScreen).fromSummaryScreen == TRUE {
+            if (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen == TRUE {
                 Select_ReshowMonSprite();
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             Select_PrintSelectMonString();
             PutWindowTilemap(SELECT_WIN_INFO);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             Select_PrintMonCategory();
             PutWindowTilemap(SELECT_WIN_MON_CATEGORY);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             Select_PrintMonSpecies();
             PutWindowTilemap(SELECT_WIN_SPECIES);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             Select_PrintRentalPkmnString();
             PutWindowTilemap(SELECT_WIN_TITLE);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
-            (*sFactorySelectScreen).fadeSpeciesNameTaskId =
+            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameTaskId =
                 CreateTask(Some(Select_Task_FadeSpeciesName), 0);
-            if (*sFactorySelectScreen).fromSummaryScreen == 0 {
+            if (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen == 0 {
                 task_set(
-                    (*sFactorySelectScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameTaskId,
                     tState,
                     FADESTATE_INIT,
                 );
@@ -773,11 +805,11 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
                 task_set(taskId, tState, STATE_CHOOSE_MONS_INIT);
             } else {
                 task_set(
-                    (*sFactorySelectScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameTaskId,
                     tState,
                     FADESTATE_RUN,
                 );
-                (*sFactorySelectScreen).fadeSpeciesNameActive = FALSE;
+                (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = FALSE;
                 taskId = CreateTask(Some(Select_Task_HandleMenu), 0);
                 task_set(taskId, tState, STATE_MENU_RESHOW);
             }
@@ -787,17 +819,17 @@ pub(crate) unsafe fn CB2_InitSelectScreen() {
     }
 }
 unsafe fn Select_InitMonsData() {
-    if !sFactorySelectScreen.is_null() {
+    if !(*sFactorySelectScreen.as_ptr()).is_null() {
         return;
     }
-    sFactorySelectScreen = AllocZeroed(684) as *mut FactorySelectScreen;
-    (*sFactorySelectScreen).cursorPos = 0;
-    (*sFactorySelectScreen).selectingMonsState = 1;
-    (*sFactorySelectScreen).fromSummaryScreen = FALSE;
+    crate::gl!(sFactorySelectScreen = AllocZeroed(684) as *mut FactorySelectScreen);
+    (*crate::gl!(sFactorySelectScreen)).cursorPos = 0;
+    (*crate::gl!(sFactorySelectScreen)).selectingMonsState = 1;
+    (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen = FALSE;
     for i in 0..SELECTABLE_MONS_COUNT {
-        (*sFactorySelectScreen).mons[i].selectedId = 0;
+        (*crate::gl!(sFactorySelectScreen)).mons[i].selectedId = 0;
     }
-    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_TENT {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_TENT {
         CreateFrontierFactorySelectableMons(0);
     } else {
         CreateSlateportTentSelectableMons(0);
@@ -807,119 +839,169 @@ unsafe fn Select_InitAllSprites() {
     let mut cursorPos: u8 = 0;
     let mut x: i16 = 0;
     for i in 0..SELECTABLE_MONS_COUNT {
-        (*sFactorySelectScreen).mons[i].ballSpriteId = CreateSprite(
+        (*crate::gl!(sFactorySelectScreen)).mons[i].ballSpriteId = CreateSprite(
             (&raw const *sSpriteTemplate_Select_Pokeball).cast_mut(),
             35 * i as i16 + 32,
             64,
             1,
         ) as u16;
-        gSprites[(*sFactorySelectScreen).mons[i].ballSpriteId].data[0] = 0;
+        {
+            let gl_i0 = (*crate::gl!(sFactorySelectScreen)).mons[i].ballSpriteId;
+            crate::gl!(gSprites[gl_i0].data[0] = 0)
+        };
         Select_SetBallSpritePaletteNum(i);
     }
-    cursorPos = (*sFactorySelectScreen).cursorPos;
-    x = gSprites[(*sFactorySelectScreen).mons[cursorPos].ballSpriteId].x;
-    (*sFactorySelectScreen).cursorSpriteId = CreateSprite(
+    cursorPos = (*crate::gl!(sFactorySelectScreen)).cursorPos;
+    x = {
+        let gl_i1 = (*crate::gl!(sFactorySelectScreen)).mons[cursorPos].ballSpriteId;
+        crate::gl!(gSprites[gl_i1].x)
+    };
+    (*crate::gl!(sFactorySelectScreen)).cursorSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_Arrow).cast_mut(),
         x,
         88,
         0,
     );
-    (*sFactorySelectScreen).menuCursor1SpriteId = CreateSprite(
+    (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_MenuHighlightLeft).cast_mut(),
         176,
         112,
         0,
     );
-    (*sFactorySelectScreen).menuCursor2SpriteId = CreateSprite(
+    (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_MenuHighlightRight).cast_mut(),
         176,
         144,
         0,
     );
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].set_invisible(TRUE as u16);
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].set_invisible(TRUE as u16);
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].centerToCornerVecY = 0;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].centerToCornerVecY = 0;
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId]
+        .set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId]
+        .set_invisible(TRUE as u16);
+    {
+        let gl_i2 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i2].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i3 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i3].centerToCornerVecY = 0)
+    };
+    {
+        let gl_i4 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i4].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i5 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i5].centerToCornerVecY = 0)
+    };
 }
 unsafe fn Select_DestroyAllSprites() {
     for i in 0..SELECTABLE_MONS_COUNT {
-        DestroySprite(&raw mut gSprites[(*sFactorySelectScreen).mons[i].ballSpriteId]);
+        DestroySprite({
+            let gl_i6 = (*crate::gl!(sFactorySelectScreen)).mons[i].ballSpriteId;
+            crate::gl!(&raw gSprites[gl_i6])
+        });
     }
-    DestroySprite(&raw mut gSprites[(*sFactorySelectScreen).cursorSpriteId]);
-    DestroySprite(&raw mut gSprites[(*sFactorySelectScreen).menuCursor1SpriteId]);
-    DestroySprite(&raw mut gSprites[(*sFactorySelectScreen).menuCursor2SpriteId]);
+    DestroySprite({
+        let gl_i7 = (*crate::gl!(sFactorySelectScreen)).cursorSpriteId;
+        crate::gl!(&raw gSprites[gl_i7])
+    });
+    DestroySprite({
+        let gl_i8 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(&raw gSprites[gl_i8])
+    });
+    DestroySprite({
+        let gl_i9 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(&raw gSprites[gl_i9])
+    });
 }
 unsafe fn Select_UpdateBallCursorPosition(direction: i8) {
     let mut cursorPos: u8 = 0;
     if direction > 0 {
-        if (*sFactorySelectScreen).cursorPos != 5 {
-            (*sFactorySelectScreen).cursorPos += 1;
+        if (*crate::gl!(sFactorySelectScreen)).cursorPos != 5 {
+            (*crate::gl!(sFactorySelectScreen)).cursorPos += 1;
         } else {
-            (*sFactorySelectScreen).cursorPos = 0;
+            (*crate::gl!(sFactorySelectScreen)).cursorPos = 0;
         }
     } else {
-        if (*sFactorySelectScreen).cursorPos != 0 {
-            (*sFactorySelectScreen).cursorPos -= 1;
+        if (*crate::gl!(sFactorySelectScreen)).cursorPos != 0 {
+            (*crate::gl!(sFactorySelectScreen)).cursorPos -= 1;
         } else {
-            (*sFactorySelectScreen).cursorPos = 5;
+            (*crate::gl!(sFactorySelectScreen)).cursorPos = 5;
         }
     }
-    cursorPos = (*sFactorySelectScreen).cursorPos;
-    gSprites[(*sFactorySelectScreen).cursorSpriteId].x =
-        gSprites[(*sFactorySelectScreen).mons[cursorPos].ballSpriteId].x;
+    cursorPos = (*crate::gl!(sFactorySelectScreen)).cursorPos;
+    {
+        let gl_v = {
+            let gl_i11 = (*crate::gl!(sFactorySelectScreen)).mons[cursorPos].ballSpriteId;
+            crate::gl!(gSprites[gl_i11].x)
+        };
+        let gl_i10 = (*crate::gl!(sFactorySelectScreen)).cursorSpriteId;
+        crate::gl!(gSprites[gl_i10].x = gl_v)
+    };
 }
 unsafe fn Select_UpdateMenuCursorPosition(direction: i8) {
     if direction > 0 {
-        if (*sFactorySelectScreen).menuCursorPos != 2 {
-            (*sFactorySelectScreen).menuCursorPos += 1;
+        if (*crate::gl!(sFactorySelectScreen)).menuCursorPos != 2 {
+            (*crate::gl!(sFactorySelectScreen)).menuCursorPos += 1;
         } else {
-            (*sFactorySelectScreen).menuCursorPos = 0;
+            (*crate::gl!(sFactorySelectScreen)).menuCursorPos = 0;
         }
     } else {
-        if (*sFactorySelectScreen).menuCursorPos != 0 {
-            (*sFactorySelectScreen).menuCursorPos -= 1;
+        if (*crate::gl!(sFactorySelectScreen)).menuCursorPos != 0 {
+            (*crate::gl!(sFactorySelectScreen)).menuCursorPos -= 1;
         } else {
-            (*sFactorySelectScreen).menuCursorPos = 2;
+            (*crate::gl!(sFactorySelectScreen)).menuCursorPos = 2;
         }
     }
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].y =
-        (*sFactorySelectScreen).menuCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].y =
-        (*sFactorySelectScreen).menuCursorPos as i16 * 16 + 112;
+    {
+        let gl_v = (*crate::gl!(sFactorySelectScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i12 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i12].y = gl_v)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySelectScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i13 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i13].y = gl_v)
+    };
 }
 unsafe fn Select_UpdateYesNoCursorPosition(direction: i8) {
     if direction > 0 {
-        if (*sFactorySelectScreen).yesNoCursorPos != 1 {
-            (*sFactorySelectScreen).yesNoCursorPos += 1;
+        if (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos != 1 {
+            (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos += 1;
         } else {
-            (*sFactorySelectScreen).yesNoCursorPos = 0;
+            (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos = 0;
         }
     } else {
-        if (*sFactorySelectScreen).yesNoCursorPos != 0 {
-            (*sFactorySelectScreen).yesNoCursorPos -= 1;
+        if (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos != 0 {
+            (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos -= 1;
         } else {
-            (*sFactorySelectScreen).yesNoCursorPos = 1;
+            (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos = 1;
         }
     }
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].y =
-        (*sFactorySelectScreen).yesNoCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].y =
-        (*sFactorySelectScreen).yesNoCursorPos as i16 * 16 + 112;
+    {
+        let gl_v = (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos as i16 * 16 + 112;
+        let gl_i14 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i14].y = gl_v)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos as i16 * 16 + 112;
+        let gl_i15 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i15].y = gl_v)
+    };
 }
 unsafe fn Select_HandleMonSelectionChange() {
     let mut i: u8 = 0;
     let mut paletteNum: u8 = 0;
-    let cursorPos: u8 = (*sFactorySelectScreen).cursorPos;
-    if (*sFactorySelectScreen).mons[cursorPos].selectedId != 0 {
+    let cursorPos: u8 = (*crate::gl!(sFactorySelectScreen)).cursorPos;
+    if (*crate::gl!(sFactorySelectScreen)).mons[cursorPos].selectedId != 0 {
         paletteNum = IndexOfSpritePaletteTag(PALTAG_BALL_GRAY);
-        if (*sFactorySelectScreen).selectingMonsState == FRONTIER_PARTY_SIZE as u8
-            && (*sFactorySelectScreen).mons[cursorPos].selectedId == 1
+        if (*crate::gl!(sFactorySelectScreen)).selectingMonsState == FRONTIER_PARTY_SIZE as u8
+            && (*crate::gl!(sFactorySelectScreen)).mons[cursorPos].selectedId == 1
         {
             i = 0;
             while i < SELECTABLE_MONS_COUNT {
-                if (*sFactorySelectScreen).mons[i].selectedId == 2 {
+                if (*crate::gl!(sFactorySelectScreen)).mons[i].selectedId == 2 {
                     break;
                 }
                 i += 1;
@@ -927,29 +1009,29 @@ unsafe fn Select_HandleMonSelectionChange() {
             if i == SELECTABLE_MONS_COUNT {
                 return;
             } else {
-                (*sFactorySelectScreen).mons[i].selectedId = 1;
+                (*crate::gl!(sFactorySelectScreen)).mons[i].selectedId = 1;
             }
         }
-        (*sFactorySelectScreen).mons[cursorPos].selectedId = 0;
-        (*sFactorySelectScreen).selectingMonsState -= 1;
+        (*crate::gl!(sFactorySelectScreen)).mons[cursorPos].selectedId = 0;
+        (*crate::gl!(sFactorySelectScreen)).selectingMonsState -= 1;
     } else {
         paletteNum = IndexOfSpritePaletteTag(PALTAG_BALL_SELECTED);
-        (*sFactorySelectScreen).mons[cursorPos].selectedId =
-            (*sFactorySelectScreen).selectingMonsState;
-        (*sFactorySelectScreen).selectingMonsState += 1;
+        (*crate::gl!(sFactorySelectScreen)).mons[cursorPos].selectedId =
+            (*crate::gl!(sFactorySelectScreen)).selectingMonsState;
+        (*crate::gl!(sFactorySelectScreen)).selectingMonsState += 1;
     }
-    gSprites[(*sFactorySelectScreen).mons[cursorPos].ballSpriteId]
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).mons[cursorPos].ballSpriteId]
         .oam
         .set_paletteNum(paletteNum as u16);
 }
 unsafe fn Select_SetBallSpritePaletteNum(id: u8) {
     let mut palNum: u8 = 0;
-    if (*sFactorySelectScreen).mons[id].selectedId != 0 {
+    if (*crate::gl!(sFactorySelectScreen)).mons[id].selectedId != 0 {
         palNum = IndexOfSpritePaletteTag(PALTAG_BALL_SELECTED);
     } else {
         palNum = IndexOfSpritePaletteTag(PALTAG_BALL_GRAY);
     }
-    gSprites[(*sFactorySelectScreen).mons[id].ballSpriteId]
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).mons[id].ballSpriteId]
         .oam
         .set_paletteNum(palNum as u16);
 }
@@ -957,42 +1039,44 @@ pub(crate) unsafe fn Select_Task_OpenSummaryScreen(taskId: u8) {
     let mut currMonId: u8 = 0;
     match task_get(taskId, tState) {
         STATE_SUMMARY_FADE => {
-            gPlttBufferUnfaded[228] = gPlttBufferFaded[228];
+            crate::gl!(gPlttBufferUnfaded[228] = crate::gl!(gPlttBufferFaded[228]));
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             task_set(taskId, tState, STATE_SUMMARY_CLEAN);
         }
         STATE_SUMMARY_CLEAN => {
-            if gPaletteFade.active() == 0 {
-                DestroyTask((*sFactorySelectScreen).fadeSpeciesNameTaskId);
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                DestroyTask((*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameTaskId);
                 HideMonPic(
-                    (*sFactorySelectScreen).monPics[1],
-                    &raw mut (*sFactorySelectScreen).monPicAnimating,
+                    (*crate::gl!(sFactorySelectScreen)).monPics[1],
+                    &raw mut (*crate::gl!(sFactorySelectScreen)).monPicAnimating,
                 );
                 Select_DestroyAllSprites();
-                Free(sSelectMenuTilesetBuffer as *mut c_void);
-                sSelectMenuTilesetBuffer = null_mut();
-                Free(sSelectMonPicBgTilesetBuffer as *mut c_void);
-                sSelectMonPicBgTilesetBuffer = null_mut();
-                Free(sSelectMenuTilemapBuffer as *mut c_void);
-                sSelectMenuTilemapBuffer = null_mut();
-                Free(sSelectMonPicBgTilemapBuffer as *mut c_void);
-                sSelectMonPicBgTilemapBuffer = null_mut();
+                Free(crate::gl!(sSelectMenuTilesetBuffer) as *mut c_void);
+                crate::gl!(sSelectMenuTilesetBuffer = null_mut());
+                Free(crate::gl!(sSelectMonPicBgTilesetBuffer) as *mut c_void);
+                crate::gl!(sSelectMonPicBgTilesetBuffer = null_mut());
+                Free(crate::gl!(sSelectMenuTilemapBuffer) as *mut c_void);
+                crate::gl!(sSelectMenuTilemapBuffer = null_mut());
+                Free(crate::gl!(sSelectMonPicBgTilemapBuffer) as *mut c_void);
+                crate::gl!(sSelectMonPicBgTilemapBuffer = null_mut());
                 FreeAllWindowBuffers();
                 task_set(taskId, tState, STATE_SUMMARY_SHOW);
             }
         }
         STATE_SUMMARY_SHOW => {
-            (*sFactorySelectScreen).speciesNameColorBackup = gPlttBufferUnfaded[228];
+            (*crate::gl!(sFactorySelectScreen)).speciesNameColorBackup =
+                crate::gl!(gPlttBufferUnfaded[228]);
             DestroyTask(taskId);
-            (*sFactorySelectScreen).fromSummaryScreen = TRUE;
-            currMonId = (*sFactorySelectScreen).cursorPos;
-            sFactorySelectMons = AllocZeroed(600) as *mut Pokemon;
+            (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen = TRUE;
+            currMonId = (*crate::gl!(sFactorySelectScreen)).cursorPos;
+            crate::gl!(sFactorySelectMons = AllocZeroed(600) as *mut Pokemon);
             for i in 0..SELECTABLE_MONS_COUNT {
-                *sFactorySelectMons.at(i) = (*sFactorySelectScreen).mons[i].monData;
+                *(*sFactorySelectMons.as_ptr()).at(i) =
+                    (*crate::gl!(sFactorySelectScreen)).mons[i].monData;
             }
             ShowPokemonSummaryScreen(
                 SUMMARY_MODE_LOCK_MOVES,
-                sFactorySelectMons as *mut c_void,
+                crate::gl!(sFactorySelectMons) as *mut c_void,
                 currMonId,
                 5,
                 Some(CB2_InitSelectScreen),
@@ -1002,7 +1086,7 @@ pub(crate) unsafe fn Select_Task_OpenSummaryScreen(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Select_Task_Exit(taskId: u8) {
-    if (*sFactorySelectScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySelectScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
@@ -1012,16 +1096,16 @@ pub(crate) unsafe fn Select_Task_Exit(taskId: u8) {
         }
         1 if UpdatePaletteFade() == 0 => {
             Select_CopyMonsToPlayerParty();
-            DestroyTask((*sFactorySelectScreen).fadeSpeciesNameTaskId);
+            DestroyTask((*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameTaskId);
             Select_DestroyAllSprites();
-            Free(sSelectMenuTilesetBuffer as *mut c_void);
-            sSelectMenuTilesetBuffer = null_mut();
-            Free(sSelectMenuTilemapBuffer as *mut c_void);
-            sSelectMenuTilemapBuffer = null_mut();
-            Free(sSelectMonPicBgTilemapBuffer as *mut c_void);
-            sSelectMonPicBgTilemapBuffer = null_mut();
-            Free(sFactorySelectScreen as *mut c_void);
-            sFactorySelectScreen = null_mut();
+            Free(crate::gl!(sSelectMenuTilesetBuffer) as *mut c_void);
+            crate::gl!(sSelectMenuTilesetBuffer = null_mut());
+            Free(crate::gl!(sSelectMenuTilemapBuffer) as *mut c_void);
+            crate::gl!(sSelectMenuTilemapBuffer = null_mut());
+            Free(crate::gl!(sSelectMonPicBgTilemapBuffer) as *mut c_void);
+            crate::gl!(sSelectMonPicBgTilemapBuffer = null_mut());
+            Free(crate::gl!(sFactorySelectScreen) as *mut c_void);
+            crate::gl!(sFactorySelectScreen = null_mut());
             FreeAllWindowBuffers();
             SetMainCallback2(Some(CB2_ReturnToFieldContinueScript));
             DestroyTask(taskId);
@@ -1030,7 +1114,7 @@ pub(crate) unsafe fn Select_Task_Exit(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Select_Task_HandleYesNo(taskId: u8) {
-    if (*sFactorySelectScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySelectScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
@@ -1043,30 +1127,30 @@ pub(crate) unsafe fn Select_Task_HandleYesNo(taskId: u8) {
             task_set(taskId, tState, STATE_YESNO_HANDLE_INPUT);
         }
         STATE_YESNO_HANDLE_INPUT => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                if (*sFactorySelectScreen).yesNoCursorPos == 0 {
+                if (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos == 0 {
                     Select_HideChosenMons();
                     task_set(taskId, tState, 0);
                     task_set_func(taskId, Some(Select_Task_Exit));
                 } else {
                     Select_ErasePopupMenu(SELECT_WIN_YES_NO);
                     Select_DeclineChosenMons();
-                    (*sFactorySelectScreen).fadeSpeciesNameActive = TRUE;
+                    (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = TRUE;
                     task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
                     task_set_func(taskId, Some(Select_Task_HandleChooseMons));
                 }
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 Select_ErasePopupMenu(SELECT_WIN_YES_NO);
                 Select_DeclineChosenMons();
-                (*sFactorySelectScreen).fadeSpeciesNameActive = TRUE;
+                (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = TRUE;
                 task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
                 task_set_func(taskId, Some(Select_Task_HandleChooseMons));
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
                 PlaySE(SE_SELECT);
                 Select_UpdateYesNoCursorPosition(-1);
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
                 PlaySE(SE_SELECT);
                 Select_UpdateYesNoCursorPosition(1);
             }
@@ -1077,28 +1161,28 @@ pub(crate) unsafe fn Select_Task_HandleYesNo(taskId: u8) {
 pub(crate) unsafe fn Select_Task_HandleMenu(taskId: u8) {
     match task_get(taskId, tState) {
         STATE_MENU_INIT => {
-            if (*sFactorySelectScreen).fromSummaryScreen == 0 {
+            if (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen == 0 {
                 OpenMonPic(
-                    &raw mut (*sFactorySelectScreen).monPics[1].bgSpriteId,
-                    &raw mut (*sFactorySelectScreen).monPicAnimating,
+                    &raw mut (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId,
+                    &raw mut (*crate::gl!(sFactorySelectScreen)).monPicAnimating,
                     FALSE,
                 );
             }
             task_set(taskId, tState, STATE_MENU_SHOW_OPTIONS);
         }
         STATE_MENU_SHOW_OPTIONS => {
-            if (*sFactorySelectScreen).monPicAnimating != TRUE {
+            if (*crate::gl!(sFactorySelectScreen)).monPicAnimating != TRUE {
                 Select_ShowMenuOptions();
-                (*sFactorySelectScreen).fromSummaryScreen = FALSE;
+                (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen = FALSE;
                 task_set(taskId, tState, STATE_MENU_HANDLE_INPUT);
             }
         }
         STATE_MENU_HANDLE_INPUT => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 let retVal: u8 = Select_RunMenuOptionFunc();
                 if retVal == SELECT_CONTINUE_CHOOSING {
-                    (*sFactorySelectScreen).fadeSpeciesNameActive = TRUE;
+                    (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = TRUE;
                     task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
                     task_set_func(taskId, Some(Select_Task_HandleChooseMons));
                 } else if retVal == SELECT_CONFIRM_MONS {
@@ -1111,32 +1195,35 @@ pub(crate) unsafe fn Select_Task_HandleMenu(taskId: u8) {
                     task_set(taskId, tState, STATE_SUMMARY_FADE);
                     task_set_func(taskId, Some(Select_Task_OpenSummaryScreen));
                 }
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 CloseMonPic(
-                    (*sFactorySelectScreen).monPics[1],
-                    &raw mut (*sFactorySelectScreen).monPicAnimating,
+                    (*crate::gl!(sFactorySelectScreen)).monPics[1],
+                    &raw mut (*crate::gl!(sFactorySelectScreen)).monPicAnimating,
                     FALSE,
                 );
                 Select_ErasePopupMenu(SELECT_WIN_OPTIONS);
-                (*sFactorySelectScreen).fadeSpeciesNameActive = TRUE;
+                (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = TRUE;
                 task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
                 task_set_func(taskId, Some(Select_Task_HandleChooseMons));
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
                 PlaySE(SE_SELECT);
                 Select_UpdateMenuCursorPosition(-1);
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
                 PlaySE(SE_SELECT);
                 Select_UpdateMenuCursorPosition(1);
             }
         }
         STATE_MENU_REINIT => {
-            if gPaletteFade.active() == 0 {
-                if (*sFactorySelectScreen).fromSummaryScreen == TRUE {
-                    gPlttBufferFaded[228] = (*sFactorySelectScreen).speciesNameColorBackup;
-                    gPlttBufferUnfaded[228] = gPlttBufferUnfaded[244];
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                if (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen == TRUE {
+                    crate::gl!(
+                        gPlttBufferFaded[228] =
+                            (*crate::gl!(sFactorySelectScreen)).speciesNameColorBackup
+                    );
+                    crate::gl!(gPlttBufferUnfaded[228] = crate::gl!(gPlttBufferUnfaded[244]));
                 }
-                (*sFactorySelectScreen).fromSummaryScreen = FALSE;
+                (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen = FALSE;
                 task_set(taskId, tState, STATE_MENU_HANDLE_INPUT);
             }
         }
@@ -1148,43 +1235,43 @@ pub(crate) unsafe fn Select_Task_HandleMenu(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Select_Task_HandleChooseMons(taskId: u8) {
-    if (*sFactorySelectScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySelectScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
         STATE_CHOOSE_MONS_INIT => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
-                (*sFactorySelectScreen).fadeSpeciesNameActive = TRUE;
+                (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = TRUE;
             }
         }
         STATE_CHOOSE_MONS_HANDLE_INPUT => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                (*sFactorySelectScreen).fadeSpeciesNameActive = FALSE;
+                (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = FALSE;
                 task_set(taskId, tState, STATE_MENU_INIT);
                 task_set_func(taskId, Some(Select_Task_HandleMenu));
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
                 PlaySE(SE_SELECT);
                 Select_UpdateBallCursorPosition(-1);
                 Select_PrintMonCategory();
                 Select_PrintMonSpecies();
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
                 PlaySE(SE_SELECT);
                 Select_UpdateBallCursorPosition(1);
                 Select_PrintMonCategory();
                 Select_PrintMonSpecies();
             }
         }
-        STATE_CHOOSE_MONS_INVALID if gMain.newKeys as i32 & A_BUTTON != 0 => {
+        STATE_CHOOSE_MONS_INVALID if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 => {
             PlaySE(SE_SELECT);
             CloseMonPic(
-                (*sFactorySelectScreen).monPics[1],
-                &raw mut (*sFactorySelectScreen).monPicAnimating,
+                (*crate::gl!(sFactorySelectScreen)).monPics[1],
+                &raw mut (*crate::gl!(sFactorySelectScreen)).monPicAnimating,
                 FALSE,
             );
             Select_PrintSelectMonString();
-            (*sFactorySelectScreen).fadeSpeciesNameActive = TRUE;
+            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive = TRUE;
             task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
         }
         _ => {}
@@ -1195,58 +1282,63 @@ unsafe fn CreateFrontierFactorySelectableMons(firstMonId: u8) {
     let mut level: u8 = 0;
     let mut friendship: u8 = 0;
     let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
-    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
-    let challengeNum: u8 =
-        ((*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode] as i32 / 7) as u8;
-    gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gBattleFrontierMons)
-        .cast::<CArray<FacilityMon, 0>>())
-    .as_ptr()
-    .cast_mut();
-    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_50 {
+    let lvlMode: u8 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode();
+    let challengeNum: u8 = ((*crate::gl!(gSaveBlock2Ptr)).frontier.factoryWinStreaks[battleMode]
+        [lvlMode] as i32
+        / 7) as u8;
+    crate::gl!(
+        gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gBattleFrontierMons)
+            .cast::<CArray<FacilityMon, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_50 {
         level = FRONTIER_MAX_LEVEL_OPEN;
     } else {
         level = FRONTIER_MAX_LEVEL_50;
     }
     let rentalRank: u8 = GetNumPastRentalsRank(battleMode, lvlMode);
-    let otId: u32 = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-        | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-        | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
+    let otId: u32 = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24;
     for i in 0..SELECTABLE_MONS_COUNT {
-        let monId: u16 = (*gSaveBlock2Ptr).frontier.rentalMons[i].monId;
-        (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monId = monId;
+        let monId: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].monId;
+        (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monId = monId;
         if i < rentalRank {
             ivs = GetFactoryMonFixedIV(challengeNum + 1, FALSE);
         } else {
             ivs = GetFactoryMonFixedIV(challengeNum, FALSE);
         }
         CreateMonWithEVSpreadNatureOTID(
-            &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
-            (*gFacilityTrainerMons.at(monId)).species,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monData,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
             level,
-            (*gFacilityTrainerMons.at(monId)).nature,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
             ivs,
-            (*gFacilityTrainerMons.at(monId)).evSpread,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
             otId,
         );
         friendship = 0;
         for j in 0..(MAX_MON_MOVES as u8) {
             SetMonMoveAvoidReturn(
-                &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
-                (*gFacilityTrainerMons.at(monId)).moves[j],
+                &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32]
+                    .monData,
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                 j,
             );
         }
         SetMonData(
-            &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monData,
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monData,
             MON_DATA_HELD_ITEM,
             (&raw const (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
-                .cast::<CArray<u16, 0>>())[(*gFacilityTrainerMons.at(monId)).itemTableId])
+                .cast::<CArray<u16, 0>>())
+                [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                 .cast_mut() as *mut c_void,
         );
     }
@@ -1255,44 +1347,48 @@ unsafe fn CreateSlateportTentSelectableMons(firstMonId: u8) {
     let ivs: u8 = 0;
     let level: u8 = TENT_MIN_LEVEL;
     let mut friendship: u8 = 0;
-    gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gSlateportBattleTentMons)
-        .cast::<CArray<FacilityMon, 0>>())
-    .as_ptr()
-    .cast_mut();
-    let otId: u32 = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-        | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-        | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
+    crate::gl!(
+        gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gSlateportBattleTentMons)
+            .cast::<CArray<FacilityMon, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
+    let otId: u32 = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24;
     for i in 0..SELECTABLE_MONS_COUNT {
-        let monId: u16 = (*gSaveBlock2Ptr).frontier.rentalMons[i].monId;
-        (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monId = monId;
+        let monId: u16 = (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].monId;
+        (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monId = monId;
         CreateMonWithEVSpreadNatureOTID(
-            &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
-            (*gFacilityTrainerMons.at(monId)).species,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monData,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species,
             level,
-            (*gFacilityTrainerMons.at(monId)).nature,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).nature,
             ivs,
-            (*gFacilityTrainerMons.at(monId)).evSpread,
+            (*(*gFacilityTrainerMons.as_ptr()).at(monId)).evSpread,
             otId,
         );
         friendship = 0;
         for j in 0..(MAX_MON_MOVES as u8) {
             SetMonMoveAvoidReturn(
-                &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
-                (*gFacilityTrainerMons.at(monId)).moves[j],
+                &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32]
+                    .monData,
+                (*(*gFacilityTrainerMons.as_ptr()).at(monId)).moves[j],
                 j,
             );
         }
         SetMonData(
-            &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monData,
             MON_DATA_FRIENDSHIP,
             &raw mut friendship as *mut c_void,
         );
         SetMonData(
-            &raw mut (*sFactorySelectScreen).mons[i as i32 + firstMonId as i32].monData,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[i as i32 + firstMonId as i32].monData,
             MON_DATA_HELD_ITEM,
             (&raw const (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
-                .cast::<CArray<u16, 0>>())[(*gFacilityTrainerMons.at(monId)).itemTableId])
+                .cast::<CArray<u16, 0>>())
+                [(*(*gFacilityTrainerMons.as_ptr()).at(monId)).itemTableId])
                 .cast_mut() as *mut c_void,
         );
     }
@@ -1300,20 +1396,26 @@ unsafe fn CreateSlateportTentSelectableMons(firstMonId: u8) {
 unsafe fn Select_CopyMonsToPlayerParty() {
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
         for j in 0..SELECTABLE_MONS_COUNT {
-            if (*sFactorySelectScreen).mons[j].selectedId as i32 == i as i32 + 1 {
-                gPlayerParty[i] = (*sFactorySelectScreen).mons[j].monData;
-                (*gSaveBlock2Ptr).frontier.rentalMons[i].monId =
-                    (*sFactorySelectScreen).mons[j].monId;
-                (*gSaveBlock2Ptr).frontier.rentalMons[i].personality =
-                    GetMonData3(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY, null_mut());
-                (*gSaveBlock2Ptr).frontier.rentalMons[i].abilityNum = GetBoxMonData3(
-                    &raw mut gPlayerParty[i].r#box,
+            if (*crate::gl!(sFactorySelectScreen)).mons[j].selectedId as i32 == i as i32 + 1 {
+                crate::gl!(gPlayerParty[i] = (*crate::gl!(sFactorySelectScreen)).mons[j].monData);
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].monId =
+                    (*crate::gl!(sFactorySelectScreen)).mons[j].monId;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].personality = GetMonData3(
+                    crate::gl!(&raw gPlayerParty[i]),
+                    MON_DATA_PERSONALITY,
+                    null_mut(),
+                );
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].abilityNum = GetBoxMonData3(
+                    crate::gl!(&raw gPlayerParty[i].r#box),
                     MON_DATA_ABILITY_NUM,
                     null_mut(),
+                )
+                    as u8;
+                (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons[i].ivs = GetBoxMonData3(
+                    crate::gl!(&raw gPlayerParty[i].r#box),
+                    MON_DATA_ATK_IV,
+                    null_mut(),
                 ) as u8;
-                (*gSaveBlock2Ptr).frontier.rentalMons[i].ivs =
-                    GetBoxMonData3(&raw mut gPlayerParty[i].r#box, MON_DATA_ATK_IV, null_mut())
-                        as u8;
                 break;
             }
         }
@@ -1321,32 +1423,62 @@ unsafe fn Select_CopyMonsToPlayerParty() {
     CalculatePlayerPartyCount();
 }
 unsafe fn Select_ShowMenuOptions() {
-    if (*sFactorySelectScreen).fromSummaryScreen == 0 {
-        (*sFactorySelectScreen).menuCursorPos = 0;
+    if (*crate::gl!(sFactorySelectScreen)).fromSummaryScreen == 0 {
+        (*crate::gl!(sFactorySelectScreen)).menuCursorPos = 0;
     }
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].x = 176;
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].y =
-        (*sFactorySelectScreen).menuCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].x = 208;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].y =
-        (*sFactorySelectScreen).menuCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].set_invisible(FALSE as u16);
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].set_invisible(FALSE as u16);
+    {
+        let gl_i16 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i16].x = 176)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySelectScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i17 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i17].y = gl_v)
+    };
+    {
+        let gl_i18 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i18].x = 208)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySelectScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i19 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i19].y = gl_v)
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId]
+        .set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId]
+        .set_invisible(FALSE as u16);
     Select_PrintMenuOptions();
 }
 unsafe fn Select_ShowYesNoOptions() {
-    (*sFactorySelectScreen).yesNoCursorPos = 0;
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].x = 176;
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].y = 112;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].x = 208;
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].y = 112;
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].set_invisible(FALSE as u16);
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].set_invisible(FALSE as u16);
+    (*crate::gl!(sFactorySelectScreen)).yesNoCursorPos = 0;
+    {
+        let gl_i20 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i20].x = 176)
+    };
+    {
+        let gl_i21 = (*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i21].y = 112)
+    };
+    {
+        let gl_i22 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i22].x = 208)
+    };
+    {
+        let gl_i23 = (*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i23].y = 112)
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId]
+        .set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId]
+        .set_invisible(FALSE as u16);
     Select_PrintYesNoOptions();
 }
 unsafe fn Select_ErasePopupMenu(windowId: u8) {
-    gSprites[(*sFactorySelectScreen).menuCursor1SpriteId].set_invisible(TRUE as u16);
-    gSprites[(*sFactorySelectScreen).menuCursor2SpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor1SpriteId]
+        .set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).menuCursor2SpriteId]
+        .set_invisible(TRUE as u16);
     FillWindowPixelBuffer(windowId, 0);
     CopyWindowToVram(windowId, COPYWIN_GFX);
     ClearWindowTilemap(windowId);
@@ -1367,10 +1499,10 @@ unsafe fn Select_PrintRentalPkmnString() {
     CopyWindowToVram(SELECT_WIN_TITLE, COPYWIN_FULL);
 }
 unsafe fn Select_PrintMonSpecies() {
-    let monId: u8 = (*sFactorySelectScreen).cursorPos;
+    let monId: u8 = (*crate::gl!(sFactorySelectScreen)).cursorPos;
     FillWindowPixelBuffer(SELECT_WIN_SPECIES, 0);
     let species: u16 = GetMonData3(
-        &raw mut (*sFactorySelectScreen).mons[monId].monData,
+        &raw mut (*crate::gl!(sFactorySelectScreen)).mons[monId].monData,
         MON_DATA_SPECIES,
         null_mut(),
     ) as u16;
@@ -1396,15 +1528,15 @@ unsafe fn Select_PrintMonSpecies() {
 unsafe fn Select_PrintSelectMonString() {
     let mut str: *mut u8 = null_mut();
     FillWindowPixelBuffer(SELECT_WIN_INFO, 0);
-    if (*sFactorySelectScreen).selectingMonsState == 1 {
+    if (*crate::gl!(sFactorySelectScreen)).selectingMonsState == 1 {
         str = (*(&raw const crate::data::strings::gText_SelectFirstPkmn).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
-    } else if (*sFactorySelectScreen).selectingMonsState == 2 {
+    } else if (*crate::gl!(sFactorySelectScreen)).selectingMonsState == 2 {
         str = (*(&raw const crate::data::strings::gText_SelectSecondPkmn).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
-    } else if (*sFactorySelectScreen).selectingMonsState == 3 {
+    } else if (*crate::gl!(sFactorySelectScreen)).selectingMonsState == 3 {
         str = (*(&raw const crate::data::strings::gText_SelectThirdPkmn).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
@@ -1433,7 +1565,9 @@ unsafe fn Select_PrintCantSelectSameMon() {
     CopyWindowToVram(SELECT_WIN_INFO, COPYWIN_GFX);
 }
 unsafe fn Select_PrintMenuOptions() {
-    let selectedId: u8 = (*sFactorySelectScreen).mons[(*sFactorySelectScreen).cursorPos].selectedId;
+    let selectedId: u8 = (*crate::gl!(sFactorySelectScreen)).mons
+        [(*crate::gl!(sFactorySelectScreen)).cursorPos]
+        .selectedId;
     PutWindowTilemap(SELECT_WIN_OPTIONS);
     FillWindowPixelBuffer(SELECT_WIN_OPTIONS, 0);
     AddTextPrinterParameterized3(
@@ -1513,27 +1647,33 @@ unsafe fn Select_PrintYesNoOptions() {
     CopyWindowToVram(SELECT_WIN_YES_NO, COPYWIN_FULL);
 }
 unsafe fn Select_RunMenuOptionFunc() -> u8 {
-    gFactorySelect_CurrentOptionFunc =
-        sSelect_MenuOptionFuncs[(*sFactorySelectScreen).menuCursorPos];
-    gFactorySelect_CurrentOptionFunc.unwrap_unchecked()()
+    crate::gl!(
+        gFactorySelect_CurrentOptionFunc =
+            sSelect_MenuOptionFuncs[(*crate::gl!(sFactorySelectScreen)).menuCursorPos]
+    );
+    (*gFactorySelect_CurrentOptionFunc.as_ptr()).unwrap_unchecked()()
 }
 pub(crate) unsafe fn Select_OptionRentDeselect() -> u8 {
-    let selectedId: u8 = (*sFactorySelectScreen).mons[(*sFactorySelectScreen).cursorPos].selectedId;
-    let monId: u16 = (*sFactorySelectScreen).mons[(*sFactorySelectScreen).cursorPos].monId;
+    let selectedId: u8 = (*crate::gl!(sFactorySelectScreen)).mons
+        [(*crate::gl!(sFactorySelectScreen)).cursorPos]
+        .selectedId;
+    let monId: u16 = (*crate::gl!(sFactorySelectScreen)).mons
+        [(*crate::gl!(sFactorySelectScreen)).cursorPos]
+        .monId;
     if selectedId == 0 && Select_AreSpeciesValid(monId) == 0 {
         Select_PrintCantSelectSameMon();
         Select_ErasePopupMenu(SELECT_WIN_OPTIONS);
         return SELECT_INVALID_MON;
     } else {
         CloseMonPic(
-            (*sFactorySelectScreen).monPics[1],
-            &raw mut (*sFactorySelectScreen).monPicAnimating,
+            (*crate::gl!(sFactorySelectScreen)).monPics[1],
+            &raw mut (*crate::gl!(sFactorySelectScreen)).monPicAnimating,
             FALSE,
         );
         Select_HandleMonSelectionChange();
         Select_PrintSelectMonString();
         Select_ErasePopupMenu(SELECT_WIN_OPTIONS);
-        if (*sFactorySelectScreen).selectingMonsState > FRONTIER_PARTY_SIZE as u8 {
+        if (*crate::gl!(sFactorySelectScreen)).selectingMonsState > FRONTIER_PARTY_SIZE as u8 {
             return SELECT_CONFIRM_MONS;
         } else {
             return SELECT_CONTINUE_CHOOSING;
@@ -1549,7 +1689,7 @@ unsafe fn Select_DeclineChosenMons() -> u8 {
     Select_HandleMonSelectionChange();
     Select_PrintSelectMonString();
     Select_ErasePopupMenu(SELECT_WIN_OPTIONS);
-    if (*sFactorySelectScreen).selectingMonsState > FRONTIER_PARTY_SIZE as u8 {
+    if (*crate::gl!(sFactorySelectScreen)).selectingMonsState > FRONTIER_PARTY_SIZE as u8 {
         return 2;
     } else {
         return 1;
@@ -1564,8 +1704,8 @@ pub(crate) fn Select_OptionSummary() -> u8 {
 }
 pub(crate) unsafe fn Select_OptionOthers() -> u8 {
     CloseMonPic(
-        (*sFactorySelectScreen).monPics[1],
-        &raw mut (*sFactorySelectScreen).monPicAnimating,
+        (*crate::gl!(sFactorySelectScreen)).monPics[1],
+        &raw mut (*crate::gl!(sFactorySelectScreen)).monPicAnimating,
         FALSE,
     );
     Select_ErasePopupMenu(SELECT_WIN_OPTIONS);
@@ -1575,12 +1715,12 @@ unsafe fn Select_PrintMonCategory() {
     let mut species: u16 = 0;
     let mut text: CArray<u8, 30> = zeroed();
     let mut x: u8 = 0;
-    let monId: u8 = (*sFactorySelectScreen).cursorPos;
+    let monId: u8 = (*crate::gl!(sFactorySelectScreen)).cursorPos;
     if monId < SELECTABLE_MONS_COUNT {
         PutWindowTilemap(SELECT_WIN_MON_CATEGORY);
         FillWindowPixelBuffer(SELECT_WIN_MON_CATEGORY, 0);
         species = GetMonData3(
-            &raw mut (*sFactorySelectScreen).mons[monId].monData,
+            &raw mut (*crate::gl!(sFactorySelectScreen)).mons[monId].monData,
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
@@ -1602,77 +1742,108 @@ unsafe fn Select_PrintMonCategory() {
     }
 }
 unsafe fn Select_CreateMonSprite() {
-    let monId: u8 = (*sFactorySelectScreen).cursorPos;
-    let mon: *mut Pokemon = &raw mut (*sFactorySelectScreen).mons[monId].monData;
+    let monId: u8 = (*crate::gl!(sFactorySelectScreen)).cursorPos;
+    let mon: *mut Pokemon = &raw mut (*crate::gl!(sFactorySelectScreen)).mons[monId].monData;
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
     let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
     let otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
-    (*sFactorySelectScreen).monPics[1].monSpriteId =
+    (*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId =
         CreateMonPicSprite_HandleDeoxys(species, otId, personality, 1, 88, 32, 15, TAG_NONE) as u8;
-    gSprites[(*sFactorySelectScreen).monPics[1].monSpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySelectScreen).monPics[1].monSpriteId].centerToCornerVecY = 0;
-    (*sFactorySelectScreen).monPicAnimating = FALSE;
+    {
+        let gl_i24 = (*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId;
+        crate::gl!(gSprites[gl_i24].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i25 = (*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId;
+        crate::gl!(gSprites[gl_i25].centerToCornerVecY = 0)
+    };
+    (*crate::gl!(sFactorySelectScreen)).monPicAnimating = FALSE;
 }
 unsafe fn Select_SetMonPicAnimating(animating: u8) {
-    (*sFactorySelectScreen).monPicAnimating = animating;
+    (*crate::gl!(sFactorySelectScreen)).monPicAnimating = animating;
 }
 unsafe fn Select_ReshowMonSprite() {
-    (*sFactorySelectScreen).monPics[1].bgSpriteId = CreateSprite(
+    (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_MonPicBgAnim).cast_mut(),
         120,
         64,
         1,
     );
     StartSpriteAffineAnim(
-        &raw mut gSprites[(*sFactorySelectScreen).monPics[1].bgSpriteId],
+        {
+            let gl_i26 = (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId;
+            crate::gl!(&raw gSprites[gl_i26])
+        },
         2,
     );
-    let mon: *mut Pokemon =
-        &raw mut (*sFactorySelectScreen).mons[(*sFactorySelectScreen).cursorPos].monData;
+    let mon: *mut Pokemon = &raw mut (*crate::gl!(sFactorySelectScreen)).mons
+        [(*crate::gl!(sFactorySelectScreen)).cursorPos]
+        .monData;
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
     let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
     let otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
-    (*sFactorySelectScreen).monPics[1].monSpriteId =
+    (*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId =
         CreateMonPicSprite_HandleDeoxys(species, otId, personality, 1, 88, 32, 15, TAG_NONE) as u8;
-    gSprites[(*sFactorySelectScreen).monPics[1].monSpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySelectScreen).monPics[1].monSpriteId].centerToCornerVecY = 0;
-    gSprites[(*sFactorySelectScreen).monPics[1].bgSpriteId].set_invisible(1);
+    {
+        let gl_i27 = (*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId;
+        crate::gl!(gSprites[gl_i27].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i28 = (*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId;
+        crate::gl!(gSprites[gl_i28].centerToCornerVecY = 0)
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId]
+        .set_invisible(1);
 }
 unsafe fn Select_CreateChosenMonsSprites() {
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
         for j in 0..SELECTABLE_MONS_COUNT {
-            if (*sFactorySelectScreen).mons[j].selectedId as i32 == i as i32 + 1 {
-                let mon: *mut Pokemon = &raw mut (*sFactorySelectScreen).mons[j].monData;
+            if (*crate::gl!(sFactorySelectScreen)).mons[j].selectedId as i32 == i as i32 + 1 {
+                let mon: *mut Pokemon =
+                    &raw mut (*crate::gl!(sFactorySelectScreen)).mons[j].monData;
                 let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
                 let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
                 let otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
-                (*sFactorySelectScreen).monPics[i].monSpriteId = CreateMonPicSprite_HandleDeoxys(
-                    species,
-                    otId,
-                    personality,
-                    TRUE,
-                    i as i16 * 72 + 16,
-                    32,
-                    i + 13,
-                    TAG_NONE,
-                ) as u8;
-                gSprites[(*sFactorySelectScreen).monPics[i].monSpriteId].centerToCornerVecX = 0;
-                gSprites[(*sFactorySelectScreen).monPics[i].monSpriteId].centerToCornerVecY = 0;
+                (*crate::gl!(sFactorySelectScreen)).monPics[i].monSpriteId =
+                    CreateMonPicSprite_HandleDeoxys(
+                        species,
+                        otId,
+                        personality,
+                        TRUE,
+                        i as i16 * 72 + 16,
+                        32,
+                        i + 13,
+                        TAG_NONE,
+                    ) as u8;
+                {
+                    let gl_i29 = (*crate::gl!(sFactorySelectScreen)).monPics[i].monSpriteId;
+                    crate::gl!(gSprites[gl_i29].centerToCornerVecX = 0)
+                };
+                {
+                    let gl_i30 = (*crate::gl!(sFactorySelectScreen)).monPics[i].monSpriteId;
+                    crate::gl!(gSprites[gl_i30].centerToCornerVecY = 0)
+                };
                 break;
             }
         }
     }
-    (*sFactorySelectScreen).monPicAnimating = FALSE;
+    (*crate::gl!(sFactorySelectScreen)).monPicAnimating = FALSE;
 }
 pub(crate) unsafe fn SpriteCB_OpenChosenMonPics(sprite: *mut Sprite) {
     let mut taskId: u8 = 0;
     if (*sprite).affineAnimEnded() != 0
-        && gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId].affineAnimEnded() != 0
-        && gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId].affineAnimEnded() != 0
+        && (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId]
+            .affineAnimEnded()
+            != 0
+        && (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId]
+            .affineAnimEnded()
+            != 0
     {
         (*sprite).set_invisible(TRUE as u16);
-        gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId].set_invisible(TRUE as u16);
-        gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId]
+            .set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId]
+            .set_invisible(TRUE as u16);
         taskId = CreateTask(Some(Select_Task_OpenChosenMonPics), 1);
         task_func(taskId).unwrap_unchecked()(taskId);
         (*sprite).callback = Some(SpriteCallbackDummy);
@@ -1680,23 +1851,33 @@ pub(crate) unsafe fn SpriteCB_OpenChosenMonPics(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn SpriteCB_CloseChosenMonPics(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0
-        && gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId].affineAnimEnded() != 0
-        && gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId].affineAnimEnded() != 0
+        && (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId]
+            .affineAnimEnded()
+            != 0
+        && (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId]
+            .affineAnimEnded()
+            != 0
     {
         FreeOamMatrix((*sprite).oam.matrixNum() as u8);
         FreeOamMatrix(
-            gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId]
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId]
                 .oam
                 .matrixNum() as u8,
         );
         FreeOamMatrix(
-            gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId]
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId]
                 .oam
                 .matrixNum() as u8,
         );
-        (*sFactorySelectScreen).monPicAnimating = FALSE;
-        DestroySprite(&raw mut gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId]);
-        DestroySprite(&raw mut gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId]);
+        (*crate::gl!(sFactorySelectScreen)).monPicAnimating = FALSE;
+        DestroySprite({
+            let gl_i31 = (*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId;
+            crate::gl!(&raw gSprites[gl_i31])
+        });
+        DestroySprite({
+            let gl_i32 = (*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId;
+            crate::gl!(&raw gSprites[gl_i32])
+        });
         DestroySprite(sprite);
     }
 }
@@ -1787,25 +1968,43 @@ pub(crate) unsafe fn Select_Task_CloseChosenMonPics(taskId: u8) {
         }
         _ => {
             HideBg(3);
-            gSprites[(*sFactorySelectScreen).monPics[1].bgSpriteId].set_invisible(FALSE as u16);
-            gSprites[(*sFactorySelectScreen).monPics[1].bgSpriteId].callback =
-                Some(SpriteCB_CloseChosenMonPics);
-            gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId].set_invisible(0);
-            gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId].callback =
-                Some(SpriteCallbackDummy);
-            gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId].set_invisible(FALSE as u16);
-            gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId].callback =
-                Some(SpriteCallbackDummy);
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId]
+                .set_invisible(FALSE as u16);
+            {
+                let gl_i33 = (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId;
+                crate::gl!(gSprites[gl_i33].callback = Some(SpriteCB_CloseChosenMonPics))
+            };
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId]
+                .set_invisible(0);
+            {
+                let gl_i34 = (*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId;
+                crate::gl!(gSprites[gl_i34].callback = Some(SpriteCallbackDummy))
+            };
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId]
+                .set_invisible(FALSE as u16);
+            {
+                let gl_i35 = (*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId;
+                crate::gl!(gSprites[gl_i35].callback = Some(SpriteCallbackDummy))
+            };
             StartSpriteAffineAnim(
-                &raw mut gSprites[(*sFactorySelectScreen).monPics[1].bgSpriteId],
+                {
+                    let gl_i36 = (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId;
+                    crate::gl!(&raw gSprites[gl_i36])
+                },
                 1,
             );
             StartSpriteAffineAnim(
-                &raw mut gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId],
+                {
+                    let gl_i37 = (*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId;
+                    crate::gl!(&raw gSprites[gl_i37])
+                },
                 1,
             );
             StartSpriteAffineAnim(
-                &raw mut gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId],
+                {
+                    let gl_i38 = (*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId;
+                    crate::gl!(&raw gSprites[gl_i38])
+                },
                 1,
             );
             ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
@@ -1814,37 +2013,45 @@ pub(crate) unsafe fn Select_Task_CloseChosenMonPics(taskId: u8) {
     }
 }
 unsafe fn Select_ShowChosenMons() {
-    (*sFactorySelectScreen).monPics[1].bgSpriteId = CreateSprite(
+    (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_MonPicBgAnim).cast_mut(),
         120,
         64,
         1,
     );
-    (*sFactorySelectScreen).monPics[0].bgSpriteId = CreateSprite(
+    (*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_MonPicBgAnim).cast_mut(),
         44,
         64,
         1,
     );
-    (*sFactorySelectScreen).monPics[2].bgSpriteId = CreateSprite(
+    (*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Select_MonPicBgAnim).cast_mut(),
         196,
         64,
         1,
     );
-    gSprites[(*sFactorySelectScreen).monPics[1].bgSpriteId].callback =
-        Some(SpriteCB_OpenChosenMonPics);
-    gSprites[(*sFactorySelectScreen).monPics[0].bgSpriteId].callback = Some(SpriteCallbackDummy);
-    gSprites[(*sFactorySelectScreen).monPics[2].bgSpriteId].callback = Some(SpriteCallbackDummy);
-    (*sFactorySelectScreen).monPicAnimating = TRUE;
+    {
+        let gl_i39 = (*crate::gl!(sFactorySelectScreen)).monPics[1].bgSpriteId;
+        crate::gl!(gSprites[gl_i39].callback = Some(SpriteCB_OpenChosenMonPics))
+    };
+    {
+        let gl_i40 = (*crate::gl!(sFactorySelectScreen)).monPics[0].bgSpriteId;
+        crate::gl!(gSprites[gl_i40].callback = Some(SpriteCallbackDummy))
+    };
+    {
+        let gl_i41 = (*crate::gl!(sFactorySelectScreen)).monPics[2].bgSpriteId;
+        crate::gl!(gSprites[gl_i41].callback = Some(SpriteCallbackDummy))
+    };
+    (*crate::gl!(sFactorySelectScreen)).monPicAnimating = TRUE;
 }
 unsafe fn Select_HideChosenMons() {
-    FreeAndDestroyMonPicSprite((*sFactorySelectScreen).monPics[0].monSpriteId as u16);
-    FreeAndDestroyMonPicSprite((*sFactorySelectScreen).monPics[1].monSpriteId as u16);
-    FreeAndDestroyMonPicSprite((*sFactorySelectScreen).monPics[2].monSpriteId as u16);
+    FreeAndDestroyMonPicSprite((*crate::gl!(sFactorySelectScreen)).monPics[0].monSpriteId as u16);
+    FreeAndDestroyMonPicSprite((*crate::gl!(sFactorySelectScreen)).monPics[1].monSpriteId as u16);
+    FreeAndDestroyMonPicSprite((*crate::gl!(sFactorySelectScreen)).monPics[2].monSpriteId as u16);
     let taskId: u8 = CreateTask(Some(Select_Task_CloseChosenMonPics), 1);
     task_func(taskId).unwrap_unchecked()(taskId);
-    (*sFactorySelectScreen).monPicAnimating = TRUE;
+    (*crate::gl!(sFactorySelectScreen)).monPicAnimating = TRUE;
 }
 unsafe fn Select_SetWinRegs(mWin0H: i16, nWin0H: i16, mWin0V: i16, nWin0V: i16) {
     SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
@@ -1854,12 +2061,14 @@ unsafe fn Select_SetWinRegs(mWin0H: i16, nWin0H: i16, mWin0V: i16, nWin0V: i16) 
     SetGpuReg(REG_OFFSET_WINOUT, 55);
 }
 unsafe fn Select_AreSpeciesValid(monId: u16) -> u32 {
-    let species: u32 = (*gFacilityTrainerMons.at(monId)).species as u32;
-    let selectState: u8 = (*sFactorySelectScreen).selectingMonsState;
+    let species: u32 = (*(*gFacilityTrainerMons.as_ptr()).at(monId)).species as u32;
+    let selectState: u8 = (*crate::gl!(sFactorySelectScreen)).selectingMonsState;
     for i in 1..selectState {
         for j in 0..SELECTABLE_MONS_COUNT {
-            if (*sFactorySelectScreen).mons[j].selectedId == i {
-                if (*gFacilityTrainerMons.at((*sFactorySelectScreen).mons[j].monId)).species as u32
+            if (*crate::gl!(sFactorySelectScreen)).mons[j].selectedId == i {
+                if (*(*gFacilityTrainerMons.as_ptr())
+                    .at((*crate::gl!(sFactorySelectScreen)).mons[j].monId))
+                .species as u32
                     == species
                 {
                     return FALSE as u32;
@@ -1873,41 +2082,45 @@ unsafe fn Select_AreSpeciesValid(monId: u16) -> u32 {
 pub(crate) unsafe fn Select_Task_FadeSpeciesName(taskId: u8) {
     match task_get(taskId, tState) {
         FADESTATE_INIT => {
-            (*sFactorySelectScreen).fadeSpeciesNameCoeffDelay = 0;
-            (*sFactorySelectScreen).fadeSpeciesNameCoeff = 0;
-            (*sFactorySelectScreen).fadeSpeciesNameFadeOut = TRUE;
+            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeffDelay = 0;
+            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeff = 0;
+            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameFadeOut = TRUE;
             task_set(taskId, tState, FADESTATE_RUN);
         }
         FADESTATE_RUN => {
-            if (*sFactorySelectScreen).fadeSpeciesNameActive != 0 {
-                if (*sFactorySelectScreen).faceSpeciesNameDelay != 0 {
+            if (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameActive != 0 {
+                if (*crate::gl!(sFactorySelectScreen)).faceSpeciesNameDelay != 0 {
                     task_set(taskId, tState, FADESTATE_DELAY);
                 } else {
-                    (*sFactorySelectScreen).fadeSpeciesNameCoeffDelay += 1;
-                    if (*sFactorySelectScreen).fadeSpeciesNameCoeffDelay > 6 {
-                        (*sFactorySelectScreen).fadeSpeciesNameCoeffDelay = 0;
-                        if (*sFactorySelectScreen).fadeSpeciesNameFadeOut == 0 {
-                            (*sFactorySelectScreen).fadeSpeciesNameCoeff -= 1;
+                    (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeffDelay += 1;
+                    if (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeffDelay > 6 {
+                        (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeffDelay = 0;
+                        if (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameFadeOut == 0 {
+                            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeff -= 1;
                         } else {
-                            (*sFactorySelectScreen).fadeSpeciesNameCoeff += 1;
+                            (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeff += 1;
                         }
                     }
-                    BlendPalettes(16384, (*sFactorySelectScreen).fadeSpeciesNameCoeff, 0);
-                    if (*sFactorySelectScreen).fadeSpeciesNameCoeff > 5 {
-                        (*sFactorySelectScreen).fadeSpeciesNameFadeOut = FALSE;
-                    } else if (*sFactorySelectScreen).fadeSpeciesNameCoeff == 0 {
+                    BlendPalettes(
+                        16384,
+                        (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeff,
+                        0,
+                    );
+                    if (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeff > 5 {
+                        (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameFadeOut = FALSE;
+                    } else if (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameCoeff == 0 {
                         task_set(taskId, tState, FADESTATE_DELAY);
-                        (*sFactorySelectScreen).fadeSpeciesNameFadeOut = TRUE;
+                        (*crate::gl!(sFactorySelectScreen)).fadeSpeciesNameFadeOut = TRUE;
                     }
                 }
             }
         }
         FADESTATE_DELAY => {
-            if (*sFactorySelectScreen).faceSpeciesNameDelay > 14 {
-                (*sFactorySelectScreen).faceSpeciesNameDelay = 0;
+            if (*crate::gl!(sFactorySelectScreen)).faceSpeciesNameDelay > 14 {
+                (*crate::gl!(sFactorySelectScreen)).faceSpeciesNameDelay = 0;
                 task_set(taskId, tState, FADESTATE_RUN);
             } else {
-                (*sFactorySelectScreen).faceSpeciesNameDelay += 1;
+                (*crate::gl!(sFactorySelectScreen)).faceSpeciesNameDelay += 1;
             }
         }
         _ => {}
@@ -1926,33 +2139,53 @@ pub(crate) unsafe fn Swap_VblankCb() {
     TransferPlttBuffer();
 }
 unsafe fn CopySwappedMonData() {
-    gPlayerParty[(*sFactorySwapScreen).playerMonId] = gEnemyParty[(*sFactorySwapScreen).enemyMonId];
+    {
+        let gl_v = {
+            let gl_i43 = (*crate::gl!(sFactorySwapScreen)).enemyMonId;
+            crate::gl!(gEnemyParty[gl_i43])
+        };
+        let gl_i42 = (*crate::gl!(sFactorySwapScreen)).playerMonId;
+        crate::gl!(gPlayerParty[gl_i42] = gl_v)
+    };
     let mut friendship: u8 = 0;
     SetMonData(
-        &raw mut gPlayerParty[(*sFactorySwapScreen).playerMonId],
+        {
+            let gl_i44 = (*crate::gl!(sFactorySwapScreen)).playerMonId;
+            crate::gl!(&raw gPlayerParty[gl_i44])
+        },
         MON_DATA_FRIENDSHIP,
         &raw mut friendship as *mut c_void,
     );
-    (*gSaveBlock2Ptr).frontier.rentalMons[(*sFactorySwapScreen).playerMonId].monId =
-        (*gSaveBlock2Ptr).frontier.rentalMons
-            [(*sFactorySwapScreen).enemyMonId as i32 + FRONTIER_PARTY_SIZE]
-            .monId;
-    (*gSaveBlock2Ptr).frontier.rentalMons[(*sFactorySwapScreen).playerMonId].ivs =
-        (*gSaveBlock2Ptr).frontier.rentalMons
-            [(*sFactorySwapScreen).enemyMonId as i32 + FRONTIER_PARTY_SIZE]
-            .ivs;
-    (*gSaveBlock2Ptr).frontier.rentalMons[(*sFactorySwapScreen).playerMonId].personality =
-        GetMonData3(
-            &raw mut gEnemyParty[(*sFactorySwapScreen).enemyMonId],
-            MON_DATA_PERSONALITY,
-            null_mut(),
-        );
-    (*gSaveBlock2Ptr).frontier.rentalMons[(*sFactorySwapScreen).playerMonId].abilityNum =
-        GetBoxMonData3(
-            &raw mut gEnemyParty[(*sFactorySwapScreen).enemyMonId].r#box,
-            MON_DATA_ABILITY_NUM,
-            null_mut(),
-        ) as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons
+        [(*crate::gl!(sFactorySwapScreen)).playerMonId]
+        .monId = (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons
+        [(*crate::gl!(sFactorySwapScreen)).enemyMonId as i32 + FRONTIER_PARTY_SIZE]
+        .monId;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons
+        [(*crate::gl!(sFactorySwapScreen)).playerMonId]
+        .ivs = (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons
+        [(*crate::gl!(sFactorySwapScreen)).enemyMonId as i32 + FRONTIER_PARTY_SIZE]
+        .ivs;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons
+        [(*crate::gl!(sFactorySwapScreen)).playerMonId]
+        .personality = GetMonData3(
+        {
+            let gl_i45 = (*crate::gl!(sFactorySwapScreen)).enemyMonId;
+            crate::gl!(&raw gEnemyParty[gl_i45])
+        },
+        MON_DATA_PERSONALITY,
+        null_mut(),
+    );
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.rentalMons
+        [(*crate::gl!(sFactorySwapScreen)).playerMonId]
+        .abilityNum = GetBoxMonData3(
+        {
+            let gl_i46 = (*crate::gl!(sFactorySwapScreen)).enemyMonId;
+            crate::gl!(&raw gEnemyParty[gl_i46].r#box)
+        },
+        MON_DATA_ABILITY_NUM,
+        null_mut(),
+    ) as u8;
 }
 pub(crate) unsafe fn Swap_Task_OpenSummaryScreen(taskId: u8) {
     match task_get(taskId, tState) {
@@ -1961,33 +2194,34 @@ pub(crate) unsafe fn Swap_Task_OpenSummaryScreen(taskId: u8) {
             task_set(taskId, tState, STATE_SUMMARY_CLEAN);
         }
         STATE_SUMMARY_CLEAN => {
-            if gPaletteFade.active() == 0 {
-                DestroyTask((*sFactorySwapScreen).fadeSpeciesNameTaskId);
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                DestroyTask((*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId);
                 HideMonPic(
-                    (*sFactorySwapScreen).monPic,
-                    &raw mut (*sFactorySwapScreen).monPicAnimating,
+                    (*crate::gl!(sFactorySwapScreen)).monPic,
+                    &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
                 );
                 Swap_DestroyAllSprites();
-                Free(sSwapMenuTilesetBuffer as *mut c_void);
-                sSwapMenuTilesetBuffer = null_mut();
-                Free(sSwapMonPicBgTilesetBuffer as *mut c_void);
-                sSwapMonPicBgTilesetBuffer = null_mut();
-                Free(sSwapMenuTilemapBuffer as *mut c_void);
-                sSwapMenuTilemapBuffer = null_mut();
-                Free(sSwapMonPicBgTilemapBuffer as *mut c_void);
-                sSwapMonPicBgTilemapBuffer = null_mut();
+                Free(crate::gl!(sSwapMenuTilesetBuffer) as *mut c_void);
+                crate::gl!(sSwapMenuTilesetBuffer = null_mut());
+                Free(crate::gl!(sSwapMonPicBgTilesetBuffer) as *mut c_void);
+                crate::gl!(sSwapMonPicBgTilesetBuffer = null_mut());
+                Free(crate::gl!(sSwapMenuTilemapBuffer) as *mut c_void);
+                crate::gl!(sSwapMenuTilemapBuffer = null_mut());
+                Free(crate::gl!(sSwapMonPicBgTilemapBuffer) as *mut c_void);
+                crate::gl!(sSwapMonPicBgTilemapBuffer = null_mut());
                 FreeAllWindowBuffers();
                 task_set(taskId, tState, STATE_SUMMARY_SHOW);
             }
         }
         STATE_SUMMARY_SHOW => {
             DestroyTask(taskId);
-            (*sFactorySwapScreen).fromSummaryScreen = TRUE;
-            (*sFactorySwapScreen).speciesNameColorBackup = gPlttBufferUnfaded[244];
+            (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen = TRUE;
+            (*crate::gl!(sFactorySwapScreen)).speciesNameColorBackup =
+                crate::gl!(gPlttBufferUnfaded[244]);
             ShowPokemonSummaryScreen(
                 SUMMARY_MODE_NORMAL,
-                gPlayerParty.as_mut_ptr() as *mut c_void,
-                (*sFactorySwapScreen).cursorPos,
+                (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sFactorySwapScreen)).cursorPos,
                 2,
                 Some(CB2_InitSwapScreen),
             );
@@ -1996,12 +2230,12 @@ pub(crate) unsafe fn Swap_Task_OpenSummaryScreen(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Swap_Task_Exit(taskId: u8) {
-    if (*sFactorySwapScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySwapScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
         0 => {
-            if (*sFactorySwapScreen).monSwapped == TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).monSwapped == TRUE {
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
                 gSpecialVar_Result = FALSE as u16;
             } else {
@@ -2010,8 +2244,9 @@ pub(crate) unsafe fn Swap_Task_Exit(taskId: u8) {
             }
         }
         1 => {
-            if (*sFactorySwapScreen).monSwapped == TRUE {
-                (*sFactorySwapScreen).enemyMonId = (*sFactorySwapScreen).cursorPos;
+            if (*crate::gl!(sFactorySwapScreen)).monSwapped == TRUE {
+                (*crate::gl!(sFactorySwapScreen)).enemyMonId =
+                    (*crate::gl!(sFactorySwapScreen)).cursorPos;
                 CopySwappedMonData();
             }
             task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -2021,18 +2256,18 @@ pub(crate) unsafe fn Swap_Task_Exit(taskId: u8) {
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         3 if UpdatePaletteFade() == 0 => {
-            DestroyTask((*sFactorySwapScreen).fadeSpeciesNameTaskId);
+            DestroyTask((*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId);
             Swap_DestroyAllSprites();
-            Free(sSwapMenuTilesetBuffer as *mut c_void);
-            sSwapMenuTilesetBuffer = null_mut();
-            Free(sSwapMonPicBgTilesetBuffer as *mut c_void);
-            sSwapMonPicBgTilesetBuffer = null_mut();
-            Free(sSwapMenuTilemapBuffer as *mut c_void);
-            sSwapMenuTilemapBuffer = null_mut();
-            Free(sSwapMonPicBgTilemapBuffer as *mut c_void);
-            sSwapMonPicBgTilemapBuffer = null_mut();
-            Free(sFactorySwapScreen as *mut c_void);
-            sFactorySwapScreen = null_mut();
+            Free(crate::gl!(sSwapMenuTilesetBuffer) as *mut c_void);
+            crate::gl!(sSwapMenuTilesetBuffer = null_mut());
+            Free(crate::gl!(sSwapMonPicBgTilesetBuffer) as *mut c_void);
+            crate::gl!(sSwapMonPicBgTilesetBuffer = null_mut());
+            Free(crate::gl!(sSwapMenuTilemapBuffer) as *mut c_void);
+            crate::gl!(sSwapMenuTilemapBuffer = null_mut());
+            Free(crate::gl!(sSwapMonPicBgTilemapBuffer) as *mut c_void);
+            crate::gl!(sSwapMonPicBgTilemapBuffer = null_mut());
+            Free(crate::gl!(sFactorySwapScreen) as *mut c_void);
+            crate::gl!(sFactorySwapScreen = null_mut());
             FreeAllWindowBuffers();
             SetMainCallback2(Some(CB2_ReturnToFieldContinueScript));
             DestroyTask(taskId);
@@ -2043,7 +2278,7 @@ pub(crate) unsafe fn Swap_Task_Exit(taskId: u8) {
 pub(crate) unsafe fn Swap_Task_HandleYesNo(taskId: u8) {
     let mut loPtr: u16 = 0;
     let mut hiPtr: u16 = 0;
-    if (*sFactorySwapScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySwapScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
@@ -2052,9 +2287,9 @@ pub(crate) unsafe fn Swap_Task_HandleYesNo(taskId: u8) {
             task_set(taskId, tState, STATE_YESNO_HANDLE_INPUT);
         }
         STATE_YESNO_HANDLE_INPUT => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                if (*sFactorySwapScreen).yesNoCursorPos == 0 {
+                if (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos == 0 {
                     task_set(taskId, tSaidYes, TRUE as i16);
                     hiPtr = task_get(taskId, tFollowUpTaskPtrHi) as u16;
                     loPtr = task_get(taskId, tFollowUpTaskPtrLo) as u16;
@@ -2076,7 +2311,7 @@ pub(crate) unsafe fn Swap_Task_HandleYesNo(taskId: u8) {
                         ),
                     );
                 }
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 task_set(taskId, tSaidYes, FALSE as i16);
                 Swap_ErasePopupMenu(SWAP_WIN_YES_NO);
@@ -2088,10 +2323,10 @@ pub(crate) unsafe fn Swap_Task_HandleYesNo(taskId: u8) {
                         ((hiPtr as i32) << 16 | loPtr as i32) as usize as *mut c_void,
                     ),
                 );
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
                 PlaySE(SE_SELECT);
                 Swap_UpdateYesNoCursorPosition(-1);
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
                 PlaySE(SE_SELECT);
                 Swap_UpdateYesNoCursorPosition(1);
             }
@@ -2126,7 +2361,7 @@ pub(crate) unsafe fn Swap_AskQuitSwapping(taskId: u8) {
                 .as_ptr()
                 .cast_mut(),
         );
-        (*sFactorySwapScreen).monSwapped = FALSE;
+        (*crate::gl!(sFactorySwapScreen)).monSwapped = FALSE;
         task_set(taskId, tState, STATE_YESNO_SHOW);
         task_set(
             taskId,
@@ -2143,8 +2378,8 @@ pub(crate) unsafe fn Swap_AskQuitSwapping(taskId: u8) {
 }
 pub(crate) unsafe fn Swap_HandleAcceptMonResponse(taskId: u8) {
     CloseMonPic(
-        (*sFactorySwapScreen).monPic,
-        &raw mut (*sFactorySwapScreen).monPicAnimating,
+        (*crate::gl!(sFactorySwapScreen)).monPic,
+        &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
         TRUE,
     );
     if task_get(taskId, tSaidYes) == TRUE as i16 {
@@ -2169,8 +2404,8 @@ pub(crate) unsafe fn Swap_HandleAcceptMonResponse(taskId: u8) {
 pub(crate) unsafe fn Swap_AskAcceptMon(taskId: u8) {
     if task_get(taskId, tState) == 0 {
         OpenMonPic(
-            &raw mut (*sFactorySwapScreen).monPic.bgSpriteId,
-            &raw mut (*sFactorySwapScreen).monPicAnimating,
+            &raw mut (*crate::gl!(sFactorySwapScreen)).monPic.bgSpriteId,
+            &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
             TRUE,
         );
         Swap_PrintOnInfoWindow(
@@ -2178,7 +2413,7 @@ pub(crate) unsafe fn Swap_AskAcceptMon(taskId: u8) {
                 .as_ptr()
                 .cast_mut(),
         );
-        (*sFactorySwapScreen).monSwapped = TRUE;
+        (*crate::gl!(sFactorySwapScreen)).monSwapped = TRUE;
         task_set(taskId, tState, STATE_YESNO_SHOW);
         task_set(
             taskId,
@@ -2196,30 +2431,30 @@ pub(crate) unsafe fn Swap_AskAcceptMon(taskId: u8) {
 pub(crate) unsafe fn Swap_Task_HandleMenu(taskId: u8) {
     match task_get(taskId, tState) {
         STATE_MENU_INIT => {
-            if (*sFactorySwapScreen).fromSummaryScreen == 0 {
+            if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == 0 {
                 OpenMonPic(
-                    &raw mut (*sFactorySwapScreen).monPic.bgSpriteId,
-                    &raw mut (*sFactorySwapScreen).monPicAnimating,
+                    &raw mut (*crate::gl!(sFactorySwapScreen)).monPic.bgSpriteId,
+                    &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
                     TRUE,
                 );
             }
             task_set(taskId, tState, STATE_MENU_SHOW_OPTIONS);
         }
         STATE_MENU_SHOW_OPTIONS => {
-            if (*sFactorySwapScreen).monPicAnimating != TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).monPicAnimating != TRUE {
                 Swap_ShowMenuOptions();
                 task_set(taskId, tState, STATE_MENU_HANDLE_INPUT);
             }
         }
-        STATE_MENU_HANDLE_INPUT if (*sFactorySwapScreen).monPicAnimating != TRUE => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+        STATE_MENU_HANDLE_INPUT if (*crate::gl!(sFactorySwapScreen)).monPicAnimating != TRUE => {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 Swap_RunMenuOptionFunc(taskId);
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
                 CloseMonPic(
-                    (*sFactorySwapScreen).monPic,
-                    &raw mut (*sFactorySwapScreen).monPicAnimating,
+                    (*crate::gl!(sFactorySwapScreen)).monPic,
+                    &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
                     TRUE,
                 );
                 Swap_ErasePopupMenu(SWAP_WIN_OPTIONS);
@@ -2236,9 +2471,9 @@ pub(crate) unsafe fn Swap_Task_HandleMenu(taskId: u8) {
                 );
                 task_set(taskId, tFollowUpTaskState, STATE_CHOOSE_MONS_HANDLE_INPUT);
                 task_set_func(taskId, Some(Swap_Task_ScreenInfoTransitionIn));
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
                 Swap_UpdateMenuCursorPosition(-1);
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
                 Swap_UpdateMenuCursorPosition(1);
             }
         }
@@ -2248,21 +2483,21 @@ pub(crate) unsafe fn Swap_Task_HandleMenu(taskId: u8) {
 pub(crate) unsafe fn Swap_Task_HandleChooseMons(taskId: u8) {
     match task_get(taskId, tState) {
         STATE_CHOOSE_MONS_INIT => {
-            if gPaletteFade.active() == 0 {
-                (*sFactorySwapScreen).fadeSpeciesNameActive = TRUE;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive = TRUE;
                 task_set(taskId, tState, STATE_CHOOSE_MONS_HANDLE_INPUT);
             }
         }
         STATE_CHOOSE_MONS_HANDLE_INPUT => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                (*sFactorySwapScreen).fadeSpeciesNameActive = FALSE;
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive = FALSE;
                 Swap_PrintMonSpeciesAtFade();
                 Swap_EraseSpeciesWindow();
                 Swap_RunActionFunc(taskId);
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                (*sFactorySwapScreen).fadeSpeciesNameActive = FALSE;
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive = FALSE;
                 Swap_PrintMonSpeciesAtFade();
                 Swap_EraseSpeciesWindow();
                 task_set(
@@ -2278,19 +2513,19 @@ pub(crate) unsafe fn Swap_Task_HandleChooseMons(taskId: u8) {
                 task_set(taskId, tState, 0);
                 task_set(taskId, tFollowUpTaskState, 0);
                 task_set_func(taskId, Some(Swap_Task_ScreenInfoTransitionOut));
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
                 Swap_UpdateBallCursorPosition(-1);
                 Swap_PrintMonCategory();
                 Swap_PrintMonSpecies();
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
                 Swap_UpdateBallCursorPosition(1);
                 Swap_PrintMonCategory();
                 Swap_PrintMonSpecies();
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
                 Swap_UpdateActionCursorPosition(1);
                 Swap_PrintMonCategory();
                 Swap_PrintMonSpecies();
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
                 Swap_UpdateActionCursorPosition(-1);
                 Swap_PrintMonCategory();
                 Swap_PrintMonSpecies();
@@ -2302,41 +2537,45 @@ pub(crate) unsafe fn Swap_Task_HandleChooseMons(taskId: u8) {
 pub(crate) unsafe fn Swap_Task_FadeSpeciesName(taskId: u8) {
     match task_get(taskId, tState) {
         FADESTATE_INIT => {
-            (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay = 0;
-            (*sFactorySwapScreen).fadeSpeciesNameCoeff = 0;
-            (*sFactorySwapScreen).fadeSpeciesNameFadeOut = TRUE;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay = 0;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff = 0;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameFadeOut = TRUE;
             task_set(taskId, tState, FADESTATE_RUN);
         }
         FADESTATE_RUN => {
-            if (*sFactorySwapScreen).fadeSpeciesNameActive != 0 {
-                if (*sFactorySwapScreen).faceSpeciesNameDelay != 0 {
+            if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive != 0 {
+                if (*crate::gl!(sFactorySwapScreen)).faceSpeciesNameDelay != 0 {
                     task_set(taskId, tState, FADESTATE_DELAY);
                 } else {
-                    (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay += 1;
-                    if (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay > 6 {
-                        (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay = 0;
-                        if (*sFactorySwapScreen).fadeSpeciesNameFadeOut == 0 {
-                            (*sFactorySwapScreen).fadeSpeciesNameCoeff -= 1;
+                    (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay += 1;
+                    if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay > 6 {
+                        (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay = 0;
+                        if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameFadeOut == 0 {
+                            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff -= 1;
                         } else {
-                            (*sFactorySwapScreen).fadeSpeciesNameCoeff += 1;
+                            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff += 1;
                         }
                     }
-                    BlendPalettes(16384, (*sFactorySwapScreen).fadeSpeciesNameCoeff, 0);
-                    if (*sFactorySwapScreen).fadeSpeciesNameCoeff > 5 {
-                        (*sFactorySwapScreen).fadeSpeciesNameFadeOut = FALSE;
-                    } else if (*sFactorySwapScreen).fadeSpeciesNameCoeff == 0 {
+                    BlendPalettes(
+                        16384,
+                        (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff,
+                        0,
+                    );
+                    if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff > 5 {
+                        (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameFadeOut = FALSE;
+                    } else if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff == 0 {
                         task_set(taskId, tState, FADESTATE_DELAY);
-                        (*sFactorySwapScreen).fadeSpeciesNameFadeOut = TRUE;
+                        (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameFadeOut = TRUE;
                     }
                 }
             }
         }
         FADESTATE_DELAY => {
-            if (*sFactorySwapScreen).faceSpeciesNameDelay > 14 {
-                (*sFactorySwapScreen).faceSpeciesNameDelay = 0;
+            if (*crate::gl!(sFactorySwapScreen)).faceSpeciesNameDelay > 14 {
+                (*crate::gl!(sFactorySwapScreen)).faceSpeciesNameDelay = 0;
                 task_set(taskId, tState, FADESTATE_RUN);
             } else {
-                (*sFactorySwapScreen).faceSpeciesNameDelay += 1;
+                (*crate::gl!(sFactorySwapScreen)).faceSpeciesNameDelay += 1;
             }
         }
         _ => {}
@@ -2345,26 +2584,34 @@ pub(crate) unsafe fn Swap_Task_FadeSpeciesName(taskId: u8) {
 pub(crate) unsafe fn Swap_Task_FadeOutSpeciesName(taskId: u8) {
     match task_get(taskId, tState) {
         0 => {
-            (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay = 0;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay = 0;
             task_set(taskId, tFadeOutFinished, FALSE as i16);
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         1 => {
-            LoadPalette(&raw mut gPlttBufferUnfaded[240] as *mut c_void, 224, 10);
+            LoadPalette(
+                crate::gl!(&raw gPlttBufferUnfaded[240]) as *mut c_void,
+                224,
+                10,
+            );
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         2 => {
-            if (*sFactorySwapScreen).fadeSpeciesNameCoeff > 15 {
+            if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff > 15 {
                 task_set(taskId, tFadeOutFinished, TRUE as i16);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
-            (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay += 1;
-            if (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay > 3 {
-                (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay = 0;
-                gPlttBufferUnfaded[244] = gPlttBufferFaded[228];
-                (*sFactorySwapScreen).fadeSpeciesNameCoeff += 1;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay += 1;
+            if (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay > 3 {
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay = 0;
+                crate::gl!(gPlttBufferUnfaded[244] = crate::gl!(gPlttBufferFaded[228]));
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff += 1;
             }
-            BlendPalettes(16384, (*sFactorySwapScreen).fadeSpeciesNameCoeff, 0);
+            BlendPalettes(
+                16384,
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff,
+                0,
+            );
         }
         _ => {}
     }
@@ -2385,25 +2632,57 @@ pub(crate) unsafe fn Swap_Task_SlideCycleBalls(taskId: u8) {
             i = 2;
             while i >= 0 {
                 if i != 2 {
-                    let posX: u8 = lastX - gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as u8;
+                    let posX: u8 = lastX
+                        - ({
+                            let gl_i47 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                            crate::gl!(gSprites[gl_i47].x)
+                        }) as u8;
                     if posX == 16 || task_get(taskId, i as i32 + 1 + 1) == 1 {
-                        lastX = gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as u8;
-                        gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x += 10;
+                        lastX = ({
+                            let gl_i48 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                            crate::gl!(gSprites[gl_i48].x)
+                        }) as u8;
+                        {
+                            let gl_i49 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                            crate::gl!(gSprites[gl_i49].x += 10)
+                        };
                     } else if posX > 16 {
-                        gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x =
-                            gSprites[(*sFactorySwapScreen).ballSpriteIds[i as i32 + 1]].x - 48;
+                        {
+                            let gl_v = ({
+                                let gl_i51 =
+                                    (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i as i32 + 1];
+                                crate::gl!(gSprites[gl_i51].x)
+                            }) - 48;
+                            let gl_i50 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                            crate::gl!(gSprites[gl_i50].x = gl_v)
+                        };
                     }
                 } else {
-                    lastX = gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as u8;
-                    gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x += 10;
+                    lastX = ({
+                        let gl_i52 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                        crate::gl!(gSprites[gl_i52].x)
+                    }) as u8;
+                    {
+                        let gl_i53 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                        crate::gl!(gSprites[gl_i53].x += 10)
+                    };
                 }
                 if task_get(taskId, i as i32 + TRUE as i32) == TRUE as i16 {
-                    if gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as i32
+                    if ({
+                        let gl_i54 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                        crate::gl!(gSprites[gl_i54].x)
+                    }) as i32
                         > i as i32 * 48 + 72
                     {
-                        gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x = i as i16 * 48 + 72;
+                        {
+                            let gl_i55 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                            crate::gl!(gSprites[gl_i55].x = i as i16 * 48 + 72)
+                        };
                         finished = TRUE;
-                    } else if gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as i32
+                    } else if ({
+                        let gl_i56 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                        crate::gl!(gSprites[gl_i56].x)
+                    }) as i32
                         == i as i32 * 48 + 72
                     {
                         finished = TRUE;
@@ -2413,17 +2692,27 @@ pub(crate) unsafe fn Swap_Task_SlideCycleBalls(taskId: u8) {
                 } else {
                     finished = FALSE;
                 }
-                if gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as i32 - 16
+                if ({
+                    let gl_i57 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                    crate::gl!(gSprites[gl_i57].x)
+                }) as i32
+                    - 16
                     > DISPLAY_WIDTH as i32
                 {
-                    lastX = gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x as u8;
-                    gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].x = -16;
-                    if (*sFactorySwapScreen).inEnemyScreen == TRUE {
-                        gSprites[(*sFactorySwapScreen).ballSpriteIds[i]]
+                    lastX = ({
+                        let gl_i58 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                        crate::gl!(gSprites[gl_i58].x)
+                    }) as u8;
+                    {
+                        let gl_i59 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+                        crate::gl!(gSprites[gl_i59].x = -16)
+                    };
+                    if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == TRUE {
+                        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i]]
                             .oam
                             .set_paletteNum(IndexOfSpritePaletteTag(PALTAG_BALL_SELECTED) as u16);
                     } else {
-                        gSprites[(*sFactorySwapScreen).ballSpriteIds[i]]
+                        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i]]
                             .oam
                             .set_paletteNum(IndexOfSpritePaletteTag(PALTAG_BALL_GRAY) as u16);
                     }
@@ -2449,7 +2738,10 @@ pub(crate) unsafe fn Swap_Task_SlideButtonOnOffScreen(taskId: u8) {
     }
     match task_get(taskId, tState) {
         SLIDE_BUTTON_PKMN => {
-            currPosX = gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][0]].x;
+            currPosX = {
+                let gl_i60 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][0];
+                crate::gl!(gSprites[gl_i60].x)
+            };
             if task_get(taskId, tSlidingOn) == 0 {
                 if (currPosX as i32 + deltaX as i32) < DISPLAY_WIDTH as i32 {
                     sliding = TRUE;
@@ -2468,18 +2760,30 @@ pub(crate) unsafe fn Swap_Task_SlideButtonOnOffScreen(taskId: u8) {
             if sliding == TRUE {
                 for i in 0..3u8 {
                     for j in 0..2u8 {
-                        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[j][i]].x +=
-                            deltaX as i16;
+                        {
+                            let gl_i61 =
+                                (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[j][i];
+                            crate::gl!(gSprites[gl_i61].x += deltaX as i16)
+                        };
                     }
                 }
             } else {
                 for j in 0..2u8 {
-                    gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[j][0]].x =
-                        posX as i16;
-                    gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[j][1]].x =
-                        posX as i16 + 16;
-                    gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[j][2]].x =
-                        posX as i16 + 48;
+                    {
+                        let gl_i62 =
+                            (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[j][0];
+                        crate::gl!(gSprites[gl_i62].x = posX as i16)
+                    };
+                    {
+                        let gl_i63 =
+                            (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[j][1];
+                        crate::gl!(gSprites[gl_i63].x = posX as i16 + 16)
+                    };
+                    {
+                        let gl_i64 =
+                            (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[j][2];
+                        crate::gl!(gSprites[gl_i64].x = posX as i16 + 48)
+                    };
                 }
                 prevTaskId = task_get(taskId, tTaskId) as u8;
                 task_set(prevTaskId, 3, TRUE as i16);
@@ -2487,7 +2791,10 @@ pub(crate) unsafe fn Swap_Task_SlideButtonOnOffScreen(taskId: u8) {
             }
         }
         SLIDE_BUTTON_CANCEL => {
-            currPosX = gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[0][0]].x;
+            currPosX = {
+                let gl_i65 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[0][0];
+                crate::gl!(gSprites[gl_i65].x)
+            };
             if task_get(taskId, tSlidingOn) == 0 {
                 if (currPosX as i32 + deltaX as i32) < DISPLAY_WIDTH as i32 {
                     sliding = TRUE;
@@ -2506,15 +2813,23 @@ pub(crate) unsafe fn Swap_Task_SlideButtonOnOffScreen(taskId: u8) {
             if sliding == TRUE {
                 for i in 0..2u8 {
                     for j in 0..2u8 {
-                        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[j][i]].x +=
-                            deltaX as i16;
+                        {
+                            let gl_i66 =
+                                (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[j][i];
+                            crate::gl!(gSprites[gl_i66].x += deltaX as i16)
+                        };
                     }
                 }
             } else {
                 for j in 0..2u8 {
-                    gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[j][0]].x = posX as i16;
-                    gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[j][1]].x =
-                        posX as i16 + 16;
+                    {
+                        let gl_i67 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[j][0];
+                        crate::gl!(gSprites[gl_i67].x = posX as i16)
+                    };
+                    {
+                        let gl_i68 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[j][1];
+                        crate::gl!(gSprites[gl_i68].x = posX as i16 + 16)
+                    };
                 }
                 prevTaskId = task_get(taskId, tTaskId) as u8;
                 task_set(prevTaskId, tSlideFinishedCancel, TRUE as i16);
@@ -2544,10 +2859,10 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionOut(taskId: u8) {
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         3 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 FillWindowPixelBuffer(SWAP_WIN_ACTION_FADE, 0);
                 CopyWindowToVram(SWAP_WIN_ACTION_FADE, COPYWIN_GFX);
-                if (*sFactorySwapScreen).inEnemyScreen == TRUE {
+                if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == TRUE {
                     slideTaskId = CreateTask(Some(Swap_Task_SlideButtonOnOffScreen), 0);
                     task_set(taskId, 3, FALSE as i16);
                     task_set(slideTaskId, tTaskId, taskId as i16);
@@ -2601,12 +2916,12 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
     let mut slideTaskId: u8 = 0;
     let mut hiPtr: u16 = 0;
     let mut loPtr: u16 = 0;
-    if (*sFactorySwapScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySwapScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
         0 => {
-            if (*sFactorySwapScreen).inEnemyScreen == TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == TRUE {
                 slideTaskId = CreateTask(Some(Swap_Task_SlideButtonOnOffScreen), 0);
                 task_set(taskId, 3, FALSE as i16);
                 task_set(slideTaskId, tTaskId, taskId as i16);
@@ -2643,7 +2958,7 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
             if task_get(taskId, 3) == TRUE as i16
                 && task_get(taskId, tSlideFinishedCancel) == TRUE as i16
             {
-                gPlttBufferFaded[226] = sPokeballGray_Pal[37];
+                crate::gl!(gPlttBufferFaded[226] = sPokeballGray_Pal[37]);
                 Swap_PrintActionStrings();
                 PutWindowTilemap(SWAP_WIN_ACTION_FADE);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -2654,7 +2969,7 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         4 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 Swap_PrintOneActionString(0);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
@@ -2670,7 +2985,7 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         7 => {
-            if (*sFactorySwapScreen).inEnemyScreen == 0 {
+            if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
                 Swap_PrintOnInfoWindow(
                     (*(&raw const crate::data::strings::gText_SelectPkmnToSwap)
                         .cast::<CArray<u8, 0>>())
@@ -2685,8 +3000,9 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
                     .cast_mut(),
                 );
             }
-            if (*sFactorySwapScreen).cursorPos < FRONTIER_PARTY_SIZE as u8 {
-                gSprites[(*sFactorySwapScreen).cursorSpriteId].set_invisible(FALSE as u16);
+            if (*crate::gl!(sFactorySwapScreen)).cursorPos < FRONTIER_PARTY_SIZE as u8 {
+                (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cursorSpriteId]
+                    .set_invisible(FALSE as u16);
             }
             Swap_PrintMonCategory();
             task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -2694,7 +3010,7 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
         8 => {
             Swap_PrintMonSpeciesForTransition();
             Swap_EraseSpeciesAtFadeWindow();
-            (*sFactorySwapScreen).fadeSpeciesNameActive = TRUE;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive = TRUE;
             task_set(taskId, tState, task_get(taskId, tFollowUpTaskState));
             hiPtr = task_get(taskId, tFollowUpTaskPtrHi) as u16;
             loPtr = task_get(taskId, tFollowUpTaskPtrLo) as u16;
@@ -2709,7 +3025,7 @@ pub(crate) unsafe fn Swap_Task_ScreenInfoTransitionIn(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Swap_Task_SwitchPartyScreen(taskId: u8) {
-    if (*sFactorySwapScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySwapScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
@@ -2719,13 +3035,14 @@ pub(crate) unsafe fn Swap_Task_SwitchPartyScreen(taskId: u8) {
         }
         1 => {
             Swap_EraseSpeciesAtFadeWindow();
-            gSprites[(*sFactorySwapScreen).cursorSpriteId].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cursorSpriteId]
+                .set_invisible(TRUE as u16);
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         2 => {
             CreateTask(Some(Swap_Task_SlideCycleBalls), 0);
             task_set_func(
-                (*sFactorySwapScreen).fadeSpeciesNameTaskId,
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId,
                 Some(Swap_Task_FadeOutSpeciesName),
             );
             task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -2733,32 +3050,39 @@ pub(crate) unsafe fn Swap_Task_SwitchPartyScreen(taskId: u8) {
         3 => {
             if FuncIsActiveTask(Some(Swap_Task_SlideCycleBalls)) == 0
                 && task_get(
-                    (*sFactorySwapScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId,
                     tFadeOutFinished,
                 ) == TRUE as i16
             {
                 Swap_EraseSpeciesWindow();
-                if (*sFactorySwapScreen).inEnemyScreen == 0 {
+                if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
                     Swap_InitActions(SWAP_ENEMY_SCREEN);
                 } else {
                     Swap_InitActions(SWAP_PLAYER_SCREEN);
                     for i in 0..3u8 {
-                        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][i]]
+                        (*gSprites.as_ptr())
+                            [(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][i]]
                             .set_invisible(1);
                     }
                 }
-                gSprites[(*sFactorySwapScreen).cursorSpriteId].x = gSprites
-                    [(*sFactorySwapScreen).ballSpriteIds[(*sFactorySwapScreen).cursorPos]]
-                    .x;
+                {
+                    let gl_v = {
+                        let gl_i70 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds
+                            [(*crate::gl!(sFactorySwapScreen)).cursorPos];
+                        crate::gl!(gSprites[gl_i70].x)
+                    };
+                    let gl_i69 = (*crate::gl!(sFactorySwapScreen)).cursorSpriteId;
+                    crate::gl!(gSprites[gl_i69].x = gl_v)
+                };
                 task_set_func(
-                    (*sFactorySwapScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId,
                     Some(Swap_Task_FadeSpeciesName),
                 );
-                (*sFactorySwapScreen).fadeSpeciesNameCoeffDelay = 0;
-                (*sFactorySwapScreen).fadeSpeciesNameCoeff = 6;
-                (*sFactorySwapScreen).fadeSpeciesNameFadeOut = FALSE;
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeffDelay = 0;
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameCoeff = 6;
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameFadeOut = FALSE;
                 task_set(
-                    (*sFactorySwapScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId,
                     tState,
                     FADESTATE_RUN,
                 );
@@ -2784,20 +3108,20 @@ pub(crate) unsafe fn Swap_Task_SwitchPartyScreen(taskId: u8) {
     }
 }
 unsafe fn Swap_InitStruct() {
-    if sFactorySwapScreen.is_null() {
-        sFactorySwapScreen = AllocZeroed(52) as *mut FactorySwapScreen;
-        (*sFactorySwapScreen).cursorPos = 0;
-        (*sFactorySwapScreen).monPicAnimating = FALSE;
-        (*sFactorySwapScreen).fromSummaryScreen = FALSE;
+    if (*sFactorySwapScreen.as_ptr()).is_null() {
+        crate::gl!(sFactorySwapScreen = AllocZeroed(52) as *mut FactorySwapScreen);
+        (*crate::gl!(sFactorySwapScreen)).cursorPos = 0;
+        (*crate::gl!(sFactorySwapScreen)).monPicAnimating = FALSE;
+        (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen = FALSE;
     }
 }
 pub unsafe fn DoBattleFactorySwapScreen() {
-    sFactorySwapScreen = null_mut();
+    crate::gl!(sFactorySwapScreen = null_mut());
     SetMainCallback2(Some(CB2_InitSwapScreen));
 }
 pub(crate) unsafe fn CB2_InitSwapScreen() {
     let mut taskId: u8 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetHBlankCallback(None);
             SetVBlankCallback(None);
@@ -2816,13 +3140,13 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
             InitBgsFromTemplates(0, sSwap_BgTemplates.as_ptr().cast_mut(), 4);
             InitWindows(sSwap_WindowTemplates.as_ptr().cast_mut());
             DeactivateAllTextPrinters();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
-            sSwapMenuTilesetBuffer = Alloc(1088) as *mut u8;
-            sSwapMonPicBgTilesetBuffer = AllocZeroed(1088) as *mut u8;
-            sSwapMenuTilemapBuffer = Alloc(BG_SCREEN_SIZE) as *mut u8;
-            sSwapMonPicBgTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+            crate::gl!(sSwapMenuTilesetBuffer = Alloc(1088) as *mut u8);
+            crate::gl!(sSwapMonPicBgTilesetBuffer = AllocZeroed(1088) as *mut u8);
+            crate::gl!(sSwapMenuTilemapBuffer = Alloc(BG_SCREEN_SIZE) as *mut u8);
+            crate::gl!(sSwapMonPicBgTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8);
             ChangeBgX(0, 0, BG_COORD_SET);
             ChangeBgY(0, 0, BG_COORD_SET);
             ChangeBgX(1, 0, BG_COORD_SET);
@@ -2839,7 +3163,7 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
             SetGpuReg(REG_OFFSET_WIN1V, 0);
             SetGpuReg(REG_OFFSET_WININ, 0);
             SetGpuReg(REG_OFFSET_WINOUT, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ResetPaletteFade();
@@ -2852,27 +3176,37 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
                     .cast::<CArray<u16, 544>>())
                 .as_ptr()
                 .cast_mut() as *mut c_void,
-                sSwapMenuTilesetBuffer as *mut c_void,
+                crate::gl!(sSwapMenuTilesetBuffer) as *mut c_void,
                 544,
             );
             CpuSet(
                 sMonPicBg_Gfx.as_ptr().cast_mut() as *mut c_void,
-                sSwapMonPicBgTilesetBuffer as *mut c_void,
+                crate::gl!(sSwapMonPicBgTilesetBuffer) as *mut c_void,
                 48,
             );
-            LoadBgTiles(1, sSwapMenuTilesetBuffer as *mut c_void, 1088, 0);
-            LoadBgTiles(3, sSwapMonPicBgTilesetBuffer as *mut c_void, 96, 0);
+            LoadBgTiles(
+                1,
+                crate::gl!(sSwapMenuTilesetBuffer) as *mut c_void,
+                1088,
+                0,
+            );
+            LoadBgTiles(
+                3,
+                crate::gl!(sSwapMonPicBgTilesetBuffer) as *mut c_void,
+                96,
+                0,
+            );
             CpuSet(
                 (*(&raw const crate::data::graphics::gFrontierFactoryMenu_Tilemap)
                     .cast::<CArray<u16, 0>>())
                 .as_ptr()
                 .cast_mut() as *mut c_void,
-                sSwapMenuTilemapBuffer as *mut c_void,
+                crate::gl!(sSwapMenuTilemapBuffer) as *mut c_void,
                 1024,
             );
             LoadBgTilemap(
                 1,
-                sSwapMenuTilemapBuffer as *mut c_void,
+                crate::gl!(sSwapMenuTilemapBuffer) as *mut c_void,
                 BG_SCREEN_SIZE as u16,
                 0,
             );
@@ -2887,10 +3221,10 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
             LoadPalette(sSwapText_Pal.as_ptr().cast_mut() as *mut c_void, 240, 10);
             LoadPalette(sSwapText_Pal.as_ptr().cast_mut() as *mut c_void, 224, 10);
             LoadPalette(sMonPicBg_Pal.as_ptr().cast_mut() as *mut c_void, 32, 4);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
-            SetBgTilemapBuffer(3, sSwapMonPicBgTilemapBuffer as *mut c_void);
+            SetBgTilemapBuffer(3, crate::gl!(sSwapMonPicBgTilemapBuffer) as *mut c_void);
             CopyToBgTilemapBufferRect(
                 3,
                 sMonPicBg_Tilemap.as_ptr().cast_mut() as *mut c_void,
@@ -2900,29 +3234,31 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
                 8,
             );
             CopyBgTilemapBufferToVram(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             LoadSpritePalettes(sSwap_SpritePalettes.as_ptr().cast_mut());
             LoadSpriteSheets(sSwap_SpriteSheets.as_ptr().cast_mut());
             LoadCompressedSpriteSheet(sSwap_BallGfx.as_ptr().cast_mut());
             SetVBlankCallback(Some(Swap_VblankCb));
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
-            if !sFactorySwapScreen.is_null() && (*sFactorySwapScreen).fromSummaryScreen != 0 {
-                (*sFactorySwapScreen).cursorPos = gLastViewedMonIndex;
+            if !(*sFactorySwapScreen.as_ptr()).is_null()
+                && (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen != 0
+            {
+                (*crate::gl!(sFactorySwapScreen)).cursorPos = gLastViewedMonIndex.get();
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             Swap_InitStruct();
             Swap_InitAllSprites();
-            if (*sFactorySwapScreen).fromSummaryScreen == TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == TRUE {
                 Swap_ShowSummaryMonSprite();
             }
             Swap_InitActions(SWAP_PLAYER_SCREEN);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             Swap_PrintOnInfoWindow(
@@ -2932,38 +3268,38 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
                 .cast_mut(),
             );
             PutWindowTilemap(SWAP_WIN_INFO);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             Swap_PrintMonCategory();
             PutWindowTilemap(SWAP_WIN_MON_CATEGORY);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
-            if (*sFactorySwapScreen).fromSummaryScreen == 0 {
+            if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == 0 {
                 Swap_PrintMonSpecies();
             }
             PutWindowTilemap(SWAP_WIN_SPECIES);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             Swap_PrintPkmnSwap();
             PutWindowTilemap(SWAP_WIN_TITLE);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         12 => {
-            if (*sFactorySwapScreen).fromSummaryScreen != 0 {
+            if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen != 0 {
                 Swap_PrintMonSpeciesAtFade();
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         13 => {
             Swap_PrintActionStrings2();
             PutWindowTilemap(SWAP_WIN_OPTIONS);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         14 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
@@ -2971,21 +3307,21 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
             ShowBg(0);
             ShowBg(1);
             ShowBg(2);
-            if (*sFactorySwapScreen).fromSummaryScreen == TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == TRUE {
                 ShowBg(3);
                 SetGpuReg(REG_OFFSET_BLDCNT, 4680);
                 SetGpuReg(REG_OFFSET_BLDALPHA, 1035);
             } else {
                 HideBg(3);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         15 => {
-            (*sFactorySwapScreen).fadeSpeciesNameTaskId =
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId =
                 CreateTask(Some(Swap_Task_FadeSpeciesName), 0);
-            if (*sFactorySwapScreen).fromSummaryScreen == 0 {
+            if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == 0 {
                 task_set(
-                    (*sFactorySwapScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId,
                     tState,
                     FADESTATE_INIT,
                 );
@@ -2994,11 +3330,11 @@ pub(crate) unsafe fn CB2_InitSwapScreen() {
             } else {
                 Swap_EraseActionFadeWindow();
                 task_set(
-                    (*sFactorySwapScreen).fadeSpeciesNameTaskId,
+                    (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameTaskId,
                     tState,
                     FADESTATE_RUN,
                 );
-                (*sFactorySwapScreen).fadeSpeciesNameActive = FALSE;
+                (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive = FALSE;
                 taskId = CreateTask(Some(Swap_Task_HandleMenu), 0);
                 task_set(taskId, tState, STATE_MENU_INIT);
             }
@@ -3012,269 +3348,409 @@ unsafe fn Swap_InitAllSprites() {
     let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_Swap_Pokeball;
     spriteTemplate.paletteTag = PALTAG_BALL_SELECTED;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        (*sFactorySwapScreen).ballSpriteIds[i] =
+        (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i] =
             CreateSprite(&raw mut spriteTemplate, 48 * i as i16 + 72, 64, 1);
-        gSprites[(*sFactorySwapScreen).ballSpriteIds[i]].data[0] = 0;
+        {
+            let gl_i71 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+            crate::gl!(gSprites[gl_i71].data[0] = 0)
+        };
     }
-    (*sFactorySwapScreen).cursorSpriteId = CreateSprite(
+    (*crate::gl!(sFactorySwapScreen)).cursorSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Swap_Arrow).cast_mut(),
-        gSprites[(*sFactorySwapScreen).ballSpriteIds[(*sFactorySwapScreen).cursorPos]].x,
+        {
+            let gl_i72 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds
+                [(*crate::gl!(sFactorySwapScreen)).cursorPos];
+            crate::gl!(gSprites[gl_i72].x)
+        },
         88,
         0,
     );
-    (*sFactorySwapScreen).menuCursor1SpriteId = CreateSprite(
+    (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Swap_MenuHighlightLeft).cast_mut(),
         176,
         112,
         0,
     );
-    (*sFactorySwapScreen).menuCursor2SpriteId = CreateSprite(
+    (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Swap_MenuHighlightRight).cast_mut(),
         176,
         144,
         0,
     );
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].set_invisible(TRUE as u16);
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].set_invisible(TRUE as u16);
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].centerToCornerVecY = 0;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].centerToCornerVecY = 0;
-    if (*sFactorySwapScreen).fromSummaryScreen == TRUE {
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId]
+        .set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId]
+        .set_invisible(TRUE as u16);
+    {
+        let gl_i73 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i73].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i74 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i74].centerToCornerVecY = 0)
+    };
+    {
+        let gl_i75 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i75].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i76 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i76].centerToCornerVecY = 0)
+    };
+    if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == TRUE {
         x = DISPLAY_WIDTH as u8;
     } else {
         x = 192;
     }
     spriteTemplate = *sSpriteTemplate_Swap_Arrow;
     spriteTemplate.tileTag = GFXTAG_ACTION_BOX_LEFT;
-    (*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][0] =
+    (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][0] =
         CreateSprite(&raw mut spriteTemplate, DISPLAY_WIDTH as i16, 120, 10);
     spriteTemplate = *sSpriteTemplate_Swap_MenuHighlightLeft;
     spriteTemplate.tileTag = GFXTAG_ACTION_BOX_RIGHT;
-    (*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][1] =
+    (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][1] =
         CreateSprite(&raw mut spriteTemplate, 256, 120, 10);
-    (*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][2] =
+    (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][2] =
         CreateSprite(&raw mut spriteTemplate, 288, 120, 10);
     spriteTemplate = *sSpriteTemplate_Swap_Arrow;
     spriteTemplate.tileTag = GFXTAG_ACTION_HIGHLIGHT_LEFT;
-    (*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][0] =
+    (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][0] =
         CreateSprite(&raw mut spriteTemplate, DISPLAY_WIDTH as i16, 120, 1);
     spriteTemplate = *sSpriteTemplate_Swap_MenuHighlightLeft;
     spriteTemplate.tileTag = GFXTAG_ACTION_HIGHLIGHT_MIDDLE;
-    (*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][1] =
+    (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][1] =
         CreateSprite(&raw mut spriteTemplate, 256, 120, 1);
     spriteTemplate.tileTag = GFXTAG_ACTION_HIGHLIGHT_RIGHT;
-    (*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][2] =
+    (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][2] =
         CreateSprite(&raw mut spriteTemplate, 288, 120, 1);
     spriteTemplate = *sSpriteTemplate_Swap_Arrow;
     spriteTemplate.tileTag = GFXTAG_ACTION_BOX_LEFT;
-    (*sFactorySwapScreen).cancelButtonSpriteIds[0][0] =
+    (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[0][0] =
         CreateSprite(&raw mut spriteTemplate, x as i16, 144, 10);
     spriteTemplate = *sSpriteTemplate_Swap_MenuHighlightLeft;
     spriteTemplate.tileTag = GFXTAG_ACTION_BOX_RIGHT;
-    (*sFactorySwapScreen).cancelButtonSpriteIds[0][1] =
+    (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[0][1] =
         CreateSprite(&raw mut spriteTemplate, x as i16 + 16, 144, 10);
     spriteTemplate = *sSpriteTemplate_Swap_Arrow;
     spriteTemplate.tileTag = GFXTAG_ACTION_HIGHLIGHT_LEFT;
-    (*sFactorySwapScreen).cancelButtonSpriteIds[1][0] =
+    (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[1][0] =
         CreateSprite(&raw mut spriteTemplate, x as i16, 144, 1);
     spriteTemplate = *sSpriteTemplate_Swap_MenuHighlightLeft;
     spriteTemplate.tileTag = GFXTAG_ACTION_HIGHLIGHT_RIGHT;
-    (*sFactorySwapScreen).cancelButtonSpriteIds[1][1] =
+    (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[1][1] =
         CreateSprite(&raw mut spriteTemplate, x as i16 + 16, 144, 1);
     for i in 0..2u8 {
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][0]].centerToCornerVecX = 0;
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][0]].centerToCornerVecY = 0;
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][1]].centerToCornerVecX = 0;
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][1]].centerToCornerVecY = 0;
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][2]].centerToCornerVecX = 0;
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][2]].centerToCornerVecY = 0;
-        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][0]].centerToCornerVecX = 0;
-        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][0]].centerToCornerVecY = 0;
-        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][1]].centerToCornerVecX = 0;
-        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][1]].centerToCornerVecY = 0;
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][0]].set_invisible(TRUE as u16);
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][1]].set_invisible(1);
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][2]].set_invisible(TRUE as u16);
-        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][0]].set_invisible(TRUE as u16);
-        gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][1]].set_invisible(1);
+        {
+            let gl_i77 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][0];
+            crate::gl!(gSprites[gl_i77].centerToCornerVecX = 0)
+        };
+        {
+            let gl_i78 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][0];
+            crate::gl!(gSprites[gl_i78].centerToCornerVecY = 0)
+        };
+        {
+            let gl_i79 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][1];
+            crate::gl!(gSprites[gl_i79].centerToCornerVecX = 0)
+        };
+        {
+            let gl_i80 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][1];
+            crate::gl!(gSprites[gl_i80].centerToCornerVecY = 0)
+        };
+        {
+            let gl_i81 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][2];
+            crate::gl!(gSprites[gl_i81].centerToCornerVecX = 0)
+        };
+        {
+            let gl_i82 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][2];
+            crate::gl!(gSprites[gl_i82].centerToCornerVecY = 0)
+        };
+        {
+            let gl_i83 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][0];
+            crate::gl!(gSprites[gl_i83].centerToCornerVecX = 0)
+        };
+        {
+            let gl_i84 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][0];
+            crate::gl!(gSprites[gl_i84].centerToCornerVecY = 0)
+        };
+        {
+            let gl_i85 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][1];
+            crate::gl!(gSprites[gl_i85].centerToCornerVecX = 0)
+        };
+        {
+            let gl_i86 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][1];
+            crate::gl!(gSprites[gl_i86].centerToCornerVecY = 0)
+        };
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][0]]
+            .set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][1]]
+            .set_invisible(1);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][2]]
+            .set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][0]]
+            .set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][1]]
+            .set_invisible(1);
     }
-    gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[0][0]].set_invisible(0);
-    gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[0][1]].set_invisible(0);
-    gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][0]].set_invisible(0);
-    gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][1]].set_invisible(0);
-    gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[0][2]].set_invisible(0);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[0][0]]
+        .set_invisible(0);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[0][1]]
+        .set_invisible(0);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][0]]
+        .set_invisible(0);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][1]]
+        .set_invisible(0);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[0][2]]
+        .set_invisible(0);
 }
 unsafe fn Swap_DestroyAllSprites() {
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        DestroySprite(&raw mut gSprites[(*sFactorySwapScreen).ballSpriteIds[i]]);
+        DestroySprite({
+            let gl_i87 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[i];
+            crate::gl!(&raw gSprites[gl_i87])
+        });
     }
-    DestroySprite(&raw mut gSprites[(*sFactorySwapScreen).cursorSpriteId]);
-    DestroySprite(&raw mut gSprites[(*sFactorySwapScreen).menuCursor1SpriteId]);
-    DestroySprite(&raw mut gSprites[(*sFactorySwapScreen).menuCursor2SpriteId]);
+    DestroySprite({
+        let gl_i88 = (*crate::gl!(sFactorySwapScreen)).cursorSpriteId;
+        crate::gl!(&raw gSprites[gl_i88])
+    });
+    DestroySprite({
+        let gl_i89 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(&raw gSprites[gl_i89])
+    });
+    DestroySprite({
+        let gl_i90 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(&raw gSprites[gl_i90])
+    });
     let mut i: u8 = 0;
     while i < 2 {
         for j in 0..3u8 {
-            DestroySprite(
-                &raw mut gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[i][j]],
-            );
+            DestroySprite({
+                let gl_i91 = (*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[i][j];
+                crate::gl!(&raw gSprites[gl_i91])
+            });
         }
         i += 1;
     }
     for i in 0..2u8 {
         for j in 0..2u8 {
-            DestroySprite(&raw mut gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[i][j]]);
+            DestroySprite({
+                let gl_i92 = (*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[i][j];
+                crate::gl!(&raw gSprites[gl_i92])
+            });
         }
     }
 }
 unsafe fn Swap_HandleActionCursorChange(cursorId: u8) {
     if cursorId < FRONTIER_PARTY_SIZE as u8 {
-        gSprites[(*sFactorySwapScreen).cursorSpriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cursorSpriteId]
+            .set_invisible(FALSE as u16);
         Swap_HideActionButtonHighlights();
-        gSprites[(*sFactorySwapScreen).cursorSpriteId].x =
-            gSprites[(*sFactorySwapScreen).ballSpriteIds[cursorId]].x;
+        {
+            let gl_v = {
+                let gl_i94 = (*crate::gl!(sFactorySwapScreen)).ballSpriteIds[cursorId];
+                crate::gl!(gSprites[gl_i94].x)
+            };
+            let gl_i93 = (*crate::gl!(sFactorySwapScreen)).cursorSpriteId;
+            crate::gl!(gSprites[gl_i93].x = gl_v)
+        };
     } else {
-        gSprites[(*sFactorySwapScreen).cursorSpriteId].set_invisible(TRUE as u16);
-        Swap_HighlightActionButton((*(*sFactorySwapScreen).actionsData.at(cursorId)).id);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cursorSpriteId]
+            .set_invisible(TRUE as u16);
+        Swap_HighlightActionButton(
+            (*(*crate::gl!(sFactorySwapScreen)).actionsData.at(cursorId)).id,
+        );
     }
 }
 unsafe fn Swap_UpdateBallCursorPosition(direction: i8) {
     let mut cursorPos: u8 = 0;
     PlaySE(SE_SELECT);
     if direction > 0 {
-        if (*sFactorySwapScreen).cursorPos as i32 + 1 != (*sFactorySwapScreen).actionsCount as i32 {
-            (*sFactorySwapScreen).cursorPos += 1;
+        if (*crate::gl!(sFactorySwapScreen)).cursorPos as i32 + 1
+            != (*crate::gl!(sFactorySwapScreen)).actionsCount as i32
+        {
+            (*crate::gl!(sFactorySwapScreen)).cursorPos += 1;
         } else {
-            (*sFactorySwapScreen).cursorPos = 0;
+            (*crate::gl!(sFactorySwapScreen)).cursorPos = 0;
         }
     } else {
-        if (*sFactorySwapScreen).cursorPos != 0 {
-            (*sFactorySwapScreen).cursorPos -= 1;
+        if (*crate::gl!(sFactorySwapScreen)).cursorPos != 0 {
+            (*crate::gl!(sFactorySwapScreen)).cursorPos -= 1;
         } else {
-            (*sFactorySwapScreen).cursorPos = (*sFactorySwapScreen).actionsCount - 1;
+            (*crate::gl!(sFactorySwapScreen)).cursorPos =
+                (*crate::gl!(sFactorySwapScreen)).actionsCount - 1;
         }
     }
-    cursorPos = (*sFactorySwapScreen).cursorPos;
+    cursorPos = (*crate::gl!(sFactorySwapScreen)).cursorPos;
     Swap_HandleActionCursorChange(cursorPos);
 }
 unsafe fn Swap_UpdateActionCursorPosition(direction: i8) {
     let mut cursorPos: u8 = 0;
     PlaySE(SE_SELECT);
     if direction > 0 {
-        if (*sFactorySwapScreen).cursorPos < FRONTIER_PARTY_SIZE as u8 {
-            (*sFactorySwapScreen).cursorPos = FRONTIER_PARTY_SIZE as u8;
-        } else if (*sFactorySwapScreen).cursorPos as i32 + 1
-            != (*sFactorySwapScreen).actionsCount as i32
+        if (*crate::gl!(sFactorySwapScreen)).cursorPos < FRONTIER_PARTY_SIZE as u8 {
+            (*crate::gl!(sFactorySwapScreen)).cursorPos = FRONTIER_PARTY_SIZE as u8;
+        } else if (*crate::gl!(sFactorySwapScreen)).cursorPos as i32 + 1
+            != (*crate::gl!(sFactorySwapScreen)).actionsCount as i32
         {
-            (*sFactorySwapScreen).cursorPos += 1;
+            (*crate::gl!(sFactorySwapScreen)).cursorPos += 1;
         } else {
-            (*sFactorySwapScreen).cursorPos = 0;
+            (*crate::gl!(sFactorySwapScreen)).cursorPos = 0;
         }
     } else {
-        if (*sFactorySwapScreen).cursorPos < FRONTIER_PARTY_SIZE as u8 {
-            (*sFactorySwapScreen).cursorPos = (*sFactorySwapScreen).actionsCount - 1;
-        } else if (*sFactorySwapScreen).cursorPos != 0 {
-            (*sFactorySwapScreen).cursorPos -= 1;
+        if (*crate::gl!(sFactorySwapScreen)).cursorPos < FRONTIER_PARTY_SIZE as u8 {
+            (*crate::gl!(sFactorySwapScreen)).cursorPos =
+                (*crate::gl!(sFactorySwapScreen)).actionsCount - 1;
+        } else if (*crate::gl!(sFactorySwapScreen)).cursorPos != 0 {
+            (*crate::gl!(sFactorySwapScreen)).cursorPos -= 1;
         } else {
-            (*sFactorySwapScreen).cursorPos = (*sFactorySwapScreen).actionsCount - 1;
+            (*crate::gl!(sFactorySwapScreen)).cursorPos =
+                (*crate::gl!(sFactorySwapScreen)).actionsCount - 1;
         }
     }
-    cursorPos = (*sFactorySwapScreen).cursorPos;
+    cursorPos = (*crate::gl!(sFactorySwapScreen)).cursorPos;
     Swap_HandleActionCursorChange(cursorPos);
 }
 unsafe fn Swap_UpdateYesNoCursorPosition(direction: i8) {
     if direction > 0 {
-        if (*sFactorySwapScreen).yesNoCursorPos != 1 {
-            (*sFactorySwapScreen).yesNoCursorPos += 1;
+        if (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos != 1 {
+            (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos += 1;
         } else {
-            (*sFactorySwapScreen).yesNoCursorPos = 0;
+            (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos = 0;
         }
     } else {
-        if (*sFactorySwapScreen).yesNoCursorPos != 0 {
-            (*sFactorySwapScreen).yesNoCursorPos -= 1;
+        if (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos != 0 {
+            (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos -= 1;
         } else {
-            (*sFactorySwapScreen).yesNoCursorPos = 1;
+            (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos = 1;
         }
     }
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].y =
-        (*sFactorySwapScreen).yesNoCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].y =
-        (*sFactorySwapScreen).yesNoCursorPos as i16 * 16 + 112;
+    {
+        let gl_v = (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos as i16 * 16 + 112;
+        let gl_i95 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i95].y = gl_v)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos as i16 * 16 + 112;
+        let gl_i96 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i96].y = gl_v)
+    };
 }
 unsafe fn Swap_UpdateMenuCursorPosition(direction: i8) {
     PlaySE(SE_SELECT);
     if direction > 0 {
-        if (*sFactorySwapScreen).menuCursorPos != 2 {
-            (*sFactorySwapScreen).menuCursorPos += 1;
+        if (*crate::gl!(sFactorySwapScreen)).menuCursorPos != 2 {
+            (*crate::gl!(sFactorySwapScreen)).menuCursorPos += 1;
         } else {
-            (*sFactorySwapScreen).menuCursorPos = 0;
+            (*crate::gl!(sFactorySwapScreen)).menuCursorPos = 0;
         }
     } else {
-        if (*sFactorySwapScreen).menuCursorPos != 0 {
-            (*sFactorySwapScreen).menuCursorPos -= 1;
+        if (*crate::gl!(sFactorySwapScreen)).menuCursorPos != 0 {
+            (*crate::gl!(sFactorySwapScreen)).menuCursorPos -= 1;
         } else {
-            (*sFactorySwapScreen).menuCursorPos = 2;
+            (*crate::gl!(sFactorySwapScreen)).menuCursorPos = 2;
         }
     }
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].y =
-        (*sFactorySwapScreen).menuCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].y =
-        (*sFactorySwapScreen).menuCursorPos as i16 * 16 + 112;
+    {
+        let gl_v = (*crate::gl!(sFactorySwapScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i97 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i97].y = gl_v)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySwapScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i98 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i98].y = gl_v)
+    };
 }
 unsafe fn Swap_HighlightActionButton(actionId: u8) {
     for i in 0..3u8 {
         if actionId == SWAPACTION_PKMN_FOR_SWAP {
-            gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][i]]
+            (*gSprites.as_ptr())
+                [(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][i]]
                 .set_invisible(FALSE as u16);
             if i < 2 {
-                gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[1][i]].set_invisible(1);
+                (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[1][i]]
+                    .set_invisible(1);
             }
         } else if actionId == SWAPACTION_CANCEL {
             if i < 2 {
-                gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[1][i]]
+                (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[1][i]]
                     .set_invisible(FALSE as u16);
             }
-            gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][i]].set_invisible(1);
+            (*gSprites.as_ptr())
+                [(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][i]]
+                .set_invisible(1);
         }
     }
 }
 unsafe fn Swap_HideActionButtonHighlights() {
     for i in 0..3u8 {
-        gSprites[(*sFactorySwapScreen).pkmnForSwapButtonSpriteIds[1][i]].set_invisible(1);
+        (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).pkmnForSwapButtonSpriteIds[1][i]]
+            .set_invisible(1);
         if i < 2 {
-            gSprites[(*sFactorySwapScreen).cancelButtonSpriteIds[1][i]].set_invisible(1);
+            (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).cancelButtonSpriteIds[1][i]]
+                .set_invisible(1);
         }
     }
 }
 unsafe fn Swap_ShowMenuOptions() {
-    if (*sFactorySwapScreen).fromSummaryScreen == TRUE {
-        (*sFactorySwapScreen).fromSummaryScreen = FALSE;
+    if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == TRUE {
+        (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen = FALSE;
     } else {
-        (*sFactorySwapScreen).menuCursorPos = 0;
+        (*crate::gl!(sFactorySwapScreen)).menuCursorPos = 0;
     }
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].x = 176;
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].y =
-        (*sFactorySwapScreen).menuCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].x = 208;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].y =
-        (*sFactorySwapScreen).menuCursorPos as i16 * 16 + 112;
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].set_invisible(FALSE as u16);
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].set_invisible(FALSE as u16);
+    {
+        let gl_i99 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i99].x = 176)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySwapScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i100 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i100].y = gl_v)
+    };
+    {
+        let gl_i101 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i101].x = 208)
+    };
+    {
+        let gl_v = (*crate::gl!(sFactorySwapScreen)).menuCursorPos as i16 * 16 + 112;
+        let gl_i102 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i102].y = gl_v)
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId]
+        .set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId]
+        .set_invisible(FALSE as u16);
     Swap_PrintMenuOptions();
 }
 unsafe fn Swap_ShowYesNoOptions() {
-    (*sFactorySwapScreen).yesNoCursorPos = 0;
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].x = 176;
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].y = 112;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].x = 208;
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].y = 112;
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].set_invisible(FALSE as u16);
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].set_invisible(FALSE as u16);
+    (*crate::gl!(sFactorySwapScreen)).yesNoCursorPos = 0;
+    {
+        let gl_i103 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i103].x = 176)
+    };
+    {
+        let gl_i104 = (*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId;
+        crate::gl!(gSprites[gl_i104].y = 112)
+    };
+    {
+        let gl_i105 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i105].x = 208)
+    };
+    {
+        let gl_i106 = (*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId;
+        crate::gl!(gSprites[gl_i106].y = 112)
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId]
+        .set_invisible(FALSE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId]
+        .set_invisible(FALSE as u16);
     Swap_PrintYesNoOptions();
 }
 unsafe fn Swap_ErasePopupMenu(windowId: u8) {
-    gSprites[(*sFactorySwapScreen).menuCursor1SpriteId].set_invisible(TRUE as u16);
-    gSprites[(*sFactorySwapScreen).menuCursor2SpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor1SpriteId]
+        .set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).menuCursor2SpriteId]
+        .set_invisible(TRUE as u16);
     FillWindowPixelBuffer(windowId, 0);
     CopyWindowToVram(windowId, COPYWIN_GFX);
     ClearWindowTilemap(windowId);
@@ -3314,15 +3790,22 @@ unsafe fn Swap_PrintMonSpecies() {
     let mut species: u16 = 0;
     let mut x: u8 = 0;
     FillWindowPixelBuffer(SWAP_WIN_SPECIES, 0);
-    if (*sFactorySwapScreen).cursorPos >= FRONTIER_PARTY_SIZE as u8 {
+    if (*crate::gl!(sFactorySwapScreen)).cursorPos >= FRONTIER_PARTY_SIZE as u8 {
         CopyWindowToVram(SWAP_WIN_SPECIES, COPYWIN_GFX);
     } else {
-        let monId: u8 = (*sFactorySwapScreen).cursorPos;
-        if (*sFactorySwapScreen).inEnemyScreen == 0 {
-            species =
-                GetMonData3(&raw mut gPlayerParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+        let monId: u8 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
+        if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
+            species = GetMonData3(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         } else {
-            species = GetMonData3(&raw mut gEnemyParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+            species = GetMonData3(
+                crate::gl!(&raw gEnemyParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         }
         StringCopy(
             gStringVar4.as_mut_ptr(),
@@ -3429,7 +3912,7 @@ unsafe fn Swap_PrintActionString(str: *mut u8, y: u32, windowId: u32) {
 unsafe fn Swap_PrintActionStrings() {
     FillWindowPixelBuffer(SWAP_WIN_ACTION_FADE, 0);
     'l1: {
-        let sw1: u8 = (*sFactorySwapScreen).inEnemyScreen;
+        let sw1: u8 = (*crate::gl!(sFactorySwapScreen)).inEnemyScreen;
         let mut fall = false;
         if sw1 == TRUE {
             fall = true;
@@ -3457,7 +3940,7 @@ unsafe fn Swap_PrintActionStrings() {
 unsafe fn Swap_PrintActionStrings2() {
     FillWindowPixelBuffer(SWAP_WIN_OPTIONS, 0);
     'l1: {
-        let sw1: u8 = (*sFactorySwapScreen).inEnemyScreen;
+        let sw1: u8 = (*crate::gl!(sFactorySwapScreen)).inEnemyScreen;
         let mut fall = false;
         if sw1 == TRUE {
             fall = true;
@@ -3485,7 +3968,7 @@ unsafe fn Swap_PrintActionStrings2() {
 unsafe fn Swap_PrintOneActionString(which: u8) {
     match which {
         0 => {
-            if (*sFactorySwapScreen).inEnemyScreen == TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == TRUE {
                 Swap_PrintActionString(
                     (*(&raw const crate::data::strings::gText_PkmnForSwap).cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -3517,23 +4000,30 @@ unsafe fn Swap_PrintMonSpeciesAtFade() {
         pal.as_mut_ptr() as *mut c_void,
         4,
     );
-    if (*sFactorySwapScreen).fromSummaryScreen == 0 {
-        pal[4] = gPlttBufferFaded[228];
+    if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen == 0 {
+        pal[4] = crate::gl!(gPlttBufferFaded[228]);
     } else {
-        pal[4] = (*sFactorySwapScreen).speciesNameColorBackup;
+        pal[4] = (*crate::gl!(sFactorySwapScreen)).speciesNameColorBackup;
     }
     LoadPalette(pal.as_mut_ptr() as *mut c_void, 240, 10);
     PutWindowTilemap(SWAP_WIN_SPECIES_AT_FADE);
     FillWindowPixelBuffer(SWAP_WIN_SPECIES_AT_FADE, 0);
-    if (*sFactorySwapScreen).cursorPos >= FRONTIER_PARTY_SIZE as u8 {
+    if (*crate::gl!(sFactorySwapScreen)).cursorPos >= FRONTIER_PARTY_SIZE as u8 {
         CopyWindowToVram(SWAP_WIN_SPECIES_AT_FADE, COPYWIN_FULL);
     } else {
-        let monId: u8 = (*sFactorySwapScreen).cursorPos;
-        if (*sFactorySwapScreen).inEnemyScreen == 0 {
-            species =
-                GetMonData3(&raw mut gPlayerParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+        let monId: u8 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
+        if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
+            species = GetMonData3(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         } else {
-            species = GetMonData3(&raw mut gEnemyParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+            species = GetMonData3(
+                crate::gl!(&raw gEnemyParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         }
         StringCopy(
             gStringVar4.as_mut_ptr(),
@@ -3560,19 +4050,26 @@ unsafe fn Swap_PrintMonSpeciesForTransition() {
     let mut x: u8 = 0;
     LoadPalette(sSwapText_Pal.as_ptr().cast_mut() as *mut c_void, 224, 10);
     CpuSet(
-        &raw mut gPlttBufferUnfaded[240] as *mut c_void,
-        &raw mut gPlttBufferFaded[224] as *mut c_void,
+        crate::gl!(&raw gPlttBufferUnfaded[240]) as *mut c_void,
+        crate::gl!(&raw gPlttBufferFaded[224]) as *mut c_void,
         5,
     );
-    if (*sFactorySwapScreen).cursorPos >= FRONTIER_PARTY_SIZE as u8 {
+    if (*crate::gl!(sFactorySwapScreen)).cursorPos >= FRONTIER_PARTY_SIZE as u8 {
         CopyWindowToVram(SWAP_WIN_SPECIES, COPYWIN_GFX);
     } else {
-        let monId: u8 = (*sFactorySwapScreen).cursorPos;
-        if (*sFactorySwapScreen).inEnemyScreen == 0 {
-            species =
-                GetMonData3(&raw mut gPlayerParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+        let monId: u8 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
+        if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
+            species = GetMonData3(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         } else {
-            species = GetMonData3(&raw mut gEnemyParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+            species = GetMonData3(
+                crate::gl!(&raw gEnemyParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         }
         StringCopy(
             gStringVar4.as_mut_ptr(),
@@ -3598,17 +4095,24 @@ unsafe fn Swap_PrintMonCategory() {
     let mut species: u16 = 0;
     let mut text: CArray<u8, 30> = zeroed();
     let mut x: u8 = 0;
-    let monId: u8 = (*sFactorySwapScreen).cursorPos;
+    let monId: u8 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
     FillWindowPixelBuffer(SWAP_WIN_MON_CATEGORY, 0);
     if monId >= FRONTIER_PARTY_SIZE as u8 {
         CopyWindowToVram(SWAP_WIN_MON_CATEGORY, COPYWIN_GFX);
     } else {
         PutWindowTilemap(SWAP_WIN_MON_CATEGORY);
-        if (*sFactorySwapScreen).inEnemyScreen == 0 {
-            species =
-                GetMonData3(&raw mut gPlayerParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+        if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
+            species = GetMonData3(
+                crate::gl!(&raw gPlayerParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         } else {
-            species = GetMonData3(&raw mut gEnemyParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+            species = GetMonData3(
+                crate::gl!(&raw gEnemyParty[monId]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16;
         }
         CopyMonCategoryText(
             SpeciesToNationalPokedexNum(species) as i32,
@@ -3628,35 +4132,40 @@ unsafe fn Swap_PrintMonCategory() {
     }
 }
 unsafe fn Swap_InitActions(id: u8) {
-    if (*sFactorySwapScreen).fromSummaryScreen != TRUE {
+    if (*crate::gl!(sFactorySwapScreen)).fromSummaryScreen != TRUE {
         match id {
             SWAP_PLAYER_SCREEN => {
-                (*sFactorySwapScreen).inEnemyScreen = FALSE;
-                (*sFactorySwapScreen).cursorPos = 0;
-                (*sFactorySwapScreen).actionsCount = 4;
-                (*sFactorySwapScreen).actionsData = sSwap_PlayerScreenActions.as_ptr().cast_mut();
+                (*crate::gl!(sFactorySwapScreen)).inEnemyScreen = FALSE;
+                (*crate::gl!(sFactorySwapScreen)).cursorPos = 0;
+                (*crate::gl!(sFactorySwapScreen)).actionsCount = 4;
+                (*crate::gl!(sFactorySwapScreen)).actionsData =
+                    sSwap_PlayerScreenActions.as_ptr().cast_mut();
             }
             SWAP_ENEMY_SCREEN => {
-                (*sFactorySwapScreen).inEnemyScreen = TRUE;
-                (*sFactorySwapScreen).cursorPos = 0;
-                (*sFactorySwapScreen).actionsCount = 5;
-                (*sFactorySwapScreen).actionsData = sSwap_EnemyScreenActions.as_ptr().cast_mut();
+                (*crate::gl!(sFactorySwapScreen)).inEnemyScreen = TRUE;
+                (*crate::gl!(sFactorySwapScreen)).cursorPos = 0;
+                (*crate::gl!(sFactorySwapScreen)).actionsCount = 5;
+                (*crate::gl!(sFactorySwapScreen)).actionsData =
+                    sSwap_EnemyScreenActions.as_ptr().cast_mut();
             }
             _ => {}
         }
     }
 }
 unsafe fn Swap_RunMenuOptionFunc(taskId: u8) {
-    sSwap_CurrentOptionFunc = sSwap_MenuOptionFuncs[(*sFactorySwapScreen).menuCursorPos];
-    sSwap_CurrentOptionFunc.unwrap_unchecked()(taskId);
+    crate::gl!(
+        sSwap_CurrentOptionFunc =
+            sSwap_MenuOptionFuncs[(*crate::gl!(sFactorySwapScreen)).menuCursorPos]
+    );
+    (*sSwap_CurrentOptionFunc.as_ptr()).unwrap_unchecked()(taskId);
 }
 pub(crate) unsafe fn Swap_OptionSwap(taskId: u8) {
     CloseMonPic(
-        (*sFactorySwapScreen).monPic,
-        &raw mut (*sFactorySwapScreen).monPicAnimating,
+        (*crate::gl!(sFactorySwapScreen)).monPic,
+        &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
         TRUE,
     );
-    (*sFactorySwapScreen).playerMonId = (*sFactorySwapScreen).cursorPos;
+    (*crate::gl!(sFactorySwapScreen)).playerMonId = (*crate::gl!(sFactorySwapScreen)).cursorPos;
     Swap_ErasePopupMenu(SWAP_WIN_OPTIONS);
     task_set(taskId, tState, 0);
     task_set_func(taskId, Some(Swap_Task_SwitchPartyScreen));
@@ -3667,8 +4176,8 @@ pub(crate) fn Swap_OptionSummary(taskId: u8) {
 }
 pub(crate) unsafe fn Swap_OptionRechoose(taskId: u8) {
     CloseMonPic(
-        (*sFactorySwapScreen).monPic,
-        &raw mut (*sFactorySwapScreen).monPicAnimating,
+        (*crate::gl!(sFactorySwapScreen)).monPic,
+        &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
         TRUE,
     );
     Swap_ErasePopupMenu(SWAP_WIN_OPTIONS);
@@ -3687,11 +4196,13 @@ pub(crate) unsafe fn Swap_OptionRechoose(taskId: u8) {
     task_set_func(taskId, Some(Swap_Task_ScreenInfoTransitionIn));
 }
 unsafe fn Swap_RunActionFunc(taskId: u8) {
-    sSwap_CurrentOptionFunc = (*(*sFactorySwapScreen)
-        .actionsData
-        .at((*sFactorySwapScreen).cursorPos))
-    .func;
-    sSwap_CurrentOptionFunc.unwrap_unchecked()(taskId);
+    crate::gl!(
+        sSwap_CurrentOptionFunc = (*(*crate::gl!(sFactorySwapScreen))
+            .actionsData
+            .at((*crate::gl!(sFactorySwapScreen)).cursorPos))
+        .func
+    );
+    (*sSwap_CurrentOptionFunc.as_ptr()).unwrap_unchecked()(taskId);
 }
 pub(crate) fn Swap_ActionCancel(taskId: u8) {
     task_set(
@@ -3724,7 +4235,7 @@ pub(crate) fn Swap_ActionPkmnForSwap(taskId: u8) {
     task_set_func(taskId, Some(Swap_Task_ScreenInfoTransitionOut));
 }
 pub(crate) unsafe fn Swap_ActionMon(taskId: u8) {
-    if (*sFactorySwapScreen).inEnemyScreen == 0 {
+    if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
         task_set(
             taskId,
             tFollowUpTaskPtrHi,
@@ -3736,10 +4247,10 @@ pub(crate) unsafe fn Swap_ActionMon(taskId: u8) {
             Swap_Task_HandleMenu as *const () as usize as u32 as i16,
         );
         task_set(taskId, tFollowUpTaskState, STATE_MENU_INIT);
-    } else if Swap_AlreadyHasSameSpecies((*sFactorySwapScreen).cursorPos) == TRUE {
+    } else if Swap_AlreadyHasSameSpecies((*crate::gl!(sFactorySwapScreen)).cursorPos) == TRUE {
         OpenMonPic(
-            &raw mut (*sFactorySwapScreen).monPic.bgSpriteId,
-            &raw mut (*sFactorySwapScreen).monPicAnimating,
+            &raw mut (*crate::gl!(sFactorySwapScreen)).monPic.bgSpriteId,
+            &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
             TRUE,
         );
         task_set(taskId, tState, 0);
@@ -3769,31 +4280,51 @@ unsafe fn OpenMonPic(spriteId: *mut u8, animating: *mut u8, swapScreen: u8) {
         64,
         1,
     );
-    gSprites[*spriteId].callback = Some(SpriteCB_OpenMonPic);
-    gSprites[*spriteId].data[sIsSwapScreen] = swapScreen as i16;
+    {
+        let gl_i107 = *spriteId;
+        crate::gl!(gSprites[gl_i107].callback = Some(SpriteCB_OpenMonPic))
+    };
+    {
+        let gl_i108 = *spriteId;
+        let gl_i109 = sIsSwapScreen;
+        crate::gl!(gSprites[gl_i108].data[gl_i109] = swapScreen as i16)
+    };
     *animating = TRUE;
 }
 unsafe fn Swap_ShowSummaryMonSprite() {
-    (*sFactorySwapScreen).monPic.bgSpriteId = CreateSprite(
+    (*crate::gl!(sFactorySwapScreen)).monPic.bgSpriteId = CreateSprite(
         (&raw const *sSpriteTemplate_Swap_MonPicBgAnim).cast_mut(),
         120,
         64,
         1,
     );
     StartSpriteAffineAnim(
-        &raw mut gSprites[(*sFactorySwapScreen).monPic.bgSpriteId],
+        {
+            let gl_i110 = (*crate::gl!(sFactorySwapScreen)).monPic.bgSpriteId;
+            crate::gl!(&raw gSprites[gl_i110])
+        },
         2,
     );
-    let mon: *mut Pokemon = &raw mut gPlayerParty[(*sFactorySwapScreen).cursorPos];
+    let mon: *mut Pokemon = {
+        let gl_i111 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
+        crate::gl!(&raw gPlayerParty[gl_i111])
+    };
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
     let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
     let otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
-    (*sFactorySwapScreen).monPic.monSpriteId =
+    (*crate::gl!(sFactorySwapScreen)).monPic.monSpriteId =
         CreateMonPicSprite_HandleDeoxys(species, personality, otId, TRUE, 88, 32, 15, TAG_NONE)
             as u8;
-    gSprites[(*sFactorySwapScreen).monPic.monSpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySwapScreen).monPic.monSpriteId].centerToCornerVecY = 0;
-    gSprites[(*sFactorySwapScreen).monPic.bgSpriteId].set_invisible(TRUE as u16);
+    {
+        let gl_i112 = (*crate::gl!(sFactorySwapScreen)).monPic.monSpriteId;
+        crate::gl!(gSprites[gl_i112].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i113 = (*crate::gl!(sFactorySwapScreen)).monPic.monSpriteId;
+        crate::gl!(gSprites[gl_i113].centerToCornerVecY = 0)
+    };
+    (*gSprites.as_ptr())[(*crate::gl!(sFactorySwapScreen)).monPic.bgSpriteId]
+        .set_invisible(TRUE as u16);
 }
 unsafe fn CloseMonPic(pic: FactoryMonPic, animating: *mut u8, swapScreen: u8) {
     FreeAndDestroyMonPicSprite(pic.monSpriteId as u16);
@@ -3805,12 +4336,15 @@ unsafe fn CloseMonPic(pic: FactoryMonPic, animating: *mut u8, swapScreen: u8) {
 }
 unsafe fn HideMonPic(pic: FactoryMonPic, animating: *mut u8) {
     FreeAndDestroyMonPicSprite(pic.monSpriteId as u16);
-    FreeOamMatrix(gSprites[pic.bgSpriteId].oam.matrixNum() as u8);
-    DestroySprite(&raw mut gSprites[pic.bgSpriteId]);
+    FreeOamMatrix((*gSprites.as_ptr())[pic.bgSpriteId].oam.matrixNum() as u8);
+    DestroySprite({
+        let gl_i114 = pic.bgSpriteId;
+        crate::gl!(&raw gSprites[gl_i114])
+    });
     *animating = FALSE;
 }
 pub(crate) unsafe fn Swap_TaskCantHaveSameMons(taskId: u8) {
-    if (*sFactorySwapScreen).monPicAnimating == TRUE {
+    if (*crate::gl!(sFactorySwapScreen)).monPicAnimating == TRUE {
         return;
     }
     match task_get(taskId, tState) {
@@ -3821,22 +4355,24 @@ pub(crate) unsafe fn Swap_TaskCantHaveSameMons(taskId: u8) {
                 .as_ptr()
                 .cast_mut(),
             );
-            (*sFactorySwapScreen).monSwapped = FALSE;
+            (*crate::gl!(sFactorySwapScreen)).monSwapped = FALSE;
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         1 => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+                || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+            {
                 PlaySE(SE_SELECT);
                 CloseMonPic(
-                    (*sFactorySwapScreen).monPic,
-                    &raw mut (*sFactorySwapScreen).monPicAnimating,
+                    (*crate::gl!(sFactorySwapScreen)).monPic,
+                    &raw mut (*crate::gl!(sFactorySwapScreen)).monPicAnimating,
                     TRUE,
                 );
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         2 => {
-            if (*sFactorySwapScreen).monPicAnimating != TRUE {
+            if (*crate::gl!(sFactorySwapScreen)).monPicAnimating != TRUE {
                 FillWindowPixelBuffer(SWAP_WIN_ACTION_FADE, 0);
                 CopyWindowToVram(SWAP_WIN_ACTION_FADE, COPYWIN_GFX);
                 task_set(taskId, tState, task_get(taskId, tState) + 1);
@@ -3854,7 +4390,7 @@ pub(crate) unsafe fn Swap_TaskCantHaveSameMons(taskId: u8) {
         4 => {
             Swap_PrintMonSpeciesForTransition();
             Swap_EraseSpeciesAtFadeWindow();
-            (*sFactorySwapScreen).fadeSpeciesNameActive = TRUE;
+            (*crate::gl!(sFactorySwapScreen)).fadeSpeciesNameActive = TRUE;
             task_set(taskId, tState, task_get(taskId, tFollowUpTaskState));
             task_set_func(taskId, Some(Swap_Task_HandleChooseMons));
         }
@@ -3862,11 +4398,19 @@ pub(crate) unsafe fn Swap_TaskCantHaveSameMons(taskId: u8) {
     }
 }
 unsafe fn Swap_AlreadyHasSameSpecies(monId: u8) -> u8 {
-    let species: u16 =
-        GetMonData3(&raw mut gEnemyParty[monId], MON_DATA_SPECIES, null_mut()) as u16;
+    let species: u16 = GetMonData3(
+        crate::gl!(&raw gEnemyParty[monId]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) as u16;
     for i in 0..(FRONTIER_PARTY_SIZE as u8) {
-        if i != (*sFactorySwapScreen).playerMonId
-            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) as u16 == species
+        if i != (*crate::gl!(sFactorySwapScreen)).playerMonId
+            && GetMonData3(
+                crate::gl!(&raw gPlayerParty[i]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) as u16
+                == species
         {
             return TRUE;
         }
@@ -3887,7 +4431,7 @@ pub(crate) unsafe fn SpriteCB_CloseMonPic(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
         FreeOamMatrix((*sprite).oam.matrixNum() as u8);
         if (*sprite).data[sIsSwapScreen] == TRUE as i16 {
-            (*sFactorySwapScreen).monPicAnimating = FALSE;
+            (*crate::gl!(sFactorySwapScreen)).monPicAnimating = FALSE;
         } else {
             Select_SetMonPicAnimating(FALSE);
         }
@@ -3984,10 +4528,22 @@ pub(crate) unsafe fn Task_CloseMonPic(taskId: u8) {
         }
         _ => {
             HideBg(3);
-            gSprites[(*task).data[tSpriteId]].data[7] = (*task).data[7];
-            gSprites[(*task).data[tSpriteId]].set_invisible(FALSE as u16);
-            gSprites[(*task).data[tSpriteId]].callback = Some(SpriteCB_CloseMonPic);
-            StartSpriteAffineAnim(&raw mut gSprites[(*task).data[tSpriteId]], 1);
+            {
+                let gl_i115 = (*task).data[tSpriteId];
+                crate::gl!(gSprites[gl_i115].data[7] = (*task).data[7])
+            };
+            (*gSprites.as_ptr())[(*task).data[tSpriteId]].set_invisible(FALSE as u16);
+            {
+                let gl_i116 = (*task).data[tSpriteId];
+                crate::gl!(gSprites[gl_i116].callback = Some(SpriteCB_CloseMonPic))
+            };
+            StartSpriteAffineAnim(
+                {
+                    let gl_i117 = (*task).data[tSpriteId];
+                    crate::gl!(&raw gSprites[gl_i117])
+                },
+                1,
+            );
             ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
             DestroyTask(taskId);
         }
@@ -3995,18 +4551,30 @@ pub(crate) unsafe fn Task_CloseMonPic(taskId: u8) {
 }
 unsafe fn Swap_CreateMonSprite() {
     let mut mon: *mut Pokemon = null_mut();
-    if (*sFactorySwapScreen).inEnemyScreen == 0 {
-        mon = &raw mut gPlayerParty[(*sFactorySwapScreen).cursorPos];
+    if (*crate::gl!(sFactorySwapScreen)).inEnemyScreen == 0 {
+        mon = {
+            let gl_i118 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
+            crate::gl!(&raw gPlayerParty[gl_i118])
+        };
     } else {
-        mon = &raw mut gEnemyParty[(*sFactorySwapScreen).cursorPos];
+        mon = {
+            let gl_i119 = (*crate::gl!(sFactorySwapScreen)).cursorPos;
+            crate::gl!(&raw gEnemyParty[gl_i119])
+        };
     }
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
     let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
     let otId: u32 = GetMonData3(mon, MON_DATA_OT_ID, null_mut());
-    (*sFactorySwapScreen).monPic.monSpriteId =
+    (*crate::gl!(sFactorySwapScreen)).monPic.monSpriteId =
         CreateMonPicSprite_HandleDeoxys(species, otId, personality, TRUE, 88, 32, 15, TAG_NONE)
             as u8;
-    gSprites[(*sFactorySwapScreen).monPic.monSpriteId].centerToCornerVecX = 0;
-    gSprites[(*sFactorySwapScreen).monPic.monSpriteId].centerToCornerVecY = 0;
-    (*sFactorySwapScreen).monPicAnimating = FALSE;
+    {
+        let gl_i120 = (*crate::gl!(sFactorySwapScreen)).monPic.monSpriteId;
+        crate::gl!(gSprites[gl_i120].centerToCornerVecX = 0)
+    };
+    {
+        let gl_i121 = (*crate::gl!(sFactorySwapScreen)).monPic.monSpriteId;
+        crate::gl!(gSprites[gl_i121].centerToCornerVecY = 0)
+    };
+    (*crate::gl!(sFactorySwapScreen)).monPicAnimating = FALSE;
 }

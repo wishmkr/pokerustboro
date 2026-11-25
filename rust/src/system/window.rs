@@ -54,25 +54,26 @@ const TILE_SIZE_8BPP: usize = 64;
 pub struct WindowArm(pub [u8; WINDOW_SIZE]);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gWindows: [WindowArm; WINDOWS_MAX] =
-    [const { WindowArm([0; WINDOW_SIZE]) }; WINDOWS_MAX];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gWindows: crate::global::Global<[WindowArm; WINDOWS_MAX]> =
+    crate::global::Global::new([const { WindowArm([0; WINDOW_SIZE]) }; WINDOWS_MAX]);
 
 /// Set to 0 and never changed.
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gTransparentTileNumber: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gTransparentTileNumber: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gWindowBgTilemapBuffers: [*mut u8; NUM_BACKGROUNDS] =
-    [core::ptr::null_mut(); NUM_BACKGROUNDS];
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gWindowBgTilemapBuffers: crate::global::Global<[*mut u8; NUM_BACKGROUNDS]> =
+    crate::global::Global::new([core::ptr::null_mut(); NUM_BACKGROUNDS]);
 
-#[unsafe(link_section = "ewram_data")]
-static mut WINDOW_PTR: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static WINDOW_PTR: crate::global::Global<*mut u8> =
+    crate::global::Global::new(core::ptr::null_mut());
 
-#[unsafe(link_section = "ewram_data")]
-static mut WINDOW_SIZE_8BIT: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static WINDOW_SIZE_8BIT: crate::global::Global<u16> = crate::global::Global::new(0);
 
 use crate::bg::{
     BgTileAllocOp, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgAttribute,
@@ -108,7 +109,7 @@ fn dummy_marker_8bit() -> *mut u8 {
 #[inline]
 unsafe fn window(window_id: u8) -> *mut u8 {
     unsafe {
-        (&raw mut gWindows)
+        (crate::gl!(&raw gWindows))
             .cast::<u8>()
             .add(window_id as usize * WINDOW_SIZE)
     }
@@ -183,7 +184,7 @@ unsafe fn clear_template(window_id: u8) {
 #[inline]
 unsafe fn buffer(bg: usize) -> *mut u8 {
     unsafe {
-        (&raw const gWindowBgTilemapBuffers)
+        (crate::gl!(&raw gWindowBgTilemapBuffers).cast_const())
             .cast::<*mut u8>()
             .add(bg)
             .read()
@@ -193,7 +194,7 @@ unsafe fn buffer(bg: usize) -> *mut u8 {
 #[inline]
 unsafe fn set_buffer(bg: usize, value: *mut u8) {
     unsafe {
-        (&raw mut gWindowBgTilemapBuffers)
+        (crate::gl!(&raw gWindowBgTilemapBuffers))
             .cast::<*mut u8>()
             .add(bg)
             .write(value)
@@ -202,7 +203,7 @@ unsafe fn set_buffer(bg: usize, value: *mut u8) {
 
 #[inline]
 unsafe fn auto_alloc_enabled() -> bool {
-    let enabled = unsafe { (&raw const gWindowTileAutoAllocEnabled).read_volatile() };
+    let enabled = unsafe { (gWindowTileAutoAllocEnabled.as_ptr().cast_const()).read_volatile() };
     enabled == 1
 }
 
@@ -299,7 +300,7 @@ pub unsafe fn InitWindows(templates: *const WindowTemplate) -> u16 {
         i += 1;
     }
 
-    unsafe { (&raw mut gTransparentTileNumber).write_volatile(0) };
+    unsafe { (gTransparentTileNumber.as_ptr()).write_volatile(0) };
     1
 }
 
@@ -583,7 +584,7 @@ pub unsafe fn ClearWindowTilemap(window_id: u8) {
     unsafe {
         FillBgTilemapBufferRect(
             tmpl_u8(window_id, TMPL_BG),
-            u16::from((&raw const gTransparentTileNumber).read_volatile()),
+            u16::from((gTransparentTileNumber.as_ptr().cast_const()).read_volatile()),
             tmpl_u8(window_id, TMPL_TILEMAP_LEFT),
             tmpl_u8(window_id, TMPL_TILEMAP_TOP),
             tmpl_u8(window_id, TMPL_WIDTH),
@@ -962,11 +963,11 @@ pub unsafe fn BlitBitmapRectToWindow4BitTo8Bit(
 
 #[unsafe(no_mangle)]
 pub unsafe fn CopyWindowToVram8Bit(window_id: u8, mode: u8) {
-    unsafe { (&raw mut WINDOW_PTR).write(window(window_id)) };
+    unsafe { (crate::gl!(&raw WINDOW_PTR)).write(window(window_id)) };
     let width = unsafe { tmpl_u8(window_id, TMPL_WIDTH) };
     let height = unsafe { tmpl_u8(window_id, TMPL_HEIGHT) };
     let size = (TILE_SIZE_8BPP as u32 * u32::from(width) * u32::from(height)) as u16;
-    unsafe { (&raw mut WINDOW_SIZE_8BIT).write_volatile(size) };
+    unsafe { (WINDOW_SIZE_8BIT.as_ptr()).write_volatile(size) };
 
     let bg = unsafe { tmpl_u8(window_id, TMPL_BG) };
     if mode == COPYWIN_GFX || mode == COPYWIN_FULL {

@@ -65,134 +65,134 @@ pub unsafe fn AreMovesContestCombo(lastMove: u16, nextMove: u16) -> u8 {
 }
 pub(crate) fn ContestEffect_HighlyAppealing() {}
 pub(crate) unsafe fn ContestEffect_UserMoreEasilyStartled() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_moreEasilyStartled(TRUE);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_MORE_CONSCIOUS,
     );
 }
 pub(crate) unsafe fn ContestEffect_GreatAppealButNoMoreMoves() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_exploded(TRUE);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_NO_APPEAL,
     );
 }
 pub(crate) unsafe fn ContestEffect_RepetitionNotBoring() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_usedRepeatableMove(TRUE);
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_repeatedMove(FALSE);
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_moveRepeatCount(0);
 }
 pub(crate) unsafe fn ContestEffect_AvoidStartleOnce() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .jamSafetyCount = 1;
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_SETTLE_DOWN,
     );
 }
 pub(crate) unsafe fn ContestEffect_AvoidStartle() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_immune(TRUE);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_OBLIVIOUS_TO_OTHERS,
     );
 }
 pub(crate) unsafe fn ContestEffect_AvoidStartleSlightly() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .jamReduction = 20;
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_LESS_AWARE,
     );
 }
 pub(crate) unsafe fn ContestEffect_UserLessEasilyStartled() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_resistant(TRUE);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_STOPPED_CARING,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleFrontMon() {
     let mut idx: u8 = 0;
-    let a: u8 = (*(*gContestResources).appealResults).contestant;
-    if (*(*gContestResources).appealResults).turnOrder[a] != 0 {
+    let a: u8 = (*(*crate::gl!(gContestResources)).appealResults).contestant;
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[a] != 0 {
         let mut i: i32 = 0;
         while i < CONTESTANT_COUNT {
-            if (*(*gContestResources).appealResults).turnOrder[a] as i32 - 1
-                == (*(*gContestResources).appealResults).turnOrder[i] as i32
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[a] as i32 - 1
+                == (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i] as i32
             {
                 break;
             }
             i += 1;
         }
-        (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
-        (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+        (*(*crate::gl!(gContestResources)).appealResults).jamQueue[0] = i as u8;
+        (*(*crate::gl!(gContestResources)).appealResults).jamQueue[1] = CONTESTANT_NONE;
         idx = WasAtLeastOneOpponentJammed();
     }
     if idx == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartlePrevMons() {
     let mut idx: u8 = 0;
-    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
-    if (*(*gContestResources).appealResults).turnOrder[contestant] != 0 {
+    let contestant: u8 = (*(*crate::gl!(gContestResources)).appealResults).contestant;
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[contestant] != 0 {
         let mut j: i32 = 0;
         for i in 0..CONTESTANT_COUNT {
-            if (*(*gContestResources).appealResults).turnOrder[contestant]
-                > (*(*gContestResources).appealResults).turnOrder[i]
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[contestant]
+                > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
             {
-                (*(*gContestResources).appealResults).jamQueue[{
+                (*(*crate::gl!(gContestResources)).appealResults).jamQueue[{
                     let t1 = j;
                     j += 1;
                     t1
                 }] = i as u8;
             }
         }
-        (*(*gContestResources).appealResults).jamQueue[j] = CONTESTANT_NONE;
+        (*(*crate::gl!(gContestResources)).appealResults).jamQueue[j] = CONTESTANT_NONE;
         idx = WasAtLeastOneOpponentJammed();
     }
     if idx == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
@@ -206,21 +206,21 @@ pub(crate) unsafe fn ContestEffect_StartlePrevMon2() {
     } else {
         jam = 60;
     }
-    (*(*gContestResources).appealResults).jam = jam as i16;
+    (*(*crate::gl!(gContestResources)).appealResults).jam = jam as i16;
     ContestEffect_StartleFrontMon();
 }
 pub(crate) unsafe fn ContestEffect_StartlePrevMons2() {
     let mut numStartled: u8 = 0;
-    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
-    let turnOrder: u8 = (*(*gContestResources).appealResults).turnOrder[contestant];
+    let contestant: u8 = (*(*crate::gl!(gContestResources)).appealResults).contestant;
+    let turnOrder: u8 = (*(*crate::gl!(gContestResources)).appealResults).turnOrder[contestant];
     if turnOrder != 0 {
         for i in 0..4i32 {
-            if (*(*gContestResources).appealResults).turnOrder[contestant]
-                > (*(*gContestResources).appealResults).turnOrder[i]
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[contestant]
+                > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
             {
                 let mut jam: u8 = 0;
-                (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
-                (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+                (*(*crate::gl!(gContestResources)).appealResults).jamQueue[0] = i as u8;
+                (*(*crate::gl!(gContestResources)).appealResults).jamQueue[1] = CONTESTANT_NONE;
                 let rval: u8 = (Random() as i32 % 10) as u8;
                 if rval == 0 {
                     jam = 0;
@@ -235,7 +235,7 @@ pub(crate) unsafe fn ContestEffect_StartlePrevMons2() {
                 } else {
                     jam = 60;
                 }
-                (*(*gContestResources).appealResults).jam = jam as i16;
+                (*(*crate::gl!(gContestResources)).appealResults).jam = jam as i16;
                 if WasAtLeastOneOpponentJammed() != 0 {
                     numStartled += 1;
                 }
@@ -243,65 +243,66 @@ pub(crate) unsafe fn ContestEffect_StartlePrevMons2() {
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
     if numStartled == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_ShiftJudgeAttention() {
     let mut hitAny: u32 = FALSE as u32;
-    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    let contestant: u8 = (*(*crate::gl!(gContestResources)).appealResults).contestant;
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         != 0
     {
         for i in 0..4i32 {
-            if (*(*gContestResources).appealResults).turnOrder[contestant]
-                > (*(*gContestResources).appealResults).turnOrder[i]
-                && (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[contestant]
+                > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
+                && (*(*crate::gl!(gContestResources)).status.at(i)).hasJudgesAttention() != 0
                 && CanUnnerveContestant(i as u8) != 0
             {
-                (*(*gContestResources).status.at(i)).set_hasJudgesAttention(FALSE);
-                (*(*gContestResources).status.at(i)).set_judgesAttentionWasRemoved(TRUE);
+                (*(*crate::gl!(gContestResources)).status.at(i)).set_hasJudgesAttention(FALSE);
+                (*(*crate::gl!(gContestResources)).status.at(i))
+                    .set_judgesAttentionWasRemoved(TRUE);
                 SetContestantEffectStringID(i as u8, CONTEST_STRING_JUDGE_LOOK_AWAY2);
                 hitAny = TRUE as u32;
             }
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_DAZZLE_ATTEMPT,
     );
     if hitAny == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_StartleMonWithJudgesAttention() {
     let mut numStartled: u8 = 0;
-    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    let contestant: u8 = (*(*crate::gl!(gContestResources)).appealResults).contestant;
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         != 0
     {
         for i in 0..4i32 {
-            if (*(*gContestResources).appealResults).turnOrder[contestant]
-                > (*(*gContestResources).appealResults).turnOrder[i]
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[contestant]
+                > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
             {
-                if (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0 {
-                    (*(*gContestResources).appealResults).jam = 50;
+                if (*(*crate::gl!(gContestResources)).status.at(i)).hasJudgesAttention() != 0 {
+                    (*(*crate::gl!(gContestResources)).appealResults).jam = 50;
                 } else {
-                    (*(*gContestResources).appealResults).jam = 10;
+                    (*(*crate::gl!(gContestResources)).appealResults).jam = 10;
                 }
-                (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
-                (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+                (*(*crate::gl!(gContestResources)).appealResults).jamQueue[0] = i as u8;
+                (*(*crate::gl!(gContestResources)).appealResults).jamQueue[1] = CONTESTANT_NONE;
                 if WasAtLeastOneOpponentJammed() != 0 {
                     numStartled += 1;
                 }
@@ -309,84 +310,85 @@ pub(crate) unsafe fn ContestEffect_StartleMonWithJudgesAttention() {
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
     if numStartled == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_JamsOthersButMissOneTurn() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_turnSkipped(TRUE);
     ContestEffect_StartlePrevMons();
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleMonsSameTypeAppeal() {
-    let r#move: u16 = (*(*gContestResources)
-        .status
-        .at((*(*gContestResources).appealResults).contestant))
-    .currMove;
+    let r#move: u16 =
+        (*(*crate::gl!(gContestResources))
+            .status
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
+        .currMove;
     JamByMoveCategory(gContestMoves[r#move].contestCategory());
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleMonsCoolAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_COOL);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleMonsBeautyAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_BEAUTY);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleMonsCuteAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_CUTE);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleMonsSmartAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_SMART);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_StartleMonsToughAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_TOUGH);
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_MakeFollowingMonNervous() {
     let mut hitAny: u32 = FALSE as u32;
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         != 3
     {
         for i in 0..4i32 {
-            if (*(*gContestResources).appealResults).turnOrder
-                [(*(*gContestResources).appealResults).contestant] as i32
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+                [(*(*crate::gl!(gContestResources)).appealResults).contestant] as i32
                 + 1
-                == (*(*gContestResources).appealResults).turnOrder[i] as i32
+                == (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i] as i32
             {
                 if CanUnnerveContestant(i as u8) != 0 {
                     MakeContestantNervous(i as u8);
@@ -400,12 +402,12 @@ pub(crate) unsafe fn ContestEffect_MakeFollowingMonNervous() {
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_UNNERVE_ATTEMPT,
     );
     if hitAny == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
@@ -420,10 +422,10 @@ pub(crate) unsafe fn ContestEffect_MakeFollowingMonsNervous() {
     let mut i: i32 = 0;
     let mut numAfter: i32 = 0;
     while i < CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).turnOrder
-            [(*(*gContestResources).appealResults).contestant]
-            < (*(*gContestResources).appealResults).turnOrder[i]
-            && (*(*gContestResources).status.at(i)).nervous() == 0
+        if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+            [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+            < (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
+            && (*(*crate::gl!(gContestResources)).status.at(i)).nervous() == 0
             && Contest_IsMonsTurnDisabled(i as u8) == 0
         {
             contestantIds[{
@@ -450,17 +452,17 @@ pub(crate) unsafe fn ContestEffect_MakeFollowingMonsNervous() {
     }
     i = 0;
     while i < CONTESTANT_COUNT {
-        if (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0
+        if (*(*crate::gl!(gContestResources)).status.at(i)).hasJudgesAttention() != 0
             && IsContestantAllowedToCombo(i as u8) != 0
         {
-            oddsMod[i] = gComboStarterLookupTable
-                [gContestMoves[(*(*gContestResources).status.at(i)).prevMove].comboStarterId]
-                as i16
+            oddsMod[i] = gComboStarterLookupTable[gContestMoves
+                [(*(*crate::gl!(gContestResources)).status.at(i)).prevMove]
+                .comboStarterId] as i16
                 * 10;
         } else {
             oddsMod[i] = 0;
         }
-        oddsMod[i] -= ((*(*gContestResources).status.at(i)).condition / 10) as i16 * 10;
+        oddsMod[i] -= ((*(*crate::gl!(gContestResources)).status.at(i)).condition / 10) as i16 * 10;
         i += 1;
     }
     if odds[0] != 0 {
@@ -482,17 +484,17 @@ pub(crate) unsafe fn ContestEffect_MakeFollowingMonsNervous() {
                 SetContestantEffectStringID(contestantIds[i], CONTEST_STRING_UNAFFECTED);
                 numUnnerved += 1;
             }
-            (*(*gContestResources).appealResults).unnervedPokes[contestantIds[i]] = 1;
+            (*(*crate::gl!(gContestResources)).appealResults).unnervedPokes[contestantIds[i]] = 1;
             i += 1;
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_UNNERVE_WAITING,
     );
     if numUnnerved == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
@@ -500,25 +502,25 @@ pub(crate) unsafe fn ContestEffect_MakeFollowingMonsNervous() {
 pub(crate) unsafe fn ContestEffect_WorsenConditionOfPrevMons() {
     let mut numHit: u8 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).turnOrder
-            [(*(*gContestResources).appealResults).contestant]
-            > (*(*gContestResources).appealResults).turnOrder[i]
-            && (*(*gContestResources).status.at(i)).condition > 0
+        if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+            [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+            > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
+            && (*(*crate::gl!(gContestResources)).status.at(i)).condition > 0
             && CanUnnerveContestant(i as u8) != 0
         {
-            (*(*gContestResources).status.at(i)).condition = 0;
-            (*(*gContestResources).status.at(i)).set_conditionMod(CONDITION_LOSE);
+            (*(*crate::gl!(gContestResources)).status.at(i)).condition = 0;
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_conditionMod(CONDITION_LOSE);
             SetContestantEffectStringID(i as u8, CONTEST_STRING_REGAINED_FORM);
             numHit += 1;
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_TAUNT_WELL,
     );
     if numHit == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_IGNORED,
         );
     }
@@ -526,61 +528,69 @@ pub(crate) unsafe fn ContestEffect_WorsenConditionOfPrevMons() {
 pub(crate) unsafe fn ContestEffect_BadlyStartlesMonsInGoodCondition() {
     let mut numHit: u8 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).turnOrder
-            [(*(*gContestResources).appealResults).contestant]
-            > (*(*gContestResources).appealResults).turnOrder[i]
+        if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+            [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+            > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
         {
-            if (*(*gContestResources).status.at(i)).condition > 0 {
-                (*(*gContestResources).appealResults).jam = 40;
+            if (*(*crate::gl!(gContestResources)).status.at(i)).condition > 0 {
+                (*(*crate::gl!(gContestResources)).appealResults).jam = 40;
             } else {
-                (*(*gContestResources).appealResults).jam = 10;
+                (*(*crate::gl!(gContestResources)).appealResults).jam = 10;
             }
-            (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
-            (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+            (*(*crate::gl!(gContestResources)).appealResults).jamQueue[0] = i as u8;
+            (*(*crate::gl!(gContestResources)).appealResults).jamQueue[1] = CONTESTANT_NONE;
             if WasAtLeastOneOpponentJammed() != 0 {
                 numHit += 1;
             }
         }
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_JAM_WELL,
     );
     if numHit == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_IGNORED,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_BetterIfFirst() {
-    if gContestantTurnOrder[(*(*gContestResources).appealResults).contestant] == 0 {
-        let r#move: u16 = (*(*gContestResources)
+    if (*gContestantTurnOrder.as_ptr())
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+        == 0
+    {
+        let r#move: u16 =
+            (*(*crate::gl!(gContestResources))
+                .status
+                .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
+            .currMove;
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
-        .currMove;
-        (*(*gContestResources)
-            .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal += 2 * gContestEffects[gContestMoves[r#move].effect].appeal as i16;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_HUSTLE_STANDOUT,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_BetterIfLast() {
-    if gContestantTurnOrder[(*(*gContestResources).appealResults).contestant] == 3 {
-        let r#move: u16 = (*(*gContestResources)
+    if (*gContestantTurnOrder.as_ptr())
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+        == 3
+    {
+        let r#move: u16 =
+            (*(*crate::gl!(gContestResources))
+                .status
+                .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
+            .currMove;
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
-        .currMove;
-        (*(*gContestResources)
-            .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal += 2 * gContestEffects[gContestMoves[r#move].effect].appeal as i16;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_WORK_HARD_UNNOTICED,
         );
     }
@@ -588,113 +598,113 @@ pub(crate) unsafe fn ContestEffect_BetterIfLast() {
 pub(crate) unsafe fn ContestEffect_AppealAsGoodAsPrevOnes() {
     let mut appealSum: i32 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).turnOrder
-            [(*(*gContestResources).appealResults).contestant]
-            > (*(*gContestResources).appealResults).turnOrder[i]
+        if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+            [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+            > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
         {
-            appealSum += (*(*gContestResources).status.at(i)).appeal as i32;
+            appealSum += (*(*crate::gl!(gContestResources)).status.at(i)).appeal as i32;
         }
     }
     if appealSum < 0 {
         appealSum = 0;
     }
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         == 0
         || appealSum == 0
     {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_NOT_WELL,
         );
     } else {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal += (appealSum / 2) as i16;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_WORK_BEFORE,
         );
     }
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .appeal = RoundTowardsZero(
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal,
     );
 }
 pub(crate) unsafe fn ContestEffect_AppealAsGoodAsPrevOne() {
     let mut appeal: i16 = 0;
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         != 0
     {
         for i in 0..CONTESTANT_COUNT {
-            if (*(*gContestResources).appealResults).turnOrder
-                [(*(*gContestResources).appealResults).contestant] as i32
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+                [(*(*crate::gl!(gContestResources)).appealResults).contestant] as i32
                 - 1
-                == (*(*gContestResources).appealResults).turnOrder[i] as i32
+                == (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i] as i32
             {
-                appeal = (*(*gContestResources).status.at(i)).appeal;
+                appeal = (*(*crate::gl!(gContestResources)).status.at(i)).appeal;
             }
         }
     }
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         == 0
         || appeal <= 0
     {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_NOT_WELL2,
         );
     } else {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal += appeal;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_WORK_PRECEDING,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_BetterWhenLater() {
-    let whichTurn: u8 = (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant];
+    let whichTurn: u8 = (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant];
     if whichTurn == 0 {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal = 10;
     } else {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal = 20 * whichTurn as i16;
     }
     if whichTurn == 0 {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_NOT_SHOWN_WELL,
         );
     } else if whichTurn == 1 {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_SLIGHTLY_WELL,
         );
     } else if whichTurn == 2 {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_PRETTY_WELL,
         );
     } else {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_EXCELLENTLY,
         );
     }
@@ -705,42 +715,43 @@ pub(crate) unsafe fn ContestEffect_QualityDependsOnTiming() {
     if rval < 3 {
         appeal = 10;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_NOT_VERY_WELL,
         );
     } else if rval < 6 {
         appeal = 20;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_SLIGHTLY_WELL2,
         );
     } else if rval < 8 {
         appeal = 40;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_PRETTY_WELL2,
         );
     } else if rval < 9 {
         appeal = 60;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_VERY_WELL,
         );
     } else {
         appeal = 80;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_EXCELLENTLY2,
         );
     }
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .appeal = appeal;
 }
 pub(crate) unsafe fn ContestEffect_BetterIfSameType() {
-    let turnOrder: i8 = (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant] as i8;
+    let turnOrder: i8 = (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+        as i8;
     let mut i: i8 = turnOrder - 1;
     let mut j: i8 = 0;
     if turnOrder == 0 {
@@ -749,14 +760,14 @@ pub(crate) unsafe fn ContestEffect_BetterIfSameType() {
     loop {
         j = 0;
         while j < CONTESTANT_COUNT as i8 {
-            if (*(*gContestResources).appealResults).turnOrder[j] as i32 == i as i32 {
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder[j] as i32 == i as i32 {
                 break;
             }
             j += 1;
         }
-        if (*(*gContestResources).status.at(j)).noMoreTurns() != 0
-            || (*(*gContestResources).status.at(j)).nervous() != 0
-            || (*(*gContestResources).status.at(j)).numTurnsSkipped() != 0
+        if (*(*crate::gl!(gContestResources)).status.at(j)).noMoreTurns() != 0
+            || (*(*crate::gl!(gContestResources)).status.at(j)).nervous() != 0
+            || (*(*crate::gl!(gContestResources)).status.at(j)).numTurnsSkipped() != 0
         {
             if ({
                 i -= 1;
@@ -769,47 +780,52 @@ pub(crate) unsafe fn ContestEffect_BetterIfSameType() {
             break;
         }
     }
-    let r#move: u16 = (*(*gContestResources)
-        .status
-        .at((*(*gContestResources).appealResults).contestant))
-    .currMove;
-    if gContestMoves[r#move].contestCategory()
-        == gContestMoves[(*(*gContestResources).status.at(j)).currMove].contestCategory()
-    {
-        (*(*gContestResources)
+    let r#move: u16 =
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
+        .currMove;
+    if gContestMoves[r#move].contestCategory()
+        == gContestMoves[(*(*crate::gl!(gContestResources)).status.at(j)).currMove]
+            .contestCategory()
+    {
+        (*(*crate::gl!(gContestResources))
+            .status
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .appeal += gContestEffects[gContestMoves[r#move].effect].appeal as i16 * 2;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_SAME_TYPE_GOOD,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_BetterIfDiffType() {
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         != 0
     {
-        let r#move: u16 = (*(*gContestResources)
-            .status
-            .at((*(*gContestResources).appealResults).contestant))
-        .currMove;
+        let r#move: u16 =
+            (*(*crate::gl!(gContestResources))
+                .status
+                .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
+            .currMove;
         for i in 0..CONTESTANT_COUNT {
-            if (*(*gContestResources).appealResults).turnOrder
-                [(*(*gContestResources).appealResults).contestant] as i32
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+                [(*(*crate::gl!(gContestResources)).appealResults).contestant] as i32
                 - 1
-                == (*(*gContestResources).appealResults).turnOrder[i] as i32
+                == (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i] as i32
                 && gContestMoves[r#move].contestCategory()
-                    != gContestMoves[(*(*gContestResources).status.at(i)).currMove]
+                    != gContestMoves[(*(*crate::gl!(gContestResources)).status.at(i)).currMove]
                         .contestCategory()
             {
-                (*(*gContestResources)
-                    .status
-                    .at((*(*gContestResources).appealResults).contestant))
+                (*(*crate::gl!(gContestResources)).status.at((*(*crate::gl!(
+                    gContestResources
+                ))
+                .appealResults)
+                    .contestant))
                 .appeal += gContestEffects[gContestMoves[r#move].effect].appeal as i16 * 2;
                 SetContestantEffectStringID(
-                    (*(*gContestResources).appealResults).contestant,
+                    (*(*crate::gl!(gContestResources)).appealResults).contestant,
                     CONTEST_STRING_DIFF_TYPE_GOOD,
                 );
                 break;
@@ -818,42 +834,50 @@ pub(crate) unsafe fn ContestEffect_BetterIfDiffType() {
     }
 }
 pub(crate) unsafe fn ContestEffect_AffectedByPrevAppeal() {
-    if (*(*gContestResources).appealResults).turnOrder
-        [(*(*gContestResources).appealResults).contestant]
+    if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+        [(*(*crate::gl!(gContestResources)).appealResults).contestant]
         != 0
     {
         for i in 0..CONTESTANT_COUNT {
-            if (*(*gContestResources).appealResults).turnOrder
-                [(*(*gContestResources).appealResults).contestant] as i32
+            if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+                [(*(*crate::gl!(gContestResources)).appealResults).contestant] as i32
                 - 1
-                == (*(*gContestResources).appealResults).turnOrder[i] as i32
+                == (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i] as i32
             {
-                if (*(*gContestResources)
-                    .status
-                    .at((*(*gContestResources).appealResults).contestant))
+                if (*(*crate::gl!(gContestResources)).status.at((*(*crate::gl!(
+                    gContestResources
+                ))
+                .appealResults)
+                    .contestant))
                 .appeal
-                    > (*(*gContestResources).status.at(i)).appeal
+                    > (*(*crate::gl!(gContestResources)).status.at(i)).appeal
                 {
-                    (*(*gContestResources)
-                        .status
-                        .at((*(*gContestResources).appealResults).contestant))
+                    (*(*crate::gl!(gContestResources)).status.at((*(*crate::gl!(
+                        gContestResources
+                    ))
+                    .appealResults)
+                        .contestant))
                     .appeal *= 2;
                     SetContestantEffectStringID(
-                        (*(*gContestResources).appealResults).contestant,
+                        (*(*crate::gl!(gContestResources)).appealResults).contestant,
                         CONTEST_STRING_STOOD_OUT_AS_MUCH,
                     );
-                } else if (*(*gContestResources)
-                    .status
-                    .at((*(*gContestResources).appealResults).contestant))
+                } else if (*(*crate::gl!(gContestResources)).status.at((*(*crate::gl!(
+                    gContestResources
+                ))
+                .appealResults)
+                    .contestant))
                 .appeal
-                    < (*(*gContestResources).status.at(i)).appeal
+                    < (*(*crate::gl!(gContestResources)).status.at(i)).appeal
                 {
-                    (*(*gContestResources)
-                        .status
-                        .at((*(*gContestResources).appealResults).contestant))
+                    (*(*crate::gl!(gContestResources)).status.at((*(*crate::gl!(
+                        gContestResources
+                    ))
+                    .appealResults)
+                        .contestant))
                     .appeal = 0;
                     SetContestantEffectStringID(
-                        (*(*gContestResources).appealResults).contestant,
+                        (*(*crate::gl!(gContestResources)).appealResults).contestant,
                         CONTEST_STRING_NOT_AS_WELL,
                     );
                 }
@@ -862,49 +886,49 @@ pub(crate) unsafe fn ContestEffect_AffectedByPrevAppeal() {
     }
 }
 pub(crate) unsafe fn ContestEffect_ImproveConditionPreventNervousness() {
-    if (*(*gContestResources)
+    if (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .condition
         < 30
     {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .condition += 10;
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_conditionMod(CONDITION_GAIN);
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_CONDITION_ROSE,
         );
     } else {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_NO_CONDITION_IMPROVE,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_BetterWithGoodCondition() {
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .set_appealTripleCondition(TRUE);
-    if (*(*gContestResources)
+    if (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .condition
         != 0
     {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_HOT_STATUS,
         );
     } else {
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_BAD_CONDITION_WEAK_APPEAL,
         );
     }
@@ -913,18 +937,19 @@ pub(crate) unsafe fn ContestEffect_NextAppealEarlier() {
     let mut i: i8 = 0;
     let mut j: i8 = 0;
     let mut turnOrder: CArray<u8, 4> = zeroed();
-    if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
+    if (*(*crate::gl!(gContestResources)).contest).appealNumber != CONTEST_LAST_APPEAL {
         for i in 0..(CONTESTANT_COUNT as i8) {
-            turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
+            turnOrder[i] = (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder;
         }
-        turnOrder[(*(*gContestResources).appealResults).contestant] = CONTESTANT_NONE;
+        turnOrder[(*(*crate::gl!(gContestResources)).appealResults).contestant] = CONTESTANT_NONE;
         i = 0;
         while i < CONTESTANT_COUNT as i8 {
             j = 0;
             while j < CONTESTANT_COUNT as i8 {
-                if j as i32 != (*(*gContestResources).appealResults).contestant as i32
+                if j as i32 != (*(*crate::gl!(gContestResources)).appealResults).contestant as i32
                     && i as i32 == turnOrder[j] as i32
-                    && turnOrder[j] == (*(*gContestResources).status.at(j)).nextTurnOrder
+                    && turnOrder[j]
+                        == (*(*crate::gl!(gContestResources)).status.at(j)).nextTurnOrder
                 {
                     turnOrder[j] += 1;
                     break;
@@ -936,20 +961,20 @@ pub(crate) unsafe fn ContestEffect_NextAppealEarlier() {
             }
             i += 1;
         }
-        turnOrder[(*(*gContestResources).appealResults).contestant] = 0;
-        (*(*gContestResources)
+        turnOrder[(*(*crate::gl!(gContestResources)).appealResults).contestant] = 0;
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_turnOrderMod(1);
         for i in 0..(CONTESTANT_COUNT as i8) {
-            (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
+            (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder = turnOrder[i];
         }
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_turnOrderModAction(1);
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MOVE_UP_LINE,
         );
     }
@@ -958,18 +983,19 @@ pub(crate) unsafe fn ContestEffect_NextAppealLater() {
     let mut i: i8 = 0;
     let mut j: i8 = 0;
     let mut turnOrder: CArray<u8, 4> = zeroed();
-    if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
+    if (*(*crate::gl!(gContestResources)).contest).appealNumber != CONTEST_LAST_APPEAL {
         for i in 0..(CONTESTANT_COUNT as i8) {
-            turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
+            turnOrder[i] = (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder;
         }
-        turnOrder[(*(*gContestResources).appealResults).contestant] = CONTESTANT_NONE;
+        turnOrder[(*(*crate::gl!(gContestResources)).appealResults).contestant] = CONTESTANT_NONE;
         i = 3;
         while i > -1 {
             j = 0;
             while j < CONTESTANT_COUNT as i8 {
-                if j as i32 != (*(*gContestResources).appealResults).contestant as i32
+                if j as i32 != (*(*crate::gl!(gContestResources)).appealResults).contestant as i32
                     && i as i32 == turnOrder[j] as i32
-                    && turnOrder[j] == (*(*gContestResources).status.at(j)).nextTurnOrder
+                    && turnOrder[j]
+                        == (*(*crate::gl!(gContestResources)).status.at(j)).nextTurnOrder
                 {
                     turnOrder[j] -= 1;
                     break;
@@ -981,20 +1007,20 @@ pub(crate) unsafe fn ContestEffect_NextAppealLater() {
             }
             i -= 1;
         }
-        turnOrder[(*(*gContestResources).appealResults).contestant] = 3;
-        (*(*gContestResources)
+        turnOrder[(*(*crate::gl!(gContestResources)).appealResults).contestant] = 3;
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_turnOrderMod(1);
         for i in 0..(CONTESTANT_COUNT as i8) {
-            (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
+            (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder = turnOrder[i];
         }
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_turnOrderModAction(2);
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MOVE_BACK_LINE,
         );
     }
@@ -1004,9 +1030,9 @@ pub(crate) unsafe fn ContestEffect_ScrambleNextTurnOrder() {
     let mut i: i8 = 0;
     let mut turnOrder: CArray<u8, 4> = zeroed();
     let mut unselectedContestants: CArray<u8, 4> = zeroed();
-    if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
+    if (*(*crate::gl!(gContestResources)).contest).appealNumber != CONTEST_LAST_APPEAL {
         for i in 0..(CONTESTANT_COUNT as i8) {
-            turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
+            turnOrder[i] = (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder;
             unselectedContestants[i] = i as u8;
         }
         i = 0;
@@ -1026,50 +1052,52 @@ pub(crate) unsafe fn ContestEffect_ScrambleNextTurnOrder() {
             i += 1;
         }
         for i in 0..(CONTESTANT_COUNT as i8) {
-            (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
-            (*(*gContestResources).status.at(i)).set_turnOrderMod(2);
+            (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder = turnOrder[i];
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_turnOrderMod(2);
         }
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_turnOrderModAction(3);
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_SCRAMBLE_ORDER,
         );
     }
 }
 pub(crate) unsafe fn ContestEffect_ExciteAudienceInAnyContest() {
-    if gContestMoves[(*(*gContestResources)
-        .status
-        .at((*(*gContestResources).appealResults).contestant))
+    if gContestMoves[(*(*crate::gl!(gContestResources)).status.at((*(*crate::gl!(
+        gContestResources
+    ))
+    .appealResults)
+        .contestant))
     .currMove]
         .contestCategory() as u16
-        != gSpecialVar_ContestCategory
+        != gSpecialVar_ContestCategory.get()
     {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .set_overrideCategoryExcitementMod(TRUE);
     }
 }
 pub(crate) unsafe fn ContestEffect_BadlyStartleMonsWithGoodAppeals() {
     let mut numJammed: u8 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).turnOrder
-            [(*(*gContestResources).appealResults).contestant]
-            > (*(*gContestResources).appealResults).turnOrder[i]
+        if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+            [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+            > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
         {
-            if (*(*gContestResources).status.at(i)).appeal > 0 {
-                (*(*gContestResources).appealResults).jam =
-                    (*(*gContestResources).status.at(i)).appeal / 2;
-                (*(*gContestResources).appealResults).jam =
-                    RoundUp((*(*gContestResources).appealResults).jam);
+            if (*(*crate::gl!(gContestResources)).status.at(i)).appeal > 0 {
+                (*(*crate::gl!(gContestResources)).appealResults).jam =
+                    (*(*crate::gl!(gContestResources)).status.at(i)).appeal / 2;
+                (*(*crate::gl!(gContestResources)).appealResults).jam =
+                    RoundUp((*(*crate::gl!(gContestResources)).appealResults).jam);
             } else {
-                (*(*gContestResources).appealResults).jam = 10;
+                (*(*crate::gl!(gContestResources)).appealResults).jam = 10;
             }
-            (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
-            (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+            (*(*crate::gl!(gContestResources)).appealResults).jamQueue[0] = i as u8;
+            (*(*crate::gl!(gContestResources)).appealResults).jamQueue[1] = CONTESTANT_NONE;
             if WasAtLeastOneOpponentJammed() != 0 {
                 numJammed += 1;
             }
@@ -1077,60 +1105,60 @@ pub(crate) unsafe fn ContestEffect_BadlyStartleMonsWithGoodAppeals() {
     }
     if numJammed == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
     SetContestantEffectStringID(
-        (*(*gContestResources).appealResults).contestant,
+        (*(*crate::gl!(gContestResources)).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
 pub(crate) unsafe fn ContestEffect_BetterWhenAudienceExcited() {
     let mut appeal: i16 = 0;
-    if (*(*gContestResources).contest).applauseLevel == 0 {
+    if (*(*crate::gl!(gContestResources)).contest).applauseLevel == 0 {
         appeal = 10;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_NOT_VERY_WELL,
         );
-    } else if (*(*gContestResources).contest).applauseLevel == 1 {
+    } else if (*(*crate::gl!(gContestResources)).contest).applauseLevel == 1 {
         appeal = 20;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_SLIGHTLY_WELL2,
         );
-    } else if (*(*gContestResources).contest).applauseLevel == 2 {
+    } else if (*(*crate::gl!(gContestResources)).contest).applauseLevel == 2 {
         appeal = 30;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_PRETTY_WELL2,
         );
-    } else if (*(*gContestResources).contest).applauseLevel == 3 {
+    } else if (*(*crate::gl!(gContestResources)).contest).applauseLevel == 3 {
         appeal = 50;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_VERY_WELL,
         );
     } else {
         appeal = 60;
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_APPEAL_EXCELLENTLY2,
         );
     }
-    (*(*gContestResources)
+    (*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .appeal = appeal;
 }
 pub(crate) unsafe fn ContestEffect_DontExciteAudience() {
-    if (*(*gContestResources).excitement).frozen() == 0 {
-        (*(*gContestResources).excitement).set_frozen(TRUE);
-        (*(*gContestResources).excitement)
-            .set_freezer((*(*gContestResources).appealResults).contestant);
+    if (*(*crate::gl!(gContestResources)).excitement).frozen() == 0 {
+        (*(*crate::gl!(gContestResources)).excitement).set_frozen(TRUE);
+        (*(*crate::gl!(gContestResources)).excitement)
+            .set_freezer((*(*crate::gl!(gContestResources)).appealResults).contestant);
         SetContestantEffectStringID(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_ATTRACTED_ATTENTION,
         );
     }
@@ -1138,19 +1166,20 @@ pub(crate) unsafe fn ContestEffect_DontExciteAudience() {
 unsafe fn JamByMoveCategory(category: u8) {
     let mut numJammed: i32 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).turnOrder
-            [(*(*gContestResources).appealResults).contestant]
-            > (*(*gContestResources).appealResults).turnOrder[i]
+        if (*(*crate::gl!(gContestResources)).appealResults).turnOrder
+            [(*(*crate::gl!(gContestResources)).appealResults).contestant]
+            > (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
         {
             if category
-                == gContestMoves[(*(*gContestResources).status.at(i)).currMove].contestCategory()
+                == gContestMoves[(*(*crate::gl!(gContestResources)).status.at(i)).currMove]
+                    .contestCategory()
             {
-                (*(*gContestResources).appealResults).jam = 40;
+                (*(*crate::gl!(gContestResources)).appealResults).jam = 40;
             } else {
-                (*(*gContestResources).appealResults).jam = 10;
+                (*(*crate::gl!(gContestResources)).appealResults).jam = 10;
             }
-            (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
-            (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
+            (*(*crate::gl!(gContestResources)).appealResults).jamQueue[0] = i as u8;
+            (*(*crate::gl!(gContestResources)).appealResults).jamQueue[1] = CONTESTANT_NONE;
             if WasAtLeastOneOpponentJammed() != 0 {
                 numJammed += 1;
             }
@@ -1158,22 +1187,22 @@ unsafe fn JamByMoveCategory(category: u8) {
     }
     if numJammed == 0 {
         SetContestantEffectStringID2(
-            (*(*gContestResources).appealResults).contestant,
+            (*(*crate::gl!(gContestResources)).appealResults).contestant,
             CONTEST_STRING_MESSED_UP2,
         );
     }
 }
 unsafe fn CanUnnerveContestant(i: u8) -> u8 {
-    (*(*gContestResources).appealResults).unnervedPokes[i] = 1;
-    if (*(*gContestResources).status.at(i)).immune() != 0 {
+    (*(*crate::gl!(gContestResources)).appealResults).unnervedPokes[i] = 1;
+    if (*(*crate::gl!(gContestResources)).status.at(i)).immune() != 0 {
         SetContestantEffectStringID(i, CONTEST_STRING_AVOID_SEEING);
         return FALSE;
-    } else if (*(*gContestResources).status.at(i)).jamSafetyCount != 0 {
-        (*(*gContestResources).status.at(i)).jamSafetyCount -= 1;
+    } else if (*(*crate::gl!(gContestResources)).status.at(i)).jamSafetyCount != 0 {
+        (*(*crate::gl!(gContestResources)).status.at(i)).jamSafetyCount -= 1;
         SetContestantEffectStringID(i, CONTEST_STRING_AVERT_GAZE);
         return FALSE;
-    } else if (*(*gContestResources).status.at(i)).noMoreTurns() == 0
-        && (*(*gContestResources).status.at(i)).numTurnsSkipped() == 0
+    } else if (*(*crate::gl!(gContestResources)).status.at(i)).noMoreTurns() == 0
+        && (*(*crate::gl!(gContestResources)).status.at(i)).numTurnsSkipped() == 0
     {
         return TRUE;
     } else {
@@ -1187,26 +1216,33 @@ unsafe fn CanUnnerveContestant(i: u8) -> u8 {
 unsafe fn WasAtLeastOneOpponentJammed() -> u8 {
     let mut jamBuffer: CArray<i16, 4> = CArray([0, 0, 0, 0]);
     let mut i: i32 = 0;
-    while (*(*gContestResources).appealResults).jamQueue[i] != CONTESTANT_NONE {
-        let contestant: u8 = (*(*gContestResources).appealResults).jamQueue[i];
+    while (*(*crate::gl!(gContestResources)).appealResults).jamQueue[i] != CONTESTANT_NONE {
+        let contestant: u8 = (*(*crate::gl!(gContestResources)).appealResults).jamQueue[i];
         if CanUnnerveContestant(contestant) != 0 {
-            (*(*gContestResources).appealResults).jam2 = (*(*gContestResources).appealResults).jam;
-            if (*(*gContestResources).status.at(contestant)).moreEasilyStartled() != 0 {
-                (*(*gContestResources).appealResults).jam2 *= 2;
+            (*(*crate::gl!(gContestResources)).appealResults).jam2 =
+                (*(*crate::gl!(gContestResources)).appealResults).jam;
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).moreEasilyStartled() != 0 {
+                (*(*crate::gl!(gContestResources)).appealResults).jam2 *= 2;
             }
-            if (*(*gContestResources).status.at(contestant)).resistant() != 0 {
-                (*(*gContestResources).appealResults).jam2 = 10;
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).resistant() != 0 {
+                (*(*crate::gl!(gContestResources)).appealResults).jam2 = 10;
                 SetContestantEffectStringID(contestant, CONTEST_STRING_LITTLE_DISTRACTED);
             } else {
-                (*(*gContestResources).appealResults).jam2 -=
-                    (*(*gContestResources).status.at(contestant)).jamReduction as i16;
-                if (*(*gContestResources).appealResults).jam2 <= 0 {
-                    (*(*gContestResources).appealResults).jam2 = 0;
+                (*(*crate::gl!(gContestResources)).appealResults).jam2 -=
+                    (*(*crate::gl!(gContestResources)).status.at(contestant)).jamReduction as i16;
+                if (*(*crate::gl!(gContestResources)).appealResults).jam2 <= 0 {
+                    (*(*crate::gl!(gContestResources)).appealResults).jam2 = 0;
                     SetContestantEffectStringID(contestant, CONTEST_STRING_NOT_FAZED);
                 } else {
-                    JamContestant(contestant, (*(*gContestResources).appealResults).jam2 as u8);
-                    SetStartledString(contestant, (*(*gContestResources).appealResults).jam2 as u8);
-                    jamBuffer[contestant] = (*(*gContestResources).appealResults).jam2;
+                    JamContestant(
+                        contestant,
+                        (*(*crate::gl!(gContestResources)).appealResults).jam2 as u8,
+                    );
+                    SetStartledString(
+                        contestant,
+                        (*(*crate::gl!(gContestResources)).appealResults).jam2 as u8,
+                    );
+                    jamBuffer[contestant] = (*(*crate::gl!(gContestResources)).appealResults).jam2;
                 }
             }
         }
@@ -1220,8 +1256,8 @@ unsafe fn WasAtLeastOneOpponentJammed() -> u8 {
     FALSE
 }
 unsafe fn JamContestant(i: u8, jam: u8) {
-    (*(*gContestResources).status.at(i)).appeal -= jam as i16;
-    (*(*gContestResources).status.at(i)).jam += jam;
+    (*(*crate::gl!(gContestResources)).status.at(i)).appeal -= jam as i16;
+    (*(*crate::gl!(gContestResources)).status.at(i)).jam += jam;
 }
 fn RoundTowardsZero(mut score: i16) -> i16 {
     let absScore: i16 = ((if score < 0 {

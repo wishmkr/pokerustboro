@@ -21,9 +21,9 @@ const MOVE_OBJECTS_PRIORITY: u8 = 50;
 const T_FINISHED_BITS: usize = 0;
 const T_OBJECT_IDS: usize = 1;
 
-#[unsafe(link_section = "ewram_data")]
-static mut MOVEMENT_SCRIPTS: [*const u8; OBJECT_EVENTS_COUNT] =
-    [core::ptr::null(); OBJECT_EVENTS_COUNT];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static MOVEMENT_SCRIPTS: crate::global::Global<[*const u8; OBJECT_EVENTS_COUNT]> =
+    crate::global::Global::new([core::ptr::null(); OBJECT_EVENTS_COUNT]);
 
 /// `TryGetObjectEventIdByLocalIdAndMap` with this module's view of its types.
 #[inline]
@@ -81,7 +81,7 @@ unsafe fn set_object_id(task_id: u8, index: usize, value: u8) {
 #[inline]
 unsafe fn movement_script(index: usize) -> *const u8 {
     unsafe {
-        (&raw const MOVEMENT_SCRIPTS)
+        (crate::gl!(&raw MOVEMENT_SCRIPTS).cast_const())
             .cast::<*const u8>()
             .add(index)
             .read()
@@ -91,7 +91,7 @@ unsafe fn movement_script(index: usize) -> *const u8 {
 #[inline]
 unsafe fn set_movement_script(index: usize, script: *const u8) {
     unsafe {
-        (&raw mut MOVEMENT_SCRIPTS)
+        (crate::gl!(&raw MOVEMENT_SCRIPTS))
             .cast::<*const u8>()
             .add(index)
             .write(script)

@@ -190,19 +190,14 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `HandleLoadSpecialPokePic_2` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_2(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-) {
+fn HandleLoadSpecialPokePic_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32) {
     unsafe {
         crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
     }
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -214,26 +209,26 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -255,7 +250,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `RequestDma3Copy` with this module's view of its types.
 #[inline]
-unsafe fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
     unsafe { crate::dma3_manager::RequestDma3Copy(a0 as _, a1 as _, a2, a3) }
 }
 /// `RequestDma3Fill` with this module's view of its types.
@@ -272,11 +267,7 @@ unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -448,12 +439,13 @@ static sSpriteTemplate_WirelessIndicatorWindow: Table<SpriteTemplate> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 5>> =
     Table((&raw const crate::data::contest_util::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sContestResults: *mut ContestResults = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sContestResults: crate::global::Global<*mut ContestResults> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinter` with this module's view of its types.
 #[inline]
-unsafe fn AddTextPrinter(
+fn AddTextPrinter(
     a0: *mut TextPrinterTemplate,
     a1: u8,
     a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
@@ -467,7 +459,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -485,7 +477,10 @@ unsafe fn InitContestResultsDisplay() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
     for i in 0..4i32 {
-        SetBgTilemapBuffer(i as u8, (*sContestResults).tilemapBuffers[i] as *mut c_void);
+        SetBgTilemapBuffer(
+            i as u8,
+            (*crate::gl!(sContestResults)).tilemapBuffers[i] as *mut c_void,
+        );
     }
     InitWindows(sWindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
@@ -508,18 +503,18 @@ unsafe fn InitContestResultsDisplay() {
     SetGpuReg(REG_OFFSET_BG3HOFS, 0);
     SetGpuReg(REG_OFFSET_BG3VOFS, 0);
     SetGpuRegBits(REG_OFFSET_DISPCNT, 65280);
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gBattle_BG1_X = 0;
-    gBattle_BG1_Y = 0;
-    gBattle_BG2_X = 0;
-    gBattle_BG2_Y = 0;
-    gBattle_BG3_X = 0;
-    gBattle_BG3_Y = 0;
-    gBattle_WIN0H = 0;
-    gBattle_WIN0V = 0;
-    gBattle_WIN1H = 0;
-    gBattle_WIN1V = 0;
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    gBattle_BG1_X.set(0);
+    gBattle_BG1_Y.set(0);
+    gBattle_BG2_X.set(0);
+    gBattle_BG2_Y.set(0);
+    gBattle_BG3_X.set(0);
+    gBattle_BG3_Y.set(0);
+    gBattle_WIN0H.set(0);
+    gBattle_WIN0V.set(0);
+    gBattle_WIN1H.set(0);
+    gBattle_WIN1V.set(0);
 }
 unsafe fn LoadContestResultsBgGfx() {
     let mut numStars: i8 = 0;
@@ -605,18 +600,22 @@ unsafe fn LoadContestResultsBgGfx() {
     ShowBg(3);
 }
 unsafe fn LoadContestMonName(monIndex: u8) {
-    let mon: *mut ContestPokemon = &raw mut gContestMons[monIndex];
-    let mut str: *mut u8 = gDisplayedStringBattle.as_mut_ptr();
-    if monIndex == gContestPlayerMonIndex {
+    let mon: *mut ContestPokemon = crate::gl!(&raw gContestMons[monIndex]);
+    let mut str: *mut u8 = (*gDisplayedStringBattle.as_ptr()).as_mut_ptr();
+    if monIndex == gContestPlayerMonIndex.get() {
         str = StringCopy(
-            gDisplayedStringBattle.as_mut_ptr(),
+            (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_ColorDarkGray).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     }
     StringCopy(str, (*mon).nickname.as_mut_ptr());
-    AddContestTextPrinter(monIndex as i32, gDisplayedStringBattle.as_mut_ptr(), 0);
+    AddContestTextPrinter(
+        monIndex as i32,
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
+        0,
+    );
     StringCopy(
         str,
         (*(&raw const crate::data::strings::gText_Slash).cast::<CArray<u8, 0>>())
@@ -624,7 +623,11 @@ unsafe fn LoadContestMonName(monIndex: u8) {
             .cast_mut(),
     );
     StringAppend(str, (*mon).trainerName.as_mut_ptr());
-    AddContestTextPrinter(monIndex as i32, gDisplayedStringBattle.as_mut_ptr(), 50);
+    AddContestTextPrinter(
+        monIndex as i32,
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
+        50,
+    );
 }
 unsafe fn LoadAllContestMonNames() {
     for i in 0..CONTESTANT_COUNT {
@@ -633,7 +636,7 @@ unsafe fn LoadAllContestMonNames() {
     CopyBgTilemapBufferToVram(1);
 }
 pub(crate) unsafe fn CB2_StartShowContestResults() {
-    gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
     SetVBlankCallback(None);
     AllocContestResults();
     InitContestResultsDisplay();
@@ -646,20 +649,21 @@ pub(crate) unsafe fn CB2_StartShowContestResults() {
     LoadAllContestMonIconPalettes();
     LoadAllContestMonIcons(0, TRUE);
     LoadAllContestMonNames();
-    memset((*sContestResults).data as *mut u8, 0, 24);
-    memset((*sContestResults).monResults as *mut u8, 0, 80);
+    memset((*crate::gl!(sContestResults)).data as *mut u8, 0, 24);
+    memset((*crate::gl!(sContestResults)).monResults as *mut u8, 0, 80);
     CreateResultsTextWindowSprites();
     TryCreateWirelessSprites();
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-    gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-    (*(*sContestResults).data).showResultsTaskId = CreateTask(Some(Task_ShowContestResults), 5);
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+    (*(*crate::gl!(sContestResults)).data).showResultsTaskId =
+        CreateTask(Some(Task_ShowContestResults), 5);
     SetMainCallback2(Some(CB2_ShowContestResults));
-    gBattle_WIN1H = DISPLAY_WIDTH;
-    gBattle_WIN1V = 32928;
+    gBattle_WIN1H.set(DISPLAY_WIDTH);
+    gBattle_WIN1V.set(32928);
     CreateTask(Some(Task_SlideContestResultsBg), 20);
     CalculateContestantsResultData();
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
-        gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+        (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
     } else {
         PlayBGM(MUS_CONTEST_RESULTS);
     }
@@ -674,18 +678,18 @@ pub(crate) unsafe fn CB2_ShowContestResults() {
     CopyBgTilemapBufferToVram(2);
 }
 pub(crate) unsafe fn VBlankCB_ShowContestResults() {
-    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
-    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
-    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
-    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
-    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X);
-    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y);
-    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X);
-    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y);
-    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H);
-    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V);
-    SetGpuReg(REG_OFFSET_WIN1H, gBattle_WIN1H);
-    SetGpuReg(REG_OFFSET_WIN1V, gBattle_WIN1V);
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X.get());
+    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y.get());
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X.get());
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y.get());
+    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X.get());
+    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y.get());
+    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X.get());
+    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y.get());
+    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H.get());
+    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V.get());
+    SetGpuReg(REG_OFFSET_WIN1H, gBattle_WIN1H.get());
+    SetGpuReg(REG_OFFSET_WIN1V, gBattle_WIN1V.get());
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
@@ -693,12 +697,16 @@ pub(crate) unsafe fn VBlankCB_ShowContestResults() {
 }
 pub(crate) unsafe fn Task_ShowContestResults(taskId: u8) {
     let mut var: u16 = 0;
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
         'l1: {
             match task_get(taskId, 0) {
                 0 => {
                     SaveLinkContestResults();
-                    if gContestFinalStandings[gContestPlayerMonIndex] == 0 {
+                    if {
+                        let gl_i0 = gContestPlayerMonIndex.get();
+                        crate::gl!(gContestFinalStandings[gl_i0])
+                    } == 0
+                    {
                         IncrementGameStat(GAME_STAT_WON_LINK_CONTEST);
                         gSpecialVar_0x8005 = TVSHOW_CONTEST_LIVE_UPDATES as u16;
                         InterviewBefore();
@@ -707,11 +715,13 @@ pub(crate) unsafe fn Task_ShowContestResults(taskId: u8) {
                         }
                     }
                     TryGainNewFanFromCounter(FANCOUNTER_FINISHED_CONTEST);
-                    SaveContestWinner(gSpecialVar_ContestRank as u8);
+                    SaveContestWinner(gSpecialVar_ContestRank.get() as u8);
                     SaveContestWinner(CONTEST_SAVE_FOR_ARTIST as u8);
-                    gCurContestWinnerIsForArtist = TRUE;
-                    gCurContestWinnerSaveIdx =
-                        GetContestWinnerSaveIdx(CONTEST_SAVE_FOR_ARTIST as u8, FALSE);
+                    gCurContestWinnerIsForArtist.set(TRUE);
+                    gCurContestWinnerSaveIdx.set(GetContestWinnerSaveIdx(
+                        CONTEST_SAVE_FOR_ARTIST as u8,
+                        FALSE,
+                    ));
                     var = VarGet(VAR_CONTEST_HALL_STATE);
                     VarSet(VAR_CONTEST_HALL_STATE, 0);
                     SetContinueGameWarpStatusToDynamicWarp();
@@ -722,7 +732,7 @@ pub(crate) unsafe fn Task_ShowContestResults(taskId: u8) {
                 }
                 1 => {
                     task_set(taskId, 0, task_get(taskId, 0) + 1);
-                    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS == 0 {
+                    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS == 0 {
                         task_set(taskId, 0, 100);
                     }
                 }
@@ -736,7 +746,7 @@ pub(crate) unsafe fn Task_ShowContestResults(taskId: u8) {
                 3 => {
                     if IsLinkTaskFinished() == TRUE {
                         PlayBGM(MUS_CONTEST_RESULTS);
-                        gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+                        (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
                         task_set(taskId, 0, task_get(taskId, 0) + 1);
                         break 'l1;
                     }
@@ -746,9 +756,9 @@ pub(crate) unsafe fn Task_ShowContestResults(taskId: u8) {
             }
         }
     }
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set(taskId, 0, 0);
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
             ShowLinkResultsTextBox(
                 (*(&raw const crate::data::strings::gText_CommunicationStandby)
                     .cast::<CArray<u8, 0>>())
@@ -758,21 +768,27 @@ pub(crate) unsafe fn Task_ShowContestResults(taskId: u8) {
             task_set_func(taskId, Some(Task_WaitForLinkPartnersBeforeResults));
         } else {
             IncrementGameStat(GAME_STAT_ENTERED_CONTEST);
-            if gContestFinalStandings[gContestPlayerMonIndex] == 0 {
+            if {
+                let gl_i1 = gContestPlayerMonIndex.get();
+                crate::gl!(gContestFinalStandings[gl_i1])
+            } == 0
+            {
                 IncrementGameStat(GAME_STAT_WON_CONTEST);
             }
-            SaveContestWinner(gSpecialVar_ContestRank as u8);
+            SaveContestWinner(gSpecialVar_ContestRank.get() as u8);
             SaveContestWinner(CONTEST_SAVE_FOR_ARTIST as u8);
-            gCurContestWinnerIsForArtist = TRUE;
-            gCurContestWinnerSaveIdx =
-                GetContestWinnerSaveIdx(CONTEST_SAVE_FOR_ARTIST as u8, FALSE);
+            gCurContestWinnerIsForArtist.set(TRUE);
+            gCurContestWinnerSaveIdx.set(GetContestWinnerSaveIdx(
+                CONTEST_SAVE_FOR_ARTIST as u8,
+                FALSE,
+            ));
             TryGainNewFanFromCounter(FANCOUNTER_FINISHED_CONTEST);
             task_set_func(taskId, Some(Task_AnnouncePreliminaryResults));
         }
     }
 }
 pub(crate) unsafe fn Task_WaitForLinkPartnersBeforeResults(taskId: u8) {
-    if gReceivedRemoteLinkPlayers != 0 {
+    if gReceivedRemoteLinkPlayers.get() != 0 {
         CreateTask(Some(Task_CommunicateMonIdxsForResults), 0);
         task_set_func(taskId, Some(TaskDummy));
     }
@@ -788,7 +804,7 @@ pub(crate) unsafe fn Task_WaitForLinkPartnerMonIdxs(taskId: u8) {
     if IsLinkTaskFinished() != 0 {
         DestroyTask(taskId);
         task_set_func(
-            (*(*sContestResults).data).showResultsTaskId,
+            (*(*crate::gl!(sContestResults)).data).showResultsTaskId,
             Some(Task_AnnouncePreliminaryResults),
         );
         HideLinkResultsTextBox();
@@ -802,12 +818,12 @@ pub(crate) unsafe fn Task_AnnouncePreliminaryResults(taskId: u8) {
             (*(&raw const crate::data::strings::gText_AnnouncingResults).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
-            (*(*sContestResults).data).slidingTextBoxSpriteId,
+            (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId,
         ) as i16;
         StartTextBoxSlideIn(x, TEXT_BOX_Y, 120, 1088);
         task_set(taskId, 0, task_get(taskId, 0) + 1);
     } else if task_get(taskId, 0) == 1 {
-        if (*(*sContestResults).data).slidingTextBoxState == SLIDING_TEXT_OFFSCREEN {
+        if (*(*crate::gl!(sContestResults)).data).slidingTextBoxState == SLIDING_TEXT_OFFSCREEN {
             task_set(taskId, 1, 0);
             task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
@@ -825,12 +841,12 @@ pub(crate) unsafe fn Task_AnnouncePreliminaryResults(taskId: u8) {
             (*(&raw const crate::data::strings::gText_PreliminaryResults).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
-            (*(*sContestResults).data).slidingTextBoxSpriteId,
+            (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId,
         ) as i16;
         StartTextBoxSlideIn(x, TEXT_BOX_Y, 65535, 1088);
         task_set(taskId, 0, task_get(taskId, 0) + 1);
     } else if task_get(taskId, 0) == 4
-        && (*(*sContestResults).data).slidingTextBoxState == SLIDING_TEXT_ARRIVED
+        && (*(*crate::gl!(sContestResults)).data).slidingTextBoxState == SLIDING_TEXT_ARRIVED
     {
         task_set(taskId, 0, 0);
         task_set_func(taskId, Some(Task_ShowPreliminaryResults));
@@ -839,7 +855,7 @@ pub(crate) unsafe fn Task_AnnouncePreliminaryResults(taskId: u8) {
 pub(crate) unsafe fn Task_ShowPreliminaryResults(taskId: u8) {
     match task_get(taskId, 0) {
         0 => {
-            if (*(*sContestResults).data).pointsFlashing == 0 {
+            if (*(*crate::gl!(sContestResults)).data).pointsFlashing == 0 {
                 UpdateContestResultBars(
                     FALSE,
                     ({
@@ -848,7 +864,7 @@ pub(crate) unsafe fn Task_ShowPreliminaryResults(taskId: u8) {
                         t1
                     }) as u8,
                 );
-                if (*(*sContestResults).data).numBarsUpdating == 0 {
+                if (*(*crate::gl!(sContestResults)).data).numBarsUpdating == 0 {
                     task_set(taskId, 0, 2);
                 } else {
                     task_set(taskId, 0, task_get(taskId, 0) + 1);
@@ -856,7 +872,7 @@ pub(crate) unsafe fn Task_ShowPreliminaryResults(taskId: u8) {
             }
         }
         1 => {
-            if (*(*sContestResults).data).numBarsUpdating == 0 {
+            if (*(*crate::gl!(sContestResults)).data).numBarsUpdating == 0 {
                 task_set(taskId, 0, 0);
             }
         }
@@ -871,7 +887,7 @@ pub(crate) unsafe fn Task_ShowPreliminaryResults(taskId: u8) {
 }
 pub(crate) unsafe fn Task_AnnounceRound2Results(taskId: u8) {
     let mut x: i16 = 0;
-    if (*(*sContestResults).data).slidingTextBoxState == SLIDING_TEXT_OFFSCREEN {
+    if (*(*crate::gl!(sContestResults)).data).slidingTextBoxState == SLIDING_TEXT_OFFSCREEN {
         if ({
             task_set(taskId, 1, task_get(taskId, 1) + 1);
             task_get(taskId, 1)
@@ -882,18 +898,18 @@ pub(crate) unsafe fn Task_AnnounceRound2Results(taskId: u8) {
                 (*(&raw const crate::data::strings::gText_Round2Results).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
-                (*(*sContestResults).data).slidingTextBoxSpriteId,
+                (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId,
             ) as i16;
             StartTextBoxSlideIn(x, TEXT_BOX_Y, 65535, 1088);
         }
-    } else if (*(*sContestResults).data).slidingTextBoxState == SLIDING_TEXT_ARRIVED {
+    } else if (*(*crate::gl!(sContestResults)).data).slidingTextBoxState == SLIDING_TEXT_ARRIVED {
         task_set_func(taskId, Some(Task_ShowRound2Results));
     }
 }
 pub(crate) unsafe fn Task_ShowRound2Results(taskId: u8) {
     match task_get(taskId, 0) {
         0 => {
-            if (*(*sContestResults).data).pointsFlashing == 0 {
+            if (*(*crate::gl!(sContestResults)).data).pointsFlashing == 0 {
                 UpdateContestResultBars(
                     TRUE,
                     ({
@@ -902,7 +918,7 @@ pub(crate) unsafe fn Task_ShowRound2Results(taskId: u8) {
                         t1
                     }) as u8,
                 );
-                if (*(*sContestResults).data).numBarsUpdating == 0 {
+                if (*(*crate::gl!(sContestResults)).data).numBarsUpdating == 0 {
                     task_set(taskId, 0, 2);
                 } else {
                     task_set(taskId, 0, task_get(taskId, 0) + 1);
@@ -910,7 +926,7 @@ pub(crate) unsafe fn Task_ShowRound2Results(taskId: u8) {
             }
         }
         1 => {
-            if (*(*sContestResults).data).numBarsUpdating == 0 {
+            if (*(*crate::gl!(sContestResults)).data).numBarsUpdating == 0 {
                 task_set(taskId, 0, 0);
             }
         }
@@ -926,7 +942,8 @@ pub(crate) unsafe fn Task_AnnounceWinner(taskId: u8) {
     let mut i: i32 = 0;
     match task_get(taskId, 0) {
         0 => {
-            if (*(*sContestResults).data).slidingTextBoxState == SLIDING_TEXT_OFFSCREEN {
+            if (*(*crate::gl!(sContestResults)).data).slidingTextBoxState == SLIDING_TEXT_OFFSCREEN
+            {
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
@@ -943,13 +960,13 @@ pub(crate) unsafe fn Task_AnnounceWinner(taskId: u8) {
         2 => {
             for i in 0..CONTESTANT_COUNT {
                 let newTaskId: u8 = CreateTask(Some(Task_DrawFinalStandingNumber), 10);
-                task_set(newTaskId, 0, gContestFinalStandings[i] as i16);
+                task_set(newTaskId, 0, crate::gl!(gContestFinalStandings[i]) as i16);
                 task_set(newTaskId, 1, i as i16);
             }
             task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         3 => {
-            if (*(*sContestResults).data).numStandingsPrinted == CONTESTANT_COUNT as u8
+            if (*(*crate::gl!(sContestResults)).data).numStandingsPrinted == CONTESTANT_COUNT as u8
                 && ({
                     task_set(taskId, 1, task_get(taskId, 1) + 1);
                     task_get(taskId, 1)
@@ -960,9 +977,10 @@ pub(crate) unsafe fn Task_AnnounceWinner(taskId: u8) {
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
                 i = 0;
                 while i < 4
-                    && (*(&raw const crate::contest::gContestFinalStandings)
-                        .cast::<CArray<u8, 4>>()
-                        .cast_mut())[i]
+                    && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;)
+                        .cast_const())
+                    .cast::<CArray<u8, 4>>()
+                    .cast_mut())[i]
                         != 0
                 {
                     i += 1;
@@ -980,21 +998,22 @@ pub(crate) unsafe fn Task_AnnounceWinner(taskId: u8) {
                 task_set(taskId, 1, 0);
                 i = 0;
                 while i < 4
-                    && (*(&raw const crate::contest::gContestFinalStandings)
-                        .cast::<CArray<u8, 4>>()
-                        .cast_mut())[i]
+                    && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;)
+                        .cast_const())
+                    .cast::<CArray<u8, 4>>()
+                    .cast_mut())[i]
                         != 0
                 {
                     i += 1;
                 }
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
-                    gContestMons[i].trainerName.as_mut_ptr(),
+                    (*gContestMons.as_ptr())[i].trainerName.as_mut_ptr(),
                 );
                 ConvertInternationalContestantName(gStringVar1.as_mut_ptr());
                 StringCopy(
-                    gStringVar2.as_mut_ptr(),
-                    gContestMons[i].nickname.as_mut_ptr(),
+                    (*gStringVar2.as_ptr()).as_mut_ptr(),
+                    (*gContestMons.as_ptr())[i].nickname.as_mut_ptr(),
                 );
                 StringExpandPlaceholders(
                     winnerTextBuffer.as_mut_ptr(),
@@ -1005,7 +1024,7 @@ pub(crate) unsafe fn Task_AnnounceWinner(taskId: u8) {
                 );
                 let x: i16 = DrawResultsTextWindow(
                     winnerTextBuffer.as_mut_ptr(),
-                    (*(*sContestResults).data).slidingTextBoxSpriteId,
+                    (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId,
                 ) as i16;
                 StartTextBoxSlideIn(x, TEXT_BOX_Y, 65535, 1088);
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
@@ -1027,26 +1046,26 @@ pub(crate) unsafe fn Task_ShowWinnerMonBanner(taskId: u8) {
     let mut pokePal: *mut CompressedSpritePalette = null_mut();
     match task_get(taskId, 0) {
         0 => {
-            gBattle_WIN0H = DISPLAY_WIDTH;
-            gBattle_WIN0V = 20560;
+            gBattle_WIN0H.set(DISPLAY_WIDTH);
+            gBattle_WIN0V.set(20560);
             i = 0;
             while i < 4
-                && (*(&raw const crate::contest::gContestFinalStandings)
+                && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;).cast_const())
                     .cast::<CArray<u8, 4>>()
                     .cast_mut())[i]
                     != 0
             {
                 i += 1;
             }
-            species = gContestMons[i].species;
-            personality = gContestMons[i].personality;
-            otId = gContestMons[i].otId;
-            if i == gContestPlayerMonIndex as i32 {
+            species = crate::gl!(gContestMons[i].species);
+            personality = crate::gl!(gContestMons[i].personality);
+            otId = crate::gl!(gContestMons[i].otId);
+            if i == gContestPlayerMonIndex.get() as i32 {
                 HandleLoadSpecialPokePic_2(
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                         .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[1],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                     species as i32,
                     personality,
                 );
@@ -1055,7 +1074,7 @@ pub(crate) unsafe fn Task_ShowWinnerMonBanner(taskId: u8) {
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                         .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[1],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                     species as i32,
                     personality,
                 );
@@ -1063,12 +1082,12 @@ pub(crate) unsafe fn Task_ShowWinnerMonBanner(taskId: u8) {
             pokePal = GetMonSpritePalStructFromOtIdPersonality(species, otId, personality);
             LoadCompressedSpritePalette(pokePal);
             SetMultiuseSpriteTemplateToPokemon(species, B_POSITION_OPPONENT_LEFT);
-            gMultiuseSpriteTemplate.paletteTag = (*pokePal).tag;
-            spriteId = CreateSprite(&raw mut gMultiuseSpriteTemplate, 272, 80, 10);
-            gSprites[spriteId].data[1] = species as i16;
-            gSprites[spriteId].oam.set_priority(0);
-            gSprites[spriteId].callback = Some(SpriteCB_WinnerMonSlideIn);
-            (*(*sContestResults).data).winnerMonSpriteId = spriteId;
+            crate::gl!(gMultiuseSpriteTemplate.paletteTag = (*pokePal).tag);
+            spriteId = CreateSprite(crate::gl!(&raw gMultiuseSpriteTemplate), 272, 80, 10);
+            crate::gl!(gSprites[spriteId].data[1] = species as i16);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_WinnerMonSlideIn));
+            (*(*crate::gl!(sContestResults)).data).winnerMonSpriteId = spriteId;
             LoadCompressedSpriteSheet((&raw const *sSpriteSheet_Confetti).cast_mut());
             LoadCompressedSpritePalette((&raw const *sSpritePalette_Confetti).cast_mut());
             CreateTask(Some(Task_CreateConfetti), 10);
@@ -1086,14 +1105,14 @@ pub(crate) unsafe fn Task_ShowWinnerMonBanner(taskId: u8) {
                     task_set(taskId, tCounter, 32);
                 }
                 let counter: u8 = task_get(taskId, tCounter) as u8;
-                gBattle_WIN0V = ((80 - counter as u16) << 8) | (80 + counter as u16);
+                gBattle_WIN0V.set(((80 - counter as u16) << 8) | (80 + counter as u16));
                 if counter == 32 {
                     task_set(taskId, 0, task_get(taskId, 0) + 1);
                 }
             }
         }
         2 => {
-            if (*(*sContestResults).data).winnerMonSlidingState == SLIDING_MON_ENTERED {
+            if (*(*crate::gl!(sContestResults)).data).winnerMonSlidingState == SLIDING_MON_ENTERED {
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
@@ -1104,26 +1123,28 @@ pub(crate) unsafe fn Task_ShowWinnerMonBanner(taskId: u8) {
             }) == 121
             {
                 task_set(taskId, 1, 0);
-                gSprites[(*(*sContestResults).data).winnerMonSpriteId].callback =
-                    Some(SpriteCB_WinnerMonSlideOut);
+                {
+                    let gl_i0 = (*(*crate::gl!(sContestResults)).data).winnerMonSpriteId;
+                    crate::gl!(gSprites[gl_i0].callback = Some(SpriteCB_WinnerMonSlideOut))
+                };
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
         4 => {
-            if (*(*sContestResults).data).winnerMonSlidingState == SLIDING_MON_EXITED {
-                let mut top: u8 = (gBattle_WIN0V >> 8) as u8;
+            if (*(*crate::gl!(sContestResults)).data).winnerMonSlidingState == SLIDING_MON_EXITED {
+                let mut top: u8 = (gBattle_WIN0V.get() >> 8) as u8;
                 top += 2;
                 if top > 80 {
                     top = 80;
                 }
-                gBattle_WIN0V = ((top as u16) << 8) | (DISPLAY_HEIGHT - top as u16);
+                gBattle_WIN0V.set(((top as u16) << 8) | (DISPLAY_HEIGHT - top as u16));
                 if top == 80 {
                     task_set(taskId, 0, task_get(taskId, 0) + 1);
                 }
             }
         }
-        5 if (*(*sContestResults).data).winnerMonSlidingState == SLIDING_MON_EXITED => {
-            (*(*sContestResults).data).destroyConfetti = TRUE;
+        5 if (*(*crate::gl!(sContestResults)).data).winnerMonSlidingState == SLIDING_MON_EXITED => {
+            (*(*crate::gl!(sContestResults)).data).destroyConfetti = TRUE;
             task_set(taskId, 0, 0);
             task_set_func(taskId, Some(Task_SetSeenWinnerMon));
         }
@@ -1132,10 +1153,11 @@ pub(crate) unsafe fn Task_ShowWinnerMonBanner(taskId: u8) {
 }
 pub(crate) unsafe fn Task_SetSeenWinnerMon(taskId: u8) {
     let mut nationalDexNum: i32 = 0;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
             for i in 0..CONTESTANT_COUNT {
-                nationalDexNum = SpeciesToNationalPokedexNum(gContestMons[i].species) as i32;
+                nationalDexNum =
+                    SpeciesToNationalPokedexNum(crate::gl!(gContestMons[i].species)) as i32;
                 GetSetPokedexFlag(nationalDexNum as u16, FLAG_SET_SEEN);
             }
         }
@@ -1144,7 +1166,7 @@ pub(crate) unsafe fn Task_SetSeenWinnerMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TryDisconnectLinkPartners(taskId: u8) {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
         if task_get(taskId, 10) == 0 {
             ShowLinkResultsTextBox(
                 (*(&raw const crate::data::strings::gText_CommunicationStandby)
@@ -1160,8 +1182,8 @@ pub(crate) unsafe fn Task_TryDisconnectLinkPartners(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_WaitForLinkPartnersDisconnect(taskId: u8) {
-    if gReceivedRemoteLinkPlayers == 0 {
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+    if gReceivedRemoteLinkPlayers.get() == 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
             DestroyWirelessStatusIndicatorSprite();
         }
         HideLinkResultsTextBox();
@@ -1169,16 +1191,19 @@ pub(crate) unsafe fn Task_WaitForLinkPartnersDisconnect(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TrySetContestInterviewData(taskId: u8) {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
-        BravoTrainerPokemonProfile_BeforeInterview2(gContestFinalStandings[gContestPlayerMonIndex]);
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
+        BravoTrainerPokemonProfile_BeforeInterview2({
+            let gl_i2 = gContestPlayerMonIndex.get();
+            crate::gl!(gContestFinalStandings[gl_i2])
+        });
     }
     BeginHardwarePaletteFade(0xFF, 0, 0, 16, 0);
     task_set_func(taskId, Some(Task_EndShowContestResults));
 }
 pub(crate) unsafe fn Task_EndShowContestResults(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if task_get(taskId, 1) == 0 {
-            DestroyTask((*(*sContestResults).data).highlightWinnerTaskId);
+            DestroyTask((*(*crate::gl!(sContestResults)).data).highlightWinnerTaskId);
             BlendPalettes(PALETTES_BG, 16, 0);
             task_set(taskId, 1, task_get(taskId, 1) + 1);
         } else if task_get(taskId, 1) == 1 {
@@ -1194,14 +1219,14 @@ pub(crate) unsafe fn Task_EndShowContestResults(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe fn Task_SlideContestResultsBg(taskId: u8) {
-    gBattle_BG3_X += 2;
-    gBattle_BG3_Y += 1;
-    if gBattle_BG3_X > 255 {
-        gBattle_BG3_X -= 255;
+pub(crate) fn Task_SlideContestResultsBg(taskId: u8) {
+    gBattle_BG3_X.set(gBattle_BG3_X.get() + (2));
+    gBattle_BG3_Y.set(gBattle_BG3_Y.get() + (1));
+    if gBattle_BG3_X.get() > 255 {
+        gBattle_BG3_X.set(gBattle_BG3_X.get() - (255));
     }
-    if gBattle_BG3_Y > 255 {
-        gBattle_BG3_Y -= 255;
+    if gBattle_BG3_Y.get() > 255 {
+        gBattle_BG3_Y.set(gBattle_BG3_Y.get() - (255));
     }
 }
 pub(crate) unsafe fn Task_FlashStarsAndHearts(taskId: u8) {
@@ -1226,9 +1251,9 @@ pub(crate) unsafe fn Task_FlashStarsAndHearts(taskId: u8) {
         BlendPalette(110, 1, task_get(taskId, tCoeff) as u8, 30654);
     }
     if task_get(taskId, tCoeff) == 0 {
-        (*(*sContestResults).data).pointsFlashing = FALSE;
+        (*(*crate::gl!(sContestResults)).data).pointsFlashing = FALSE;
     } else {
-        (*(*sContestResults).data).pointsFlashing = TRUE;
+        (*(*crate::gl!(sContestResults)).data).pointsFlashing = TRUE;
     }
 }
 unsafe fn LoadContestMonIcon(
@@ -1241,7 +1266,7 @@ unsafe fn LoadContestMonIcon(
     let mut var0: u16 = 0;
     let mut var1: u16 = 0;
     let mut frameNum: u16 = 0;
-    if monIndex == gContestPlayerMonIndex {
+    if monIndex == gContestPlayerMonIndex.get() {
         frameNum = 1;
     } else {
         frameNum = 0;
@@ -1270,18 +1295,18 @@ unsafe fn LoadContestMonIcon(
 unsafe fn LoadAllContestMonIcons(srcOffset: u8, useDmaNow: u8) {
     for i in 0..CONTESTANT_COUNT {
         LoadContestMonIcon(
-            gContestMons[i].species,
+            crate::gl!(gContestMons[i].species),
             i as u8,
             srcOffset,
             useDmaNow,
-            gContestMons[i].personality,
+            crate::gl!(gContestMons[i].personality),
         );
     }
 }
 unsafe fn LoadAllContestMonIconPalettes() {
     let mut species: i32 = 0;
     for i in 0..CONTESTANT_COUNT {
-        species = gContestMons[i].species as i32;
+        species = crate::gl!(gContestMons[i].species) as i32;
         LoadPalette(
             (*(&raw const crate::data::graphics::gMonIconPalettes)
                 .cast::<CArray<CArray<u16, 16>, 0>>())
@@ -1297,10 +1322,13 @@ unsafe fn LoadAllContestMonIconPalettes() {
 unsafe fn TryCreateWirelessSprites() {
     let mut sheet: u16 = 0;
     let mut spriteId: u8 = 0;
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
         LoadWirelessStatusIndicatorSpriteGfx();
         CreateWirelessStatusIndicatorSprite(8, 8);
-        gSprites[gWirelessStatusIndicatorSpriteId].subpriority = 1;
+        {
+            let gl_i1 = gWirelessStatusIndicatorSpriteId.get();
+            crate::gl!(gSprites[gl_i1].subpriority = 1)
+        };
         sheet = LoadSpriteSheet((&raw const *sSpriteSheet_WirelessIndicatorWindow).cast_mut());
         RequestDma3Fill(
             -1,
@@ -1314,7 +1342,9 @@ unsafe fn TryCreateWirelessSprites() {
             8,
             0,
         );
-        gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_WINDOW);
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_objMode(ST_OAM_OBJ_WINDOW);
     }
 }
 unsafe fn DrawResultsTextWindow(text: *mut u8, spriteId: u8) -> i32 {
@@ -1344,10 +1374,11 @@ unsafe fn DrawResultsTextWindow(text: *mut u8, spriteId: u8) -> i32 {
         let mut windowTilesPtr: *mut u8 =
             GetWindowAttribute(windowId as u8, WINDOW_TILE_DATA) as usize as *mut u8;
         let src: *mut u8 = sResultsTextWindow_Gfx.as_ptr().cast_mut();
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         spriteTilePtrs[0] = ((*sprite).oam.tileNum() as i32 * 32 + OBJ_VRAM0) as usize as *mut u8;
         for i in 1..4i32 {
-            spriteTilePtrs[i] = (gSprites[(*sprite).data[i - 1]].oam.tileNum() as i32 * 32
+            spriteTilePtrs[i] = ((*gSprites.as_ptr())[(*sprite).data[i - 1]].oam.tileNum() as i32
+                * 32
                 + OBJ_VRAM0) as usize as *mut c_void as *mut u8;
         }
         for i in 0..4i32 {
@@ -1434,19 +1465,40 @@ unsafe fn CreateResultsTextWindowSprites() {
         spriteIds[i] = CreateSprite(&raw mut template, TEXT_BOX_X, TEXT_BOX_Y as i16, 10);
         template.tileTag += 1;
     }
-    gSprites[spriteIds[0]].data[0] = spriteIds[1] as i16;
-    gSprites[spriteIds[0]].data[1] = spriteIds[2] as i16;
-    gSprites[spriteIds[0]].data[2] = spriteIds[3] as i16;
-    gSprites[spriteIds[4]].data[0] = spriteIds[5] as i16;
-    gSprites[spriteIds[4]].data[1] = spriteIds[6] as i16;
-    gSprites[spriteIds[4]].data[2] = spriteIds[7] as i16;
-    (*(*sContestResults).data).slidingTextBoxSpriteId = spriteIds[0];
-    (*(*sContestResults).data).slidingTextBoxState = SLIDING_TEXT_OFFSCREEN;
-    (*(*sContestResults).data).linkTextBoxSpriteId = spriteIds[4];
+    {
+        let gl_i2 = spriteIds[0];
+        crate::gl!(gSprites[gl_i2].data[0] = spriteIds[1] as i16)
+    };
+    {
+        let gl_i3 = spriteIds[0];
+        crate::gl!(gSprites[gl_i3].data[1] = spriteIds[2] as i16)
+    };
+    {
+        let gl_i4 = spriteIds[0];
+        crate::gl!(gSprites[gl_i4].data[2] = spriteIds[3] as i16)
+    };
+    {
+        let gl_i5 = spriteIds[4];
+        crate::gl!(gSprites[gl_i5].data[0] = spriteIds[5] as i16)
+    };
+    {
+        let gl_i6 = spriteIds[4];
+        crate::gl!(gSprites[gl_i6].data[1] = spriteIds[6] as i16)
+    };
+    {
+        let gl_i7 = spriteIds[4];
+        crate::gl!(gSprites[gl_i7].data[2] = spriteIds[7] as i16)
+    };
+    (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId = spriteIds[0];
+    (*(*crate::gl!(sContestResults)).data).slidingTextBoxState = SLIDING_TEXT_OFFSCREEN;
+    (*(*crate::gl!(sContestResults)).data).linkTextBoxSpriteId = spriteIds[4];
     HideLinkResultsTextBox();
 }
 unsafe fn StartTextBoxSlideIn(x: i16, y: u16, slideOutTimer: u16, slideIncrement: u16) {
-    let sprite: *mut Sprite = &raw mut gSprites[(*(*sContestResults).data).slidingTextBoxSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i8 = (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId;
+        crate::gl!(&raw gSprites[gl_i8])
+    };
     (*sprite).x = TEXT_BOX_X;
     (*sprite).y = y as i16;
     (*sprite).x2 = 0;
@@ -1456,10 +1508,13 @@ unsafe fn StartTextBoxSlideIn(x: i16, y: u16, slideOutTimer: u16, slideIncrement
     (*sprite).data[sSlideIncrement] = slideIncrement as i16;
     (*sprite).data[sDistance] = 0;
     (*sprite).callback = Some(SpriteCB_TextBoxSlideIn);
-    (*(*sContestResults).data).slidingTextBoxState = SLIDING_TEXT_ENTERING;
+    (*(*crate::gl!(sContestResults)).data).slidingTextBoxState = SLIDING_TEXT_ENTERING;
 }
 unsafe fn StartTextBoxSlideOut(slideIncrement: u16) {
-    let sprite: *mut Sprite = &raw mut gSprites[(*(*sContestResults).data).slidingTextBoxSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i9 = (*(*crate::gl!(sContestResults)).data).slidingTextBoxSpriteId;
+        crate::gl!(&raw gSprites[gl_i9])
+    };
     (*sprite).x += (*sprite).x2;
     (*sprite).y += (*sprite).y2;
     (*sprite).y2 = 0;
@@ -1467,7 +1522,7 @@ unsafe fn StartTextBoxSlideOut(slideIncrement: u16) {
     (*sprite).data[sSlideIncrement] = slideIncrement as i16;
     (*sprite).data[sDistance] = 0;
     (*sprite).callback = Some(SpriteCB_TextBoxSlideOut);
-    (*(*sContestResults).data).slidingTextBoxState = SLIDING_TEXT_EXITING;
+    (*(*crate::gl!(sContestResults)).data).slidingTextBoxState = SLIDING_TEXT_EXITING;
 }
 unsafe fn EndTextBoxSlideOut(sprite: *mut Sprite) {
     (*sprite).x = TEXT_BOX_X;
@@ -1475,7 +1530,7 @@ unsafe fn EndTextBoxSlideOut(sprite: *mut Sprite) {
     (*sprite).y2 = 0;
     (*sprite).x2 = 0;
     (*sprite).callback = Some(SpriteCallbackDummy);
-    (*(*sContestResults).data).slidingTextBoxState = SLIDING_TEXT_OFFSCREEN;
+    (*(*crate::gl!(sContestResults)).data).slidingTextBoxState = SLIDING_TEXT_OFFSCREEN;
 }
 pub(crate) unsafe fn SpriteCB_TextBoxSlideIn(sprite: *mut Sprite) {
     let delta: i16 = (*sprite).data[sDistance] + (*sprite).data[sSlideIncrement];
@@ -1486,7 +1541,10 @@ pub(crate) unsafe fn SpriteCB_TextBoxSlideIn(sprite: *mut Sprite) {
         (*sprite).x = (*sprite).data[sTargetX];
     }
     for i in 0..3i32 {
-        let sprite2: *mut Sprite = &raw mut gSprites[(*sprite).data[i]];
+        let sprite2: *mut Sprite = {
+            let gl_i10 = (*sprite).data[i];
+            crate::gl!(&raw gSprites[gl_i10])
+        };
         (*sprite2).x = (*sprite).x + (*sprite).x2 + (i as i16 + 1) * 64;
     }
     if (*sprite).x == (*sprite).data[sTargetX] {
@@ -1494,7 +1552,7 @@ pub(crate) unsafe fn SpriteCB_TextBoxSlideIn(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_EndTextBoxSlideIn(sprite: *mut Sprite) {
-    (*(*sContestResults).data).slidingTextBoxState = SLIDING_TEXT_ARRIVED;
+    (*(*crate::gl!(sContestResults)).data).slidingTextBoxState = SLIDING_TEXT_ARRIVED;
     if (*sprite).data[sSlideOutTimer] as u16 != 0xFFFF
         && ({
             (*sprite).data[sSlideOutTimer] -= 1;
@@ -1510,7 +1568,10 @@ pub(crate) unsafe fn SpriteCB_TextBoxSlideOut(sprite: *mut Sprite) {
     (*sprite).data[sDistance] += (*sprite).data[sSlideIncrement];
     (*sprite).data[sDistance] &= 0xFF;
     for i in 0..3i32 {
-        let sprite2: *mut Sprite = &raw mut gSprites[(*sprite).data[i]];
+        let sprite2: *mut Sprite = {
+            let gl_i11 = (*sprite).data[i];
+            crate::gl!(&raw gSprites[gl_i11])
+        };
         (*sprite2).x = (*sprite).x + (*sprite).x2 + (i as i16 + 1) * 64;
     }
     if ((*sprite).x as i32 + (*sprite).x2 as i32) < -224 {
@@ -1518,37 +1579,52 @@ pub(crate) unsafe fn SpriteCB_TextBoxSlideOut(sprite: *mut Sprite) {
     }
 }
 unsafe fn ShowLinkResultsTextBox(text: *mut u8) {
-    let x: u16 = DrawResultsTextWindow(text, (*(*sContestResults).data).linkTextBoxSpriteId) as u16;
-    let sprite: *mut Sprite = &raw mut gSprites[(*(*sContestResults).data).linkTextBoxSpriteId];
+    let x: u16 = DrawResultsTextWindow(
+        text,
+        (*(*crate::gl!(sContestResults)).data).linkTextBoxSpriteId,
+    ) as u16;
+    let sprite: *mut Sprite = {
+        let gl_i12 = (*(*crate::gl!(sContestResults)).data).linkTextBoxSpriteId;
+        crate::gl!(&raw gSprites[gl_i12])
+    };
     (*sprite).x = x as i16 + 32;
     (*sprite).y = 80;
     (*sprite).set_invisible(FALSE as u16);
     for i in 0..3i32 {
-        gSprites[(*sprite).data[i]].x = (*sprite).x + (*sprite).x2 + (i as i16 + 1) * 64;
-        gSprites[(*sprite).data[i]].y = (*sprite).y;
-        gSprites[(*sprite).data[i]].set_invisible(FALSE as u16);
+        {
+            let gl_i13 = (*sprite).data[i];
+            crate::gl!(gSprites[gl_i13].x = (*sprite).x + (*sprite).x2 + (i as i16 + 1) * 64)
+        };
+        {
+            let gl_i14 = (*sprite).data[i];
+            crate::gl!(gSprites[gl_i14].y = (*sprite).y)
+        };
+        (*gSprites.as_ptr())[(*sprite).data[i]].set_invisible(FALSE as u16);
     }
-    gBattle_WIN0H = DISPLAY_WIDTH;
-    gBattle_WIN0V = (((*sprite).y as u16 - 16) << 8) | ((*sprite).y as u16 + 16);
+    gBattle_WIN0H.set(DISPLAY_WIDTH);
+    gBattle_WIN0V.set((((*sprite).y as u16 - 16) << 8) | ((*sprite).y as u16 + 16));
     SetGpuReg(REG_OFFSET_WININ, 16190);
 }
 unsafe fn HideLinkResultsTextBox() {
-    let sprite: *mut Sprite = &raw mut gSprites[(*(*sContestResults).data).linkTextBoxSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i15 = (*(*crate::gl!(sContestResults)).data).linkTextBoxSpriteId;
+        crate::gl!(&raw gSprites[gl_i15])
+    };
     (*sprite).set_invisible(TRUE as u16);
     for i in 0..3i32 {
-        gSprites[(*sprite).data[i]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*sprite).data[i]].set_invisible(TRUE as u16);
     }
-    gBattle_WIN0H = 0;
-    gBattle_WIN0V = 0;
-    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H);
-    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V);
+    gBattle_WIN0H.set(0);
+    gBattle_WIN0V.set(0);
+    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H.get());
+    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V.get());
     SetGpuReg(REG_OFFSET_WININ, 16191);
 }
 unsafe fn LoadContestResultsTitleBarTilemaps() {
     let mut palette: u8 = 0;
     let mut x: i32 = 5;
     let y: i32 = 1;
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
         CopyToBgTilemapBufferRect(
             2,
             (*(&raw const crate::data::graphics::gContestResultsTitle_Link_Tilemap)
@@ -1561,7 +1637,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
             2,
         );
         x = 10;
-    } else if gSpecialVar_ContestRank == CONTEST_RANK_NORMAL as u16 {
+    } else if gSpecialVar_ContestRank.get() == CONTEST_RANK_NORMAL as u16 {
         CopyToBgTilemapBufferRect(
             2,
             (*(&raw const crate::data::graphics::gContestResultsTitle_Normal_Tilemap)
@@ -1574,7 +1650,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
             2,
         );
         x = 15;
-    } else if gSpecialVar_ContestRank == CONTEST_RANK_SUPER as u16 {
+    } else if gSpecialVar_ContestRank.get() == CONTEST_RANK_SUPER as u16 {
         CopyToBgTilemapBufferRect(
             2,
             (*(&raw const crate::data::graphics::gContestResultsTitle_Super_Tilemap)
@@ -1587,7 +1663,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
             2,
         );
         x = 15;
-    } else if gSpecialVar_ContestRank == CONTEST_RANK_HYPER as u16 {
+    } else if gSpecialVar_ContestRank.get() == CONTEST_RANK_HYPER as u16 {
         CopyToBgTilemapBufferRect(
             2,
             (*(&raw const crate::data::graphics::gContestResultsTitle_Hyper_Tilemap)
@@ -1614,7 +1690,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
         );
         x = 15;
     }
-    if gSpecialVar_ContestCategory == CONTEST_CATEGORY_COOL as u16 {
+    if gSpecialVar_ContestCategory.get() == CONTEST_CATEGORY_COOL as u16 {
         palette = 0;
         CopyToBgTilemapBufferRect(
             2,
@@ -1627,7 +1703,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
             5,
             2,
         );
-    } else if gSpecialVar_ContestCategory == CONTEST_CATEGORY_BEAUTY as u16 {
+    } else if gSpecialVar_ContestCategory.get() == CONTEST_CATEGORY_BEAUTY as u16 {
         palette = 1;
         CopyToBgTilemapBufferRect(
             2,
@@ -1640,7 +1716,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
             5,
             2,
         );
-    } else if gSpecialVar_ContestCategory == CONTEST_CATEGORY_CUTE as u16 {
+    } else if gSpecialVar_ContestCategory.get() == CONTEST_CATEGORY_CUTE as u16 {
         palette = 2;
         CopyToBgTilemapBufferRect(
             2,
@@ -1653,7 +1729,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
             5,
             2,
         );
-    } else if gSpecialVar_ContestCategory == CONTEST_CATEGORY_SMART as u16 {
+    } else if gSpecialVar_ContestCategory.get() == CONTEST_CATEGORY_SMART as u16 {
         palette = 3;
         CopyToBgTilemapBufferRect(
             2,
@@ -1693,7 +1769,7 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
     );
     CopyToBgTilemapBufferRect_ChangePalette(
         2,
-        (*sContestResults).tilemapBuffers[2] as *mut c_void,
+        (*crate::gl!(sContestResults)).tilemapBuffers[2] as *mut c_void,
         0,
         0,
         32,
@@ -1701,8 +1777,8 @@ unsafe fn LoadContestResultsTitleBarTilemaps() {
         palette,
     );
 }
-unsafe fn GetNumPreliminaryPoints(monIndex: u8, capPoints: u8) -> u8 {
-    let condition: u32 = (gContestMonRound1Points[monIndex] as u32) << 16;
+fn GetNumPreliminaryPoints(monIndex: u8, capPoints: u8) -> u8 {
+    let condition: u32 = (crate::gl!(gContestMonRound1Points[monIndex]) as u32) << 16;
     let mut numStars: u32 = condition / 63;
     if numStars & 0xFFFF != 0 {
         numStars += 0x10000;
@@ -1716,10 +1792,10 @@ unsafe fn GetNumPreliminaryPoints(monIndex: u8, capPoints: u8) -> u8 {
     }
     numStars as u8
 }
-unsafe fn GetNumRound2Points(monIndex: u8, capPoints: u8) -> i8 {
+fn GetNumRound2Points(monIndex: u8, capPoints: u8) -> i8 {
     let mut r4: u32 = 0;
     let mut points: i8 = 0;
-    let results: i16 = gContestMonRound2Points[monIndex];
+    let results: i16 = crate::gl!(gContestMonRound2Points[monIndex]);
     if results < 0 {
         r4 = (results as u32).wrapping_neg() << 16;
     } else {
@@ -1736,7 +1812,7 @@ unsafe fn GetNumRound2Points(monIndex: u8, capPoints: u8) -> i8 {
     if capPoints != 0 && numHearts > 10 {
         numHearts = 10;
     }
-    if gContestMonRound2Points[monIndex] < 0 {
+    if crate::gl!(gContestMonRound2Points[monIndex]) < 0 {
         points = -(numHearts as i8);
     } else {
         points = numHearts as i8;
@@ -1775,7 +1851,7 @@ pub(crate) unsafe fn Task_DrawFinalStandingNumber(taskId: u8) {
             17,
             1,
         );
-        (*(*sContestResults).data).numStandingsPrinted += 1;
+        (*(*crate::gl!(sContestResults)).data).numStandingsPrinted += 1;
         DestroyTask(taskId);
         PlaySE(SE_CONTEST_PLACE);
     }
@@ -1783,7 +1859,7 @@ pub(crate) unsafe fn Task_DrawFinalStandingNumber(taskId: u8) {
 pub(crate) unsafe fn Task_StartHighlightWinnersBox(taskId: u8) {
     let mut i: i32 = 0;
     while i < 4
-        && (*(&raw const crate::contest::gContestFinalStandings)
+        && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;).cast_const())
             .cast::<CArray<u8, 4>>()
             .cast_mut())[i]
             != 0
@@ -1792,7 +1868,7 @@ pub(crate) unsafe fn Task_StartHighlightWinnersBox(taskId: u8) {
     }
     CopyToBgTilemapBufferRect_ChangePalette(
         2,
-        (*sContestResults).tilemapBuffers[2].at(i * 0xC0 + 0x100) as *mut c_void,
+        (*crate::gl!(sContestResults)).tilemapBuffers[2].at(i * 0xC0 + 0x100) as *mut c_void,
         0,
         i as u8 * 3 + 4,
         32,
@@ -1802,7 +1878,7 @@ pub(crate) unsafe fn Task_StartHighlightWinnersBox(taskId: u8) {
     task_set(taskId, 10, i as i16);
     task_set(taskId, 12, 1);
     task_set_func(taskId, Some(Task_HighlightWinnersBox));
-    (*(*sContestResults).data).highlightWinnerTaskId = taskId;
+    (*(*crate::gl!(sContestResults)).data).highlightWinnerTaskId = taskId;
 }
 pub(crate) unsafe fn Task_HighlightWinnersBox(taskId: u8) {
     if ({
@@ -1852,7 +1928,7 @@ pub(crate) unsafe fn SpriteCB_WinnerMonSlideIn(sprite: *mut Sprite) {
         if (*sprite).x == 120 {
             (*sprite).callback = Some(SpriteCallbackDummy);
             (*sprite).data[1] = 0;
-            (*(*sContestResults).data).winnerMonSlidingState = SLIDING_MON_ENTERED;
+            (*(*crate::gl!(sContestResults)).data).winnerMonSlidingState = SLIDING_MON_ENTERED;
         }
     }
 }
@@ -1864,7 +1940,7 @@ pub(crate) unsafe fn SpriteCB_WinnerMonSlideOut(sprite: *mut Sprite) {
     if (*sprite).x < -32 {
         (*sprite).callback = Some(SpriteCallbackDummy);
         (*sprite).set_invisible(TRUE as u16);
-        (*(*sContestResults).data).winnerMonSlidingState = SLIDING_MON_EXITED;
+        (*(*crate::gl!(sContestResults)).data).winnerMonSlidingState = SLIDING_MON_EXITED;
     }
 }
 pub(crate) unsafe fn Task_CreateConfetti(taskId: u8) {
@@ -1874,23 +1950,23 @@ pub(crate) unsafe fn Task_CreateConfetti(taskId: u8) {
     }) == 5
     {
         task_set(taskId, 0, 0);
-        if (*(*sContestResults).data).confettiCount < 40 {
+        if (*(*crate::gl!(sContestResults)).data).confettiCount < 40 {
             let spriteId: u8 = CreateSprite(
                 (&raw const *sSpriteTemplate_Confetti).cast_mut(),
                 (Random() as i32 % 240) as i16 - 20,
                 44,
                 5,
             );
-            gSprites[spriteId].data[0] = (Random() as i32 % 512) as i16;
-            gSprites[spriteId].data[1] = (Random() as i32 % 24) as i16 + 16;
-            gSprites[spriteId].data[2] = (Random() as i32 % 256) as i16 + 48;
-            gSprites[spriteId]
-                .oam
-                .set_tileNum(gSprites[spriteId].oam.tileNum() + (Random() as i32 % 17) as u16);
-            (*(*sContestResults).data).confettiCount += 1;
+            crate::gl!(gSprites[spriteId].data[0] = (Random() as i32 % 512) as i16);
+            crate::gl!(gSprites[spriteId].data[1] = (Random() as i32 % 24) as i16 + 16);
+            crate::gl!(gSprites[spriteId].data[2] = (Random() as i32 % 256) as i16 + 48);
+            (*gSprites.as_ptr())[spriteId].oam.set_tileNum(
+                (*gSprites.as_ptr())[spriteId].oam.tileNum() + (Random() as i32 % 17) as u16,
+            );
+            (*(*crate::gl!(sContestResults)).data).confettiCount += 1;
         }
     }
-    if (*(*sContestResults).data).destroyConfetti != 0 {
+    if (*(*crate::gl!(sContestResults)).data).destroyConfetti != 0 {
         DestroyTask(taskId);
     }
 }
@@ -1902,19 +1978,23 @@ pub(crate) unsafe fn SpriteCB_Confetti(sprite: *mut Sprite) {
     (*sprite).data[4] += (*sprite).data[2];
     (*sprite).data[4] &= 0xff;
     (*sprite).y += 1;
-    if (*(*sContestResults).data).destroyConfetti != 0 {
+    if (*(*crate::gl!(sContestResults)).data).destroyConfetti != 0 {
         (*sprite).set_invisible(TRUE as u16);
     }
     if (*sprite).x > 248 || (*sprite).y > 116 {
         DestroySprite(sprite);
-        (*(*sContestResults).data).confettiCount -= 1;
+        (*(*crate::gl!(sContestResults)).data).confettiCount -= 1;
     }
 }
 unsafe fn BounceMonIconInBox(monIndex: u8, numFrames: u8) {
     let taskId: u8 = CreateTask(Some(Task_BounceMonIconInBox), 8);
     task_set(taskId, 0, monIndex as i16);
     task_set(taskId, tNumFrames, numFrames as i16);
-    task_set(taskId, tSpecies, gContestMons[monIndex].species as i16);
+    task_set(
+        taskId,
+        tSpecies,
+        crate::gl!(gContestMons[monIndex].species) as i16,
+    );
 }
 pub(crate) unsafe fn Task_BounceMonIconInBox(taskId: u8) {
     let monIndex: u8 = task_get(taskId, 0) as u8;
@@ -1930,7 +2010,7 @@ pub(crate) unsafe fn Task_BounceMonIconInBox(taskId: u8) {
             monIndex,
             task_get(taskId, tBounced) as u8,
             FALSE,
-            gContestMons[monIndex].personality,
+            crate::gl!(gContestMons[monIndex].personality),
         );
         task_set(taskId, tBounced, task_get(taskId, tBounced) ^ 1);
     }
@@ -1939,25 +2019,25 @@ unsafe fn CalculateContestantsResultData() {
     let mut relativePoints: i32 = 0;
     let mut barLength: u32 = 0;
     let mut round2Points: i8 = 0;
-    let mut highestPoints: i16 = gContestMonTotalPoints[0];
+    let mut highestPoints: i16 = crate::gl!(gContestMonTotalPoints[0]);
     let mut i: i32 = 1;
     while i < CONTESTANT_COUNT {
-        if highestPoints < gContestMonTotalPoints[i] {
-            highestPoints = gContestMonTotalPoints[i];
+        if highestPoints < crate::gl!(gContestMonTotalPoints[i]) {
+            highestPoints = crate::gl!(gContestMonTotalPoints[i]);
         }
         i += 1;
     }
     if highestPoints < 0 {
-        highestPoints = gContestMonTotalPoints[0];
+        highestPoints = crate::gl!(gContestMonTotalPoints[0]);
         for i in 1..CONTESTANT_COUNT {
-            if highestPoints > gContestMonTotalPoints[i] {
-                highestPoints = gContestMonTotalPoints[i];
+            if highestPoints > crate::gl!(gContestMonTotalPoints[i]) {
+                highestPoints = crate::gl!(gContestMonTotalPoints[i]);
             }
         }
     }
     for i in 0..CONTESTANT_COUNT {
         relativePoints = div_i32(
-            gContestMonRound1Points[i] as i32 * 1000,
+            crate::gl!(gContestMonRound1Points[i]) as i32 * 1000,
             if highestPoints < 0 {
                 -(highestPoints as i32)
             } else {
@@ -1967,12 +2047,13 @@ unsafe fn CalculateContestantsResultData() {
         if relativePoints % 10 > 4 {
             relativePoints += 10;
         }
-        (*(*sContestResults).monResults)[i].relativePreliminaryPoints = relativePoints / 10;
+        (*(*crate::gl!(sContestResults)).monResults)[i].relativePreliminaryPoints =
+            relativePoints / 10;
         relativePoints = div_i32(
-            (if gContestMonRound2Points[i] < 0 {
-                -(gContestMonRound2Points[i] as i32)
+            (if crate::gl!(gContestMonRound2Points[i]) < 0 {
+                -(crate::gl!(gContestMonRound2Points[i]) as i32)
             } else {
-                gContestMonRound2Points[i] as i32
+                crate::gl!(gContestMonRound2Points[i]) as i32
             }) * 1000,
             if highestPoints < 0 {
                 -(highestPoints as i32)
@@ -1983,42 +2064,44 @@ unsafe fn CalculateContestantsResultData() {
         if relativePoints % 10 > 4 {
             relativePoints += 10;
         }
-        (*(*sContestResults).monResults)[i].relativeRound2Points = relativePoints / 10;
-        if gContestMonRound2Points[i] < 0 {
-            (*(*sContestResults).monResults)[i].lostPoints = TRUE;
+        (*(*crate::gl!(sContestResults)).monResults)[i].relativeRound2Points = relativePoints / 10;
+        if crate::gl!(gContestMonRound2Points[i]) < 0 {
+            (*(*crate::gl!(sContestResults)).monResults)[i].lostPoints = TRUE;
         }
-        barLength =
-            ((*(*sContestResults).monResults)[i].relativePreliminaryPoints * 0x5800 / 100) as u32;
+        barLength = ((*(*crate::gl!(sContestResults)).monResults)[i].relativePreliminaryPoints
+            * 0x5800
+            / 100) as u32;
         if barLength & 0xFF > 0x7F {
             barLength += 0x100;
         }
-        (*(*sContestResults).monResults)[i].barLengthPreliminary = barLength >> 8;
-        barLength =
-            ((*(*sContestResults).monResults)[i].relativeRound2Points * 0x5800 / 100) as u32;
+        (*(*crate::gl!(sContestResults)).monResults)[i].barLengthPreliminary = barLength >> 8;
+        barLength = ((*(*crate::gl!(sContestResults)).monResults)[i].relativeRound2Points * 0x5800
+            / 100) as u32;
         if barLength & 0xFF > 0x7F {
             barLength += 0x100;
         }
-        (*(*sContestResults).monResults)[i].barLengthRound2 = barLength >> 8;
-        (*(*sContestResults).monResults)[i].numStars = GetNumPreliminaryPoints(i as u8, TRUE);
+        (*(*crate::gl!(sContestResults)).monResults)[i].barLengthRound2 = barLength >> 8;
+        (*(*crate::gl!(sContestResults)).monResults)[i].numStars =
+            GetNumPreliminaryPoints(i as u8, TRUE);
         round2Points = GetNumRound2Points(i as u8, TRUE);
-        (*(*sContestResults).monResults)[i].numHearts = (if round2Points < 0 {
+        (*(*crate::gl!(sContestResults)).monResults)[i].numHearts = (if round2Points < 0 {
             -(round2Points as i32)
         } else {
             round2Points as i32
         }) as u8;
-        if gContestFinalStandings[i] != 0 {
+        if crate::gl!(gContestFinalStandings[i]) != 0 {
             let barLengthPreliminary: i16 =
-                (*(*sContestResults).monResults)[i].barLengthPreliminary as i16;
+                (*(*crate::gl!(sContestResults)).monResults)[i].barLengthPreliminary as i16;
             let mut barLengthRound2: i16 =
-                (*(*sContestResults).monResults)[i].barLengthRound2 as i16;
-            if (*(*sContestResults).monResults)[i].lostPoints != 0 {
+                (*(*crate::gl!(sContestResults)).monResults)[i].barLengthRound2 as i16;
+            if (*(*crate::gl!(sContestResults)).monResults)[i].lostPoints != 0 {
                 barLengthRound2 *= -1;
             }
             if barLengthPreliminary as i32 + barLengthRound2 as i32 == MAX_BAR_LENGTH {
                 if barLengthRound2 > 0 {
-                    (*(*sContestResults).monResults)[i].barLengthRound2 -= 1;
+                    (*(*crate::gl!(sContestResults)).monResults)[i].barLengthRound2 -= 1;
                 } else if barLengthPreliminary > 0 {
-                    (*(*sContestResults).monResults)[i].barLengthPreliminary -= 1;
+                    (*(*crate::gl!(sContestResults)).monResults)[i].barLengthPreliminary -= 1;
                 }
             }
         }
@@ -2031,7 +2114,7 @@ unsafe fn UpdateContestResultBars(isRound2: u8, numUpdates: u8) {
     let mut numDecreasing: u8 = 0;
     if isRound2 == 0 {
         for i in 0..CONTESTANT_COUNT {
-            let numStars: u8 = (*(*sContestResults).monResults)[i].numStars;
+            let numStars: u8 = (*(*crate::gl!(sContestResults)).monResults)[i].numStars;
             if numUpdates < numStars {
                 FillBgTilemapBufferRect_Palette0(
                     1,
@@ -2043,22 +2126,22 @@ unsafe fn UpdateContestResultBars(isRound2: u8, numUpdates: u8) {
                 );
                 taskId = CreateTask(Some(Task_UpdateContestResultBar), 10) as i32;
                 target = div_u32(
-                    (*(*sContestResults).monResults)[i].barLengthPreliminary << 16,
-                    (*(*sContestResults).monResults)[i].numStars as u32,
+                    (*(*crate::gl!(sContestResults)).monResults)[i].barLengthPreliminary << 16,
+                    (*(*crate::gl!(sContestResults)).monResults)[i].numStars as u32,
                 ) * (numUpdates as u32 + 1);
                 if target & 0xFFFF > 0x7FFF {
                     target += 0x10000;
                 }
                 task_set(taskId, tMonId, i as i16);
                 task_set(taskId, tTarget, (target >> 16) as i16);
-                (*(*sContestResults).data).numBarsUpdating += 1;
+                (*(*crate::gl!(sContestResults)).data).numBarsUpdating += 1;
                 numIncreasing += 1;
             }
         }
     } else {
         for i in 0..CONTESTANT_COUNT {
-            let numHearts: i8 = (*(*sContestResults).monResults)[i].numHearts as i8;
-            let tile: u32 = (if (*(*sContestResults).monResults)[i].lostPoints != 0 {
+            let numHearts: i8 = (*(*crate::gl!(sContestResults)).monResults)[i].numHearts as i8;
+            let tile: u32 = (if (*(*crate::gl!(sContestResults)).monResults)[i].lostPoints != 0 {
                 0x60A5
             } else {
                 0x60A3
@@ -2074,35 +2157,37 @@ unsafe fn UpdateContestResultBars(isRound2: u8, numUpdates: u8) {
                 );
                 taskId = CreateTask(Some(Task_UpdateContestResultBar), 10) as i32;
                 target = div_u32(
-                    (*(*sContestResults).monResults)[i].barLengthRound2 << 16,
-                    (*(*sContestResults).monResults)[i].numHearts as u32,
+                    (*(*crate::gl!(sContestResults)).monResults)[i].barLengthRound2 << 16,
+                    (*(*crate::gl!(sContestResults)).monResults)[i].numHearts as u32,
                 ) * (numUpdates as u32 + 1);
                 if target & 0xFFFF > 0x7FFF {
                     target += 0x10000;
                 }
                 task_set(taskId, tMonId, i as i16);
-                if (*(*sContestResults).monResults)[i].lostPoints != 0 {
+                if (*(*crate::gl!(sContestResults)).monResults)[i].lostPoints != 0 {
                     task_set(taskId, tDecreasing, TRUE as i16);
                     numDecreasing += 1;
                 } else {
                     numIncreasing += 1;
                 }
-                if (*(*sContestResults).monResults)[i].lostPoints != 0 {
+                if (*(*crate::gl!(sContestResults)).monResults)[i].lostPoints != 0 {
                     task_set(
                         taskId,
                         tTarget,
                         -((target >> 16) as i16)
-                            + (*(*sContestResults).monResults)[i].barLengthPreliminary as i16,
+                            + (*(*crate::gl!(sContestResults)).monResults)[i].barLengthPreliminary
+                                as i16,
                     );
                 } else {
                     task_set(
                         taskId,
                         tTarget,
                         (target >> 16) as i16
-                            + (*(*sContestResults).monResults)[i].barLengthPreliminary as i16,
+                            + (*(*crate::gl!(sContestResults)).monResults)[i].barLengthPreliminary
+                                as i16,
                     );
                 }
-                (*(*sContestResults).data).numBarsUpdating += 1;
+                (*(*crate::gl!(sContestResults)).data).numBarsUpdating += 1;
             }
         }
     }
@@ -2120,34 +2205,38 @@ pub(crate) unsafe fn Task_UpdateContestResultBar(taskId: u8) {
     let target: i16 = task_get(taskId, tTarget);
     let decreasing: i16 = task_get(taskId, tDecreasing);
     if decreasing != 0 {
-        if (*(*sContestResults).data).barLength[monId] <= 0 {
+        if (*(*crate::gl!(sContestResults)).data).barLength[monId] <= 0 {
             minMaxReached = TRUE as u32;
         }
     } else {
-        if (*(*sContestResults).data).barLength[monId] >= MAX_BAR_LENGTH as i16 {
+        if (*(*crate::gl!(sContestResults)).data).barLength[monId] >= MAX_BAR_LENGTH as i16 {
             minMaxReached = TRUE as u32;
         }
     }
-    if (*(*sContestResults).data).barLength[monId] == target {
+    if (*(*crate::gl!(sContestResults)).data).barLength[monId] == target {
         targetReached = TRUE as u32;
     }
     if targetReached == 0 {
         if minMaxReached != 0 {
-            (*(*sContestResults).data).barLength[monId] = target;
+            (*(*crate::gl!(sContestResults)).data).barLength[monId] = target;
         } else if decreasing != 0 {
-            (*(*sContestResults).data).barLength[monId] -= 1;
+            (*(*crate::gl!(sContestResults)).data).barLength[monId] -= 1;
         } else {
-            (*(*sContestResults).data).barLength[monId] += 1;
+            (*(*crate::gl!(sContestResults)).data).barLength[monId] += 1;
         }
     }
     if minMaxReached == 0 && targetReached == 0 {
         let mut tileOffset: u8 = 0;
         let mut tileNum: u16 = 0;
         for i in 0..NUM_BAR_SEGMENTS {
-            if (*(*sContestResults).data).barLength[monId] as i32 >= (i + 1) * BAR_SEGMENT_LENGTH {
+            if (*(*crate::gl!(sContestResults)).data).barLength[monId] as i32
+                >= (i + 1) * BAR_SEGMENT_LENGTH
+            {
                 tileOffset = 8;
-            } else if (*(*sContestResults).data).barLength[monId] as i32 >= i * BAR_SEGMENT_LENGTH {
-                tileOffset = ((*(*sContestResults).data).barLength[monId] % 8) as u8;
+            } else if (*(*crate::gl!(sContestResults)).data).barLength[monId] as i32
+                >= i * BAR_SEGMENT_LENGTH
+            {
+                tileOffset = ((*(*crate::gl!(sContestResults)).data).barLength[monId] % 8) as u8;
             } else {
                 tileOffset = 0;
             }
@@ -2160,41 +2249,42 @@ pub(crate) unsafe fn Task_UpdateContestResultBar(taskId: u8) {
         }
     }
     if targetReached != 0 {
-        (*(*sContestResults).data).numBarsUpdating -= 1;
+        (*(*crate::gl!(sContestResults)).data).numBarsUpdating -= 1;
         DestroyTask(taskId);
     }
 }
 unsafe fn AllocContestResults() {
-    sContestResults = AllocZeroed(32) as *mut ContestResults;
-    (*sContestResults).data = AllocZeroed(24) as *mut ContestResultsInternal;
-    (*sContestResults).monResults = AllocZeroed(80) as *mut CArray<ContestMonResults, 4>;
-    (*sContestResults).unusedBg = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
-    (*sContestResults).tilemapBuffers[0] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
-    (*sContestResults).tilemapBuffers[1] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
-    (*sContestResults).tilemapBuffers[2] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
-    (*sContestResults).tilemapBuffers[3] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
-    (*sContestResults).unused = AllocZeroed(0x1000) as *mut u8;
+    crate::gl!(sContestResults = AllocZeroed(32) as *mut ContestResults);
+    (*crate::gl!(sContestResults)).data = AllocZeroed(24) as *mut ContestResultsInternal;
+    (*crate::gl!(sContestResults)).monResults =
+        AllocZeroed(80) as *mut CArray<ContestMonResults, 4>;
+    (*crate::gl!(sContestResults)).unusedBg = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+    (*crate::gl!(sContestResults)).tilemapBuffers[0] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+    (*crate::gl!(sContestResults)).tilemapBuffers[1] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+    (*crate::gl!(sContestResults)).tilemapBuffers[2] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+    (*crate::gl!(sContestResults)).tilemapBuffers[3] = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
+    (*crate::gl!(sContestResults)).unused = AllocZeroed(0x1000) as *mut u8;
     AllocateMonSpritesGfx();
 }
 unsafe fn FreeContestResults() {
-    Free((*sContestResults).data as *mut c_void);
-    (*sContestResults).data = null_mut();
-    Free((*sContestResults).monResults as *mut c_void);
-    (*sContestResults).monResults = null_mut();
-    Free((*sContestResults).unusedBg as *mut c_void);
-    (*sContestResults).unusedBg = null_mut();
-    Free((*sContestResults).tilemapBuffers[0] as *mut c_void);
-    (*sContestResults).tilemapBuffers[0] = null_mut();
-    Free((*sContestResults).tilemapBuffers[1] as *mut c_void);
-    (*sContestResults).tilemapBuffers[1] = null_mut();
-    Free((*sContestResults).tilemapBuffers[2] as *mut c_void);
-    (*sContestResults).tilemapBuffers[2] = null_mut();
-    Free((*sContestResults).tilemapBuffers[3] as *mut c_void);
-    (*sContestResults).tilemapBuffers[3] = null_mut();
-    Free((*sContestResults).unused as *mut c_void);
-    (*sContestResults).unused = null_mut();
-    Free(sContestResults as *mut c_void);
-    sContestResults = null_mut();
+    Free((*crate::gl!(sContestResults)).data as *mut c_void);
+    (*crate::gl!(sContestResults)).data = null_mut();
+    Free((*crate::gl!(sContestResults)).monResults as *mut c_void);
+    (*crate::gl!(sContestResults)).monResults = null_mut();
+    Free((*crate::gl!(sContestResults)).unusedBg as *mut c_void);
+    (*crate::gl!(sContestResults)).unusedBg = null_mut();
+    Free((*crate::gl!(sContestResults)).tilemapBuffers[0] as *mut c_void);
+    (*crate::gl!(sContestResults)).tilemapBuffers[0] = null_mut();
+    Free((*crate::gl!(sContestResults)).tilemapBuffers[1] as *mut c_void);
+    (*crate::gl!(sContestResults)).tilemapBuffers[1] = null_mut();
+    Free((*crate::gl!(sContestResults)).tilemapBuffers[2] as *mut c_void);
+    (*crate::gl!(sContestResults)).tilemapBuffers[2] = null_mut();
+    Free((*crate::gl!(sContestResults)).tilemapBuffers[3] as *mut c_void);
+    (*crate::gl!(sContestResults)).tilemapBuffers[3] = null_mut();
+    Free((*crate::gl!(sContestResults)).unused as *mut c_void);
+    (*crate::gl!(sContestResults)).unused = null_mut();
+    Free(crate::gl!(sContestResults) as *mut c_void);
+    crate::gl!(sContestResults = null_mut());
     FreeMonSpritesGfx();
 }
 unsafe fn AddContestTextPrinter(windowId: i32, str: *mut u8, x: i32) {
@@ -2217,42 +2307,48 @@ unsafe fn AddContestTextPrinter(windowId: i32, str: *mut u8, x: i32) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryEnterContestMon() {
-    let eligibility: u8 = GetContestEntryEligibility(&raw mut gPlayerParty[gContestMonPartyIndex]);
+    let eligibility: u8 = GetContestEntryEligibility({
+        let gl_i16 = gContestMonPartyIndex.get();
+        crate::gl!(&raw gPlayerParty[gl_i16])
+    });
     if eligibility != 0 {
         SetContestants(
-            gSpecialVar_ContestCategory as u8,
-            gSpecialVar_ContestRank as u8,
+            gSpecialVar_ContestCategory.get() as u8,
+            gSpecialVar_ContestRank.get() as u8,
         );
-        CalculateRound1Points(gSpecialVar_ContestCategory as u8);
+        CalculateRound1Points(gSpecialVar_ContestCategory.get() as u8);
     }
     gSpecialVar_Result = eligibility as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn HasMonWonThisContestBefore() -> u16 {
     let mut hasRankRibbon: u16 = FALSE as u16;
-    let mon: *mut Pokemon = &raw mut gPlayerParty[gContestMonPartyIndex];
-    match gSpecialVar_ContestCategory {
+    let mon: *mut Pokemon = {
+        let gl_i17 = gContestMonPartyIndex.get();
+        crate::gl!(&raw gPlayerParty[gl_i17])
+    };
+    match gSpecialVar_ContestCategory.get() {
         0 => {
-            if GetMonData2(mon, MON_DATA_COOL_RIBBON) > gSpecialVar_ContestRank as u32 {
+            if GetMonData2(mon, MON_DATA_COOL_RIBBON) > gSpecialVar_ContestRank.get() as u32 {
                 hasRankRibbon = TRUE as u16;
             }
         }
         1 => {
-            if GetMonData2(mon, MON_DATA_BEAUTY_RIBBON) > gSpecialVar_ContestRank as u32 {
+            if GetMonData2(mon, MON_DATA_BEAUTY_RIBBON) > gSpecialVar_ContestRank.get() as u32 {
                 hasRankRibbon = TRUE as u16;
             }
         }
         2 => {
-            if GetMonData2(mon, MON_DATA_CUTE_RIBBON) > gSpecialVar_ContestRank as u32 {
+            if GetMonData2(mon, MON_DATA_CUTE_RIBBON) > gSpecialVar_ContestRank.get() as u32 {
                 hasRankRibbon = TRUE as u16;
             }
         }
         3 => {
-            if GetMonData2(mon, MON_DATA_SMART_RIBBON) > gSpecialVar_ContestRank as u32 {
+            if GetMonData2(mon, MON_DATA_SMART_RIBBON) > gSpecialVar_ContestRank.get() as u32 {
                 hasRankRibbon = TRUE as u16;
             }
         }
-        4 if GetMonData2(mon, MON_DATA_TOUGH_RIBBON) > gSpecialVar_ContestRank as u32 => {
+        4 if GetMonData2(mon, MON_DATA_TOUGH_RIBBON) > gSpecialVar_ContestRank.get() as u32 => {
             hasRankRibbon = TRUE as u16;
         }
         _ => {}
@@ -2262,26 +2358,44 @@ pub unsafe fn HasMonWonThisContestBefore() -> u16 {
 #[unsafe(no_mangle)]
 pub unsafe fn GiveMonContestRibbon() {
     let mut ribbonData: u8 = 0;
-    if gContestFinalStandings[gContestPlayerMonIndex] != 0 {
+    if {
+        let gl_i3 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestFinalStandings[gl_i3])
+    } != 0
+    {
         return;
     }
-    match gSpecialVar_ContestCategory {
+    match gSpecialVar_ContestCategory.get() {
         0 => {
             ribbonData = GetMonData2(
-                &raw mut gPlayerParty[gContestMonPartyIndex],
+                {
+                    let gl_i18 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i18])
+                },
                 MON_DATA_COOL_RIBBON,
             ) as u8;
-            if ribbonData as u16 <= gSpecialVar_ContestRank && ribbonData <= CONTEST_RANK_MASTER {
+            if ribbonData as u16 <= gSpecialVar_ContestRank.get()
+                && ribbonData <= CONTEST_RANK_MASTER
+            {
                 ribbonData += 1;
                 SetMonData(
-                    &raw mut gPlayerParty[gContestMonPartyIndex],
+                    {
+                        let gl_i19 = gContestMonPartyIndex.get();
+                        crate::gl!(&raw gPlayerParty[gl_i19])
+                    },
                     MON_DATA_COOL_RIBBON,
                     &raw mut ribbonData as *mut c_void,
                 );
-                if GetRibbonCount(&raw mut gPlayerParty[gContestMonPartyIndex]) > NUM_CUTIES_RIBBONS
+                if GetRibbonCount({
+                    let gl_i20 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i20])
+                }) > NUM_CUTIES_RIBBONS
                 {
                     TryPutSpotTheCutiesOnAir(
-                        &raw mut gPlayerParty[gContestMonPartyIndex],
+                        {
+                            let gl_i21 = gContestMonPartyIndex.get();
+                            crate::gl!(&raw gPlayerParty[gl_i21])
+                        },
                         MON_DATA_COOL_RIBBON as u8,
                     );
                 }
@@ -2289,20 +2403,34 @@ pub unsafe fn GiveMonContestRibbon() {
         }
         1 => {
             ribbonData = GetMonData2(
-                &raw mut gPlayerParty[gContestMonPartyIndex],
+                {
+                    let gl_i22 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i22])
+                },
                 MON_DATA_BEAUTY_RIBBON,
             ) as u8;
-            if ribbonData as u16 <= gSpecialVar_ContestRank && ribbonData <= CONTEST_RANK_MASTER {
+            if ribbonData as u16 <= gSpecialVar_ContestRank.get()
+                && ribbonData <= CONTEST_RANK_MASTER
+            {
                 ribbonData += 1;
                 SetMonData(
-                    &raw mut gPlayerParty[gContestMonPartyIndex],
+                    {
+                        let gl_i23 = gContestMonPartyIndex.get();
+                        crate::gl!(&raw gPlayerParty[gl_i23])
+                    },
                     MON_DATA_BEAUTY_RIBBON,
                     &raw mut ribbonData as *mut c_void,
                 );
-                if GetRibbonCount(&raw mut gPlayerParty[gContestMonPartyIndex]) > NUM_CUTIES_RIBBONS
+                if GetRibbonCount({
+                    let gl_i24 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i24])
+                }) > NUM_CUTIES_RIBBONS
                 {
                     TryPutSpotTheCutiesOnAir(
-                        &raw mut gPlayerParty[gContestMonPartyIndex],
+                        {
+                            let gl_i25 = gContestMonPartyIndex.get();
+                            crate::gl!(&raw gPlayerParty[gl_i25])
+                        },
                         MON_DATA_BEAUTY_RIBBON as u8,
                     );
                 }
@@ -2310,20 +2438,34 @@ pub unsafe fn GiveMonContestRibbon() {
         }
         2 => {
             ribbonData = GetMonData2(
-                &raw mut gPlayerParty[gContestMonPartyIndex],
+                {
+                    let gl_i26 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i26])
+                },
                 MON_DATA_CUTE_RIBBON,
             ) as u8;
-            if ribbonData as u16 <= gSpecialVar_ContestRank && ribbonData <= CONTEST_RANK_MASTER {
+            if ribbonData as u16 <= gSpecialVar_ContestRank.get()
+                && ribbonData <= CONTEST_RANK_MASTER
+            {
                 ribbonData += 1;
                 SetMonData(
-                    &raw mut gPlayerParty[gContestMonPartyIndex],
+                    {
+                        let gl_i27 = gContestMonPartyIndex.get();
+                        crate::gl!(&raw gPlayerParty[gl_i27])
+                    },
                     MON_DATA_CUTE_RIBBON,
                     &raw mut ribbonData as *mut c_void,
                 );
-                if GetRibbonCount(&raw mut gPlayerParty[gContestMonPartyIndex]) > NUM_CUTIES_RIBBONS
+                if GetRibbonCount({
+                    let gl_i28 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i28])
+                }) > NUM_CUTIES_RIBBONS
                 {
                     TryPutSpotTheCutiesOnAir(
-                        &raw mut gPlayerParty[gContestMonPartyIndex],
+                        {
+                            let gl_i29 = gContestMonPartyIndex.get();
+                            crate::gl!(&raw gPlayerParty[gl_i29])
+                        },
                         MON_DATA_CUTE_RIBBON as u8,
                     );
                 }
@@ -2331,20 +2473,34 @@ pub unsafe fn GiveMonContestRibbon() {
         }
         3 => {
             ribbonData = GetMonData2(
-                &raw mut gPlayerParty[gContestMonPartyIndex],
+                {
+                    let gl_i30 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i30])
+                },
                 MON_DATA_SMART_RIBBON,
             ) as u8;
-            if ribbonData as u16 <= gSpecialVar_ContestRank && ribbonData <= CONTEST_RANK_MASTER {
+            if ribbonData as u16 <= gSpecialVar_ContestRank.get()
+                && ribbonData <= CONTEST_RANK_MASTER
+            {
                 ribbonData += 1;
                 SetMonData(
-                    &raw mut gPlayerParty[gContestMonPartyIndex],
+                    {
+                        let gl_i31 = gContestMonPartyIndex.get();
+                        crate::gl!(&raw gPlayerParty[gl_i31])
+                    },
                     MON_DATA_SMART_RIBBON,
                     &raw mut ribbonData as *mut c_void,
                 );
-                if GetRibbonCount(&raw mut gPlayerParty[gContestMonPartyIndex]) > NUM_CUTIES_RIBBONS
+                if GetRibbonCount({
+                    let gl_i32 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i32])
+                }) > NUM_CUTIES_RIBBONS
                 {
                     TryPutSpotTheCutiesOnAir(
-                        &raw mut gPlayerParty[gContestMonPartyIndex],
+                        {
+                            let gl_i33 = gContestMonPartyIndex.get();
+                            crate::gl!(&raw gPlayerParty[gl_i33])
+                        },
                         MON_DATA_SMART_RIBBON as u8,
                     );
                 }
@@ -2352,20 +2508,34 @@ pub unsafe fn GiveMonContestRibbon() {
         }
         4 => {
             ribbonData = GetMonData2(
-                &raw mut gPlayerParty[gContestMonPartyIndex],
+                {
+                    let gl_i34 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i34])
+                },
                 MON_DATA_TOUGH_RIBBON,
             ) as u8;
-            if ribbonData as u16 <= gSpecialVar_ContestRank && ribbonData <= CONTEST_RANK_MASTER {
+            if ribbonData as u16 <= gSpecialVar_ContestRank.get()
+                && ribbonData <= CONTEST_RANK_MASTER
+            {
                 ribbonData += 1;
                 SetMonData(
-                    &raw mut gPlayerParty[gContestMonPartyIndex],
+                    {
+                        let gl_i35 = gContestMonPartyIndex.get();
+                        crate::gl!(&raw gPlayerParty[gl_i35])
+                    },
                     MON_DATA_TOUGH_RIBBON,
                     &raw mut ribbonData as *mut c_void,
                 );
-                if GetRibbonCount(&raw mut gPlayerParty[gContestMonPartyIndex]) > NUM_CUTIES_RIBBONS
+                if GetRibbonCount({
+                    let gl_i36 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i36])
+                }) > NUM_CUTIES_RIBBONS
                 {
                     TryPutSpotTheCutiesOnAir(
-                        &raw mut gPlayerParty[gContestMonPartyIndex],
+                        {
+                            let gl_i37 = gContestMonPartyIndex.get();
+                            crate::gl!(&raw gPlayerParty[gl_i37])
+                        },
                         MON_DATA_TOUGH_RIBBON as u8,
                     );
                 }
@@ -2377,7 +2547,7 @@ pub unsafe fn GiveMonContestRibbon() {
 pub unsafe fn BufferContestantTrainerName() {
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gContestMons[*(&raw const crate::ffi::gSpecialVar_0x8006)
+        (*gContestMons.as_ptr())[*(&raw const crate::ffi::gSpecialVar_0x8006)
             .cast::<u16>()
             .cast_mut()]
         .trainerName
@@ -2387,8 +2557,8 @@ pub unsafe fn BufferContestantTrainerName() {
 }
 pub unsafe fn BufferContestantMonNickname() {
     StringCopy(
-        gStringVar3.as_mut_ptr(),
-        gContestMons[*(&raw const crate::ffi::gSpecialVar_0x8006)
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        (*gContestMons.as_ptr())[*(&raw const crate::ffi::gSpecialVar_0x8006)
             .cast::<u16>()
             .cast_mut()]
         .nickname
@@ -2399,10 +2569,12 @@ pub unsafe fn BufferContestantMonNickname() {
 pub unsafe fn GetContestMonConditionRanking() {
     let mut rank: u8 = 0;
     for i in 0..(CONTESTANT_COUNT as u8) {
-        if gContestMonRound1Points[*(&raw const crate::ffi::gSpecialVar_0x8006)
-            .cast::<u16>()
-            .cast_mut()]
-            < gContestMonRound1Points[i]
+        if {
+            let gl_i4 = *(&raw const crate::ffi::gSpecialVar_0x8006)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(gContestMonRound1Points[gl_i4])
+        } < crate::gl!(gContestMonRound1Points[i])
         {
             rank += 1;
         }
@@ -2411,15 +2583,18 @@ pub unsafe fn GetContestMonConditionRanking() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetContestMonCondition() {
-    gSpecialVar_0x8004 = gContestMonRound1Points[*(&raw const crate::ffi::gSpecialVar_0x8006)
-        .cast::<u16>()
-        .cast_mut()] as u16;
+    gSpecialVar_0x8004 = {
+        let gl_i5 = *(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut();
+        crate::gl!(gContestMonRound1Points[gl_i5])
+    } as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetContestWinnerId() {
     let mut i: u8 = 0;
     while i < 4
-        && (*(&raw const crate::contest::gContestFinalStandings)
+        && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;).cast_const())
             .cast::<CArray<u8, 4>>()
             .cast_mut())[i]
             != 0
@@ -2432,7 +2607,7 @@ pub unsafe fn GetContestWinnerId() {
 pub unsafe fn BufferContestWinnerTrainerName() {
     let mut i: u8 = 0;
     while i < 4
-        && (*(&raw const crate::contest::gContestFinalStandings)
+        && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;).cast_const())
             .cast::<CArray<u8, 4>>()
             .cast_mut())[i]
             != 0
@@ -2440,16 +2615,16 @@ pub unsafe fn BufferContestWinnerTrainerName() {
         i += 1;
     }
     StringCopy(
-        gStringVar3.as_mut_ptr(),
-        gContestMons[i].trainerName.as_mut_ptr(),
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        (*gContestMons.as_ptr())[i].trainerName.as_mut_ptr(),
     );
-    ConvertInternationalContestantName(gStringVar3.as_mut_ptr());
+    ConvertInternationalContestantName((*gStringVar3.as_ptr()).as_mut_ptr());
 }
 #[unsafe(no_mangle)]
 pub unsafe fn BufferContestWinnerMonName() {
     let mut i: u8 = 0;
     while i < 4
-        && (*(&raw const crate::contest::gContestFinalStandings)
+        && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;).cast_const())
             .cast::<CArray<u8, 4>>()
             .cast_mut())[i]
             != 0
@@ -2458,14 +2633,14 @@ pub unsafe fn BufferContestWinnerMonName() {
     }
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gContestMons[i].nickname.as_mut_ptr(),
+        (*gContestMons.as_ptr())[i].nickname.as_mut_ptr(),
     );
 }
 pub unsafe fn CB2_SetStartContestCallback() {
     SetMainCallback2(Some(CB2_StartContest));
 }
 pub(crate) unsafe fn Task_StartContest(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(taskId);
         SetMainCallback2(Some(CB2_SetStartContestCallback));
     }
@@ -2476,13 +2651,15 @@ pub unsafe fn StartContest() {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
 }
 pub unsafe fn BufferContestantMonSpecies() {
-    gSpecialVar_0x8004 = gContestMons[*(&raw const crate::ffi::gSpecialVar_0x8006)
-        .cast::<u16>()
-        .cast_mut()]
-    .species;
+    gSpecialVar_0x8004 = {
+        let gl_i6 = *(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut();
+        crate::gl!(gContestMons[gl_i6].species)
+    };
 }
 pub(crate) unsafe fn Task_StartShowContestResults(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(taskId);
         SetMainCallback2(Some(CB2_StartShowContestResults));
     }
@@ -2494,7 +2671,7 @@ pub unsafe fn ShowContestResults() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetContestPlayerId() {
-    gSpecialVar_0x8004 = gContestPlayerMonIndex as u16;
+    gSpecialVar_0x8004 = gContestPlayerMonIndex.get() as u16;
 }
 pub unsafe fn ContestLinkTransfer(category: u8) {
     LockPlayerFieldControls();
@@ -2507,33 +2684,33 @@ pub unsafe fn ContestLinkTransfer(category: u8) {
     task_set(newTaskId, 9, category as i16);
 }
 pub(crate) unsafe fn Task_StartCommunication(taskId: u8) {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER != 0 {
-        CreateContestMonFromParty(gContestMonPartyIndex);
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER != 0 {
+        CreateContestMonFromParty(gContestMonPartyIndex.get());
         SetTaskFuncWithFollowupFunc(
             taskId,
             Some(Task_LinkContest_CommunicateMonsRS),
             Some(Task_StartCommunicateRngRS),
         );
     } else {
-        CreateContestMonFromParty(gContestMonPartyIndex);
+        CreateContestMonFromParty(gContestMonPartyIndex.get());
         task_set_func(taskId, Some(Task_LinkContest_StartCommunicationEm));
     }
 }
-pub(crate) unsafe fn Task_StartCommunicateRngRS(taskId: u8) {
+pub(crate) fn Task_StartCommunicateRngRS(taskId: u8) {
     SetTaskFuncWithFollowupFunc(
         taskId,
         Some(Task_LinkContest_CommunicateRngRS),
         Some(Task_StartCommunicateLeaderIdsRS),
     );
 }
-pub(crate) unsafe fn Task_StartCommunicateLeaderIdsRS(taskId: u8) {
+pub(crate) fn Task_StartCommunicateLeaderIdsRS(taskId: u8) {
     SetTaskFuncWithFollowupFunc(
         taskId,
         Some(Task_LinkContest_CommunicateLeaderIdsRS),
         Some(Task_StartCommunicateCategoryRS),
     );
 }
-pub(crate) unsafe fn Task_StartCommunicateCategoryRS(taskId: u8) {
+pub(crate) fn Task_StartCommunicateCategoryRS(taskId: u8) {
     SetTaskFuncWithFollowupFunc(
         taskId,
         Some(Task_LinkContest_CommunicateCategoryRS),
@@ -2545,23 +2722,23 @@ pub(crate) unsafe fn Task_LinkContest_SetUpContestRS(taskId: u8) {
     let mut leaderIds: CArray<u8, 4> = zeroed();
     memset(categories.as_mut_ptr(), 0, 4);
     memset(leaderIds.as_mut_ptr(), 0, 4);
-    for i in 0..gNumLinkContestPlayers {
+    for i in 0..gNumLinkContestPlayers.get() {
         categories[i] = task_get(taskId, i as i32 + 1) as u8;
     }
     let mut i: u8 = 0;
-    while i < gNumLinkContestPlayers && categories[0] == categories[i] {
+    while i < gNumLinkContestPlayers.get() && categories[0] == categories[i] {
         i += 1;
     }
-    if i == gNumLinkContestPlayers {
+    if i == gNumLinkContestPlayers.get() {
         gSpecialVar_0x8004 = FALSE as u16;
     } else {
         gSpecialVar_0x8004 = TRUE as u16;
     }
-    for i in 0..gNumLinkContestPlayers {
+    for i in 0..gNumLinkContestPlayers.get() {
         leaderIds[i] = task_get(taskId, i as i32 + 5) as u8;
     }
-    gContestLinkLeaderIndex = LinkContest_GetLeaderIndex(leaderIds.as_mut_ptr());
-    CalculateRound1Points(gSpecialVar_ContestCategory as u8);
+    gContestLinkLeaderIndex.set(LinkContest_GetLeaderIndex(leaderIds.as_mut_ptr()));
+    CalculateRound1Points(gSpecialVar_ContestCategory.get() as u8);
     SetTaskFuncWithFollowupFunc(
         taskId,
         Some(Task_LinkContest_CommunicateRound1Points),
@@ -2578,7 +2755,7 @@ pub(crate) unsafe fn Task_LinkContest_CalculateTurnOrderRS(taskId: u8) {
 }
 pub unsafe fn LinkContest_GetLeaderIndex(ids: *mut u8) -> u8 {
     let mut leaderIdx: u8 = 0;
-    for i in 1..(gNumLinkContestPlayers as i32) {
+    for i in 1..(gNumLinkContestPlayers.get() as i32) {
         if *ids.at(leaderIdx) < *ids.at(i) {
             leaderIdx = i as u8;
         }
@@ -2592,13 +2769,13 @@ pub unsafe fn Task_LinkContest_FinalizeConnection(taskId: u8) {
         }
     } else {
         for i in 0..CONTESTANT_COUNT {
-            StringGet_Nickname(gContestMons[i].nickname.as_mut_ptr());
+            StringGet_Nickname((*gContestMons.as_ptr())[i].nickname.as_mut_ptr());
         }
         DestroyTask(taskId);
         SetDynamicWarp(
             0,
-            (*gSaveBlock1Ptr).location.mapGroup,
-            (*gSaveBlock1Ptr).location.mapNum,
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
             WARP_ID_NONE,
         );
         UnlockPlayerFieldControls();
@@ -2610,7 +2787,7 @@ pub(crate) unsafe fn Task_LinkContest_Disconnect(taskId: u8) {
     task_set_func(taskId, Some(Task_LinkContest_WaitDisconnect));
 }
 pub(crate) unsafe fn Task_LinkContest_WaitDisconnect(taskId: u8) {
-    if gReceivedRemoteLinkPlayers == 0 {
+    if gReceivedRemoteLinkPlayers.get() == 0 {
         DestroyTask(taskId);
         UnlockPlayerFieldControls();
         ScriptContext_Enable();
@@ -2618,9 +2795,9 @@ pub(crate) unsafe fn Task_LinkContest_WaitDisconnect(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetContestTrainerGfxIds() {
-    (*gSaveBlock1Ptr).vars[16] = gContestMons[0].trainerGfxId as u16;
-    (*gSaveBlock1Ptr).vars[17] = gContestMons[1].trainerGfxId as u16;
-    (*gSaveBlock1Ptr).vars[18] = gContestMons[2].trainerGfxId as u16;
+    (*crate::gl!(gSaveBlock1Ptr)).vars[16] = crate::gl!(gContestMons[0].trainerGfxId) as u16;
+    (*crate::gl!(gSaveBlock1Ptr)).vars[17] = crate::gl!(gContestMons[1].trainerGfxId) as u16;
+    (*crate::gl!(gSaveBlock1Ptr)).vars[18] = crate::gl!(gContestMons[2].trainerGfxId) as u16;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetNpcContestantLocalId() {
@@ -2651,7 +2828,7 @@ pub unsafe fn BufferContestTrainerAndMonNames() {
 #[unsafe(no_mangle)]
 pub unsafe fn DoesContestCategoryHaveMuseumPainting() {
     let mut contestWinner: i32 = 0;
-    match gSpecialVar_ContestCategory {
+    match gSpecialVar_ContestCategory.get() {
         0 => {
             contestWinner = 8;
         }
@@ -2668,7 +2845,7 @@ pub unsafe fn DoesContestCategoryHaveMuseumPainting() {
             contestWinner = 12;
         }
     }
-    if (*gSaveBlock1Ptr).contestWinners[contestWinner].species == SPECIES_NONE {
+    if (*crate::gl!(gSaveBlock1Ptr)).contestWinners[contestWinner].species == SPECIES_NONE {
         gSpecialVar_0x8004 = FALSE as u16;
     } else {
         gSpecialVar_0x8004 = TRUE as u16;
@@ -2680,11 +2857,14 @@ pub unsafe fn SaveMuseumContestPainting() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ShouldReadyContestArtist() {
-    if gContestFinalStandings[gContestPlayerMonIndex] == 0
-        && gSpecialVar_ContestRank == CONTEST_RANK_MASTER as u16
-        && (*(&raw const crate::contest::gContestMonTotalPoints)
+    if {
+        let gl_i7 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestFinalStandings[gl_i7])
+    } == 0
+        && gSpecialVar_ContestRank.get() == CONTEST_RANK_MASTER as u16
+        && (*(crate::gl!(&raw @at crate::contest::gContestMonTotalPoints;).cast_const())
             .cast::<CArray<i16, 4>>()
-            .cast_mut())[gContestPlayerMonIndex]
+            .cast_mut())[gContestPlayerMonIndex.get()]
             >= 800
     {
         gSpecialVar_0x8004 = TRUE as u16;
@@ -2696,7 +2876,10 @@ pub unsafe fn ShouldReadyContestArtist() {
 pub unsafe fn CountPlayerMuseumPaintings() -> u8 {
     let mut count: u8 = 0;
     for i in 0..5i32 {
-        if (*gSaveBlock1Ptr).contestWinners[MUSEUM_CONTEST_WINNERS_START as i32 + i].species != 0 {
+        if (*crate::gl!(gSaveBlock1Ptr)).contestWinners[MUSEUM_CONTEST_WINNERS_START as i32 + i]
+            .species
+            != 0
+        {
             count += 1;
         }
     }
@@ -2707,7 +2890,7 @@ pub unsafe fn GetContestantNamesAtRank() {
     let mut conditions: CArray<i16, 4> = zeroed();
     let mut j: i32 = 0;
     for i in 0..CONTESTANT_COUNT {
-        conditions[i] = gContestMonRound1Points[i];
+        conditions[i] = crate::gl!(gContestMonRound1Points[i]);
     }
     let mut i: i32 = 0;
     while i < 3 {
@@ -2746,7 +2929,7 @@ pub unsafe fn GetContestantNamesAtRank() {
     let mut contestantOffset: u8 = tieRank;
     i = 0;
     while i < CONTESTANT_COUNT {
-        if condition == gContestMonRound1Points[i] {
+        if condition == crate::gl!(gContestMonRound1Points[i]) {
             if contestantOffset == 1 {
                 break;
             }
@@ -2756,13 +2939,13 @@ pub unsafe fn GetContestantNamesAtRank() {
     }
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gContestMons[i].nickname.as_mut_ptr(),
+        (*gContestMons.as_ptr())[i].nickname.as_mut_ptr(),
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
-        gContestMons[i].trainerName.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+        (*gContestMons.as_ptr())[i].trainerName.as_mut_ptr(),
     );
-    ConvertInternationalContestantName(gStringVar2.as_mut_ptr());
+    ConvertInternationalContestantName((*gStringVar2.as_ptr()).as_mut_ptr());
     if numAtCondition == 1 {
         gSpecialVar_0x8006 = rank as u16;
     } else if tieRank as i32 == numAtCondition as i32 {
@@ -2777,25 +2960,37 @@ pub(crate) unsafe fn ExitContestPainting() {
 #[unsafe(no_mangle)]
 pub unsafe fn ShowContestPainting() {
     SetMainCallback2(Some(CB2_ContestPainting));
-    gMain.savedCallback = Some(ExitContestPainting);
+    crate::gl!(gMain.savedCallback = Some(ExitContestPainting));
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetLinkContestPlayerGfx() {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-        for i in 0..(gNumLinkContestPlayers as i32) {
-            let version: i32 = gLinkPlayers[i].version as u8 as i32;
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        for i in 0..(gNumLinkContestPlayers.get() as i32) {
+            let version: i32 = crate::gl!(gLinkPlayers[i].version) as u8 as i32;
             if version == VERSION_RUBY || version == VERSION_SAPPHIRE {
-                if gLinkPlayers[i].gender == MALE {
-                    gContestMons[i].trainerGfxId = OBJ_EVENT_GFX_LINK_RS_BRENDAN;
+                if crate::gl!(gLinkPlayers[i].gender) == MALE {
+                    crate::gl!(gContestMons[i].trainerGfxId = OBJ_EVENT_GFX_LINK_RS_BRENDAN);
                 } else {
-                    gContestMons[i].trainerGfxId = OBJ_EVENT_GFX_LINK_RS_MAY;
+                    crate::gl!(gContestMons[i].trainerGfxId = OBJ_EVENT_GFX_LINK_RS_MAY);
                 }
             }
         }
-        VarSet(VAR_OBJ_GFX_ID_0, gContestMons[0].trainerGfxId as u16);
-        VarSet(VAR_OBJ_GFX_ID_1, gContestMons[1].trainerGfxId as u16);
-        VarSet(VAR_OBJ_GFX_ID_2, gContestMons[2].trainerGfxId as u16);
-        VarSet(VAR_OBJ_GFX_ID_3, gContestMons[3].trainerGfxId as u16);
+        VarSet(
+            VAR_OBJ_GFX_ID_0,
+            crate::gl!(gContestMons[0].trainerGfxId) as u16,
+        );
+        VarSet(
+            VAR_OBJ_GFX_ID_1,
+            crate::gl!(gContestMons[1].trainerGfxId) as u16,
+        );
+        VarSet(
+            VAR_OBJ_GFX_ID_2,
+            crate::gl!(gContestMons[2].trainerGfxId) as u16,
+        );
+        VarSet(
+            VAR_OBJ_GFX_ID_3,
+            crate::gl!(gContestMons[3].trainerGfxId) as u16,
+        );
     }
 }
 #[unsafe(no_mangle)]
@@ -2804,20 +2999,23 @@ pub unsafe fn LoadLinkContestPlayerPalettes() {
     let mut objectEventId: u8 = 0;
     let mut version: i32 = 0;
     let mut sprite: *mut Sprite = null_mut();
-    gReservedSpritePaletteCount = 12;
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+    gReservedSpritePaletteCount.set(12);
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
         i = 0;
-        while i < gNumLinkContestPlayers as i32 {
+        while i < gNumLinkContestPlayers.get() as i32 {
             objectEventId = GetObjectEventIdByLocalIdAndMap(
                 sContestantLocalIds_0[i],
-                (*gSaveBlock1Ptr).location.mapNum as u8,
-                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
             );
-            sprite = &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+            sprite = {
+                let gl_i38 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+                crate::gl!(&raw gSprites[gl_i38])
+            };
             (*sprite).oam.set_paletteNum(6 + i as u16);
-            version = gLinkPlayers[i].version as u8 as i32;
+            version = crate::gl!(gLinkPlayers[i].version) as u8 as i32;
             if version == VERSION_RUBY || version == VERSION_SAPPHIRE {
-                if gLinkPlayers[i].gender == MALE {
+                if crate::gl!(gLinkPlayers[i].gender) == MALE {
                     LoadPalette(
                         (*(&raw const crate::data::event_object_movement::gObjectEventPal_RubySapphireBrendan).cast::<CArray<u16, 0>>()).as_ptr().cast_mut() as *mut c_void,
                         0x100 + (6 + i as u16) * 16,
@@ -2831,7 +3029,7 @@ pub unsafe fn LoadLinkContestPlayerPalettes() {
                     );
                 }
             } else {
-                if gLinkPlayers[i].gender == MALE {
+                if crate::gl!(gLinkPlayers[i].gender) == MALE {
                     LoadPalette(
                         (*(&raw const crate::data::event_object_movement::gObjectEventPal_Brendan)
                             .cast::<CArray<u16, 0>>())
@@ -2858,29 +3056,42 @@ pub unsafe fn LoadLinkContestPlayerPalettes() {
 #[unsafe(no_mangle)]
 pub unsafe fn GiveMonArtistRibbon() -> u8 {
     let mut hasArtistRibbon: u8 = GetMonData2(
-        &raw mut gPlayerParty[gContestMonPartyIndex],
+        {
+            let gl_i39 = gContestMonPartyIndex.get();
+            crate::gl!(&raw gPlayerParty[gl_i39])
+        },
         MON_DATA_ARTIST_RIBBON,
     ) as u8;
     if hasArtistRibbon == 0
-        && (*(&raw const crate::contest::gContestFinalStandings)
+        && (*(crate::gl!(&raw @at crate::contest::gContestFinalStandings;).cast_const())
             .cast::<CArray<u8, 4>>()
-            .cast_mut())[gContestPlayerMonIndex]
+            .cast_mut())[gContestPlayerMonIndex.get()]
             == 0
-        && gSpecialVar_ContestRank == CONTEST_RANK_MASTER as u16
-        && (*(&raw const crate::contest::gContestMonTotalPoints)
+        && gSpecialVar_ContestRank.get() == CONTEST_RANK_MASTER as u16
+        && (*(crate::gl!(&raw @at crate::contest::gContestMonTotalPoints;).cast_const())
             .cast::<CArray<i16, 4>>()
-            .cast_mut())[gContestPlayerMonIndex]
+            .cast_mut())[gContestPlayerMonIndex.get()]
             >= 800
     {
         hasArtistRibbon = 1;
         SetMonData(
-            &raw mut gPlayerParty[gContestMonPartyIndex],
+            {
+                let gl_i40 = gContestMonPartyIndex.get();
+                crate::gl!(&raw gPlayerParty[gl_i40])
+            },
             MON_DATA_ARTIST_RIBBON,
             &raw mut hasArtistRibbon as *mut c_void,
         );
-        if GetRibbonCount(&raw mut gPlayerParty[gContestMonPartyIndex]) > NUM_CUTIES_RIBBONS {
+        if GetRibbonCount({
+            let gl_i41 = gContestMonPartyIndex.get();
+            crate::gl!(&raw gPlayerParty[gl_i41])
+        }) > NUM_CUTIES_RIBBONS
+        {
             TryPutSpotTheCutiesOnAir(
-                &raw mut gPlayerParty[gContestMonPartyIndex],
+                {
+                    let gl_i42 = gContestMonPartyIndex.get();
+                    crate::gl!(&raw gPlayerParty[gl_i42])
+                },
                 MON_DATA_ARTIST_RIBBON as u8,
             );
         }
@@ -2911,27 +3122,33 @@ pub unsafe fn ShowContestEntryMonPic() {
         AllocateMonSpritesGfx();
         left = 10;
         top = 3;
-        species = gContestMons[*(&raw const crate::ffi::gSpecialVar_0x8006)
-            .cast::<u16>()
-            .cast_mut()]
-        .species;
-        personality = gContestMons[*(&raw const crate::ffi::gSpecialVar_0x8006)
-            .cast::<u16>()
-            .cast_mut()]
-        .personality;
-        otId = gContestMons[*(&raw const crate::ffi::gSpecialVar_0x8006)
-            .cast::<u16>()
-            .cast_mut()]
-        .otId;
+        species = {
+            let gl_i8 = *(&raw const crate::ffi::gSpecialVar_0x8006)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(gContestMons[gl_i8].species)
+        };
+        personality = {
+            let gl_i9 = *(&raw const crate::ffi::gSpecialVar_0x8006)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(gContestMons[gl_i9].personality)
+        };
+        otId = {
+            let gl_i10 = *(&raw const crate::ffi::gSpecialVar_0x8006)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(gContestMons[gl_i10].otId)
+        };
         taskId = CreateTask(Some(Task_ShowContestEntryMonPic), 0x50);
         task_set(taskId, 0, 0);
         task_set(taskId, 1, species as i16);
-        if gSpecialVar_0x8006 == gContestPlayerMonIndex as u16 {
+        if gSpecialVar_0x8006 == gContestPlayerMonIndex.get() as u16 {
             HandleLoadSpecialPokePic_2(
                 (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                     .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                     .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr[1],
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                 species as i32,
                 personality,
             );
@@ -2940,7 +3157,7 @@ pub unsafe fn ShowContestEntryMonPic() {
                 (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                     .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                     .cast_mut(),
-                (*gMonSpritesGfxPtr).sprites.ptr[1],
+                (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                 species as i32,
                 personality,
             );
@@ -2948,25 +3165,25 @@ pub unsafe fn ShowContestEntryMonPic() {
         palette = GetMonSpritePalStructFromOtIdPersonality(species, otId, personality);
         LoadCompressedSpritePalette(palette);
         SetMultiuseSpriteTemplateToPokemon(species, B_POSITION_OPPONENT_LEFT);
-        gMultiuseSpriteTemplate.paletteTag = (*palette).tag;
+        crate::gl!(gMultiuseSpriteTemplate.paletteTag = (*palette).tag);
         spriteId = CreateSprite(
-            &raw mut gMultiuseSpriteTemplate,
+            crate::gl!(&raw gMultiuseSpriteTemplate),
             (left as i16 + 1) * 8 + 32,
             top as i16 * 8 + 40,
             0,
         );
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-            if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER == 0 {
-                DoMonFrontSpriteAnimation(&raw mut gSprites[spriteId], species, 0, 0);
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+            if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER == 0 {
+                DoMonFrontSpriteAnimation(crate::gl!(&raw gSprites[spriteId]), species, 0, 0);
             }
         } else {
-            DoMonFrontSpriteAnimation(&raw mut gSprites[spriteId], species, 0, 0);
+            DoMonFrontSpriteAnimation(crate::gl!(&raw gSprites[spriteId]), species, 0, 0);
         }
         task_set(taskId, 2, spriteId as i16);
         task_set(taskId, 3, left as i16);
         task_set(taskId, 4, top as i16);
-        gSprites[spriteId].callback = Some(SpriteCallbackDummy);
-        gSprites[spriteId].oam.set_priority(0);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCallbackDummy));
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
     }
 }
 #[unsafe(no_mangle)]
@@ -2991,7 +3208,10 @@ pub(crate) unsafe fn Task_ShowContestEntryMonPic(taskId: u8) {
         }
         2 => {}
         3 => {
-            sprite = &raw mut gSprites[(*task).data[2]];
+            sprite = {
+                let gl_i43 = (*task).data[2];
+                crate::gl!(&raw gSprites[gl_i43])
+            };
             FreeSpritePaletteByTag(GetSpritePaletteTagByPaletteNum(
                 (*sprite).oam.paletteNum() as u8
             ));
@@ -3010,9 +3230,9 @@ pub(crate) unsafe fn Task_ShowContestEntryMonPic(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetContestMultiplayerId() {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0
-        && gNumLinkContestPlayers == CONTESTANT_COUNT as u8
-        && gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS == 0
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0
+        && gNumLinkContestPlayers.get() == CONTESTANT_COUNT as u8
+        && gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS == 0
     {
         gSpecialVar_Result = GetMultiplayerId() as u16;
     } else {
@@ -3023,9 +3243,9 @@ pub unsafe fn GetContestMultiplayerId() {
 pub unsafe fn GenerateContestRand() {
     let mut random: u16 = 0;
     let mut result: *mut u16 = null_mut();
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-        gContestRngValue = 0x41c64e6d * gContestRngValue + 24691;
-        random = (gContestRngValue >> 16) as u16;
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        gContestRngValue.set(0x41c64e6d * gContestRngValue.get() + 24691);
+        random = (gContestRngValue.get() >> 16) as u16;
         result = &raw mut gSpecialVar_Result;
     } else {
         result = &raw mut gSpecialVar_Result;
@@ -3033,13 +3253,13 @@ pub unsafe fn GenerateContestRand() {
     }
     *result = rem_i32(random as i32, *result as i32) as u16;
 }
-pub unsafe fn GetContestRand() -> u16 {
-    gContestRngValue = 0x41c64e6d * gContestRngValue + 24691;
-    (gContestRngValue >> 16) as u16
+pub fn GetContestRand() -> u16 {
+    gContestRngValue.set(0x41c64e6d * gContestRngValue.get() + 24691);
+    (gContestRngValue.get() >> 16) as u16
 }
 #[unsafe(no_mangle)]
 pub unsafe fn LinkContestWaitForConnection() -> u8 {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
         CreateTask(Some(Task_LinkContestWaitForConnection), 5);
         return TRUE;
     } else {
@@ -3071,8 +3291,8 @@ pub(crate) unsafe fn Task_LinkContestWaitForConnection(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn LinkContestTryShowWirelessIndicator() {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0
-        && gReceivedRemoteLinkPlayers != 0
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0
+        && gReceivedRemoteLinkPlayers.get() != 0
     {
         LoadWirelessStatusIndicatorSpriteGfx();
         CreateWirelessStatusIndicatorSprite(8, 8);
@@ -3080,15 +3300,15 @@ pub unsafe fn LinkContestTryShowWirelessIndicator() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn LinkContestTryHideWirelessIndicator() {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0
-        && gReceivedRemoteLinkPlayers != 0
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0
+        && gReceivedRemoteLinkPlayers.get() != 0
     {
         DestroyWirelessStatusIndicatorSprite();
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn IsContestWithRSPlayer() -> u8 {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER != 0 {
+pub fn IsContestWithRSPlayer() -> u8 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_HAS_RS_PLAYER != 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -3099,12 +3319,12 @@ pub unsafe fn IsContestWithRSPlayer() -> u8 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ClearLinkContestFlags() {
-    gLinkContestFlags = 0;
+pub fn ClearLinkContestFlags() {
+    gLinkContestFlags.set(0);
 }
 #[unsafe(no_mangle)]
-pub unsafe fn IsWirelessContest() -> u8 {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+pub fn IsWirelessContest() -> u8 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
         return TRUE;
     } else {
         return FALSE;

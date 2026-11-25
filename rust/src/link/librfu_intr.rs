@@ -31,12 +31,12 @@ use core::ptr::null_mut;
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn IntrSIO32() {
-    if (&raw mut (*gSTWIStatus).state).read_volatile() == 10 {
-        if (*gSTWIStatus).callbackID.is_some() {
-            Callback_Dummy_ID((*gSTWIStatus).callbackID);
+    if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 10 {
+        if (*crate::gl!(gSTWIStatus)).callbackID.is_some() {
+            Callback_Dummy_ID((*crate::gl!(gSTWIStatus)).callbackID);
         }
     } else {
-        if (&raw mut (*gSTWIStatus).msMode).read_volatile() == AGB_CLK_MASTER {
+        if (&raw mut (*crate::gl!(gSTWIStatus)).msMode).read_volatile() == AGB_CLK_MASTER {
             sio32intr_clock_master();
         } else {
             sio32intr_clock_slave();
@@ -48,17 +48,20 @@ unsafe fn sio32intr_clock_master() {
     let mut ackLen: u32 = 0;
     STWI_set_timer_in_RAM(80);
     let regSIODATA32: u32 = (67109152_usize as *mut u32).read_volatile();
-    if (&raw mut (*gSTWIStatus).state).read_volatile() == 0 {
+    if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 0 {
         if regSIODATA32 == 0x80000000 {
-            if (*gSTWIStatus).reqNext <= (*gSTWIStatus).reqLength {
+            if (*crate::gl!(gSTWIStatus)).reqNext <= (*crate::gl!(gSTWIStatus)).reqLength {
                 volatile_write(
                     67109152_usize as *mut u32,
-                    *((*(*gSTWIStatus).txPacket).rfuPacket8.data.as_mut_ptr() as *mut u32)
-                        .at((*gSTWIStatus).reqNext),
+                    *((*(*crate::gl!(gSTWIStatus)).txPacket)
+                        .rfuPacket8
+                        .data
+                        .as_mut_ptr() as *mut u32)
+                        .at((*crate::gl!(gSTWIStatus)).reqNext),
                 );
-                (*gSTWIStatus).reqNext += 1;
+                (*crate::gl!(gSTWIStatus)).reqNext += 1;
             } else {
-                volatile_write(&raw mut (*gSTWIStatus).state, 1);
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 1);
                 volatile_write(67109152_usize as *mut u32, 0x80000000);
             }
         } else {
@@ -66,36 +69,38 @@ unsafe fn sio32intr_clock_master() {
             STWI_set_timer_in_RAM(130);
             return;
         }
-    } else if (&raw mut (*gSTWIStatus).state).read_volatile() == 1 {
+    } else if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 1 {
         if regSIODATA32 & 0xFFFF0000 == 0x99660000 {
-            (*gSTWIStatus).ackNext = 0;
-            *((*gSTWIStatus).rxPacket as *mut u32).at((*gSTWIStatus).ackNext) = regSIODATA32;
-            (*gSTWIStatus).ackNext += 1;
-            (*gSTWIStatus).ackActiveCommand = regSIODATA32 as u8;
-            (*gSTWIStatus).ackLength = ({
+            (*crate::gl!(gSTWIStatus)).ackNext = 0;
+            *((*crate::gl!(gSTWIStatus)).rxPacket as *mut u32)
+                .at((*crate::gl!(gSTWIStatus)).ackNext) = regSIODATA32;
+            (*crate::gl!(gSTWIStatus)).ackNext += 1;
+            (*crate::gl!(gSTWIStatus)).ackActiveCommand = regSIODATA32 as u8;
+            (*crate::gl!(gSTWIStatus)).ackLength = ({
                 ackLen = regSIODATA32 >> 8;
                 ackLen
             }) as u8;
             if ({
-                ackLen = (*gSTWIStatus).ackLength as u32;
+                ackLen = (*crate::gl!(gSTWIStatus)).ackLength as u32;
                 ackLen
-            }) >= (*gSTWIStatus).ackNext as u32
+            }) >= (*crate::gl!(gSTWIStatus)).ackNext as u32
             {
-                volatile_write(&raw mut (*gSTWIStatus).state, 2);
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 2);
                 volatile_write(67109152_usize as *mut u32, 0x80000000);
             } else {
-                volatile_write(&raw mut (*gSTWIStatus).state, 3);
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 3);
             }
         } else {
             STWI_stop_timer_in_RAM();
             STWI_set_timer_in_RAM(130);
             return;
         }
-    } else if (&raw mut (*gSTWIStatus).state).read_volatile() == 2 {
-        *((*gSTWIStatus).rxPacket as *mut u32).at((*gSTWIStatus).ackNext) = regSIODATA32;
-        (*gSTWIStatus).ackNext += 1;
-        if (*gSTWIStatus).ackLength < (*gSTWIStatus).ackNext {
-            volatile_write(&raw mut (*gSTWIStatus).state, 3);
+    } else if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 2 {
+        *((*crate::gl!(gSTWIStatus)).rxPacket as *mut u32).at((*crate::gl!(gSTWIStatus)).ackNext) =
+            regSIODATA32;
+        (*crate::gl!(gSTWIStatus)).ackNext += 1;
+        if (*crate::gl!(gSTWIStatus)).ackLength < (*crate::gl!(gSTWIStatus)).ackNext {
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 3);
         } else {
             volatile_write(67109152_usize as *mut u32, 0x80000000);
         }
@@ -108,33 +113,36 @@ unsafe fn sio32intr_clock_master() {
         return;
     }
     STWI_stop_timer_in_RAM();
-    if (&raw mut (*gSTWIStatus).state).read_volatile() == 3 {
-        if (*gSTWIStatus).ackActiveCommand == 167
-            || (*gSTWIStatus).ackActiveCommand == 165
-            || (*gSTWIStatus).ackActiveCommand == 181
-            || (*gSTWIStatus).ackActiveCommand == 183
+    if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 3 {
+        if (*crate::gl!(gSTWIStatus)).ackActiveCommand == 167
+            || (*crate::gl!(gSTWIStatus)).ackActiveCommand == 165
+            || (*crate::gl!(gSTWIStatus)).ackActiveCommand == 181
+            || (*crate::gl!(gSTWIStatus)).ackActiveCommand == 183
         {
-            volatile_write(&raw mut (*gSTWIStatus).msMode, AGB_CLK_SLAVE);
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).msMode, AGB_CLK_SLAVE);
             volatile_write(67109152_usize as *mut u32, 0x80000000);
             volatile_write(67109160_usize as *mut u16, 20482);
             volatile_write(67109160_usize as *mut u16, 20610);
-            volatile_write(&raw mut (*gSTWIStatus).state, 5);
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 5);
         } else {
-            if (*gSTWIStatus).ackActiveCommand == 0xEE {
+            if (*crate::gl!(gSTWIStatus)).ackActiveCommand == 0xEE {
                 volatile_write(67109160_usize as *mut u16, 20483);
-                volatile_write(&raw mut (*gSTWIStatus).state, 4);
-                volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_ACK_REJECTION);
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 4);
+                volatile_write(
+                    &raw mut (*crate::gl!(gSTWIStatus)).error,
+                    ERR_REQ_CMD_ACK_REJECTION,
+                );
             } else {
                 volatile_write(67109160_usize as *mut u16, 20483);
-                volatile_write(&raw mut (*gSTWIStatus).state, 4);
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 4);
             }
         }
-        volatile_write(&raw mut (*gSTWIStatus).sending, 0);
-        if (*gSTWIStatus).callbackM.is_some() {
+        volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).sending, 0);
+        if (*crate::gl!(gSTWIStatus)).callbackM.is_some() {
             Callback_Dummy_M(
-                (*gSTWIStatus).reqActiveCommand as i32,
-                (&raw mut (*gSTWIStatus).error).read_volatile() as i32,
-                (*gSTWIStatus).callbackM,
+                (*crate::gl!(gSTWIStatus)).reqActiveCommand as i32,
+                (&raw mut (*crate::gl!(gSTWIStatus)).error).read_volatile() as i32,
+                (*crate::gl!(gSTWIStatus)).callbackM,
             );
         }
     } else {
@@ -146,108 +154,118 @@ unsafe fn sio32intr_clock_master() {
 unsafe fn sio32intr_clock_slave() {
     let mut r0: u32 = 0;
     let mut reqLen: u32 = 0;
-    volatile_write(&raw mut (*gSTWIStatus).timerActive, 0);
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).timerActive, 0);
     STWI_set_timer_in_RAM(100);
     if handshake_wait(0) == 1 {
         return;
     }
     volatile_write(67109160_usize as *mut u16, 20490);
     let regSIODATA32: u32 = (67109152_usize as *mut u32).read_volatile();
-    if (&raw mut (*gSTWIStatus).state).read_volatile() == 5 {
-        *((*gSTWIStatus).rxPacket as *mut u32) = regSIODATA32;
-        (*gSTWIStatus).reqNext = 1;
+    if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 5 {
+        *((*crate::gl!(gSTWIStatus)).rxPacket as *mut u32) = regSIODATA32;
+        (*crate::gl!(gSTWIStatus)).reqNext = 1;
         r0 = 0x99660000;
         reqLen = regSIODATA32 >> 16;
         if reqLen == r0 >> 16 {
-            (*gSTWIStatus).reqLength = ({
+            (*crate::gl!(gSTWIStatus)).reqLength = ({
                 reqLen = regSIODATA32 >> 8;
                 reqLen
             }) as u8;
-            (*gSTWIStatus).reqActiveCommand = ({
+            (*crate::gl!(gSTWIStatus)).reqActiveCommand = ({
                 reqLen = regSIODATA32;
                 reqLen
             }) as u8;
-            if (*gSTWIStatus).reqLength == 0 {
-                if (*gSTWIStatus).reqActiveCommand == ID_MS_CHANGE_REQ
-                    || (*gSTWIStatus).reqActiveCommand == ID_DATA_READY_AND_CHANGE_REQ
-                    || (*gSTWIStatus).reqActiveCommand == ID_DISCONNECTED_AND_CHANGE_REQ
-                    || (*gSTWIStatus).reqActiveCommand == ID_UNK36_REQ
+            if (*crate::gl!(gSTWIStatus)).reqLength == 0 {
+                if (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_MS_CHANGE_REQ
+                    || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_DATA_READY_AND_CHANGE_REQ
+                    || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_DISCONNECTED_AND_CHANGE_REQ
+                    || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_UNK36_REQ
                 {
-                    (*gSTWIStatus).ackActiveCommand = (*gSTWIStatus).reqActiveCommand + 0x80;
-                    *((*gSTWIStatus).txPacket as *mut u32) =
-                        0x99660000 + (*gSTWIStatus).ackActiveCommand as u32;
-                    (*gSTWIStatus).ackLength = 0;
+                    (*crate::gl!(gSTWIStatus)).ackActiveCommand =
+                        (*crate::gl!(gSTWIStatus)).reqActiveCommand + 0x80;
+                    *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32) =
+                        0x99660000 + (*crate::gl!(gSTWIStatus)).ackActiveCommand as u32;
+                    (*crate::gl!(gSTWIStatus)).ackLength = 0;
                 } else {
-                    *((*gSTWIStatus).txPacket as *mut u32) = 0x996601EE;
-                    if (*gSTWIStatus).reqActiveCommand >= 0x10
-                        && (*gSTWIStatus).reqActiveCommand <= 0x3D
+                    *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32) = 0x996601EE;
+                    if (*crate::gl!(gSTWIStatus)).reqActiveCommand >= 0x10
+                        && (*crate::gl!(gSTWIStatus)).reqActiveCommand <= 0x3D
                     {
-                        *((*gSTWIStatus).txPacket as *mut u32).at(1) = 1;
+                        *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32).at(1) = 1;
                     } else {
-                        *((*gSTWIStatus).txPacket as *mut u32).at(1) = 2;
+                        *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32).at(1) = 2;
                     }
-                    (*gSTWIStatus).ackLength = 1;
-                    volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_ACK_REJECTION);
+                    (*crate::gl!(gSTWIStatus)).ackLength = 1;
+                    volatile_write(
+                        &raw mut (*crate::gl!(gSTWIStatus)).error,
+                        ERR_REQ_CMD_ACK_REJECTION,
+                    );
                 }
                 volatile_write(
                     67109152_usize as *mut u32,
-                    *((*gSTWIStatus).txPacket as *mut u32),
+                    *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32),
                 );
-                (*gSTWIStatus).ackNext = 1;
-                volatile_write(&raw mut (*gSTWIStatus).state, 7);
+                (*crate::gl!(gSTWIStatus)).ackNext = 1;
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 7);
             } else {
                 volatile_write(67109152_usize as *mut u32, 0x80000000);
-                (*gSTWIStatus).reqNext = 1;
-                volatile_write(&raw mut (*gSTWIStatus).state, 6);
+                (*crate::gl!(gSTWIStatus)).reqNext = 1;
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 6);
             }
         } else {
             STWI_stop_timer_in_RAM();
             STWI_set_timer_in_RAM(100);
             return;
         }
-    } else if (&raw mut (*gSTWIStatus).state).read_volatile() == 6 {
-        *((*gSTWIStatus).rxPacket as *mut u32).at((*gSTWIStatus).reqNext) = regSIODATA32;
-        (*gSTWIStatus).reqNext += 1;
-        if (*gSTWIStatus).reqLength < (*gSTWIStatus).reqNext {
-            if (*gSTWIStatus).reqActiveCommand == ID_DATA_READY_AND_CHANGE_REQ
-                || (*gSTWIStatus).reqActiveCommand == ID_DISCONNECTED_AND_CHANGE_REQ
-                || (*gSTWIStatus).reqActiveCommand == ID_UNK36_REQ
+    } else if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 6 {
+        *((*crate::gl!(gSTWIStatus)).rxPacket as *mut u32).at((*crate::gl!(gSTWIStatus)).reqNext) =
+            regSIODATA32;
+        (*crate::gl!(gSTWIStatus)).reqNext += 1;
+        if (*crate::gl!(gSTWIStatus)).reqLength < (*crate::gl!(gSTWIStatus)).reqNext {
+            if (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_DATA_READY_AND_CHANGE_REQ
+                || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_DISCONNECTED_AND_CHANGE_REQ
+                || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_UNK36_REQ
             {
-                (*gSTWIStatus).ackActiveCommand = (*gSTWIStatus).reqActiveCommand + 0x80;
-                *((*gSTWIStatus).txPacket as *mut u32) =
-                    0x99660000 | (*gSTWIStatus).ackActiveCommand as u32;
-                (*gSTWIStatus).ackLength = 0;
+                (*crate::gl!(gSTWIStatus)).ackActiveCommand =
+                    (*crate::gl!(gSTWIStatus)).reqActiveCommand + 0x80;
+                *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32) =
+                    0x99660000 | (*crate::gl!(gSTWIStatus)).ackActiveCommand as u32;
+                (*crate::gl!(gSTWIStatus)).ackLength = 0;
             } else {
-                *((*gSTWIStatus).txPacket as *mut u32) = 0x996601EE;
-                if (*gSTWIStatus).reqActiveCommand >= 0x10
-                    && (*gSTWIStatus).reqActiveCommand <= 0x3D
+                *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32) = 0x996601EE;
+                if (*crate::gl!(gSTWIStatus)).reqActiveCommand >= 0x10
+                    && (*crate::gl!(gSTWIStatus)).reqActiveCommand <= 0x3D
                 {
-                    *((*gSTWIStatus).txPacket as *mut u32).at(1) = 1;
+                    *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32).at(1) = 1;
                 } else {
-                    *((*gSTWIStatus).txPacket as *mut u32).at(1) = 2;
+                    *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32).at(1) = 2;
                 }
-                (*gSTWIStatus).ackLength = 1;
-                volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_ACK_REJECTION);
+                (*crate::gl!(gSTWIStatus)).ackLength = 1;
+                volatile_write(
+                    &raw mut (*crate::gl!(gSTWIStatus)).error,
+                    ERR_REQ_CMD_ACK_REJECTION,
+                );
             }
             volatile_write(
                 67109152_usize as *mut u32,
-                *((*gSTWIStatus).txPacket as *mut u32),
+                *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32),
             );
-            (*gSTWIStatus).ackNext = 1;
-            volatile_write(&raw mut (*gSTWIStatus).state, 7);
+            (*crate::gl!(gSTWIStatus)).ackNext = 1;
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 7);
         } else {
             volatile_write(67109152_usize as *mut u32, 0x80000000);
         }
-    } else if (&raw mut (*gSTWIStatus).state).read_volatile() == 7 {
+    } else if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 7 {
         if regSIODATA32 == 0x80000000 {
-            if (*gSTWIStatus).ackLength < (*gSTWIStatus).ackNext {
-                volatile_write(&raw mut (*gSTWIStatus).state, 8);
+            if (*crate::gl!(gSTWIStatus)).ackLength < (*crate::gl!(gSTWIStatus)).ackNext {
+                volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 8);
             } else {
                 volatile_write(
                     67109152_usize as *mut u32,
-                    *((*gSTWIStatus).txPacket as *mut u32).at((*gSTWIStatus).ackNext),
+                    *((*crate::gl!(gSTWIStatus)).txPacket as *mut u32)
+                        .at((*crate::gl!(gSTWIStatus)).ackNext),
                 );
-                (*gSTWIStatus).ackNext += 1;
+                (*crate::gl!(gSTWIStatus)).ackNext += 1;
             }
         } else {
             STWI_stop_timer_in_RAM();
@@ -258,24 +276,26 @@ unsafe fn sio32intr_clock_slave() {
     if handshake_wait(1) == 1 {
         return;
     }
-    if (&raw mut (*gSTWIStatus).state).read_volatile() == 8 {
+    if (&raw mut (*crate::gl!(gSTWIStatus)).state).read_volatile() == 8 {
         volatile_write(67109160_usize as *mut u16, 20482);
         STWI_stop_timer_in_RAM();
-        if (&raw mut (*gSTWIStatus).error).read_volatile() == ERR_REQ_CMD_ACK_REJECTION {
+        if (&raw mut (*crate::gl!(gSTWIStatus)).error).read_volatile() == ERR_REQ_CMD_ACK_REJECTION
+        {
             STWI_init_slave();
-            if (*gSTWIStatus).callbackS.is_some() {
-                Callback_Dummy_S(0x1EE, (*gSTWIStatus).callbackS);
+            if (*crate::gl!(gSTWIStatus)).callbackS.is_some() {
+                Callback_Dummy_S(0x1EE, (*crate::gl!(gSTWIStatus)).callbackS);
             }
         } else {
             volatile_write(67109152_usize as *mut u32, 0);
             volatile_write(67109160_usize as *mut u16, 0);
             volatile_write(67109160_usize as *mut u16, 20483);
-            volatile_write(&raw mut (*gSTWIStatus).msMode, AGB_CLK_MASTER);
-            volatile_write(&raw mut (*gSTWIStatus).state, 0);
-            if (*gSTWIStatus).callbackS.is_some() {
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).msMode, AGB_CLK_MASTER);
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 0);
+            if (*crate::gl!(gSTWIStatus)).callbackS.is_some() {
                 Callback_Dummy_S(
-                    ((*gSTWIStatus).reqLength as u16) << 8 | (*gSTWIStatus).reqActiveCommand as u16,
-                    (*gSTWIStatus).callbackS,
+                    ((*crate::gl!(gSTWIStatus)).reqLength as u16) << 8
+                        | (*crate::gl!(gSTWIStatus)).reqActiveCommand as u16,
+                    (*crate::gl!(gSTWIStatus)).callbackS,
                 );
             }
         }
@@ -296,8 +316,8 @@ unsafe fn sio32intr_clock_slave() {
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn handshake_wait(slot: u16) -> u16 {
     loop {
-        if (&raw mut (*gSTWIStatus).timerActive).read_volatile() as i32 & 0xFF == 1 {
-            volatile_write(&raw mut (*gSTWIStatus).timerActive, 0);
+        if (&raw mut (*crate::gl!(gSTWIStatus)).timerActive).read_volatile() as i32 & 0xFF == 1 {
+            volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).timerActive, 0);
             return 1;
         }
         if (67109160_usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI == (slot as i32) << 2
@@ -310,62 +330,65 @@ unsafe fn handshake_wait(slot: u16) -> u16 {
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn STWI_set_timer_in_RAM(count: u8) {
     let regTMCNTL: *mut u16 =
-        (0x4000100 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16;
+        (0x4000100 + (*crate::gl!(gSTWIStatus)).timerSelect as i32 * 4) as usize as *mut u16;
     let regTMCNTH: *mut u16 =
-        (67109122 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16;
+        (67109122 + (*crate::gl!(gSTWIStatus)).timerSelect as i32 * 4) as usize as *mut u16;
     volatile_write(67109384_usize as *mut u16, 0);
     match count {
         50 => {
             volatile_write(regTMCNTL, 0xFCCB);
-            (*gSTWIStatus).timerState = 1;
+            (*crate::gl!(gSTWIStatus)).timerState = 1;
         }
         80 => {
             volatile_write(regTMCNTL, 0xFAE0);
-            (*gSTWIStatus).timerState = 2;
+            (*crate::gl!(gSTWIStatus)).timerState = 2;
         }
         100 => {
             volatile_write(regTMCNTL, 0xF996);
-            (*gSTWIStatus).timerState = 3;
+            (*crate::gl!(gSTWIStatus)).timerState = 3;
         }
         130 => {
             volatile_write(regTMCNTL, 0xF7AD);
-            (*gSTWIStatus).timerState = 4;
+            (*crate::gl!(gSTWIStatus)).timerState = 4;
         }
         _ => {}
     }
     volatile_write(regTMCNTH, 195);
     volatile_write(
         67109378_usize as *mut u16,
-        shl_i32(INTR_FLAG_TIMER0, (*gSTWIStatus).timerSelect as u32) as u16,
+        shl_i32(
+            INTR_FLAG_TIMER0,
+            (*crate::gl!(gSTWIStatus)).timerSelect as u32,
+        ) as u16,
     );
     volatile_write(67109384_usize as *mut u16, 1);
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn STWI_stop_timer_in_RAM() {
-    (*gSTWIStatus).timerState = 0;
+    (*crate::gl!(gSTWIStatus)).timerState = 0;
     volatile_write(
-        (0x4000100 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16,
+        (0x4000100 + (*crate::gl!(gSTWIStatus)).timerSelect as i32 * 4) as usize as *mut u16,
         0,
     );
     volatile_write(
-        (67109122 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16,
+        (67109122 + (*crate::gl!(gSTWIStatus)).timerSelect as i32 * 4) as usize as *mut u16,
         0,
     );
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn STWI_init_slave() {
-    volatile_write(&raw mut (*gSTWIStatus).state, 5);
-    volatile_write(&raw mut (*gSTWIStatus).msMode, AGB_CLK_SLAVE);
-    (*gSTWIStatus).reqLength = 0;
-    (*gSTWIStatus).reqNext = 0;
-    (*gSTWIStatus).reqActiveCommand = 0;
-    (*gSTWIStatus).ackLength = 0;
-    (*gSTWIStatus).ackNext = 0;
-    (*gSTWIStatus).ackActiveCommand = 0;
-    (*gSTWIStatus).timerState = 0;
-    volatile_write(&raw mut (*gSTWIStatus).timerActive, 0);
-    volatile_write(&raw mut (*gSTWIStatus).error, 0);
-    (*gSTWIStatus).recoveryCount = 0;
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 5);
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).msMode, AGB_CLK_SLAVE);
+    (*crate::gl!(gSTWIStatus)).reqLength = 0;
+    (*crate::gl!(gSTWIStatus)).reqNext = 0;
+    (*crate::gl!(gSTWIStatus)).reqActiveCommand = 0;
+    (*crate::gl!(gSTWIStatus)).ackLength = 0;
+    (*crate::gl!(gSTWIStatus)).ackNext = 0;
+    (*crate::gl!(gSTWIStatus)).ackActiveCommand = 0;
+    (*crate::gl!(gSTWIStatus)).timerState = 0;
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).timerActive, 0);
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).error, 0);
+    (*crate::gl!(gSTWIStatus)).recoveryCount = 0;
     volatile_write(67109160_usize as *mut u16, 20610);
 }
 // hand-written: tools/rustport/overrides/librfu_intr/Callback_Dummy_M.rs

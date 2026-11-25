@@ -80,7 +80,7 @@ unsafe fn GetLinkPlayerCount() -> u8 {
 #[inline]
 unsafe fn saved_trends() -> *mut DewfordTrend {
     unsafe {
-        (&raw const gSaveBlock1Ptr)
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB1_DEWFORD_TRENDS)

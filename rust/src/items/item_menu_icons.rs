@@ -61,14 +61,14 @@ unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -155,22 +155,31 @@ static sRotatingBallTable: Table<SpriteSheet> =
     Table((&raw const crate::data::item_menu_icons::sRotatingBallTable).cast());
 
 pub unsafe fn RemoveBagSprite(id: u8) {
-    let spriteId: *mut u8 = &raw mut (*gBagMenu).spriteIds[id];
+    let spriteId: *mut u8 = &raw mut (*crate::gl!(gBagMenu)).spriteIds[id];
     if *spriteId != SPRITE_NONE {
         FreeSpriteTilesByTag(id as u16 + TAG_BAG_GFX);
         FreeSpritePaletteByTag(id as u16 + TAG_BAG_GFX);
-        FreeSpriteOamMatrix(&raw mut gSprites[*spriteId]);
-        DestroySprite(&raw mut gSprites[*spriteId]);
+        FreeSpriteOamMatrix({
+            let gl_i0 = *spriteId;
+            crate::gl!(&raw gSprites[gl_i0])
+        });
+        DestroySprite({
+            let gl_i1 = *spriteId;
+            crate::gl!(&raw gSprites[gl_i1])
+        });
         *spriteId = SPRITE_NONE;
     }
 }
 pub unsafe fn AddBagVisualSprite(bagPocketId: u8) {
-    let spriteId: *mut u8 = &raw mut (*gBagMenu).spriteIds[0];
+    let spriteId: *mut u8 = &raw mut (*crate::gl!(gBagMenu)).spriteIds[0];
     *spriteId = CreateSprite((&raw const *sBagSpriteTemplate).cast_mut(), 68, 66, 0);
     SetBagVisualPocketId(bagPocketId, FALSE);
 }
 pub unsafe fn SetBagVisualPocketId(bagPocketId: u8, isSwitchingPockets: u8) {
-    let sprite: *mut Sprite = &raw mut gSprites[(*gBagMenu).spriteIds[0]];
+    let sprite: *mut Sprite = {
+        let gl_i2 = (*crate::gl!(gBagMenu)).spriteIds[0];
+        crate::gl!(&raw gSprites[gl_i2])
+    };
     if isSwitchingPockets != 0 {
         (*sprite).y2 = -5;
         (*sprite).callback = Some(SpriteCB_BagVisualSwitchingPockets);
@@ -189,7 +198,10 @@ pub(crate) unsafe fn SpriteCB_BagVisualSwitchingPockets(sprite: *mut Sprite) {
     }
 }
 pub unsafe fn ShakeBagSprite() {
-    let sprite: *mut Sprite = &raw mut gSprites[(*gBagMenu).spriteIds[0]];
+    let sprite: *mut Sprite = {
+        let gl_i3 = (*crate::gl!(gBagMenu)).spriteIds[0];
+        crate::gl!(&raw gSprites[gl_i3])
+    };
     if (*sprite).affineAnimEnded() != 0 {
         StartSpriteAffineAnim(sprite, ANIM_BAG_SHAKE);
         (*sprite).callback = Some(SpriteCB_ShakeBagSprite);
@@ -202,7 +214,7 @@ pub(crate) unsafe fn SpriteCB_ShakeBagSprite(sprite: *mut Sprite) {
     }
 }
 pub unsafe fn AddSwitchPocketRotatingBallSprite(rotationDirection: i16) {
-    let spriteId: *mut u8 = &raw mut (*gBagMenu).spriteIds[1];
+    let spriteId: *mut u8 = &raw mut (*crate::gl!(gBagMenu)).spriteIds[1];
     LoadSpriteSheet((&raw const *sRotatingBallTable).cast_mut());
     LoadSpritePalette((&raw const *sRotatingBallPaletteTable).cast_mut());
     *spriteId = CreateSprite(
@@ -211,7 +223,10 @@ pub unsafe fn AddSwitchPocketRotatingBallSprite(rotationDirection: i16) {
         16,
         0,
     );
-    gSprites[*spriteId].data[0] = rotationDirection;
+    {
+        let gl_i4 = *spriteId;
+        crate::gl!(gSprites[gl_i4].data[0] = rotationDirection)
+    };
 }
 unsafe fn UpdateSwitchPocketRotatingBallCoords(sprite: *mut Sprite) {
     (*sprite).centerToCornerVecX = (*sprite).data[1] as i8 - (((*sprite).data[3] as i8 + 1) & 1);
@@ -238,7 +253,8 @@ pub(crate) unsafe fn SpriteCB_SwitchPocketRotatingBallContinue(sprite: *mut Spri
     }
 }
 pub unsafe fn AddBagItemIconSprite(itemId: u16, id: u8) {
-    let spriteId: *mut u8 = &raw mut (*gBagMenu).spriteIds[id as i32 + ITEMMENUSPRITE_ITEM];
+    let spriteId: *mut u8 =
+        &raw mut (*crate::gl!(gBagMenu)).spriteIds[id as i32 + ITEMMENUSPRITE_ITEM];
     if *spriteId == SPRITE_NONE {
         FreeSpriteTilesByTag(id as u16 + TAG_ITEM_ICON);
         FreeSpritePaletteByTag(id as u16 + TAG_ITEM_ICON);
@@ -246,8 +262,8 @@ pub unsafe fn AddBagItemIconSprite(itemId: u16, id: u8) {
             AddItemIconSprite(id as u16 + TAG_ITEM_ICON, id as u16 + TAG_ITEM_ICON, itemId);
         if iconSpriteId != MAX_SPRITES {
             *spriteId = iconSpriteId;
-            gSprites[iconSpriteId].x2 = 24;
-            gSprites[iconSpriteId].y2 = 88;
+            crate::gl!(gSprites[iconSpriteId].x2 = 24);
+            crate::gl!(gSprites[iconSpriteId].y2 = 88);
         }
     }
 }
@@ -255,18 +271,21 @@ pub unsafe fn RemoveBagItemIconSprite(id: u8) {
     RemoveBagSprite(id + ITEMMENUSPRITE_ITEM as u8);
 }
 pub unsafe fn CreateItemMenuSwapLine() {
-    CreateSwapLineSprites(&raw mut (*gBagMenu).spriteIds[4], ITEMMENU_SWAP_LINE_LENGTH);
+    CreateSwapLineSprites(
+        &raw mut (*crate::gl!(gBagMenu)).spriteIds[4],
+        ITEMMENU_SWAP_LINE_LENGTH,
+    );
 }
 pub unsafe fn SetItemMenuSwapLineInvisibility(invisible: u8) {
     SetSwapLineSpritesInvisibility(
-        &raw mut (*gBagMenu).spriteIds[4],
+        &raw mut (*crate::gl!(gBagMenu)).spriteIds[4],
         ITEMMENU_SWAP_LINE_LENGTH,
         invisible,
     );
 }
 pub unsafe fn UpdateItemMenuSwapLinePos(y: u8) {
     UpdateSwapLineSpritesPos(
-        &raw mut (*gBagMenu).spriteIds[4],
+        &raw mut (*crate::gl!(gBagMenu)).spriteIds[4],
         136,
         120,
         (y as u16 + 1) * 16,
@@ -298,15 +317,15 @@ pub(crate) unsafe fn LoadBerryGfx(berryId: u8) {
     LoadCompressedSpritePalette(&raw mut pal);
     LZDecompressWram(
         sBerryPicTable[berryId].tiles,
-        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+        &raw mut (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())[4096] as *mut c_void,
     );
     ArrangeBerryGfx(
-        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+        &raw mut (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())[4096] as *mut c_void,
-        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+        &raw mut (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())[0] as *mut c_void,
     );
@@ -328,7 +347,7 @@ pub unsafe fn CreateSpinningBerrySprite(berryId: u8, x: u8, y: u8, startAffine: 
         0,
     );
     if startAffine == TRUE {
-        StartSpriteAffineAnim(&raw mut gSprites[spriteId], 1);
+        StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), 1);
     }
     spriteId
 }

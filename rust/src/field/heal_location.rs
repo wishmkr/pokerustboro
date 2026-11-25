@@ -18,7 +18,7 @@ const fn location(map_group: i8, map_num: i8, x: u16, y: u16) -> HealLocation {
     }
 }
 
-#[unsafe(link_section = ".rodata")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".rodata"))]
 static HEAL_LOCATIONS: [HealLocation; 22] = [
     location(1, 1, 4, 2),
     location(1, 3, 4, 2),

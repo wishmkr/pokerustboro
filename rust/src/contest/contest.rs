@@ -126,7 +126,7 @@ unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
 }
 /// `CreateInvisibleSpriteWithCallback` with this module's view of its types.
 #[inline]
-unsafe fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
     unsafe { crate::util::CreateInvisibleSpriteWithCallback(core::mem::transmute(a0)) }
 }
 /// `CreateSprite` with this module's view of its types.
@@ -174,19 +174,14 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `HandleLoadSpecialPokePic_2` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_2(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-) {
+fn HandleLoadSpecialPokePic_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32) {
     unsafe {
         crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
     }
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -198,7 +193,7 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -212,19 +207,19 @@ unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -246,7 +241,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `RequestDma3Copy` with this module's view of its types.
 #[inline]
-unsafe fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
     unsafe { crate::dma3_manager::RequestDma3Copy(a0 as _, a1 as _, a2, a3) }
 }
 /// `RequestDma3Fill` with this module's view of its types.
@@ -270,11 +265,7 @@ unsafe fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable) {
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -493,60 +484,69 @@ static sSubspriteTable_NextTurn: Table<CArray<SubspriteTable, 1>> =
 static sText_Pal: Table<CArray<u16, 16>> =
     Table((&raw const crate::data::contest::sText_Pal).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestMons: CArray<ContestPokemon, 4> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestMons: crate::global::Global<CArray<ContestPokemon, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestMonRound1Points: Aligned<CArray<i16, 4>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestMonRound1Points: crate::global::Global<Aligned<CArray<i16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestMonTotalPoints: Aligned<CArray<i16, 4>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestMonTotalPoints: crate::global::Global<Aligned<CArray<i16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestMonAppealPointTotals: Aligned<CArray<i16, 4>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestMonAppealPointTotals: crate::global::Global<Aligned<CArray<i16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestMonRound2Points: Aligned<CArray<i16, 4>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestMonRound2Points: crate::global::Global<Aligned<CArray<i16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestFinalStandings: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestMonPartyIndex: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestPlayerMonIndex: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestFinalStandings: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestMonPartyIndex: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestPlayerMonIndex: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestantTurnOrder: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gLinkContestFlags: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestLinkLeaderIndex: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestantTurnOrder: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gLinkContestFlags: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestLinkLeaderIndex: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSpecialVar_ContestCategory: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSpecialVar_ContestCategory: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSpecialVar_ContestRank: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gNumLinkContestPlayers: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gHighestRibbonRank: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gContestResources: *mut ContestResources = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSpecialVar_ContestRank: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gNumLinkContestPlayers: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gHighestRibbonRank: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gContestResources: crate::global::Global<*mut ContestResources> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sContestBgCopyFlags: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gCurContestWinner: ContestWinner = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub static mut gCurContestWinnerIsForArtist: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gCurContestWinnerSaveIdx: u8 = 0;
-#[unsafe(link_section = "common_data")]
-pub static mut gContestRngValue: u32 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gCurContestWinner: crate::global::Global<ContestWinner> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gCurContestWinnerIsForArtist: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gCurContestWinnerSaveIdx: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gContestRngValue: crate::global::Global<u32> = crate::global::Global::new(0);
 
 /// `AddTextPrinter` with this module's view of its types.
 #[inline]
-unsafe fn AddTextPrinter(
+fn AddTextPrinter(
     a0: *mut TextPrinterTemplate,
     a1: u8,
     a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
@@ -560,7 +560,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -575,8 +575,8 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 
 pub(crate) fn TaskDummy1(taskId: u8) {}
 #[unsafe(no_mangle)]
-pub unsafe fn ResetLinkContestBoolean() {
-    gLinkContestFlags = 0;
+pub fn ResetLinkContestBoolean() {
+    gLinkContestFlags.set(0);
 }
 unsafe fn SetupContestGpuRegs() {
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP);
@@ -586,18 +586,18 @@ unsafe fn SetupContestGpuRegs() {
     SetGpuReg(REG_OFFSET_WININ, 16191);
     SetGpuReg(REG_OFFSET_WINOUT, 16191);
     SetGpuRegBits(REG_OFFSET_DISPCNT, 32512);
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gBattle_BG1_X = 0;
-    gBattle_BG1_Y = 0;
-    gBattle_BG2_X = 0;
-    gBattle_BG2_Y = 0;
-    gBattle_BG3_X = 0;
-    gBattle_BG3_Y = 0;
-    gBattle_WIN0H = 0;
-    gBattle_WIN0V = 0;
-    gBattle_WIN1H = 0;
-    gBattle_WIN1V = 0;
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    gBattle_BG1_X.set(0);
+    gBattle_BG1_Y.set(0);
+    gBattle_BG2_X.set(0);
+    gBattle_BG2_Y.set(0);
+    gBattle_BG3_X.set(0);
+    gBattle_BG3_Y.set(0);
+    gBattle_WIN0H.set(0);
+    gBattle_WIN0V.set(0);
+    gBattle_WIN1H.set(0);
+    gBattle_WIN1V.set(0);
 }
 pub unsafe fn LoadContestBgAfterMoveAnim() {
     LZDecompressVram(
@@ -633,14 +633,14 @@ pub unsafe fn LoadContestBgAfterMoveAnim() {
     for i in 0..CONTESTANT_COUNT {
         let contestantWindowId: u32 = 5 + i as u32;
         LoadPalette(
-            (*((*(&raw const crate::malloc::gHeap)
+            (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                 .cast::<CArray<u8, 114688>>()
                 .cast_mut())
             .as_mut_ptr()
             .at(106500) as *mut ContestTempSave))
                 .cachedWindowPalettes[contestantWindowId]
                 .as_mut_ptr() as *mut c_void,
-            (5 + gContestantTurnOrder[i] as u16) * 16,
+            (5 + crate::gl!(gContestantTurnOrder[i]) as u16) * 16,
             32,
         );
     }
@@ -652,20 +652,20 @@ unsafe fn InitContestInfoBgs() {
     for i in 0..CONTESTANT_COUNT {
         SetBgTilemapBuffer(
             i as u8,
-            (*gContestResources).contestBgTilemaps[i] as *mut c_void,
+            (*crate::gl!(gContestResources)).contestBgTilemaps[i] as *mut c_void,
         );
     }
 }
 unsafe fn InitContestWindows() {
     InitWindows(sContestWindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-        (*(&raw const crate::text::gTextFlags)
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(FALSE);
     } else {
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(TRUE);
@@ -676,7 +676,7 @@ unsafe fn LoadContestPalettes() {
     SetBackdropFromColor(0);
     for i in 10..14i32 {
         LoadPalette(
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[241] as *mut c_void,
             240 + i as u16,
@@ -686,16 +686,16 @@ unsafe fn LoadContestPalettes() {
     FillPalette(32319, 243, 2);
 }
 unsafe fn InitContestResources() {
-    *(*gContestResources).contest = {
+    *(*crate::gl!(gContestResources)).contest = {
         let mut lit1: Contest = zeroed();
         lit1.playerMoveChoice = 0;
         lit1
     };
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).contest).unk[i] = 0xFF;
+        (*(*crate::gl!(gContestResources)).contest).unk[i] = 0xFF;
     }
     for i in 0..CONTESTANT_COUNT {
-        *(*gContestResources).status.at(i) = {
+        *(*crate::gl!(gContestResources)).status.at(i) = {
             let mut lit2: ContestantStatus = zeroed();
             lit2.baseAppeal = 0;
             lit2
@@ -703,143 +703,149 @@ unsafe fn InitContestResources() {
     }
     let mut i: i32 = 0;
     while i < CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).set_ranking(0);
-        (*(*gContestResources).status.at(i)).effectStringId = CONTEST_STRING_NONE;
-        (*(*gContestResources).status.at(i)).effectStringId2 = CONTEST_STRING_NONE;
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_ranking(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).effectStringId = CONTEST_STRING_NONE;
+        (*(*crate::gl!(gContestResources)).status.at(i)).effectStringId2 = CONTEST_STRING_NONE;
         i += 1;
     }
-    *(*gContestResources).appealResults = {
+    *(*crate::gl!(gContestResources)).appealResults = {
         let lit3: ContestAppealMoveResults = zeroed();
         lit3
     };
-    *(*gContestResources).aiData = {
+    *(*crate::gl!(gContestResources)).aiData = {
         let mut lit4: ContestAIInfo = zeroed();
         lit4.aiState = 0;
         lit4
     };
-    *(*gContestResources).excitement = {
+    *(*crate::gl!(gContestResources)).excitement = {
         let mut lit5: ContestExcitement = zeroed();
         lit5.moveExcitement = 0;
         lit5
     };
-    memset((*gContestResources).gfxState as *mut u8, 0, 16);
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
+    memset((*crate::gl!(gContestResources)).gfxState as *mut u8, 0, 16);
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
         SortContestants(FALSE);
     }
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).nextTurnOrder = CONTESTANT_NONE;
-        (*(*gContestResources).contest).prevTurnOrder[i] = gContestantTurnOrder[i];
+        (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder = CONTESTANT_NONE;
+        (*(*crate::gl!(gContestResources)).contest).prevTurnOrder[i] =
+            crate::gl!(gContestantTurnOrder[i]);
     }
     ApplyNextTurnOrder();
-    memset((*gContestResources).tv as *mut u8, 0, 64);
+    memset((*crate::gl!(gContestResources)).tv as *mut u8, 0, 64);
 }
 unsafe fn AllocContestResources() {
-    gContestResources = AllocZeroed(64) as *mut ContestResources;
-    (*gContestResources).contest = AllocZeroed(92) as *mut Contest;
-    (*gContestResources).status = AllocZeroed(112) as *mut ContestantStatus;
-    (*gContestResources).appealResults = AllocZeroed(20) as *mut ContestAppealMoveResults;
-    (*gContestResources).aiData = AllocZeroed(68) as *mut ContestAIInfo;
-    (*gContestResources).excitement = AllocZeroed(16) as *mut ContestExcitement;
-    (*gContestResources).gfxState = AllocZeroed(16) as *mut ContestGraphicsState;
-    (*gContestResources).moveAnim = AllocZeroed(20) as *mut ContestMoveAnimData;
-    (*gContestResources).tv = AllocZeroed(64) as *mut ContestTV;
-    (*gContestResources).unused = AllocZeroed(12) as *mut ContestUnused;
-    (*gContestResources).contestBgTilemaps[0] = AllocZeroed(0x1000) as *mut u8;
-    (*gContestResources).contestBgTilemaps[1] = AllocZeroed(0x1000) as *mut u8;
-    (*gContestResources).contestBgTilemaps[2] = AllocZeroed(0x1000) as *mut u8;
-    (*gContestResources).contestBgTilemaps[3] = AllocZeroed(0x1000) as *mut u8;
-    (*gContestResources).boxBlinkTiles1 = AllocZeroed(0x800);
-    (*gContestResources).boxBlinkTiles2 = AllocZeroed(0x800);
-    (*gContestResources).animBgTileBuffer = AllocZeroed(0x2000);
-    gBattleAnimBgTileBuffer = (*gContestResources).animBgTileBuffer as *mut u8;
-    gBattleAnimBgTilemapBuffer = (*gContestResources).contestBgTilemaps[1];
+    crate::gl!(gContestResources = AllocZeroed(64) as *mut ContestResources);
+    (*crate::gl!(gContestResources)).contest = AllocZeroed(92) as *mut Contest;
+    (*crate::gl!(gContestResources)).status = AllocZeroed(112) as *mut ContestantStatus;
+    (*crate::gl!(gContestResources)).appealResults =
+        AllocZeroed(20) as *mut ContestAppealMoveResults;
+    (*crate::gl!(gContestResources)).aiData = AllocZeroed(68) as *mut ContestAIInfo;
+    (*crate::gl!(gContestResources)).excitement = AllocZeroed(16) as *mut ContestExcitement;
+    (*crate::gl!(gContestResources)).gfxState = AllocZeroed(16) as *mut ContestGraphicsState;
+    (*crate::gl!(gContestResources)).moveAnim = AllocZeroed(20) as *mut ContestMoveAnimData;
+    (*crate::gl!(gContestResources)).tv = AllocZeroed(64) as *mut ContestTV;
+    (*crate::gl!(gContestResources)).unused = AllocZeroed(12) as *mut ContestUnused;
+    (*crate::gl!(gContestResources)).contestBgTilemaps[0] = AllocZeroed(0x1000) as *mut u8;
+    (*crate::gl!(gContestResources)).contestBgTilemaps[1] = AllocZeroed(0x1000) as *mut u8;
+    (*crate::gl!(gContestResources)).contestBgTilemaps[2] = AllocZeroed(0x1000) as *mut u8;
+    (*crate::gl!(gContestResources)).contestBgTilemaps[3] = AllocZeroed(0x1000) as *mut u8;
+    (*crate::gl!(gContestResources)).boxBlinkTiles1 = AllocZeroed(0x800);
+    (*crate::gl!(gContestResources)).boxBlinkTiles2 = AllocZeroed(0x800);
+    (*crate::gl!(gContestResources)).animBgTileBuffer = AllocZeroed(0x2000);
+    crate::gl!(
+        gBattleAnimBgTileBuffer = (*crate::gl!(gContestResources)).animBgTileBuffer as *mut u8
+    );
+    crate::gl!(gBattleAnimBgTilemapBuffer = (*crate::gl!(gContestResources)).contestBgTilemaps[1]);
 }
 unsafe fn FreeContestResources() {
-    Free((*gContestResources).contest as *mut c_void);
-    (*gContestResources).contest = null_mut();
-    Free((*gContestResources).status as *mut c_void);
-    (*gContestResources).status = null_mut();
-    Free((*gContestResources).appealResults as *mut c_void);
-    (*gContestResources).appealResults = null_mut();
-    Free((*gContestResources).aiData as *mut c_void);
-    (*gContestResources).aiData = null_mut();
-    Free((*gContestResources).excitement as *mut c_void);
-    (*gContestResources).excitement = null_mut();
-    Free((*gContestResources).gfxState as *mut c_void);
-    (*gContestResources).gfxState = null_mut();
-    Free((*gContestResources).moveAnim as *mut c_void);
-    (*gContestResources).moveAnim = null_mut();
-    Free((*gContestResources).tv as *mut c_void);
-    (*gContestResources).tv = null_mut();
-    Free((*gContestResources).unused as *mut c_void);
-    (*gContestResources).unused = null_mut();
-    Free((*gContestResources).contestBgTilemaps[0] as *mut c_void);
-    (*gContestResources).contestBgTilemaps[0] = null_mut();
-    Free((*gContestResources).contestBgTilemaps[1] as *mut c_void);
-    (*gContestResources).contestBgTilemaps[1] = null_mut();
-    Free((*gContestResources).contestBgTilemaps[2] as *mut c_void);
-    (*gContestResources).contestBgTilemaps[2] = null_mut();
-    Free((*gContestResources).contestBgTilemaps[3] as *mut c_void);
-    (*gContestResources).contestBgTilemaps[3] = null_mut();
-    Free((*gContestResources).boxBlinkTiles1);
-    (*gContestResources).boxBlinkTiles1 = null_mut();
-    Free((*gContestResources).boxBlinkTiles2);
-    (*gContestResources).boxBlinkTiles2 = null_mut();
-    Free((*gContestResources).animBgTileBuffer);
-    (*gContestResources).animBgTileBuffer = null_mut();
-    Free(gContestResources as *mut c_void);
-    gContestResources = null_mut();
-    gBattleAnimBgTileBuffer = null_mut();
-    gBattleAnimBgTilemapBuffer = null_mut();
+    Free((*crate::gl!(gContestResources)).contest as *mut c_void);
+    (*crate::gl!(gContestResources)).contest = null_mut();
+    Free((*crate::gl!(gContestResources)).status as *mut c_void);
+    (*crate::gl!(gContestResources)).status = null_mut();
+    Free((*crate::gl!(gContestResources)).appealResults as *mut c_void);
+    (*crate::gl!(gContestResources)).appealResults = null_mut();
+    Free((*crate::gl!(gContestResources)).aiData as *mut c_void);
+    (*crate::gl!(gContestResources)).aiData = null_mut();
+    Free((*crate::gl!(gContestResources)).excitement as *mut c_void);
+    (*crate::gl!(gContestResources)).excitement = null_mut();
+    Free((*crate::gl!(gContestResources)).gfxState as *mut c_void);
+    (*crate::gl!(gContestResources)).gfxState = null_mut();
+    Free((*crate::gl!(gContestResources)).moveAnim as *mut c_void);
+    (*crate::gl!(gContestResources)).moveAnim = null_mut();
+    Free((*crate::gl!(gContestResources)).tv as *mut c_void);
+    (*crate::gl!(gContestResources)).tv = null_mut();
+    Free((*crate::gl!(gContestResources)).unused as *mut c_void);
+    (*crate::gl!(gContestResources)).unused = null_mut();
+    Free((*crate::gl!(gContestResources)).contestBgTilemaps[0] as *mut c_void);
+    (*crate::gl!(gContestResources)).contestBgTilemaps[0] = null_mut();
+    Free((*crate::gl!(gContestResources)).contestBgTilemaps[1] as *mut c_void);
+    (*crate::gl!(gContestResources)).contestBgTilemaps[1] = null_mut();
+    Free((*crate::gl!(gContestResources)).contestBgTilemaps[2] as *mut c_void);
+    (*crate::gl!(gContestResources)).contestBgTilemaps[2] = null_mut();
+    Free((*crate::gl!(gContestResources)).contestBgTilemaps[3] as *mut c_void);
+    (*crate::gl!(gContestResources)).contestBgTilemaps[3] = null_mut();
+    Free((*crate::gl!(gContestResources)).boxBlinkTiles1);
+    (*crate::gl!(gContestResources)).boxBlinkTiles1 = null_mut();
+    Free((*crate::gl!(gContestResources)).boxBlinkTiles2);
+    (*crate::gl!(gContestResources)).boxBlinkTiles2 = null_mut();
+    Free((*crate::gl!(gContestResources)).animBgTileBuffer);
+    (*crate::gl!(gContestResources)).animBgTileBuffer = null_mut();
+    Free(crate::gl!(gContestResources) as *mut c_void);
+    crate::gl!(gContestResources = null_mut());
+    crate::gl!(gBattleAnimBgTileBuffer = null_mut());
+    crate::gl!(gBattleAnimBgTilemapBuffer = null_mut());
 }
 pub unsafe fn CB2_StartContest() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             sContestBgCopyFlags.set(0);
             AllocContestResources();
             AllocateMonSpritesGfx();
-            Free((*gMonSpritesGfxPtr).firstDecompressed);
-            (*gMonSpritesGfxPtr).firstDecompressed = null_mut();
-            (*gMonSpritesGfxPtr).firstDecompressed = AllocZeroed(0x4000);
+            Free((*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed);
+            (*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed = null_mut();
+            (*crate::gl!(gMonSpritesGfxPtr)).firstDecompressed = AllocZeroed(0x4000);
             SetVBlankCallback(None);
             InitContestInfoBgs();
             InitContestWindows();
             SetupContestGpuRegs();
             ScanlineEffect_Clear();
             ResetPaletteFade();
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
             ResetSpriteData();
             ResetTasks();
             FreeAllSpritePalettes();
-            gReservedSpritePaletteCount = 4;
-            (*(&raw const crate::malloc::gHeap)
+            gReservedSpritePaletteCount.set(4);
+            (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                 .cast::<CArray<u8, 114688>>()
                 .cast_mut())[0x1a000] = CONTEST_DEBUG_MODE_OFF;
             ClearBattleMonForms();
             InitContestResources();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
-            if SetupContestGraphics(&raw mut (*(*gContestResources).contest).contestSetupState) != 0
+            if SetupContestGraphics(
+                &raw mut (*(*crate::gl!(gContestResources)).contest).contestSetupState,
+            ) != 0
             {
-                (*(*gContestResources).contest).contestSetupState = 0;
-                gMain.state += 1;
+                (*(*crate::gl!(gContestResources)).contest).contestSetupState = 0;
+                crate::gl!(gMain.state += 1);
             }
         }
         3 => {
             SetBgForCurtainDrop();
-            gBattle_BG1_X = 0;
-            gBattle_BG1_Y = 0;
+            gBattle_BG1_X.set(0);
+            gBattle_BG1_Y.set(0);
             BeginFastPaletteFade(2);
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             SetVBlankCallback(Some(VBlankCB_Contest));
-            (*(*gContestResources).contest).mainTaskId =
+            (*(*crate::gl!(gContestResources)).contest).mainTaskId =
                 CreateTask(Some(Task_StartContestWaitFade), 10);
             SetMainCallback2(Some(CB2_ContestMain));
-            if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+            if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
                 LoadWirelessStatusIndicatorSpriteGfx();
                 CreateWirelessStatusIndicatorSprite(8, 8);
             }
@@ -848,14 +854,14 @@ pub unsafe fn CB2_StartContest() {
     }
 }
 pub(crate) unsafe fn Task_StartContestWaitFade(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set(taskId, 0, 0);
         task_set_func(taskId, Some(Task_TryStartLinkContest));
     }
 }
 pub(crate) unsafe fn Task_TryStartLinkContest(taskId: u8) {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS != 0 {
             'l1: {
                 let sw1: i16 = task_get(taskId, 0);
                 let mut fall = false;
@@ -880,9 +886,9 @@ pub(crate) unsafe fn Task_TryStartLinkContest(taskId: u8) {
                 }
             }
         }
-        if gPaletteFade.active() == 0 {
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-            if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_WIRELESS == 0 {
+        if (*gPaletteFade.as_ptr()).active() == 0 {
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+            if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_WIRELESS == 0 {
                 ContestPrintLinkStandby();
             }
             CreateTask(Some(Task_CommunicateMonIdxs), 0);
@@ -893,14 +899,14 @@ pub(crate) unsafe fn Task_TryStartLinkContest(taskId: u8) {
         task_set_func(taskId, Some(Task_WaitToRaiseCurtainAtStart));
     }
 }
-pub(crate) unsafe fn Task_CommunicateMonIdxs(taskId: u8) {
+pub(crate) fn Task_CommunicateMonIdxs(taskId: u8) {
     SetTaskFuncWithFollowupFunc(
         taskId,
         Some(Task_LinkContest_CommunicateMonIdxs),
         Some(Task_EndCommunicateMonIdxs),
     );
 }
-pub(crate) unsafe fn Task_EndCommunicateMonIdxs(taskId: u8) {
+pub(crate) fn Task_EndCommunicateMonIdxs(taskId: u8) {
     task_set(taskId, 0, 1);
     task_set_func(taskId, Some(Task_ReadyStartLinkContest));
 }
@@ -910,10 +916,10 @@ pub(crate) unsafe fn Task_ReadyStartLinkContest(taskId: u8) {
         GetMultiplayerId();
         DestroyTask(taskId);
         task_set_func(
-            (*(*gContestResources).contest).mainTaskId,
+            (*(*crate::gl!(gContestResources)).contest).mainTaskId,
             Some(Task_WaitToRaiseCurtainAtStart),
         );
-        (*crate::random::gRngValue.as_ptr().cast::<u32>()) = gContestRngValue;
+        (*crate::random::gRngValue.as_ptr().cast::<u32>()) = gContestRngValue.get();
     }
 }
 unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
@@ -921,7 +927,7 @@ unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
     let mut tempPalette2: CArray<u16, 16> = zeroed();
     match *stateVar {
         0 => {
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
             RequestDma3Fill(0, VRAM as usize as *mut c_void, 0x8000, 1);
             RequestDma3Fill(
                 0,
@@ -954,9 +960,10 @@ unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
             );
             {
                 let mut _src: *mut c_void = 0x6002000_usize as *mut c_void;
-                let mut _dest: *mut c_void = (*(&raw const crate::malloc::gHeap)
-                    .cast::<CArray<u8, 114688>>()
-                    .cast_mut())
+                let mut _dest: *mut c_void = (*(crate::gl!(&raw @at crate::malloc::gHeap;)
+                    .cast_const())
+                .cast::<CArray<u8, 114688>>()
+                .cast_mut())
                 .as_mut_ptr()
                 .at(0x18000) as *mut c_void;
                 let mut _size: u32 = 0x2000;
@@ -1017,15 +1024,15 @@ unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
             CopyBgTilemapBufferToVram(2);
             {
                 let mut _src: *mut c_void =
-                    (*gContestResources).contestBgTilemaps[2] as *mut c_void;
-                let mut _dest: *mut c_void = (*((*(&raw const crate::malloc::gHeap)
-                    .cast::<CArray<u8, 114688>>()
-                    .cast_mut())
-                .as_mut_ptr()
-                .at(106500)
-                    as *mut ContestTempSave))
-                    .savedJunk
-                    .as_mut_ptr() as *mut c_void;
+                    (*crate::gl!(gContestResources)).contestBgTilemaps[2] as *mut c_void;
+                let mut _dest: *mut c_void =
+                    (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
+                        .cast::<CArray<u8, 114688>>()
+                        .cast_mut())
+                    .as_mut_ptr()
+                    .at(106500) as *mut ContestTempSave))
+                        .savedJunk
+                        .as_mut_ptr() as *mut c_void;
                 let mut _size: u32 = 2048;
                 {
                     {
@@ -1050,45 +1057,46 @@ unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
                 BG_PLTT_SIZE,
             );
             CpuSet(
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[128] as *mut c_void,
                 tempPalette1.as_mut_ptr() as *mut c_void,
                 0x4000008,
             );
             CpuSet(
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
-                    .cast_mut())[(5 + gContestPlayerMonIndex as i32) * 16]
+                    .cast_mut())[(5 + gContestPlayerMonIndex.get() as i32) * 16]
                     as *mut c_void,
                 tempPalette2.as_mut_ptr() as *mut c_void,
                 0x4000008,
             );
             CpuSet(
                 tempPalette2.as_mut_ptr() as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[128] as *mut c_void,
                 0x4000008,
             );
             CpuSet(
                 tempPalette1.as_mut_ptr() as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
-                    .cast_mut())[(5 + gContestPlayerMonIndex as i32) * 16]
+                    .cast_mut())[(5 + gContestPlayerMonIndex.get() as i32) * 16]
                     as *mut c_void,
                 0x4000008,
             );
             {
-                let mut _src: *mut c_void = gPlttBufferUnfaded.as_mut_ptr() as *mut c_void;
-                let mut _dest: *mut c_void = (*((*(&raw const crate::malloc::gHeap)
-                    .cast::<CArray<u8, 114688>>()
-                    .cast_mut())
-                .as_mut_ptr()
-                .at(106500)
-                    as *mut ContestTempSave))
-                    .cachedWindowPalettes
-                    .as_mut_ptr() as *mut c_void;
+                let mut _src: *mut c_void =
+                    (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void;
+                let mut _dest: *mut c_void =
+                    (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
+                        .cast::<CArray<u8, 114688>>()
+                        .cast_mut())
+                    .as_mut_ptr()
+                    .at(106500) as *mut ContestTempSave))
+                        .cachedWindowPalettes
+                        .as_mut_ptr() as *mut c_void;
                 let mut _size: u32 = 512;
                 {
                     {
@@ -1108,21 +1116,25 @@ unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
             DrawContestantWindows();
             FillContestantWindowBgs();
             SwapMoveDescAndContestTilemaps();
-            (*(*gContestResources).contest).judgeSpeechBubbleSpriteId =
+            (*(*crate::gl!(gContestResources)).contest).judgeSpeechBubbleSpriteId =
                 CreateJudgeSpeechBubbleSprite();
             CreateSliderHeartSprites();
             CreateNextTurnSprites();
             CreateApplauseMeterSprite();
             CreateJudgeAttentionEyeTask();
             CreateUnusedBlendTask();
-            gBattlerPositions[0] = B_POSITION_PLAYER_LEFT;
-            gBattlerPositions[1] = B_POSITION_OPPONENT_LEFT;
-            gBattlerPositions[2] = B_POSITION_OPPONENT_RIGHT;
-            gBattlerPositions[3] = B_POSITION_PLAYER_RIGHT;
-            gBattleTypeFlags = 0;
-            gBattlerAttacker = B_BATTLER_2;
-            gBattlerTarget = B_BATTLER_3;
-            gBattlerSpriteIds[gBattlerAttacker] = CreateJudgeSprite();
+            crate::gl!(gBattlerPositions[0] = B_POSITION_PLAYER_LEFT);
+            crate::gl!(gBattlerPositions[1] = B_POSITION_OPPONENT_LEFT);
+            crate::gl!(gBattlerPositions[2] = B_POSITION_OPPONENT_RIGHT);
+            crate::gl!(gBattlerPositions[3] = B_POSITION_PLAYER_RIGHT);
+            gBattleTypeFlags.set(0);
+            gBattlerAttacker.set(B_BATTLER_2);
+            gBattlerTarget.set(B_BATTLER_3);
+            {
+                let gl_v = CreateJudgeSprite();
+                let gl_i0 = gBattlerAttacker.get();
+                crate::gl!(gBattlerSpriteIds[gl_i0] = gl_v)
+            };
             CreateInvisibleBattleTargetSprite();
             CopyBgTilemapBufferToVram(3);
             CopyBgTilemapBufferToVram(2);
@@ -1141,8 +1153,8 @@ unsafe fn SetupContestGraphics(stateVar: *mut u8) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn Task_WaitToRaiseCurtainAtStart(taskId: u8) {
-    gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-    if gPaletteFade.active() == 0 {
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set(taskId, 0, 0);
         task_set(taskId, 1, 0);
         task_set_func(taskId, Some(Task_RaiseCurtainAtStart));
@@ -1165,8 +1177,8 @@ pub(crate) unsafe fn Task_RaiseCurtainAtStart(taskId: u8) {
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
             1 => {
-                *(&raw mut gBattle_BG1_Y as *mut i16) += 7;
-                if gBattle_BG1_Y as i16 <= DISPLAY_HEIGHT as i16 {
+                *(gBattle_BG1_Y.as_ptr() as *mut i16) += 7;
+                if gBattle_BG1_Y.get() as i16 <= DISPLAY_HEIGHT as i16 {
                     break 'l1;
                 }
                 task_set(taskId, 0, task_get(taskId, 0) + 1);
@@ -1187,7 +1199,7 @@ pub(crate) unsafe fn Task_RaiseCurtainAtStart(taskId: u8) {
                 break 'l1;
             }
             _ => {
-                if (*(*gContestResources).contest).applauseMeterIsMoving() != 0 {
+                if (*(*crate::gl!(gContestResources)).contest).applauseMeterIsMoving() != 0 {
                     break 'l1;
                 }
                 task_set(taskId, 0, 0);
@@ -1210,18 +1222,18 @@ pub(crate) unsafe fn CB2_ContestMain() {
     sContestBgCopyFlags.set(0);
 }
 pub(crate) unsafe fn VBlankCB_Contest() {
-    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
-    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
-    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
-    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
-    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X);
-    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y);
-    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X);
-    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y);
-    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H);
-    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V);
-    SetGpuReg(REG_OFFSET_WIN1H, gBattle_WIN1H);
-    SetGpuReg(REG_OFFSET_WIN1V, gBattle_WIN1V);
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X.get());
+    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y.get());
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X.get());
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y.get());
+    SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X.get());
+    SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y.get());
+    SetGpuReg(REG_OFFSET_BG3HOFS, gBattle_BG3_X.get());
+    SetGpuReg(REG_OFFSET_BG3VOFS, gBattle_BG3_Y.get());
+    SetGpuReg(REG_OFFSET_WIN0H, gBattle_WIN0H.get());
+    SetGpuReg(REG_OFFSET_WIN0V, gBattle_WIN0V.get());
+    SetGpuReg(REG_OFFSET_WIN1H, gBattle_WIN1H.get());
+    SetGpuReg(REG_OFFSET_WIN1V, gBattle_WIN1V.get());
     TransferPlttBuffer();
     LoadOam();
     ProcessSpriteCopyRequests();
@@ -1229,14 +1241,15 @@ pub(crate) unsafe fn VBlankCB_Contest() {
 }
 pub(crate) unsafe fn Task_DisplayAppealNumberText(taskId: u8) {
     if task_get(taskId, 0) == 0 {
-        gBattle_BG0_Y = 0;
-        gBattle_BG2_Y = 0;
+        gBattle_BG0_Y.set(0);
+        gBattle_BG2_Y.set(0);
         ContestDebugDoPrint();
         {
-            let mut _src: *mut c_void = gPlttBufferUnfaded.as_mut_ptr() as *mut c_void;
-            let mut _dest: *mut c_void = (*((*(&raw const crate::malloc::gHeap)
-                .cast::<CArray<u8, 114688>>()
-                .cast_mut())
+            let mut _src: *mut c_void = (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void;
+            let mut _dest: *mut c_void = (*((*(crate::gl!(&raw @at crate::malloc::gHeap;)
+                .cast_const())
+            .cast::<CArray<u8, 114688>>()
+            .cast_mut())
             .as_mut_ptr()
             .at(106500) as *mut ContestTempSave))
                 .cachedPlttBufferUnfaded
@@ -1256,20 +1269,20 @@ pub(crate) unsafe fn Task_DisplayAppealNumberText(taskId: u8) {
         }
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
-            (*(*gContestResources).contest).appealNumber as i32 + 1,
+            (*(*crate::gl!(gContestResources)).contest).appealNumber as i32 + 1,
             STR_CONV_MODE_LEFT_ALIGN,
             1,
         );
-        if Contest_IsMonsTurnDisabled(gContestPlayerMonIndex) == 0 {
+        if Contest_IsMonsTurnDisabled(gContestPlayerMonIndex.get()) == 0 {
             StringCopy(
-                gDisplayedStringBattle.as_mut_ptr(),
+                (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                 (*crate::asmdata::gText_AppealNumWhichMoveWillBePlayed.cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
             );
         } else {
             StringCopy(
-                gDisplayedStringBattle.as_mut_ptr(),
+                (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                 (*crate::asmdata::gText_AppealNumButItCantParticipate.cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -1278,7 +1291,7 @@ pub(crate) unsafe fn Task_DisplayAppealNumberText(taskId: u8) {
         ContestClearGeneralTextWindow();
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gDisplayedStringBattle.as_mut_ptr(),
+            (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
         );
         Contest_StartTextPrinter(gStringVar4.as_mut_ptr(), TRUE as u32);
         task_set(taskId, 0, task_get(taskId, 0) + 1);
@@ -1290,9 +1303,11 @@ pub(crate) unsafe fn Task_DisplayAppealNumberText(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TryShowMoveSelectScreen(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys == B_BUTTON as u16 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) == B_BUTTON as u16
+    {
         PlaySE(SE_SELECT);
-        if Contest_IsMonsTurnDisabled(gContestPlayerMonIndex) == 0 {
+        if Contest_IsMonsTurnDisabled(gContestPlayerMonIndex.get()) == 0 {
             SetBottomSliderHeartsInvisibility(TRUE);
             task_set_func(taskId, Some(Task_ShowMoveSelectScreen));
         } else {
@@ -1302,18 +1317,32 @@ pub(crate) unsafe fn Task_TryShowMoveSelectScreen(taskId: u8) {
 }
 pub(crate) unsafe fn Task_ShowMoveSelectScreen(taskId: u8) {
     let mut moveName: CArray<u8, 32> = zeroed();
-    gBattle_BG0_Y = DISPLAY_HEIGHT;
-    gBattle_BG2_Y = DISPLAY_HEIGHT;
+    gBattle_BG0_Y.set(DISPLAY_HEIGHT);
+    gBattle_BG2_Y.set(DISPLAY_HEIGHT);
     for i in 0..(MAX_MON_MOVES as u8) {
-        let r#move: u16 = gContestMons[gContestPlayerMonIndex].moves[i];
+        let r#move: u16 = {
+            let gl_i0 = gContestPlayerMonIndex.get();
+            crate::gl!(gContestMons[gl_i0].moves[i])
+        };
         let mut moveNameBuffer: *mut u8 = moveName.as_mut_ptr();
-        if (*(*gContestResources).status.at(gContestPlayerMonIndex)).prevMove != MOVE_NONE
-            && IsContestantAllowedToCombo(gContestPlayerMonIndex) != 0
+        if (*(*crate::gl!(gContestResources))
+            .status
+            .at(gContestPlayerMonIndex.get()))
+        .prevMove
+            != MOVE_NONE
+            && IsContestantAllowedToCombo(gContestPlayerMonIndex.get()) != 0
             && AreMovesContestCombo(
-                (*(*gContestResources).status.at(gContestPlayerMonIndex)).prevMove,
+                (*(*crate::gl!(gContestResources))
+                    .status
+                    .at(gContestPlayerMonIndex.get()))
+                .prevMove,
                 r#move,
             ) != 0
-            && (*(*gContestResources).status.at(gContestPlayerMonIndex)).hasJudgesAttention() != 0
+            && (*(*crate::gl!(gContestResources))
+                .status
+                .at(gContestPlayerMonIndex.get()))
+            .hasJudgesAttention()
+                != 0
         {
             moveNameBuffer = StringCopy(
                 moveName.as_mut_ptr(),
@@ -1323,7 +1352,11 @@ pub(crate) unsafe fn Task_ShowMoveSelectScreen(taskId: u8) {
                 .cast_mut(),
             );
         } else if r#move != MOVE_NONE
-            && (*(*gContestResources).status.at(gContestPlayerMonIndex)).prevMove == r#move
+            && (*(*crate::gl!(gContestResources))
+                .status
+                .at(gContestPlayerMonIndex.get()))
+            .prevMove
+                == r#move
             && (*(&raw const crate::data::contest_effect::gContestMoves)
                 .cast::<CArray<ContestMove, 0>>())[r#move]
                 .effect
@@ -1352,37 +1385,41 @@ pub(crate) unsafe fn Task_ShowMoveSelectScreen(taskId: u8) {
             FONT_NARROW as i32,
         );
     }
-    DrawMoveSelectArrow((*(*gContestResources).contest).playerMoveChoice as i8);
+    DrawMoveSelectArrow((*(*crate::gl!(gContestResources)).contest).playerMoveChoice as i8);
     PrintContestMoveDescription(
-        gContestMons[gContestPlayerMonIndex].moves
-            [(*(*gContestResources).contest).playerMoveChoice],
+        (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()].moves
+            [(*(*crate::gl!(gContestResources)).contest).playerMoveChoice],
     );
     task_set_func(taskId, Some(Task_HandleMoveSelectInput));
 }
 pub(crate) unsafe fn Task_HandleMoveSelectInput(taskId: u8) {
     let mut numMoves: u8 = 0;
     for i in 0..MAX_MON_MOVES {
-        if gContestMons[gContestPlayerMonIndex].moves[i] != MOVE_NONE {
+        if {
+            let gl_i2 = gContestPlayerMonIndex.get();
+            crate::gl!(gContestMons[gl_i2].moves[i])
+        } != MOVE_NONE
+        {
             numMoves += 1;
         }
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         task_set_func(taskId, Some(Task_SelectedMove));
     } else {
-        match gMain.newAndRepeatedKeys {
+        match crate::gl!(gMain.newAndRepeatedKeys) {
             2 => {
                 PlaySE(SE_SELECT);
                 SetBottomSliderHeartsInvisibility(FALSE);
                 ConvertIntToDecimalStringN(
                     gStringVar1.as_mut_ptr(),
-                    (*(*gContestResources).contest).appealNumber as i32 + 1,
+                    (*(*crate::gl!(gContestResources)).contest).appealNumber as i32 + 1,
                     STR_CONV_MODE_LEFT_ALIGN,
                     1,
                 );
-                if Contest_IsMonsTurnDisabled(gContestPlayerMonIndex) == 0 {
+                if Contest_IsMonsTurnDisabled(gContestPlayerMonIndex.get()) == 0 {
                     StringCopy(
-                        gDisplayedStringBattle.as_mut_ptr(),
+                        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                         (*crate::asmdata::gText_AppealNumWhichMoveWillBePlayed
                             .cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -1390,7 +1427,7 @@ pub(crate) unsafe fn Task_HandleMoveSelectInput(taskId: u8) {
                     );
                 } else {
                     StringCopy(
-                        gDisplayedStringBattle.as_mut_ptr(),
+                        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                         (*crate::asmdata::gText_AppealNumButItCantParticipate
                             .cast::<CArray<u8, 0>>())
                         .as_ptr()
@@ -1400,41 +1437,51 @@ pub(crate) unsafe fn Task_HandleMoveSelectInput(taskId: u8) {
                 ContestClearGeneralTextWindow();
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gDisplayedStringBattle.as_mut_ptr(),
+                    (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
                 );
                 Contest_StartTextPrinter(gStringVar4.as_mut_ptr(), FALSE as u32);
-                gBattle_BG0_Y = 0;
-                gBattle_BG2_Y = 0;
+                gBattle_BG0_Y.set(0);
+                gBattle_BG2_Y.set(0);
                 task_set_func(taskId, Some(Task_TryShowMoveSelectScreen));
             }
             32 | 16 => {}
             64 => {
-                EraseMoveSelectArrow((*(*gContestResources).contest).playerMoveChoice as i8);
-                if (*(*gContestResources).contest).playerMoveChoice == 0 {
-                    (*(*gContestResources).contest).playerMoveChoice = numMoves - 1;
+                EraseMoveSelectArrow(
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice as i8,
+                );
+                if (*(*crate::gl!(gContestResources)).contest).playerMoveChoice == 0 {
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice = numMoves - 1;
                 } else {
-                    (*(*gContestResources).contest).playerMoveChoice -= 1;
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice -= 1;
                 }
-                DrawMoveSelectArrow((*(*gContestResources).contest).playerMoveChoice as i8);
+                DrawMoveSelectArrow(
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice as i8,
+                );
                 PrintContestMoveDescription(
-                    gContestMons[gContestPlayerMonIndex].moves
-                        [(*(*gContestResources).contest).playerMoveChoice],
+                    (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()].moves
+                        [(*(*crate::gl!(gContestResources)).contest).playerMoveChoice],
                 );
                 if numMoves > 1 {
                     PlaySE(SE_SELECT);
                 }
             }
             128 => {
-                EraseMoveSelectArrow((*(*gContestResources).contest).playerMoveChoice as i8);
-                if (*(*gContestResources).contest).playerMoveChoice as i32 == numMoves as i32 - 1 {
-                    (*(*gContestResources).contest).playerMoveChoice = 0;
+                EraseMoveSelectArrow(
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice as i8,
+                );
+                if (*(*crate::gl!(gContestResources)).contest).playerMoveChoice as i32
+                    == numMoves as i32 - 1
+                {
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice = 0;
                 } else {
-                    (*(*gContestResources).contest).playerMoveChoice += 1;
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice += 1;
                 }
-                DrawMoveSelectArrow((*(*gContestResources).contest).playerMoveChoice as i8);
+                DrawMoveSelectArrow(
+                    (*(*crate::gl!(gContestResources)).contest).playerMoveChoice as i8,
+                );
                 PrintContestMoveDescription(
-                    gContestMons[gContestPlayerMonIndex].moves
-                        [(*(*gContestResources).contest).playerMoveChoice],
+                    (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()].moves
+                        [(*(*crate::gl!(gContestResources)).contest).playerMoveChoice],
                 );
                 if numMoves > 1 {
                     PlaySE(SE_SELECT);
@@ -1452,9 +1499,12 @@ unsafe fn EraseMoveSelectArrow(moveIndex: i8) {
     ContestBG_FillBoxWithIncrementingTile(2, 11, 0, 32 + moveIndex as u8 * 2, 2, 1, 17, 1);
 }
 pub(crate) unsafe fn Task_SelectedMove(taskId: u8) {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-        let r#move: u16 = GetChosenMove(gContestPlayerMonIndex);
-        (*(*gContestResources).status.at(gContestPlayerMonIndex)).currMove = r#move;
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        let r#move: u16 = GetChosenMove(gContestPlayerMonIndex.get());
+        (*(*crate::gl!(gContestResources))
+            .status
+            .at(gContestPlayerMonIndex.get()))
+        .currMove = r#move;
         let taskId2: u8 = CreateTask(Some(Task_LinkContest_CommunicateMoveSelections), 0);
         SetTaskFuncWithFollowupFunc(
             taskId2,
@@ -1472,14 +1522,14 @@ pub(crate) unsafe fn Task_SelectedMove(taskId: u8) {
 pub(crate) unsafe fn Task_EndCommunicateMoveSelections(taskId: u8) {
     DestroyTask(taskId);
     task_set_func(
-        (*(*gContestResources).contest).mainTaskId,
+        (*(*crate::gl!(gContestResources)).contest).mainTaskId,
         Some(Task_HideMoveSelectScreen),
     );
 }
 pub(crate) unsafe fn Task_HideMoveSelectScreen(taskId: u8) {
     ContestClearGeneralTextWindow();
-    gBattle_BG0_Y = 0;
-    gBattle_BG2_Y = 0;
+    gBattle_BG0_Y.set(0);
+    gBattle_BG2_Y.set(0);
     SetBottomSliderHeartsInvisibility(FALSE);
     for i in 0..MAX_MON_MOVES {
         FillWindowPixelBuffer(WIN_MOVE0 + i as u8, 0);
@@ -1488,8 +1538,8 @@ pub(crate) unsafe fn Task_HideMoveSelectScreen(taskId: u8) {
     }
     Contest_SetBgCopyFlags(0);
     {
-        let mut _src: *mut c_void = gPlttBufferFaded.as_mut_ptr() as *mut c_void;
-        let mut _dest: *mut c_void = (*((*(&raw const crate::malloc::gHeap)
+        let mut _src: *mut c_void = (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void;
+        let mut _dest: *mut c_void = (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())
         .as_mut_ptr()
@@ -1510,7 +1560,7 @@ pub(crate) unsafe fn Task_HideMoveSelectScreen(taskId: u8) {
         }
     }
     LoadPalette(
-        (*((*(&raw const crate::malloc::gHeap)
+        (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())
         .as_mut_ptr()
@@ -1543,8 +1593,8 @@ pub(crate) unsafe fn Task_HideApplauseMeterForAppealStart(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_WaitHideApplauseMeterForAppealStart(taskId: u8) {
-    if (*(*gContestResources).contest).applauseMeterIsMoving() == 0
-        && (*(*gContestResources).contest).sliderHeartsAnimating() == 0
+    if (*(*crate::gl!(gContestResources)).contest).applauseMeterIsMoving() == 0
+        && (*(*crate::gl!(gContestResources)).contest).sliderHeartsAnimating() == 0
     {
         task_set_func(taskId, Some(Task_AppealSetup));
     }
@@ -1555,16 +1605,18 @@ pub(crate) unsafe fn Task_AppealSetup(taskId: u8) {
         task_get(taskId, 0)
     }) > 19
     {
-        (*(*gContestResources).contest).turnNumber = 0;
-        (*(*gContestResources).contest).unusedRng =
+        (*(*crate::gl!(gContestResources)).contest).turnNumber = 0;
+        (*(*crate::gl!(gContestResources)).contest).unusedRng =
             *crate::random::gRngValue.as_ptr().cast::<u32>();
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 && IsPlayerLinkLeader() != 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0
+            && IsPlayerLinkLeader() != 0
+        {
             let mut i: i32 = 0;
-            while (i + gNumLinkContestPlayers as i32) < CONTESTANT_COUNT {
-                (*(*gContestResources)
+            while (i + gNumLinkContestPlayers.get() as i32) < CONTESTANT_COUNT {
+                (*(*crate::gl!(gContestResources))
                     .status
-                    .at(gNumLinkContestPlayers as i32 + i))
-                .currMove = GetChosenMove(gNumLinkContestPlayers + i as u8);
+                    .at(gNumLinkContestPlayers.get() as i32 + i))
+                .currMove = GetChosenMove(gNumLinkContestPlayers.get() + i as u8);
                 i += 1;
             }
         }
@@ -1575,23 +1627,25 @@ pub(crate) unsafe fn Task_AppealSetup(taskId: u8) {
 pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
     let mut spriteId: u8 = 0;
     let mut i: i32 = 0;
-    let mut contestant: u8 = (*(*gContestResources).contest).currentContestant;
+    let mut contestant: u8 = (*(*crate::gl!(gContestResources)).contest).currentContestant;
     let mut r3: i8 = 0;
     match task_get(taskId, tState) {
         APPEALSTATE_START_TURN => {
             ContestDebugDoPrint();
             i = 0;
-            while (*(*gContestResources).contest).turnNumber
-                != (*(*gContestResources).appealResults).turnOrder[i]
+            while (*(*crate::gl!(gContestResources)).contest).turnNumber
+                != (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i]
             {
                 i += 1;
             }
-            (*(*gContestResources).contest).currentContestant = i as u8;
-            contestant = (*(*gContestResources).contest).currentContestant;
-            if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-                (*(*gContestResources).contest).set_waitForLink(TRUE as u16);
+            (*(*crate::gl!(gContestResources)).contest).currentContestant = i as u8;
+            contestant = (*(*crate::gl!(gContestResources)).contest).currentContestant;
+            if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+                (*(*crate::gl!(gContestResources)).contest).set_waitForLink(TRUE as u16);
                 if IsPlayerLinkLeader() != 0 {
-                    CalculateAppealMoveImpact((*(*gContestResources).contest).currentContestant);
+                    CalculateAppealMoveImpact(
+                        (*(*crate::gl!(gContestResources)).contest).currentContestant,
+                    );
                 }
                 let taskId2: u8 = CreateTask(Some(Task_LinkContest_CommunicateAppealsState), 0);
                 SetTaskFuncWithFollowupFunc(
@@ -1602,20 +1656,22 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 ContestPrintLinkStandby();
                 task_set(taskId, tState, APPEALSTATE_WAIT_LINK);
             } else {
-                CalculateAppealMoveImpact((*(*gContestResources).contest).currentContestant);
+                CalculateAppealMoveImpact(
+                    (*(*crate::gl!(gContestResources)).contest).currentContestant,
+                );
                 task_set(taskId, tState, APPEALSTATE_CHECK_SKIP_TURN);
             }
         }
         APPEALSTATE_WAIT_LINK => {
-            if (*(*gContestResources).contest).waitForLink() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).waitForLink() == 0 {
                 task_set(taskId, tState, APPEALSTATE_CHECK_SKIP_TURN);
             }
         }
         APPEALSTATE_CHECK_SKIP_TURN => {
             SetContestLiveUpdateFlags(contestant);
             ContestDebugPrintBitStrings();
-            if (*(*gContestResources).status.at(contestant)).numTurnsSkipped() != 0
-                || (*(*gContestResources).status.at(contestant)).noMoreTurns() != 0
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).numTurnsSkipped() != 0
+                || (*(*crate::gl!(gContestResources)).status.at(contestant)).noMoreTurns() != 0
             {
                 task_set(taskId, tState, APPEALSTATE_PRINT_SKIP_TURN_MSG);
             } else {
@@ -1626,59 +1682,74 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_SLIDE_MON_IN => {
             for i in 0..CONTESTANT_COUNT {
-                gBattleMonForms[i] = 0;
+                crate::gl!(gBattleMonForms[i] = 0);
             }
-            memset((*gContestResources).moveAnim as *mut u8, 0, 20);
-            SetMoveAnimAttackerData((*(*gContestResources).contest).currentContestant);
+            memset((*crate::gl!(gContestResources)).moveAnim as *mut u8, 0, 20);
+            SetMoveAnimAttackerData((*(*crate::gl!(gContestResources)).contest).currentContestant);
             spriteId = CreateContestantSprite(
-                gContestMons[(*(*gContestResources).contest).currentContestant].species,
-                gContestMons[(*(*gContestResources).contest).currentContestant].otId,
-                gContestMons[(*(*gContestResources).contest).currentContestant].personality,
-                (*(*gContestResources).contest).currentContestant as u32,
+                (*gContestMons.as_ptr())
+                    [(*(*crate::gl!(gContestResources)).contest).currentContestant]
+                    .species,
+                (*gContestMons.as_ptr())
+                    [(*(*crate::gl!(gContestResources)).contest).currentContestant]
+                    .otId,
+                (*gContestMons.as_ptr())
+                    [(*(*crate::gl!(gContestResources)).contest).currentContestant]
+                    .personality,
+                (*(*crate::gl!(gContestResources)).contest).currentContestant as u32,
             );
-            gSprites[spriteId].x2 = 120;
-            gSprites[spriteId].callback = Some(SpriteCB_MonSlideIn);
+            crate::gl!(gSprites[spriteId].x2 = 120);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_MonSlideIn));
             task_set(taskId, tMonSpriteId, spriteId as i16);
-            gBattlerSpriteIds[gBattlerAttacker] = spriteId;
+            {
+                let gl_i1 = gBattlerAttacker.get();
+                crate::gl!(gBattlerSpriteIds[gl_i1] = spriteId)
+            };
             BlinkContestantBox(
-                CreateContestantBoxBlinkSprites((*(*gContestResources).contest).currentContestant),
+                CreateContestantBoxBlinkSprites(
+                    (*(*crate::gl!(gContestResources)).contest).currentContestant,
+                ),
                 FALSE,
             );
             task_set(taskId, tState, APPEALSTATE_WAIT_SLIDE_MON);
         }
         APPEALSTATE_WAIT_SLIDE_MON => {
             spriteId = task_get(taskId, tMonSpriteId) as u8;
-            if gSprites[spriteId].callback == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-                && (*(*gContestResources).gfxState.at(contestant)).boxBlinking() == 0
+            if crate::gl!(gSprites[spriteId].callback)
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+                && (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).boxBlinking() == 0
             {
                 task_set(taskId, tState, APPEALSTATE_PRINT_USED_MOVE_MSG);
             }
         }
         APPEALSTATE_PRINT_USED_MOVE_MSG => {
-            if (*(*gContestResources).status.at(contestant)).nervous() != 0 {
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).nervous() != 0 {
                 task_set(taskId, tState, APPEALSTATE_PRINT_TOO_NERVOUS_MSG);
             } else {
                 ContestClearGeneralTextWindow();
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
-                    gContestMons[contestant].nickname.as_mut_ptr(),
+                    (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
                 );
-                if (*(*gContestResources).status.at(contestant)).currMove < MOVES_COUNT {
+                if (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove < MOVES_COUNT
+                {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
                             CArray<u8, 13>,
                             355,
                         >>(
-                        ))[(*(*gContestResources).status.at(contestant)).currMove]
+                        ))[(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
                             .as_ptr()
                             .cast_mut(),
                     );
                 } else {
                     StringCopy(
-                        gStringVar2.as_mut_ptr(),
-                        sInvalidContestMoveNames
-                            [(*(*gContestResources).status.at(contestant)).moveCategory],
+                        (*gStringVar2.as_ptr()).as_mut_ptr(),
+                        sInvalidContestMoveNames[(*(*crate::gl!(gContestResources))
+                            .status
+                            .at(contestant))
+                        .moveCategory],
                     );
                 }
                 StringExpandPlaceholders(
@@ -1693,32 +1764,35 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_WAIT_USED_MOVE_MSG => {
             if Contest_RunTextPrinters() == 0 {
-                (*(*gContestResources).contest).moveAnimTurnCount = 0;
+                (*(*crate::gl!(gContestResources)).contest).moveAnimTurnCount = 0;
                 task_set(taskId, tState, APPEALSTATE_MOVE_ANIM);
             }
         }
         APPEALSTATE_MOVE_ANIM => {
             let r#move: u16 = SanitizeMove(
-                (*(*gContestResources)
+                (*(*crate::gl!(gContestResources))
                     .status
-                    .at((*(*gContestResources).contest).currentContestant))
+                    .at((*(*crate::gl!(gContestResources)).contest).currentContestant))
                 .currMove,
             );
-            SetMoveSpecificAnimData((*(*gContestResources).contest).currentContestant);
-            SetMoveAnimAttackerData((*(*gContestResources).contest).currentContestant);
+            SetMoveSpecificAnimData((*(*crate::gl!(gContestResources)).contest).currentContestant);
+            SetMoveAnimAttackerData((*(*crate::gl!(gContestResources)).contest).currentContestant);
             SetMoveTargetPosition(r#move);
             DoMoveAnim(r#move);
             task_set(taskId, tState, APPEALSTATE_WAIT_MOVE_ANIM);
         }
         APPEALSTATE_WAIT_MOVE_ANIM => {
-            gAnimScriptCallback.unwrap_unchecked()();
-            if gAnimScriptActive == 0 {
+            (*gAnimScriptCallback.as_ptr()).unwrap_unchecked()();
+            if gAnimScriptActive.get() == 0 {
                 ClearMoveAnimData(contestant);
-                if (*(*gContestResources).contest).moveAnimTurnCount != 0 {
+                if (*(*crate::gl!(gContestResources)).contest).moveAnimTurnCount != 0 {
                     task_set(taskId, tCounter, 0);
                     task_set(taskId, tState, APPEALSTATE_MOVE_ANIM_MULTITURN);
                 } else {
-                    if (*(*gContestResources).status.at(contestant)).hasJudgesAttention() == 0 {
+                    if (*(*crate::gl!(gContestResources)).status.at(contestant))
+                        .hasJudgesAttention()
+                        == 0
+                    {
                         StopFlashJudgeAttentionEye(contestant);
                     }
                     DrawUnnervedSymbols();
@@ -1739,21 +1813,24 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_TRY_PRINT_MOVE_RESULT => {
             task_set(taskId, 1, 0);
-            if (*(*gContestResources).status.at(contestant)).effectStringId != CONTEST_STRING_NONE {
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId
+                != CONTEST_STRING_NONE
+            {
                 PrintAppealMoveResultText(
                     contestant,
-                    (*(*gContestResources).status.at(contestant)).effectStringId,
+                    (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId,
                 );
-                (*(*gContestResources).status.at(contestant)).effectStringId = CONTEST_STRING_NONE;
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId =
+                    CONTEST_STRING_NONE;
                 task_set(taskId, tState, APPEALSTATE_WAIT_MOVE_RESULT_MSG);
             } else {
-                if (*(*gContestResources).status.at(contestant)).effectStringId2
+                if (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId2
                     != CONTEST_STRING_NONE
                 {
                     i = 0;
                     while i < CONTESTANT_COUNT {
                         if i != contestant as i32
-                            && (*(*gContestResources).status.at(i)).effectStringId
+                            && (*(*crate::gl!(gContestResources)).status.at(i)).effectStringId
                                 != CONTEST_STRING_NONE
                         {
                             break;
@@ -1763,9 +1840,10 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                     if i == CONTESTANT_COUNT {
                         PrintAppealMoveResultText(
                             contestant,
-                            (*(*gContestResources).status.at(contestant)).effectStringId2,
+                            (*(*crate::gl!(gContestResources)).status.at(contestant))
+                                .effectStringId2,
                         );
-                        (*(*gContestResources).status.at(contestant)).effectStringId2 =
+                        (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId2 =
                             CONTEST_STRING_NONE;
                         task_set(taskId, tState, APPEALSTATE_WAIT_MOVE_RESULT_MSG);
                     } else {
@@ -1782,11 +1860,15 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             }
         }
         APPEALSTATE_CHECK_TURN_ORDER_MOD => {
-            if (*(*gContestResources).status.at(contestant)).turnOrderModAction() == 1 {
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).turnOrderModAction() == 1 {
                 DoJudgeSpeechBubble(JUDGE_SYMBOL_NUMBER_ONE);
-            } else if (*(*gContestResources).status.at(contestant)).turnOrderModAction() == 2 {
+            } else if (*(*crate::gl!(gContestResources)).status.at(contestant)).turnOrderModAction()
+                == 2
+            {
                 DoJudgeSpeechBubble(JUDGE_SYMBOL_NUMBER_FOUR);
-            } else if (*(*gContestResources).status.at(contestant)).turnOrderModAction() == 3 {
+            } else if (*(*crate::gl!(gContestResources)).status.at(contestant)).turnOrderModAction()
+                == 3
+            {
                 DoJudgeSpeechBubble(JUDGE_SYMBOL_QUESTION_MARK);
             } else {
                 task_set(taskId, tState, APPEALSTATE_TRY_SHOW_NEXT_TURN_GFX);
@@ -1795,7 +1877,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             task_set(taskId, tState, APPEALSTATE_WAIT_JUDGE_TURN_ORDER);
         }
         APPEALSTATE_WAIT_JUDGE_TURN_ORDER => {
-            if (*(*gContestResources).contest).waitForJudgeSpeechBubble() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).waitForJudgeSpeechBubble() == 0 {
                 task_set(taskId, tState, APPEALSTATE_TRY_SHOW_NEXT_TURN_GFX);
             }
         }
@@ -1806,15 +1888,15 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         APPEALSTATE_UPDATE_MOVE_USERS_HEARTS => {
             UpdateAppealHearts(
                 0,
-                (*(*gContestResources).status.at(contestant)).appeal,
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal,
                 contestant,
             );
             task_set(taskId, tState, APPEALSTATE_WAIT_MOVE_USERS_HEARTS);
         }
         APPEALSTATE_WAIT_MOVE_USERS_HEARTS => {
-            if (*(*gContestResources)
+            if (*(*crate::gl!(gContestResources))
                 .gfxState
-                .at((*(*gContestResources).contest).currentContestant))
+                .at((*(*crate::gl!(gContestResources)).contest).currentContestant))
             .updatingAppealHearts()
                 == 0
             {
@@ -1822,13 +1904,15 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             }
         }
         APPEALSTATE_TRY_JUDGE_STAR => {
-            if (*(*gContestResources).status.at(contestant)).conditionMod() == CONDITION_GAIN {
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).conditionMod()
+                == CONDITION_GAIN
+            {
                 DoJudgeSpeechBubble(JUDGE_SYMBOL_STAR);
             }
             task_set(taskId, tState, APPEALSTATE_WAIT_JUDGE_STAR);
         }
         APPEALSTATE_WAIT_JUDGE_STAR => {
-            if (*(*gContestResources).contest).waitForJudgeSpeechBubble() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).waitForJudgeSpeechBubble() == 0 {
                 task_set(taskId, tState, APPEALSTATE_UPDATE_MOVE_USERS_STARS);
             }
         }
@@ -1867,8 +1951,8 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 r3 = FALSE as i8;
                 for j in 0..CONTESTANT_COUNT {
                     if j != contestant as i32
-                        && gContestantTurnOrder[j] as i32 == i
-                        && (*(*gContestResources).status.at(j)).effectStringId
+                        && crate::gl!(gContestantTurnOrder[j]) as i32 == i
+                        && (*(*crate::gl!(gContestResources)).status.at(j)).effectStringId
                             != CONTEST_STRING_NONE
                     {
                         r3 = TRUE as i8;
@@ -1880,12 +1964,13 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 }
             }
             if r3 != 0 {
-                task_set(taskId, 1, gContestantTurnOrder[j] as i16);
+                task_set(taskId, 1, crate::gl!(gContestantTurnOrder[j]) as i16);
                 PrintAppealMoveResultText(
                     j as u8,
-                    (*(*gContestResources).status.at(j)).effectStringId,
+                    (*(*crate::gl!(gContestResources)).status.at(j)).effectStringId,
                 );
-                (*(*gContestResources).status.at(j)).effectStringId = CONTEST_STRING_NONE;
+                (*(*crate::gl!(gContestResources)).status.at(j)).effectStringId =
+                    CONTEST_STRING_NONE;
                 task_set(taskId, tState, APPEALSTATE_WAIT_OPPONENT_RESPONSE_MSG);
             } else {
                 task_set(taskId, 1, 0);
@@ -1901,29 +1986,29 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_UPDATE_OPPONENT_HEARTS => {
             i = 0;
-            while task_get(taskId, 1) != gContestantTurnOrder[i] as i16 {
+            while task_get(taskId, 1) != crate::gl!(gContestantTurnOrder[i]) as i16 {
                 i += 1;
             }
             UpdateAppealHearts(
-                (*(*gContestResources).status.at(i)).appeal
-                    + (*(*gContestResources).status.at(i)).jam as i16,
-                -((*(*gContestResources).status.at(i)).jam as i16),
+                (*(*crate::gl!(gContestResources)).status.at(i)).appeal
+                    + (*(*crate::gl!(gContestResources)).status.at(i)).jam as i16,
+                -((*(*crate::gl!(gContestResources)).status.at(i)).jam as i16),
                 i as u8,
             );
             task_set(taskId, tState, APPEALSTATE_WAIT_OPPONENT_HEARTS);
         }
         APPEALSTATE_WAIT_OPPONENT_HEARTS => {
             i = 0;
-            while task_get(taskId, 1) != gContestantTurnOrder[i] as i16 {
+            while task_get(taskId, 1) != crate::gl!(gContestantTurnOrder[i]) as i16 {
                 i += 1;
             }
-            if (*(*gContestResources).gfxState.at(i)).updatingAppealHearts() == 0 {
+            if (*(*crate::gl!(gContestResources)).gfxState.at(i)).updatingAppealHearts() == 0 {
                 task_set(taskId, tState, APPEALSTATE_UPDATE_OPPONENT_STARS);
             }
         }
         APPEALSTATE_UPDATE_OPPONENT_STARS => {
             i = 0;
-            while task_get(taskId, 1) != gContestantTurnOrder[i] as i16 {
+            while task_get(taskId, 1) != crate::gl!(gContestantTurnOrder[i]) as i16 {
                 i += 1;
             }
             if UpdateConditionStars(i as u8, TRUE) != 0 {
@@ -1946,7 +2031,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         APPEALSTATE_UPDATE_OPPONENT_STATUS => {
             i = 0;
             while i < CONTESTANT_COUNT {
-                if gContestantTurnOrder[i] as i16 == task_get(taskId, 1) {
+                if crate::gl!(gContestantTurnOrder[i]) as i16 == task_get(taskId, 1) {
                     break;
                 }
                 i += 1;
@@ -1956,9 +2041,10 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             } else {
                 PlaySE(SE_CONTEST_ICON_CLEAR);
             }
-            if (*(*gContestResources).status.at(i)).judgesAttentionWasRemoved() != 0 {
+            if (*(*crate::gl!(gContestResources)).status.at(i)).judgesAttentionWasRemoved() != 0 {
                 StopFlashJudgeAttentionEye(i as u8);
-                (*(*gContestResources).status.at(i)).set_judgesAttentionWasRemoved(FALSE);
+                (*(*crate::gl!(gContestResources)).status.at(i))
+                    .set_judgesAttentionWasRemoved(FALSE);
             }
             task_set(taskId, 1, task_get(taskId, 1) + 1);
             task_set(taskId, tState, APPEALSTATE_UPDATE_OPPONENT);
@@ -1971,13 +2057,13 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             }) > 9
             {
                 task_set(taskId, tCounter, 0);
-                if (*(*gContestResources).status.at(contestant)).numTurnsSkipped() != 0
-                    || (*(*gContestResources).status.at(contestant)).turnSkipped() != 0
+                if (*(*crate::gl!(gContestResources)).status.at(contestant)).numTurnsSkipped() != 0
+                    || (*(*crate::gl!(gContestResources)).status.at(contestant)).turnSkipped() != 0
                 {
                     ContestClearGeneralTextWindow();
                     StringCopy(
                         gStringVar1.as_mut_ptr(),
-                        gContestMons[contestant].nickname.as_mut_ptr(),
+                        (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
                     );
                     StringExpandPlaceholders(
                         gStringVar4.as_mut_ptr(),
@@ -1992,7 +2078,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_WAIT_SKIP_NEXT_TURN_MSG => {
             if Contest_RunTextPrinters() == 0 {
-                if (*(*gContestResources).status.at(contestant)).usedComboMove() == 0 {
+                if (*(*crate::gl!(gContestResources)).status.at(contestant)).usedComboMove() == 0 {
                     task_set(taskId, tState, APPEALSTATE_CHECK_REPEATED_MOVE);
                 } else {
                     task_set(taskId, tState, APPEALSTATE_PRINT_COMBO_MSG);
@@ -2001,8 +2087,8 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_PRINT_COMBO_MSG => {
             let completedCombo: i8 =
-                (*(*gContestResources).status.at(contestant)).completedCombo as i8;
-            if (*(*gContestResources).status.at(contestant)).completedCombo != 0 {
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).completedCombo as i8;
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).completedCombo != 0 {
                 ContestClearGeneralTextWindow();
                 if completedCombo == 1 {
                     Contest_StartTextPrinter(
@@ -2035,7 +2121,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 ContestClearGeneralTextWindow();
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
-                    gContestMons[contestant].nickname.as_mut_ptr(),
+                    (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
                 );
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
@@ -2050,8 +2136,10 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             }
         }
         APPEALSTATE_WAIT_JUDGE_COMBO => {
-            if (*(*gContestResources).contest).waitForJudgeSpeechBubble() == 0 {
-                StartStopFlashJudgeAttentionEye((*(*gContestResources).contest).currentContestant);
+            if (*(*crate::gl!(gContestResources)).contest).waitForJudgeSpeechBubble() == 0 {
+                StartStopFlashJudgeAttentionEye(
+                    (*(*crate::gl!(gContestResources)).contest).currentContestant,
+                );
                 task_set(taskId, tState, APPEALSTATE_TRY_UPDATE_HEARTS_FROM_COMBO);
             }
         }
@@ -2062,30 +2150,36 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                     task_get(taskId, tCounter)
                 }) > 50
             {
-                if (*(*gContestResources).status.at(contestant)).hasJudgesAttention() == 0 {
+                if (*(*crate::gl!(gContestResources)).status.at(contestant)).hasJudgesAttention()
+                    == 0
+                {
                     UpdateAppealHearts(
-                        (*(*gContestResources).status.at(contestant)).appeal,
-                        (*(*gContestResources).status.at(contestant)).comboAppealBonus as i16,
+                        (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal,
+                        (*(*crate::gl!(gContestResources)).status.at(contestant)).comboAppealBonus
+                            as i16,
                         contestant,
                     );
-                    (*(*gContestResources).status.at(contestant)).appeal +=
-                        (*(*gContestResources).status.at(contestant)).comboAppealBonus as i16;
+                    (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal +=
+                        (*(*crate::gl!(gContestResources)).status.at(contestant)).comboAppealBonus
+                            as i16;
                 }
                 task_set(taskId, tState, APPEALSTATE_WAIT_HEARTS_FROM_COMBO);
             }
         }
         APPEALSTATE_WAIT_HEARTS_FROM_COMBO => {
-            if (*(*gContestResources).gfxState.at(contestant)).updatingAppealHearts() == 0 {
+            if (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).updatingAppealHearts()
+                == 0
+            {
                 task_set(taskId, tCounter, 0);
                 task_set(taskId, tState, APPEALSTATE_CHECK_REPEATED_MOVE);
             }
         }
         APPEALSTATE_CHECK_REPEATED_MOVE => {
-            if (*(*gContestResources).status.at(contestant)).repeatedMove() != 0 {
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatedMove() != 0 {
                 ContestClearGeneralTextWindow();
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
-                    gContestMons[contestant].nickname.as_mut_ptr(),
+                    (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
                 );
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
@@ -2102,72 +2196,81 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             }
         }
         APPEALSTATE_WAIT_JUDGE_REPEATED_MOVE => {
-            if (*(*gContestResources).contest).waitForJudgeSpeechBubble() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).waitForJudgeSpeechBubble() == 0 {
                 task_set(taskId, tState, APPEALSTATE_UPDATE_HEARTS_FROM_REPEAT);
             }
         }
         APPEALSTATE_UPDATE_HEARTS_FROM_REPEAT => {
             if Contest_RunTextPrinters() == 0 {
                 UpdateAppealHearts(
-                    (*(*gContestResources).status.at(contestant)).appeal,
-                    -((*(*gContestResources).status.at(contestant)).repeatJam as i16),
+                    (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal,
+                    -((*(*crate::gl!(gContestResources)).status.at(contestant)).repeatJam as i16),
                     contestant,
                 );
-                (*(*gContestResources).status.at(contestant)).appeal -=
-                    (*(*gContestResources).status.at(contestant)).repeatJam as i16;
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal -=
+                    (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatJam as i16;
                 task_set(taskId, tState, APPEALSTATE_WAIT_HEARTS_FROM_REPEAT);
             }
         }
         APPEALSTATE_WAIT_HEARTS_FROM_REPEAT => {
             ContestDebugDoPrint();
-            if (*(*gContestResources).gfxState.at(contestant)).updatingAppealHearts() == 0 {
+            if (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).updatingAppealHearts()
+                == 0
+            {
                 task_set(taskId, tCounter, 0);
                 ContestClearGeneralTextWindow();
                 task_set(taskId, tState, APPEALSTATE_UPDATE_CROWD);
             }
         }
         APPEALSTATE_UPDATE_CROWD => {
-            if (*(*gContestResources).excitement).frozen() != 0
-                && contestant != (*(*gContestResources).excitement).freezer()
+            if (*(*crate::gl!(gContestResources)).excitement).frozen() != 0
+                && contestant != (*(*crate::gl!(gContestResources)).excitement).freezer()
             {
                 task_set(taskId, tState, APPEALSTATE_PRINT_CROWD_WATCHES_MSG);
             } else {
-                r3 = (*(*gContestResources).excitement).moveExcitement;
-                if (*(*gContestResources).status.at(contestant)).overrideCategoryExcitementMod()
+                r3 = (*(*crate::gl!(gContestResources)).excitement).moveExcitement;
+                if (*(*crate::gl!(gContestResources)).status.at(contestant))
+                    .overrideCategoryExcitementMod()
                     != 0
                 {
                     r3 = 1;
                     StringCopy(
-                        gStringVar3.as_mut_ptr(),
+                        (*gStringVar3.as_ptr()).as_mut_ptr(),
                         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
                             CArray<u8, 13>,
                             355,
                         >>(
-                        ))[(*(*gContestResources).status.at(contestant)).currMove]
+                        ))[(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
                             .as_ptr()
                             .cast_mut(),
                     );
                 } else {
                     StringCopy(
-                        gStringVar3.as_mut_ptr(),
+                        (*gStringVar3.as_ptr()).as_mut_ptr(),
                         sContestConditions
                             [(*(&raw const crate::data::contest_effect::gContestMoves)
-                                .cast::<CArray<ContestMove, 0>>())
-                                [(*(*gContestResources).status.at(contestant)).currMove]
+                                .cast::<CArray<ContestMove, 0>>())[(*(*crate::gl!(
+                                gContestResources
+                            ))
+                            .status
+                            .at(contestant))
+                            .currMove]
                                 .contestCategory()],
                     );
                 }
-                if r3 > 0 && (*(*gContestResources).status.at(contestant)).repeatedMove() != 0 {
+                if r3 > 0
+                    && (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatedMove() != 0
+                {
                     r3 = 0;
                 }
                 ContestClearGeneralTextWindow();
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
-                    gContestMons[contestant].nickname.as_mut_ptr(),
+                    (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
                 );
-                (*(*gContestResources).contest).applauseLevel += r3;
-                if (*(*gContestResources).contest).applauseLevel < 0 {
-                    (*(*gContestResources).contest).applauseLevel = 0;
+                (*(*crate::gl!(gContestResources)).contest).applauseLevel += r3;
+                if (*(*crate::gl!(gContestResources)).contest).applauseLevel < 0 {
+                    (*(*crate::gl!(gContestResources)).contest).applauseLevel = 0;
                 }
                 if r3 == 0 {
                     task_set(taskId, tState, APPEALSTATE_SLIDE_APPLAUSE_OUT);
@@ -2179,7 +2282,9 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                                 .as_ptr()
                                 .cast_mut(),
                         );
-                    } else if r3 > 0 && (*(*gContestResources).contest).applauseLevel <= 4 {
+                    } else if r3 > 0
+                        && (*(*crate::gl!(gContestResources)).contest).applauseLevel <= 4
+                    {
                         StringExpandPlaceholders(
                             gStringVar4.as_mut_ptr(),
                             (*crate::asmdata::gText_MonsXWentOverGreat.cast::<CArray<u8, 0>>())
@@ -2212,7 +2317,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 task_set(taskId, tCounter, task_get(taskId, tCounter) + 1);
             }
             1 => {
-                if (*(*gContestResources).contest).waitForAudienceBlend() == 0
+                if (*(*crate::gl!(gContestResources)).contest).waitForAudienceBlend() == 0
                     && Contest_RunTextPrinters() == 0
                 {
                     ShowAndUpdateApplauseMeter(-1);
@@ -2220,7 +2325,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 }
             }
             2 => {
-                if (*(*gContestResources).contest).isShowingApplauseMeter() == 0
+                if (*(*crate::gl!(gContestResources)).contest).isShowingApplauseMeter() == 0
                     && ({
                         let t6 = task_get(taskId, 11);
                         task_set(taskId, 11, task_get(taskId, 11) + 1);
@@ -2232,7 +2337,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                     task_set(taskId, tCounter, task_get(taskId, tCounter) + 1);
                 }
             }
-            3 if gPaletteFade.active() == 0 => {
+            3 if (*gPaletteFade.as_ptr()).active() == 0 => {
                 task_set(taskId, tCounter, 0);
                 task_set(taskId, 11, 0);
                 task_set(taskId, tState, APPEALSTATE_WAIT_EXCITEMENT_HEARTS);
@@ -2247,7 +2352,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 }
             }
             1 => {
-                if (*(*gContestResources).contest).waitForAudienceBlend() == 0 {
+                if (*(*crate::gl!(gContestResources)).contest).waitForAudienceBlend() == 0 {
                     AnimateAudience();
                     PlaySE(SE_M_ENCORE2);
                     ShowAndUpdateApplauseMeter(1);
@@ -2255,7 +2360,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 }
             }
             2 => {
-                if (*(*gContestResources).contest).isShowingApplauseMeter() == 0
+                if (*(*crate::gl!(gContestResources)).contest).isShowingApplauseMeter() == 0
                     && ({
                         let t7 = task_get(taskId, 11);
                         task_set(taskId, 11, task_get(taskId, 11) + 1);
@@ -2264,24 +2369,26 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
                 {
                     task_set(taskId, 11, 0);
                     UpdateAppealHearts(
-                        (*(*gContestResources).status.at(contestant)).appeal,
-                        (*(*gContestResources).excitement).excitementAppealBonus as i16,
+                        (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal,
+                        (*(*crate::gl!(gContestResources)).excitement).excitementAppealBonus as i16,
                         contestant,
                     );
-                    (*(*gContestResources).status.at(contestant)).appeal +=
-                        (*(*gContestResources).excitement).excitementAppealBonus as i16;
+                    (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal +=
+                        (*(*crate::gl!(gContestResources)).excitement).excitementAppealBonus as i16;
                     task_set(taskId, tCounter, task_get(taskId, tCounter) + 1);
                 }
             }
             3 => {
-                if (*(*gContestResources).gfxState.at(contestant)).updatingAppealHearts() == 0
-                    && (*(*gContestResources).contest).animatingAudience() == 0
+                if (*(*crate::gl!(gContestResources)).gfxState.at(contestant))
+                    .updatingAppealHearts()
+                    == 0
+                    && (*(*crate::gl!(gContestResources)).contest).animatingAudience() == 0
                 {
                     BlendAudienceBackground(1, -1);
                     task_set(taskId, tCounter, task_get(taskId, tCounter) + 1);
                 }
             }
-            4 if gPaletteFade.active() == 0 => {
+            4 if (*gPaletteFade.as_ptr()).active() == 0 => {
                 task_set(taskId, tCounter, 0);
                 task_set(taskId, 11, 0);
                 task_set(taskId, tState, APPEALSTATE_WAIT_EXCITEMENT_HEARTS);
@@ -2289,7 +2396,9 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             _ => {}
         },
         APPEALSTATE_WAIT_EXCITEMENT_HEARTS => {
-            if (*(*gContestResources).gfxState.at(contestant)).updatingAppealHearts() == 0 {
+            if (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).updatingAppealHearts()
+                == 0
+            {
                 ContestClearGeneralTextWindow();
                 task_set(taskId, tState, APPEALSTATE_SLIDE_APPLAUSE_OUT);
             }
@@ -2297,20 +2406,20 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         APPEALSTATE_PRINT_CROWD_WATCHES_MSG => {
             ContestClearGeneralTextWindow();
             StringCopy(
-                gStringVar3.as_mut_ptr(),
-                gContestMons[(*(*gContestResources).excitement).freezer()]
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*gContestMons.as_ptr())[(*(*crate::gl!(gContestResources)).excitement).freezer()]
                     .nickname
                     .as_mut_ptr(),
             );
             StringCopy(
                 gStringVar1.as_mut_ptr(),
-                gContestMons[contestant].nickname.as_mut_ptr(),
+                (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())
-                    [(*(*gContestResources).status.at(contestant)).currMove]
+                    [(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -2343,19 +2452,20 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             }
         }
         APPEALSTATE_PRINT_TOO_NERVOUS_MSG => {
-            if (*(*gContestResources).status.at(contestant)).hasJudgesAttention() != 0 {
-                (*(*gContestResources).status.at(contestant)).set_hasJudgesAttention(FALSE);
+            if (*(*crate::gl!(gContestResources)).status.at(contestant)).hasJudgesAttention() != 0 {
+                (*(*crate::gl!(gContestResources)).status.at(contestant))
+                    .set_hasJudgesAttention(FALSE);
             }
             StartStopFlashJudgeAttentionEye(contestant);
             StringCopy(
                 gStringVar1.as_mut_ptr(),
-                gContestMons[contestant].nickname.as_mut_ptr(),
+                (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
             );
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::data_tables::gMoveNames)
                     .cast::<CArray<CArray<u8, 13>, 355>>())
-                    [(*(*gContestResources).status.at(contestant)).currMove]
+                    [(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -2378,9 +2488,9 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             task_set(taskId, tState, APPEALSTATE_WAIT_SLIDE_APPLAUSE);
         }
         APPEALSTATE_WAIT_SLIDE_APPLAUSE => {
-            if (*(*gContestResources).contest).applauseMeterIsMoving() == 0 {
-                if (*(*gContestResources).contest).applauseLevel > 4 {
-                    (*(*gContestResources).contest).applauseLevel = 0;
+            if (*(*crate::gl!(gContestResources)).contest).applauseMeterIsMoving() == 0 {
+                if (*(*crate::gl!(gContestResources)).contest).applauseLevel > 4 {
+                    (*(*crate::gl!(gContestResources)).contest).applauseLevel = 0;
                     UpdateApplauseMeter();
                 }
                 task_set(taskId, tState, APPEALSTATE_SLIDE_MON_OUT);
@@ -2388,14 +2498,14 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_SLIDE_MON_OUT => {
             spriteId = task_get(taskId, tMonSpriteId) as u8;
-            gSprites[spriteId].callback = Some(SpriteCB_MonSlideOut);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_MonSlideOut));
             task_set(taskId, tState, APPEALSTATE_FREE_MON_SPRITE);
         }
         APPEALSTATE_FREE_MON_SPRITE => {
             spriteId = task_get(taskId, tMonSpriteId) as u8;
-            if gSprites[spriteId].invisible() != 0 {
-                FreeSpriteOamMatrix(&raw mut gSprites[spriteId]);
-                DestroySprite(&raw mut gSprites[spriteId]);
+            if (*gSprites.as_ptr())[spriteId].invisible() != 0 {
+                FreeSpriteOamMatrix(crate::gl!(&raw gSprites[spriteId]));
+                DestroySprite(crate::gl!(&raw gSprites[spriteId]));
                 task_set(taskId, tState, APPEALSTATE_START_TURN_END_DELAY);
             }
         }
@@ -2407,7 +2517,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
             ContestClearGeneralTextWindow();
             StringCopy(
                 gStringVar1.as_mut_ptr(),
-                gContestMons[contestant].nickname.as_mut_ptr(),
+                (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
             );
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
@@ -2435,8 +2545,8 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
         }
         APPEALSTATE_START_NEXT_TURN => {
             if ({
-                (*(*gContestResources).contest).turnNumber += 1;
-                (*(*gContestResources).contest).turnNumber
+                (*(*crate::gl!(gContestResources)).contest).turnNumber += 1;
+                (*(*crate::gl!(gContestResources)).contest).turnNumber
             }) == CONTESTANT_COUNT as u8
             {
                 task_set(taskId, tState, 0);
@@ -2451,7 +2561,7 @@ pub(crate) unsafe fn Task_DoAppeals(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_EndWaitForLink(taskId: u8) {
-    (*(*gContestResources).contest).set_waitForLink(FALSE as u16);
+    (*(*crate::gl!(gContestResources)).contest).set_waitForLink(FALSE as u16);
     DestroyTask(taskId);
 }
 pub(crate) unsafe fn SpriteCB_MonSlideIn(sprite: *mut Sprite) {
@@ -2478,8 +2588,8 @@ pub(crate) unsafe fn SpriteCB_MonSlideOut(sprite: *mut Sprite) {
 pub(crate) unsafe fn Task_FinishRoundOfAppeals(taskId: u8) {
     match task_get(taskId, 0) {
         0 => {
-            if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-                (*(*gContestResources).contest).set_waitForLink(TRUE as u16);
+            if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+                (*(*crate::gl!(gContestResources)).contest).set_waitForLink(TRUE as u16);
                 if IsPlayerLinkLeader() != 0 {
                     RankContestants();
                     SetAttentionLevels();
@@ -2499,7 +2609,7 @@ pub(crate) unsafe fn Task_FinishRoundOfAppeals(taskId: u8) {
             }
         }
         1 => {
-            if (*(*gContestResources).contest).waitForLink() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).waitForLink() == 0 {
                 task_set(taskId, 0, 2);
             }
         }
@@ -2530,7 +2640,7 @@ pub(crate) unsafe fn Task_UpdateHeartSliders(taskId: u8) {
             }
         }
         1 => {
-            if (*(*gContestResources).contest).sliderHeartsAnimating() == 0
+            if (*(*crate::gl!(gContestResources)).contest).sliderHeartsAnimating() == 0
                 && ({
                     task_set(taskId, 1, task_get(taskId, 1) + 1);
                     task_get(taskId, 1)
@@ -2556,14 +2666,14 @@ pub(crate) unsafe fn Task_WaitForHeartSliders(taskId: u8) {
 }
 pub(crate) unsafe fn Task_RestorePlttBufferUnfaded(taskId: u8) {
     {
-        let mut _src: *mut c_void = (*((*(&raw const crate::malloc::gHeap)
+        let mut _src: *mut c_void = (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())
         .as_mut_ptr()
         .at(106500) as *mut ContestTempSave))
             .cachedPlttBufferUnfaded
             .as_mut_ptr() as *mut c_void;
-        let mut _dest: *mut c_void = gPlttBufferUnfaded.as_mut_ptr() as *mut c_void;
+        let mut _dest: *mut c_void = (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void;
         let mut _size: u32 = PLTT_SIZE;
         {
             {
@@ -2599,12 +2709,16 @@ pub(crate) fn Task_WaitPrintRoundResult(taskId: u8) {
 }
 pub(crate) unsafe fn Task_PrintRoundResultText(taskId: u8) {
     if task_get(taskId, 0) == 0 {
-        let attention: u8 =
-            (*(*gContestResources).status.at(gContestPlayerMonIndex)).attentionLevel;
+        let attention: u8 = (*(*crate::gl!(gContestResources))
+            .status
+            .at(gContestPlayerMonIndex.get()))
+        .attentionLevel;
         ContestClearGeneralTextWindow();
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gContestMons[gContestPlayerMonIndex].nickname.as_mut_ptr(),
+            (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()]
+                .nickname
+                .as_mut_ptr(),
         );
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sRoundResultTexts[attention]);
         Contest_StartTextPrinter(gStringVar4.as_mut_ptr(), TRUE as u32);
@@ -2652,8 +2766,8 @@ pub(crate) unsafe fn Task_TryStartNextRoundOfAppeals(taskId: u8) {
     (*(&raw mut sp2 as *mut BgCnt)).set_priority(0);
     SetGpuReg(REG_OFFSET_BG0CNT, (&raw mut sp0).read_volatile());
     SetGpuReg(REG_OFFSET_BG2CNT, (&raw mut sp2).read_volatile());
-    (*(*gContestResources).contest).appealNumber += 1;
-    if (*(*gContestResources).contest).appealNumber == CONTEST_NUM_APPEALS as u8 {
+    (*(*crate::gl!(gContestResources)).contest).appealNumber += 1;
+    if (*(*crate::gl!(gContestResources)).contest).appealNumber == CONTEST_NUM_APPEALS as u8 {
         task_set_func(taskId, Some(Task_EndAppeals));
     } else {
         SlideApplauseMeterIn();
@@ -2661,28 +2775,34 @@ pub(crate) unsafe fn Task_TryStartNextRoundOfAppeals(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_StartNewRoundOfAppeals(taskId: u8) {
-    if (*(*gContestResources).contest).applauseMeterIsMoving() == 0 {
+    if (*(*crate::gl!(gContestResources)).contest).applauseMeterIsMoving() == 0 {
         task_set_func(taskId, Some(Task_DisplayAppealNumberText));
     }
 }
 pub(crate) unsafe fn Task_EndAppeals(taskId: u8) {
-    gBattle_BG0_Y = 0;
-    gBattle_BG2_Y = 0;
+    gBattle_BG0_Y.set(0);
+    gBattle_BG2_Y.set(0);
     for i in 0..CONTESTANT_COUNT {
-        gContestMonAppealPointTotals[i] = (*(*gContestResources).status.at(i)).pointTotal;
+        crate::gl!(
+            gContestMonAppealPointTotals[i] =
+                (*(*crate::gl!(gContestResources)).status.at(i)).pointTotal
+        );
     }
     CalculateFinalScores();
     ContestClearGeneralTextWindow();
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
         BravoTrainerPokemonProfile_BeforeInterview1(
-            (*(*gContestResources).status.at(gContestPlayerMonIndex)).prevMove,
+            (*(*crate::gl!(gContestResources))
+                .status
+                .at(gContestPlayerMonIndex.get()))
+            .prevMove,
         );
     } else {
         CalculateContestLiveUpdateData();
         SetConestLiveUpdateTVData();
         ContestDebugPrintBitStrings();
     }
-    gContestRngValue = *crate::random::gRngValue.as_ptr().cast::<u32>();
+    gContestRngValue.set(*crate::random::gRngValue.as_ptr().cast::<u32>());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*crate::asmdata::gText_AllOutOfAppealTime.cast::<CArray<u8, 0>>())
@@ -2696,19 +2816,19 @@ pub(crate) unsafe fn Task_EndAppeals(taskId: u8) {
 pub(crate) unsafe fn Task_WaitForOutOfTimeMsg(taskId: u8) {
     if Contest_RunTextPrinters() == 0 {
         SetBgForCurtainDrop();
-        gBattle_BG1_X = 0;
-        gBattle_BG1_Y = DISPLAY_HEIGHT;
+        gBattle_BG1_X.set(0);
+        gBattle_BG1_Y.set(DISPLAY_HEIGHT);
         PlaySE12WithPanning(SE_CONTEST_CURTAIN_FALL, 0);
         task_set(taskId, 0, 0);
         task_set_func(taskId, Some(Task_DropCurtainAtAppealsEnd));
     }
 }
-pub(crate) unsafe fn Task_DropCurtainAtAppealsEnd(taskId: u8) {
-    gBattle_BG1_Y -= 7;
-    if (gBattle_BG1_Y as i16) < 0 {
-        gBattle_BG1_Y = 0;
+pub(crate) fn Task_DropCurtainAtAppealsEnd(taskId: u8) {
+    gBattle_BG1_Y.set(gBattle_BG1_Y.get() - (7));
+    if (gBattle_BG1_Y.get() as i16) < 0 {
+        gBattle_BG1_Y.set(0);
     }
-    if gBattle_BG1_Y == 0 {
+    if gBattle_BG1_Y.get() == 0 {
         task_set_func(taskId, Some(Task_TryCommunicateFinalStandings));
         task_set(taskId, 0, 0);
     }
@@ -2721,7 +2841,7 @@ pub(crate) unsafe fn Task_TryCommunicateFinalStandings(taskId: u8) {
     }) >= 50
     {
         task_set(taskId, 0, 0);
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
             task_set_func(taskId, Some(Task_CommunicateFinalStandings));
         } else {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
@@ -2744,14 +2864,14 @@ pub(crate) unsafe fn Task_EndCommunicateFinalStandings(taskId: u8) {
     DestroyTask(taskId);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     task_set_func(
-        (*(*gContestResources).contest).mainTaskId,
+        (*(*crate::gl!(gContestResources)).contest).mainTaskId,
         Some(Task_ContestReturnToField),
     );
 }
 pub(crate) unsafe fn Task_ContestReturnToField(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(taskId);
-        gFieldCallback = Some(FieldCB_ContestReturnToField);
+        crate::gl!(gFieldCallback = Some(FieldCB_ContestReturnToField));
         FreeAllWindowBuffers();
         FreeContestResources();
         FreeMonSpritesGfx();
@@ -2762,13 +2882,13 @@ pub(crate) unsafe fn FieldCB_ContestReturnToField() {
     UnlockPlayerFieldControls();
     ScriptContext_Enable();
 }
-unsafe fn TryPutPlayerLast() {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
-        gContestPlayerMonIndex = 3;
+fn TryPutPlayerLast() {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK == 0 {
+        gContestPlayerMonIndex.set(3);
     }
 }
-unsafe fn IsPlayerLinkLeader() -> u8 {
-    if gContestPlayerMonIndex == gContestLinkLeaderIndex {
+fn IsPlayerLinkLeader() -> u8 {
+    if gContestPlayerMonIndex.get() == gContestLinkLeaderIndex.get() {
         return TRUE;
     }
     FALSE
@@ -2780,77 +2900,160 @@ pub unsafe fn CreateContestMonFromParty(partyIndex: u8) {
     let mut cute: i16 = 0;
     let mut smart: i16 = 0;
     let mut tough: i16 = 0;
-    StringCopy(name.as_mut_ptr(), (*gSaveBlock2Ptr).playerName.as_mut_ptr());
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+    StringCopy(
+        name.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
         StripPlayerNameForLinkContest(name.as_mut_ptr());
     }
     memcpy(
-        gContestMons[gContestPlayerMonIndex]
+        (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()]
             .trainerName
             .as_mut_ptr(),
         name.as_mut_ptr(),
         8,
     );
-    if (*gSaveBlock2Ptr).playerGender == MALE {
-        gContestMons[gContestPlayerMonIndex].trainerGfxId = OBJ_EVENT_GFX_LINK_BRENDAN;
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
+        {
+            let gl_v = OBJ_EVENT_GFX_LINK_BRENDAN;
+            let gl_i5 = gContestPlayerMonIndex.get();
+            crate::gl!(gContestMons[gl_i5].trainerGfxId = gl_v)
+        };
     } else {
-        gContestMons[gContestPlayerMonIndex].trainerGfxId = OBJ_EVENT_GFX_LINK_MAY;
+        {
+            let gl_v = OBJ_EVENT_GFX_LINK_MAY;
+            let gl_i6 = gContestPlayerMonIndex.get();
+            crate::gl!(gContestMons[gl_i6].trainerGfxId = gl_v)
+        };
     }
-    gContestMons[gContestPlayerMonIndex].aiFlags = 0;
-    gContestMons[gContestPlayerMonIndex].highestRank = 0;
-    gContestMons[gContestPlayerMonIndex].species =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_SPECIES) as u16;
+    {
+        let gl_v = 0;
+        let gl_i7 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i7].aiFlags = gl_v)
+    };
+    {
+        let gl_v = 0;
+        let gl_i8 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i8].highestRank = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_SPECIES) as u16;
+        let gl_i9 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i9].species = gl_v)
+    };
     GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_NICKNAME,
         name.as_mut_ptr(),
     );
     StringGet_Nickname(name.as_mut_ptr());
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
         StripMonNameForLinkContest(
             name.as_mut_ptr(),
-            GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_LANGUAGE) as i32,
+            GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_LANGUAGE) as i32,
         );
     }
     memcpy(
-        gContestMons[gContestPlayerMonIndex].nickname.as_mut_ptr(),
+        (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()]
+            .nickname
+            .as_mut_ptr(),
         name.as_mut_ptr(),
         11,
     );
     StringCopy(
-        gContestMons[gContestPlayerMonIndex].nickname.as_mut_ptr(),
+        (*gContestMons.as_ptr())[gContestPlayerMonIndex.get()]
+            .nickname
+            .as_mut_ptr(),
         name.as_mut_ptr(),
     );
-    gContestMons[gContestPlayerMonIndex].cool =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_COOL) as u8;
-    gContestMons[gContestPlayerMonIndex].beauty =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_BEAUTY) as u8;
-    gContestMons[gContestPlayerMonIndex].cute =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_CUTE) as u8;
-    gContestMons[gContestPlayerMonIndex].smart =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_SMART) as u8;
-    gContestMons[gContestPlayerMonIndex].tough =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_TOUGH) as u8;
-    gContestMons[gContestPlayerMonIndex].sheen =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_SHEEN) as u8;
-    gContestMons[gContestPlayerMonIndex].moves[0] =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_MOVE1) as u16;
-    gContestMons[gContestPlayerMonIndex].moves[1] =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_MOVE2) as u16;
-    gContestMons[gContestPlayerMonIndex].moves[2] =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_MOVE3) as u16;
-    gContestMons[gContestPlayerMonIndex].moves[3] =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_MOVE4) as u16;
-    gContestMons[gContestPlayerMonIndex].personality =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_PERSONALITY);
-    gContestMons[gContestPlayerMonIndex].otId =
-        GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_OT_ID);
-    let heldItem: u16 = GetMonData2(&raw mut gPlayerParty[partyIndex], MON_DATA_HELD_ITEM) as u16;
-    cool = gContestMons[gContestPlayerMonIndex].cool as i16;
-    beauty = gContestMons[gContestPlayerMonIndex].beauty as i16;
-    cute = gContestMons[gContestPlayerMonIndex].cute as i16;
-    smart = gContestMons[gContestPlayerMonIndex].smart as i16;
-    tough = gContestMons[gContestPlayerMonIndex].tough as i16;
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_COOL) as u8;
+        let gl_i10 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i10].cool = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_BEAUTY) as u8;
+        let gl_i11 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i11].beauty = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_CUTE) as u8;
+        let gl_i12 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i12].cute = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_SMART) as u8;
+        let gl_i13 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i13].smart = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_TOUGH) as u8;
+        let gl_i14 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i14].tough = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_SHEEN) as u8;
+        let gl_i15 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i15].sheen = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_MOVE1) as u16;
+        let gl_i16 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i16].moves[0] = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_MOVE2) as u16;
+        let gl_i17 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i17].moves[1] = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_MOVE3) as u16;
+        let gl_i18 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i18].moves[2] = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_MOVE4) as u16;
+        let gl_i19 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i19].moves[3] = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_PERSONALITY,
+        );
+        let gl_i20 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i20].personality = gl_v)
+    };
+    {
+        let gl_v = GetMonData2(crate::gl!(&raw gPlayerParty[partyIndex]), MON_DATA_OT_ID);
+        let gl_i21 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i21].otId = gl_v)
+    };
+    let heldItem: u16 = GetMonData2(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
+        MON_DATA_HELD_ITEM,
+    ) as u16;
+    cool = {
+        let gl_i22 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i22].cool)
+    } as i16;
+    beauty = {
+        let gl_i23 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i23].beauty)
+    } as i16;
+    cute = {
+        let gl_i24 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i24].cute)
+    } as i16;
+    smart = {
+        let gl_i25 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i25].smart)
+    } as i16;
+    tough = {
+        let gl_i26 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i26].tough)
+    } as i16;
     if heldItem == ITEM_RED_SCARF {
         cool += 20;
     } else if heldItem == ITEM_BLUE_SCARF {
@@ -2877,11 +3080,31 @@ pub unsafe fn CreateContestMonFromParty(partyIndex: u8) {
     if tough > 255 {
         tough = 255;
     }
-    gContestMons[gContestPlayerMonIndex].cool = cool as u8;
-    gContestMons[gContestPlayerMonIndex].beauty = beauty as u8;
-    gContestMons[gContestPlayerMonIndex].cute = cute as u8;
-    gContestMons[gContestPlayerMonIndex].smart = smart as u8;
-    gContestMons[gContestPlayerMonIndex].tough = tough as u8;
+    {
+        let gl_v = cool as u8;
+        let gl_i27 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i27].cool = gl_v)
+    };
+    {
+        let gl_v = beauty as u8;
+        let gl_i28 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i28].beauty = gl_v)
+    };
+    {
+        let gl_v = cute as u8;
+        let gl_i29 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i29].cute = gl_v)
+    };
+    {
+        let gl_v = smart as u8;
+        let gl_i30 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i30].smart = gl_v)
+    };
+    {
+        let gl_v = tough as u8;
+        let gl_i31 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestMons[gl_i31].tough = gl_v)
+    };
 }
 pub unsafe fn SetContestants(contestType: u8, rank: u8) {
     let mut opponentsCount: u8 = 0;
@@ -2889,7 +3112,7 @@ pub unsafe fn SetContestants(contestType: u8, rank: u8) {
     let mut allowPostgameContestants: u8 = FALSE;
     TryPutPlayerLast();
     if FlagGet(FLAG_SYS_GAME_CLEAR) != 0
-        && gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK == 0
+        && gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK == 0
     {
         allowPostgameContestants = TRUE;
     }
@@ -2951,7 +3174,7 @@ pub unsafe fn SetContestants(contestType: u8, rank: u8) {
     opponents[opponentsCount] = CONTESTANT_NONE;
     for i in 0..3i32 {
         let rnd: u16 = rem_i32(Random() as i32, opponentsCount as i32) as u16;
-        gContestMons[i] = gContestOpponents[opponents[rnd]];
+        crate::gl!(gContestMons[i] = gContestOpponents[opponents[rnd]]);
         let mut j: i32 = rnd as i32;
         while opponents[j] != CONTESTANT_NONE {
             opponents[j] = opponents[j + 1];
@@ -2959,13 +3182,13 @@ pub unsafe fn SetContestants(contestType: u8, rank: u8) {
         }
         opponentsCount -= 1;
     }
-    CreateContestMonFromParty(gContestMonPartyIndex);
+    CreateContestMonFromParty(gContestMonPartyIndex.get());
 }
 pub unsafe fn SetLinkAIContestants(contestType: u8, rank: u8, isPostgame: u32) {
     let mut j: i32 = 0;
     let mut opponentsCount: u8 = 0;
     let mut opponents: CArray<u8, 100> = zeroed();
-    if gNumLinkContestPlayers == CONTESTANT_COUNT as u8 {
+    if gNumLinkContestPlayers.get() == CONTESTANT_COUNT as u8 {
         return;
     }
     for i in 0..96i32 {
@@ -2999,16 +3222,20 @@ pub unsafe fn SetLinkAIContestants(contestType: u8, rank: u8, isPostgame: u32) {
     }
     opponents[opponentsCount] = CONTESTANT_NONE;
     let mut i: i32 = 0;
-    while i < CONTESTANT_COUNT - gNumLinkContestPlayers as i32 {
+    while i < CONTESTANT_COUNT - gNumLinkContestPlayers.get() as i32 {
         let rnd: u16 = rem_i32(GetContestRand() as i32, opponentsCount as i32) as u16;
-        gContestMons[gNumLinkContestPlayers as i32 + i] = gContestOpponents[opponents[rnd]];
+        {
+            let gl_v = gContestOpponents[opponents[rnd]];
+            let gl_i32 = gNumLinkContestPlayers.get() as i32 + i;
+            crate::gl!(gContestMons[gl_i32] = gl_v)
+        };
         StripPlayerNameForLinkContest(
-            gContestMons[gNumLinkContestPlayers as i32 + i]
+            (*gContestMons.as_ptr())[gNumLinkContestPlayers.get() as i32 + i]
                 .trainerName
                 .as_mut_ptr(),
         );
         StripMonNameForLinkContest(
-            gContestMons[gNumLinkContestPlayers as i32 + i]
+            (*gContestMons.as_ptr())[gNumLinkContestPlayers.get() as i32 + i]
                 .nickname
                 .as_mut_ptr(),
             GAME_LANGUAGE as i32,
@@ -3031,7 +3258,7 @@ pub unsafe fn GetContestEntryEligibility(pkmn: *mut Pokemon) -> u8 {
     if GetMonData2(pkmn, MON_DATA_HP) == 0 {
         return CANT_ENTER_CONTEST_FAINTED;
     }
-    match gSpecialVar_ContestCategory {
+    match gSpecialVar_ContestCategory.get() {
         0 => {
             ribbon = GetMonData2(pkmn, MON_DATA_COOL_RIBBON) as u8;
         }
@@ -3051,9 +3278,9 @@ pub unsafe fn GetContestEntryEligibility(pkmn: *mut Pokemon) -> u8 {
             return CANT_ENTER_CONTEST;
         }
     }
-    if ribbon as u16 > gSpecialVar_ContestRank {
+    if ribbon as u16 > gSpecialVar_ContestRank.get() {
         eligibility = CAN_ENTER_CONTEST_HIGH_RANK;
-    } else if ribbon as u16 >= gSpecialVar_ContestRank {
+    } else if ribbon as u16 >= gSpecialVar_ContestRank.get() {
         eligibility = CAN_ENTER_CONTEST_EQUAL_RANK;
     } else {
         eligibility = CANT_ENTER_CONTEST;
@@ -3062,14 +3289,14 @@ pub unsafe fn GetContestEntryEligibility(pkmn: *mut Pokemon) -> u8 {
 }
 unsafe fn DrawContestantWindowText() {
     for i in 0..CONTESTANT_COUNT {
-        FillWindowPixelBuffer(gContestantTurnOrder[i], 0);
+        FillWindowPixelBuffer(crate::gl!(gContestantTurnOrder[i]), 0);
         PrintContestantTrainerName(i as u8);
         PrintContestantMonName(i as u8);
     }
 }
 unsafe fn Contest_CopyStringWithColor(string: *mut u8, color: u8) -> *mut u8 {
     let mut ptr: *mut u8 = StringCopy(
-        gDisplayedStringBattle.as_mut_ptr(),
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_ColorTransparent).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
@@ -3091,20 +3318,22 @@ unsafe fn PrintContestantTrainerNameWithColor(contestant: u8, color: u8) {
     );
     StringAppend(
         buffer.as_mut_ptr(),
-        gContestMons[contestant].trainerName.as_mut_ptr(),
+        (*gContestMons.as_ptr())[contestant]
+            .trainerName
+            .as_mut_ptr(),
     );
     Contest_CopyStringWithColor(buffer.as_mut_ptr(), color);
     let mut offset: i32 = GetStringRightAlignXOffset(
         FONT_NARROW as i32,
-        gDisplayedStringBattle.as_mut_ptr(),
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
         0x60,
     );
     if offset > 55 {
         offset = 55;
     }
     Contest_PrintTextToBg0WindowAt(
-        gContestantTurnOrder[contestant] as u32,
-        gDisplayedStringBattle.as_mut_ptr(),
+        crate::gl!(gContestantTurnOrder[contestant]) as u32,
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
         offset,
         1,
         FONT_NARROW as i32,
@@ -3114,53 +3343,59 @@ unsafe fn PrintContestantMonName(contestant: u8) {
     PrintContestantMonNameWithColor(contestant, contestant + CONTESTANT_TEXT_COLOR_START);
 }
 unsafe fn PrintContestantMonNameWithColor(contestant: u8, color: u8) {
-    Contest_CopyStringWithColor(gContestMons[contestant].nickname.as_mut_ptr(), color);
+    Contest_CopyStringWithColor(
+        (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
+        color,
+    );
     Contest_PrintTextToBg0WindowAt(
-        gContestantTurnOrder[contestant] as u32,
-        gDisplayedStringBattle.as_mut_ptr(),
+        crate::gl!(gContestantTurnOrder[contestant]) as u32,
+        (*gDisplayedStringBattle.as_ptr()).as_mut_ptr(),
         5,
         1,
         FONT_NARROW as i32,
     );
 }
-unsafe fn CalculateContestantRound1Points(who: u8, contestCategory: u8) -> u16 {
+fn CalculateContestantRound1Points(who: u8, contestCategory: u8) -> u16 {
     let mut statMain: u8 = 0;
     let mut statSub1: u8 = 0;
     let mut statSub2: u8 = 0;
     match contestCategory {
         CONTEST_CATEGORY_COOL => {
-            statMain = gContestMons[who].cool;
-            statSub1 = gContestMons[who].tough;
-            statSub2 = gContestMons[who].beauty;
+            statMain = crate::gl!(gContestMons[who].cool);
+            statSub1 = crate::gl!(gContestMons[who].tough);
+            statSub2 = crate::gl!(gContestMons[who].beauty);
         }
         CONTEST_CATEGORY_BEAUTY => {
-            statMain = gContestMons[who].beauty;
-            statSub1 = gContestMons[who].cool;
-            statSub2 = gContestMons[who].cute;
+            statMain = crate::gl!(gContestMons[who].beauty);
+            statSub1 = crate::gl!(gContestMons[who].cool);
+            statSub2 = crate::gl!(gContestMons[who].cute);
         }
         CONTEST_CATEGORY_CUTE => {
-            statMain = gContestMons[who].cute;
-            statSub1 = gContestMons[who].beauty;
-            statSub2 = gContestMons[who].smart;
+            statMain = crate::gl!(gContestMons[who].cute);
+            statSub1 = crate::gl!(gContestMons[who].beauty);
+            statSub2 = crate::gl!(gContestMons[who].smart);
         }
         CONTEST_CATEGORY_SMART => {
-            statMain = gContestMons[who].smart;
-            statSub1 = gContestMons[who].cute;
-            statSub2 = gContestMons[who].tough;
+            statMain = crate::gl!(gContestMons[who].smart);
+            statSub1 = crate::gl!(gContestMons[who].cute);
+            statSub2 = crate::gl!(gContestMons[who].tough);
         }
         _ => {
-            statMain = gContestMons[who].tough;
-            statSub1 = gContestMons[who].smart;
-            statSub2 = gContestMons[who].cool;
+            statMain = crate::gl!(gContestMons[who].tough);
+            statSub1 = crate::gl!(gContestMons[who].smart);
+            statSub2 = crate::gl!(gContestMons[who].cool);
         }
     }
     statMain as u16
-        + ((statSub1 as i32 + statSub2 as i32 + gContestMons[who].sheen as i32) / 2) as u16
+        + ((statSub1 as i32 + statSub2 as i32 + crate::gl!(gContestMons[who].sheen) as i32) / 2)
+            as u16
 }
-pub unsafe fn CalculateRound1Points(contestCategory: u8) {
+pub fn CalculateRound1Points(contestCategory: u8) {
     for i in 0..CONTESTANT_COUNT {
-        gContestMonRound1Points[i] =
-            CalculateContestantRound1Points(i as u8, contestCategory) as i16;
+        crate::gl!(
+            gContestMonRound1Points[i] =
+                CalculateContestantRound1Points(i as u8, contestCategory) as i16
+        );
     }
 }
 unsafe fn CreateJudgeSprite() -> u8 {
@@ -3173,8 +3408,8 @@ unsafe fn CreateJudgeSprite() -> u8 {
         32,
     );
     let spriteId: u8 = CreateSprite((&raw const *sSpriteTemplate_Judge).cast_mut(), 112, 36, 30);
-    gSprites[spriteId].oam.set_paletteNum(1);
-    gSprites[spriteId].callback = Some(SpriteCallbackDummy);
+    (*gSprites.as_ptr())[spriteId].oam.set_paletteNum(1);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCallbackDummy));
     spriteId
 }
 unsafe fn CreateJudgeSpeechBubbleSprite() -> u8 {
@@ -3186,18 +3421,18 @@ unsafe fn CreateJudgeSpeechBubbleSprite() -> u8 {
         10,
         29,
     );
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    gSprites[spriteId].data[0] = gSprites[spriteId].oam.tileNum() as i16;
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    crate::gl!(gSprites[spriteId].data[0] = (*gSprites.as_ptr())[spriteId].oam.tileNum() as i16);
     spriteId
 }
 unsafe fn CreateContestantSprite(mut species: u16, otId: u32, personality: u32, index: u32) -> u8 {
     species = SanitizeSpecies(species);
-    if index == gContestPlayerMonIndex as u32 {
+    if index == gContestPlayerMonIndex.get() as u32 {
         HandleLoadSpecialPokePic_2(
             (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                 .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                 .cast_mut(),
-            (*gMonSpritesGfxPtr).sprites.ptr[0],
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[0],
             species as i32,
             personality,
         );
@@ -3206,7 +3441,7 @@ unsafe fn CreateContestantSprite(mut species: u16, otId: u32, personality: u32, 
             (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
                 .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                 .cast_mut(),
-            (*gMonSpritesGfxPtr).sprites.ptr[0],
+            (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[0],
             species as i32,
             personality,
         );
@@ -3218,31 +3453,35 @@ unsafe fn CreateContestantSprite(mut species: u16, otId: u32, personality: u32, 
     );
     SetMultiuseSpriteTemplateToPokemon(species, B_POSITION_PLAYER_LEFT);
     let spriteId: u8 = CreateSprite(
-        &raw mut gMultiuseSpriteTemplate,
+        crate::gl!(&raw gMultiuseSpriteTemplate),
         0x70,
         GetBattlerSpriteFinal_Y(2, species, FALSE) as i16,
         30,
     );
-    gSprites[spriteId].oam.set_paletteNum(2);
-    gSprites[spriteId].oam.set_priority(2);
-    gSprites[spriteId].subpriority = GetBattlerSpriteSubpriority(2);
-    gSprites[spriteId].callback = Some(SpriteCallbackDummy);
-    gSprites[spriteId].data[0] = gSprites[spriteId].oam.paletteNum() as i16;
-    gSprites[spriteId].data[2] = species as i16;
+    (*gSprites.as_ptr())[spriteId].oam.set_paletteNum(2);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
+    crate::gl!(gSprites[spriteId].subpriority = GetBattlerSpriteSubpriority(2));
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCallbackDummy));
+    crate::gl!(gSprites[spriteId].data[0] = (*gSprites.as_ptr())[spriteId].oam.paletteNum() as i16);
+    crate::gl!(gSprites[spriteId].data[2] = species as i16);
     if IsSpeciesNotUnown(species) != 0 {
-        gSprites[spriteId].affineAnims =
-            (*(&raw const crate::data::data_tables::gAffineAnims_BattleSpriteContest)
-                .cast::<CArray<*mut AffineAnimCmd, 0>>())
-            .as_ptr()
-            .cast_mut();
+        crate::gl!(
+            gSprites[spriteId].affineAnims =
+                (*(&raw const crate::data::data_tables::gAffineAnims_BattleSpriteContest)
+                    .cast::<CArray<*mut AffineAnimCmd, 0>>())
+                .as_ptr()
+                .cast_mut()
+        );
     } else {
-        gSprites[spriteId].affineAnims =
-            (*(&raw const crate::data::data_tables::gAffineAnims_BattleSpriteOpponentSide)
-                .cast::<CArray<*mut AffineAnimCmd, 0>>())
-            .as_ptr()
-            .cast_mut();
+        crate::gl!(
+            gSprites[spriteId].affineAnims =
+                (*(&raw const crate::data::data_tables::gAffineAnims_BattleSpriteOpponentSide)
+                    .cast::<CArray<*mut AffineAnimCmd, 0>>())
+                .as_ptr()
+                .cast_mut()
+        );
     }
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId], BATTLER_AFFINE_NORMAL);
+    StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), BATTLER_AFFINE_NORMAL);
     spriteId
 }
 pub unsafe fn IsSpeciesNotUnown(species: u16) -> u8 {
@@ -3258,13 +3497,13 @@ pub unsafe fn IsSpeciesNotUnown(species: u16) -> u8 {
 }
 unsafe fn SwapMoveDescAndContestTilemaps() {
     CpuSet(
-        (*gContestResources).contestBgTilemaps[0] as *mut c_void,
-        (*gContestResources).contestBgTilemaps[0].at(1280) as *mut c_void,
+        (*crate::gl!(gContestResources)).contestBgTilemaps[0] as *mut c_void,
+        (*crate::gl!(gContestResources)).contestBgTilemaps[0].at(1280) as *mut c_void,
         320,
     );
     CpuSet(
-        (*gContestResources).contestBgTilemaps[2] as *mut c_void,
-        (*gContestResources).contestBgTilemaps[2].at(1280) as *mut c_void,
+        (*crate::gl!(gContestResources)).contestBgTilemaps[2] as *mut c_void,
+        (*crate::gl!(gContestResources)).contestBgTilemaps[2].at(1280) as *mut c_void,
         320,
     );
 }
@@ -3406,7 +3645,7 @@ pub(crate) unsafe fn PrintContestMoveDescription(r#move: u16) {
     );
 }
 unsafe fn DrawMoveEffectSymbol(r#move: u16, contestant: u8) {
-    let contestantOffset: u8 = gContestantTurnOrder[contestant] * 5 + 2;
+    let contestantOffset: u8 = crate::gl!(gContestantTurnOrder[contestant]) * 5 + 2;
     if Contest_IsMonsTurnDisabled(contestant) == 0 && r#move != MOVE_NONE {
         let tile: u16 = GetMoveEffectSymbolTileOffset(r#move, contestant);
         ContestBG_FillBoxWithIncrementingTile(0, tile, 20, contestantOffset, 2, 1, 17, 1);
@@ -3417,19 +3656,26 @@ unsafe fn DrawMoveEffectSymbol(r#move: u16, contestant: u8) {
 }
 unsafe fn DrawMoveEffectSymbols() {
     for i in 0..CONTESTANT_COUNT {
-        DrawMoveEffectSymbol((*(*gContestResources).status.at(i)).currMove, i as u8);
+        DrawMoveEffectSymbol(
+            (*(*crate::gl!(gContestResources)).status.at(i)).currMove,
+            i as u8,
+        );
     }
 }
 fn GetStarTileOffset() -> u16 {
     0x2034
 }
 unsafe fn UpdateConditionStars(contestantIdx: u8, resetMod: u8) -> u8 {
-    if (*(*gContestResources).status.at(contestantIdx)).conditionMod() == CONDITION_NO_CHANGE {
+    if (*(*crate::gl!(gContestResources)).status.at(contestantIdx)).conditionMod()
+        == CONDITION_NO_CHANGE
+    {
         return FALSE;
     }
-    let contestantOffset: u8 = gContestantTurnOrder[contestantIdx] * 5 + 2;
-    let numStars: i32 = ((*(*gContestResources).status.at(contestantIdx)).condition / 10) as i32;
-    if (*(*gContestResources).status.at(contestantIdx)).conditionMod() == CONDITION_GAIN {
+    let contestantOffset: u8 = crate::gl!(gContestantTurnOrder[contestantIdx]) * 5 + 2;
+    let numStars: i32 =
+        ((*(*crate::gl!(gContestResources)).status.at(contestantIdx)).condition / 10) as i32;
+    if (*(*crate::gl!(gContestResources)).status.at(contestantIdx)).conditionMod() == CONDITION_GAIN
+    {
         ContestBG_FillBoxWithTile(
             0,
             GetStarTileOffset(),
@@ -3441,7 +3687,8 @@ unsafe fn UpdateConditionStars(contestantIdx: u8, resetMod: u8) -> u8 {
         );
         if resetMod != 0 {
             PlaySE(SE_EXP_MAX);
-            (*(*gContestResources).status.at(contestantIdx)).set_conditionMod(CONDITION_NO_CHANGE);
+            (*(*crate::gl!(gContestResources)).status.at(contestantIdx))
+                .set_conditionMod(CONDITION_NO_CHANGE);
         }
     } else {
         ContestBG_FillBoxWithTile(
@@ -3455,7 +3702,8 @@ unsafe fn UpdateConditionStars(contestantIdx: u8, resetMod: u8) -> u8 {
         );
         if resetMod != 0 {
             PlaySE(SE_CONTEST_CONDITION_LOSE);
-            (*(*gContestResources).status.at(contestantIdx)).set_conditionMod(CONDITION_NO_CHANGE);
+            (*(*crate::gl!(gContestResources)).status.at(contestantIdx))
+                .set_conditionMod(CONDITION_NO_CHANGE);
         }
     }
     TRUE
@@ -3463,9 +3711,9 @@ unsafe fn UpdateConditionStars(contestantIdx: u8, resetMod: u8) -> u8 {
 unsafe fn DrawConditionStars() {
     let mut numStars: i32 = 0;
     for i in 0..CONTESTANT_COUNT {
-        let contestantOffset: u8 = gContestantTurnOrder[i] * 5 + 2;
+        let contestantOffset: u8 = crate::gl!(gContestantTurnOrder[i]) * 5 + 2;
         let starOffset: u16 = GetStarTileOffset();
-        numStars = ((*(*gContestResources).status.at(i)).condition / 10) as i32;
+        numStars = ((*(*crate::gl!(gContestResources)).status.at(i)).condition / 10) as i32;
         ContestBG_FillBoxWithTile(0, starOffset, 19, contestantOffset, 1, numStars as u8, 17);
         ContestBG_FillBoxWithTile(
             0,
@@ -3504,17 +3752,17 @@ fn GetStatusSymbolTileOffset(status: u8) -> u16 {
 unsafe fn DrawStatusSymbol(contestant: u8) -> u8 {
     let mut statused: u8 = TRUE;
     let mut symbolOffset: u16 = 0;
-    let contestantOffset: u8 = gContestantTurnOrder[contestant] * 5 + 2;
-    if (*(*gContestResources).status.at(contestant)).resistant() != 0
-        || (*(*gContestResources).status.at(contestant)).immune() != 0
-        || (*(*gContestResources).status.at(contestant)).jamSafetyCount != 0
-        || (*(*gContestResources).status.at(contestant)).jamReduction != 0
+    let contestantOffset: u8 = crate::gl!(gContestantTurnOrder[contestant]) * 5 + 2;
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).resistant() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).immune() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).jamSafetyCount != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).jamReduction != 0
     {
         symbolOffset = GetStatusSymbolTileOffset(STAT_SYMBOL_CIRCLE);
-    } else if (*(*gContestResources).status.at(contestant)).nervous() != 0 {
+    } else if (*(*crate::gl!(gContestResources)).status.at(contestant)).nervous() != 0 {
         symbolOffset = GetStatusSymbolTileOffset(STAT_SYMBOL_WAVE);
-    } else if (*(*gContestResources).status.at(contestant)).numTurnsSkipped() != 0
-        || (*(*gContestResources).status.at(contestant)).noMoreTurns() != 0
+    } else if (*(*crate::gl!(gContestResources)).status.at(contestant)).numTurnsSkipped() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).noMoreTurns() != 0
     {
         symbolOffset = GetStatusSymbolTileOffset(STAT_SYMBOL_X);
     } else {
@@ -3551,12 +3799,13 @@ unsafe fn GetChosenMove(contestant: u8) -> u16 {
     if Contest_IsMonsTurnDisabled(contestant) != 0 {
         return MOVE_NONE;
     }
-    if contestant == gContestPlayerMonIndex {
-        return gContestMons[contestant].moves[(*(*gContestResources).contest).playerMoveChoice];
+    if contestant == gContestPlayerMonIndex.get() {
+        return (*gContestMons.as_ptr())[contestant].moves
+            [(*(*crate::gl!(gContestResources)).contest).playerMoveChoice];
     } else {
         ContestAI_ResetAI(contestant);
         let moveChoice: u8 = ContestAI_GetActionToUse();
-        return gContestMons[contestant].moves[moveChoice];
+        return crate::gl!(gContestMons[contestant].moves[moveChoice]);
     }
     #[allow(unreachable_code)]
     {
@@ -3565,16 +3814,16 @@ unsafe fn GetChosenMove(contestant: u8) -> u16 {
 }
 unsafe fn GetAllChosenMoves() {
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).currMove = GetChosenMove(i as u8);
+        (*(*crate::gl!(gContestResources)).status.at(i)).currMove = GetChosenMove(i as u8);
     }
 }
 unsafe fn RankContestants() {
     let mut j: i32 = 0;
     let mut arr: CArray<i16, 4> = zeroed();
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).pointTotal +=
-            (*(*gContestResources).status.at(i)).appeal;
-        arr[i] = (*(*gContestResources).status.at(i)).pointTotal;
+        (*(*crate::gl!(gContestResources)).status.at(i)).pointTotal +=
+            (*(*crate::gl!(gContestResources)).status.at(i)).appeal;
+        arr[i] = (*(*crate::gl!(gContestResources)).status.at(i)).pointTotal;
     }
     let mut i: i32 = 0;
     while i < 3 {
@@ -3591,8 +3840,8 @@ unsafe fn RankContestants() {
     }
     for i in 0..CONTESTANT_COUNT {
         for j in 0..CONTESTANT_COUNT {
-            if (*(*gContestResources).status.at(i)).pointTotal == arr[j] {
-                (*(*gContestResources).status.at(i)).set_ranking(j as u8);
+            if (*(*crate::gl!(gContestResources)).status.at(i)).pointTotal == arr[j] {
+                (*(*crate::gl!(gContestResources)).status.at(i)).set_ranking(j as u8);
                 break;
             }
         }
@@ -3603,25 +3852,25 @@ unsafe fn RankContestants() {
 unsafe fn SetAttentionLevels() {
     for i in 0..CONTESTANT_COUNT {
         let mut attentionLevel: u8 = 0;
-        if (*(*gContestResources).status.at(i)).currMove == MOVE_NONE {
+        if (*(*crate::gl!(gContestResources)).status.at(i)).currMove == MOVE_NONE {
             attentionLevel = 5;
-        } else if (*(*gContestResources).status.at(i)).appeal <= 0 {
+        } else if (*(*crate::gl!(gContestResources)).status.at(i)).appeal <= 0 {
             attentionLevel = 0;
-        } else if (*(*gContestResources).status.at(i)).appeal < 30 {
+        } else if (*(*crate::gl!(gContestResources)).status.at(i)).appeal < 30 {
             attentionLevel = 1;
-        } else if (*(*gContestResources).status.at(i)).appeal < 60 {
+        } else if (*(*crate::gl!(gContestResources)).status.at(i)).appeal < 60 {
             attentionLevel = 2;
-        } else if (*(*gContestResources).status.at(i)).appeal < 80 {
+        } else if (*(*crate::gl!(gContestResources)).status.at(i)).appeal < 80 {
             attentionLevel = 3;
         } else {
             attentionLevel = 4;
         }
-        (*(*gContestResources).status.at(i)).attentionLevel = attentionLevel;
+        (*(*crate::gl!(gContestResources)).status.at(i)).attentionLevel = attentionLevel;
     }
 }
 unsafe fn ContestantCanUseTurn(contestant: u8) -> u8 {
-    if (*(*gContestResources).status.at(contestant)).numTurnsSkipped() != 0
-        || (*(*gContestResources).status.at(contestant)).noMoreTurns() != 0
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).numTurnsSkipped() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).noMoreTurns() != 0
     {
         return FALSE;
     } else {
@@ -3635,54 +3884,57 @@ unsafe fn ContestantCanUseTurn(contestant: u8) -> u8 {
 unsafe fn SetContestantStatusesForNextRound() {
     let mut i: i32 = 0;
     while i < CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).appeal = 0;
-        (*(*gContestResources).status.at(i)).baseAppeal = 0;
-        (*(*gContestResources).status.at(i)).jamSafetyCount = 0;
-        if (*(*gContestResources).status.at(i)).numTurnsSkipped() > 0 {
-            (*(*gContestResources).status.at(i))
-                .set_numTurnsSkipped((*(*gContestResources).status.at(i)).numTurnsSkipped() - 1);
+        (*(*crate::gl!(gContestResources)).status.at(i)).appeal = 0;
+        (*(*crate::gl!(gContestResources)).status.at(i)).baseAppeal = 0;
+        (*(*crate::gl!(gContestResources)).status.at(i)).jamSafetyCount = 0;
+        if (*(*crate::gl!(gContestResources)).status.at(i)).numTurnsSkipped() > 0 {
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_numTurnsSkipped(
+                (*(*crate::gl!(gContestResources)).status.at(i)).numTurnsSkipped() - 1,
+            );
         }
-        (*(*gContestResources).status.at(i)).jam = 0;
-        (*(*gContestResources).status.at(i)).set_resistant(0);
-        (*(*gContestResources).status.at(i)).jamReduction = 0;
-        (*(*gContestResources).status.at(i)).set_immune(0);
-        (*(*gContestResources).status.at(i)).set_moreEasilyStartled(0);
-        (*(*gContestResources).status.at(i)).set_usedRepeatableMove(0);
-        (*(*gContestResources).status.at(i)).set_nervous(FALSE);
-        (*(*gContestResources).status.at(i)).effectStringId = CONTEST_STRING_NONE;
-        (*(*gContestResources).status.at(i)).effectStringId2 = CONTEST_STRING_NONE;
-        (*(*gContestResources).status.at(i)).set_conditionMod(CONDITION_NO_CHANGE);
-        (*(*gContestResources).status.at(i))
-            .set_repeatedPrevMove((*(*gContestResources).status.at(i)).repeatedMove());
-        (*(*gContestResources).status.at(i)).set_repeatedMove(FALSE);
-        (*(*gContestResources).status.at(i)).set_turnOrderModAction(0);
-        (*(*gContestResources).status.at(i)).set_appealTripleCondition(0);
-        if (*(*gContestResources).status.at(i)).turnSkipped() != 0 {
-            (*(*gContestResources).status.at(i)).set_numTurnsSkipped(1);
-            (*(*gContestResources).status.at(i)).set_turnSkipped(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).jam = 0;
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_resistant(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).jamReduction = 0;
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_immune(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_moreEasilyStartled(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_usedRepeatableMove(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_nervous(FALSE);
+        (*(*crate::gl!(gContestResources)).status.at(i)).effectStringId = CONTEST_STRING_NONE;
+        (*(*crate::gl!(gContestResources)).status.at(i)).effectStringId2 = CONTEST_STRING_NONE;
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_conditionMod(CONDITION_NO_CHANGE);
+        (*(*crate::gl!(gContestResources)).status.at(i))
+            .set_repeatedPrevMove((*(*crate::gl!(gContestResources)).status.at(i)).repeatedMove());
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_repeatedMove(FALSE);
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_turnOrderModAction(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_appealTripleCondition(0);
+        if (*(*crate::gl!(gContestResources)).status.at(i)).turnSkipped() != 0 {
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_numTurnsSkipped(1);
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_turnSkipped(0);
         }
-        if (*(*gContestResources).status.at(i)).exploded() != 0 {
-            (*(*gContestResources).status.at(i)).set_noMoreTurns(TRUE);
-            (*(*gContestResources).status.at(i)).set_exploded(FALSE);
+        if (*(*crate::gl!(gContestResources)).status.at(i)).exploded() != 0 {
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_noMoreTurns(TRUE);
+            (*(*crate::gl!(gContestResources)).status.at(i)).set_exploded(FALSE);
         }
-        (*(*gContestResources).status.at(i)).set_overrideCategoryExcitementMod(0);
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_overrideCategoryExcitementMod(0);
         i += 1;
     }
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).prevMove =
-            (*(*gContestResources).status.at(i)).currMove;
-        (*(*gContestResources).contest).moveHistory[(*(*gContestResources).contest).appealNumber]
-            [i] = (*(*gContestResources).status.at(i)).currMove;
-        (*(*gContestResources).contest).excitementHistory
-            [(*(*gContestResources).contest).appealNumber][i] =
-            Contest_GetMoveExcitement((*(*gContestResources).status.at(i)).currMove) as u8;
-        (*(*gContestResources).status.at(i)).currMove = MOVE_NONE;
+        (*(*crate::gl!(gContestResources)).status.at(i)).prevMove =
+            (*(*crate::gl!(gContestResources)).status.at(i)).currMove;
+        (*(*crate::gl!(gContestResources)).contest).moveHistory
+            [(*(*crate::gl!(gContestResources)).contest).appealNumber][i] =
+            (*(*crate::gl!(gContestResources)).status.at(i)).currMove;
+        (*(*crate::gl!(gContestResources)).contest).excitementHistory
+            [(*(*crate::gl!(gContestResources)).contest).appealNumber][i] =
+            Contest_GetMoveExcitement((*(*crate::gl!(gContestResources)).status.at(i)).currMove)
+                as u8;
+        (*(*crate::gl!(gContestResources)).status.at(i)).currMove = MOVE_NONE;
     }
-    (*(*gContestResources).excitement).set_frozen(FALSE);
+    (*(*crate::gl!(gContestResources)).excitement).set_frozen(FALSE);
 }
 pub unsafe fn Contest_IsMonsTurnDisabled(contestant: u8) -> u8 {
-    if (*(*gContestResources).status.at(contestant)).numTurnsSkipped() != 0
-        || (*(*gContestResources).status.at(contestant)).noMoreTurns() != 0
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).numTurnsSkipped() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).noMoreTurns() != 0
     {
         return TRUE;
     } else {
@@ -3693,10 +3945,12 @@ pub unsafe fn Contest_IsMonsTurnDisabled(contestant: u8) -> u8 {
         0
     }
 }
-unsafe fn CalculateTotalPointsForContestant(contestant: u8) {
-    gContestMonRound2Points[contestant] = GetContestantRound2Points(contestant);
-    gContestMonTotalPoints[contestant] =
-        gContestMonRound1Points[contestant] + gContestMonRound2Points[contestant];
+fn CalculateTotalPointsForContestant(contestant: u8) {
+    crate::gl!(gContestMonRound2Points[contestant] = GetContestantRound2Points(contestant));
+    crate::gl!(
+        gContestMonTotalPoints[contestant] = crate::gl!(gContestMonRound1Points[contestant])
+            + crate::gl!(gContestMonRound2Points[contestant])
+    );
 }
 unsafe fn CalculateFinalScores() {
     for i in 0..CONTESTANT_COUNT {
@@ -3704,8 +3958,8 @@ unsafe fn CalculateFinalScores() {
     }
     DetermineFinalStandings();
 }
-unsafe fn GetContestantRound2Points(contestant: u8) -> i16 {
-    gContestMonAppealPointTotals[contestant] * 2
+fn GetContestantRound2Points(contestant: u8) -> i16 {
+    crate::gl!(gContestMonAppealPointTotals[contestant]) * 2
 }
 unsafe fn DetermineFinalStandings() {
     let mut randomOrdering: CArray<u16, 4> = CArray([0, 0, 0, 0]);
@@ -3724,8 +3978,8 @@ unsafe fn DetermineFinalStandings() {
         i += 1;
     }
     for i in 0..CONTESTANT_COUNT {
-        standings[i].totalPoints = gContestMonTotalPoints[i] as i32;
-        standings[i].round1Points = gContestMonRound1Points[i] as i32;
+        standings[i].totalPoints = crate::gl!(gContestMonTotalPoints[i]) as i32;
+        standings[i].round1Points = crate::gl!(gContestMonRound1Points[i]) as i32;
         standings[i].random = randomOrdering[i] as i32;
         standings[i].contestant = i;
     }
@@ -3753,24 +4007,34 @@ unsafe fn DetermineFinalStandings() {
         i += 1;
     }
     for i in 0..CONTESTANT_COUNT {
-        gContestFinalStandings[standings[i].contestant] = i as u8;
+        {
+            let gl_v = i as u8;
+            let gl_i33 = standings[i].contestant;
+            crate::gl!(gContestFinalStandings[gl_i33] = gl_v)
+        };
     }
 }
 pub unsafe fn SaveLinkContestResults() {
-    if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-        (*gSaveBlock2Ptr).contestLinkResults[gSpecialVar_ContestCategory]
-            [gContestFinalStandings[gContestPlayerMonIndex]] =
-            (if (*gSaveBlock2Ptr).contestLinkResults[gSpecialVar_ContestCategory]
-                [gContestFinalStandings[gContestPlayerMonIndex]] as i32
+    if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        (*crate::gl!(gSaveBlock2Ptr)).contestLinkResults[gSpecialVar_ContestCategory.get()][{
+            let gl_i34 = gContestPlayerMonIndex.get();
+            crate::gl!(gContestFinalStandings[gl_i34])
+        }] = (if (*crate::gl!(gSaveBlock2Ptr)).contestLinkResults[gSpecialVar_ContestCategory.get()]
+            [{
+                let gl_i35 = gContestPlayerMonIndex.get();
+                crate::gl!(gContestFinalStandings[gl_i35])
+            }] as i32
+            + 1
+            > 9999
+        {
+            9999
+        } else {
+            (*crate::gl!(gSaveBlock2Ptr)).contestLinkResults[gSpecialVar_ContestCategory.get()][{
+                let gl_i36 = gContestPlayerMonIndex.get();
+                crate::gl!(gContestFinalStandings[gl_i36])
+            }] as i32
                 + 1
-                > 9999
-            {
-                9999
-            } else {
-                (*gSaveBlock2Ptr).contestLinkResults[gSpecialVar_ContestCategory]
-                    [gContestFinalStandings[gContestPlayerMonIndex]] as i32
-                    + 1
-            }) as u16;
+        }) as u16;
     }
 }
 unsafe fn DidContestantPlaceHigher(a: i32, b: i32, standings: *mut ContestFinalStandings) -> u8 {
@@ -3791,8 +4055,8 @@ unsafe fn DidContestantPlaceHigher(a: i32, b: i32, standings: *mut ContestFinalS
     retVal
 }
 unsafe fn ContestPrintLinkStandby() {
-    gBattle_BG0_Y = 0;
-    gBattle_BG2_Y = 0;
+    gBattle_BG0_Y.set(0);
+    gBattle_BG2_Y.set(0);
     ContestClearGeneralTextWindow();
     Contest_StartTextPrinter(
         (*crate::asmdata::gText_LinkStandby4.cast::<CArray<u8, 0>>())
@@ -3829,7 +4093,7 @@ fn GetNumHeartsFromAppealPoints(appeal: i16) -> i8 {
     hearts
 }
 unsafe fn UpdateAppealHearts(startAppeal: i16, appealDelta: i16, contestant: u8) -> u8 {
-    (*(*gContestResources).gfxState.at(contestant)).set_updatingAppealHearts(TRUE);
+    (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).set_updatingAppealHearts(TRUE);
     let taskId: u8 = CreateTask(Some(Task_UpdateAppealHearts), 20);
     let startHearts: i8 = GetNumHeartsFromAppealPoints(startAppeal);
     let heartsDelta: i8 = GetNumHeartsFromAppealPoints(startAppeal + appealDelta) - startHearts;
@@ -3866,7 +4130,8 @@ pub(crate) unsafe fn Task_UpdateAppealHearts(taskId: u8) {
         task_set(taskId, tDelayTimer, 0);
         if task_get(taskId, tHeartsDelta) == 0 {
             DestroyTask(taskId);
-            (*(*gContestResources).gfxState.at(contestant)).set_updatingAppealHearts(FALSE);
+            (*(*crate::gl!(gContestResources)).gfxState.at(contestant))
+                .set_updatingAppealHearts(FALSE);
             return;
         } else if startHearts == 0 {
             if heartsDelta < 0 {
@@ -3928,15 +4193,19 @@ pub(crate) unsafe fn Task_UpdateAppealHearts(taskId: u8) {
             0,
             heartOffset,
             newNumHearts + 22,
-            gContestantTurnOrder[contestant] * 5 + 2 + onSecondLine,
+            crate::gl!(gContestantTurnOrder[contestant]) * 5 + 2 + onSecondLine,
             1,
             1,
             17,
         );
         if heartsDelta > 0 {
             PlaySE(SE_CONTEST_HEART);
-            m4aMPlayImmInit(&raw mut gMPlayInfo_SE1);
-            m4aMPlayPitchControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, pitchMod as i16 * 256);
+            m4aMPlayImmInit(crate::gl!(&raw gMPlayInfo_SE1));
+            m4aMPlayPitchControl(
+                crate::gl!(&raw gMPlayInfo_SE1),
+                TRACKS_ALL,
+                pitchMod as i16 * 256,
+            );
         } else {
             PlaySE(SE_BOO);
         }
@@ -3948,8 +4217,8 @@ pub(crate) unsafe fn Task_UpdateAppealHearts(taskId: u8) {
 unsafe fn CreateSliderHeartSprites() {
     LoadSpriteSheet((&raw const *sSpriteSheet_SliderHeart).cast_mut());
     for i in 0..CONTESTANT_COUNT {
-        let y: u8 = sSliderHeartYPositions[gContestantTurnOrder[i]];
-        (*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId = CreateSprite(
+        let y: u8 = sSliderHeartYPositions[crate::gl!(gContestantTurnOrder[i])];
+        (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId = CreateSprite(
             (&raw const *sSpriteTemplate_SliderHeart).cast_mut(),
             180,
             y as i16,
@@ -3958,23 +4227,41 @@ unsafe fn CreateSliderHeartSprites() {
     }
 }
 unsafe fn UpdateHeartSlider(contestant: u8) {
-    (*(*gContestResources).gfxState.at(contestant)).set_sliderUpdating(TRUE);
-    let spriteId: u8 = (*(*gContestResources).gfxState.at(contestant)).sliderHeartSpriteId;
-    let mut slideTarget: i16 = (*(*gContestResources).status.at(contestant)).pointTotal / 10 * 2;
+    (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).set_sliderUpdating(TRUE);
+    let spriteId: u8 =
+        (*(*crate::gl!(gContestResources)).gfxState.at(contestant)).sliderHeartSpriteId;
+    let mut slideTarget: i16 =
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).pointTotal / 10 * 2;
     if slideTarget > 56 {
         slideTarget = 56;
     } else if slideTarget < 0 {
         slideTarget = 0;
     }
-    gSprites[spriteId].set_invisible(FALSE as u16);
-    gSprites[spriteId].data[sContestant] = contestant as i16;
-    gSprites[spriteId].data[sTargetX] = slideTarget;
-    if gSprites[spriteId].data[sTargetX] > gSprites[spriteId].x2 {
-        gSprites[spriteId].data[sMoveX] = 1;
+    (*gSprites.as_ptr())[spriteId].set_invisible(FALSE as u16);
+    {
+        let gl_i2 = sContestant;
+        crate::gl!(gSprites[spriteId].data[gl_i2] = contestant as i16)
+    };
+    {
+        let gl_i3 = sTargetX;
+        crate::gl!(gSprites[spriteId].data[gl_i3] = slideTarget)
+    };
+    if ({
+        let gl_i4 = sTargetX;
+        crate::gl!(gSprites[spriteId].data[gl_i4])
+    }) > crate::gl!(gSprites[spriteId].x2)
+    {
+        {
+            let gl_i5 = sMoveX;
+            crate::gl!(gSprites[spriteId].data[gl_i5] = 1)
+        };
     } else {
-        gSprites[spriteId].data[sMoveX] = -1;
+        {
+            let gl_i6 = sMoveX;
+            crate::gl!(gSprites[spriteId].data[gl_i6] = -1)
+        };
     }
-    gSprites[spriteId].callback = Some(SpriteCB_UpdateHeartSlider);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_UpdateHeartSlider));
 }
 unsafe fn UpdateHeartSliders() {
     for i in 0..CONTESTANT_COUNT {
@@ -3984,7 +4271,7 @@ unsafe fn UpdateHeartSliders() {
 unsafe fn SlidersDoneUpdating() -> u8 {
     let mut i: i32 = 0;
     while i < CONTESTANT_COUNT {
-        if (*(*gContestResources).gfxState.at(i)).sliderUpdating() != 0 {
+        if (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderUpdating() != 0 {
             break;
         }
         i += 1;
@@ -4001,7 +4288,7 @@ unsafe fn SlidersDoneUpdating() -> u8 {
 }
 pub(crate) unsafe fn SpriteCB_UpdateHeartSlider(sprite: *mut Sprite) {
     if (*sprite).x2 == (*sprite).data[sTargetX] {
-        (*(*gContestResources)
+        (*(*crate::gl!(gContestResources))
             .gfxState
             .at((*sprite).data[sContestant]))
         .set_sliderUpdating(FALSE);
@@ -4012,17 +4299,28 @@ pub(crate) unsafe fn SpriteCB_UpdateHeartSlider(sprite: *mut Sprite) {
 }
 unsafe fn UpdateSliderHeartSpriteYPositions() {
     for i in 0..CONTESTANT_COUNT {
-        gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId].y =
-            sSliderHeartYPositions[gContestantTurnOrder[i]] as i16;
+        {
+            let gl_v = sSliderHeartYPositions[crate::gl!(gContestantTurnOrder[i])] as i16;
+            let gl_i7 = (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId;
+            crate::gl!(gSprites[gl_i7].y = gl_v)
+        };
     }
 }
 unsafe fn SetBottomSliderHeartsInvisibility(invisible: u8) {
     for i in 0..CONTESTANT_COUNT {
-        if gContestantTurnOrder[i] > 1 {
+        if crate::gl!(gContestantTurnOrder[i]) > 1 {
             if invisible == 0 {
-                gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId].x = 180;
+                {
+                    let gl_i8 =
+                        (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId;
+                    crate::gl!(gSprites[gl_i8].x = 180)
+                };
             } else {
-                gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId].x = 256;
+                {
+                    let gl_i9 =
+                        (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId;
+                    crate::gl!(gSprites[gl_i9].x = 256)
+                };
             }
         }
     }
@@ -4031,17 +4329,20 @@ unsafe fn CreateNextTurnSprites() {
     LoadSpritePalette((&raw const *sSpritePalette_NextTurn).cast_mut());
     for i in 0..CONTESTANT_COUNT {
         LoadCompressedSpriteSheet((&raw const sSpriteSheet_NextTurn[i]).cast_mut());
-        (*(*gContestResources).gfxState.at(i)).nextTurnSpriteId = CreateSprite(
+        (*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId = CreateSprite(
             (&raw const sSpriteTemplates_NextTurn[i]).cast_mut(),
             204,
-            sNextTurnSpriteYPositions[gContestantTurnOrder[i]] as i16,
+            sNextTurnSpriteYPositions[crate::gl!(gContestantTurnOrder[i])] as i16,
             0,
         );
         SetSubspriteTables(
-            &raw mut gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId],
+            {
+                let gl_i10 = (*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId;
+                crate::gl!(&raw gSprites[gl_i10])
+            },
             sSubspriteTable_NextTurn.as_ptr().cast_mut(),
         );
-        gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId]
+        (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId]
             .set_invisible(TRUE as u16);
     }
 }
@@ -4054,24 +4355,24 @@ unsafe fn CreateApplauseMeterSprite() {
         44,
         1,
     );
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    (*(*gContestResources).contest).applauseMeterSpriteId = spriteId;
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    (*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId = spriteId;
 }
 unsafe fn CreateJudgeAttentionEyeTask() {
     let taskId: u8 = CreateTask(Some(Task_FlashJudgeAttentionEye), 30);
-    (*(*gContestResources).contest).judgeAttentionTaskId = taskId;
+    (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId = taskId;
     for i in 0..(CONTESTANT_COUNT as u8) {
         task_set(taskId, i as i32 * 4, 0xFF);
     }
 }
 unsafe fn StartFlashJudgeAttentionEye(contestant: u8) {
     task_set(
-        (*(*gContestResources).contest).judgeAttentionTaskId,
+        (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId,
         contestant as i32 * 4,
         0,
     );
     task_set(
-        (*(*gContestResources).contest).judgeAttentionTaskId,
+        (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId,
         contestant as i32 * 4 + 1,
         0,
     );
@@ -4083,26 +4384,28 @@ unsafe fn StopFlashJudgeAttentionEye(contestant: u8) {
 pub(crate) unsafe fn Task_StopFlashJudgeAttentionEye(taskId: u8) {
     let contestant: u8 = task_get(taskId, 0) as u8;
     if task_get(
-        (*(*gContestResources).contest).judgeAttentionTaskId,
+        (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId,
         contestant as i32 * 4,
     ) == 0
         || task_get(
-            (*(*gContestResources).contest).judgeAttentionTaskId,
+            (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId,
             contestant as i32 * 4,
         ) == 0xFF
     {
         task_set(
-            (*(*gContestResources).contest).judgeAttentionTaskId,
+            (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId,
             contestant as i32 * 4,
             0xFF,
         );
         task_set(
-            (*(*gContestResources).contest).judgeAttentionTaskId,
+            (*(*crate::gl!(gContestResources)).contest).judgeAttentionTaskId,
             contestant as i32 * 4 + 1,
             0,
         );
         BlendPalette(
-            ((5 + (*(*gContestResources).contest).prevTurnOrder[contestant] as u16) * 16) + 6,
+            ((5 + (*(*crate::gl!(gContestResources)).contest).prevTurnOrder[contestant] as u16)
+                * 16)
+                + 6,
             2,
             0,
             19455,
@@ -4127,7 +4430,8 @@ pub(crate) unsafe fn Task_FlashJudgeAttentionEye(taskId: u8) {
                 );
             }
             BlendPalette(
-                ((5 + (*(*gContestResources).contest).prevTurnOrder[i] as u16) * 16) + 6,
+                ((5 + (*(*crate::gl!(gContestResources)).contest).prevTurnOrder[i] as u16) * 16)
+                    + 6,
                 2,
                 task_get(taskId, offset as i32) as u8,
                 19455,
@@ -4136,19 +4440,20 @@ pub(crate) unsafe fn Task_FlashJudgeAttentionEye(taskId: u8) {
     }
 }
 unsafe fn CreateUnusedBlendTask() {
-    (*(*gContestResources).contest).blendTaskId = CreateTask(Some(Task_UnusedBlend), 30);
+    (*(*crate::gl!(gContestResources)).contest).blendTaskId =
+        CreateTask(Some(Task_UnusedBlend), 30);
     for i in 0..CONTESTANT_COUNT {
         InitUnusedBlendTaskData(i as u8);
     }
 }
 unsafe fn InitUnusedBlendTaskData(contestant: u8) {
     task_set(
-        (*(*gContestResources).contest).blendTaskId,
+        (*(*crate::gl!(gContestResources)).contest).blendTaskId,
         contestant as i32 * 4,
         0xFF,
     );
     task_set(
-        (*(*gContestResources).contest).blendTaskId,
+        (*(*crate::gl!(gContestResources)).contest).blendTaskId,
         contestant as i32 * 4 + 1,
         0,
     );
@@ -4162,12 +4467,14 @@ unsafe fn UpdateBlendTaskContestantData(contestant: u8) {
     InitUnusedBlendTaskData(contestant);
     let palOffset1: u32 = contestant as u32 + 5;
     {
-        let mut _src: *mut c_void = &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
-            .cast::<CArray<u16, 512>>()
-            .cast_mut())[palOffset1 * 16 + 10] as *mut c_void;
-        let mut _dest: *mut c_void = &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-            .cast::<CArray<u16, 512>>()
-            .cast_mut())[palOffset1 * 16 + 10] as *mut c_void;
+        let mut _src: *mut c_void =
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[palOffset1 * 16 + 10] as *mut c_void;
+        let mut _dest: *mut c_void =
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[palOffset1 * 16 + 10] as *mut c_void;
         let mut _size: u32 = 2;
         {
             {
@@ -4183,12 +4490,14 @@ unsafe fn UpdateBlendTaskContestantData(contestant: u8) {
     }
     let palOffset2: u32 = (contestant as u32 + 5) * 16 + 12 + contestant as u32;
     {
-        let mut _src: *mut c_void = &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
-            .cast::<CArray<u16, 512>>()
-            .cast_mut())[palOffset2] as *mut c_void;
-        let mut _dest: *mut c_void = &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-            .cast::<CArray<u16, 512>>()
-            .cast_mut())[palOffset2] as *mut c_void;
+        let mut _src: *mut c_void =
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[palOffset2] as *mut c_void;
+        let mut _dest: *mut c_void =
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[palOffset2] as *mut c_void;
         let mut _size: u32 = 2;
         {
             {
@@ -4237,14 +4546,14 @@ pub(crate) unsafe fn Task_UnusedBlend(taskId: u8) {
     }
 }
 unsafe fn StartStopFlashJudgeAttentionEye(contestant: u8) {
-    if (*(*gContestResources).status.at(contestant)).hasJudgesAttention() != 0 {
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).hasJudgesAttention() != 0 {
         StartFlashJudgeAttentionEye(contestant);
     } else {
         StopFlashJudgeAttentionEye(contestant);
     }
 }
 unsafe fn CreateContestantBoxBlinkSprites(contestant: u8) -> u8 {
-    let x: u8 = gContestantTurnOrder[contestant] * 40 + 32;
+    let x: u8 = crate::gl!(gContestantTurnOrder[contestant]) * 40 + 32;
     LoadCompressedSpriteSheet(
         (&raw const sSpriteSheets_ContestantsTurnBlinkEffect[contestant]).cast_mut(),
     );
@@ -4263,22 +4572,24 @@ unsafe fn CreateContestantBoxBlinkSprites(contestant: u8) -> u8 {
         x as i16,
         29,
     );
-    gSprites[spriteId2]
+    (*gSprites.as_ptr())[spriteId2]
         .oam
-        .set_tileNum(gSprites[spriteId2].oam.tileNum() + 64);
+        .set_tileNum((*gSprites.as_ptr())[spriteId2].oam.tileNum() + 64);
     CopySpriteTiles(
         0,
         3,
         VRAM as usize as *mut c_void as *mut u8,
-        (0x600e000 + gContestantTurnOrder[contestant] as i32 * 5 * 64 + 0x26) as usize as *mut u16,
-        (*gContestResources).boxBlinkTiles1 as *mut u8,
+        (0x600e000 + crate::gl!(gContestantTurnOrder[contestant]) as i32 * 5 * 64 + 0x26) as usize
+            as *mut u16,
+        (*crate::gl!(gContestResources)).boxBlinkTiles1 as *mut u8,
     );
     CopySpriteTiles(
         0,
         3,
         VRAM as usize as *mut c_void as *mut u8,
-        (0x600e000 + gContestantTurnOrder[contestant] as i32 * 5 * 64 + 0x36) as usize as *mut u16,
-        (*gContestResources).boxBlinkTiles2 as *mut u8,
+        (0x600e000 + crate::gl!(gContestantTurnOrder[contestant]) as i32 * 5 * 64 + 0x36) as usize
+            as *mut u16,
+        (*crate::gl!(gContestResources)).boxBlinkTiles2 as *mut u8,
     );
     {
         {
@@ -4286,7 +4597,8 @@ unsafe fn CreateContestantBoxBlinkSprites(contestant: u8) -> u8 {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                ((*gContestResources).boxBlinkTiles1 as *mut u8).at(1280) as *mut c_void,
+                ((*crate::gl!(gContestResources)).boxBlinkTiles1 as *mut u8).at(1280)
+                    as *mut c_void,
                 0x50000c0,
             );
         }
@@ -4297,36 +4609,37 @@ unsafe fn CreateContestantBoxBlinkSprites(contestant: u8) -> u8 {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                ((*gContestResources).boxBlinkTiles2 as *mut u8).at(1280) as *mut c_void,
+                ((*crate::gl!(gContestResources)).boxBlinkTiles2 as *mut u8).at(1280)
+                    as *mut c_void,
                 0x50000c0,
             );
         }
     }
     RequestDma3Copy(
-        (*gContestResources).boxBlinkTiles1,
-        (OBJ_VRAM0 + gSprites[spriteId1].oam.tileNum() as i32 * 32) as usize as *mut u8
+        (*crate::gl!(gContestResources)).boxBlinkTiles1,
+        (OBJ_VRAM0 + (*gSprites.as_ptr())[spriteId1].oam.tileNum() as i32 * 32) as usize as *mut u8
             as *mut c_void,
         0x800,
         1,
     );
     RequestDma3Copy(
-        (*gContestResources).boxBlinkTiles2,
-        (OBJ_VRAM0 + gSprites[spriteId2].oam.tileNum() as i32 * 32) as usize as *mut u8
+        (*crate::gl!(gContestResources)).boxBlinkTiles2,
+        (OBJ_VRAM0 + (*gSprites.as_ptr())[spriteId2].oam.tileNum() as i32 * 32) as usize as *mut u8
             as *mut c_void,
         0x800,
         1,
     );
-    gSprites[spriteId1].data[0] = spriteId2 as i16;
-    gSprites[spriteId2].data[0] = spriteId1 as i16;
-    gSprites[spriteId1].data[1] = contestant as i16;
-    gSprites[spriteId2].data[1] = contestant as i16;
+    crate::gl!(gSprites[spriteId1].data[0] = spriteId2 as i16);
+    crate::gl!(gSprites[spriteId2].data[0] = spriteId1 as i16);
+    crate::gl!(gSprites[spriteId1].data[1] = contestant as i16);
+    crate::gl!(gSprites[spriteId2].data[1] = contestant as i16);
     spriteId1
 }
 unsafe fn DestroyContestantBoxBlinkSprites(spriteId: u8) {
-    let spriteId2: u8 = gSprites[spriteId].data[0] as u8;
-    FreeSpriteOamMatrix(&raw mut gSprites[spriteId2]);
-    DestroySprite(&raw mut gSprites[spriteId2]);
-    DestroySpriteAndFreeResources(&raw mut gSprites[spriteId]);
+    let spriteId2: u8 = crate::gl!(gSprites[spriteId].data[0]) as u8;
+    FreeSpriteOamMatrix(crate::gl!(&raw gSprites[spriteId2]));
+    DestroySprite(crate::gl!(&raw gSprites[spriteId2]));
+    DestroySpriteAndFreeResources(crate::gl!(&raw gSprites[spriteId]));
 }
 unsafe fn SetBlendForContestantBoxBlink() {
     SetGpuReg(REG_OFFSET_BLDCNT, 16192);
@@ -4338,12 +4651,15 @@ unsafe fn ResetBlendForContestantBoxBlink() {
 }
 unsafe fn BlinkContestantBox(spriteId: u8, b: u8) {
     SetBlendForContestantBoxBlink();
-    (*(*gContestResources).gfxState.at(gSprites[spriteId].data[1])).set_boxBlinking(1);
-    let spriteId2: u8 = gSprites[spriteId].data[0] as u8;
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId], 1);
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId2], 1);
-    gSprites[spriteId].callback = Some(SpriteCB_BlinkContestantBox);
-    gSprites[spriteId2].callback = Some(SpriteCallbackDummy);
+    (*(*crate::gl!(gContestResources))
+        .gfxState
+        .at(crate::gl!(gSprites[spriteId].data[1])))
+    .set_boxBlinking(1);
+    let spriteId2: u8 = crate::gl!(gSprites[spriteId].data[0]) as u8;
+    StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), 1);
+    StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId2]), 1);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_BlinkContestantBox));
+    crate::gl!(gSprites[spriteId2].callback = Some(SpriteCallbackDummy));
     if b == FALSE {
         PlaySE(SE_CONTEST_MONS_TURN);
     } else {
@@ -4353,33 +4669,36 @@ unsafe fn BlinkContestantBox(spriteId: u8, b: u8) {
 pub(crate) unsafe fn SpriteCB_BlinkContestantBox(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
         let spriteId2: u8 = (*sprite).data[0] as u8;
-        if gSprites[spriteId2].affineAnimEnded() != 0 {
+        if (*gSprites.as_ptr())[spriteId2].affineAnimEnded() != 0 {
             (*sprite).set_invisible(TRUE as u16);
-            gSprites[spriteId2].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[spriteId2].set_invisible(TRUE as u16);
             (*sprite).callback = Some(SpriteCB_EndBlinkContestantBox);
         }
     }
 }
 pub(crate) unsafe fn SpriteCB_EndBlinkContestantBox(sprite: *mut Sprite) {
-    (*(*gContestResources).gfxState.at((*sprite).data[1])).set_boxBlinking(FALSE);
+    (*(*crate::gl!(gContestResources))
+        .gfxState
+        .at((*sprite).data[1]))
+    .set_boxBlinking(FALSE);
     DestroyContestantBoxBlinkSprites((*sprite).data[0] as u8);
     ResetBlendForContestantBoxBlink();
 }
 unsafe fn ContestDebugTogglePointTotal() {
-    if (*(&raw const crate::malloc::gHeap)
+    if (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
         == CONTEST_DEBUG_MODE_PRINT_POINT_TOTAL
     {
-        (*(&raw const crate::malloc::gHeap)
+        (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())[0x1a000] = CONTEST_DEBUG_MODE_OFF;
     } else {
-        (*(&raw const crate::malloc::gHeap)
+        (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())[0x1a000] = CONTEST_DEBUG_MODE_PRINT_POINT_TOTAL;
     }
-    if (*(&raw const crate::malloc::gHeap)
+    if (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
         == CONTEST_DEBUG_MODE_OFF
@@ -4398,7 +4717,7 @@ unsafe fn ContestDebugDoPrint() {
     if gEnableContestDebugging.get() == 0 {
         return;
     }
-    match (*(&raw const crate::malloc::gHeap)
+    match (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
     {
@@ -4412,9 +4731,9 @@ unsafe fn ContestDebugDoPrint() {
             }
             i = 0;
             while i < CONTESTANT_COUNT as u8 {
-                value = (*(*gContestResources).status.at(i)).pointTotal;
+                value = (*(*crate::gl!(gContestResources)).status.at(i)).pointTotal;
                 txtPtr = text.as_mut_ptr();
-                if (*(*gContestResources).status.at(i)).pointTotal < 0 {
+                if (*(*crate::gl!(gContestResources)).status.at(i)).pointTotal < 0 {
                     value *= -1;
                     txtPtr = StringCopy(
                         txtPtr,
@@ -4425,7 +4744,7 @@ unsafe fn ContestDebugDoPrint() {
                 }
                 ConvertIntToDecimalStringN(txtPtr, value as i32, STR_CONV_MODE_LEFT_ALIGN, 4);
                 Contest_PrintTextToBg0WindowAt(
-                    gContestantTurnOrder[i] as u32,
+                    crate::gl!(gContestantTurnOrder[i]) as u32,
                     text.as_mut_ptr(),
                     55,
                     1,
@@ -4434,9 +4753,9 @@ unsafe fn ContestDebugDoPrint() {
                 i += 1;
             }
             for i in 0..(CONTESTANT_COUNT as u8) {
-                value = (*(*gContestResources).status.at(i)).appeal;
+                value = (*(*crate::gl!(gContestResources)).status.at(i)).appeal;
                 txtPtr = text.as_mut_ptr();
-                if (*(*gContestResources).status.at(i)).appeal < 0 {
+                if (*(*crate::gl!(gContestResources)).status.at(i)).appeal < 0 {
                     value *= -1;
                     txtPtr = StringCopy(
                         txtPtr,
@@ -4447,7 +4766,7 @@ unsafe fn ContestDebugDoPrint() {
                 }
                 ConvertIntToDecimalStringN(txtPtr, value as i32, STR_CONV_MODE_LEFT_ALIGN, 4);
                 Contest_PrintTextToBg0WindowAt(
-                    gContestantTurnOrder[i] as u32,
+                    crate::gl!(gContestantTurnOrder[i]) as u32,
                     text.as_mut_ptr(),
                     5,
                     1,
@@ -4478,42 +4797,56 @@ pub unsafe fn SortContestants(useRanking: u8) {
     if useRanking == 0 {
         i = 0;
         while i < CONTESTANT_COUNT {
-            gContestantTurnOrder[i] = i as u8;
+            crate::gl!(gContestantTurnOrder[i] = i as u8);
             v3 = 0;
             while v3 < i {
-                if gContestMonRound1Points[gContestantTurnOrder[v3]] < gContestMonRound1Points[i]
-                    || gContestMonRound1Points[gContestantTurnOrder[v3]]
-                        == gContestMonRound1Points[i]
-                        && randomOrdering[gContestantTurnOrder[v3]] < randomOrdering[i]
+                if (*gContestMonRound1Points.as_ptr())[crate::gl!(gContestantTurnOrder[v3])]
+                    < crate::gl!(gContestMonRound1Points[i])
+                    || (*gContestMonRound1Points.as_ptr())[crate::gl!(gContestantTurnOrder[v3])]
+                        == crate::gl!(gContestMonRound1Points[i])
+                        && randomOrdering[crate::gl!(gContestantTurnOrder[v3])] < randomOrdering[i]
                 {
                     let mut j: i32 = i;
                     while j > v3 {
-                        gContestantTurnOrder[j] = gContestantTurnOrder[j - 1];
+                        crate::gl!(
+                            gContestantTurnOrder[j] = {
+                                let gl_i37 = j - 1;
+                                crate::gl!(gContestantTurnOrder[gl_i37])
+                            }
+                        );
                         j -= 1;
                     }
-                    gContestantTurnOrder[v3] = i as u8;
+                    crate::gl!(gContestantTurnOrder[v3] = i as u8);
                     break;
                 }
                 v3 += 1;
             }
             if v3 == i {
-                gContestantTurnOrder[i] = i as u8;
+                crate::gl!(gContestantTurnOrder[i] = i as u8);
             }
             i += 1;
         }
-        memcpy(scratch.as_mut_ptr(), gContestantTurnOrder.as_mut_ptr(), 4);
+        memcpy(
+            scratch.as_mut_ptr(),
+            (*gContestantTurnOrder.as_ptr()).as_mut_ptr(),
+            4,
+        );
         for i in 0..CONTESTANT_COUNT {
-            gContestantTurnOrder[scratch[i]] = i as u8;
+            {
+                let gl_v = i as u8;
+                let gl_i38 = scratch[i];
+                crate::gl!(gContestantTurnOrder[gl_i38] = gl_v)
+            };
         }
     } else {
         memset(scratch.as_mut_ptr(), CONTESTANT_NONE as i32, 4);
         for i in 0..CONTESTANT_COUNT {
-            let mut j: u8 = (*(*gContestResources).status.at(i)).ranking();
+            let mut j: u8 = (*(*crate::gl!(gContestResources)).status.at(i)).ranking();
             loop {
                 let ptr: *mut u8 = &raw mut scratch[j];
                 if *ptr == CONTESTANT_NONE {
                     *ptr = i as u8;
-                    gContestantTurnOrder[i] = j;
+                    crate::gl!(gContestantTurnOrder[i] = j);
                     break;
                 }
                 j += 1;
@@ -4522,14 +4855,26 @@ pub unsafe fn SortContestants(useRanking: u8) {
         for i in 0..3i32 {
             v3 = 3;
             while v3 > i {
-                if (*(*gContestResources).status.at(v3 - 1)).ranking()
-                    == (*(*gContestResources).status.at(v3)).ranking()
-                    && gContestantTurnOrder[v3 - 1] < gContestantTurnOrder[v3]
+                if (*(*crate::gl!(gContestResources)).status.at(v3 - 1)).ranking()
+                    == (*(*crate::gl!(gContestResources)).status.at(v3)).ranking()
+                    && {
+                        let gl_i39 = v3 - 1;
+                        crate::gl!(gContestantTurnOrder[gl_i39])
+                    } < crate::gl!(gContestantTurnOrder[v3])
                     && randomOrdering[v3 - 1] < randomOrdering[v3]
                 {
-                    let temp: u8 = gContestantTurnOrder[v3];
-                    gContestantTurnOrder[v3] = gContestantTurnOrder[v3 - 1];
-                    gContestantTurnOrder[v3 - 1] = temp;
+                    let temp: u8 = crate::gl!(gContestantTurnOrder[v3]);
+                    crate::gl!(
+                        gContestantTurnOrder[v3] = {
+                            let gl_i40 = v3 - 1;
+                            crate::gl!(gContestantTurnOrder[gl_i40])
+                        }
+                    );
+                    {
+                        let gl_v = temp;
+                        let gl_i41 = v3 - 1;
+                        crate::gl!(gContestantTurnOrder[gl_i41] = gl_v)
+                    };
                 }
                 v3 -= 1;
             }
@@ -4540,14 +4885,14 @@ unsafe fn DrawContestantWindows() {
     for i in 0..CONTESTANT_COUNT {
         let windowId: i32 = i + 5;
         LoadPalette(
-            (*((*(&raw const crate::malloc::gHeap)
+            (*((*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                 .cast::<CArray<u8, 114688>>()
                 .cast_mut())
             .as_mut_ptr()
             .at(106500) as *mut ContestTempSave))
                 .cachedWindowPalettes[windowId]
                 .as_mut_ptr() as *mut c_void,
-            (5 + gContestantTurnOrder[i] as u16) * 16,
+            (5 + crate::gl!(gContestantTurnOrder[i]) as u16) * 16,
             32,
         );
     }
@@ -4555,123 +4900,131 @@ unsafe fn DrawContestantWindows() {
 }
 unsafe fn CalculateAppealMoveImpact(contestant: u8) {
     let mut effect: u8 = 0;
-    (*(*gContestResources).status.at(contestant)).appeal = 0;
-    (*(*gContestResources).status.at(contestant)).baseAppeal = 0;
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal = 0;
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).baseAppeal = 0;
     if ContestantCanUseTurn(contestant) == 0 {
         return;
     }
-    let r#move: u16 = (*(*gContestResources).status.at(contestant)).currMove;
+    let r#move: u16 = (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove;
     effect = (*(&raw const crate::data::contest_effect::gContestMoves)
         .cast::<CArray<ContestMove, 0>>())[r#move]
         .effect;
-    (*(*gContestResources).status.at(contestant)).moveCategory =
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).moveCategory =
         (*(&raw const crate::data::contest_effect::gContestMoves).cast::<CArray<ContestMove, 0>>())
-            [(*(*gContestResources).status.at(contestant)).currMove]
+            [(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
             .contestCategory();
-    if (*(*gContestResources).status.at(contestant)).currMove
-        == (*(*gContestResources).status.at(contestant)).prevMove
-        && (*(*gContestResources).status.at(contestant)).currMove != MOVE_NONE
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove
+        == (*(*crate::gl!(gContestResources)).status.at(contestant)).prevMove
+        && (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove != MOVE_NONE
     {
-        (*(*gContestResources).status.at(contestant)).set_repeatedMove(TRUE);
-        (*(*gContestResources).status.at(contestant)).set_moveRepeatCount(
-            (*(*gContestResources).status.at(contestant)).moveRepeatCount() + 1,
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).set_repeatedMove(TRUE);
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).set_moveRepeatCount(
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).moveRepeatCount() + 1,
         );
     } else {
-        (*(*gContestResources).status.at(contestant)).set_moveRepeatCount(0);
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).set_moveRepeatCount(0);
     }
-    (*(*gContestResources).status.at(contestant)).baseAppeal =
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).baseAppeal =
         (*(&raw const crate::data::contest_effect::gContestEffects)
             .cast::<CArray<ContestEffect, 0>>())[effect]
             .appeal as i16;
-    (*(*gContestResources).status.at(contestant)).appeal =
-        (*(*gContestResources).status.at(contestant)).baseAppeal;
-    (*(*gContestResources).appealResults).jam =
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal =
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).baseAppeal;
+    (*(*crate::gl!(gContestResources)).appealResults).jam =
         (*(&raw const crate::data::contest_effect::gContestEffects)
             .cast::<CArray<ContestEffect, 0>>())[effect]
             .jam as i16;
-    (*(*gContestResources).appealResults).jam2 = (*(*gContestResources).appealResults).jam;
-    (*(*gContestResources).appealResults).contestant = contestant;
+    (*(*crate::gl!(gContestResources)).appealResults).jam2 =
+        (*(*crate::gl!(gContestResources)).appealResults).jam;
+    (*(*crate::gl!(gContestResources)).appealResults).contestant = contestant;
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).status.at(i)).jam = 0;
-        (*(*gContestResources).appealResults).unnervedPokes[i] = 0;
+        (*(*crate::gl!(gContestResources)).status.at(i)).jam = 0;
+        (*(*crate::gl!(gContestResources)).appealResults).unnervedPokes[i] = 0;
     }
-    if (*(*gContestResources).status.at(contestant)).hasJudgesAttention() != 0
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).hasJudgesAttention() != 0
         && AreMovesContestCombo(
-            (*(*gContestResources).status.at(contestant)).prevMove,
-            (*(*gContestResources).status.at(contestant)).currMove,
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).prevMove,
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove,
         ) == 0
     {
-        (*(*gContestResources).status.at(contestant)).set_hasJudgesAttention(FALSE);
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).set_hasJudgesAttention(FALSE);
     }
     (*(&raw const crate::data::contest_effect::gContestEffectFuncs)
         .cast::<CArray<Option<unsafe fn()>, 0>>())[effect]
         .unwrap_unchecked()();
-    if (*(*gContestResources).status.at(contestant)).conditionMod() == CONDITION_GAIN {
-        (*(*gContestResources).status.at(contestant)).appeal +=
-            (*(*gContestResources).status.at(contestant)).condition as i16 - 10;
-    } else if (*(*gContestResources).status.at(contestant)).appealTripleCondition() != 0 {
-        (*(*gContestResources).status.at(contestant)).appeal +=
-            (*(*gContestResources).status.at(contestant)).condition as i16 * 3;
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).conditionMod() == CONDITION_GAIN {
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal +=
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).condition as i16 - 10;
+    } else if (*(*crate::gl!(gContestResources)).status.at(contestant)).appealTripleCondition() != 0
+    {
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal +=
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).condition as i16 * 3;
     } else {
-        (*(*gContestResources).status.at(contestant)).appeal +=
-            (*(*gContestResources).status.at(contestant)).condition as i16;
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal +=
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).condition as i16;
     }
-    (*(*gContestResources).status.at(contestant)).completedCombo = FALSE;
-    (*(*gContestResources).status.at(contestant)).set_usedComboMove(FALSE);
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).completedCombo = FALSE;
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).set_usedComboMove(FALSE);
     if IsContestantAllowedToCombo(contestant) != 0 {
         let completedCombo: u8 = AreMovesContestCombo(
-            (*(*gContestResources).status.at(contestant)).prevMove,
-            (*(*gContestResources).status.at(contestant)).currMove,
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).prevMove,
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove,
         );
         if completedCombo != 0
-            && (*(*gContestResources).status.at(contestant)).hasJudgesAttention() != 0
+            && (*(*crate::gl!(gContestResources)).status.at(contestant)).hasJudgesAttention() != 0
         {
-            (*(*gContestResources).status.at(contestant)).completedCombo = completedCombo;
-            (*(*gContestResources).status.at(contestant)).set_usedComboMove(TRUE);
-            (*(*gContestResources).status.at(contestant)).set_hasJudgesAttention(FALSE);
-            (*(*gContestResources).status.at(contestant)).comboAppealBonus =
-                (*(*gContestResources).status.at(contestant)).baseAppeal as u8
-                    * (*(*gContestResources).status.at(contestant)).completedCombo;
-            (*(*gContestResources).status.at(contestant)).set_completedComboFlag(TRUE);
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).completedCombo =
+                completedCombo;
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).set_usedComboMove(TRUE);
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).set_hasJudgesAttention(FALSE);
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).comboAppealBonus =
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).baseAppeal as u8
+                    * (*(*crate::gl!(gContestResources)).status.at(contestant)).completedCombo;
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).set_completedComboFlag(TRUE);
         } else {
             if (*(&raw const crate::data::contest_effect::gContestMoves)
                 .cast::<CArray<ContestMove, 0>>())
-                [(*(*gContestResources).status.at(contestant)).currMove]
+                [(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
                 .comboStarterId
                 != 0
             {
-                (*(*gContestResources).status.at(contestant)).set_hasJudgesAttention(TRUE);
-                (*(*gContestResources).status.at(contestant)).set_usedComboMove(TRUE);
+                (*(*crate::gl!(gContestResources)).status.at(contestant))
+                    .set_hasJudgesAttention(TRUE);
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).set_usedComboMove(TRUE);
             } else {
-                (*(*gContestResources).status.at(contestant)).set_hasJudgesAttention(FALSE);
+                (*(*crate::gl!(gContestResources)).status.at(contestant))
+                    .set_hasJudgesAttention(FALSE);
             }
         }
     }
-    if (*(*gContestResources).status.at(contestant)).repeatedMove() != 0 {
-        (*(*gContestResources).status.at(contestant)).repeatJam =
-            ((*(*gContestResources).status.at(contestant)).moveRepeatCount() + 1) * 10;
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatedMove() != 0 {
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatJam =
+            ((*(*crate::gl!(gContestResources)).status.at(contestant)).moveRepeatCount() + 1) * 10;
     }
-    if (*(*gContestResources).status.at(contestant)).nervous() != 0 {
-        (*(*gContestResources).status.at(contestant)).set_hasJudgesAttention(FALSE);
-        (*(*gContestResources).status.at(contestant)).appeal = 0;
-        (*(*gContestResources).status.at(contestant)).baseAppeal = 0;
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).nervous() != 0 {
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).set_hasJudgesAttention(FALSE);
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).appeal = 0;
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).baseAppeal = 0;
     }
-    (*(*gContestResources).excitement).moveExcitement =
-        Contest_GetMoveExcitement((*(*gContestResources).status.at(contestant)).currMove);
-    if (*(*gContestResources).status.at(contestant)).overrideCategoryExcitementMod() != 0 {
-        (*(*gContestResources).excitement).moveExcitement = 1;
+    (*(*crate::gl!(gContestResources)).excitement).moveExcitement = Contest_GetMoveExcitement(
+        (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove,
+    );
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).overrideCategoryExcitementMod()
+        != 0
+    {
+        (*(*crate::gl!(gContestResources)).excitement).moveExcitement = 1;
     }
-    if (*(*gContestResources).excitement).moveExcitement > 0 {
-        if (*(*gContestResources).contest).applauseLevel as i32
-            + (*(*gContestResources).excitement).moveExcitement as i32
+    if (*(*crate::gl!(gContestResources)).excitement).moveExcitement > 0 {
+        if (*(*crate::gl!(gContestResources)).contest).applauseLevel as i32
+            + (*(*crate::gl!(gContestResources)).excitement).moveExcitement as i32
             > 4
         {
-            (*(*gContestResources).excitement).excitementAppealBonus = 60;
+            (*(*crate::gl!(gContestResources)).excitement).excitementAppealBonus = 60;
         } else {
-            (*(*gContestResources).excitement).excitementAppealBonus = 10;
+            (*(*crate::gl!(gContestResources)).excitement).excitementAppealBonus = 10;
         }
     } else {
-        (*(*gContestResources).excitement).excitementAppealBonus = 0;
+        (*(*crate::gl!(gContestResources)).excitement).excitementAppealBonus = 0;
     }
     let mut rnd: u8 = (Random() as i32 % 3) as u8;
     let mut i: i32 = 0;
@@ -4684,13 +5037,13 @@ unsafe fn CalculateAppealMoveImpact(contestant: u8) {
         }
         i += 1;
     }
-    (*(*gContestResources).status.at(contestant)).contestantAnimTarget = i as u8;
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).contestantAnimTarget = i as u8;
 }
 pub unsafe fn SetContestantEffectStringID(contestant: u8, effectStringId: u8) {
-    (*(*gContestResources).status.at(contestant)).effectStringId = effectStringId;
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId = effectStringId;
 }
 pub unsafe fn SetContestantEffectStringID2(contestant: u8, effectStringId: u8) {
-    (*(*gContestResources).status.at(contestant)).effectStringId2 = effectStringId;
+    (*(*crate::gl!(gContestResources)).status.at(contestant)).effectStringId2 = effectStringId;
 }
 pub unsafe fn SetStartledString(contestant: u8, jam: u8) {
     if jam >= 60 {
@@ -4708,74 +5061,74 @@ pub unsafe fn SetStartledString(contestant: u8, jam: u8) {
 unsafe fn PrintAppealMoveResultText(contestant: u8, stringId: u8) {
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gContestMons[contestant].nickname.as_mut_ptr(),
+        (*gContestMons.as_ptr())[contestant].nickname.as_mut_ptr(),
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<CArray<u8, 13>, 355>>())
-            [(*(*gContestResources).status.at(contestant)).currMove]
+            [(*(*crate::gl!(gContestResources)).status.at(contestant)).currMove]
             .as_ptr()
             .cast_mut(),
     );
     if (*(&raw const crate::data::contest_effect::gContestMoves).cast::<CArray<ContestMove, 0>>())
-        [(*(*gContestResources)
+        [(*(*crate::gl!(gContestResources))
             .status
-            .at((*(*gContestResources).appealResults).contestant))
+            .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
         .currMove]
         .contestCategory()
         == CONTEST_CATEGORY_COOL
     {
         StringCopy(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*crate::asmdata::gText_Contest_Shyness.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else if (*(&raw const crate::data::contest_effect::gContestMoves)
-        .cast::<CArray<ContestMove, 0>>())[(*(*gContestResources)
+        .cast::<CArray<ContestMove, 0>>())[(*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .currMove]
         .contestCategory()
         == CONTEST_CATEGORY_BEAUTY
     {
         StringCopy(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*crate::asmdata::gText_Contest_Anxiety.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else if (*(&raw const crate::data::contest_effect::gContestMoves)
-        .cast::<CArray<ContestMove, 0>>())[(*(*gContestResources)
+        .cast::<CArray<ContestMove, 0>>())[(*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .currMove]
         .contestCategory()
         == CONTEST_CATEGORY_CUTE
     {
         StringCopy(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*crate::asmdata::gText_Contest_Laziness.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else if (*(&raw const crate::data::contest_effect::gContestMoves)
-        .cast::<CArray<ContestMove, 0>>())[(*(*gContestResources)
+        .cast::<CArray<ContestMove, 0>>())[(*(*crate::gl!(gContestResources))
         .status
-        .at((*(*gContestResources).appealResults).contestant))
+        .at((*(*crate::gl!(gContestResources)).appealResults).contestant))
     .currMove]
         .contestCategory()
         == CONTEST_CATEGORY_SMART
     {
         StringCopy(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*crate::asmdata::gText_Contest_Hesitancy.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
     } else {
         StringCopy(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*crate::asmdata::gText_Contest_Fear.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
@@ -4786,8 +5139,8 @@ unsafe fn PrintAppealMoveResultText(contestant: u8, stringId: u8) {
     Contest_StartTextPrinter(gStringVar4.as_mut_ptr(), TRUE as u32);
 }
 pub unsafe fn MakeContestantNervous(p: u8) {
-    (*(*gContestResources).status.at(p)).set_nervous(TRUE);
-    (*(*gContestResources).status.at(p)).currMove = MOVE_NONE;
+    (*(*crate::gl!(gContestResources)).status.at(p)).set_nervous(TRUE);
+    (*(*crate::gl!(gContestResources)).status.at(p)).currMove = MOVE_NONE;
 }
 unsafe fn ApplyNextTurnOrder() {
     let mut nextContestant: u8 = 0;
@@ -4795,14 +5148,14 @@ unsafe fn ApplyNextTurnOrder() {
     let mut newTurnOrder: CArray<u8, 4> = zeroed();
     let mut isContestantOrdered: CArray<u8, 4> = zeroed();
     for i in 0..CONTESTANT_COUNT {
-        newTurnOrder[i] = gContestantTurnOrder[i];
+        newTurnOrder[i] = crate::gl!(gContestantTurnOrder[i]);
         isContestantOrdered[i] = FALSE;
     }
     let mut i: i32 = 0;
     while i < CONTESTANT_COUNT {
         j = 0;
         while j < CONTESTANT_COUNT {
-            if (*(*gContestResources).status.at(j)).nextTurnOrder as i32 == i {
+            if (*(*crate::gl!(gContestResources)).status.at(j)).nextTurnOrder as i32 == i {
                 newTurnOrder[j] = i as u8;
                 isContestantOrdered[j] = TRUE;
                 break;
@@ -4813,7 +5166,8 @@ unsafe fn ApplyNextTurnOrder() {
             j = 0;
             while j < CONTESTANT_COUNT {
                 if isContestantOrdered[j] == 0
-                    && (*(*gContestResources).status.at(j)).nextTurnOrder == CONTESTANT_NONE
+                    && (*(*crate::gl!(gContestResources)).status.at(j)).nextTurnOrder
+                        == CONTESTANT_NONE
                 {
                     nextContestant = j as u8;
                     j += 1;
@@ -4823,8 +5177,10 @@ unsafe fn ApplyNextTurnOrder() {
             }
             while j < CONTESTANT_COUNT {
                 if isContestantOrdered[j] == 0
-                    && (*(*gContestResources).status.at(j)).nextTurnOrder == CONTESTANT_NONE
-                    && gContestantTurnOrder[nextContestant] > gContestantTurnOrder[j]
+                    && (*(*crate::gl!(gContestResources)).status.at(j)).nextTurnOrder
+                        == CONTESTANT_NONE
+                    && crate::gl!(gContestantTurnOrder[nextContestant])
+                        > crate::gl!(gContestantTurnOrder[j])
                 {
                     nextContestant = j as u8;
                 }
@@ -4836,10 +5192,10 @@ unsafe fn ApplyNextTurnOrder() {
         i += 1;
     }
     for i in 0..CONTESTANT_COUNT {
-        (*(*gContestResources).appealResults).turnOrder[i] = newTurnOrder[i];
-        (*(*gContestResources).status.at(i)).nextTurnOrder = CONTESTANT_NONE;
-        (*(*gContestResources).status.at(i)).set_turnOrderMod(0);
-        gContestantTurnOrder[i] = newTurnOrder[i];
+        (*(*crate::gl!(gContestResources)).appealResults).turnOrder[i] = newTurnOrder[i];
+        (*(*crate::gl!(gContestResources)).status.at(i)).nextTurnOrder = CONTESTANT_NONE;
+        (*(*crate::gl!(gContestResources)).status.at(i)).set_turnOrderMod(0);
+        crate::gl!(gContestantTurnOrder[i] = newTurnOrder[i]);
     }
 }
 pub(crate) unsafe fn SpriteCB_JudgeSpeechBubble(sprite: *mut Sprite) {
@@ -4852,70 +5208,70 @@ pub(crate) unsafe fn SpriteCB_JudgeSpeechBubble(sprite: *mut Sprite) {
         (*sprite).data[1] = 0;
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).callback = Some(SpriteCallbackDummy);
-        (*(*gContestResources).contest).set_waitForJudgeSpeechBubble(FALSE as u16);
+        (*(*crate::gl!(gContestResources)).contest).set_waitForJudgeSpeechBubble(FALSE as u16);
     }
 }
 unsafe fn DoJudgeSpeechBubble(symbolId: u8) {
-    let spriteId: u8 = (*(*gContestResources).contest).judgeSpeechBubbleSpriteId;
+    let spriteId: u8 = (*(*crate::gl!(gContestResources)).contest).judgeSpeechBubbleSpriteId;
     match symbolId {
         JUDGE_SYMBOL_SWIRL | JUDGE_SYMBOL_SWIRL_UNUSED => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16);
             PlaySE(SE_FAILURE);
         }
         JUDGE_SYMBOL_ONE_EXCLAMATION => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 4);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 4);
             PlaySE(SE_SUCCESS);
         }
         JUDGE_SYMBOL_TWO_EXCLAMATIONS => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 8);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 8);
             PlaySE(SE_SUCCESS);
         }
         JUDGE_SYMBOL_NUMBER_ONE_UNUSED => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 12);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 12);
             PlaySE(SE_WARP_IN);
         }
         JUDGE_SYMBOL_NUMBER_ONE => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 12);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 12);
             PlaySE(SE_WARP_IN);
         }
         JUDGE_SYMBOL_NUMBER_FOUR => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 16);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 16);
             PlaySE(SE_WARP_IN);
         }
         JUDGE_SYMBOL_STAR => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 24);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 24);
             PlaySE(SE_M_HEAL_BELL);
         }
         _ => {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].data[0] as u16 + 20);
+                .set_tileNum(crate::gl!(gSprites[spriteId].data[0]) as u16 + 20);
             PlaySE(SE_WARP_IN);
         }
     }
-    gSprites[spriteId].data[1] = 0;
-    gSprites[spriteId].set_invisible(FALSE as u16);
-    gSprites[spriteId].callback = Some(SpriteCB_JudgeSpeechBubble);
-    (*(*gContestResources).contest).set_waitForJudgeSpeechBubble(TRUE as u16);
+    crate::gl!(gSprites[spriteId].data[1] = 0);
+    (*gSprites.as_ptr())[spriteId].set_invisible(FALSE as u16);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_JudgeSpeechBubble));
+    (*(*crate::gl!(gContestResources)).contest).set_waitForJudgeSpeechBubble(TRUE as u16);
 }
 unsafe fn UpdateApplauseMeter() {
     for i in 0..APPLAUSE_METER_SIZE {
         let mut src: *mut u8 = null_mut();
-        if i < (*(*gContestResources).contest).applauseLevel as i32 {
+        if i < (*(*crate::gl!(gContestResources)).contest).applauseLevel as i32 {
             src = (&raw const (*(&raw const crate::data::graphics::gContestApplauseMeterGfx)
                 .cast::<CArray<u8, 0>>())[64])
                 .cast_mut();
@@ -4928,7 +5284,8 @@ unsafe fn UpdateApplauseMeter() {
         CpuSet(
             src as *mut c_void,
             (OBJ_VRAM0
-                + (gSprites[(*(*gContestResources).contest).applauseMeterSpriteId]
+                + ((*gSprites.as_ptr())
+                    [(*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId]
                     .oam
                     .tileNum() as i32
                     + 17
@@ -4939,7 +5296,8 @@ unsafe fn UpdateApplauseMeter() {
         CpuSet(
             src.at(32) as *mut c_void,
             (OBJ_VRAM0
-                + (gSprites[(*(*gContestResources).contest).applauseMeterSpriteId]
+                + ((*gSprites.as_ptr())
+                    [(*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId]
                     .oam
                     .tileNum() as i32
                     + 25
@@ -4947,13 +5305,13 @@ unsafe fn UpdateApplauseMeter() {
                     * 32) as usize as *mut c_void,
             0x4000008,
         );
-        if (*(*gContestResources).contest).applauseLevel > 4 {
+        if (*(*crate::gl!(gContestResources)).contest).applauseLevel > 4 {
             StartApplauseOverflowAnimation();
         }
     }
 }
 pub unsafe fn Contest_GetMoveExcitement(r#move: u16) -> i8 {
-    sContestExcitementTable[gSpecialVar_ContestCategory]
+    sContestExcitementTable[gSpecialVar_ContestCategory.get()]
         [(*(&raw const crate::data::contest_effect::gContestMoves)
             .cast::<CArray<ContestMove, 0>>())[r#move]
             .contestCategory()]
@@ -4988,7 +5346,7 @@ pub(crate) unsafe fn Task_ApplauseOverflowAnimation(taskId: u8) {
         );
         if task_get(taskId, 4) == 0 || task_get(taskId, 4) == 16 {
             task_set(taskId, 3, task_get(taskId, 3) ^ 1);
-            if (*(*gContestResources).contest).applauseLevel < 5 {
+            if (*(*crate::gl!(gContestResources)).contest).applauseLevel < 5 {
                 BlendPalette(0x100 + task_get(taskId, 2) as u16 * 16 + 8, 1, 0, 31);
                 DestroyTask(taskId);
             }
@@ -4997,13 +5355,19 @@ pub(crate) unsafe fn Task_ApplauseOverflowAnimation(taskId: u8) {
 }
 unsafe fn SlideApplauseMeterIn() {
     CreateTask(Some(Task_SlideApplauseMeterIn), 10);
-    gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].x2 = -70;
-    gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].set_invisible(FALSE as u16);
-    (*(*gContestResources).contest).set_applauseMeterIsMoving(TRUE as u16);
+    {
+        let gl_i11 = (*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId;
+        crate::gl!(gSprites[gl_i11].x2 = -70)
+    };
+    (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId]
+        .set_invisible(FALSE as u16);
+    (*(*crate::gl!(gContestResources)).contest).set_applauseMeterIsMoving(TRUE as u16);
 }
 pub(crate) unsafe fn Task_SlideApplauseMeterIn(taskId: u8) {
-    let sprite: *mut Sprite =
-        &raw mut gSprites[(*(*gContestResources).contest).applauseMeterSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i12 = (*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId;
+        crate::gl!(&raw gSprites[gl_i12])
+    };
     task_set(taskId, 10, task_get(taskId, 10) + 1664);
     (*sprite).x2 += task_get(taskId, 10) >> 8;
     task_set(taskId, 10, task_get(taskId, 10) & 0xFF);
@@ -5011,22 +5375,30 @@ pub(crate) unsafe fn Task_SlideApplauseMeterIn(taskId: u8) {
         (*sprite).x2 = 0;
     }
     if (*sprite).x2 == 0 {
-        (*(*gContestResources).contest).set_applauseMeterIsMoving(FALSE as u16);
+        (*(*crate::gl!(gContestResources)).contest).set_applauseMeterIsMoving(FALSE as u16);
         DestroyTask(taskId);
     }
 }
 unsafe fn SlideApplauseMeterOut() {
-    if gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].invisible() == TRUE as u16 {
-        (*(*gContestResources).contest).set_applauseMeterIsMoving(FALSE as u16);
+    if (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId]
+        .invisible()
+        == TRUE as u16
+    {
+        (*(*crate::gl!(gContestResources)).contest).set_applauseMeterIsMoving(FALSE as u16);
     } else {
         CreateTask(Some(Task_SlideApplauseMeterOut), 10);
-        gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].x2 = 0;
-        (*(*gContestResources).contest).set_applauseMeterIsMoving(TRUE as u16);
+        {
+            let gl_i13 = (*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId;
+            crate::gl!(gSprites[gl_i13].x2 = 0)
+        };
+        (*(*crate::gl!(gContestResources)).contest).set_applauseMeterIsMoving(TRUE as u16);
     }
 }
 pub(crate) unsafe fn Task_SlideApplauseMeterOut(taskId: u8) {
-    let sprite: *mut Sprite =
-        &raw mut gSprites[(*(*gContestResources).contest).applauseMeterSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i14 = (*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId;
+        crate::gl!(&raw gSprites[gl_i14])
+    };
     task_set(taskId, 10, task_get(taskId, 10) + 1664);
     (*sprite).x2 -= task_get(taskId, 10) >> 8;
     task_set(taskId, 10, task_get(taskId, 10) & 0xFF);
@@ -5035,14 +5407,14 @@ pub(crate) unsafe fn Task_SlideApplauseMeterOut(taskId: u8) {
     }
     if (*sprite).x2 == -70 {
         (*sprite).set_invisible(TRUE as u16);
-        (*(*gContestResources).contest).set_applauseMeterIsMoving(FALSE as u16);
+        (*(*crate::gl!(gContestResources)).contest).set_applauseMeterIsMoving(FALSE as u16);
         DestroyTask(taskId);
     }
 }
 unsafe fn ShowAndUpdateApplauseMeter(unused: i8) {
     let taskId: u8 = CreateTask(Some(Task_ShowAndUpdateApplauseMeter), 5);
     task_set(taskId, 0, unused as i16);
-    (*(*gContestResources).contest).set_isShowingApplauseMeter(TRUE as u16);
+    (*(*crate::gl!(gContestResources)).contest).set_isShowingApplauseMeter(TRUE as u16);
 }
 pub(crate) unsafe fn Task_ShowAndUpdateApplauseMeter(taskId: u8) {
     match task_get(taskId, 10) {
@@ -5051,7 +5423,7 @@ pub(crate) unsafe fn Task_ShowAndUpdateApplauseMeter(taskId: u8) {
             task_set(taskId, 10, task_get(taskId, 10) + 1);
         }
         1 => {
-            if (*(*gContestResources).contest).applauseMeterIsMoving() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).applauseMeterIsMoving() == 0 {
                 task_set(taskId, 10, task_get(taskId, 10) + 1);
             }
         }
@@ -5063,22 +5435,27 @@ pub(crate) unsafe fn Task_ShowAndUpdateApplauseMeter(taskId: u8) {
         {
             task_set(taskId, 11, 0);
             UpdateApplauseMeter();
-            (*(*gContestResources).contest).set_isShowingApplauseMeter(FALSE as u16);
+            (*(*crate::gl!(gContestResources)).contest).set_isShowingApplauseMeter(FALSE as u16);
             DestroyTask(taskId);
         }
         _ => {}
     }
 }
 unsafe fn HideApplauseMeterNoAnim() {
-    gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].x2 = 0;
-    gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].set_invisible(FALSE as u16);
+    {
+        let gl_i15 = (*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId;
+        crate::gl!(gSprites[gl_i15].x2 = 0)
+    };
+    (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId]
+        .set_invisible(FALSE as u16);
 }
 unsafe fn ShowApplauseMeterNoAnim() {
-    gSprites[(*(*gContestResources).contest).applauseMeterSpriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).contest).applauseMeterSpriteId]
+        .set_invisible(TRUE as u16);
 }
 unsafe fn AnimateAudience() {
     CreateTask(Some(Task_AnimateAudience), 15);
-    (*(*gContestResources).contest).set_animatingAudience(TRUE as u16);
+    (*(*crate::gl!(gContestResources)).contest).set_animatingAudience(TRUE as u16);
 }
 pub(crate) unsafe fn Task_AnimateAudience(taskId: u8) {
     if ({
@@ -5090,7 +5467,7 @@ pub(crate) unsafe fn Task_AnimateAudience(taskId: u8) {
         task_set(taskId, tDelay, 0);
         if task_get(taskId, tFrame) == 0 {
             RequestDma3Copy(
-                (*(&raw const crate::malloc::gHeap)
+                (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                     .cast::<CArray<u8, 114688>>()
                     .cast_mut())
                 .as_mut_ptr()
@@ -5101,7 +5478,7 @@ pub(crate) unsafe fn Task_AnimateAudience(taskId: u8) {
             );
         } else {
             RequestDma3Copy(
-                (*(&raw const crate::malloc::gHeap)
+                (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                     .cast::<CArray<u8, 114688>>()
                     .cast_mut())
                 .as_mut_ptr()
@@ -5114,7 +5491,7 @@ pub(crate) unsafe fn Task_AnimateAudience(taskId: u8) {
         }
         task_set(taskId, tFrame, task_get(taskId, tFrame) ^ 1);
         if task_get(taskId, tCycles) == 9 {
-            (*(*gContestResources).contest).set_animatingAudience(FALSE as u16);
+            (*(*crate::gl!(gContestResources)).contest).set_animatingAudience(FALSE as u16);
             DestroyTask(taskId);
         }
     }
@@ -5128,9 +5505,9 @@ unsafe fn BlendAudienceBackground(excitementDir: i8, blendDir: i8) {
         blendColor = 9086;
         if blendDir > 0 {
             blendCoeff = 0;
-            targetBlendCoeff = (*(*gContestResources).contest).applauseLevel as u8 * 3;
+            targetBlendCoeff = (*(*crate::gl!(gContestResources)).contest).applauseLevel as u8 * 3;
         } else {
-            blendCoeff = (*(*gContestResources).contest).applauseLevel as u8 * 3;
+            blendCoeff = (*(*crate::gl!(gContestResources)).contest).applauseLevel as u8 * 3;
             targetBlendCoeff = 0;
         }
     } else {
@@ -5147,7 +5524,7 @@ unsafe fn BlendAudienceBackground(excitementDir: i8, blendDir: i8) {
     task_set(taskId, tBlendCoeff, blendCoeff as i16);
     task_set(taskId, tBlendDir, blendDir as i16);
     task_set(taskId, tTargetBlendCoeff, targetBlendCoeff as i16);
-    (*(*gContestResources).contest).set_waitForAudienceBlend(FALSE as u16);
+    (*(*crate::gl!(gContestResources)).contest).set_waitForAudienceBlend(FALSE as u16);
 }
 pub(crate) unsafe fn Task_BlendAudienceBackground(taskId: u8) {
     if ({
@@ -5176,35 +5553,41 @@ pub(crate) unsafe fn Task_BlendAudienceBackground(taskId: u8) {
         );
         if task_get(taskId, tBlendCoeff) == task_get(taskId, tTargetBlendCoeff) {
             DestroyTask(taskId);
-            (*(*gContestResources).contest).set_waitForAudienceBlend(FALSE as u16);
+            (*(*crate::gl!(gContestResources)).contest).set_waitForAudienceBlend(FALSE as u16);
         }
     }
 }
 unsafe fn ShowHideNextTurnGfx(show: u8) {
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).status.at(i)).turnOrderMod() != 0 && show != 0 {
+        if (*(*crate::gl!(gContestResources)).status.at(i)).turnOrderMod() != 0 && show != 0 {
             CpuSet(
                 GetTurnOrderNumberGfx(i as u8) as *mut c_void,
                 (OBJ_VRAM0
-                    + (gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId]
+                    + ((*gSprites.as_ptr())
+                        [(*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId]
                         .oam
                         .tileNum() as i32
                         + 6)
                         * 32) as usize as *mut c_void,
                 0x4000008,
             );
-            gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId].y =
-                sNextTurnSpriteYPositions[gContestantTurnOrder[i]] as i16;
-            gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId]
+            {
+                let gl_v = sNextTurnSpriteYPositions[crate::gl!(gContestantTurnOrder[i])] as i16;
+                let gl_i16 = (*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId;
+                crate::gl!(gSprites[gl_i16].y = gl_v)
+            };
+            (*gSprites.as_ptr())
+                [(*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId]
                 .set_invisible(FALSE as u16);
         } else {
-            gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId]
+            (*gSprites.as_ptr())
+                [(*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId]
                 .set_invisible(TRUE as u16);
         }
     }
 }
 unsafe fn GetTurnOrderNumberGfx(contestant: u8) -> *mut u8 {
-    if (*(*gContestResources).status.at(contestant)).turnOrderMod() != 1 {
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).turnOrderMod() != 1 {
         return (*(&raw const crate::data::graphics::gContestNextTurnRandomGfx)
             .cast::<CArray<u8, 0>>())
         .as_ptr()
@@ -5214,7 +5597,7 @@ unsafe fn GetTurnOrderNumberGfx(contestant: u8) -> *mut u8 {
             .cast::<CArray<u8, 0>>())
         .as_ptr()
         .cast_mut()
-        .at((*(*gContestResources).status.at(contestant)).nextTurnOrder as i32 * 32);
+        .at((*(*crate::gl!(gContestResources)).status.at(contestant)).nextTurnOrder as i32 * 32);
     }
     #[allow(unreachable_code)]
     {
@@ -5223,10 +5606,10 @@ unsafe fn GetTurnOrderNumberGfx(contestant: u8) -> *mut u8 {
 }
 unsafe fn DrawUnnervedSymbols() {
     for i in 0..CONTESTANT_COUNT {
-        if (*(*gContestResources).appealResults).unnervedPokes[i] != 0
+        if (*(*crate::gl!(gContestResources)).appealResults).unnervedPokes[i] != 0
             && Contest_IsMonsTurnDisabled(i as u8) == 0
         {
-            let contestantOffset: u32 = gContestantTurnOrder[i] as u32 * 5 + 2;
+            let contestantOffset: u32 = crate::gl!(gContestantTurnOrder[i]) as u32 * 5 + 2;
             let mut symbolOffset: u16 = GetStatusSymbolTileOffset(STAT_SYMBOL_SWIRL);
             ContestBG_FillBoxWithIncrementingTile(
                 0,
@@ -5254,8 +5637,8 @@ unsafe fn DrawUnnervedSymbols() {
     }
 }
 pub unsafe fn IsContestantAllowedToCombo(contestant: u8) -> u8 {
-    if (*(*gContestResources).status.at(contestant)).repeatedMove() != 0
-        || (*(*gContestResources).status.at(contestant)).nervous() != 0
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatedMove() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).nervous() != 0
     {
         return FALSE;
     } else {
@@ -5279,17 +5662,17 @@ unsafe fn SetBgForCurtainDrop() {
     (*(&raw mut bg2Cnt as *mut BgCnt)).set_priority(1);
     SetGpuReg(REG_OFFSET_BG0CNT, bg0Cnt);
     SetGpuReg(REG_OFFSET_BG2CNT, bg2Cnt);
-    gBattle_BG1_X = DISPLAY_WIDTH;
-    gBattle_BG1_Y = DISPLAY_HEIGHT;
-    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
-    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+    gBattle_BG1_X.set(DISPLAY_WIDTH);
+    gBattle_BG1_Y.set(DISPLAY_HEIGHT);
+    SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X.get());
+    SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y.get());
     {
         {
             let mut tmp: u32 = 0;
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gContestResources).contestBgTilemaps[1] as *mut c_void,
+                (*crate::gl!(gContestResources)).contestBgTilemaps[1] as *mut c_void,
                 0x5000400,
             );
         }
@@ -5304,10 +5687,11 @@ unsafe fn SetBgForCurtainDrop() {
     );
     Contest_SetBgCopyFlags(1);
     for i in 0..CONTESTANT_COUNT {
-        gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId]
+        (*gSprites.as_ptr())
+            [(*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId]
             .oam
             .set_priority(1);
-        gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId]
+        (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId]
             .oam
             .set_priority(1);
     }
@@ -5320,7 +5704,7 @@ unsafe fn UpdateContestantBoxOrder() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gContestResources).contestBgTilemaps[1] as *mut c_void,
+                (*crate::gl!(gContestResources)).contestBgTilemaps[1] as *mut c_void,
                 0x5000400,
             );
         }
@@ -5332,33 +5716,34 @@ unsafe fn UpdateContestantBoxOrder() {
     (*(&raw mut bg1Cnt as *mut BgCnt)).set_areaOverflowMode(0);
     (*(&raw mut bg1Cnt as *mut BgCnt)).set_charBaseBlock(2);
     SetGpuReg(REG_OFFSET_BG1CNT, bg1Cnt);
-    gBattle_BG1_X = 0;
-    gBattle_BG1_Y = 0;
+    gBattle_BG1_X.set(0);
+    gBattle_BG1_Y.set(0);
     for i in 0..CONTESTANT_COUNT {
-        gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId]
+        (*gSprites.as_ptr())
+            [(*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId]
             .oam
             .set_priority(0);
-        gSprites[(*(*gContestResources).gfxState.at(i)).nextTurnSpriteId]
+        (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).gfxState.at(i)).nextTurnSpriteId]
             .oam
             .set_priority(0);
     }
 }
 pub(crate) unsafe fn Task_StartDropCurtainAtRoundEnd(taskId: u8) {
-    gBattle_BG1_X = 0;
-    gBattle_BG1_Y = DISPLAY_HEIGHT;
+    gBattle_BG1_X.set(0);
+    gBattle_BG1_Y.set(DISPLAY_HEIGHT);
     PlaySE12WithPanning(SE_CONTEST_CURTAIN_FALL, 0);
     task_set_func(taskId, Some(Task_UpdateCurtainDropAtRoundEnd));
 }
-pub(crate) unsafe fn Task_UpdateCurtainDropAtRoundEnd(taskId: u8) {
+pub(crate) fn Task_UpdateCurtainDropAtRoundEnd(taskId: u8) {
     if (({
-        gBattle_BG1_Y -= 7;
-        gBattle_BG1_Y
+        gBattle_BG1_Y.set(gBattle_BG1_Y.get() - (7));
+        gBattle_BG1_Y.get()
     }) as i16)
         < 0
     {
-        gBattle_BG1_Y = 0;
+        gBattle_BG1_Y.set(0);
     }
-    if gBattle_BG1_Y == 0 {
+    if gBattle_BG1_Y.get() == 0 {
         task_set(taskId, 0, 0);
         task_set(taskId, 1, 0);
         task_set(taskId, 2, 0);
@@ -5369,7 +5754,8 @@ pub(crate) unsafe fn Task_ResetForNextRound(taskId: u8) {
     match task_get(taskId, 0) {
         0 => {
             for i in 0..CONTESTANT_COUNT {
-                (*(*gContestResources).contest).prevTurnOrder[i] = gContestantTurnOrder[i];
+                (*(*crate::gl!(gContestResources)).contest).prevTurnOrder[i] =
+                    crate::gl!(gContestantTurnOrder[i]);
             }
             FillContestantWindowBgs();
             UpdateBlendTaskContestantsData();
@@ -5380,8 +5766,8 @@ pub(crate) unsafe fn Task_ResetForNextRound(taskId: u8) {
             task_set(taskId, 0, 1);
         }
         1 => {
-            if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-                (*(*gContestResources).contest).set_waitForLink(TRUE as u16);
+            if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+                (*(*crate::gl!(gContestResources)).contest).set_waitForLink(TRUE as u16);
                 if IsPlayerLinkLeader() != 0 {
                     SetContestantStatusesForNextRound();
                 }
@@ -5399,7 +5785,7 @@ pub(crate) unsafe fn Task_ResetForNextRound(taskId: u8) {
             }
         }
         2 => {
-            if (*(*gContestResources).contest).waitForLink() == 0 {
+            if (*(*crate::gl!(gContestResources)).contest).waitForLink() == 0 {
                 task_set(taskId, 0, 3);
             }
         }
@@ -5412,10 +5798,10 @@ pub(crate) unsafe fn Task_ResetForNextRound(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe fn Task_UpdateRaiseCurtainAtRoundEnd(taskId: u8) {
+pub(crate) fn Task_UpdateRaiseCurtainAtRoundEnd(taskId: u8) {
     if ({
-        gBattle_BG1_Y += 7;
-        gBattle_BG1_Y
+        gBattle_BG1_Y.set(gBattle_BG1_Y.get() + (7));
+        gBattle_BG1_Y.get()
     }) as i16
         > DISPLAY_HEIGHT as i16
     {
@@ -5454,42 +5840,54 @@ pub(crate) unsafe fn Task_StartRaiseCurtainAtRoundEnd(taskId: u8) {
 }
 unsafe fn AnimateSliderHearts(animId: u8) {
     for i in 0..CONTESTANT_COUNT {
-        gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId]
+        (*gSprites.as_ptr())
+            [(*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId]
             .oam
             .set_matrixNum(AllocOamMatrix() as u32);
-        gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId]
+        (*gSprites.as_ptr())
+            [(*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId]
             .oam
             .set_affineMode(ST_OAM_AFFINE_NORMAL);
         StartSpriteAffineAnim(
-            &raw mut gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId],
+            {
+                let gl_i17 = (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId;
+                crate::gl!(&raw gSprites[gl_i17])
+            },
             animId,
         );
         if animId == SLIDER_HEART_ANIM_APPEAR {
-            AnimateSprite(
-                &raw mut gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId],
-            );
-            gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId]
+            AnimateSprite({
+                let gl_i18 = (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId;
+                crate::gl!(&raw gSprites[gl_i18])
+            });
+            (*gSprites.as_ptr())
+                [(*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId]
                 .set_invisible(FALSE as u16);
         }
     }
     let taskId: u8 = CreateTask(Some(Task_WaitForSliderHeartAnim), 5);
     task_set(taskId, tAnimId, animId as i16);
-    (*(*gContestResources).contest).set_sliderHeartsAnimating(TRUE as u16);
+    (*(*crate::gl!(gContestResources)).contest).set_sliderHeartsAnimating(TRUE as u16);
 }
 pub(crate) unsafe fn Task_WaitForSliderHeartAnim(taskId: u8) {
-    if gSprites[(*(*gContestResources).gfxState).sliderHeartSpriteId].affineAnimEnded() != 0 {
+    if (*gSprites.as_ptr())[(*(*crate::gl!(gContestResources)).gfxState).sliderHeartSpriteId]
+        .affineAnimEnded()
+        != 0
+    {
         if task_get(taskId, tAnimId) as u8 == SLIDER_HEART_ANIM_DISAPPEAR {
             for i in 0..CONTESTANT_COUNT {
-                gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId]
+                (*gSprites.as_ptr())
+                    [(*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId]
                     .set_invisible(TRUE as u16);
             }
         }
         for i in 0..CONTESTANT_COUNT {
-            FreeSpriteOamMatrix(
-                &raw mut gSprites[(*(*gContestResources).gfxState.at(i)).sliderHeartSpriteId],
-            );
+            FreeSpriteOamMatrix({
+                let gl_i19 = (*(*crate::gl!(gContestResources)).gfxState.at(i)).sliderHeartSpriteId;
+                crate::gl!(&raw gSprites[gl_i19])
+            });
         }
-        (*(*gContestResources).contest).set_sliderHeartsAnimating(FALSE as u16);
+        (*(*crate::gl!(gContestResources)).contest).set_sliderHeartsAnimating(FALSE as u16);
         DestroyTask(taskId);
     }
 }
@@ -5499,24 +5897,25 @@ unsafe fn SanitizeMove(mut r#move: u16) -> u16 {
     }
     r#move
 }
-unsafe fn SanitizeSpecies(mut species: u16) -> u16 {
+fn SanitizeSpecies(mut species: u16) -> u16 {
     if species >= NUM_SPECIES {
         species = SPECIES_NONE;
     }
     species
 }
 unsafe fn SetMoveSpecificAnimData(contestant: u8) {
-    let r#move: u16 = SanitizeMove((*(*gContestResources).status.at(contestant)).currMove);
-    let species: u16 = SanitizeSpecies(gContestMons[contestant].species);
+    let r#move: u16 =
+        SanitizeMove((*(*crate::gl!(gContestResources)).status.at(contestant)).currMove);
+    let species: u16 = SanitizeSpecies(crate::gl!(gContestMons[contestant].species));
     let mut targetContestant: u8 = 0;
     memset(
-        &raw mut (*(*gContestResources).moveAnim).species as *mut u8,
+        &raw mut (*(*crate::gl!(gContestResources)).moveAnim).species as *mut u8,
         0,
         20,
     );
     ClearBattleAnimationVars();
     for i in 0..CONTESTANT_COUNT {
-        gBattleMonForms[i] = 0;
+        crate::gl!(gBattleMonForms[i] = 0);
     }
     match r#move {
         MOVE_CURSE => {
@@ -5529,31 +5928,32 @@ unsafe fn SetMoveSpecificAnimData(contestant: u8) {
                     .types[1]
                     == TYPE_GHOST
             {
-                gAnimMoveTurn = 0;
+                gAnimMoveTurn.set(0);
             } else {
-                gAnimMoveTurn = 1;
+                gAnimMoveTurn.set(1);
             }
         }
         MOVE_TRANSFORM | MOVE_ROLE_PLAY => {
-            targetContestant = (*(*gContestResources).status.at(contestant)).contestantAnimTarget;
-            (*(*gContestResources).moveAnim).targetSpecies =
-                SanitizeSpecies(gContestMons[targetContestant].species);
-            (*(*gContestResources).moveAnim).targetPersonality =
-                gContestMons[targetContestant].personality;
-            (*(*gContestResources).moveAnim).set_hasTargetAnim(TRUE);
+            targetContestant =
+                (*(*crate::gl!(gContestResources)).status.at(contestant)).contestantAnimTarget;
+            (*(*crate::gl!(gContestResources)).moveAnim).targetSpecies =
+                SanitizeSpecies(crate::gl!(gContestMons[targetContestant].species));
+            (*(*crate::gl!(gContestResources)).moveAnim).targetPersonality =
+                crate::gl!(gContestMons[targetContestant].personality);
+            (*(*crate::gl!(gContestResources)).moveAnim).set_hasTargetAnim(TRUE);
         }
         MOVE_RETURN => {
-            gAnimFriendship = MAX_FRIENDSHIP;
+            gAnimFriendship.set(MAX_FRIENDSHIP);
         }
         MOVE_FRUSTRATION => {
-            gAnimFriendship = 0;
+            gAnimFriendship.set(0);
         }
         MOVE_SOLAR_BEAM | MOVE_RAZOR_WIND | MOVE_SKULL_BASH | MOVE_SKY_ATTACK => {
-            if (*(*gContestResources).contest).moveAnimTurnCount == 0 {
-                (*(*gContestResources).contest).moveAnimTurnCount = 2;
-                gAnimMoveTurn = 0;
+            if (*(*crate::gl!(gContestResources)).contest).moveAnimTurnCount == 0 {
+                (*(*crate::gl!(gContestResources)).contest).moveAnimTurnCount = 2;
+                gAnimMoveTurn.set(0);
             } else {
-                gAnimMoveTurn = 1;
+                gAnimMoveTurn.set(1);
             }
         }
         _ => {}
@@ -5561,24 +5961,31 @@ unsafe fn SetMoveSpecificAnimData(contestant: u8) {
     SetBattleTargetSpritePosition();
 }
 unsafe fn ClearMoveAnimData(contestant: u8) {
-    memset((*gContestResources).moveAnim as *mut u8, 0, 20);
-    if (*(*gContestResources).contest).moveAnimTurnCount != 0 {
-        (*(*gContestResources).contest).moveAnimTurnCount -= 1;
+    memset((*crate::gl!(gContestResources)).moveAnim as *mut u8, 0, 20);
+    if (*(*crate::gl!(gContestResources)).contest).moveAnimTurnCount != 0 {
+        (*(*crate::gl!(gContestResources)).contest).moveAnimTurnCount -= 1;
     }
 }
 unsafe fn SetMoveAnimAttackerData(contestant: u8) {
-    (*(*gContestResources).moveAnim).contestant = contestant;
-    (*(*gContestResources).moveAnim).species = SanitizeSpecies(gContestMons[contestant].species);
-    (*(*gContestResources).moveAnim).personality = gContestMons[contestant].personality;
-    (*(*gContestResources).moveAnim).otId = gContestMons[contestant].otId;
+    (*(*crate::gl!(gContestResources)).moveAnim).contestant = contestant;
+    (*(*crate::gl!(gContestResources)).moveAnim).species =
+        SanitizeSpecies(crate::gl!(gContestMons[contestant].species));
+    (*(*crate::gl!(gContestResources)).moveAnim).personality =
+        crate::gl!(gContestMons[contestant].personality);
+    (*(*crate::gl!(gContestResources)).moveAnim).otId = crate::gl!(gContestMons[contestant].otId);
 }
 unsafe fn CreateInvisibleBattleTargetSprite() {
-    gBattlerSpriteIds[3] = CreateInvisibleSpriteWithCallback(Some(SpriteCallbackDummy));
-    InitSpriteAffineAnim(&raw mut gSprites[gBattlerSpriteIds[gBattlerTarget]]);
+    crate::gl!(gBattlerSpriteIds[3] = CreateInvisibleSpriteWithCallback(Some(SpriteCallbackDummy)));
+    InitSpriteAffineAnim(
+        &raw mut (*gSprites.as_ptr())[{
+            let gl_i20 = gBattlerTarget.get();
+            crate::gl!(gBattlerSpriteIds[gl_i20])
+        }],
+    );
     SetBattleTargetSpritePosition();
 }
 unsafe fn SetBattleTargetSpritePosition() {
-    let sprite: *mut Sprite = &raw mut gSprites[gBattlerSpriteIds[3]];
+    let sprite: *mut Sprite = &raw mut (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[3])];
     (*sprite).x2 = 0;
     (*sprite).y2 = 0;
     (*sprite).x = GetBattlerSpriteCoord(B_POSITION_OPPONENT_RIGHT, BATTLER_COORD_X) as i16;
@@ -5590,10 +5997,10 @@ unsafe fn SetMoveTargetPosition(r#move: u16) {
         .target
     {
         MOVE_TARGET_USER_OR_SELECTED | MOVE_TARGET_USER => {
-            gBattlerTarget = B_POSITION_PLAYER_RIGHT;
+            gBattlerTarget.set(B_POSITION_PLAYER_RIGHT);
         }
         _ => {
-            gBattlerTarget = B_POSITION_OPPONENT_RIGHT;
+            gBattlerTarget.set(B_POSITION_OPPONENT_RIGHT);
         }
     }
 }
@@ -5660,7 +6067,7 @@ unsafe fn Contest_StartTextPrinter(currChar: *mut u8, b: u32) {
     if b == 0 {
         AddTextPrinter(&raw mut printerTemplate, 0, None);
     } else {
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
             speed = 4;
         } else {
             speed = GetPlayerTextSpeedDelay();
@@ -5717,7 +6124,7 @@ fn Contest_SetBgCopyFlags(flagIndex: u32) {
 pub unsafe fn ResetContestLinkResults() {
     for i in 0..CONTEST_CATEGORIES_COUNT {
         for j in 0..CONTESTANT_COUNT {
-            (*gSaveBlock2Ptr).contestLinkResults[i][j] = 0;
+            (*crate::gl!(gSaveBlock2Ptr)).contestLinkResults[i][j] = 0;
         }
     }
 }
@@ -5725,15 +6132,15 @@ pub unsafe fn SaveContestWinner(rank: u8) -> u8 {
     let mut captionId: u8 = (Random() as i32 % 3) as u8;
     let mut i: i32 = 0;
     while i < 3 {
-        if gContestFinalStandings[i] == 0 {
+        if crate::gl!(gContestFinalStandings[i]) == 0 {
             break;
         }
         i += 1;
     }
-    if rank == CONTEST_SAVE_FOR_MUSEUM as u8 && i != gContestPlayerMonIndex as i32 {
+    if rank == CONTEST_SAVE_FOR_MUSEUM as u8 && i != gContestPlayerMonIndex.get() as i32 {
         return FALSE;
     }
-    match gSpecialVar_ContestCategory {
+    match gSpecialVar_ContestCategory.get() {
         0 => {
             captionId += CONTEST_CATEGORY_COOL;
         }
@@ -5753,43 +6160,49 @@ pub unsafe fn SaveContestWinner(rank: u8) -> u8 {
     }
     if rank != CONTEST_SAVE_FOR_ARTIST as u8 {
         let id: u8 = GetContestWinnerSaveIdx(rank, TRUE);
-        (*gSaveBlock1Ptr).contestWinners[id].personality = gContestMons[i].personality;
-        (*gSaveBlock1Ptr).contestWinners[id].species = gContestMons[i].species;
-        (*gSaveBlock1Ptr).contestWinners[id].trainerId = gContestMons[i].otId;
+        (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].personality =
+            crate::gl!(gContestMons[i].personality);
+        (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].species =
+            crate::gl!(gContestMons[i].species);
+        (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].trainerId =
+            crate::gl!(gContestMons[i].otId);
         StringCopy(
-            (*gSaveBlock1Ptr).contestWinners[id].monName.as_mut_ptr(),
-            gContestMons[i].nickname.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id]
+                .monName
+                .as_mut_ptr(),
+            (*gContestMons.as_ptr())[i].nickname.as_mut_ptr(),
         );
         StringCopy(
-            (*gSaveBlock1Ptr).contestWinners[id]
+            (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id]
                 .trainerName
                 .as_mut_ptr(),
-            gContestMons[i].trainerName.as_mut_ptr(),
+            (*gContestMons.as_ptr())[i].trainerName.as_mut_ptr(),
         );
-        if gLinkContestFlags as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
-            (*gSaveBlock1Ptr).contestWinners[id].contestRank = CONTEST_RANK_LINK;
+        if gLinkContestFlags.get() as i32 & LINK_CONTEST_FLAG_IS_LINK != 0 {
+            (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].contestRank = CONTEST_RANK_LINK;
         } else {
-            (*gSaveBlock1Ptr).contestWinners[id].contestRank = gSpecialVar_ContestRank as u8;
+            (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].contestRank =
+                gSpecialVar_ContestRank.get() as u8;
         }
         if rank != CONTEST_SAVE_FOR_MUSEUM as u8 {
-            (*gSaveBlock1Ptr).contestWinners[id].contestCategory =
-                gSpecialVar_ContestCategory as u8;
+            (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].contestCategory =
+                gSpecialVar_ContestCategory.get() as u8;
         } else {
-            (*gSaveBlock1Ptr).contestWinners[id].contestCategory = captionId;
+            (*crate::gl!(gSaveBlock1Ptr)).contestWinners[id].contestCategory = captionId;
         }
     } else {
-        gCurContestWinner.personality = gContestMons[i].personality;
-        gCurContestWinner.trainerId = gContestMons[i].otId;
-        gCurContestWinner.species = gContestMons[i].species;
+        crate::gl!(gCurContestWinner.personality = crate::gl!(gContestMons[i].personality));
+        crate::gl!(gCurContestWinner.trainerId = crate::gl!(gContestMons[i].otId));
+        crate::gl!(gCurContestWinner.species = crate::gl!(gContestMons[i].species));
         StringCopy(
-            gCurContestWinner.monName.as_mut_ptr(),
-            gContestMons[i].nickname.as_mut_ptr(),
+            (*gCurContestWinner.as_ptr()).monName.as_mut_ptr(),
+            (*gContestMons.as_ptr())[i].nickname.as_mut_ptr(),
         );
         StringCopy(
-            gCurContestWinner.trainerName.as_mut_ptr(),
-            gContestMons[i].trainerName.as_mut_ptr(),
+            (*gCurContestWinner.as_ptr()).trainerName.as_mut_ptr(),
+            (*gContestMons.as_ptr())[i].trainerName.as_mut_ptr(),
         );
-        gCurContestWinner.contestCategory = captionId;
+        crate::gl!(gCurContestWinner.contestCategory = captionId);
     }
     TRUE
 }
@@ -5801,8 +6214,8 @@ pub unsafe fn GetContestWinnerSaveIdx(rank: u8, shift: u8) -> u8 {
                 i = 5;
                 while i > 0 {
                     memcpy(
-                        &raw mut (*gSaveBlock1Ptr).contestWinners[i] as *mut u8,
-                        &raw mut (*gSaveBlock1Ptr).contestWinners[i - 1] as *mut u8,
+                        &raw mut (*crate::gl!(gSaveBlock1Ptr)).contestWinners[i] as *mut u8,
+                        &raw mut (*crate::gl!(gSaveBlock1Ptr)).contestWinners[i - 1] as *mut u8,
                         32,
                     );
                     i -= 1;
@@ -5810,7 +6223,7 @@ pub unsafe fn GetContestWinnerSaveIdx(rank: u8, shift: u8) -> u8 {
             }
             return 0;
         }
-        _ => match gSpecialVar_ContestCategory {
+        _ => match gSpecialVar_ContestCategory.get() {
             0 => {
                 return 8;
             }
@@ -5836,57 +6249,66 @@ pub unsafe fn GetContestWinnerSaveIdx(rank: u8, shift: u8) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn ClearContestWinnerPicsInContestHall() {
     for i in 0..(MUSEUM_CONTEST_WINNERS_START as i32) {
-        (*gSaveBlock1Ptr).contestWinners[i] = gDefaultContestWinners[i];
+        (*crate::gl!(gSaveBlock1Ptr)).contestWinners[i] = gDefaultContestWinners[i];
     }
 }
 unsafe fn SetContestLiveUpdateFlags(contestant: u8) {
-    if (*(*gContestResources).excitement).frozen() == 0
-        && (*(*gContestResources).excitement).moveExcitement > 0
-        && (*(*gContestResources).status.at(contestant)).repeatedMove() == 0
+    if (*(*crate::gl!(gContestResources)).excitement).frozen() == 0
+        && (*(*crate::gl!(gContestResources)).excitement).moveExcitement > 0
+        && (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatedMove() == 0
     {
-        (*(*gContestResources).tv.at(contestant)).winnerFlags |= CONTESTLIVE_FLAG_EXCITING_APPEAL;
-        (*(*gContestResources).tv.at(contestant)).set_madeExcitingAppeal(TRUE);
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
+            CONTESTLIVE_FLAG_EXCITING_APPEAL;
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).set_madeExcitingAppeal(TRUE);
     }
-    if (*(*gContestResources).status.at(contestant)).nervous() != 0 {
-        (*(*gContestResources).tv.at(contestant)).winnerFlags |= CONTESTLIVE_FLAG_GOT_NERVOUS;
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).nervous() != 0 {
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
+            CONTESTLIVE_FLAG_GOT_NERVOUS;
     }
-    if (*(*gContestResources).excitement).frozen() == 0
-        && (*(*gContestResources).excitement).moveExcitement != 0
-        && (*(*gContestResources).excitement).excitementAppealBonus == 60
+    if (*(*crate::gl!(gContestResources)).excitement).frozen() == 0
+        && (*(*crate::gl!(gContestResources)).excitement).moveExcitement != 0
+        && (*(*crate::gl!(gContestResources)).excitement).excitementAppealBonus == 60
     {
-        (*(*gContestResources).tv.at(contestant)).winnerFlags |= CONTESTLIVE_FLAG_MAXED_EXCITEMENT;
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
+            CONTESTLIVE_FLAG_MAXED_EXCITEMENT;
     }
-    if (*(*gContestResources).status.at(contestant)).usedComboMove() != 0
-        && (*(*gContestResources).status.at(contestant)).completedCombo != 0
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).usedComboMove() != 0
+        && (*(*crate::gl!(gContestResources)).status.at(contestant)).completedCombo != 0
     {
-        (*(*gContestResources).tv.at(contestant)).winnerFlags |= CONTESTLIVE_FLAG_USED_COMBO;
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
+            CONTESTLIVE_FLAG_USED_COMBO;
     }
     for i in 0..CONTESTANT_COUNT {
-        if i != contestant as i32 && (*(*gContestResources).status.at(i)).jam != 0 {
-            (*(*gContestResources).tv.at(contestant)).winnerFlags |=
+        if i != contestant as i32 && (*(*crate::gl!(gContestResources)).status.at(i)).jam != 0 {
+            (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
                 CONTESTLIVE_FLAG_STARTLED_OTHER;
-            (*(*gContestResources).tv.at(i)).winnerFlags |= CONTESTLIVE_FLAG_GOT_STARTLED;
+            (*(*crate::gl!(gContestResources)).tv.at(i)).winnerFlags |=
+                CONTESTLIVE_FLAG_GOT_STARTLED;
         }
     }
-    if (*(*gContestResources).status.at(contestant)).numTurnsSkipped() != 0
-        || (*(*gContestResources).status.at(contestant)).noMoreTurns() != 0
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).numTurnsSkipped() != 0
+        || (*(*crate::gl!(gContestResources)).status.at(contestant)).noMoreTurns() != 0
     {
-        (*(*gContestResources).tv.at(contestant)).winnerFlags |= CONTESTLIVE_FLAG_SKIPPED_TURN;
-    } else if (*(*gContestResources).status.at(contestant)).nervous() == 0 {
-        (*(*gContestResources).tv.at(contestant)).winnerFlags |= CONTESTLIVE_FLAG_MADE_APPEAL;
-        (*(*gContestResources).tv.at(contestant)).set_madeAppeal(TRUE);
-        (*(*gContestResources).tv.at(contestant)).appeals
-            [(*(*gContestResources).contest).appealNumber] =
-            (*(*gContestResources).status.at(contestant)).currMove;
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
+            CONTESTLIVE_FLAG_SKIPPED_TURN;
+    } else if (*(*crate::gl!(gContestResources)).status.at(contestant)).nervous() == 0 {
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).winnerFlags |=
+            CONTESTLIVE_FLAG_MADE_APPEAL;
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).set_madeAppeal(TRUE);
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).appeals
+            [(*(*crate::gl!(gContestResources)).contest).appealNumber] =
+            (*(*crate::gl!(gContestResources)).status.at(contestant)).currMove;
     }
-    if (*(*gContestResources).status.at(contestant)).repeatedMove() != 0 {
-        (*(*gContestResources).tv.at(contestant)).loserFlags |= CONTESTLIVE_FLAG_REPEATED_MOVE;
+    if (*(*crate::gl!(gContestResources)).status.at(contestant)).repeatedMove() != 0 {
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).loserFlags |=
+            CONTESTLIVE_FLAG_REPEATED_MOVE;
     }
-    if (*(*gContestResources).contest).applauseLevel == 4
-        && (*(*gContestResources).excitement).frozen() == 0
-        && (*(*gContestResources).excitement).moveExcitement < 0
+    if (*(*crate::gl!(gContestResources)).contest).applauseLevel == 4
+        && (*(*crate::gl!(gContestResources)).excitement).frozen() == 0
+        && (*(*crate::gl!(gContestResources)).excitement).moveExcitement < 0
     {
-        (*(*gContestResources).tv.at(contestant)).loserFlags |= CONTESTLIVE_FLAG_MISSED_EXCITEMENT;
+        (*(*crate::gl!(gContestResources)).tv.at(contestant)).loserFlags |=
+            CONTESTLIVE_FLAG_MISSED_EXCITEMENT;
     }
 }
 unsafe fn CalculateContestLiveUpdateData() {
@@ -5899,48 +6321,53 @@ unsafe fn CalculateContestLiveUpdateData() {
     let mut loser: u8 = 0;
     let mut winner: u8 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if gContestFinalStandings[i] == 0 {
+        if crate::gl!(gContestFinalStandings[i]) == 0 {
             winner = i as u8;
-        } else if gContestFinalStandings[i] == 3 {
+        } else if crate::gl!(gContestFinalStandings[i]) == 3 {
             loser = i as u8;
         }
     }
-    (*(*gContestResources).tv.at(loser)).loserFlags |= CONTESTLIVE_FLAG_LOST;
+    (*(*crate::gl!(gContestResources)).tv.at(loser)).loserFlags |= CONTESTLIVE_FLAG_LOST;
     let mut i: i32 = 0;
     while i < CONTESTANT_COUNT {
         if i != winner as i32
-            && gContestMonTotalPoints[winner] as i32 - gContestMonTotalPoints[i] as i32 <= 50
+            && crate::gl!(gContestMonTotalPoints[winner]) as i32
+                - crate::gl!(gContestMonTotalPoints[i]) as i32
+                <= 50
         {
-            (*(*gContestResources).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_LOST_SMALL_MARGIN;
+            (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags |=
+                CONTESTLIVE_FLAG_LOST_SMALL_MARGIN;
         }
-        if (*(*gContestResources).tv.at(i)).madeExcitingAppeal() == 0 {
-            (*(*gContestResources).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_NO_EXCITEMENT;
+        if (*(*crate::gl!(gContestResources)).tv.at(i)).madeExcitingAppeal() == 0 {
+            (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags |=
+                CONTESTLIVE_FLAG_NO_EXCITEMENT;
         }
         j = 0;
         while j < CONTESTANT_COUNT {
-            if gContestMonRound1Points[i] < gContestMonRound1Points[j] {
+            if crate::gl!(gContestMonRound1Points[i]) < crate::gl!(gContestMonRound1Points[j]) {
                 break;
             }
             j += 1;
         }
-        if j == CONTESTANT_COUNT && gContestFinalStandings[i] != 0 {
-            (*(*gContestResources).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_BLEW_LEAD;
+        if j == CONTESTANT_COUNT && crate::gl!(gContestFinalStandings[i]) != 0 {
+            (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_BLEW_LEAD;
         }
         notLastInRound1 = FALSE as u32;
         notLastInRound2 = FALSE as u32;
         for j in 0..CONTESTANT_COUNT {
-            if gContestMonRound1Points[i] > gContestMonRound1Points[j] {
+            if crate::gl!(gContestMonRound1Points[i]) > crate::gl!(gContestMonRound1Points[j]) {
                 notLastInRound1 = TRUE as u32;
             }
-            if gContestMonRound2Points[i] > gContestMonRound2Points[j] {
+            if crate::gl!(gContestMonRound2Points[i]) > crate::gl!(gContestMonRound2Points[j]) {
                 notLastInRound2 = TRUE as u32;
             }
         }
         if notLastInRound1 == 0 && notLastInRound2 == 0 {
-            (*(*gContestResources).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_LAST_BOTH_ROUNDS;
+            (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags |=
+                CONTESTLIVE_FLAG_LAST_BOTH_ROUNDS;
         }
-        if (*(*gContestResources).tv.at(i)).madeAppeal() == 0 {
-            (*(*gContestResources).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_NO_APPEALS;
+        if (*(*crate::gl!(gContestResources)).tv.at(i)).madeAppeal() == 0 {
+            (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags |= CONTESTLIVE_FLAG_NO_APPEALS;
         }
         i += 1;
     }
@@ -5951,11 +6378,12 @@ unsafe fn CalculateContestLiveUpdateData() {
     appealMoves[5] = APPEAL_MOVES_END;
     numMoveUses[5] = 0;
     for i in 0..CONTEST_NUM_APPEALS {
-        if (*(*gContestResources).tv.at(winner)).appeals[i] != MOVE_NONE {
+        if (*(*crate::gl!(gContestResources)).tv.at(winner)).appeals[i] != MOVE_NONE {
             for j in 0..CONTEST_NUM_APPEALS {
-                if (*(*gContestResources).tv.at(winner)).appeals[i] != appealMoves[j] {
+                if (*(*crate::gl!(gContestResources)).tv.at(winner)).appeals[i] != appealMoves[j] {
                     if appealMoves[j] == MOVE_NONE {
-                        appealMoves[j] = (*(*gContestResources).tv.at(winner)).appeals[i];
+                        appealMoves[j] =
+                            (*(*crate::gl!(gContestResources)).tv.at(winner)).appeals[i];
                         numMoveUses[j] += 1;
                     }
                 } else {
@@ -5979,18 +6407,22 @@ unsafe fn CalculateContestLiveUpdateData() {
         }
         i += 1;
     }
-    (*(*gContestResources).tv.at(winner)).r#move =
+    (*(*crate::gl!(gContestResources)).tv.at(winner)).r#move =
         moveCandidates[rem_i32(Random() as i32, numMoveCandidates as i32)] as i16;
 }
 unsafe fn SetConestLiveUpdateTVData() {
     let mut loserFlag: u8 = 0;
     let mut loserCandidates: CArray<u8, 3> = zeroed();
-    if gContestFinalStandings[gContestPlayerMonIndex] != 0 {
+    if {
+        let gl_i42 = gContestPlayerMonIndex.get();
+        crate::gl!(gContestFinalStandings[gl_i42])
+    } != 0
+    {
         return;
     }
     let mut winner: u8 = 0;
     for i in 0..CONTESTANT_COUNT {
-        if gContestFinalStandings[i] == 0 {
+        if crate::gl!(gContestFinalStandings[i]) == 0 {
             winner = i as u8;
         }
     }
@@ -5998,15 +6430,15 @@ unsafe fn SetConestLiveUpdateTVData() {
     let mut round2Placing: u8 = 0;
     let mut i: i32 = 0;
     while i < CONTESTANT_COUNT {
-        if gContestMonRound1Points[winner] < gContestMonRound1Points[i] {
+        if crate::gl!(gContestMonRound1Points[winner]) < crate::gl!(gContestMonRound1Points[i]) {
             round1Placing += 1;
         }
-        if gContestMonRound2Points[winner] < gContestMonRound2Points[i] {
+        if crate::gl!(gContestMonRound2Points[winner]) < crate::gl!(gContestMonRound2Points[i]) {
             round2Placing += 1;
         }
         i += 1;
     }
-    let mut flags: u32 = (*(*gContestResources).tv.at(winner)).winnerFlags as u32;
+    let mut flags: u32 = (*(*crate::gl!(gContestResources)).tv.at(winner)).winnerFlags as u32;
     let mut count: u8 = 0;
     for i in 0..8i32 {
         if flags & 1 != 0 {
@@ -6015,7 +6447,7 @@ unsafe fn SetConestLiveUpdateTVData() {
         flags >>= 1;
     }
     let randAction: u8 = rem_i32(Random() as i32, count as i32) as u8;
-    flags = (*(*gContestResources).tv.at(winner)).winnerFlags as u32;
+    flags = (*(*crate::gl!(gContestResources)).tv.at(winner)).winnerFlags as u32;
     count = 0;
     let mut flagId: u8 = 0;
     i = 0;
@@ -6036,21 +6468,21 @@ unsafe fn SetConestLiveUpdateTVData() {
     let winnerFlag: u16 = shl_i32(1, flagId as u32) as u16;
     if winner == 0 {
         loserCandidates[0] = 1;
-        loserFlag = (*(*gContestResources).tv.at(1)).loserFlags;
+        loserFlag = (*(*crate::gl!(gContestResources)).tv.at(1)).loserFlags;
         i = 2;
     } else {
         loserCandidates[0] = 0;
-        loserFlag = (*(*gContestResources).tv).loserFlags;
+        loserFlag = (*(*crate::gl!(gContestResources)).tv).loserFlags;
         i = 1;
     }
     let mut numLoserCandidates: u8 = 1;
     while i < CONTESTANT_COUNT {
         if i != winner as i32 {
-            if loserFlag < (*(*gContestResources).tv.at(i)).loserFlags {
+            if loserFlag < (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags {
                 loserCandidates[0] = i as u8;
-                loserFlag = (*(*gContestResources).tv.at(i)).loserFlags;
+                loserFlag = (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags;
                 numLoserCandidates = 1;
-            } else if loserFlag == (*(*gContestResources).tv.at(i)).loserFlags {
+            } else if loserFlag == (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags {
                 loserCandidates[numLoserCandidates] = i as u8;
                 numLoserCandidates += 1;
             }
@@ -6060,7 +6492,7 @@ unsafe fn SetConestLiveUpdateTVData() {
     let loser: u8 = loserCandidates[rem_i32(Random() as i32, numLoserCandidates as i32)];
     flagId = CONTESTLIVE_FLAG_NO_APPEALS;
     for i in 0..8i32 {
-        loserFlag = (*(*gContestResources).tv.at(loser)).loserFlags & flagId;
+        loserFlag = (*(*crate::gl!(gContestResources)).tv.at(loser)).loserFlags & flagId;
         if loserFlag != 0 {
             break;
         }
@@ -6069,30 +6501,32 @@ unsafe fn SetConestLiveUpdateTVData() {
     ContestLiveUpdates_Init(round1Placing);
     ContestLiveUpdates_SetRound2Placing(round2Placing);
     ContestLiveUpdates_SetWinnerAppealFlag(winnerFlag as u8);
-    ContestLiveUpdates_SetWinnerMoveUsed((*(*gContestResources).tv.at(winner)).r#move as u16);
+    ContestLiveUpdates_SetWinnerMoveUsed(
+        (*(*crate::gl!(gContestResources)).tv.at(winner)).r#move as u16,
+    );
     ContestLiveUpdates_SetLoserData(loserFlag, loser);
 }
 pub unsafe fn ContestDebugToggleBitfields(loserFlags: u8) {
-    if (*(&raw const crate::malloc::gHeap)
+    if (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
         == CONTEST_DEBUG_MODE_OFF
     {
         if loserFlags == 0 {
-            (*(&raw const crate::malloc::gHeap)
+            (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                 .cast::<CArray<u8, 114688>>()
                 .cast_mut())[0x1a000] = CONTEST_DEBUG_MODE_PRINT_WINNER_FLAGS;
         } else {
-            (*(&raw const crate::malloc::gHeap)
+            (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                 .cast::<CArray<u8, 114688>>()
                 .cast_mut())[0x1a000] = CONTEST_DEBUG_MODE_PRINT_LOSER_FLAGS;
         }
     } else {
-        (*(&raw const crate::malloc::gHeap)
+        (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())[0x1a000] = CONTEST_DEBUG_MODE_OFF;
     }
-    if (*(&raw const crate::malloc::gHeap)
+    if (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
         == CONTEST_DEBUG_MODE_OFF
@@ -6112,11 +6546,11 @@ unsafe fn ContestDebugPrintBitStrings() {
     if gEnableContestDebugging.get() == 0 {
         return;
     }
-    if (*(&raw const crate::malloc::gHeap)
+    if (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
         != CONTEST_DEBUG_MODE_PRINT_WINNER_FLAGS
-        && (*(&raw const crate::malloc::gHeap)
+        && (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
             .cast::<CArray<u8, 114688>>()
             .cast_mut())[0x1a000]
             != CONTEST_DEBUG_MODE_PRINT_LOSER_FLAGS
@@ -6128,7 +6562,7 @@ unsafe fn ContestDebugPrintBitStrings() {
         FillWindowPixelBuffer(i, 0);
         i += 1;
     }
-    if (*(&raw const crate::malloc::gHeap)
+    if (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
         .cast::<CArray<u8, 114688>>()
         .cast_mut())[0x1a000]
         == CONTEST_DEBUG_MODE_PRINT_WINNER_FLAGS
@@ -6141,13 +6575,13 @@ unsafe fn ContestDebugPrintBitStrings() {
                     .cast_mut(),
             );
             Contest_PrintTextToBg0WindowAt(
-                gContestantTurnOrder[i] as u32,
+                crate::gl!(gContestantTurnOrder[i]) as u32,
                 text1.as_mut_ptr(),
                 5,
                 1,
                 FONT_NARROW as i32,
             );
-            bits = (*(*gContestResources).tv.at(i)).winnerFlags as u32;
+            bits = (*(*crate::gl!(gContestResources)).tv.at(i)).winnerFlags as u32;
             j = 7;
             while j > -1 {
                 txtPtr = ConvertIntToDecimalStringN(
@@ -6166,14 +6600,14 @@ unsafe fn ContestDebugPrintBitStrings() {
             }
             text2[j] = EOS;
             Contest_PrintTextToBg0WindowAt(
-                gContestantTurnOrder[i] as u32,
+                crate::gl!(gContestantTurnOrder[i]) as u32,
                 text2.as_mut_ptr(),
                 5,
                 1,
                 7,
             );
             Contest_PrintTextToBg0WindowAt(
-                gContestantTurnOrder[i] as u32,
+                crate::gl!(gContestantTurnOrder[i]) as u32,
                 text1.as_mut_ptr().at(j),
                 55,
                 1,
@@ -6188,7 +6622,7 @@ unsafe fn ContestDebugPrintBitStrings() {
                     .as_ptr()
                     .cast_mut(),
             );
-            bits = (*(*gContestResources).tv.at(i)).loserFlags as u32;
+            bits = (*(*crate::gl!(gContestResources)).tv.at(i)).loserFlags as u32;
             txtPtr = &raw mut text1[2];
             j = 7;
             while j > -1 {
@@ -6208,14 +6642,14 @@ unsafe fn ContestDebugPrintBitStrings() {
             }
             text2[j] = EOS;
             Contest_PrintTextToBg0WindowAt(
-                gContestantTurnOrder[i] as u32,
+                crate::gl!(gContestantTurnOrder[i]) as u32,
                 text2.as_mut_ptr(),
                 5,
                 1,
                 FONT_NARROW as i32,
             );
             Contest_PrintTextToBg0WindowAt(
-                gContestantTurnOrder[i] as u32,
+                crate::gl!(gContestantTurnOrder[i]) as u32,
                 text1.as_mut_ptr().at(j),
                 55,
                 1,

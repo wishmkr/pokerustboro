@@ -246,19 +246,19 @@ pub(crate) unsafe fn HandleConditionSearchInput_WaitSetup(menu: *mut Pokenav_Sea
     FALSE as u32
 }
 pub(crate) unsafe fn HandleConditionSearchInput(menu: *mut Pokenav_SearchResults) -> u32 {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         return CONDITION_SEARCH_FUNC_MOVE_UP;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         return CONDITION_SEARCH_FUNC_MOVE_DOWN;
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
         return CONDITION_SEARCH_FUNC_PAGE_UP;
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
         return CONDITION_SEARCH_FUNC_PAGE_DOWN;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*menu).saveResultsList = FALSE as u32;
         (*menu).callback = Some(ReturnToConditionSearchList);
         return CONDITION_SEARCH_FUNC_EXIT;
-    } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         (*(*menu).monList).currIndex = PokenavList_GetSelectedIndex() as u16;
         (*menu).saveResultsList = TRUE as u32;
         (*menu).callback = Some(OpenConditionGraphFromSearchList);
@@ -314,7 +314,7 @@ pub(crate) unsafe fn BuildPartyMonSearchResults(state: i32) -> u32 {
     (*(*menu).monList).currIndex = 0;
     item.boxId = TOTAL_BOXES_COUNT;
     for i in 0..PARTY_SIZE {
-        let pokemon: *mut Pokemon = &raw mut gPlayerParty[i];
+        let pokemon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
         if GetMonData2(pokemon, MON_DATA_SANITY_HAS_SPECIES) == 0 {
             return LT_INC_AND_CONTINUE;
         }
@@ -755,7 +755,7 @@ unsafe fn PrintSearchResultListMenuItems(gfx: *mut Pokenav_SearchResultsGfx) {
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
     *gStringVar1.as_mut_ptr() = EOS;
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_NumberIndex).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
@@ -763,7 +763,7 @@ unsafe fn PrintSearchResultListMenuItems(gfx: *mut Pokenav_SearchResultsGfx) {
     AddTextPrinterParameterized(
         (*gfx).winid as u8,
         FONT_NORMAL,
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         4,
         1,
         TEXT_SKIP_DRAW,
@@ -809,18 +809,26 @@ pub(crate) unsafe fn BufferSearchMonListItem(item: *mut PokenavMonListItem, mut 
     let mut level: u8 = 0;
     let mut genderStr: *mut u8 = null_mut();
     if (*item).boxId == TOTAL_BOXES_COUNT {
-        let mon: *mut Pokemon = &raw mut gPlayerParty[(*item).monId];
+        let mon: *mut Pokemon = {
+            let gl_i0 = (*item).monId;
+            crate::gl!(&raw gPlayerParty[gl_i0])
+        };
         gender = GetMonGender(mon);
         level = GetLevelFromMonExp(mon);
-        GetMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
+        GetMonData3(mon, MON_DATA_NICKNAME, (*gStringVar3.as_ptr()).as_mut_ptr());
     } else {
         let mon: *mut BoxPokemon = GetBoxedMonPtr((*item).boxId, (*item).monId);
         gender = GetBoxMonGender(mon);
         level = GetLevelFromBoxMonExp(mon);
-        GetBoxMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
+        GetBoxMonData3(mon, MON_DATA_NICKNAME, (*gStringVar3.as_ptr()).as_mut_ptr());
     }
-    StringGet_Nickname(gStringVar3.as_mut_ptr());
-    dest = GetStringClearToWidth(dest, FONT_NORMAL as i32, gStringVar3.as_mut_ptr(), 60);
+    StringGet_Nickname((*gStringVar3.as_ptr()).as_mut_ptr());
+    dest = GetStringClearToWidth(
+        dest,
+        FONT_NORMAL as i32,
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        60,
+    );
     match gender {
         MON_MALE => {
             genderStr = sText_MaleSymbol.as_ptr().cast_mut();

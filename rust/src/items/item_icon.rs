@@ -28,12 +28,14 @@ pub enum IconPart {
 }
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gItemIconDecompressionBuffer: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gItemIconDecompressionBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(core::ptr::null_mut());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gItemIcon4x4Buffer: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gItemIcon4x4Buffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(core::ptr::null_mut());
 
 /// C's CpuCopy16.
 unsafe fn cpu_copy16(src: *const u8, dest: *mut u8, size: u32) {
@@ -46,12 +48,12 @@ pub fn alloc_item_icon_temporary_buffers() -> bool {
     // free_item_icon_temporary_buffers.
     unsafe {
         let pic = Alloc(ICON_PIC_SIZE);
-        *(&raw mut gItemIconDecompressionBuffer) = pic;
+        *(crate::gl!(&raw gItemIconDecompressionBuffer)) = pic;
         if pic.is_null() {
             return false;
         }
         let sheet = AllocZeroed(ICON_SHEET_SIZE.into());
-        *(&raw mut gItemIcon4x4Buffer) = sheet;
+        *(crate::gl!(&raw gItemIcon4x4Buffer)) = sheet;
         if sheet.is_null() {
             Free(pic);
             return false;
@@ -63,8 +65,8 @@ pub fn alloc_item_icon_temporary_buffers() -> bool {
 pub fn free_item_icon_temporary_buffers() {
     // SAFETY: as above.
     unsafe {
-        Free(*(&raw const gItemIconDecompressionBuffer));
-        Free(*(&raw const gItemIcon4x4Buffer));
+        Free(*(crate::gl!(&raw gItemIconDecompressionBuffer).cast_const()));
+        Free(*(crate::gl!(&raw gItemIcon4x4Buffer).cast_const()));
     }
 }
 
@@ -115,8 +117,8 @@ pub unsafe fn add_custom_item_icon_sprite(
     // SAFETY: the buffers were just allocated with the right sizes; the
     // rest are C's sprite calls in C's order.
     unsafe {
-        let pic = *(&raw const gItemIconDecompressionBuffer);
-        let sheet = *(&raw const gItemIcon4x4Buffer);
+        let pic = *(crate::gl!(&raw gItemIconDecompressionBuffer).cast_const());
+        let sheet = *(crate::gl!(&raw gItemIcon4x4Buffer).cast_const());
         LZDecompressWram(item_icon_pic_or_palette(item_id, IconPart::Pic).cast(), pic);
         copy_item_icon_pic_to_4x4_buffer(pic, sheet);
         let sprite_sheet = SpriteSheet {

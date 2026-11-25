@@ -75,7 +75,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `BlitBitmapToWindow` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
     unsafe {
         crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
     }
@@ -101,7 +101,7 @@ unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
 }
 /// `CopyToWindowPixelBuffer` with this module's view of its types.
 #[inline]
-unsafe fn CopyToWindowPixelBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+fn CopyToWindowPixelBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
     unsafe {
         crate::window::CopyToWindowPixelBuffer(a0, a1 as _, a2, a3);
     }
@@ -137,14 +137,14 @@ unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -154,7 +154,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -562,19 +562,22 @@ static sText_TenDashes: Table<CArray<u8, 11>> =
 static sText_TenDashes2: Table<CArray<u8, 11>> =
     Table((&raw const crate::data::pokedex::sText_TenDashes2).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokedexView: *mut PokedexView = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPokedexView: crate::global::Global<*mut PokedexView> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sLastSelectedPokemon: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPokeBallRotation: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokedexListItem: *mut PokedexListItem = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPokedexListItem: crate::global::Global<*mut PokedexListItem> =
+    crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gUnusedPokedexU8: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut gPokedexVBlankCB: Option<unsafe fn()> = None;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPokedexVBlankCB: crate::global::Global<Option<unsafe fn()>> =
+    crate::global::Global::new(None);
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -588,7 +591,7 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `GetOverworldTextboxPalettePtr` with this module's view of its types.
 #[inline]
-unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+fn GetOverworldTextboxPalettePtr() -> *mut u16 {
     unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
 }
 /// `SetMainCallback2` with this module's view of its types.
@@ -604,20 +607,20 @@ pub unsafe fn ResetPokedex() {
     sLastSelectedPokemon.set(0);
     sPokeBallRotation.set(POKEBALL_ROTATION_TOP);
     gUnusedPokedexU8.set(0);
-    (*gSaveBlock2Ptr).pokedex.mode = DEX_MODE_HOENN as u8;
-    (*gSaveBlock2Ptr).pokedex.order = 0;
-    (*gSaveBlock2Ptr).pokedex.nationalMagic = 0;
-    (*gSaveBlock2Ptr).pokedex.unknown2 = 0;
-    (*gSaveBlock2Ptr).pokedex.unownPersonality = 0;
-    (*gSaveBlock2Ptr).pokedex.spindaPersonality = 0;
-    (*gSaveBlock2Ptr).pokedex.unknown3 = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode = DEX_MODE_HOENN as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.order = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.nationalMagic = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.unknown2 = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.unownPersonality = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.spindaPersonality = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).pokedex.unknown3 = 0;
     DisableNationalPokedex();
     let mut i: u16 = 0;
     while (i as i32) < 51 + (if 4 != 0 { 1 } else { 0 }) {
-        (*gSaveBlock2Ptr).pokedex.owned[i] = 0;
-        (*gSaveBlock2Ptr).pokedex.seen[i] = 0;
-        (*gSaveBlock1Ptr).seen1[i] = 0;
-        (*gSaveBlock1Ptr).seen2[i] = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[i] = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[i] = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).seen1[i] = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).seen2[i] = 0;
         i += 1;
     }
 }
@@ -684,48 +687,49 @@ unsafe fn ResetPokedexView(pokedexView: *mut PokedexView) {
     }
 }
 pub unsafe fn CB2_OpenPokedex() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             ScanlineEffect_Stop();
             ResetTasks();
             ResetSpriteData();
             ResetPaletteFade();
             FreeAllSpritePalettes();
-            gReservedSpritePaletteCount = 8;
+            gReservedSpritePaletteCount.set(8);
             ResetAllPicSprites();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
-            sPokedexView = AllocZeroed(1636) as *mut PokedexView;
-            ResetPokedexView(sPokedexView);
+            crate::gl!(sPokedexView = AllocZeroed(1636) as *mut PokedexView);
+            ResetPokedexView(crate::gl!(sPokedexView));
             CreateTask(Some(Task_OpenPokedexMainPage), 0);
-            (*sPokedexView).dexMode = (*gSaveBlock2Ptr).pokedex.mode as u16;
+            (*crate::gl!(sPokedexView)).dexMode = (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode as u16;
             if IsNationalPokedexEnabled() == 0 {
-                (*sPokedexView).dexMode = DEX_MODE_HOENN;
+                (*crate::gl!(sPokedexView)).dexMode = DEX_MODE_HOENN;
             }
-            (*sPokedexView).dexOrder = (*gSaveBlock2Ptr).pokedex.order as u16;
-            (*sPokedexView).selectedPokemon = sLastSelectedPokemon.get();
-            (*sPokedexView).pokeBallRotation = sPokeBallRotation.get();
-            (*sPokedexView).selectedScreen = AREA_SCREEN;
+            (*crate::gl!(sPokedexView)).dexOrder =
+                (*crate::gl!(gSaveBlock2Ptr)).pokedex.order as u16;
+            (*crate::gl!(sPokedexView)).selectedPokemon = sLastSelectedPokemon.get();
+            (*crate::gl!(sPokedexView)).pokeBallRotation = sPokeBallRotation.get();
+            (*crate::gl!(sPokedexView)).selectedScreen = AREA_SCREEN;
             if IsNationalPokedexEnabled() == 0 {
-                (*sPokedexView).seenCount = GetHoennPokedexCount(FLAG_GET_SEEN);
-                (*sPokedexView).ownCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
+                (*crate::gl!(sPokedexView)).seenCount = GetHoennPokedexCount(FLAG_GET_SEEN);
+                (*crate::gl!(sPokedexView)).ownCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
             } else {
-                (*sPokedexView).seenCount = GetNationalPokedexCount(FLAG_GET_SEEN);
-                (*sPokedexView).ownCount = GetNationalPokedexCount(FLAG_GET_CAUGHT);
+                (*crate::gl!(sPokedexView)).seenCount = GetNationalPokedexCount(FLAG_GET_SEEN);
+                (*crate::gl!(sPokedexView)).ownCount = GetNationalPokedexCount(FLAG_GET_CAUGHT);
             }
-            (*sPokedexView).initialVOffset = 8;
-            gMain.state += 1;
+            (*crate::gl!(sPokedexView)).initialVOffset = 8;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             EnableInterrupts(1);
             SetVBlankCallback(Some(VBlankCB_Pokedex));
             SetMainCallback2(Some(CB2_Pokedex));
             CreatePokedexList(
-                (*sPokedexView).dexMode as u8,
-                (*sPokedexView).dexOrder as u8,
+                (*crate::gl!(sPokedexView)).dexMode as u8,
+                (*crate::gl!(sPokedexView)).dexOrder as u8,
             );
-            m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x80);
+            m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 0x80);
         }
         _ => {
             SetVBlankCallback(None);
@@ -813,7 +817,7 @@ pub unsafe fn CB2_OpenPokedex() {
                     }
                 }
             }
-            gMain.state = 1;
+            crate::gl!(gMain.state = 1);
         }
     }
 }
@@ -824,24 +828,26 @@ pub(crate) unsafe fn CB2_Pokedex() {
     UpdatePaletteFade();
 }
 pub unsafe fn Task_OpenPokedexMainPage(taskId: u8) {
-    (*sPokedexView).set_isSearchResults(FALSE);
+    (*crate::gl!(sPokedexView)).set_isSearchResults(FALSE);
     if LoadPokedexListPage(PAGE_MAIN) != 0 {
         task_set_func(taskId, Some(Task_HandlePokedexInput));
     }
 }
 pub(crate) unsafe fn Task_HandlePokedexInput(taskId: u8) {
-    SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
-    if (*sPokedexView).menuY != 0 {
-        (*sPokedexView).menuY -= 8;
+    SetGpuReg(REG_OFFSET_BG0VOFS, (*crate::gl!(sPokedexView)).menuY as u16);
+    if (*crate::gl!(sPokedexView)).menuY != 0 {
+        (*crate::gl!(sPokedexView)).menuY -= 8;
     } else {
-        if gMain.newKeys as i32 & A_BUTTON != 0
-            && (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon].seen() != 0
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+            && (*crate::gl!(sPokedexView)).pokedexList[(*crate::gl!(sPokedexView)).selectedPokemon]
+                .seen()
+                != 0
         {
             UpdateSelectedMonSpriteId();
             BeginNormalPaletteFade(
                 !(shl_i32(
                     1,
-                    gSprites[(*sPokedexView).selectedMonSpriteId]
+                    (*gSprites.as_ptr())[(*crate::gl!(sPokedexView)).selectedMonSpriteId]
                         .oam
                         .paletteNum() as u32
                         + 16,
@@ -851,37 +857,41 @@ pub(crate) unsafe fn Task_HandlePokedexInput(taskId: u8) {
                 0x10,
                 0,
             );
-            gSprites[(*sPokedexView).selectedMonSpriteId].callback =
-                Some(SpriteCB_MoveMonForInfoScreen);
+            {
+                let gl_i0 = (*crate::gl!(sPokedexView)).selectedMonSpriteId;
+                crate::gl!(gSprites[gl_i0].callback = Some(SpriteCB_MoveMonForInfoScreen))
+            };
             task_set_func(taskId, Some(Task_OpenInfoScreenAfterMonMovement));
             PlaySE(SE_PIN);
             FreeWindowAndBgBuffers();
-        } else if gMain.newKeys as i32 & START_BUTTON != 0 {
-            (*sPokedexView).menuY = 0;
-            (*sPokedexView).menuIsOpen = TRUE;
-            (*sPokedexView).menuCursorPos = 0;
+        } else if crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
+            (*crate::gl!(sPokedexView)).menuY = 0;
+            (*crate::gl!(sPokedexView)).menuIsOpen = TRUE;
+            (*crate::gl!(sPokedexView)).menuCursorPos = 0;
             task_set_func(taskId, Some(Task_HandlePokedexStartMenuInput));
             PlaySE(SE_SELECT);
-        } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             PlaySE(SE_SELECT);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
             task_set(taskId, tLoadScreenTaskId, LoadSearchMenu() as i16);
-            (*sPokedexView).screenSwitchState = 0;
-            (*sPokedexView).pokeBallRotationBackup = (*sPokedexView).pokeBallRotation as u16;
-            (*sPokedexView).selectedPokemonBackup = (*sPokedexView).selectedPokemon;
-            (*sPokedexView).dexModeBackup = (*sPokedexView).dexMode;
-            (*sPokedexView).dexOrderBackup = (*sPokedexView).dexOrder;
+            (*crate::gl!(sPokedexView)).screenSwitchState = 0;
+            (*crate::gl!(sPokedexView)).pokeBallRotationBackup =
+                (*crate::gl!(sPokedexView)).pokeBallRotation as u16;
+            (*crate::gl!(sPokedexView)).selectedPokemonBackup =
+                (*crate::gl!(sPokedexView)).selectedPokemon;
+            (*crate::gl!(sPokedexView)).dexModeBackup = (*crate::gl!(sPokedexView)).dexMode;
+            (*crate::gl!(sPokedexView)).dexOrderBackup = (*crate::gl!(sPokedexView)).dexOrder;
             task_set_func(taskId, Some(Task_WaitForExitSearch));
             PlaySE(SE_PC_LOGIN);
             FreeWindowAndBgBuffers();
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
             task_set_func(taskId, Some(Task_ClosePokedex));
             PlaySE(SE_PC_OFF);
         } else {
-            (*sPokedexView).selectedPokemon =
-                TryDoPokedexScroll((*sPokedexView).selectedPokemon, 0xE);
-            if (*sPokedexView).scrollTimer != 0 {
+            (*crate::gl!(sPokedexView)).selectedPokemon =
+                TryDoPokedexScroll((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+            if (*crate::gl!(sPokedexView)).scrollTimer != 0 {
                 task_set_func(taskId, Some(Task_WaitForScroll));
             }
         }
@@ -889,35 +899,37 @@ pub(crate) unsafe fn Task_HandlePokedexInput(taskId: u8) {
 }
 pub(crate) unsafe fn Task_WaitForScroll(taskId: u8) {
     if UpdateDexListScroll(
-        (*sPokedexView).scrollDirection,
-        (*sPokedexView).scrollMonIncrement as u8,
-        (*sPokedexView).maxScrollTimer as u8,
+        (*crate::gl!(sPokedexView)).scrollDirection,
+        (*crate::gl!(sPokedexView)).scrollMonIncrement as u8,
+        (*crate::gl!(sPokedexView)).maxScrollTimer as u8,
     ) != 0
     {
         task_set_func(taskId, Some(Task_HandlePokedexInput));
     }
 }
 pub(crate) unsafe fn Task_HandlePokedexStartMenuInput(taskId: u8) {
-    SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
-    if (*sPokedexView).menuY != 80 {
-        (*sPokedexView).menuY += 8;
+    SetGpuReg(REG_OFFSET_BG0VOFS, (*crate::gl!(sPokedexView)).menuY as u16);
+    if (*crate::gl!(sPokedexView)).menuY != 80 {
+        (*crate::gl!(sPokedexView)).menuY += 8;
     } else {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
-            match (*sPokedexView).menuCursorPos {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            match (*crate::gl!(sPokedexView)).menuCursorPos {
                 1 => {
-                    (*sPokedexView).selectedPokemon = 0;
-                    (*sPokedexView).pokeBallRotation = POKEBALL_ROTATION_TOP;
+                    (*crate::gl!(sPokedexView)).selectedPokemon = 0;
+                    (*crate::gl!(sPokedexView)).pokeBallRotation = POKEBALL_ROTATION_TOP;
                     ClearMonSprites();
-                    CreateMonSpritesAtPos((*sPokedexView).selectedPokemon, 0xE);
-                    gMain.newKeys |= START_BUTTON as u16;
+                    CreateMonSpritesAtPos((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+                    crate::gl!(gMain.newKeys |= START_BUTTON as u16);
                 }
                 2 => {
-                    (*sPokedexView).selectedPokemon = (*sPokedexView).pokemonListCount - 1;
-                    (*sPokedexView).pokeBallRotation =
-                        (*sPokedexView).pokemonListCount as u8 * 16 + POKEBALL_ROTATION_BOTTOM;
+                    (*crate::gl!(sPokedexView)).selectedPokemon =
+                        (*crate::gl!(sPokedexView)).pokemonListCount - 1;
+                    (*crate::gl!(sPokedexView)).pokeBallRotation =
+                        (*crate::gl!(sPokedexView)).pokemonListCount as u8 * 16
+                            + POKEBALL_ROTATION_BOTTOM;
                     ClearMonSprites();
-                    CreateMonSpritesAtPos((*sPokedexView).selectedPokemon, 0xE);
-                    gMain.newKeys |= START_BUTTON as u16;
+                    CreateMonSpritesAtPos((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+                    crate::gl!(gMain.newKeys |= START_BUTTON as u16);
                 }
                 3 => {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
@@ -925,38 +937,45 @@ pub(crate) unsafe fn Task_HandlePokedexStartMenuInput(taskId: u8) {
                     PlaySE(SE_PC_OFF);
                 }
                 _ => {
-                    gMain.newKeys |= START_BUTTON as u16;
+                    crate::gl!(gMain.newKeys |= START_BUTTON as u16);
                 }
             }
         }
-        if gMain.newKeys as i32 & 10 != 0 {
-            (*sPokedexView).menuIsOpen = FALSE;
+        if crate::gl!(gMain.newKeys) as i32 & 10 != 0 {
+            (*crate::gl!(sPokedexView)).menuIsOpen = FALSE;
             task_set_func(taskId, Some(Task_HandlePokedexInput));
             PlaySE(SE_SELECT);
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0
-            && (*sPokedexView).menuCursorPos != 0
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0
+            && (*crate::gl!(sPokedexView)).menuCursorPos != 0
         {
-            (*sPokedexView).menuCursorPos -= 1;
+            (*crate::gl!(sPokedexView)).menuCursorPos -= 1;
             PlaySE(SE_SELECT);
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0
-            && (*sPokedexView).menuCursorPos < 3
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0
+            && (*crate::gl!(sPokedexView)).menuCursorPos < 3
         {
-            (*sPokedexView).menuCursorPos += 1;
+            (*crate::gl!(sPokedexView)).menuCursorPos += 1;
             PlaySE(SE_SELECT);
         }
     }
 }
 pub(crate) unsafe fn Task_OpenInfoScreenAfterMonMovement(taskId: u8) {
-    if gSprites[(*sPokedexView).selectedMonSpriteId].x == MON_PAGE_X
-        && gSprites[(*sPokedexView).selectedMonSpriteId].y == MON_PAGE_Y
+    if ({
+        let gl_i1 = (*crate::gl!(sPokedexView)).selectedMonSpriteId;
+        crate::gl!(gSprites[gl_i1].x)
+    }) == MON_PAGE_X
+        && ({
+            let gl_i2 = (*crate::gl!(sPokedexView)).selectedMonSpriteId;
+            crate::gl!(gSprites[gl_i2].y)
+        }) == MON_PAGE_Y
     {
-        (*sPokedexView).currentPageBackup = (*sPokedexView).currentPage;
+        (*crate::gl!(sPokedexView)).currentPageBackup = (*crate::gl!(sPokedexView)).currentPage;
         task_set(
             taskId,
             tLoadScreenTaskId,
             LoadInfoScreen(
-                &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
-                (*sPokedexView).selectedMonSpriteId as u8,
+                &raw mut (*crate::gl!(sPokedexView)).pokedexList
+                    [(*crate::gl!(sPokedexView)).selectedPokemon],
+                (*crate::gl!(sPokedexView)).selectedMonSpriteId as u8,
             ) as i16,
         );
         task_set_func(taskId, Some(Task_WaitForExitInfoScreen));
@@ -964,79 +983,86 @@ pub(crate) unsafe fn Task_OpenInfoScreenAfterMonMovement(taskId: u8) {
 }
 pub(crate) unsafe fn Task_WaitForExitInfoScreen(taskId: u8) {
     if (*gTasks.as_ptr())[task_get(taskId, tLoadScreenTaskId)].isActive != 0 {
-        if (*sPokedexView).currentPage == PAGE_INFO
+        if (*crate::gl!(sPokedexView)).currentPage == PAGE_INFO
             && IsInfoScreenScrolling(task_get(taskId, tLoadScreenTaskId) as u8) == 0
             && TryDoInfoScreenScroll() != 0
         {
             StartInfoScreenScroll(
-                &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
+                &raw mut (*crate::gl!(sPokedexView)).pokedexList
+                    [(*crate::gl!(sPokedexView)).selectedPokemon],
                 task_get(taskId, tLoadScreenTaskId) as u8,
             );
         }
     } else {
-        sLastSelectedPokemon.set((*sPokedexView).selectedPokemon);
-        sPokeBallRotation.set((*sPokedexView).pokeBallRotation);
+        sLastSelectedPokemon.set((*crate::gl!(sPokedexView)).selectedPokemon);
+        sPokeBallRotation.set((*crate::gl!(sPokedexView)).pokeBallRotation);
         task_set_func(taskId, Some(Task_OpenPokedexMainPage));
     }
 }
 pub(crate) unsafe fn Task_WaitForExitSearch(taskId: u8) {
     if (*gTasks.as_ptr())[task_get(taskId, tLoadScreenTaskId)].isActive == 0 {
         ClearMonSprites();
-        if (*sPokedexView).screenSwitchState != 0 {
-            (*sPokedexView).selectedPokemon = 0;
-            (*sPokedexView).pokeBallRotation = POKEBALL_ROTATION_TOP;
+        if (*crate::gl!(sPokedexView)).screenSwitchState != 0 {
+            (*crate::gl!(sPokedexView)).selectedPokemon = 0;
+            (*crate::gl!(sPokedexView)).pokeBallRotation = POKEBALL_ROTATION_TOP;
             task_set_func(taskId, Some(Task_OpenSearchResults));
         } else {
-            (*sPokedexView).pokeBallRotation = (*sPokedexView).pokeBallRotationBackup as u8;
-            (*sPokedexView).selectedPokemon = (*sPokedexView).selectedPokemonBackup;
-            (*sPokedexView).dexMode = (*sPokedexView).dexModeBackup;
+            (*crate::gl!(sPokedexView)).pokeBallRotation =
+                (*crate::gl!(sPokedexView)).pokeBallRotationBackup as u8;
+            (*crate::gl!(sPokedexView)).selectedPokemon =
+                (*crate::gl!(sPokedexView)).selectedPokemonBackup;
+            (*crate::gl!(sPokedexView)).dexMode = (*crate::gl!(sPokedexView)).dexModeBackup;
             if IsNationalPokedexEnabled() == 0 {
-                (*sPokedexView).dexMode = DEX_MODE_HOENN;
+                (*crate::gl!(sPokedexView)).dexMode = DEX_MODE_HOENN;
             }
-            (*sPokedexView).dexOrder = (*sPokedexView).dexOrderBackup;
+            (*crate::gl!(sPokedexView)).dexOrder = (*crate::gl!(sPokedexView)).dexOrderBackup;
             task_set_func(taskId, Some(Task_OpenPokedexMainPage));
         }
     }
 }
 pub(crate) unsafe fn Task_ClosePokedex(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        (*gSaveBlock2Ptr).pokedex.mode = (*sPokedexView).dexMode as u8;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode = (*crate::gl!(sPokedexView)).dexMode as u8;
         if IsNationalPokedexEnabled() == 0 {
-            (*gSaveBlock2Ptr).pokedex.mode = DEX_MODE_HOENN as u8;
+            (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode = DEX_MODE_HOENN as u8;
         }
-        (*gSaveBlock2Ptr).pokedex.order = (*sPokedexView).dexOrder as u8;
+        (*crate::gl!(gSaveBlock2Ptr)).pokedex.order = (*crate::gl!(sPokedexView)).dexOrder as u8;
         ClearMonSprites();
         FreeWindowAndBgBuffers();
         DestroyTask(taskId);
         SetMainCallback2(Some(CB2_ReturnToFieldWithOpenMenu));
-        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
-        Free(sPokedexView as *mut c_void);
+        m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 0x100);
+        Free(crate::gl!(sPokedexView) as *mut c_void);
     }
 }
 pub(crate) unsafe fn Task_OpenSearchResults(taskId: u8) {
-    (*sPokedexView).set_isSearchResults(TRUE);
+    (*crate::gl!(sPokedexView)).set_isSearchResults(TRUE);
     if LoadPokedexListPage(PAGE_SEARCH_RESULTS) != 0 {
         task_set_func(taskId, Some(Task_HandleSearchResultsInput));
     }
 }
 pub(crate) unsafe fn Task_HandleSearchResultsInput(taskId: u8) {
-    SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
-    if (*sPokedexView).menuY != 0 {
-        (*sPokedexView).menuY -= 8;
+    SetGpuReg(REG_OFFSET_BG0VOFS, (*crate::gl!(sPokedexView)).menuY as u16);
+    if (*crate::gl!(sPokedexView)).menuY != 0 {
+        (*crate::gl!(sPokedexView)).menuY -= 8;
     } else {
-        if gMain.newKeys as i32 & A_BUTTON != 0
-            && (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon].seen() != 0
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+            && (*crate::gl!(sPokedexView)).pokedexList[(*crate::gl!(sPokedexView)).selectedPokemon]
+                .seen()
+                != 0
         {
             UpdateSelectedMonSpriteId();
             let a: u32 = shl_i32(
                 1,
-                gSprites[(*sPokedexView).selectedMonSpriteId]
+                (*gSprites.as_ptr())[(*crate::gl!(sPokedexView)).selectedMonSpriteId]
                     .oam
                     .paletteNum() as u32
                     + 16,
             ) as u32;
-            gSprites[(*sPokedexView).selectedMonSpriteId].callback =
-                Some(SpriteCB_MoveMonForInfoScreen);
+            {
+                let gl_i3 = (*crate::gl!(sPokedexView)).selectedMonSpriteId;
+                crate::gl!(gSprites[gl_i3].callback = Some(SpriteCB_MoveMonForInfoScreen))
+            };
             BeginNormalPaletteFade(!a, 0, 0, 0x10, 0);
             task_set_func(
                 taskId,
@@ -1044,27 +1070,27 @@ pub(crate) unsafe fn Task_HandleSearchResultsInput(taskId: u8) {
             );
             PlaySE(SE_PIN);
             FreeWindowAndBgBuffers();
-        } else if gMain.newKeys as i32 & START_BUTTON != 0 {
-            (*sPokedexView).menuY = 0;
-            (*sPokedexView).menuIsOpen = TRUE;
-            (*sPokedexView).menuCursorPos = 0;
+        } else if crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
+            (*crate::gl!(sPokedexView)).menuY = 0;
+            (*crate::gl!(sPokedexView)).menuIsOpen = TRUE;
+            (*crate::gl!(sPokedexView)).menuCursorPos = 0;
             task_set_func(taskId, Some(Task_HandleSearchResultsStartMenuInput));
             PlaySE(SE_SELECT);
-        } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
             task_set(taskId, tLoadScreenTaskId, LoadSearchMenu() as i16);
-            (*sPokedexView).screenSwitchState = 0;
+            (*crate::gl!(sPokedexView)).screenSwitchState = 0;
             task_set_func(taskId, Some(Task_WaitForExitSearch));
             PlaySE(SE_PC_LOGIN);
             FreeWindowAndBgBuffers();
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
             task_set_func(taskId, Some(Task_ReturnToPokedexFromSearchResults));
             PlaySE(SE_PC_OFF);
         } else {
-            (*sPokedexView).selectedPokemon =
-                TryDoPokedexScroll((*sPokedexView).selectedPokemon, 0xE);
-            if (*sPokedexView).scrollTimer != 0 {
+            (*crate::gl!(sPokedexView)).selectedPokemon =
+                TryDoPokedexScroll((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+            if (*crate::gl!(sPokedexView)).scrollTimer != 0 {
                 task_set_func(taskId, Some(Task_WaitForSearchResultsScroll));
             }
         }
@@ -1072,35 +1098,37 @@ pub(crate) unsafe fn Task_HandleSearchResultsInput(taskId: u8) {
 }
 pub(crate) unsafe fn Task_WaitForSearchResultsScroll(taskId: u8) {
     if UpdateDexListScroll(
-        (*sPokedexView).scrollDirection,
-        (*sPokedexView).scrollMonIncrement as u8,
-        (*sPokedexView).maxScrollTimer as u8,
+        (*crate::gl!(sPokedexView)).scrollDirection,
+        (*crate::gl!(sPokedexView)).scrollMonIncrement as u8,
+        (*crate::gl!(sPokedexView)).maxScrollTimer as u8,
     ) != 0
     {
         task_set_func(taskId, Some(Task_HandleSearchResultsInput));
     }
 }
 pub(crate) unsafe fn Task_HandleSearchResultsStartMenuInput(taskId: u8) {
-    SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
-    if (*sPokedexView).menuY != 96 {
-        (*sPokedexView).menuY += 8;
+    SetGpuReg(REG_OFFSET_BG0VOFS, (*crate::gl!(sPokedexView)).menuY as u16);
+    if (*crate::gl!(sPokedexView)).menuY != 96 {
+        (*crate::gl!(sPokedexView)).menuY += 8;
     } else {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
-            match (*sPokedexView).menuCursorPos {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            match (*crate::gl!(sPokedexView)).menuCursorPos {
                 1 => {
-                    (*sPokedexView).selectedPokemon = 0;
-                    (*sPokedexView).pokeBallRotation = POKEBALL_ROTATION_TOP;
+                    (*crate::gl!(sPokedexView)).selectedPokemon = 0;
+                    (*crate::gl!(sPokedexView)).pokeBallRotation = POKEBALL_ROTATION_TOP;
                     ClearMonSprites();
-                    CreateMonSpritesAtPos((*sPokedexView).selectedPokemon, 0xE);
-                    gMain.newKeys |= START_BUTTON as u16;
+                    CreateMonSpritesAtPos((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+                    crate::gl!(gMain.newKeys |= START_BUTTON as u16);
                 }
                 2 => {
-                    (*sPokedexView).selectedPokemon = (*sPokedexView).pokemonListCount - 1;
-                    (*sPokedexView).pokeBallRotation =
-                        (*sPokedexView).pokemonListCount as u8 * 16 + POKEBALL_ROTATION_BOTTOM;
+                    (*crate::gl!(sPokedexView)).selectedPokemon =
+                        (*crate::gl!(sPokedexView)).pokemonListCount - 1;
+                    (*crate::gl!(sPokedexView)).pokeBallRotation =
+                        (*crate::gl!(sPokedexView)).pokemonListCount as u8 * 16
+                            + POKEBALL_ROTATION_BOTTOM;
                     ClearMonSprites();
-                    CreateMonSpritesAtPos((*sPokedexView).selectedPokemon, 0xE);
-                    gMain.newKeys |= START_BUTTON as u16;
+                    CreateMonSpritesAtPos((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+                    crate::gl!(gMain.newKeys |= START_BUTTON as u16);
                 }
                 3 => {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
@@ -1113,52 +1141,60 @@ pub(crate) unsafe fn Task_HandleSearchResultsStartMenuInput(taskId: u8) {
                     PlaySE(SE_PC_OFF);
                 }
                 _ => {
-                    gMain.newKeys |= START_BUTTON as u16;
+                    crate::gl!(gMain.newKeys |= START_BUTTON as u16);
                 }
             }
         }
-        if gMain.newKeys as i32 & 10 != 0 {
-            (*sPokedexView).menuIsOpen = FALSE;
+        if crate::gl!(gMain.newKeys) as i32 & 10 != 0 {
+            (*crate::gl!(sPokedexView)).menuIsOpen = FALSE;
             task_set_func(taskId, Some(Task_HandleSearchResultsInput));
             PlaySE(SE_SELECT);
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0
-            && (*sPokedexView).menuCursorPos != 0
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0
+            && (*crate::gl!(sPokedexView)).menuCursorPos != 0
         {
-            (*sPokedexView).menuCursorPos -= 1;
+            (*crate::gl!(sPokedexView)).menuCursorPos -= 1;
             PlaySE(SE_SELECT);
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0
-            && (*sPokedexView).menuCursorPos < 4
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0
+            && (*crate::gl!(sPokedexView)).menuCursorPos < 4
         {
-            (*sPokedexView).menuCursorPos += 1;
+            (*crate::gl!(sPokedexView)).menuCursorPos += 1;
             PlaySE(SE_SELECT);
         }
     }
 }
 pub(crate) unsafe fn Task_OpenSearchResultsInfoScreenAfterMonMovement(taskId: u8) {
-    if gSprites[(*sPokedexView).selectedMonSpriteId].x == MON_PAGE_X
-        && gSprites[(*sPokedexView).selectedMonSpriteId].y == MON_PAGE_Y
+    if ({
+        let gl_i4 = (*crate::gl!(sPokedexView)).selectedMonSpriteId;
+        crate::gl!(gSprites[gl_i4].x)
+    }) == MON_PAGE_X
+        && ({
+            let gl_i5 = (*crate::gl!(sPokedexView)).selectedMonSpriteId;
+            crate::gl!(gSprites[gl_i5].y)
+        }) == MON_PAGE_Y
     {
-        (*sPokedexView).currentPageBackup = (*sPokedexView).currentPage;
+        (*crate::gl!(sPokedexView)).currentPageBackup = (*crate::gl!(sPokedexView)).currentPage;
         task_set(
             taskId,
             tLoadScreenTaskId,
             LoadInfoScreen(
-                &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
-                (*sPokedexView).selectedMonSpriteId as u8,
+                &raw mut (*crate::gl!(sPokedexView)).pokedexList
+                    [(*crate::gl!(sPokedexView)).selectedPokemon],
+                (*crate::gl!(sPokedexView)).selectedMonSpriteId as u8,
             ) as i16,
         );
-        (*sPokedexView).selectedMonSpriteId = 65535;
+        (*crate::gl!(sPokedexView)).selectedMonSpriteId = 65535;
         task_set_func(taskId, Some(Task_WaitForExitSearchResultsInfoScreen));
     }
 }
 pub(crate) unsafe fn Task_WaitForExitSearchResultsInfoScreen(taskId: u8) {
     if (*gTasks.as_ptr())[task_get(taskId, tLoadScreenTaskId)].isActive != 0 {
-        if (*sPokedexView).currentPage == PAGE_INFO
+        if (*crate::gl!(sPokedexView)).currentPage == PAGE_INFO
             && IsInfoScreenScrolling(task_get(taskId, tLoadScreenTaskId) as u8) == 0
             && TryDoInfoScreenScroll() != 0
         {
             StartInfoScreenScroll(
-                &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
+                &raw mut (*crate::gl!(sPokedexView)).pokedexList
+                    [(*crate::gl!(sPokedexView)).selectedPokemon],
                 task_get(taskId, tLoadScreenTaskId) as u8,
             );
         }
@@ -1167,65 +1203,69 @@ pub(crate) unsafe fn Task_WaitForExitSearchResultsInfoScreen(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ReturnToPokedexFromSearchResults(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        (*sPokedexView).pokeBallRotation = (*sPokedexView).pokeBallRotationBackup as u8;
-        (*sPokedexView).selectedPokemon = (*sPokedexView).selectedPokemonBackup;
-        (*sPokedexView).dexMode = (*sPokedexView).dexModeBackup;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        (*crate::gl!(sPokedexView)).pokeBallRotation =
+            (*crate::gl!(sPokedexView)).pokeBallRotationBackup as u8;
+        (*crate::gl!(sPokedexView)).selectedPokemon =
+            (*crate::gl!(sPokedexView)).selectedPokemonBackup;
+        (*crate::gl!(sPokedexView)).dexMode = (*crate::gl!(sPokedexView)).dexModeBackup;
         if IsNationalPokedexEnabled() == 0 {
-            (*sPokedexView).dexMode = DEX_MODE_HOENN;
+            (*crate::gl!(sPokedexView)).dexMode = DEX_MODE_HOENN;
         }
-        (*sPokedexView).dexOrder = (*sPokedexView).dexOrderBackup;
+        (*crate::gl!(sPokedexView)).dexOrder = (*crate::gl!(sPokedexView)).dexOrderBackup;
         task_set_func(taskId, Some(Task_OpenPokedexMainPage));
         ClearMonSprites();
         FreeWindowAndBgBuffers();
     }
 }
 pub(crate) unsafe fn Task_ClosePokedexFromSearchResultsStartMenu(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        (*sPokedexView).pokeBallRotation = (*sPokedexView).pokeBallRotationBackup as u8;
-        (*sPokedexView).selectedPokemon = (*sPokedexView).selectedPokemonBackup;
-        (*sPokedexView).dexMode = (*sPokedexView).dexModeBackup;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        (*crate::gl!(sPokedexView)).pokeBallRotation =
+            (*crate::gl!(sPokedexView)).pokeBallRotationBackup as u8;
+        (*crate::gl!(sPokedexView)).selectedPokemon =
+            (*crate::gl!(sPokedexView)).selectedPokemonBackup;
+        (*crate::gl!(sPokedexView)).dexMode = (*crate::gl!(sPokedexView)).dexModeBackup;
         if IsNationalPokedexEnabled() == 0 {
-            (*sPokedexView).dexMode = DEX_MODE_HOENN;
+            (*crate::gl!(sPokedexView)).dexMode = DEX_MODE_HOENN;
         }
-        (*sPokedexView).dexOrder = (*sPokedexView).dexOrderBackup;
+        (*crate::gl!(sPokedexView)).dexOrder = (*crate::gl!(sPokedexView)).dexOrderBackup;
         task_set_func(taskId, Some(Task_ClosePokedex));
     }
 }
 unsafe fn LoadPokedexListPage(page: u8) -> u8 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             ResetSpriteData();
             FreeAllSpritePalettes();
-            gReservedSpritePaletteCount = 8;
+            gReservedSpritePaletteCount.set(8);
             LoadCompressedSpriteSheet((&raw const sInterfaceSpriteSheet[0]).cast_mut());
             LoadSpritePalettes(sInterfaceSpritePalette.as_ptr().cast_mut());
             CreateInterfaceSprites(page);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             if page == PAGE_MAIN {
                 CreatePokedexList(
-                    (*sPokedexView).dexMode as u8,
-                    (*sPokedexView).dexOrder as u8,
+                    (*crate::gl!(sPokedexView)).dexMode as u8,
+                    (*crate::gl!(sPokedexView)).dexOrder as u8,
                 );
             }
-            CreateMonSpritesAtPos((*sPokedexView).selectedPokemon, 0xE);
-            (*sPokedexView).menuIsOpen = FALSE;
-            (*sPokedexView).menuY = 0;
+            CreateMonSpritesAtPos((*crate::gl!(sPokedexView)).selectedPokemon, 0xE);
+            (*crate::gl!(sPokedexView)).menuIsOpen = FALSE;
+            (*crate::gl!(sPokedexView)).menuY = 0;
             CopyBgTilemapBufferToVram(0);
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
             CopyBgTilemapBufferToVram(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
             SetVBlankCallback(Some(VBlankCB_Pokedex));
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             SetGpuReg(REG_OFFSET_WININ, 16191);
@@ -1242,22 +1282,25 @@ unsafe fn LoadPokedexListPage(page: u8) -> u8 {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
-            if gPaletteFade.active() == 0 {
-                gMain.state = 0;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                crate::gl!(gMain.state = 0);
                 return TRUE;
             }
         }
         _ => {
-            if gPaletteFade.active() != 0 {
+            if (*gPaletteFade.as_ptr()).active() != 0 {
                 return 0;
             }
             SetVBlankCallback(None);
-            (*sPokedexView).currentPage = page;
+            (*crate::gl!(sPokedexView)).currentPage = page;
             ResetOtherVideoRegisters(0);
-            SetGpuReg(REG_OFFSET_BG2VOFS, (*sPokedexView).initialVOffset as u16);
+            SetGpuReg(
+                REG_OFFSET_BG2VOFS,
+                (*crate::gl!(sPokedexView)).initialVOffset as u16,
+            );
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(0, sPokedex_BgTemplate.as_ptr().cast_mut(), 4);
             SetBgTilemapBuffer(3, AllocZeroed(BG_SCREEN_SIZE));
@@ -1313,16 +1356,16 @@ unsafe fn LoadPokedexListPage(page: u8) -> u8 {
             }
             ResetPaletteFade();
             if page == PAGE_MAIN {
-                (*sPokedexView).set_isSearchResults(FALSE);
+                (*crate::gl!(sPokedexView)).set_isSearchResults(FALSE);
             } else {
-                (*sPokedexView).set_isSearchResults(TRUE);
+                (*crate::gl!(sPokedexView)).set_isSearchResults(TRUE);
             }
-            LoadPokedexBgPalette((*sPokedexView).isSearchResults());
+            LoadPokedexBgPalette((*crate::gl!(sPokedexView)).isSearchResults());
             InitWindows(sPokemonList_WindowTemplate.as_ptr().cast_mut());
             DeactivateAllTextPrinters();
             PutWindowTilemap(0);
             CopyWindowToVram(0, COPYWIN_FULL);
-            gMain.state = 1;
+            crate::gl!(gMain.state = 1);
         }
     }
     FALSE
@@ -1381,7 +1424,7 @@ unsafe fn FreeWindowAndBgBuffers() {
 unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
     let mut vars: CArray<u16, 3> = zeroed();
     let mut i: i16 = 0;
-    (*sPokedexView).pokemonListCount = 0;
+    (*crate::gl!(sPokedexView)).pokemonListCount = 0;
     match dexMode {
         1 if IsNationalPokedexEnabled() != 0 => {
             vars[0] = NATIONAL_DEX_DEOXYS;
@@ -1398,13 +1441,19 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                 i = 0;
                 while (i as i32) < vars[0] as i32 {
                     vars[2] = HoennToNationalOrder(i as u16 + 1);
-                    (*sPokedexView).pokedexList[i].dexNum = vars[2];
-                    (*sPokedexView).pokedexList[i]
-                        .set_seen(GetSetPokedexFlag(vars[2], FLAG_GET_SEEN) as u16);
-                    (*sPokedexView).pokedexList[i]
-                        .set_owned(GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) as u16);
-                    if (*sPokedexView).pokedexList[i].seen() != 0 {
-                        (*sPokedexView).pokemonListCount = i as u16 + 1;
+                    (*crate::gl!(sPokedexView)).pokedexList[i].dexNum = vars[2];
+                    (*crate::gl!(sPokedexView)).pokedexList[i].set_seen(GetSetPokedexFlag(
+                        vars[2],
+                        FLAG_GET_SEEN,
+                    )
+                        as u16);
+                    (*crate::gl!(sPokedexView)).pokedexList[i].set_owned(GetSetPokedexFlag(
+                        vars[2],
+                        FLAG_GET_CAUGHT,
+                    )
+                        as u16);
+                    if (*crate::gl!(sPokedexView)).pokedexList[i].seen() != 0 {
+                        (*crate::gl!(sPokedexView)).pokemonListCount = i as u16 + 1;
                     }
                     i += 1;
                 }
@@ -1418,13 +1467,19 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                         r10 = 1;
                     }
                     if r10 != 0 {
-                        (*sPokedexView).pokedexList[r5].dexNum = vars[2];
-                        (*sPokedexView).pokedexList[r5]
-                            .set_seen(GetSetPokedexFlag(vars[2], FLAG_GET_SEEN) as u16);
-                        (*sPokedexView).pokedexList[r5]
-                            .set_owned(GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) as u16);
-                        if (*sPokedexView).pokedexList[r5].seen() != 0 {
-                            (*sPokedexView).pokemonListCount = r5 as u16 + 1;
+                        (*crate::gl!(sPokedexView)).pokedexList[r5].dexNum = vars[2];
+                        (*crate::gl!(sPokedexView)).pokedexList[r5].set_seen(GetSetPokedexFlag(
+                            vars[2],
+                            FLAG_GET_SEEN,
+                        )
+                            as u16);
+                        (*crate::gl!(sPokedexView)).pokedexList[r5].set_owned(GetSetPokedexFlag(
+                            vars[2],
+                            FLAG_GET_CAUGHT,
+                        )
+                            as u16);
+                        if (*crate::gl!(sPokedexView)).pokedexList[r5].seen() != 0 {
+                            (*crate::gl!(sPokedexView)).pokemonListCount = r5 as u16 + 1;
                         }
                         r5 += 1;
                     }
@@ -1438,12 +1493,16 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_SEEN) != 0
                 {
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount].dexNum = vars[2];
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
+                        .dexNum = vars[2];
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_seen(TRUE as u16);
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_owned(GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) as u16);
-                    (*sPokedexView).pokemonListCount += 1;
+                    (*crate::gl!(sPokedexView)).pokemonListCount += 1;
                 }
             }
         }
@@ -1454,12 +1513,16 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) != 0
                 {
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount].dexNum = vars[2];
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
+                        .dexNum = vars[2];
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_seen(TRUE as u16);
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_owned(TRUE as u16);
-                    (*sPokedexView).pokemonListCount += 1;
+                    (*crate::gl!(sPokedexView)).pokemonListCount += 1;
                 }
                 i -= 1;
             }
@@ -1470,12 +1533,16 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) != 0
                 {
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount].dexNum = vars[2];
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
+                        .dexNum = vars[2];
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_seen(TRUE as u16);
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_owned(TRUE as u16);
-                    (*sPokedexView).pokemonListCount += 1;
+                    (*crate::gl!(sPokedexView)).pokemonListCount += 1;
                 }
             }
         }
@@ -1486,12 +1553,16 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) != 0
                 {
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount].dexNum = vars[2];
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
+                        .dexNum = vars[2];
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_seen(TRUE as u16);
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_owned(TRUE as u16);
-                    (*sPokedexView).pokemonListCount += 1;
+                    (*crate::gl!(sPokedexView)).pokemonListCount += 1;
                 }
                 i -= 1;
             }
@@ -1502,21 +1573,25 @@ unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) != 0
                 {
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount].dexNum = vars[2];
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
+                        .dexNum = vars[2];
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_seen(TRUE as u16);
-                    (*sPokedexView).pokedexList[(*sPokedexView).pokemonListCount]
+                    (*crate::gl!(sPokedexView)).pokedexList
+                        [(*crate::gl!(sPokedexView)).pokemonListCount]
                         .set_owned(TRUE as u16);
-                    (*sPokedexView).pokemonListCount += 1;
+                    (*crate::gl!(sPokedexView)).pokemonListCount += 1;
                 }
             }
         }
         _ => {}
     }
-    for i in ((*sPokedexView).pokemonListCount as i16)..(NATIONAL_DEX_DEOXYS as i16) {
-        (*sPokedexView).pokedexList[i].dexNum = 0xFFFF;
-        (*sPokedexView).pokedexList[i].set_seen(FALSE as u16);
-        (*sPokedexView).pokedexList[i].set_owned(FALSE as u16);
+    for i in ((*crate::gl!(sPokedexView)).pokemonListCount as i16)..(NATIONAL_DEX_DEOXYS as i16) {
+        (*crate::gl!(sPokedexView)).pokedexList[i].dexNum = 0xFFFF;
+        (*crate::gl!(sPokedexView)).pokedexList[i].set_seen(FALSE as u16);
+        (*crate::gl!(sPokedexView)).pokedexList[i].set_owned(FALSE as u16);
     }
 }
 unsafe fn PrintMonDexNumAndName(windowId: u8, fontId: u8, str: *mut u8, left: u8, top: u8) {
@@ -1544,69 +1619,77 @@ unsafe fn CreateMonListEntry(position: u8, b: u16, ignored: u16) {
             entryNum = b as i16 - 5;
             if entryNum < 0
                 || entryNum >= NATIONAL_DEX_DEOXYS as i16
-                || (*sPokedexView).pokedexList[entryNum].dexNum == 0xFFFF
+                || (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum == 0xFFFF
             {
-                ClearMonListEntry(17, (*sPokedexView).listVOffset as u8 * 2, ignored);
+                ClearMonListEntry(
+                    17,
+                    (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
+                    ignored,
+                );
             } else {
-                ClearMonListEntry(17, (*sPokedexView).listVOffset as u8 * 2, ignored);
-                if (*sPokedexView).pokedexList[entryNum].seen() != 0 {
+                ClearMonListEntry(
+                    17,
+                    (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
+                    ignored,
+                );
+                if (*crate::gl!(sPokedexView)).pokedexList[entryNum].seen() != 0 {
                     CreateMonDexNum(
                         entryNum as u16,
                         18,
-                        (*sPokedexView).listVOffset as u8 * 2,
+                        (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
                         ignored,
                     );
                     CreateCaughtBall(
-                        (*sPokedexView).pokedexList[entryNum].owned(),
+                        (*crate::gl!(sPokedexView)).pokedexList[entryNum].owned(),
                         0x11,
-                        (*sPokedexView).listVOffset as u8 * 2,
+                        (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
                         ignored,
                     );
                     CreateMonName(
-                        (*sPokedexView).pokedexList[entryNum].dexNum,
+                        (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum,
                         0x16,
-                        (*sPokedexView).listVOffset as u8 * 2,
+                        (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
                     );
                 } else {
                     CreateMonDexNum(
                         entryNum as u16,
                         18,
-                        (*sPokedexView).listVOffset as u8 * 2,
+                        (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
                         ignored,
                     );
                     CreateCaughtBall(
                         FALSE as u16,
                         17,
-                        (*sPokedexView).listVOffset as u8 * 2,
+                        (*crate::gl!(sPokedexView)).listVOffset as u8 * 2,
                         ignored,
                     );
-                    CreateMonName(0, 0x16, (*sPokedexView).listVOffset as u8 * 2);
+                    CreateMonName(0, 0x16, (*crate::gl!(sPokedexView)).listVOffset as u8 * 2);
                 }
             }
         }
         2 => {
             entryNum = b as i16 + 5;
-            vOffset = (*sPokedexView).listVOffset as u16 + 10;
+            vOffset = (*crate::gl!(sPokedexView)).listVOffset as u16 + 10;
             if vOffset >= LIST_SCROLL_STEP {
                 vOffset -= LIST_SCROLL_STEP;
             }
             if entryNum < 0
                 || entryNum >= NATIONAL_DEX_DEOXYS as i16
-                || (*sPokedexView).pokedexList[entryNum].dexNum == 0xFFFF
+                || (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum == 0xFFFF
             {
                 ClearMonListEntry(17, vOffset as u8 * 2, ignored);
             } else {
                 ClearMonListEntry(17, vOffset as u8 * 2, ignored);
-                if (*sPokedexView).pokedexList[entryNum].seen() != 0 {
+                if (*crate::gl!(sPokedexView)).pokedexList[entryNum].seen() != 0 {
                     CreateMonDexNum(entryNum as u16, 18, vOffset as u8 * 2, ignored);
                     CreateCaughtBall(
-                        (*sPokedexView).pokedexList[entryNum].owned(),
+                        (*crate::gl!(sPokedexView)).pokedexList[entryNum].owned(),
                         0x11,
                         vOffset as u8 * 2,
                         ignored,
                     );
                     CreateMonName(
-                        (*sPokedexView).pokedexList[entryNum].dexNum,
+                        (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum,
                         0x16,
                         vOffset as u8 * 2,
                     );
@@ -1622,21 +1705,21 @@ unsafe fn CreateMonListEntry(position: u8, b: u16, ignored: u16) {
             for i in 0..=10u16 {
                 if entryNum < 0
                     || entryNum >= NATIONAL_DEX_DEOXYS as i16
-                    || (*sPokedexView).pokedexList[entryNum].dexNum == 0xFFFF
+                    || (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum == 0xFFFF
                 {
                     ClearMonListEntry(17, i as u8 * 2, ignored);
                 } else {
                     ClearMonListEntry(17, i as u8 * 2, ignored);
-                    if (*sPokedexView).pokedexList[entryNum].seen() != 0 {
+                    if (*crate::gl!(sPokedexView)).pokedexList[entryNum].seen() != 0 {
                         CreateMonDexNum(entryNum as u16, 0x12, i as u8 * 2, ignored);
                         CreateCaughtBall(
-                            (*sPokedexView).pokedexList[entryNum].owned(),
+                            (*crate::gl!(sPokedexView)).pokedexList[entryNum].owned(),
                             0x11,
                             i as u8 * 2,
                             ignored,
                         );
                         CreateMonName(
-                            (*sPokedexView).pokedexList[entryNum].dexNum,
+                            (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum,
                             0x16,
                             i as u8 * 2,
                         );
@@ -1656,8 +1739,8 @@ unsafe fn CreateMonDexNum(entryNum: u16, left: u8, top: u8, unused: u16) {
     let mut text: CArray<u8, 6> = zeroed();
     let mut dexNum: u16 = 0;
     memcpy(text.as_mut_ptr(), sText_No000.as_ptr().cast_mut(), 6);
-    dexNum = (*sPokedexView).pokedexList[entryNum].dexNum;
-    if (*sPokedexView).dexMode == DEX_MODE_HOENN {
+    dexNum = (*crate::gl!(sPokedexView)).pokedexList[entryNum].dexNum;
+    if (*crate::gl!(sPokedexView)).dexMode == DEX_MODE_HOENN {
         dexNum = NationalToHoennOrder(dexNum);
     }
     text[2] = CHAR_0 + (dexNum as i32 / 100) as u8;
@@ -1698,79 +1781,88 @@ unsafe fn ClearMonListEntry(x: u8, y: u8, unused: u16) {
 }
 unsafe fn CreateMonSpritesAtPos(selectedMon: u16, ignored: u16) {
     let mut spriteId: u8 = 0;
-    gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
     for i in 0..(MAX_MONS_ON_SCREEN as u8) {
-        (*sPokedexView).monSpriteIds[i] = 0xFFFF;
+        (*crate::gl!(sPokedexView)).monSpriteIds[i] = 0xFFFF;
     }
-    (*sPokedexView).selectedMonSpriteId = 0xFFFF;
+    (*crate::gl!(sPokedexView)).selectedMonSpriteId = 0xFFFF;
     let mut dexNum: u16 = GetPokemonSpriteToDisplay(selectedMon - 1);
     if dexNum != 0xFFFF {
         spriteId = CreatePokedexMonSprite(dexNum, 0x60, 0x50) as u8;
-        gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite);
-        gSprites[spriteId].data[5] = -32;
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite));
+        crate::gl!(gSprites[spriteId].data[5] = -32);
     }
     dexNum = GetPokemonSpriteToDisplay(selectedMon);
     if dexNum != 0xFFFF {
         spriteId = CreatePokedexMonSprite(dexNum, 0x60, 0x50) as u8;
-        gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite);
-        gSprites[spriteId].data[5] = 0;
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite));
+        crate::gl!(gSprites[spriteId].data[5] = 0);
     }
     dexNum = GetPokemonSpriteToDisplay(selectedMon + 1);
     if dexNum != 0xFFFF {
         spriteId = CreatePokedexMonSprite(dexNum, 0x60, 0x50) as u8;
-        gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite);
-        gSprites[spriteId].data[5] = 32;
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite));
+        crate::gl!(gSprites[spriteId].data[5] = 32);
     }
     CreateMonListEntry(0, selectedMon, ignored);
-    SetGpuReg(REG_OFFSET_BG2VOFS, (*sPokedexView).initialVOffset as u16);
-    (*sPokedexView).listVOffset = 0;
-    (*sPokedexView).listMovingVOffset = 0;
-    gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+    SetGpuReg(
+        REG_OFFSET_BG2VOFS,
+        (*crate::gl!(sPokedexView)).initialVOffset as u16,
+    );
+    (*crate::gl!(sPokedexView)).listVOffset = 0;
+    (*crate::gl!(sPokedexView)).listMovingVOffset = 0;
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
 }
 unsafe fn UpdateDexListScroll(direction: u8, monMoveIncrement: u8, scrollTimerMax: u8) -> u8 {
     let mut step: u8 = 0;
-    if (*sPokedexView).scrollTimer != 0 {
-        (*sPokedexView).scrollTimer -= 1;
+    if (*crate::gl!(sPokedexView)).scrollTimer != 0 {
+        (*crate::gl!(sPokedexView)).scrollTimer -= 1;
         match direction {
             1 => {
                 for i in 0..MAX_MONS_ON_SCREEN {
-                    if (*sPokedexView).monSpriteIds[i] != 0xFFFF {
-                        gSprites[(*sPokedexView).monSpriteIds[i]].data[5] +=
-                            monMoveIncrement as i16;
+                    if (*crate::gl!(sPokedexView)).monSpriteIds[i] != 0xFFFF {
+                        {
+                            let gl_i6 = (*crate::gl!(sPokedexView)).monSpriteIds[i];
+                            crate::gl!(gSprites[gl_i6].data[5] += monMoveIncrement as i16)
+                        };
                     }
                 }
                 step = div_i32(
                     LIST_SCROLL_STEP as i32
-                        * (scrollTimerMax as i32 - (*sPokedexView).scrollTimer as i32),
+                        * (scrollTimerMax as i32 - (*crate::gl!(sPokedexView)).scrollTimer as i32),
                     scrollTimerMax as i32,
                 ) as u8;
                 SetGpuReg(
                     REG_OFFSET_BG2VOFS,
-                    (*sPokedexView).initialVOffset as u16
-                        + (*sPokedexView).listMovingVOffset as u16 * LIST_SCROLL_STEP
+                    (*crate::gl!(sPokedexView)).initialVOffset as u16
+                        + (*crate::gl!(sPokedexView)).listMovingVOffset as u16 * LIST_SCROLL_STEP
                         - step as u16,
                 );
-                (*sPokedexView).pokeBallRotation -= (*sPokedexView).pokeBallRotationStep as u8;
+                (*crate::gl!(sPokedexView)).pokeBallRotation -=
+                    (*crate::gl!(sPokedexView)).pokeBallRotationStep as u8;
             }
             2 => {
                 for i in 0..MAX_MONS_ON_SCREEN {
-                    if (*sPokedexView).monSpriteIds[i] != 0xFFFF {
-                        gSprites[(*sPokedexView).monSpriteIds[i]].data[5] -=
-                            monMoveIncrement as i16;
+                    if (*crate::gl!(sPokedexView)).monSpriteIds[i] != 0xFFFF {
+                        {
+                            let gl_i7 = (*crate::gl!(sPokedexView)).monSpriteIds[i];
+                            crate::gl!(gSprites[gl_i7].data[5] -= monMoveIncrement as i16)
+                        };
                     }
                 }
                 step = div_i32(
                     LIST_SCROLL_STEP as i32
-                        * (scrollTimerMax as i32 - (*sPokedexView).scrollTimer as i32),
+                        * (scrollTimerMax as i32 - (*crate::gl!(sPokedexView)).scrollTimer as i32),
                     scrollTimerMax as i32,
                 ) as u8;
                 SetGpuReg(
                     REG_OFFSET_BG2VOFS,
-                    (*sPokedexView).initialVOffset as u16
-                        + (*sPokedexView).listMovingVOffset as u16 * LIST_SCROLL_STEP
+                    (*crate::gl!(sPokedexView)).initialVOffset as u16
+                        + (*crate::gl!(sPokedexView)).listMovingVOffset as u16 * LIST_SCROLL_STEP
                         + step as u16,
                 );
-                (*sPokedexView).pokeBallRotation += (*sPokedexView).pokeBallRotationStep as u8;
+                (*crate::gl!(sPokedexView)).pokeBallRotation +=
+                    (*crate::gl!(sPokedexView)).pokeBallRotationStep as u8;
             }
             _ => {}
         }
@@ -1778,8 +1870,8 @@ unsafe fn UpdateDexListScroll(direction: u8, monMoveIncrement: u8, scrollTimerMa
     } else {
         SetGpuReg(
             REG_OFFSET_BG2VOFS,
-            (*sPokedexView).initialVOffset as u16
-                + (*sPokedexView).listVOffset as u16 * LIST_SCROLL_STEP,
+            (*crate::gl!(sPokedexView)).initialVOffset as u16
+                + (*crate::gl!(sPokedexView)).listVOffset as u16 * LIST_SCROLL_STEP,
         );
         return TRUE;
     }
@@ -1791,32 +1883,32 @@ unsafe fn UpdateDexListScroll(direction: u8, monMoveIncrement: u8, scrollTimerMa
 unsafe fn CreateScrollingPokemonSprite(direction: u8, selectedMon: u16) {
     let mut dexNum: u16 = 0;
     let mut spriteId: u8 = 0;
-    (*sPokedexView).listMovingVOffset = (*sPokedexView).listVOffset;
+    (*crate::gl!(sPokedexView)).listMovingVOffset = (*crate::gl!(sPokedexView)).listVOffset;
     match direction {
         1 => {
             dexNum = GetPokemonSpriteToDisplay(selectedMon - 1);
             if dexNum != 0xFFFF {
                 spriteId = CreatePokedexMonSprite(dexNum, 0x60, 0x50) as u8;
-                gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite);
-                gSprites[spriteId].data[5] = -64;
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite));
+                crate::gl!(gSprites[spriteId].data[5] = -64);
             }
-            if (*sPokedexView).listVOffset > 0 {
-                (*sPokedexView).listVOffset -= 1;
+            if (*crate::gl!(sPokedexView)).listVOffset > 0 {
+                (*crate::gl!(sPokedexView)).listVOffset -= 1;
             } else {
-                (*sPokedexView).listVOffset = 15;
+                (*crate::gl!(sPokedexView)).listVOffset = 15;
             }
         }
         2 => {
             dexNum = GetPokemonSpriteToDisplay(selectedMon + 1);
             if dexNum != 0xFFFF {
                 spriteId = CreatePokedexMonSprite(dexNum, 0x60, 0x50) as u8;
-                gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite);
-                gSprites[spriteId].data[5] = 64;
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite));
+                crate::gl!(gSprites[spriteId].data[5] = 64);
             }
-            if (*sPokedexView).listVOffset < 15 {
-                (*sPokedexView).listVOffset += 1;
+            if (*crate::gl!(sPokedexView)).listVOffset < 15 {
+                (*crate::gl!(sPokedexView)).listVOffset += 1;
             } else {
-                (*sPokedexView).listVOffset = 0;
+                (*crate::gl!(sPokedexView)).listVOffset = 0;
             }
         }
         _ => {}
@@ -1825,105 +1917,141 @@ unsafe fn CreateScrollingPokemonSprite(direction: u8, selectedMon: u16) {
 unsafe fn TryDoPokedexScroll(mut selectedMon: u16, ignored: u16) -> u16 {
     let mut startingPos: u16 = 0;
     let mut scrollDir: u8 = 0;
-    if gMain.heldKeys as i32 & DPAD_UP != 0 && selectedMon > 0 {
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_UP != 0 && selectedMon > 0 {
         scrollDir = 1;
-        selectedMon = GetNextPosition(1, selectedMon, 0, (*sPokedexView).pokemonListCount - 1);
+        selectedMon = GetNextPosition(
+            1,
+            selectedMon,
+            0,
+            (*crate::gl!(sPokedexView)).pokemonListCount - 1,
+        );
         CreateScrollingPokemonSprite(1, selectedMon);
         CreateMonListEntry(1, selectedMon, ignored);
         PlaySE(SE_DEX_SCROLL);
-    } else if gMain.heldKeys as i32 & DPAD_DOWN != 0
-        && (selectedMon as i32) < (*sPokedexView).pokemonListCount as i32 - 1
+    } else if crate::gl!(gMain.heldKeys) as i32 & DPAD_DOWN != 0
+        && (selectedMon as i32) < (*crate::gl!(sPokedexView)).pokemonListCount as i32 - 1
     {
         scrollDir = 2;
-        selectedMon = GetNextPosition(0, selectedMon, 0, (*sPokedexView).pokemonListCount - 1);
+        selectedMon = GetNextPosition(
+            0,
+            selectedMon,
+            0,
+            (*crate::gl!(sPokedexView)).pokemonListCount - 1,
+        );
         CreateScrollingPokemonSprite(2, selectedMon);
         CreateMonListEntry(2, selectedMon, ignored);
         PlaySE(SE_DEX_SCROLL);
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 && selectedMon > 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 && selectedMon > 0 {
         startingPos = selectedMon;
         for i in 0..7u8 {
-            selectedMon = GetNextPosition(1, selectedMon, 0, (*sPokedexView).pokemonListCount - 1);
+            selectedMon = GetNextPosition(
+                1,
+                selectedMon,
+                0,
+                (*crate::gl!(sPokedexView)).pokemonListCount - 1,
+            );
         }
-        (*sPokedexView).pokeBallRotation += 16 * (selectedMon as u8 - startingPos as u8);
+        (*crate::gl!(sPokedexView)).pokeBallRotation +=
+            16 * (selectedMon as u8 - startingPos as u8);
         ClearMonSprites();
         CreateMonSpritesAtPos(selectedMon, 0xE);
         PlaySE(SE_DEX_PAGE);
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0
-        && (selectedMon as i32) < (*sPokedexView).pokemonListCount as i32 - 1
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+        && (selectedMon as i32) < (*crate::gl!(sPokedexView)).pokemonListCount as i32 - 1
     {
         startingPos = selectedMon;
         for i in 0..7u8 {
-            selectedMon = GetNextPosition(0, selectedMon, 0, (*sPokedexView).pokemonListCount - 1);
+            selectedMon = GetNextPosition(
+                0,
+                selectedMon,
+                0,
+                (*crate::gl!(sPokedexView)).pokemonListCount - 1,
+            );
         }
-        (*sPokedexView).pokeBallRotation += 16 * (selectedMon as u8 - startingPos as u8);
+        (*crate::gl!(sPokedexView)).pokeBallRotation +=
+            16 * (selectedMon as u8 - startingPos as u8);
         ClearMonSprites();
         CreateMonSpritesAtPos(selectedMon, 0xE);
         PlaySE(SE_DEX_PAGE);
     }
     if scrollDir == 0 {
-        (*sPokedexView).scrollSpeed = 0;
+        (*crate::gl!(sPokedexView)).scrollSpeed = 0;
         return selectedMon;
     }
-    let scrollMonIncrement: u8 = sScrollMonIncrements[(*sPokedexView).scrollSpeed as i32 / 4];
-    let scrollTimer: u8 = sScrollTimers[(*sPokedexView).scrollSpeed as i32 / 4];
-    (*sPokedexView).scrollTimer = scrollTimer;
-    (*sPokedexView).maxScrollTimer = scrollTimer as u16;
-    (*sPokedexView).scrollMonIncrement = scrollMonIncrement as u16;
-    (*sPokedexView).scrollDirection = scrollDir;
-    (*sPokedexView).pokeBallRotationStep = (scrollMonIncrement as i32 / 2) as u16;
+    let scrollMonIncrement: u8 =
+        sScrollMonIncrements[(*crate::gl!(sPokedexView)).scrollSpeed as i32 / 4];
+    let scrollTimer: u8 = sScrollTimers[(*crate::gl!(sPokedexView)).scrollSpeed as i32 / 4];
+    (*crate::gl!(sPokedexView)).scrollTimer = scrollTimer;
+    (*crate::gl!(sPokedexView)).maxScrollTimer = scrollTimer as u16;
+    (*crate::gl!(sPokedexView)).scrollMonIncrement = scrollMonIncrement as u16;
+    (*crate::gl!(sPokedexView)).scrollDirection = scrollDir;
+    (*crate::gl!(sPokedexView)).pokeBallRotationStep = (scrollMonIncrement as i32 / 2) as u16;
     UpdateDexListScroll(
-        (*sPokedexView).scrollDirection,
-        (*sPokedexView).scrollMonIncrement as u8,
-        (*sPokedexView).maxScrollTimer as u8,
+        (*crate::gl!(sPokedexView)).scrollDirection,
+        (*crate::gl!(sPokedexView)).scrollMonIncrement as u8,
+        (*crate::gl!(sPokedexView)).maxScrollTimer as u8,
     );
-    if (*sPokedexView).scrollSpeed < 12 {
-        (*sPokedexView).scrollSpeed += 1;
+    if (*crate::gl!(sPokedexView)).scrollSpeed < 12 {
+        (*crate::gl!(sPokedexView)).scrollSpeed += 1;
     }
     selectedMon
 }
 unsafe fn UpdateSelectedMonSpriteId() {
     for i in 0..MAX_MONS_ON_SCREEN {
-        let spriteId: u16 = (*sPokedexView).monSpriteIds[i];
-        if gSprites[spriteId].x2 == 0 && gSprites[spriteId].y2 == 0 && spriteId != 0xFFFF {
-            (*sPokedexView).selectedMonSpriteId = spriteId;
+        let spriteId: u16 = (*crate::gl!(sPokedexView)).monSpriteIds[i];
+        if crate::gl!(gSprites[spriteId].x2) == 0
+            && crate::gl!(gSprites[spriteId].y2) == 0
+            && spriteId != 0xFFFF
+        {
+            (*crate::gl!(sPokedexView)).selectedMonSpriteId = spriteId;
         }
     }
 }
 unsafe fn TryDoInfoScreenScroll() -> u8 {
     let mut nextPokemon: u16 = 0;
-    let mut selectedPokemon: u16 = (*sPokedexView).selectedPokemon;
-    if gMain.newKeys as i32 & DPAD_UP != 0 && selectedPokemon != 0 {
+    let mut selectedPokemon: u16 = (*crate::gl!(sPokedexView)).selectedPokemon;
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 && selectedPokemon != 0 {
         nextPokemon = selectedPokemon;
         while nextPokemon != 0 {
-            nextPokemon = GetNextPosition(1, nextPokemon, 0, (*sPokedexView).pokemonListCount - 1);
-            if (*sPokedexView).pokedexList[nextPokemon].seen() != 0 {
+            nextPokemon = GetNextPosition(
+                1,
+                nextPokemon,
+                0,
+                (*crate::gl!(sPokedexView)).pokemonListCount - 1,
+            );
+            if (*crate::gl!(sPokedexView)).pokedexList[nextPokemon].seen() != 0 {
                 selectedPokemon = nextPokemon;
                 break;
             }
         }
-        if (*sPokedexView).selectedPokemon == selectedPokemon {
+        if (*crate::gl!(sPokedexView)).selectedPokemon == selectedPokemon {
             return FALSE;
         } else {
-            (*sPokedexView).selectedPokemon = selectedPokemon;
-            (*sPokedexView).pokeBallRotation -= 16;
+            (*crate::gl!(sPokedexView)).selectedPokemon = selectedPokemon;
+            (*crate::gl!(sPokedexView)).pokeBallRotation -= 16;
             return TRUE;
         }
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0
-        && (selectedPokemon as i32) < (*sPokedexView).pokemonListCount as i32 - 1
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
+        && (selectedPokemon as i32) < (*crate::gl!(sPokedexView)).pokemonListCount as i32 - 1
     {
         nextPokemon = selectedPokemon;
-        while (nextPokemon as i32) < (*sPokedexView).pokemonListCount as i32 - 1 {
-            nextPokemon = GetNextPosition(0, nextPokemon, 0, (*sPokedexView).pokemonListCount - 1);
-            if (*sPokedexView).pokedexList[nextPokemon].seen() != 0 {
+        while (nextPokemon as i32) < (*crate::gl!(sPokedexView)).pokemonListCount as i32 - 1 {
+            nextPokemon = GetNextPosition(
+                0,
+                nextPokemon,
+                0,
+                (*crate::gl!(sPokedexView)).pokemonListCount - 1,
+            );
+            if (*crate::gl!(sPokedexView)).pokedexList[nextPokemon].seen() != 0 {
                 selectedPokemon = nextPokemon;
                 break;
             }
         }
-        if (*sPokedexView).selectedPokemon == selectedPokemon {
+        if (*crate::gl!(sPokedexView)).selectedPokemon == selectedPokemon {
             return FALSE;
         } else {
-            (*sPokedexView).selectedPokemon = selectedPokemon;
-            (*sPokedexView).pokeBallRotation += 16;
+            (*crate::gl!(sPokedexView)).selectedPokemon = selectedPokemon;
+            (*crate::gl!(sPokedexView)).pokeBallRotation += 16;
             return TRUE;
         }
     }
@@ -1931,18 +2059,20 @@ unsafe fn TryDoInfoScreenScroll() -> u8 {
 }
 unsafe fn ClearMonSprites() -> u8 {
     for i in 0..MAX_MONS_ON_SCREEN {
-        if (*sPokedexView).monSpriteIds[i] != 0xFFFF {
-            FreeAndDestroyMonPicSprite((*sPokedexView).monSpriteIds[i]);
-            (*sPokedexView).monSpriteIds[i] = 0xFFFF;
+        if (*crate::gl!(sPokedexView)).monSpriteIds[i] != 0xFFFF {
+            FreeAndDestroyMonPicSprite((*crate::gl!(sPokedexView)).monSpriteIds[i]);
+            (*crate::gl!(sPokedexView)).monSpriteIds[i] = 0xFFFF;
         }
     }
     FALSE
 }
 unsafe fn GetPokemonSpriteToDisplay(species: u16) -> u16 {
-    if species >= NATIONAL_DEX_DEOXYS || (*sPokedexView).pokedexList[species].dexNum == 0xFFFF {
+    if species >= NATIONAL_DEX_DEOXYS
+        || (*crate::gl!(sPokedexView)).pokedexList[species].dexNum == 0xFFFF
+    {
         return 0xFFFF;
-    } else if (*sPokedexView).pokedexList[species].seen() != 0 {
-        return (*sPokedexView).pokedexList[species].dexNum;
+    } else if (*crate::gl!(sPokedexView)).pokedexList[species].seen() != 0 {
+        return (*crate::gl!(sPokedexView)).pokedexList[species].dexNum;
     } else {
         return 0;
     }
@@ -1953,14 +2083,16 @@ unsafe fn GetPokemonSpriteToDisplay(species: u16) -> u16 {
 }
 unsafe fn CreatePokedexMonSprite(num: u16, x: i16, y: i16) -> u32 {
     for i in 0..(MAX_MONS_ON_SCREEN as u8) {
-        if (*sPokedexView).monSpriteIds[i] == 0xFFFF {
+        if (*crate::gl!(sPokedexView)).monSpriteIds[i] == 0xFFFF {
             let spriteId: u8 = CreateMonSpriteFromNationalDexNumber(num, x, y, i as u16) as u8;
-            gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-            gSprites[spriteId].oam.set_priority(3);
-            gSprites[spriteId].data[0] = 0;
-            gSprites[spriteId].data[1] = i as i16;
-            gSprites[spriteId].data[2] = NationalPokedexNumToSpecies(num) as i16;
-            (*sPokedexView).monSpriteIds[i] = spriteId as u16;
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_affineMode(ST_OAM_AFFINE_NORMAL);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
+            crate::gl!(gSprites[spriteId].data[0] = 0);
+            crate::gl!(gSprites[spriteId].data[1] = i as i16);
+            crate::gl!(gSprites[spriteId].data[2] = NationalPokedexNumToSpecies(num) as i16);
+            (*crate::gl!(sPokedexView)).monSpriteIds[i] = spriteId as u16;
             return spriteId as u32;
         }
     }
@@ -1974,15 +2106,15 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
         4,
         0,
     );
-    gSprites[spriteId].data[1] = FALSE as i16;
+    crate::gl!(gSprites[spriteId].data[1] = FALSE as i16);
     spriteId = CreateSprite(
         (&raw const *sScrollArrowSpriteTemplate).cast_mut(),
         184,
         156,
         0,
     );
-    gSprites[spriteId].data[1] = TRUE as i16;
-    gSprites[spriteId].set_vFlip(TRUE as u16);
+    crate::gl!(gSprites[spriteId].data[1] = TRUE as i16);
+    (*gSprites.as_ptr())[spriteId].set_vFlip(TRUE as u16);
     CreateSprite(
         (&raw const *sScrollBarSpriteTemplate).cast_mut(),
         230,
@@ -2001,42 +2133,46 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
         120,
         0,
     );
-    StartSpriteAnim(&raw mut gSprites[spriteId], 3);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 3);
     spriteId = CreateSprite(
         (&raw const *sInterfaceTextSpriteTemplate).cast_mut(),
         16,
         144,
         0,
     );
-    StartSpriteAnim(&raw mut gSprites[spriteId], 2);
-    gSprites[spriteId].data[2] = 0x80;
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 2);
+    crate::gl!(gSprites[spriteId].data[2] = 0x80);
     spriteId = CreateSprite(
         (&raw const *sInterfaceTextSpriteTemplate).cast_mut(),
         48,
         144,
         0,
     );
-    StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
     spriteId = CreateSprite(
         (&raw const *sRotatingPokeBallSpriteTemplate).cast_mut(),
         0,
         80,
         2,
     );
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].oam.set_matrixNum(30);
-    gSprites[spriteId].data[0] = 30;
-    gSprites[spriteId].data[1] = 0;
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(30);
+    crate::gl!(gSprites[spriteId].data[0] = 30);
+    crate::gl!(gSprites[spriteId].data[1] = 0);
     spriteId = CreateSprite(
         (&raw const *sRotatingPokeBallSpriteTemplate).cast_mut(),
         0,
         80,
         2,
     );
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].oam.set_matrixNum(31);
-    gSprites[spriteId].data[0] = 31;
-    gSprites[spriteId].data[1] = 128;
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(31);
+    crate::gl!(gSprites[spriteId].data[0] = 31);
+    crate::gl!(gSprites[spriteId].data[1] = 128);
     if page == PAGE_MAIN {
         let mut drawNextDigit: u32 = 0;
         if IsNationalPokedexEnabled() == 0 {
@@ -2052,7 +2188,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 72,
                 1,
             );
-            StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
                 (&raw const *sHoennDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2060,12 +2196,12 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 48,
                 1,
             );
-            digitNum = ((*sPokedexView).seenCount as i32 / 100) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).seenCount as i32 / 100) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             if digitNum != 0 {
                 drawNextDigit = TRUE as u32;
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sHoennDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2073,11 +2209,11 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 48,
                 1,
             );
-            digitNum = ((*sPokedexView).seenCount as i32 % 100 / 10) as u16;
+            digitNum = ((*crate::gl!(sPokedexView)).seenCount as i32 % 100 / 10) as u16;
             if digitNum != 0 || drawNextDigit != 0 {
-                StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sHoennDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2085,8 +2221,8 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 48,
                 1,
             );
-            digitNum = ((*sPokedexView).seenCount as i32 % 100 % 10) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).seenCount as i32 % 100 % 10) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
                 (&raw const *sHoennDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2094,12 +2230,12 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 80,
                 1,
             );
-            digitNum = ((*sPokedexView).ownCount as i32 / 100) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).ownCount as i32 / 100) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             if digitNum != 0 {
                 drawNextDigit = TRUE as u32;
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sHoennDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2107,11 +2243,11 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 80,
                 1,
             );
-            digitNum = ((*sPokedexView).ownCount as i32 % 100 / 10) as u16;
+            digitNum = ((*crate::gl!(sPokedexView)).ownCount as i32 % 100 / 10) as u16;
             if digitNum != 0 || drawNextDigit != 0 {
-                StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sHoennDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2119,8 +2255,8 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 80,
                 1,
             );
-            digitNum = ((*sPokedexView).ownCount as i32 % 100 % 10) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).ownCount as i32 % 100 % 10) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
         } else {
             CreateSprite(
                 (&raw const *sSeenOwnTextSpriteTemplate).cast_mut(),
@@ -2134,7 +2270,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 76,
                 1,
             );
-            StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
             CreateSprite(
                 (&raw const *sHoennNationalTextSpriteTemplate).cast_mut(),
                 17,
@@ -2147,7 +2283,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 55,
                 1,
             );
-            StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
             CreateSprite(
                 (&raw const *sHoennNationalTextSpriteTemplate).cast_mut(),
                 17,
@@ -2160,7 +2296,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 91,
                 1,
             );
-            StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
             let mut seenOwnedCount: u16 = GetHoennPokedexCount(FLAG_GET_SEEN);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
@@ -2170,11 +2306,11 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 1,
             );
             digitNum = (seenOwnedCount as i32 / 100) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             if digitNum != 0 {
                 drawNextDigit = TRUE as u32;
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2184,9 +2320,9 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
             );
             digitNum = (seenOwnedCount as i32 % 100 / 10) as u16;
             if digitNum != 0 || drawNextDigit != 0 {
-                StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2195,7 +2331,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 1,
             );
             digitNum = (seenOwnedCount as i32 % 100 % 10) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2203,12 +2339,12 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 55,
                 1,
             );
-            digitNum = ((*sPokedexView).seenCount as i32 / 100) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).seenCount as i32 / 100) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             if digitNum != 0 {
                 drawNextDigit = TRUE as u32;
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2216,11 +2352,11 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 55,
                 1,
             );
-            digitNum = ((*sPokedexView).seenCount as i32 % 100 / 10) as u16;
+            digitNum = ((*crate::gl!(sPokedexView)).seenCount as i32 % 100 / 10) as u16;
             if digitNum != 0 || drawNextDigit != 0 {
-                StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2228,8 +2364,8 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 55,
                 1,
             );
-            digitNum = ((*sPokedexView).seenCount as i32 % 100 % 10) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).seenCount as i32 % 100 % 10) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             seenOwnedCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
@@ -2239,11 +2375,11 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 1,
             );
             digitNum = (seenOwnedCount as i32 / 100) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             if digitNum != 0 {
                 drawNextDigit = TRUE as u32;
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2253,9 +2389,9 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
             );
             digitNum = (seenOwnedCount as i32 % 100 / 10) as u16;
             if digitNum != 0 || drawNextDigit != 0 {
-                StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2264,7 +2400,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 1,
             );
             digitNum = (seenOwnedCount as i32 % 100 % 10) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2272,12 +2408,12 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 91,
                 1,
             );
-            digitNum = ((*sPokedexView).ownCount as i32 / 100) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).ownCount as i32 / 100) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             if digitNum != 0 {
                 drawNextDigit = TRUE as u32;
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2285,11 +2421,11 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 91,
                 1,
             );
-            digitNum = ((*sPokedexView).ownCount as i32 % 100 / 10) as u16;
+            digitNum = ((*crate::gl!(sPokedexView)).ownCount as i32 % 100 / 10) as u16;
             if digitNum != 0 || drawNextDigit != 0 {
-                StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
             } else {
-                gSprites[spriteId].set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             }
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2297,8 +2433,8 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
                 91,
                 1,
             );
-            digitNum = ((*sPokedexView).ownCount as i32 % 100 % 10) as u16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
+            digitNum = ((*crate::gl!(sPokedexView)).ownCount as i32 % 100 % 10) as u16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), digitNum as u8);
         }
         spriteId = CreateSprite(
             (&raw const *sDexListStartMenuCursorSpriteTemplate).cast_mut(),
@@ -2306,7 +2442,7 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
             96,
             1,
         );
-        gSprites[spriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     } else {
         spriteId = CreateSprite(
             (&raw const *sDexListStartMenuCursorSpriteTemplate).cast_mut(),
@@ -2314,12 +2450,12 @@ pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
             80,
             1,
         );
-        gSprites[spriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     }
 }
 pub(crate) unsafe fn SpriteCB_EndMoveMonForInfoScreen(sprite: *mut Sprite) {}
 pub(crate) unsafe fn SpriteCB_SeenOwnInfo(sprite: *mut Sprite) {
-    if (*sPokedexView).currentPage != PAGE_MAIN {
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN {
         DestroySprite(sprite);
     }
 }
@@ -2347,11 +2483,11 @@ pub unsafe fn SpriteCB_MoveMonForInfoScreen(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn SpriteCB_PokedexListMonSprite(sprite: *mut Sprite) {
     let monId: u8 = (*sprite).data[1] as u8;
-    if (*sPokedexView).currentPage != PAGE_MAIN
-        && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN
+        && (*crate::gl!(sPokedexView)).currentPage != PAGE_SEARCH_RESULTS
     {
-        FreeAndDestroyMonPicSprite((*sPokedexView).monSpriteIds[monId]);
-        (*sPokedexView).monSpriteIds[monId] = 0xFFFF;
+        FreeAndDestroyMonPicSprite((*crate::gl!(sPokedexView)).monSpriteIds[monId]);
+        (*crate::gl!(sPokedexView)).monSpriteIds[monId] = 0xFFFF;
     } else {
         (*sprite).y2 = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
             [(*sprite).data[5] as u8] as i32
@@ -2381,32 +2517,33 @@ pub(crate) unsafe fn SpriteCB_PokedexListMonSprite(sprite: *mut Sprite) {
             (*sprite).set_invisible(TRUE as u16);
         }
         if ((*sprite).data[5] <= -64 || (*sprite).data[5] >= 64) && (*sprite).data[0] != 0 {
-            FreeAndDestroyMonPicSprite((*sPokedexView).monSpriteIds[monId]);
-            (*sPokedexView).monSpriteIds[monId] = 0xFFFF;
+            FreeAndDestroyMonPicSprite((*crate::gl!(sPokedexView)).monSpriteIds[monId]);
+            (*crate::gl!(sPokedexView)).monSpriteIds[monId] = 0xFFFF;
         }
     }
 }
 pub(crate) unsafe fn SpriteCB_Scrollbar(sprite: *mut Sprite) {
-    if (*sPokedexView).currentPage != PAGE_MAIN
-        && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN
+        && (*crate::gl!(sPokedexView)).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
         (*sprite).y2 = div_i32(
-            (*sPokedexView).selectedPokemon as i32 * 120,
-            (*sPokedexView).pokemonListCount as i32 - 1,
+            (*crate::gl!(sPokedexView)).selectedPokemon as i32 * 120,
+            (*crate::gl!(sPokedexView)).pokemonListCount as i32 - 1,
         ) as i16;
     }
 }
 pub(crate) unsafe fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
-    if (*sPokedexView).currentPage != PAGE_MAIN
-        && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN
+        && (*crate::gl!(sPokedexView)).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
         let mut r0: u8 = 0;
         if (*sprite).data[sIsDownArrow] != 0 {
-            if (*sPokedexView).selectedPokemon as i32 == (*sPokedexView).pokemonListCount as i32 - 1
+            if (*crate::gl!(sPokedexView)).selectedPokemon as i32
+                == (*crate::gl!(sPokedexView)).pokemonListCount as i32 - 1
             {
                 (*sprite).set_invisible(TRUE as u16);
             } else {
@@ -2414,7 +2551,7 @@ pub(crate) unsafe fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
             }
             r0 = (*sprite).data[2] as u8;
         } else {
-            if (*sPokedexView).selectedPokemon == 0 {
+            if (*crate::gl!(sPokedexView)).selectedPokemon == 0 {
                 (*sprite).set_invisible(TRUE as u16);
             } else {
                 (*sprite).set_invisible(FALSE as u16);
@@ -2423,8 +2560,8 @@ pub(crate) unsafe fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
         }
         (*sprite).y2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[r0] / 64;
         (*sprite).data[2] += 8;
-        if (*sPokedexView).menuIsOpen == 0
-            && (*sPokedexView).menuY == 0
+        if (*crate::gl!(sPokedexView)).menuIsOpen == 0
+            && (*crate::gl!(sPokedexView)).menuY == 0
             && (*sprite).invisible() == 0
         {
             (*sprite).set_invisible(FALSE as u16);
@@ -2434,19 +2571,19 @@ pub(crate) unsafe fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_DexListInterfaceText(sprite: *mut Sprite) {
-    if (*sPokedexView).currentPage != PAGE_MAIN
-        && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN
+        && (*crate::gl!(sPokedexView)).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     }
 }
 pub(crate) unsafe fn SpriteCB_RotatingPokeBall(sprite: *mut Sprite) {
-    if (*sPokedexView).currentPage != PAGE_MAIN
-        && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN
+        && (*crate::gl!(sPokedexView)).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
-        let mut val: u8 = (*sPokedexView).pokeBallRotation + (*sprite).data[1] as u8;
+        let mut val: u8 = (*crate::gl!(sPokedexView)).pokeBallRotation + (*sprite).data[1] as u8;
         let mut r3: i16 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val];
         let mut r0: i16 =
             (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val as i32 + 64];
@@ -2457,7 +2594,7 @@ pub(crate) unsafe fn SpriteCB_RotatingPokeBall(sprite: *mut Sprite) {
             (r3 as u16).wrapping_neg(),
             r0 as u16,
         );
-        val = (*sPokedexView).pokeBallRotation + ((*sprite).data[1] as u8 + 64);
+        val = (*crate::gl!(sPokedexView)).pokeBallRotation + ((*sprite).data[1] as u8 + 64);
         r3 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val];
         r0 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val as i32 + 64];
         (*sprite).x2 = (r0 as i32 * 40 / 256) as i16;
@@ -2465,19 +2602,21 @@ pub(crate) unsafe fn SpriteCB_RotatingPokeBall(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_DexListStartMenuCursor(sprite: *mut Sprite) {
-    if (*sPokedexView).currentPage != PAGE_MAIN
-        && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
+    if (*crate::gl!(sPokedexView)).currentPage != PAGE_MAIN
+        && (*crate::gl!(sPokedexView)).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
-        let r1: u16 = (if (*sPokedexView).currentPage == PAGE_MAIN {
+        let r1: u16 = (if (*crate::gl!(sPokedexView)).currentPage == PAGE_MAIN {
             80
         } else {
             96
         }) as u16;
-        if (*sPokedexView).menuIsOpen != 0 && (*sPokedexView).menuY as i32 == r1 as i32 {
+        if (*crate::gl!(sPokedexView)).menuIsOpen != 0
+            && (*crate::gl!(sPokedexView)).menuY as i32 == r1 as i32
+        {
             (*sprite).set_invisible(FALSE as u16);
-            (*sprite).y2 = (*sPokedexView).menuCursorPos as i16 * 16;
+            (*sprite).y2 = (*crate::gl!(sPokedexView)).menuCursorPos as i16 * 16;
             (*sprite).x2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
                 [(*sprite).data[2] as u8]
                 / 64;
@@ -2505,7 +2644,7 @@ unsafe fn PrintInfoScreenText(str: *mut u8, left: u8, top: u8) {
     );
 }
 unsafe fn LoadInfoScreen(item: *mut PokedexListItem, monSpriteId: u8) -> u8 {
-    sPokedexListItem = item;
+    crate::gl!(sPokedexListItem = item);
     let taskId: u8 = CreateTask(Some(Task_LoadInfoScreen), 0);
     task_set(taskId, tScrolling, FALSE as i16);
     task_set(taskId, tMonSpriteDone, TRUE as i16);
@@ -2536,8 +2675,8 @@ fn IsInfoScreenScrolling(taskId: u8) -> u8 {
         0
     }
 }
-unsafe fn StartInfoScreenScroll(item: *mut PokedexListItem, taskId: u8) -> u8 {
-    sPokedexListItem = item;
+fn StartInfoScreenScroll(item: *mut PokedexListItem, taskId: u8) -> u8 {
+    crate::gl!(sPokedexListItem = item);
     task_set(taskId, tScrolling, TRUE as i16);
     task_set(taskId, tMonSpriteDone, FALSE as i16);
     task_set(taskId, tBgLoaded, FALSE as i16);
@@ -2545,7 +2684,7 @@ unsafe fn StartInfoScreenScroll(item: *mut PokedexListItem, taskId: u8) -> u8 {
     taskId
 }
 pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
@@ -2568,35 +2707,36 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
             FillWindowPixelBuffer(WIN_INFO, 0);
             PutWindowTilemap(WIN_INFO);
             PutWindowTilemap(WIN_FOOTPRINT);
-            DrawFootprint(WIN_FOOTPRINT, (*sPokedexListItem).dexNum);
+            DrawFootprint(WIN_FOOTPRINT, (*crate::gl!(sPokedexListItem)).dexNum);
             CopyWindowToVram(WIN_FOOTPRINT, COPYWIN_GFX);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             LoadScreenSelectBarMain(0xD);
-            HighlightScreenSelectBarItem((*sPokedexView).selectedScreen, 0xD);
-            LoadPokedexBgPalette((*sPokedexView).isSearchResults());
-            gMain.state += 1;
+            HighlightScreenSelectBarItem((*crate::gl!(sPokedexView)).selectedScreen, 0xD);
+            LoadPokedexBgPalette((*crate::gl!(sPokedexView)).isSearchResults());
+            crate::gl!(gMain.state += 1);
         }
         3 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             PrintMonInfo(
-                (*sPokedexListItem).dexNum as u32,
-                (if (*sPokedexView).dexMode == DEX_MODE_HOENN {
+                (*crate::gl!(sPokedexListItem)).dexNum as u32,
+                (if (*crate::gl!(sPokedexView)).dexMode == DEX_MODE_HOENN {
                     0
                 } else {
                     TRUE as i32
                 }) as u32,
-                (*sPokedexListItem).owned() as u32,
+                (*crate::gl!(sPokedexListItem)).owned() as u32,
                 0,
             );
-            if (*sPokedexListItem).owned() == 0 {
+            if (*crate::gl!(sPokedexListItem)).owned() == 0 {
                 LoadPalette(
-                    &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[1] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[1] as *mut c_void,
                     49,
                     30,
                 );
@@ -2605,7 +2745,7 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
             CopyBgTilemapBufferToVram(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             if task_get(taskId, tMonSpriteDone) == 0 {
@@ -2613,15 +2753,17 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
                     taskId,
                     4,
                     CreateMonSpriteFromNationalDexNumber(
-                        (*sPokedexListItem).dexNum,
+                        (*crate::gl!(sPokedexListItem)).dexNum,
                         MON_PAGE_X,
                         MON_PAGE_Y,
                         0,
                     ) as i16,
                 );
-                gSprites[task_get(taskId, 4)].oam.set_priority(0);
+                (*gSprites.as_ptr())[task_get(taskId, 4)]
+                    .oam
+                    .set_priority(0);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             let mut preservedPalettes: u32 = 0;
@@ -2631,12 +2773,12 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
             if task_get(taskId, tMonSpriteDone) != 0 {
                 preservedPalettes |= shl_i32(
                     1,
-                    gSprites[task_get(taskId, 4)].oam.paletteNum() as u32 + 16,
+                    (*gSprites.as_ptr())[task_get(taskId, 4)].oam.paletteNum() as u32 + 16,
                 ) as u32;
             }
             BeginNormalPaletteFade(!preservedPalettes, 0, 16, 0, 0);
-            SetVBlankCallback(gPokedexVBlankCB);
-            gMain.state += 1;
+            SetVBlankCallback(crate::gl!(gPokedexVBlankCB));
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -2647,27 +2789,27 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
-            if gPaletteFade.active() == 0 {
-                gMain.state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                crate::gl!(gMain.state += 1);
                 if task_get(taskId, tSkipCry) == 0 {
                     StopCryAndClearCrySongs();
                     PlayCry_NormalNoDucking(
-                        NationalPokedexNumToSpecies((*sPokedexListItem).dexNum),
+                        NationalPokedexNumToSpecies((*crate::gl!(sPokedexListItem)).dexNum),
                         0,
                         CRY_VOLUME_RS,
                         CRY_PRIORITY_NORMAL,
                     );
                 } else {
-                    gMain.state += 1;
+                    crate::gl!(gMain.state += 1);
                 }
             }
         }
         9 => {
             if IsCryPlayingOrClearCrySongs() == 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         10 => {
@@ -2676,12 +2818,12 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
             task_set(taskId, tBgLoaded, TRUE as i16);
             task_set(taskId, tSkipCry, TRUE as i16);
             task_set_func(taskId, Some(Task_HandleInfoScreenInput));
-            gMain.state = 0;
+            crate::gl!(gMain.state = 0);
         }
         _ => {
-            if gPaletteFade.active() == 0 {
-                (*sPokedexView).currentPage = PAGE_INFO;
-                gPokedexVBlankCB = gMain.vblankCallback;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sPokedexView)).currentPage = PAGE_INFO;
+                crate::gl!(gPokedexVBlankCB = crate::gl!(gMain.vblankCallback));
                 SetVBlankCallback(None);
                 let mut r2: u16 = 0;
                 if task_get(taskId, tMonSpriteDone) != 0 {
@@ -2691,7 +2833,7 @@ pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
                     r2 |= DISPCNT_BG1_ON;
                 }
                 ResetOtherVideoRegisters(r2);
-                gMain.state = 1;
+                crate::gl!(gMain.state = 1);
             }
         }
     }
@@ -2722,32 +2864,32 @@ pub(crate) unsafe fn Task_HandleInfoScreenInput(taskId: u8) {
         PlaySE(SE_DEX_SCROLL);
         return;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         task_set_func(taskId, Some(Task_ExitInfoScreen));
         PlaySE(SE_PC_OFF);
         return;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        match (*sPokedexView).selectedScreen {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        match (*crate::gl!(sPokedexView)).selectedScreen {
             AREA_SCREEN => {
                 BeginNormalPaletteFade(0xffffffeb, 0, 0, 16, 0);
-                (*sPokedexView).screenSwitchState = 1;
+                (*crate::gl!(sPokedexView)).screenSwitchState = 1;
                 task_set_func(taskId, Some(Task_SwitchScreensFromInfoScreen));
                 PlaySE(SE_PIN);
             }
             CRY_SCREEN => {
                 BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-                (*sPokedexView).screenSwitchState = 2;
+                (*crate::gl!(sPokedexView)).screenSwitchState = 2;
                 task_set_func(taskId, Some(Task_SwitchScreensFromInfoScreen));
                 PlaySE(SE_PIN);
             }
             SIZE_SCREEN => {
-                if (*sPokedexListItem).owned() == 0 {
+                if (*crate::gl!(sPokedexListItem)).owned() == 0 {
                     PlaySE(SE_FAILURE);
                 } else {
                     BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-                    (*sPokedexView).screenSwitchState = 3;
+                    (*crate::gl!(sPokedexView)).screenSwitchState = 3;
                     task_set_func(taskId, Some(Task_SwitchScreensFromInfoScreen));
                     PlaySE(SE_PIN);
                 }
@@ -2761,30 +2903,30 @@ pub(crate) unsafe fn Task_HandleInfoScreenInput(taskId: u8) {
         }
         return;
     }
-    if (gMain.newKeys as i32 & DPAD_LEFT != 0
-        || gMain.newKeys as i32 & L_BUTTON != 0
-            && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR)
-        && (*sPokedexView).selectedScreen > 0
+    if (crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+        || crate::gl!(gMain.newKeys) as i32 & L_BUTTON != 0
+            && (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR)
+        && (*crate::gl!(sPokedexView)).selectedScreen > 0
     {
-        (*sPokedexView).selectedScreen -= 1;
-        HighlightScreenSelectBarItem((*sPokedexView).selectedScreen, 0xD);
+        (*crate::gl!(sPokedexView)).selectedScreen -= 1;
+        HighlightScreenSelectBarItem((*crate::gl!(sPokedexView)).selectedScreen, 0xD);
         PlaySE(SE_DEX_PAGE);
         return;
     }
-    if (gMain.newKeys as i32 & DPAD_RIGHT != 0
-        || gMain.newKeys as i32 & R_BUTTON != 0
-            && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR)
-        && (*sPokedexView).selectedScreen < CANCEL_SCREEN
+    if (crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+        || crate::gl!(gMain.newKeys) as i32 & R_BUTTON != 0
+            && (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR)
+        && (*crate::gl!(sPokedexView)).selectedScreen < CANCEL_SCREEN
     {
-        (*sPokedexView).selectedScreen += 1;
-        HighlightScreenSelectBarItem((*sPokedexView).selectedScreen, 0xD);
+        (*crate::gl!(sPokedexView)).selectedScreen += 1;
+        HighlightScreenSelectBarItem((*crate::gl!(sPokedexView)).selectedScreen, 0xD);
         PlaySE(SE_DEX_PAGE);
     }
 }
 pub(crate) unsafe fn Task_SwitchScreensFromInfoScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
-        match (*sPokedexView).screenSwitchState {
+        match (*crate::gl!(sPokedexView)).screenSwitchState {
             2 => {
                 task_set_func(taskId, Some(Task_LoadCryScreen));
             }
@@ -2798,57 +2940,57 @@ pub(crate) unsafe fn Task_SwitchScreensFromInfoScreen(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_LoadInfoScreenWaitForFade(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
         task_set_func(taskId, Some(Task_LoadInfoScreen));
     }
 }
 pub(crate) unsafe fn Task_ExitInfoScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
         FreeInfoScreenWindowAndBgBuffers();
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn Task_LoadAreaScreen(taskId: u8) {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             LoadScreenSelectBarSubmenu(0xD);
             HighlightSubmenuScreenSelectBarItem(0, 0xD);
-            LoadPokedexBgPalette((*sPokedexView).isSearchResults());
+            LoadPokedexBgPalette((*crate::gl!(sPokedexView)).isSearchResults());
             SetGpuReg(REG_OFFSET_BG1CNT, 3328);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ShowPokedexAreaScreen(
-                NationalPokedexNumToSpecies((*sPokedexListItem).dexNum),
-                &raw mut (*sPokedexView).screenSwitchState,
+                NationalPokedexNumToSpecies((*crate::gl!(sPokedexListItem)).dexNum),
+                &raw mut (*crate::gl!(sPokedexView)).screenSwitchState,
             );
-            SetVBlankCallback(gPokedexVBlankCB);
-            (*sPokedexView).screenSwitchState = 0;
-            gMain.state = 0;
+            SetVBlankCallback(crate::gl!(gPokedexVBlankCB));
+            (*crate::gl!(sPokedexView)).screenSwitchState = 0;
+            crate::gl!(gMain.state = 0);
             task_set_func(taskId, Some(Task_WaitForAreaScreenInput));
         }
         _ => {
-            if gPaletteFade.active() == 0 {
-                (*sPokedexView).currentPage = PAGE_AREA;
-                gPokedexVBlankCB = gMain.vblankCallback;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sPokedexView)).currentPage = PAGE_AREA;
+                crate::gl!(gPokedexVBlankCB = crate::gl!(gMain.vblankCallback));
                 SetVBlankCallback(None);
                 ResetOtherVideoRegisters(DISPCNT_BG1_ON);
-                (*sPokedexView).selectedScreen = AREA_SCREEN;
-                gMain.state = 1;
+                (*crate::gl!(sPokedexView)).selectedScreen = AREA_SCREEN;
+                crate::gl!(gMain.state = 1);
             }
         }
     }
 }
 pub(crate) unsafe fn Task_WaitForAreaScreenInput(taskId: u8) {
-    if (*sPokedexView).screenSwitchState != 0 {
+    if (*crate::gl!(sPokedexView)).screenSwitchState != 0 {
         task_set_func(taskId, Some(Task_SwitchScreensFromAreaScreen));
     }
 }
 pub(crate) unsafe fn Task_SwitchScreensFromAreaScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        match (*sPokedexView).screenSwitchState {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        match (*crate::gl!(sPokedexView)).screenSwitchState {
             2 => {
                 task_set_func(taskId, Some(Task_LoadCryScreen));
             }
@@ -2859,7 +3001,7 @@ pub(crate) unsafe fn Task_SwitchScreensFromAreaScreen(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
@@ -2882,17 +3024,17 @@ pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
             PutWindowTilemap(WIN_INFO);
             PutWindowTilemap(WIN_VU_METER);
             PutWindowTilemap(WIN_CRY_WAVE);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             LoadScreenSelectBarSubmenu(0xD);
             HighlightSubmenuScreenSelectBarItem(1, 0xD);
-            LoadPokedexBgPalette((*sPokedexView).isSearchResults());
-            gMain.state += 1;
+            LoadPokedexBgPalette((*crate::gl!(sPokedexView)).isSearchResults());
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ResetPaletteFade();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             PrintInfoScreenText(
@@ -2902,23 +3044,25 @@ pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
                 82,
                 33,
             );
-            PrintCryScreenSpeciesName(0, (*sPokedexListItem).dexNum, 82, 49);
-            gMain.state += 1;
+            PrintCryScreenSpeciesName(0, (*crate::gl!(sPokedexListItem)).dexNum, 82, 49);
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             task_set(
                 taskId,
                 4,
                 CreateMonSpriteFromNationalDexNumber(
-                    (*sPokedexListItem).dexNum,
+                    (*crate::gl!(sPokedexListItem)).dexNum,
                     MON_PAGE_X,
                     MON_PAGE_Y,
                     0,
                 ) as i16,
             );
-            gSprites[task_get(taskId, 4)].oam.set_priority(0);
-            gDexCryScreenState = 0;
-            gMain.state += 1;
+            (*gSprites.as_ptr())[task_get(taskId, 4)]
+                .oam
+                .set_priority(0);
+            gDexCryScreenState.set(0);
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             let mut waveformWindow: CryScreenWindow = zeroed();
@@ -2928,8 +3072,8 @@ pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
             waveformWindow.yPos = 30;
             waveformWindow.xPos = 12;
             if LoadCryWaveformWindow(&raw mut waveformWindow, 2) != 0 {
-                gMain.state += 1;
-                gDexCryScreenState = 0;
+                crate::gl!(gMain.state += 1);
+                gDexCryScreenState.set(0);
             }
         }
         7 => {
@@ -2938,7 +3082,7 @@ pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
             cryMeter.xPos = 18;
             cryMeter.yPos = 3;
             if LoadCryMeter(&raw mut cryMeter, 3) != 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
             CopyWindowToVram(WIN_VU_METER, COPYWIN_GFX);
             CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
@@ -2949,8 +3093,8 @@ pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
         }
         8 => {
             BeginNormalPaletteFade(0xffffffeb, 0, 0x10, 0, 0);
-            SetVBlankCallback(gPokedexVBlankCB);
-            gMain.state += 1;
+            SetVBlankCallback(crate::gl!(gPokedexVBlankCB));
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -2961,22 +3105,22 @@ pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
-            (*sPokedexView).screenSwitchState = 0;
-            gMain.state = 0;
+            (*crate::gl!(sPokedexView)).screenSwitchState = 0;
+            crate::gl!(gMain.state = 0);
             task_set_func(taskId, Some(Task_HandleCryScreenInput));
         }
         _ => {
-            if gPaletteFade.active() == 0 {
-                m4aMPlayStop(&raw mut gMPlayInfo_BGM);
-                (*sPokedexView).currentPage = PAGE_CRY;
-                gPokedexVBlankCB = gMain.vblankCallback;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                m4aMPlayStop(crate::gl!(&raw gMPlayInfo_BGM));
+                (*crate::gl!(sPokedexView)).currentPage = PAGE_CRY;
+                crate::gl!(gPokedexVBlankCB = crate::gl!(gMain.vblankCallback));
                 SetVBlankCallback(None);
                 ResetOtherVideoRegisters(DISPCNT_BG1_ON);
-                (*sPokedexView).selectedScreen = CRY_SCREEN;
-                gMain.state = 1;
+                (*crate::gl!(sPokedexView)).selectedScreen = CRY_SCREEN;
+                crate::gl!(gMain.state = 1);
             }
         }
     }
@@ -2988,39 +3132,41 @@ pub(crate) unsafe fn Task_HandleCryScreenInput(taskId: u8) {
     } else {
         LoadPlayArrowPalette(FALSE);
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         LoadPlayArrowPalette(TRUE);
-        CryScreenPlayButton(NationalPokedexNumToSpecies((*sPokedexListItem).dexNum));
-    } else if gPaletteFade.active() == 0 {
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        CryScreenPlayButton(NationalPokedexNumToSpecies(
+            (*crate::gl!(sPokedexListItem)).dexNum,
+        ));
+    } else if (*gPaletteFade.as_ptr()).active() == 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-            m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
-            (*sPokedexView).screenSwitchState = 1;
+            m4aMPlayContinue(crate::gl!(&raw gMPlayInfo_BGM));
+            (*crate::gl!(sPokedexView)).screenSwitchState = 1;
             task_set_func(taskId, Some(Task_SwitchScreensFromCryScreen));
             PlaySE(SE_PC_OFF);
             return;
         }
-        if gMain.newKeys as i32 & DPAD_LEFT != 0
-            || gMain.newKeys as i32 & L_BUTTON != 0
-                && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+            || crate::gl!(gMain.newKeys) as i32 & L_BUTTON != 0
+                && (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
         {
             BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-            m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
-            (*sPokedexView).screenSwitchState = 2;
+            m4aMPlayContinue(crate::gl!(&raw gMPlayInfo_BGM));
+            (*crate::gl!(sPokedexView)).screenSwitchState = 2;
             task_set_func(taskId, Some(Task_SwitchScreensFromCryScreen));
             PlaySE(SE_DEX_PAGE);
             return;
         }
-        if gMain.newKeys as i32 & DPAD_RIGHT != 0
-            || gMain.newKeys as i32 & R_BUTTON != 0
-                && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+            || crate::gl!(gMain.newKeys) as i32 & R_BUTTON != 0
+                && (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
         {
-            if (*sPokedexListItem).owned() == 0 {
+            if (*crate::gl!(sPokedexListItem)).owned() == 0 {
                 PlaySE(SE_FAILURE);
             } else {
                 BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-                m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
-                (*sPokedexView).screenSwitchState = 3;
+                m4aMPlayContinue(crate::gl!(&raw gMPlayInfo_BGM));
+                (*crate::gl!(sPokedexView)).screenSwitchState = 3;
                 task_set_func(taskId, Some(Task_SwitchScreensFromCryScreen));
                 PlaySE(SE_DEX_PAGE);
             }
@@ -3028,10 +3174,10 @@ pub(crate) unsafe fn Task_HandleCryScreenInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_SwitchScreensFromCryScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeCryScreen();
         FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
-        match (*sPokedexView).screenSwitchState {
+        match (*crate::gl!(sPokedexView)).screenSwitchState {
             2 => {
                 task_set_func(taskId, Some(Task_LoadAreaScreen));
             }
@@ -3055,7 +3201,7 @@ unsafe fn LoadPlayArrowPalette(cryPlaying: u8) {
 }
 pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
     let mut spriteId: u8 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
@@ -3077,13 +3223,13 @@ pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
             );
             FillWindowPixelBuffer(WIN_INFO, 0);
             PutWindowTilemap(WIN_INFO);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             LoadScreenSelectBarSubmenu(0xD);
             HighlightSubmenuScreenSelectBarItem(2, 0xD);
-            LoadPokedexBgPalette((*sPokedexView).isSearchResults());
-            gMain.state += 1;
+            LoadPokedexBgPalette((*crate::gl!(sPokedexView)).isSearchResults());
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             let mut string: CArray<u8, 64> = zeroed();
@@ -3095,7 +3241,7 @@ pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
             );
             StringAppend(
                 string.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
             PrintInfoScreenText(
                 string.as_mut_ptr(),
@@ -3106,57 +3252,69 @@ pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
                 ) as u8,
                 121,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             ResetPaletteFade();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             spriteId = CreateSizeScreenTrainerPic(
-                PlayerGenderToFrontTrainerPicId((*gSaveBlock2Ptr).playerGender),
+                PlayerGenderToFrontTrainerPicId((*crate::gl!(gSaveBlock2Ptr)).playerGender),
                 152,
                 56,
                 0,
             ) as u8;
-            gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-            gSprites[spriteId].oam.set_matrixNum(1);
-            gSprites[spriteId].oam.set_priority(0);
-            gSprites[spriteId].y2 =
-                gPokedexEntries[(*sPokedexListItem).dexNum].trainerOffset as i16;
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_affineMode(ST_OAM_AFFINE_NORMAL);
+            (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(1);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
+            crate::gl!(
+                gSprites[spriteId].y2 =
+                    gPokedexEntries[(*crate::gl!(sPokedexListItem)).dexNum].trainerOffset as i16
+            );
             SetOamMatrix(
                 1,
-                gPokedexEntries[(*sPokedexListItem).dexNum].trainerScale,
+                gPokedexEntries[(*crate::gl!(sPokedexListItem)).dexNum].trainerScale,
                 0,
                 0,
-                gPokedexEntries[(*sPokedexListItem).dexNum].trainerScale,
+                gPokedexEntries[(*crate::gl!(sPokedexListItem)).dexNum].trainerScale,
             );
             LoadPalette(
                 sSizeScreenSilhouette_Pal.as_ptr().cast_mut() as *mut c_void,
-                (gSprites[spriteId].oam.paletteNum() + 16) * 16,
+                ((*gSprites.as_ptr())[spriteId].oam.paletteNum() + 16) * 16,
                 32,
             );
             task_set(taskId, tTrainerSpriteId, spriteId as i16);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
-            spriteId =
-                CreateMonSpriteFromNationalDexNumber((*sPokedexListItem).dexNum, 88, 56, 1) as u8;
-            gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-            gSprites[spriteId].oam.set_matrixNum(2);
-            gSprites[spriteId].oam.set_priority(0);
-            gSprites[spriteId].y2 =
-                gPokedexEntries[(*sPokedexListItem).dexNum].pokemonOffset as i16;
+            spriteId = CreateMonSpriteFromNationalDexNumber(
+                (*crate::gl!(sPokedexListItem)).dexNum,
+                88,
+                56,
+                1,
+            ) as u8;
+            (*gSprites.as_ptr())[spriteId]
+                .oam
+                .set_affineMode(ST_OAM_AFFINE_NORMAL);
+            (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(2);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
+            crate::gl!(
+                gSprites[spriteId].y2 =
+                    gPokedexEntries[(*crate::gl!(sPokedexListItem)).dexNum].pokemonOffset as i16
+            );
             SetOamMatrix(
                 2,
-                gPokedexEntries[(*sPokedexListItem).dexNum].pokemonScale,
+                gPokedexEntries[(*crate::gl!(sPokedexListItem)).dexNum].pokemonScale,
                 0,
                 0,
-                gPokedexEntries[(*sPokedexListItem).dexNum].pokemonScale,
+                gPokedexEntries[(*crate::gl!(sPokedexListItem)).dexNum].pokemonScale,
             );
             LoadPalette(
                 sSizeScreenSilhouette_Pal.as_ptr().cast_mut() as *mut c_void,
-                (gSprites[spriteId].oam.paletteNum() + 16) * 16,
+                ((*gSprites.as_ptr())[spriteId].oam.paletteNum() + 16) * 16,
                 32,
             );
             task_set(taskId, 4, spriteId as i16);
@@ -3164,12 +3322,12 @@ pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
             CopyBgTilemapBufferToVram(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             BeginNormalPaletteFade(0xffffffeb, 0, 0x10, 0, 0);
-            SetVBlankCallback(gPokedexVBlankCB);
-            gMain.state += 1;
+            SetVBlankCallback(crate::gl!(gPokedexVBlankCB));
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -3180,48 +3338,48 @@ pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
-            if gPaletteFade.active() == 0 {
-                (*sPokedexView).screenSwitchState = 0;
-                gMain.state = 0;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sPokedexView)).screenSwitchState = 0;
+                crate::gl!(gMain.state = 0);
                 task_set_func(taskId, Some(Task_HandleSizeScreenInput));
             }
         }
         _ => {
-            if gPaletteFade.active() == 0 {
-                (*sPokedexView).currentPage = PAGE_SIZE;
-                gPokedexVBlankCB = gMain.vblankCallback;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sPokedexView)).currentPage = PAGE_SIZE;
+                crate::gl!(gPokedexVBlankCB = crate::gl!(gMain.vblankCallback));
                 SetVBlankCallback(None);
                 ResetOtherVideoRegisters(DISPCNT_BG1_ON);
-                (*sPokedexView).selectedScreen = SIZE_SCREEN;
-                gMain.state = 1;
+                (*crate::gl!(sPokedexView)).selectedScreen = SIZE_SCREEN;
+                crate::gl!(gMain.state = 1);
             }
         }
     }
 }
 pub(crate) unsafe fn Task_HandleSizeScreenInput(taskId: u8) {
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-        (*sPokedexView).screenSwitchState = 1;
+        (*crate::gl!(sPokedexView)).screenSwitchState = 1;
         task_set_func(taskId, Some(Task_SwitchScreensFromSizeScreen));
         PlaySE(SE_PC_OFF);
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0
-        || gMain.newKeys as i32 & L_BUTTON != 0
-            && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+        || crate::gl!(gMain.newKeys) as i32 & L_BUTTON != 0
+            && (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
     {
         BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
-        (*sPokedexView).screenSwitchState = 2;
+        (*crate::gl!(sPokedexView)).screenSwitchState = 2;
         task_set_func(taskId, Some(Task_SwitchScreensFromSizeScreen));
         PlaySE(SE_DEX_PAGE);
     }
 }
 pub(crate) unsafe fn Task_SwitchScreensFromSizeScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
         FreeAndDestroyTrainerPicSprite(task_get(taskId, tTrainerSpriteId) as u16);
-        match (*sPokedexView).screenSwitchState {
+        match (*crate::gl!(sPokedexView)).screenSwitchState {
             2 => {
                 task_set_func(taskId, Some(Task_LoadCryScreen));
             }
@@ -3344,9 +3502,9 @@ pub(crate) unsafe fn Task_DisplayCaughtMonDexPage(taskId: u8) {
         4 => {
             spriteId =
                 CreateMonSpriteFromNationalDexNumber(dexNum, MON_PAGE_X, MON_PAGE_Y, 0) as u8;
-            gSprites[spriteId].oam.set_priority(0);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-            SetVBlankCallback(gPokedexVBlankCB);
+            SetVBlankCallback(crate::gl!(gPokedexVBlankCB));
             task_set(taskId, 3, spriteId as i16);
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
@@ -3360,15 +3518,15 @@ pub(crate) unsafe fn Task_DisplayCaughtMonDexPage(taskId: u8) {
             task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         6 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 PlayCry_Normal(NationalPokedexNumToSpecies(dexNum), 0);
                 task_set(taskId, tPalTimer, 0);
                 task_set_func(taskId, Some(Task_HandleCaughtMonPageInput));
             }
         }
         _ => {
-            if gPaletteFade.active() == 0 {
-                gPokedexVBlankCB = gMain.vblankCallback;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                crate::gl!(gPokedexVBlankCB = crate::gl!(gMain.vblankCallback));
                 SetVBlankCallback(None);
                 ResetOtherVideoRegisters(DISPCNT_BG0_ON);
                 ResetBgsAndClearDma3BusyFlags(0);
@@ -3383,9 +3541,12 @@ pub(crate) unsafe fn Task_DisplayCaughtMonDexPage(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleCaughtMonPageInput(taskId: u8) {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         BeginNormalPaletteFade(PALETTES_BG, 0, 0, 16, 0);
-        gSprites[task_get(taskId, 3)].callback = Some(SpriteCB_SlideCaughtMonToCenter);
+        {
+            let gl_i8 = task_get(taskId, 3);
+            crate::gl!(gSprites[gl_i8].callback = Some(SpriteCB_SlideCaughtMonToCenter))
+        };
         task_set_func(taskId, Some(Task_ExitCaughtMonPage));
     } else if ({
         task_set(taskId, tPalTimer, task_get(taskId, tPalTimer) + 1);
@@ -3414,7 +3575,7 @@ pub(crate) unsafe fn Task_HandleCaughtMonPageInput(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ExitCaughtMonPage(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let mut paletteNum: u8 = 0;
         SetGpuReg(REG_OFFSET_DISPCNT, 4160);
         FreeAllWindowBuffers();
@@ -3431,7 +3592,7 @@ pub(crate) unsafe fn Task_ExitCaughtMonPage(taskId: u8) {
             | task_get(taskId, tOtIdLo) as u16 as u32;
         let personality: u32 = (task_get(taskId, tPersonalityHi) as u16 as u32) << 16
             | task_get(taskId, tPersonalityLo) as u16 as u32;
-        paletteNum = gSprites[task_get(taskId, 3)].oam.paletteNum() as u8;
+        paletteNum = (*gSprites.as_ptr())[task_get(taskId, 3)].oam.paletteNum() as u8;
         let lzPaletteData: *mut u32 =
             GetMonSpritePalFromSpeciesAndPersonality(species, otId, personality);
         LoadCompressedPalette(lzPaletteData, 0x100 + paletteNum as u16 * 16, 32);
@@ -3762,47 +3923,47 @@ pub unsafe fn GetSetPokedexFlag(mut nationalDexNo: u16, caseID: u8) -> i8 {
     let mut retVal: i8 = 0;
     match caseID {
         FLAG_GET_SEEN => {
-            if (*gSaveBlock2Ptr).pokedex.seen[index] as i32 & mask as i32 != 0 {
-                if (*gSaveBlock2Ptr).pokedex.seen[index] as i32 & mask as i32
-                    == (*gSaveBlock1Ptr).seen1[index] as i32 & mask as i32
-                    && (*gSaveBlock2Ptr).pokedex.seen[index] as i32 & mask as i32
-                        == (*gSaveBlock1Ptr).seen2[index] as i32 & mask as i32
+            if (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] as i32 & mask as i32 != 0 {
+                if (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] as i32 & mask as i32
+                    == (*crate::gl!(gSaveBlock1Ptr)).seen1[index] as i32 & mask as i32
+                    && (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] as i32 & mask as i32
+                        == (*crate::gl!(gSaveBlock1Ptr)).seen2[index] as i32 & mask as i32
                 {
                     retVal = 1;
                 } else {
-                    (*gSaveBlock2Ptr).pokedex.seen[index] &= !mask;
-                    (*gSaveBlock1Ptr).seen1[index] &= !mask;
-                    (*gSaveBlock1Ptr).seen2[index] &= !mask;
+                    (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] &= !mask;
+                    (*crate::gl!(gSaveBlock1Ptr)).seen1[index] &= !mask;
+                    (*crate::gl!(gSaveBlock1Ptr)).seen2[index] &= !mask;
                     retVal = 0;
                 }
             }
         }
         FLAG_GET_CAUGHT => {
-            if (*gSaveBlock2Ptr).pokedex.owned[index] as i32 & mask as i32 != 0 {
-                if (*gSaveBlock2Ptr).pokedex.owned[index] as i32 & mask as i32
-                    == (*gSaveBlock2Ptr).pokedex.seen[index] as i32 & mask as i32
-                    && (*gSaveBlock2Ptr).pokedex.owned[index] as i32 & mask as i32
-                        == (*gSaveBlock1Ptr).seen1[index] as i32 & mask as i32
-                    && (*gSaveBlock2Ptr).pokedex.owned[index] as i32 & mask as i32
-                        == (*gSaveBlock1Ptr).seen2[index] as i32 & mask as i32
+            if (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[index] as i32 & mask as i32 != 0 {
+                if (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[index] as i32 & mask as i32
+                    == (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] as i32 & mask as i32
+                    && (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[index] as i32 & mask as i32
+                        == (*crate::gl!(gSaveBlock1Ptr)).seen1[index] as i32 & mask as i32
+                    && (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[index] as i32 & mask as i32
+                        == (*crate::gl!(gSaveBlock1Ptr)).seen2[index] as i32 & mask as i32
                 {
                     retVal = 1;
                 } else {
-                    (*gSaveBlock2Ptr).pokedex.owned[index] &= !mask;
-                    (*gSaveBlock2Ptr).pokedex.seen[index] &= !mask;
-                    (*gSaveBlock1Ptr).seen1[index] &= !mask;
-                    (*gSaveBlock1Ptr).seen2[index] &= !mask;
+                    (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[index] &= !mask;
+                    (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] &= !mask;
+                    (*crate::gl!(gSaveBlock1Ptr)).seen1[index] &= !mask;
+                    (*crate::gl!(gSaveBlock1Ptr)).seen2[index] &= !mask;
                     retVal = 0;
                 }
             }
         }
         FLAG_SET_SEEN => {
-            (*gSaveBlock2Ptr).pokedex.seen[index] |= mask;
-            (*gSaveBlock1Ptr).seen1[index] |= mask;
-            (*gSaveBlock1Ptr).seen2[index] |= mask;
+            (*crate::gl!(gSaveBlock2Ptr)).pokedex.seen[index] |= mask;
+            (*crate::gl!(gSaveBlock1Ptr)).seen1[index] |= mask;
+            (*crate::gl!(gSaveBlock1Ptr)).seen2[index] |= mask;
         }
         FLAG_SET_CAUGHT => {
-            (*gSaveBlock2Ptr).pokedex.owned[index] |= mask;
+            (*crate::gl!(gSaveBlock2Ptr)).pokedex.owned[index] |= mask;
         }
         _ => {}
     }
@@ -3928,7 +4089,7 @@ unsafe fn ResetOtherVideoRegisters(regBits: u16) {
         ClearGpuRegBits(0, DISPCNT_OBJ_ON);
         ResetSpriteData();
         FreeAllSpritePalettes();
-        gReservedSpritePaletteCount = 8;
+        gReservedSpritePaletteCount.set(8);
     }
 }
 unsafe fn PrintInfoSubMenuText(windowId: u8, str: *mut u8, left: u8, top: u8) {
@@ -4053,7 +4214,7 @@ unsafe fn RS_DrawFootprint(offset: u16, tileNum: u16) {
     *((VRAM + offset as i32 * 0x800 + 0x272) as usize as *mut u16) = 0xF000 + tileNum + 2;
     *((VRAM + offset as i32 * 0x800 + 0x274) as usize as *mut u16) = 0xF000 + tileNum + 3;
 }
-unsafe fn GetNextPosition(direction: u8, mut position: u16, min: u16, max: u16) -> u16 {
+fn GetNextPosition(direction: u8, mut position: u16, min: u16, max: u16) -> u16 {
     match direction {
         1 => {
             if position > min {
@@ -4086,9 +4247,9 @@ unsafe fn GetNextPosition(direction: u8, mut position: u16, min: u16, max: u16) 
 unsafe fn GetPokedexMonPersonality(species: u16) -> u32 {
     if species == SPECIES_UNOWN || species == SPECIES_SPINDA {
         if species == SPECIES_UNOWN {
-            return (*gSaveBlock2Ptr).pokedex.unownPersonality;
+            return (*crate::gl!(gSaveBlock2Ptr)).pokedex.unownPersonality;
         } else {
-            return (*gSaveBlock2Ptr).pokedex.spindaPersonality;
+            return (*crate::gl!(gSaveBlock2Ptr)).pokedex.spindaPersonality;
         }
     } else {
         return 0;
@@ -4133,18 +4294,20 @@ unsafe fn DoPokedexSearch(
     let mut i: u16 = 0;
     let mut resultsCount: u16 = 0;
     while i < NATIONAL_DEX_DEOXYS {
-        if (*sPokedexView).pokedexList[i].seen() != 0 {
-            (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
+        if (*crate::gl!(sPokedexView)).pokedexList[i].seen() != 0 {
+            (*crate::gl!(sPokedexView)).pokedexList[resultsCount] =
+                (*crate::gl!(sPokedexView)).pokedexList[i];
             resultsCount += 1;
         }
         i += 1;
     }
-    (*sPokedexView).pokemonListCount = resultsCount;
+    (*crate::gl!(sPokedexView)).pokemonListCount = resultsCount;
     if abcGroup != 0xFF {
         i = 0;
         resultsCount = 0;
-        while i < (*sPokedexView).pokemonListCount {
-            species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
+        while i < (*crate::gl!(sPokedexView)).pokemonListCount {
+            species =
+                NationalPokedexNumToSpecies((*crate::gl!(sPokedexView)).pokedexList[i].dexNum);
             let firstLetter: u8 = (*(&raw const crate::data::data_tables::gSpeciesNames)
                 .cast::<CArray<CArray<u8, 11>, 0>>())[species][0];
             if firstLetter >= sLetterSearchRanges[abcGroup][0]
@@ -4156,29 +4319,32 @@ unsafe fn DoPokedexSearch(
                         < sLetterSearchRanges[abcGroup][2] as i32
                             + sLetterSearchRanges[abcGroup][3] as i32
             {
-                (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
+                (*crate::gl!(sPokedexView)).pokedexList[resultsCount] =
+                    (*crate::gl!(sPokedexView)).pokedexList[i];
                 resultsCount += 1;
             }
             i += 1;
         }
-        (*sPokedexView).pokemonListCount = resultsCount;
+        (*crate::gl!(sPokedexView)).pokemonListCount = resultsCount;
     }
     if bodyColor != 0xFF {
         i = 0;
         resultsCount = 0;
-        while i < (*sPokedexView).pokemonListCount {
-            species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
+        while i < (*crate::gl!(sPokedexView)).pokemonListCount {
+            species =
+                NationalPokedexNumToSpecies((*crate::gl!(sPokedexView)).pokedexList[i].dexNum);
             if bodyColor
                 == (*(&raw const crate::data::pokemon::gSpeciesInfo)
                     .cast::<CArray<SpeciesInfo, 0>>())[species]
                     .bodyColor()
             {
-                (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
+                (*crate::gl!(sPokedexView)).pokedexList[resultsCount] =
+                    (*crate::gl!(sPokedexView)).pokedexList[i];
                 resultsCount += 1;
             }
             i += 1;
         }
-        (*sPokedexView).pokemonListCount = resultsCount;
+        (*crate::gl!(sPokedexView)).pokemonListCount = resultsCount;
     }
     if type1 != TYPE_NONE || type2 != TYPE_NONE {
         if type1 == TYPE_NONE {
@@ -4188,9 +4354,11 @@ unsafe fn DoPokedexSearch(
         if type2 == TYPE_NONE {
             i = 0;
             resultsCount = 0;
-            while i < (*sPokedexView).pokemonListCount {
-                if (*sPokedexView).pokedexList[i].owned() != 0 {
-                    species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
+            while i < (*crate::gl!(sPokedexView)).pokemonListCount {
+                if (*crate::gl!(sPokedexView)).pokedexList[i].owned() != 0 {
+                    species = NationalPokedexNumToSpecies(
+                        (*crate::gl!(sPokedexView)).pokedexList[i].dexNum,
+                    );
                     types[0] =
                         (*(&raw const crate::data::pokemon::gSpeciesInfo)
                             .cast::<CArray<SpeciesInfo, 0>>())[species]
@@ -4200,7 +4368,8 @@ unsafe fn DoPokedexSearch(
                             .cast::<CArray<SpeciesInfo, 0>>())[species]
                             .types[1];
                     if types[0] == type1 || types[1] == type1 {
-                        (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
+                        (*crate::gl!(sPokedexView)).pokedexList[resultsCount] =
+                            (*crate::gl!(sPokedexView)).pokedexList[i];
                         resultsCount += 1;
                     }
                 }
@@ -4209,9 +4378,11 @@ unsafe fn DoPokedexSearch(
         } else {
             i = 0;
             resultsCount = 0;
-            while i < (*sPokedexView).pokemonListCount {
-                if (*sPokedexView).pokedexList[i].owned() != 0 {
-                    species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
+            while i < (*crate::gl!(sPokedexView)).pokemonListCount {
+                if (*crate::gl!(sPokedexView)).pokedexList[i].owned() != 0 {
+                    species = NationalPokedexNumToSpecies(
+                        (*crate::gl!(sPokedexView)).pokedexList[i].dexNum,
+                    );
                     types[0] =
                         (*(&raw const crate::data::pokemon::gSpeciesInfo)
                             .cast::<CArray<SpeciesInfo, 0>>())[species]
@@ -4223,20 +4394,21 @@ unsafe fn DoPokedexSearch(
                     if types[0] == type1 && types[1] == type2
                         || types[0] == type2 && types[1] == type1
                     {
-                        (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
+                        (*crate::gl!(sPokedexView)).pokedexList[resultsCount] =
+                            (*crate::gl!(sPokedexView)).pokedexList[i];
                         resultsCount += 1;
                     }
                 }
                 i += 1;
             }
         }
-        (*sPokedexView).pokemonListCount = resultsCount;
+        (*crate::gl!(sPokedexView)).pokemonListCount = resultsCount;
     }
-    if (*sPokedexView).pokemonListCount != 0 {
-        for i in (*sPokedexView).pokemonListCount..NATIONAL_DEX_DEOXYS {
-            (*sPokedexView).pokedexList[i].dexNum = 0xFFFF;
-            (*sPokedexView).pokedexList[i].set_seen(FALSE as u16);
-            (*sPokedexView).pokedexList[i].set_owned(FALSE as u16);
+    if (*crate::gl!(sPokedexView)).pokemonListCount != 0 {
+        for i in (*crate::gl!(sPokedexView)).pokemonListCount..NATIONAL_DEX_DEOXYS {
+            (*crate::gl!(sPokedexView)).pokedexList[i].dexNum = 0xFFFF;
+            (*crate::gl!(sPokedexView)).pokedexList[i].set_seen(FALSE as u16);
+            (*crate::gl!(sPokedexView)).pokedexList[i].set_owned(FALSE as u16);
         }
     }
     resultsCount as i32
@@ -4265,7 +4437,7 @@ unsafe fn ClearSearchMenuRect(x: u32, y: u32, width: u32, height: u32) {
     FillWindowPixelRect(0, 0, x as u16, y as u16, width as u16, height as u16);
 }
 pub(crate) unsafe fn Task_LoadSearchMenu(taskId: u8) {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             LoadCompressedSpriteSheet(sInterfaceSpriteSheet.as_ptr().cast_mut());
             LoadSpritePalettes(sInterfaceSpritePalette.as_ptr().cast_mut());
@@ -4280,11 +4452,11 @@ pub(crate) unsafe fn Task_LoadSearchMenu(taskId: u8) {
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
             CopyBgTilemapBufferToVram(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -4295,17 +4467,17 @@ pub(crate) unsafe fn Task_LoadSearchMenu(taskId: u8) {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set_func(taskId, Some(Task_SwitchToSearchMenuTopBar));
-                gMain.state = 0;
+                crate::gl!(gMain.state = 0);
             }
         }
         _ => {
-            if gPaletteFade.active() == 0 {
-                (*sPokedexView).currentPage = PAGE_SEARCH;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sPokedexView)).currentPage = PAGE_SEARCH;
                 ResetOtherVideoRegisters(0);
                 ResetBgsAndClearDma3BusyFlags(0);
                 InitBgsFromTemplates(0, sSearchMenu_BgTemplate.as_ptr().cast_mut(), 4);
@@ -4356,7 +4528,7 @@ pub(crate) unsafe fn Task_LoadSearchMenu(taskId: u8) {
                     1,
                     126,
                 );
-                gMain.state = 1;
+                crate::gl!(gMain.state = 1);
             }
         }
     }
@@ -4388,12 +4560,12 @@ pub(crate) unsafe fn Task_SwitchToSearchMenuTopBar(taskId: u8) {
     task_set_func(taskId, Some(Task_HandleSearchTopBarInput));
 }
 pub(crate) unsafe fn Task_HandleSearchTopBarInput(taskId: u8) {
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_PC_OFF);
         task_set_func(taskId, Some(Task_ExitSearch));
         return;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         match task_get(taskId, tTopBarItem) {
             0 => {
                 PlaySE(SE_PIN);
@@ -4413,7 +4585,7 @@ pub(crate) unsafe fn Task_HandleSearchTopBarInput(taskId: u8) {
         }
         return;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
         && task_get(taskId, tTopBarItem) > SEARCH_TOPBAR_SEARCH as i16
     {
         PlaySE(SE_DEX_PAGE);
@@ -4422,7 +4594,7 @@ pub(crate) unsafe fn Task_HandleSearchTopBarInput(taskId: u8) {
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
         && task_get(taskId, tTopBarItem) < SEARCH_TOPBAR_CANCEL as i16
     {
         PlaySE(SE_DEX_PAGE);
@@ -4457,26 +4629,30 @@ pub(crate) unsafe fn Task_HandleSearchMenuInput(taskId: u8) {
             movementMap = sSearchMovementMap_SearchNatDex.as_ptr().cast_mut();
         }
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_BALL);
         SetDefaultSearchModeAndOrder(taskId);
         task_set_func(taskId, Some(Task_SwitchToSearchMenuTopBar));
         return;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         if task_get(taskId, tMenuItem) == SEARCH_OK {
             if task_get(taskId, tTopBarItem) != SEARCH_TOPBAR_SEARCH as i16 {
                 sPokeBallRotation.set(POKEBALL_ROTATION_TOP);
-                (*sPokedexView).pokeBallRotationBackup = POKEBALL_ROTATION_TOP as u16;
+                (*crate::gl!(sPokedexView)).pokeBallRotationBackup = POKEBALL_ROTATION_TOP as u16;
                 sLastSelectedPokemon.set(0);
-                (*sPokedexView).selectedPokemonBackup = 0;
-                (*gSaveBlock2Ptr).pokedex.mode = GetSearchModeSelection(taskId, SEARCH_MODE);
+                (*crate::gl!(sPokedexView)).selectedPokemonBackup = 0;
+                (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode =
+                    GetSearchModeSelection(taskId, SEARCH_MODE);
                 if IsNationalPokedexEnabled() == 0 {
-                    (*gSaveBlock2Ptr).pokedex.mode = DEX_MODE_HOENN as u8;
+                    (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode = DEX_MODE_HOENN as u8;
                 }
-                (*sPokedexView).dexModeBackup = (*gSaveBlock2Ptr).pokedex.mode as u16;
-                (*gSaveBlock2Ptr).pokedex.order = GetSearchModeSelection(taskId, SEARCH_ORDER);
-                (*sPokedexView).dexOrderBackup = (*gSaveBlock2Ptr).pokedex.order as u16;
+                (*crate::gl!(sPokedexView)).dexModeBackup =
+                    (*crate::gl!(gSaveBlock2Ptr)).pokedex.mode as u16;
+                (*crate::gl!(gSaveBlock2Ptr)).pokedex.order =
+                    GetSearchModeSelection(taskId, SEARCH_ORDER);
+                (*crate::gl!(sPokedexView)).dexOrderBackup =
+                    (*crate::gl!(gSaveBlock2Ptr)).pokedex.order as u16;
                 PlaySE(SE_PC_OFF);
                 task_set_func(taskId, Some(Task_ExitSearch));
             } else {
@@ -4496,7 +4672,7 @@ pub(crate) unsafe fn Task_HandleSearchMenuInput(taskId: u8) {
         }
         return;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
         && (*movementMap.at(task_get(taskId, tMenuItem)))[0] != 0xFF
     {
         PlaySE(SE_SELECT);
@@ -4512,7 +4688,7 @@ pub(crate) unsafe fn Task_HandleSearchMenuInput(taskId: u8) {
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
         && (*movementMap.at(task_get(taskId, tMenuItem)))[1] != 0xFF
     {
         PlaySE(SE_SELECT);
@@ -4528,7 +4704,7 @@ pub(crate) unsafe fn Task_HandleSearchMenuInput(taskId: u8) {
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
-    if gMain.newKeys as i32 & DPAD_UP != 0
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0
         && (*movementMap.at(task_get(taskId, tMenuItem)))[2] != 0xFF
     {
         PlaySE(SE_SELECT);
@@ -4544,7 +4720,7 @@ pub(crate) unsafe fn Task_HandleSearchMenuInput(taskId: u8) {
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
-    if gMain.newKeys as i32 & DPAD_DOWN != 0
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
         && (*movementMap.at(task_get(taskId, tMenuItem)))[3] != 0xFF
     {
         PlaySE(SE_SELECT);
@@ -4573,7 +4749,7 @@ pub(crate) unsafe fn Task_StartPokedexSearch(taskId: u8) {
 }
 pub(crate) unsafe fn Task_WaitAndCompleteSearch(taskId: u8) {
     if IsSEPlaying() == 0 {
-        if (*sPokedexView).pokemonListCount != 0 {
+        if (*crate::gl!(sPokedexView)).pokemonListCount != 0 {
             PlaySE(SE_SUCCESS);
             EraseAndPrintSearchTextBox(
                 (*(&raw const crate::data::strings::gText_SearchCompleted).cast::<CArray<u8, 0>>())
@@ -4594,11 +4770,13 @@ pub(crate) unsafe fn Task_WaitAndCompleteSearch(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_SearchCompleteWaitForInput(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if (*sPokedexView).pokemonListCount != 0 {
-            (*sPokedexView).screenSwitchState = 1;
-            (*sPokedexView).dexMode = GetSearchModeSelection(taskId, SEARCH_MODE) as u16;
-            (*sPokedexView).dexOrder = GetSearchModeSelection(taskId, SEARCH_ORDER) as u16;
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        if (*crate::gl!(sPokedexView)).pokemonListCount != 0 {
+            (*crate::gl!(sPokedexView)).screenSwitchState = 1;
+            (*crate::gl!(sPokedexView)).dexMode =
+                GetSearchModeSelection(taskId, SEARCH_MODE) as u16;
+            (*crate::gl!(sPokedexView)).dexOrder =
+                GetSearchModeSelection(taskId, SEARCH_ORDER) as u16;
             task_set_func(taskId, Some(Task_ExitSearch));
             PlaySE(SE_PC_OFF);
         } else {
@@ -4631,7 +4809,7 @@ pub(crate) unsafe fn Task_HandleSearchParameterInput(taskId: u8) {
     let scrollOffset: *mut u16 =
         task_data_ptr(taskId, sSearchOptions[menuItem].taskDataScrollOffset) as *mut u16;
     let maxOption: u16 = sSearchOptions[menuItem].numOptions - 1;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_PIN);
         ClearSearchParameterBoxText();
         DrawOrEraseSearchParameterBox(TRUE);
@@ -4640,7 +4818,7 @@ pub(crate) unsafe fn Task_HandleSearchParameterInput(taskId: u8) {
         CopyBgTilemapBufferToVram(3);
         return;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_BALL);
         ClearSearchParameterBoxText();
         DrawOrEraseSearchParameterBox(TRUE);
@@ -4652,7 +4830,7 @@ pub(crate) unsafe fn Task_HandleSearchParameterInput(taskId: u8) {
         return;
     }
     let mut moved: u8 = FALSE;
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         if *cursorPos != 0 {
             EraseSelectorArrow(*cursorPos as u32);
             *cursorPos -= 1;
@@ -4673,7 +4851,7 @@ pub(crate) unsafe fn Task_HandleSearchParameterInput(taskId: u8) {
         }
         return;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         if *cursorPos < MAX_SEARCH_PARAM_CURSOR_POS && *cursorPos < maxOption {
             EraseSelectorArrow(*cursorPos as u32);
             *cursorPos += 1;
@@ -4701,7 +4879,7 @@ pub(crate) unsafe fn Task_ExitSearch(taskId: u8) {
     task_set_func(taskId, Some(Task_ExitSearchWaitForFade));
 }
 pub(crate) unsafe fn Task_ExitSearchWaitForFade(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeSearchWindowAndBgBuffers();
         DestroyTask(taskId);
     }
@@ -4978,7 +5156,7 @@ unsafe fn GetSearchModeSelection(taskId: u8, option: u8) -> u8 {
 }
 unsafe fn SetDefaultSearchModeAndOrder(taskId: u8) {
     let mut selected: u16 = 0;
-    match (*sPokedexView).dexModeBackup {
+    match (*crate::gl!(sPokedexView)).dexModeBackup {
         DEX_MODE_NATIONAL => {
             selected = DEX_MODE_NATIONAL;
         }
@@ -4987,7 +5165,7 @@ unsafe fn SetDefaultSearchModeAndOrder(taskId: u8) {
         }
     }
     task_set(taskId, tCursorPos_Mode, selected as i16);
-    match (*sPokedexView).dexOrderBackup {
+    match (*crate::gl!(sPokedexView)).dexOrderBackup {
         ORDER_ALPHABETICAL => {
             selected = ORDER_ALPHABETICAL;
         }
@@ -5071,19 +5249,31 @@ unsafe fn CreateSearchParameterScrollArrows(taskId: u8) {
         4,
         0,
     );
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].data[sIsDownArrow] = FALSE as i16;
-    gSprites[spriteId].callback = Some(SpriteCB_SearchParameterScrollArrow);
+    {
+        let gl_i9 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i9] = taskId as i16)
+    };
+    {
+        let gl_i10 = sIsDownArrow;
+        crate::gl!(gSprites[spriteId].data[gl_i10] = FALSE as i16)
+    };
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_SearchParameterScrollArrow));
     spriteId = CreateSprite(
         (&raw const *sScrollArrowSpriteTemplate).cast_mut(),
         184,
         108,
         0,
     );
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].data[sIsDownArrow] = TRUE as i16;
-    gSprites[spriteId].set_vFlip(TRUE as u16);
-    gSprites[spriteId].callback = Some(SpriteCB_SearchParameterScrollArrow);
+    {
+        let gl_i11 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i11] = taskId as i16)
+    };
+    {
+        let gl_i12 = sIsDownArrow;
+        crate::gl!(gSprites[spriteId].data[gl_i12] = TRUE as i16)
+    };
+    (*gSprites.as_ptr())[spriteId].set_vFlip(TRUE as u16);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_SearchParameterScrollArrow));
 }
 unsafe fn EraseAndPrintSearchTextBox(str: *mut u8) {
     ClearSearchMenuRect(8, 120, 224, 32);

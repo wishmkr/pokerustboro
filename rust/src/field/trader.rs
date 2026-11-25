@@ -73,9 +73,7 @@ unsafe fn Menu_ProcessInput() -> i8 {
 /// `ScheduleBgCopyTilemapToVram` with this module's view of its types.
 #[inline]
 unsafe fn ScheduleBgCopyTilemapToVram(a0: u8) {
-    unsafe {
-        crate::menu::ScheduleBgCopyTilemapToVram(a0);
-    }
+    crate::menu::ScheduleBgCopyTilemapToVram(a0);
 }
 /// `ScriptContext_Enable` with this module's view of its types.
 #[inline]
@@ -101,14 +99,14 @@ unsafe fn ShowDecorationCategoriesWindow(a0: u8) {
 /// `IsSelectedDecorInThePC` with this module's view of its types.
 #[inline]
 unsafe fn IsSelectedDecorInThePC() -> u8 {
-    unsafe { crate::decoration::IsSelectedDecorInThePC() }
+    crate::decoration::IsSelectedDecorInThePC()
 }
 
 /// `&gSaveBlock1Ptr->oldMan.trader`
 #[inline]
 unsafe fn trader() -> *mut u8 {
     unsafe {
-        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+        (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut())
         .add(SAVE1_TRADER_OFFSET)
@@ -342,7 +340,10 @@ pub unsafe fn IsDecorationCategoryFull() {
         && GetFirstEmptyDecorSlot(offered_category) == -1
     {
         unsafe {
-            CopyDecorationCategoryName((&raw mut gStringVar2).cast::<u8>(), offered_category)
+            CopyDecorationCategoryName(
+                (crate::gl!(&raw gStringVar2)).cast::<u8>(),
+                offered_category,
+            )
         };
         unsafe { (&raw mut gSpecialVar_Result).write_volatile(1) };
     }
@@ -361,19 +362,19 @@ pub unsafe fn DecorationItemsMenuAction_Trade(task_id: u8) {
             (&raw const (*crate::decoration::gCurDecorationIndex.as_ptr().cast::<u8>()))
                 .read_volatile()
         } as usize;
-        let owned = unsafe { gCurDecorationItems.add(index).read_volatile() };
+        let owned = unsafe { (*gCurDecorationItems.as_ptr()).add(index).read_volatile() };
         unsafe { (&raw mut gSpecialVar_0x8006).write_volatile(u16::from(owned)) };
 
         let offered = unsafe { (&raw const gSpecialVar_0x8004).read_volatile() };
         let _ = unsafe {
             StringCopy(
-                (&raw mut gStringVar3).cast::<u8>(),
+                (crate::gl!(&raw gStringVar3)).cast::<u8>(),
                 decoration_name(offered),
             )
         };
         let _ = unsafe {
             StringCopy(
-                (&raw mut gStringVar2).cast::<u8>(),
+                (crate::gl!(&raw gStringVar2)).cast::<u8>(),
                 decoration_name(u16::from(owned)),
             )
         };
@@ -406,7 +407,7 @@ pub unsafe fn TraderDoDecorationTrade() {
     let _ = unsafe {
         StringCopy(
             player_name(slot),
-            *(&raw const crate::load_save::gSaveBlock2Ptr)
+            *(crate::gl!(&raw @at crate::load_save::gSaveBlock2Ptr;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut(),
         )

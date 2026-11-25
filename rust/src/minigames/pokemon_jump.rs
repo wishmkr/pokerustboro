@@ -148,31 +148,26 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `HandleLoadSpecialPokePic` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-) {
+fn HandleLoadSpecialPokePic(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32) {
     unsafe {
         crate::decompress::HandleLoadSpecialPokePic(a0 as _, a1 as _, a2, a3);
     }
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -761,10 +756,12 @@ static sWindowTemplate_Records: Table<WindowTemplate> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 3>> =
     Table((&raw const crate::data::pokemon_jump::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokemonJump: *mut PokemonJump = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokemonJumpGfx: *mut PokemonJumpGfx = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPokemonJump: crate::global::Global<*mut PokemonJump> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPokemonJumpGfx: crate::global::Global<*mut PokemonJumpGfx> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -804,21 +801,22 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 
 pub unsafe fn StartPokemonJump(partyId: u16, exitCallback: Option<unsafe fn()>) {
     let mut taskId: u8 = 0;
-    if gReceivedRemoteLinkPlayers != 0 {
-        sPokemonJump = Alloc(33712) as *mut PokemonJump;
-        if !sPokemonJump.is_null() {
+    if gReceivedRemoteLinkPlayers.get() != 0 {
+        crate::gl!(sPokemonJump = Alloc(33712) as *mut PokemonJump);
+        if !(*sPokemonJump.as_ptr()).is_null() {
             ResetTasks();
             taskId = CreateTask(Some(Task_StartPokemonJump), 1);
-            (*sPokemonJump).mainState = 0;
-            (*sPokemonJump).exitCallback = exitCallback;
-            (*sPokemonJump).taskId = taskId;
-            (*sPokemonJump).multiplayerId = GetMultiplayerId();
+            (*crate::gl!(sPokemonJump)).mainState = 0;
+            (*crate::gl!(sPokemonJump)).exitCallback = exitCallback;
+            (*crate::gl!(sPokemonJump)).taskId = taskId;
+            (*crate::gl!(sPokemonJump)).multiplayerId = GetMultiplayerId();
             InitJumpMonInfo(
-                &raw mut (*sPokemonJump).monInfo[(*sPokemonJump).multiplayerId],
-                &raw mut gPlayerParty[partyId],
+                &raw mut (*crate::gl!(sPokemonJump)).monInfo
+                    [(*crate::gl!(sPokemonJump)).multiplayerId],
+                crate::gl!(&raw gPlayerParty[partyId]),
             );
-            InitGame(sPokemonJump);
-            SetWordTaskArg(taskId, 2, sPokemonJump as usize as u32);
+            InitGame(crate::gl!(sPokemonJump));
+            SetWordTaskArg(taskId, 2, crate::gl!(sPokemonJump) as usize as u32);
             SetMainCallback2(Some(CB2_PokemonJump));
             return;
         }
@@ -827,7 +825,7 @@ pub unsafe fn StartPokemonJump(partyId: u16, exitCallback: Option<unsafe fn()>) 
 }
 unsafe fn FreePokemonJump() {
     FreeWindowsAndDigitObj();
-    Free(sPokemonJump as *mut c_void);
+    Free(crate::gl!(sPokemonJump) as *mut c_void);
 }
 unsafe fn InitGame(jump: *mut PokemonJump) {
     (*jump).numPlayers = GetLinkPlayerCount();
@@ -876,20 +874,21 @@ unsafe fn ResetForNewGame(jump: *mut PokemonJump) {
 unsafe fn InitPlayerAndJumpTypes() {
     let mut index: i32 = 0;
     for i in 0..MAX_RFU_PLAYERS {
-        index = GetPokemonJumpSpeciesIdx((*sPokemonJump).monInfo[i].species) as i32;
-        (*sPokemonJump).players[i].monJumpType = sPokeJumpMons[index].jumpType;
+        index = GetPokemonJumpSpeciesIdx((*crate::gl!(sPokemonJump)).monInfo[i].species) as i32;
+        (*crate::gl!(sPokemonJump)).players[i].monJumpType = sPokeJumpMons[index].jumpType;
     }
-    (*sPokemonJump).player = &raw mut (*sPokemonJump).players[(*sPokemonJump).multiplayerId];
+    (*crate::gl!(sPokemonJump)).player =
+        &raw mut (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId];
 }
 unsafe fn ResetPlayersForNewGame() {
     for i in 0..MAX_RFU_PLAYERS {
-        (*sPokemonJump).players[i].jumpTimeStart = 0;
-        (*sPokemonJump).players[i].monState = MONSTATE_NORMAL;
-        (*sPokemonJump).players[i].prevMonState = MONSTATE_NORMAL;
-        (*sPokemonJump).players[i].jumpOffset = 0;
-        (*sPokemonJump).players[i].jumpOffsetIdx = 2147483647;
-        (*sPokemonJump).players[i].jumpState = JUMPSTATE_NONE;
-        (*sPokemonJump).memberFuncIds[i] = FUNC_NONE;
+        (*crate::gl!(sPokemonJump)).players[i].jumpTimeStart = 0;
+        (*crate::gl!(sPokemonJump)).players[i].monState = MONSTATE_NORMAL;
+        (*crate::gl!(sPokemonJump)).players[i].prevMonState = MONSTATE_NORMAL;
+        (*crate::gl!(sPokemonJump)).players[i].jumpOffset = 0;
+        (*crate::gl!(sPokemonJump)).players[i].jumpOffsetIdx = 2147483647;
+        (*crate::gl!(sPokemonJump)).players[i].jumpState = JUMPSTATE_NONE;
+        (*crate::gl!(sPokemonJump)).memberFuncIds[i] = FUNC_NONE;
     }
 }
 unsafe fn GetPokemonJumpSpeciesIdx(species: u16) -> i16 {
@@ -917,31 +916,31 @@ pub(crate) unsafe fn CB2_PokemonJump() {
     UpdatePaletteFade();
 }
 unsafe fn SetPokeJumpTask(func: Option<unsafe fn(u8)>) {
-    (*sPokemonJump).taskId = CreateTask(func, 1);
-    (*sPokemonJump).mainState = 0;
+    (*crate::gl!(sPokemonJump)).taskId = CreateTask(func, 1);
+    (*crate::gl!(sPokemonJump)).mainState = 0;
 }
 pub(crate) unsafe fn Task_StartPokemonJump(taskId: u8) {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             SetVBlankCallback(None);
             ResetSpriteData();
             FreeAllSpritePalettes();
             SetTaskWithPokeJumpStruct(Some(Task_CommunicateMonInfo), 5);
             FadeOutMapMusic(4);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         1 => {
             if FuncIsActiveTask(Some(Task_CommunicateMonInfo)) == 0 {
-                StartPokeJumpGfx(&raw mut (*sPokemonJump).jumpGfx);
+                StartPokeJumpGfx(&raw mut (*crate::gl!(sPokemonJump)).jumpGfx);
                 LoadWirelessStatusIndicatorSpriteGfx();
                 CreateWirelessStatusIndicatorSprite(0, 0);
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         2 => {
             if IsPokeJumpGfxFuncFinished() == 0 && IsNotWaitingForBGMStop() == TRUE {
                 FadeOutAndPlayNewMapMusic(MUS_RG_POKE_JUMP, 8);
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         3 => {
@@ -949,20 +948,20 @@ pub(crate) unsafe fn Task_StartPokemonJump(taskId: u8) {
                 BlendPalettes(PALETTES_ALL, 16, 0);
                 BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
                 SetVBlankCallback(Some(VBlankCB_PokemonJump));
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         4 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
-                (*sPokemonJump).startDelayTimer = 0;
-                (*sPokemonJump).mainState += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sPokemonJump)).startDelayTimer = 0;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         5 => {
-            (*sPokemonJump).startDelayTimer += 1;
-            if (*sPokemonJump).startDelayTimer >= 20 {
-                if (*sPokemonJump).isLeader != 0 {
+            (*crate::gl!(sPokemonJump)).startDelayTimer += 1;
+            if (*crate::gl!(sPokemonJump)).startDelayTimer >= 20 {
+                if (*crate::gl!(sPokemonJump)).isLeader != 0 {
                     SetPokeJumpTask(Some(Task_PokemonJump_Leader));
                 } else {
                     SetPokeJumpTask(Some(Task_PokemonJump_Member));
@@ -976,22 +975,22 @@ pub(crate) unsafe fn Task_StartPokemonJump(taskId: u8) {
 }
 unsafe fn SetLinkTimeInterval(intervalId: i32) {
     if intervalId == LINK_INTERVAL_NONE {
-        (*sPokemonJump).linkTimerLimit = LINK_TIMER_STOPPED;
-        (*sPokemonJump).linkTimer = 1;
+        (*crate::gl!(sPokemonJump)).linkTimerLimit = LINK_TIMER_STOPPED;
+        (*crate::gl!(sPokemonJump)).linkTimer = 1;
     } else {
-        (*sPokemonJump).linkTimerLimit = shl_i32(1, intervalId as u32 - 1) as u32 - 1;
-        (*sPokemonJump).linkTimer = 0;
+        (*crate::gl!(sPokemonJump)).linkTimerLimit = shl_i32(1, intervalId as u32 - 1) as u32 - 1;
+        (*crate::gl!(sPokemonJump)).linkTimer = 0;
     }
 }
 unsafe fn SetFunc_Leader(funcId: u8) {
-    (*sPokemonJump).comm.funcId = funcId;
-    (*sPokemonJump).mainState = 0;
-    (*sPokemonJump).helperState = 0;
-    (*sPokemonJump).funcActive = TRUE;
-    (*sPokemonJump).allPlayersReady = FALSE;
+    (*crate::gl!(sPokemonJump)).comm.funcId = funcId;
+    (*crate::gl!(sPokemonJump)).mainState = 0;
+    (*crate::gl!(sPokemonJump)).helperState = 0;
+    (*crate::gl!(sPokemonJump)).funcActive = TRUE;
+    (*crate::gl!(sPokemonJump)).allPlayersReady = FALSE;
     let mut i: i32 = 1;
-    while i < (*sPokemonJump).numPlayers as i32 {
-        (*sPokemonJump).players[i].funcFinished = FALSE as u32;
+    while i < (*crate::gl!(sPokemonJump)).numPlayers as i32 {
+        (*crate::gl!(sPokemonJump)).players[i].funcFinished = FALSE as u32;
         i += 1;
     }
 }
@@ -1001,95 +1000,108 @@ pub(crate) unsafe fn RecvLinkData_Leader() {
     let mut playAgainState: u16 = 0;
     let mut i: i32 = 1;
     let mut numReady: i32 = 0;
-    while i < (*sPokemonJump).numPlayers as i32 {
-        monState = (*sPokemonJump).players[i].monState;
+    while i < (*crate::gl!(sPokemonJump)).numPlayers as i32 {
+        monState = (*crate::gl!(sPokemonJump)).players[i].monState;
         if RecvPacket_MemberStateToLeader(
-            &raw mut (*sPokemonJump).players[i],
+            &raw mut (*crate::gl!(sPokemonJump)).players[i],
             i,
             &raw mut funcId,
             &raw mut playAgainState,
         ) != 0
         {
-            (*sPokemonJump).playAgainStates[i] = playAgainState;
-            (*sPokemonJump).memberFuncIds[i] = funcId;
-            (*sPokemonJump).players[i].prevMonState = monState;
+            (*crate::gl!(sPokemonJump)).playAgainStates[i] = playAgainState;
+            (*crate::gl!(sPokemonJump)).memberFuncIds[i] = funcId;
+            (*crate::gl!(sPokemonJump)).players[i].prevMonState = monState;
         }
-        if (*sPokemonJump).players[i].funcFinished != 0
-            && (*sPokemonJump).memberFuncIds[i] == (*sPokemonJump).comm.funcId
+        if (*crate::gl!(sPokemonJump)).players[i].funcFinished != 0
+            && (*crate::gl!(sPokemonJump)).memberFuncIds[i]
+                == (*crate::gl!(sPokemonJump)).comm.funcId
         {
             numReady += 1;
         }
         i += 1;
     }
-    if numReady == (*sPokemonJump).numPlayers as i32 - 1 {
-        (*sPokemonJump).allPlayersReady = TRUE;
+    if numReady == (*crate::gl!(sPokemonJump)).numPlayers as i32 - 1 {
+        (*crate::gl!(sPokemonJump)).allPlayersReady = TRUE;
     }
 }
 pub(crate) unsafe fn Task_PokemonJump_Leader(taskId: u8) {
     RecvLinkData_Leader();
     TryUpdateScore();
-    if (*sPokemonJump).funcActive == 0 && (*sPokemonJump).allPlayersReady != 0 {
-        SetFunc_Leader((*sPokemonJump).nextFuncId);
+    if (*crate::gl!(sPokemonJump)).funcActive == 0
+        && (*crate::gl!(sPokemonJump)).allPlayersReady != 0
+    {
+        SetFunc_Leader((*crate::gl!(sPokemonJump)).nextFuncId);
         SetLinkTimeInterval(LINK_INTERVAL_SHORT);
     }
-    if (*sPokemonJump).funcActive == TRUE
-        && sPokeJumpLeaderFuncs[(*sPokemonJump).comm.funcId].unwrap_unchecked()() == 0
+    if (*crate::gl!(sPokemonJump)).funcActive == TRUE
+        && sPokeJumpLeaderFuncs[(*crate::gl!(sPokemonJump)).comm.funcId].unwrap_unchecked()() == 0
     {
-        (*sPokemonJump).funcActive = FALSE;
-        (*sPokemonJump).players[(*sPokemonJump).multiplayerId].funcFinished = TRUE as u32;
+        (*crate::gl!(sPokemonJump)).funcActive = FALSE;
+        (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId]
+            .funcFinished = TRUE as u32;
     }
     UpdateGame();
     SendLinkData_Leader();
 }
 pub(crate) unsafe fn SendLinkData_Leader() {
-    if (*sPokemonJump).linkTimer == 0 {
+    if (*crate::gl!(sPokemonJump)).linkTimer == 0 {
         SendPacket_LeaderState(
-            (*sPokemonJump).players.as_mut_ptr(),
-            &raw mut (*sPokemonJump).comm,
+            (*crate::gl!(sPokemonJump)).players.as_mut_ptr(),
+            &raw mut (*crate::gl!(sPokemonJump)).comm,
         );
     }
-    if (*sPokemonJump).linkTimerLimit != LINK_TIMER_STOPPED {
-        (*sPokemonJump).linkTimer += 1;
-        (*sPokemonJump).linkTimer &= (*sPokemonJump).linkTimerLimit as i32;
+    if (*crate::gl!(sPokemonJump)).linkTimerLimit != LINK_TIMER_STOPPED {
+        (*crate::gl!(sPokemonJump)).linkTimer += 1;
+        (*crate::gl!(sPokemonJump)).linkTimer &= (*crate::gl!(sPokemonJump)).linkTimerLimit as i32;
     }
 }
 unsafe fn SetFunc_Member(funcId: u8) {
-    (*sPokemonJump).comm.funcId = funcId;
-    (*sPokemonJump).mainState = 0;
-    (*sPokemonJump).helperState = 0;
-    (*sPokemonJump).funcActive = TRUE;
-    (*sPokemonJump).players[(*sPokemonJump).multiplayerId].funcFinished = FALSE as u32;
+    (*crate::gl!(sPokemonJump)).comm.funcId = funcId;
+    (*crate::gl!(sPokemonJump)).mainState = 0;
+    (*crate::gl!(sPokemonJump)).helperState = 0;
+    (*crate::gl!(sPokemonJump)).funcActive = TRUE;
+    (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId].funcFinished =
+        FALSE as u32;
 }
 pub(crate) unsafe fn RecvLinkData_Member() {
     let mut monState: u16 = 0;
     let mut leaderData: PokemonJump_CommData = zeroed();
-    monState = (*sPokemonJump).players[0].monState;
-    if RecvPacket_LeaderState((*sPokemonJump).players.as_mut_ptr(), &raw mut leaderData) != 0 {
-        if (*sPokemonJump).players[(*sPokemonJump).multiplayerId].funcFinished == TRUE as u32
-            && leaderData.funcId != (*sPokemonJump).comm.funcId
+    monState = (*crate::gl!(sPokemonJump)).players[0].monState;
+    if RecvPacket_LeaderState(
+        (*crate::gl!(sPokemonJump)).players.as_mut_ptr(),
+        &raw mut leaderData,
+    ) != 0
+    {
+        if (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId]
+            .funcFinished
+            == TRUE as u32
+            && leaderData.funcId != (*crate::gl!(sPokemonJump)).comm.funcId
         {
             SetFunc_Member(leaderData.funcId);
         }
-        if (*sPokemonJump).comm.jumpScore != leaderData.jumpScore {
-            (*sPokemonJump).comm.jumpScore = leaderData.jumpScore;
-            (*sPokemonJump).updateScore = TRUE as u32;
-            (*sPokemonJump).comm.receivedBonusFlags = leaderData.receivedBonusFlags;
-            if (*sPokemonJump).comm.receivedBonusFlags != 0 {
-                (*sPokemonJump).showBonus = TRUE;
+        if (*crate::gl!(sPokemonJump)).comm.jumpScore != leaderData.jumpScore {
+            (*crate::gl!(sPokemonJump)).comm.jumpScore = leaderData.jumpScore;
+            (*crate::gl!(sPokemonJump)).updateScore = TRUE as u32;
+            (*crate::gl!(sPokemonJump)).comm.receivedBonusFlags = leaderData.receivedBonusFlags;
+            if (*crate::gl!(sPokemonJump)).comm.receivedBonusFlags != 0 {
+                (*crate::gl!(sPokemonJump)).showBonus = TRUE;
             } else {
-                (*sPokemonJump).showBonus = FALSE;
+                (*crate::gl!(sPokemonJump)).showBonus = FALSE;
             }
         }
-        (*sPokemonJump).comm.data = leaderData.data;
-        (*sPokemonJump).comm.jumpsInRow = leaderData.jumpsInRow;
-        (*sPokemonJump).players[0].prevMonState = monState;
+        (*crate::gl!(sPokemonJump)).comm.data = leaderData.data;
+        (*crate::gl!(sPokemonJump)).comm.jumpsInRow = leaderData.jumpsInRow;
+        (*crate::gl!(sPokemonJump)).players[0].prevMonState = monState;
     }
     let mut i: i32 = 1;
-    while i < (*sPokemonJump).numPlayers as i32 {
-        if i != (*sPokemonJump).multiplayerId as i32 {
-            monState = (*sPokemonJump).players[i].monState;
-            if RecvPacket_MemberStateToMember(&raw mut (*sPokemonJump).players[i], i) != 0 {
-                (*sPokemonJump).players[i].prevMonState = monState;
+    while i < (*crate::gl!(sPokemonJump)).numPlayers as i32 {
+        if i != (*crate::gl!(sPokemonJump)).multiplayerId as i32 {
+            monState = (*crate::gl!(sPokemonJump)).players[i].monState;
+            if RecvPacket_MemberStateToMember(&raw mut (*crate::gl!(sPokemonJump)).players[i], i)
+                != 0
+            {
+                (*crate::gl!(sPokemonJump)).players[i].prevMonState = monState;
             }
         }
         i += 1;
@@ -1097,42 +1109,43 @@ pub(crate) unsafe fn RecvLinkData_Member() {
 }
 pub(crate) unsafe fn Task_PokemonJump_Member(taskId: u8) {
     RecvLinkData_Member();
-    if (*sPokemonJump).funcActive != 0
-        && sPokeJumpMemberFuncs[(*sPokemonJump).comm.funcId].unwrap_unchecked()() == 0
+    if (*crate::gl!(sPokemonJump)).funcActive != 0
+        && sPokeJumpMemberFuncs[(*crate::gl!(sPokemonJump)).comm.funcId].unwrap_unchecked()() == 0
     {
-        (*sPokemonJump).funcActive = FALSE;
-        (*sPokemonJump).players[(*sPokemonJump).multiplayerId].funcFinished = TRUE as u32;
+        (*crate::gl!(sPokemonJump)).funcActive = FALSE;
+        (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId]
+            .funcFinished = TRUE as u32;
         SetLinkTimeInterval(LINK_INTERVAL_SHORT);
     }
     UpdateGame();
     SendLinkData_Member();
 }
 pub(crate) unsafe fn SendLinkData_Member() {
-    if (*sPokemonJump).linkTimer == 0 {
+    if (*crate::gl!(sPokemonJump)).linkTimer == 0 {
         SendPacket_MemberState(
-            &raw mut (*sPokemonJump).players[(*sPokemonJump).multiplayerId],
-            (*sPokemonJump).comm.funcId,
-            (*sPokemonJump).playAgainComm,
+            &raw mut (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId],
+            (*crate::gl!(sPokemonJump)).comm.funcId,
+            (*crate::gl!(sPokemonJump)).playAgainComm,
         );
     }
-    if (*sPokemonJump).linkTimerLimit != LINK_TIMER_STOPPED {
-        (*sPokemonJump).linkTimer += 1;
-        (*sPokemonJump).linkTimer &= (*sPokemonJump).linkTimerLimit as i32;
+    if (*crate::gl!(sPokemonJump)).linkTimerLimit != LINK_TIMER_STOPPED {
+        (*crate::gl!(sPokemonJump)).linkTimer += 1;
+        (*crate::gl!(sPokemonJump)).linkTimer &= (*crate::gl!(sPokemonJump)).linkTimerLimit as i32;
     }
 }
 pub(crate) unsafe fn GameIntro_Leader() -> u32 {
     'l1: {
-        let sw1: u16 = (*sPokemonJump).mainState;
+        let sw1: u16 = (*crate::gl!(sPokemonJump)).mainState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             SetLinkTimeInterval(LINK_INTERVAL_SHORT);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         if fall || sw1 == 1 {
             if DoGameIntro() == 0 {
-                (*sPokemonJump).comm.data = (*sPokemonJump).vineTimer;
-                (*sPokemonJump).nextFuncId = FUNC_WAIT_ROUND;
+                (*crate::gl!(sPokemonJump)).comm.data = (*crate::gl!(sPokemonJump)).vineTimer;
+                (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_WAIT_ROUND;
                 return FALSE as u32;
             }
             break 'l1;
@@ -1142,13 +1155,13 @@ pub(crate) unsafe fn GameIntro_Leader() -> u32 {
 }
 pub(crate) unsafe fn GameIntro_Member() -> u32 {
     'l1: {
-        let sw1: u16 = (*sPokemonJump).mainState;
+        let sw1: u16 = (*crate::gl!(sPokemonJump)).mainState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             SetLinkTimeInterval(LINK_INTERVAL_NONE);
-            (*sPokemonJump).rngSeed = (*sPokemonJump).comm.data as u32;
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).rngSeed = (*crate::gl!(sPokemonJump)).comm.data as u32;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         if fall || sw1 == 1 {
             return DoGameIntro();
@@ -1157,14 +1170,14 @@ pub(crate) unsafe fn GameIntro_Member() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn WaitRound_Leader() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             ResetPlayersJumpStates();
             SetLinkTimeInterval(LINK_INTERVAL_LONG);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
-        1 if (*sPokemonJump).allPlayersReady != 0 => {
-            (*sPokemonJump).nextFuncId = FUNC_GAME_ROUND;
+        1 if (*crate::gl!(sPokemonJump)).allPlayersReady != 0 => {
+            (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_GAME_ROUND;
             return FALSE as u32;
         }
         _ => {}
@@ -1173,14 +1186,14 @@ pub(crate) unsafe fn WaitRound_Leader() -> u32 {
 }
 pub(crate) unsafe fn WaitRound_Member() -> u32 {
     'l1: {
-        let sw1: u16 = (*sPokemonJump).mainState;
+        let sw1: u16 = (*crate::gl!(sPokemonJump)).mainState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             ResetPlayersJumpStates();
             SetLinkTimeInterval(LINK_INTERVAL_NONE);
-            (*sPokemonJump).vineTimer = (*sPokemonJump).comm.data;
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).vineTimer = (*crate::gl!(sPokemonJump)).comm.data;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         if fall || sw1 == 1 {
             if AreLinkQueuesEmpty() != 0 {
@@ -1193,13 +1206,13 @@ pub(crate) unsafe fn WaitRound_Member() -> u32 {
 }
 pub(crate) unsafe fn GameRound_Leader() -> u32 {
     if HandleSwingRound() == 0 {
-        (*sPokemonJump).comm.data = (*sPokemonJump).vineTimer;
-        (*sPokemonJump).nextFuncId = FUNC_WAIT_ROUND;
+        (*crate::gl!(sPokemonJump)).comm.data = (*crate::gl!(sPokemonJump)).vineTimer;
+        (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_WAIT_ROUND;
     } else if UpdateVineHitStates() != 0 {
         return TRUE as u32;
     } else {
         ResetVineAfterHit();
-        (*sPokemonJump).nextFuncId = FUNC_GAME_OVER;
+        (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_GAME_OVER;
     }
     FALSE as u32
 }
@@ -1213,26 +1226,28 @@ pub(crate) unsafe fn GameRound_Member() -> u32 {
     FALSE as u32
 }
 pub(crate) unsafe fn GameOver_Leader() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             UpdateVineHitStates();
             if AllPlayersJumpedOrHit() != 0 {
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         1 => {
             if DoVineHitEffect() == 0 {
                 if HasEnoughScoreForPrize() != 0 {
-                    (*sPokemonJump).comm.data = GetPrizeData();
-                    (*sPokemonJump).nextFuncId = FUNC_GIVE_PRIZE;
-                } else if (*sPokemonJump).comm.jumpsInRow >= 200 {
-                    (*sPokemonJump).comm.data = (*sPokemonJump).excellentsInRowRecord;
-                    (*sPokemonJump).nextFuncId = FUNC_SAVE;
+                    (*crate::gl!(sPokemonJump)).comm.data = GetPrizeData();
+                    (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_GIVE_PRIZE;
+                } else if (*crate::gl!(sPokemonJump)).comm.jumpsInRow >= 200 {
+                    (*crate::gl!(sPokemonJump)).comm.data =
+                        (*crate::gl!(sPokemonJump)).excellentsInRowRecord;
+                    (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_SAVE;
                 } else {
-                    (*sPokemonJump).comm.data = (*sPokemonJump).excellentsInRowRecord;
-                    (*sPokemonJump).nextFuncId = FUNC_ASK_PLAY_AGAIN;
+                    (*crate::gl!(sPokemonJump)).comm.data =
+                        (*crate::gl!(sPokemonJump)).excellentsInRowRecord;
+                    (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_ASK_PLAY_AGAIN;
                 }
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
                 return FALSE as u32;
             }
         }
@@ -1244,18 +1259,18 @@ pub(crate) unsafe fn GameOver_Leader() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn GameOver_Member() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             if UpdateVineHitStates() == 0 {
                 ResetVineAfterHit();
             }
             if AllPlayersJumpedOrHit() != 0 {
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         1 => {
             if DoVineHitEffect() == 0 {
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
                 return FALSE as u32;
             }
         }
@@ -1268,32 +1283,32 @@ pub(crate) unsafe fn GameOver_Member() -> u32 {
 }
 pub(crate) unsafe fn AskPlayAgain_Leader() -> u32 {
     'l1: {
-        let sw1: u16 = (*sPokemonJump).mainState;
+        let sw1: u16 = (*crate::gl!(sPokemonJump)).mainState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             SetLinkTimeInterval(LINK_INTERVAL_MEDIUM);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         if fall || sw1 == 1 {
             if DoPlayAgainPrompt() == 0 {
                 TryUpdateRecords(
-                    (*sPokemonJump).comm.jumpScore,
-                    (*sPokemonJump).comm.jumpsInRow,
-                    (*sPokemonJump).comm.data,
+                    (*crate::gl!(sPokemonJump)).comm.jumpScore,
+                    (*crate::gl!(sPokemonJump)).comm.jumpsInRow,
+                    (*crate::gl!(sPokemonJump)).comm.data,
                 );
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
-            if (*sPokemonJump).allPlayersReady != 0 {
+            if (*crate::gl!(sPokemonJump)).allPlayersReady != 0 {
                 if ShouldPlayAgain() != 0 {
-                    (*sPokemonJump).nextFuncId = FUNC_RESET_GAME;
+                    (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_RESET_GAME;
                 } else {
-                    (*sPokemonJump).nextFuncId = FUNC_EXIT;
+                    (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_EXIT;
                 }
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
                 return FALSE as u32;
             }
             break 'l1;
@@ -1306,21 +1321,22 @@ pub(crate) unsafe fn AskPlayAgain_Leader() -> u32 {
 }
 pub(crate) unsafe fn AskPlayAgain_Member() -> u32 {
     'l1: {
-        let sw1: u16 = (*sPokemonJump).mainState;
+        let sw1: u16 = (*crate::gl!(sPokemonJump)).mainState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             SetLinkTimeInterval(LINK_INTERVAL_NONE);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         if fall || sw1 == 1 {
             if DoPlayAgainPrompt() == 0 {
                 TryUpdateRecords(
-                    (*sPokemonJump).comm.jumpScore,
-                    (*sPokemonJump).comm.jumpsInRow,
-                    (*sPokemonJump).comm.data,
+                    (*crate::gl!(sPokemonJump)).comm.jumpScore,
+                    (*crate::gl!(sPokemonJump)).comm.jumpsInRow,
+                    (*crate::gl!(sPokemonJump)).comm.data,
                 );
-                (*sPokemonJump).playAgainComm = (*sPokemonJump).playAgainState as u16;
+                (*crate::gl!(sPokemonJump)).playAgainComm =
+                    (*crate::gl!(sPokemonJump)).playAgainState as u16;
                 return FALSE as u32;
             }
             break 'l1;
@@ -1329,17 +1345,17 @@ pub(crate) unsafe fn AskPlayAgain_Member() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn ResetGame_Leader() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             if CloseMessageAndResetScore() == 0 {
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
-        1 if (*sPokemonJump).allPlayersReady != 0 => {
-            ResetForNewGame(sPokemonJump);
-            (*sPokemonJump).rngSeed = Random() as u32;
-            (*sPokemonJump).comm.data = (*sPokemonJump).rngSeed as u16;
-            (*sPokemonJump).nextFuncId = FUNC_GAME_INTRO;
+        1 if (*crate::gl!(sPokemonJump)).allPlayersReady != 0 => {
+            ResetForNewGame(crate::gl!(sPokemonJump));
+            (*crate::gl!(sPokemonJump)).rngSeed = Random() as u32;
+            (*crate::gl!(sPokemonJump)).comm.data = (*crate::gl!(sPokemonJump)).rngSeed as u16;
+            (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_GAME_INTRO;
             return FALSE as u32;
         }
         _ => {}
@@ -1347,11 +1363,11 @@ pub(crate) unsafe fn ResetGame_Leader() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn ResetGame_Member() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             if CloseMessageAndResetScore() == 0 {
-                ResetForNewGame(sPokemonJump);
-                (*sPokemonJump).mainState += 1;
+                ResetForNewGame(crate::gl!(sPokemonJump));
+                (*crate::gl!(sPokemonJump)).mainState += 1;
                 return FALSE as u32;
             }
         }
@@ -1363,16 +1379,16 @@ pub(crate) unsafe fn ResetGame_Member() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn ExitGame() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
-            (*sPokemonJump).mainState = 1;
+            (*crate::gl!(sPokemonJump)).mainState = 1;
         }
         1 => {
             SetLinkTimeInterval(LINK_INTERVAL_NONE);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         2 if ClosePokeJumpLink() == 0 => {
-            SetMainCallback2((*sPokemonJump).exitCallback);
+            SetMainCallback2((*crate::gl!(sPokemonJump)).exitCallback);
             FreePokemonJump();
         }
         _ => {}
@@ -1380,14 +1396,15 @@ pub(crate) unsafe fn ExitGame() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn GivePrize_Leader() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             SetLinkTimeInterval(LINK_INTERVAL_MEDIUM);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         1 if TryGivePrize() == 0 => {
-            (*sPokemonJump).comm.data = (*sPokemonJump).excellentsInRowRecord;
-            (*sPokemonJump).nextFuncId = FUNC_SAVE;
+            (*crate::gl!(sPokemonJump)).comm.data =
+                (*crate::gl!(sPokemonJump)).excellentsInRowRecord;
+            (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_SAVE;
             return FALSE as u32;
         }
         _ => {}
@@ -1407,36 +1424,36 @@ pub(crate) unsafe fn GivePrize_Member() -> u32 {
     }
 }
 pub(crate) unsafe fn SavePokeJump() -> u32 {
-    match (*sPokemonJump).mainState {
+    match (*crate::gl!(sPokemonJump)).mainState {
         0 => {
             TryUpdateRecords(
-                (*sPokemonJump).comm.jumpScore,
-                (*sPokemonJump).comm.jumpsInRow,
-                (*sPokemonJump).comm.data,
+                (*crate::gl!(sPokemonJump)).comm.jumpScore,
+                (*crate::gl!(sPokemonJump)).comm.jumpsInRow,
+                (*crate::gl!(sPokemonJump)).comm.data,
             );
             SetUpPokeJumpGfxFuncById(GFXFUNC_MSG_SAVING);
-            (*sPokemonJump).mainState += 1;
+            (*crate::gl!(sPokemonJump)).mainState += 1;
         }
         1 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
                 SetLinkTimeInterval(LINK_INTERVAL_NONE);
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         2 => {
             if AreLinkQueuesEmpty() != 0 {
                 CreateTask(Some(Task_LinkFullSave), 6);
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         3 => {
             if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
                 ClearMessageWindow();
-                (*sPokemonJump).mainState += 1;
+                (*crate::gl!(sPokemonJump)).mainState += 1;
             }
         }
         4 if RemoveMessageWindow() == 0 => {
-            (*sPokemonJump).nextFuncId = FUNC_ASK_PLAY_AGAIN;
+            (*crate::gl!(sPokemonJump)).nextFuncId = FUNC_ASK_PLAY_AGAIN;
             return FALSE as u32;
         }
         _ => {}
@@ -1444,51 +1461,51 @@ pub(crate) unsafe fn SavePokeJump() -> u32 {
     TRUE as u32
 }
 pub(crate) unsafe fn DoGameIntro() -> u32 {
-    match (*sPokemonJump).helperState {
+    match (*crate::gl!(sPokemonJump)).helperState {
         0 => {
             SetUpPokeJumpGfxFuncById(GFXFUNC_SHOW_NAMES_HIGHLIGHT);
             ResetMonSpriteSubpriorities();
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         1 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
-                StartMonIntroBounce((*sPokemonJump).multiplayerId as i32);
-                (*sPokemonJump).timer = 0;
-                (*sPokemonJump).helperState += 1;
+                StartMonIntroBounce((*crate::gl!(sPokemonJump)).multiplayerId as i32);
+                (*crate::gl!(sPokemonJump)).timer = 0;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         2 => {
             if ({
-                (*sPokemonJump).timer += 1;
-                (*sPokemonJump).timer
+                (*crate::gl!(sPokemonJump)).timer += 1;
+                (*crate::gl!(sPokemonJump)).timer
             }) > 120
             {
                 SetUpPokeJumpGfxFuncById(GFXFUNC_ERASE_NAMES);
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         3 => {
             if IsPokeJumpGfxFuncFinished() != TRUE as u32 && IsMonIntroBounceActive() != TRUE as i32
             {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         4 => {
             SetUpPokeJumpGfxFuncById(GFXFUNC_COUNTDOWN);
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         5 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
                 DisallowVineUpdates();
                 SetUpResetVineGfx();
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         6 => {
             if ResetVineGfx() == 0 {
                 AllowVineUpdates();
                 ResetVineState();
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
                 return FALSE as u32;
             }
         }
@@ -1501,38 +1518,38 @@ pub(crate) unsafe fn DoGameIntro() -> u32 {
 }
 unsafe fn HandleSwingRound() -> u32 {
     UpdateVineState();
-    if (*sPokemonJump).ignoreJumpInput != 0 {
-        (*sPokemonJump).ignoreJumpInput = FALSE as u16;
+    if (*crate::gl!(sPokemonJump)).ignoreJumpInput != 0 {
+        (*crate::gl!(sPokemonJump)).ignoreJumpInput = FALSE as u16;
         return FALSE as u32;
     }
     'l1: {
-        let sw1: u16 = (*sPokemonJump).helperState;
+        let sw1: u16 = (*crate::gl!(sPokemonJump)).helperState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             if IsPlayersMonState(MONSTATE_NORMAL) != 0 {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             } else {
                 break 'l1;
             }
         }
         if fall || sw1 == 1 {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 SetMonStateJump();
                 SetLinkTimeInterval(LINK_INTERVAL_SHORT);
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
             if IsPlayersMonState(MONSTATE_JUMP) == TRUE as u32 {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
             break 'l1;
         }
         if sw1 == 3 {
             if IsPlayersMonState(MONSTATE_NORMAL) == TRUE as u32 {
-                (*sPokemonJump).helperState = 0;
+                (*crate::gl!(sPokemonJump)).helperState = 0;
             }
             break 'l1;
         }
@@ -1541,46 +1558,46 @@ unsafe fn HandleSwingRound() -> u32 {
 }
 unsafe fn DoVineHitEffect() -> u32 {
     let mut i: i32 = 0;
-    match (*sPokemonJump).helperState {
+    match (*crate::gl!(sPokemonJump)).helperState {
         0 => {
             i = 0;
-            while i < (*sPokemonJump).numPlayers as i32 {
+            while i < (*crate::gl!(sPokemonJump)).numPlayers as i32 {
                 if IsMonHitShakeActive(i) == TRUE as i32 {
                     return TRUE as u32;
                 }
                 i += 1;
             }
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         1 => {
             i = 0;
-            while i < (*sPokemonJump).numPlayers as i32 {
-                if (*sPokemonJump).players[i].monState == MONSTATE_HIT {
+            while i < (*crate::gl!(sPokemonJump)).numPlayers as i32 {
+                if (*crate::gl!(sPokemonJump)).players[i].monState == MONSTATE_HIT {
                     StartMonHitFlash(i as u8);
                 }
                 i += 1;
             }
             SetUpPokeJumpGfxFuncById(GFXFUNC_SHOW_NAMES);
-            (*sPokemonJump).timer = 0;
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).timer = 0;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         2 => {
             if ({
-                (*sPokemonJump).timer += 1;
-                (*sPokemonJump).timer
+                (*crate::gl!(sPokemonJump)).timer += 1;
+                (*crate::gl!(sPokemonJump)).timer
             }) > 100
             {
                 SetUpPokeJumpGfxFuncById(GFXFUNC_ERASE_NAMES);
-                (*sPokemonJump).timer = 0;
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).timer = 0;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         3 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
                 StopMonHitFlash();
-                (*sPokemonJump).comm.receivedBonusFlags = 0;
+                (*crate::gl!(sPokemonJump)).comm.receivedBonusFlags = 0;
                 ResetPlayersMonState();
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
                 return FALSE as u32;
             }
         }
@@ -1593,54 +1610,56 @@ unsafe fn DoVineHitEffect() -> u32 {
 }
 pub(crate) unsafe fn TryGivePrize() -> u32 {
     'l1: {
-        match (*sPokemonJump).helperState {
+        match (*crate::gl!(sPokemonJump)).helperState {
             0 => {
                 UnpackPrizeData(
-                    (*sPokemonJump).comm.data,
-                    &raw mut (*sPokemonJump).prizeItemId,
-                    &raw mut (*sPokemonJump).prizeItemQuantity,
+                    (*crate::gl!(sPokemonJump)).comm.data,
+                    &raw mut (*crate::gl!(sPokemonJump)).prizeItemId,
+                    &raw mut (*crate::gl!(sPokemonJump)).prizeItemQuantity,
                 );
                 PrintPrizeMessage(
-                    (*sPokemonJump).prizeItemId,
-                    (*sPokemonJump).prizeItemQuantity,
+                    (*crate::gl!(sPokemonJump)).prizeItemId,
+                    (*crate::gl!(sPokemonJump)).prizeItemQuantity,
                 );
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
             1 | 4 => {
                 if DoPrizeMessageAndFanfare() == 0 {
-                    (*sPokemonJump).timer = 0;
-                    (*sPokemonJump).helperState += 1;
+                    (*crate::gl!(sPokemonJump)).timer = 0;
+                    (*crate::gl!(sPokemonJump)).helperState += 1;
                 }
             }
             2 | 5 => {
-                (*sPokemonJump).timer += 1;
-                if gMain.newKeys as i32 & 3 != 0 || (*sPokemonJump).timer > 180 {
+                (*crate::gl!(sPokemonJump)).timer += 1;
+                if crate::gl!(gMain.newKeys) as i32 & 3 != 0
+                    || (*crate::gl!(sPokemonJump)).timer > 180
+                {
                     ClearMessageWindow();
-                    (*sPokemonJump).helperState += 1;
+                    (*crate::gl!(sPokemonJump)).helperState += 1;
                 }
             }
             3 => {
                 if RemoveMessageWindow() == 0 {
-                    (*sPokemonJump).prizeItemQuantity = GetQuantityLimitedByBag(
-                        (*sPokemonJump).prizeItemId,
-                        (*sPokemonJump).prizeItemQuantity,
+                    (*crate::gl!(sPokemonJump)).prizeItemQuantity = GetQuantityLimitedByBag(
+                        (*crate::gl!(sPokemonJump)).prizeItemId,
+                        (*crate::gl!(sPokemonJump)).prizeItemQuantity,
                     );
-                    if (*sPokemonJump).prizeItemQuantity != 0
+                    if (*crate::gl!(sPokemonJump)).prizeItemQuantity != 0
                         && AddBagItem(
-                            (*sPokemonJump).prizeItemId,
-                            (*sPokemonJump).prizeItemQuantity,
+                            (*crate::gl!(sPokemonJump)).prizeItemId,
+                            (*crate::gl!(sPokemonJump)).prizeItemQuantity,
                         ) != 0
                     {
-                        if CheckBagHasSpace((*sPokemonJump).prizeItemId, 1) == 0 {
-                            PrintPrizeFilledBagMessage((*sPokemonJump).prizeItemId);
-                            (*sPokemonJump).helperState = 4;
+                        if CheckBagHasSpace((*crate::gl!(sPokemonJump)).prizeItemId, 1) == 0 {
+                            PrintPrizeFilledBagMessage((*crate::gl!(sPokemonJump)).prizeItemId);
+                            (*crate::gl!(sPokemonJump)).helperState = 4;
                         } else {
-                            (*sPokemonJump).helperState = 6;
+                            (*crate::gl!(sPokemonJump)).helperState = 6;
                             break 'l1;
                         }
                     } else {
-                        PrintNoRoomForPrizeMessage((*sPokemonJump).prizeItemId);
-                        (*sPokemonJump).helperState = 4;
+                        PrintNoRoomForPrizeMessage((*crate::gl!(sPokemonJump)).prizeItemId);
+                        (*crate::gl!(sPokemonJump)).helperState = 4;
                     }
                 }
             }
@@ -1654,44 +1673,44 @@ pub(crate) unsafe fn TryGivePrize() -> u32 {
 }
 unsafe fn DoPlayAgainPrompt() -> u32 {
     let mut input: i8 = 0;
-    match (*sPokemonJump).helperState {
+    match (*crate::gl!(sPokemonJump)).helperState {
         0 => {
             SetUpPokeJumpGfxFuncById(GFXFUNC_MSG_PLAY_AGAIN);
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         1 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         2 => {
             input = HandlePlayAgainInput();
             match input {
                 MENU_B_PRESSED | 1 => {
-                    (*sPokemonJump).playAgainState = PLAY_AGAIN_NO;
+                    (*crate::gl!(sPokemonJump)).playAgainState = PLAY_AGAIN_NO;
                     SetUpPokeJumpGfxFuncById(GFXFUNC_ERASE_MSG);
-                    (*sPokemonJump).helperState += 1;
+                    (*crate::gl!(sPokemonJump)).helperState += 1;
                 }
                 0 => {
-                    (*sPokemonJump).playAgainState = PLAY_AGAIN_YES;
+                    (*crate::gl!(sPokemonJump)).playAgainState = PLAY_AGAIN_YES;
                     SetUpPokeJumpGfxFuncById(GFXFUNC_ERASE_MSG);
-                    (*sPokemonJump).helperState += 1;
+                    (*crate::gl!(sPokemonJump)).helperState += 1;
                 }
                 _ => {}
             }
         }
         3 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         4 => {
             SetUpPokeJumpGfxFuncById(GFXFUNC_MSG_COMM_STANDBY);
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         5 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
                 return FALSE as u32;
             }
         }
@@ -1703,40 +1722,40 @@ unsafe fn DoPlayAgainPrompt() -> u32 {
     TRUE as u32
 }
 unsafe fn ClosePokeJumpLink() -> u32 {
-    match (*sPokemonJump).helperState {
+    match (*crate::gl!(sPokemonJump)).helperState {
         0 => {
             ClearMessageWindow();
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         1 => {
             if RemoveMessageWindow() == 0 {
                 SetUpPokeJumpGfxFuncById(GFXFUNC_MSG_PLAYER_DROPPED);
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         2 => {
             if IsPokeJumpGfxFuncFinished() == 0 {
-                (*sPokemonJump).timer = 0;
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).timer = 0;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         3 => {
             if ({
-                (*sPokemonJump).timer += 1;
-                (*sPokemonJump).timer
+                (*crate::gl!(sPokemonJump)).timer += 1;
+                (*crate::gl!(sPokemonJump)).timer
             }) > 120
             {
                 BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
         4 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetCloseLinkCallback();
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
             }
         }
-        5 if gReceivedRemoteLinkPlayers == 0 => {
+        5 if gReceivedRemoteLinkPlayers.get() == 0 => {
             return FALSE as u32;
         }
         _ => {}
@@ -1744,15 +1763,15 @@ unsafe fn ClosePokeJumpLink() -> u32 {
     TRUE as u32
 }
 unsafe fn CloseMessageAndResetScore() -> u32 {
-    match (*sPokemonJump).helperState {
+    match (*crate::gl!(sPokemonJump)).helperState {
         0 => {
             ClearMessageWindow();
             PrintScore(0);
-            (*sPokemonJump).helperState += 1;
+            (*crate::gl!(sPokemonJump)).helperState += 1;
         }
         1 => {
             if RemoveMessageWindow() == 0 {
-                (*sPokemonJump).helperState += 1;
+                (*crate::gl!(sPokemonJump)).helperState += 1;
                 return FALSE as u32;
             }
         }
@@ -1783,7 +1802,7 @@ pub(crate) unsafe fn Task_CommunicateMonInfo(taskId: u8) {
                 if *data.at(i + 2) == 0 && RecvPacket_MonInfo(i, &raw mut (*jump).monInfo[i]) != 0 {
                     StringCopy(
                         (*jump).players[i].name.as_mut_ptr(),
-                        gLinkPlayers[i].name.as_mut_ptr(),
+                        (*gLinkPlayers.as_ptr())[i].name.as_mut_ptr(),
                     );
                     *data.at(i + 2) = TRUE as i16;
                     *data.at(1) += 1;
@@ -1800,129 +1819,138 @@ pub(crate) unsafe fn Task_CommunicateMonInfo(taskId: u8) {
 }
 unsafe fn SetTaskWithPokeJumpStruct(func: Option<unsafe fn(u8)>, taskPriority: u8) {
     let taskId: u8 = CreateTask(func, taskPriority);
-    SetWordTaskArg(taskId, DATAIDX_GAME_STRUCT, sPokemonJump as usize as u32);
+    SetWordTaskArg(
+        taskId,
+        DATAIDX_GAME_STRUCT,
+        crate::gl!(sPokemonJump) as usize as u32,
+    );
 }
 unsafe fn InitVineState() {
-    (*sPokemonJump).vineTimer = 0;
-    (*sPokemonJump).vineState = VINE_UPSWING_LOWER;
-    (*sPokemonJump).vineStateTimer = 0;
-    (*sPokemonJump).vineSpeed = 0;
-    (*sPokemonJump).ignoreJumpInput = FALSE as u16;
-    (*sPokemonJump).gameOver = FALSE as u32;
+    (*crate::gl!(sPokemonJump)).vineTimer = 0;
+    (*crate::gl!(sPokemonJump)).vineState = VINE_UPSWING_LOWER;
+    (*crate::gl!(sPokemonJump)).vineStateTimer = 0;
+    (*crate::gl!(sPokemonJump)).vineSpeed = 0;
+    (*crate::gl!(sPokemonJump)).ignoreJumpInput = FALSE as u16;
+    (*crate::gl!(sPokemonJump)).gameOver = FALSE as u32;
 }
 unsafe fn ResetVineState() {
-    (*sPokemonJump).vineTimer = 0;
-    (*sPokemonJump).vineStateTimer = 1791;
-    (*sPokemonJump).vineState = VINE_UPSWING_LOW;
-    (*sPokemonJump).ignoreJumpInput = FALSE as u16;
-    (*sPokemonJump).gameOver = FALSE as u32;
-    (*sPokemonJump).vineSpeedStage = 0;
-    (*sPokemonJump).vineBaseSpeedIdx = 0;
-    (*sPokemonJump).vineSpeedAccel = 0;
-    (*sPokemonJump).vineSpeedDelay = 0;
-    (*sPokemonJump).atMaxSpeedStage = FALSE as u32;
+    (*crate::gl!(sPokemonJump)).vineTimer = 0;
+    (*crate::gl!(sPokemonJump)).vineStateTimer = 1791;
+    (*crate::gl!(sPokemonJump)).vineState = VINE_UPSWING_LOW;
+    (*crate::gl!(sPokemonJump)).ignoreJumpInput = FALSE as u16;
+    (*crate::gl!(sPokemonJump)).gameOver = FALSE as u32;
+    (*crate::gl!(sPokemonJump)).vineSpeedStage = 0;
+    (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx = 0;
+    (*crate::gl!(sPokemonJump)).vineSpeedAccel = 0;
+    (*crate::gl!(sPokemonJump)).vineSpeedDelay = 0;
+    (*crate::gl!(sPokemonJump)).atMaxSpeedStage = FALSE as u32;
     UpdateVineSpeed();
 }
 unsafe fn UpdateVineState() {
-    if (*sPokemonJump).allowVineUpdates != 0 {
-        (*sPokemonJump).vineTimer += 1;
-        (*sPokemonJump).vineStateTimer += GetVineSpeed() as u16;
-        if (*sPokemonJump).vineStateTimer >= 2559 {
-            (*sPokemonJump).vineStateTimer -= 2559;
+    if (*crate::gl!(sPokemonJump)).allowVineUpdates != 0 {
+        (*crate::gl!(sPokemonJump)).vineTimer += 1;
+        (*crate::gl!(sPokemonJump)).vineStateTimer += GetVineSpeed() as u16;
+        if (*crate::gl!(sPokemonJump)).vineStateTimer >= 2559 {
+            (*crate::gl!(sPokemonJump)).vineStateTimer -= 2559;
         }
-        (*sPokemonJump).prevVineState = (*sPokemonJump).vineState;
-        (*sPokemonJump).vineState = ((*sPokemonJump).vineStateTimer >> 8) as u32;
-        if (*sPokemonJump).vineState > VINE_UPSWING_LOWER
-            && (*sPokemonJump).prevVineState < VINE_UPSWING_LOW
+        (*crate::gl!(sPokemonJump)).prevVineState = (*crate::gl!(sPokemonJump)).vineState;
+        (*crate::gl!(sPokemonJump)).vineState =
+            ((*crate::gl!(sPokemonJump)).vineStateTimer >> 8) as u32;
+        if (*crate::gl!(sPokemonJump)).vineState > VINE_UPSWING_LOWER
+            && (*crate::gl!(sPokemonJump)).prevVineState < VINE_UPSWING_LOW
         {
-            (*sPokemonJump).ignoreJumpInput += 1;
+            (*crate::gl!(sPokemonJump)).ignoreJumpInput += 1;
             UpdateVineSpeed();
         }
     }
 }
 unsafe fn GetVineSpeed() -> i32 {
-    if (*sPokemonJump).gameOver != 0 {
+    if (*crate::gl!(sPokemonJump)).gameOver != 0 {
         return 0;
     }
-    let mut speed: i32 = (*sPokemonJump).vineSpeed;
-    if (*sPokemonJump).vineStateTimer <= 1535 {
-        (*sPokemonJump).vineSpeedAccel += 80;
-        speed += ((*sPokemonJump).vineSpeedAccel / 256) as i32;
+    let mut speed: i32 = (*crate::gl!(sPokemonJump)).vineSpeed;
+    if (*crate::gl!(sPokemonJump)).vineStateTimer <= 1535 {
+        (*crate::gl!(sPokemonJump)).vineSpeedAccel += 80;
+        speed += ((*crate::gl!(sPokemonJump)).vineSpeedAccel / 256) as i32;
     }
     speed
 }
 unsafe fn UpdateVineSpeed() {
     let mut baseSpeed: i32 = 0;
-    (*sPokemonJump).vineSpeedAccel = 0;
-    if (*sPokemonJump).vineSpeedDelay != 0 {
-        (*sPokemonJump).vineSpeedDelay -= 1;
-        if (*sPokemonJump).atMaxSpeedStage != 0 {
+    (*crate::gl!(sPokemonJump)).vineSpeedAccel = 0;
+    if (*crate::gl!(sPokemonJump)).vineSpeedDelay != 0 {
+        (*crate::gl!(sPokemonJump)).vineSpeedDelay -= 1;
+        if (*crate::gl!(sPokemonJump)).atMaxSpeedStage != 0 {
             if PokeJumpRandom() % 4 != 0 {
-                (*sPokemonJump).vineSpeed = (*sPokemonJump).nextVineSpeed as i32;
+                (*crate::gl!(sPokemonJump)).vineSpeed =
+                    (*crate::gl!(sPokemonJump)).nextVineSpeed as i32;
             } else {
-                if (*sPokemonJump).nextVineSpeed > 54 {
-                    (*sPokemonJump).vineSpeed = 30;
+                if (*crate::gl!(sPokemonJump)).nextVineSpeed > 54 {
+                    (*crate::gl!(sPokemonJump)).vineSpeed = 30;
                 } else {
-                    (*sPokemonJump).vineSpeed = 82;
+                    (*crate::gl!(sPokemonJump)).vineSpeed = 82;
                 }
             }
         }
     } else {
-        if (*sPokemonJump).vineBaseSpeedIdx as u32 & 8 == 0 {
-            (*sPokemonJump).nextVineSpeed = sVineBaseSpeeds[(*sPokemonJump).vineBaseSpeedIdx]
-                as u32
-                + (*sPokemonJump).vineSpeedStage as u32 * 7;
-            (*sPokemonJump).vineSpeedDelay = sVineSpeedDelays[PokeJumpRandom() % 4] + 2;
-            (*sPokemonJump).vineBaseSpeedIdx += 1;
+        if (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx as u32 & 8 == 0 {
+            (*crate::gl!(sPokemonJump)).nextVineSpeed =
+                sVineBaseSpeeds[(*crate::gl!(sPokemonJump)).vineBaseSpeedIdx] as u32
+                    + (*crate::gl!(sPokemonJump)).vineSpeedStage as u32 * 7;
+            (*crate::gl!(sPokemonJump)).vineSpeedDelay = sVineSpeedDelays[PokeJumpRandom() % 4] + 2;
+            (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx += 1;
         } else {
-            if (*sPokemonJump).vineBaseSpeedIdx == 8 {
-                if (*sPokemonJump).vineSpeedStage < 3 {
-                    (*sPokemonJump).vineSpeedStage += 1;
+            if (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx == 8 {
+                if (*crate::gl!(sPokemonJump)).vineSpeedStage < 3 {
+                    (*crate::gl!(sPokemonJump)).vineSpeedStage += 1;
                 } else {
-                    (*sPokemonJump).atMaxSpeedStage = TRUE as u32;
+                    (*crate::gl!(sPokemonJump)).atMaxSpeedStage = TRUE as u32;
                 }
             }
-            baseSpeed = sVineBaseSpeeds[15 - (*sPokemonJump).vineBaseSpeedIdx as i32] as i32;
-            (*sPokemonJump).nextVineSpeed =
-                baseSpeed as u32 + (*sPokemonJump).vineSpeedStage as u32 * 7;
+            baseSpeed =
+                sVineBaseSpeeds[15 - (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx as i32] as i32;
+            (*crate::gl!(sPokemonJump)).nextVineSpeed =
+                baseSpeed as u32 + (*crate::gl!(sPokemonJump)).vineSpeedStage as u32 * 7;
             if ({
-                (*sPokemonJump).vineBaseSpeedIdx += 1;
-                (*sPokemonJump).vineBaseSpeedIdx
+                (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx += 1;
+                (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx
             }) > 15
             {
                 if PokeJumpRandom() % 4 == 0 {
-                    (*sPokemonJump).nextVineSpeed -= 5;
+                    (*crate::gl!(sPokemonJump)).nextVineSpeed -= 5;
                 }
-                (*sPokemonJump).vineBaseSpeedIdx = 0;
+                (*crate::gl!(sPokemonJump)).vineBaseSpeedIdx = 0;
             }
         }
-        (*sPokemonJump).vineSpeed = (*sPokemonJump).nextVineSpeed as i32;
+        (*crate::gl!(sPokemonJump)).vineSpeed = (*crate::gl!(sPokemonJump)).nextVineSpeed as i32;
     }
 }
 unsafe fn PokeJumpRandom() -> i32 {
-    (*sPokemonJump).rngSeed = 0x41c64e6d * (*sPokemonJump).rngSeed + 24691;
-    ((*sPokemonJump).rngSeed >> 16) as i32
+    (*crate::gl!(sPokemonJump)).rngSeed = 0x41c64e6d * (*crate::gl!(sPokemonJump)).rngSeed + 24691;
+    ((*crate::gl!(sPokemonJump)).rngSeed >> 16) as i32
 }
 unsafe fn ResetVineAfterHit() {
-    (*sPokemonJump).gameOver = TRUE as u32;
-    (*sPokemonJump).vineState = VINE_UPSWING_LOWER;
-    (*sPokemonJump).vineStateTimer = 1535;
+    (*crate::gl!(sPokemonJump)).gameOver = TRUE as u32;
+    (*crate::gl!(sPokemonJump)).vineState = VINE_UPSWING_LOWER;
+    (*crate::gl!(sPokemonJump)).vineStateTimer = 1535;
     AllowVineUpdates();
 }
 unsafe fn IsGameOver() -> i32 {
-    (*sPokemonJump).gameOver as i32
+    (*crate::gl!(sPokemonJump)).gameOver as i32
 }
 unsafe fn ResetPlayersJumpStates() {
     for i in 0..MAX_RFU_PLAYERS {
-        (*sPokemonJump).players[i].jumpState = JUMPSTATE_NONE;
+        (*crate::gl!(sPokemonJump)).players[i].jumpState = JUMPSTATE_NONE;
     }
 }
 unsafe fn ResetPlayersMonState() {
-    (*(*sPokemonJump).player).monState = MONSTATE_NORMAL;
-    (*(*sPokemonJump).player).prevMonState = MONSTATE_NORMAL;
+    (*(*crate::gl!(sPokemonJump)).player).monState = MONSTATE_NORMAL;
+    (*(*crate::gl!(sPokemonJump)).player).prevMonState = MONSTATE_NORMAL;
 }
 unsafe fn IsPlayersMonState(monState: u16) -> u32 {
-    if (*sPokemonJump).players[(*sPokemonJump).multiplayerId].monState == monState {
+    if (*crate::gl!(sPokemonJump)).players[(*crate::gl!(sPokemonJump)).multiplayerId].monState
+        == monState
+    {
         return TRUE as u32;
     } else {
         return FALSE as u32;
@@ -1933,69 +1961,75 @@ unsafe fn IsPlayersMonState(monState: u16) -> u32 {
     }
 }
 unsafe fn SetMonStateJump() {
-    (*(*sPokemonJump).player).jumpTimeStart = (*sPokemonJump).vineTimer;
-    (*(*sPokemonJump).player).prevMonState = (*(*sPokemonJump).player).monState;
-    (*(*sPokemonJump).player).monState = MONSTATE_JUMP;
+    (*(*crate::gl!(sPokemonJump)).player).jumpTimeStart = (*crate::gl!(sPokemonJump)).vineTimer;
+    (*(*crate::gl!(sPokemonJump)).player).prevMonState =
+        (*(*crate::gl!(sPokemonJump)).player).monState;
+    (*(*crate::gl!(sPokemonJump)).player).monState = MONSTATE_JUMP;
 }
 unsafe fn SetMonStateHit() {
-    (*(*sPokemonJump).player).prevMonState = (*(*sPokemonJump).player).monState;
-    (*(*sPokemonJump).player).monState = MONSTATE_HIT;
-    (*(*sPokemonJump).player).jumpTimeStart = (*sPokemonJump).vineTimer;
-    (*(*sPokemonJump).player).jumpState = JUMPSTATE_FAILURE;
+    (*(*crate::gl!(sPokemonJump)).player).prevMonState =
+        (*(*crate::gl!(sPokemonJump)).player).monState;
+    (*(*crate::gl!(sPokemonJump)).player).monState = MONSTATE_HIT;
+    (*(*crate::gl!(sPokemonJump)).player).jumpTimeStart = (*crate::gl!(sPokemonJump)).vineTimer;
+    (*(*crate::gl!(sPokemonJump)).player).jumpState = JUMPSTATE_FAILURE;
 }
 unsafe fn SetMonStateNormal() {
-    (*(*sPokemonJump).player).prevMonState = (*(*sPokemonJump).player).monState;
-    (*(*sPokemonJump).player).monState = MONSTATE_NORMAL;
+    (*(*crate::gl!(sPokemonJump)).player).prevMonState =
+        (*(*crate::gl!(sPokemonJump)).player).monState;
+    (*(*crate::gl!(sPokemonJump)).player).monState = MONSTATE_NORMAL;
 }
 pub(crate) unsafe fn UpdateGame() {
-    if (*sPokemonJump).updateScore != 0 {
-        PrintScore((*sPokemonJump).comm.jumpScore as i32);
-        (*sPokemonJump).updateScore = FALSE as u32;
-        if (*sPokemonJump).showBonus != 0 {
-            let numPlayers: i32 = DoSameJumpTimeBonus((*sPokemonJump).comm.receivedBonusFlags);
+    if (*crate::gl!(sPokemonJump)).updateScore != 0 {
+        PrintScore((*crate::gl!(sPokemonJump)).comm.jumpScore as i32);
+        (*crate::gl!(sPokemonJump)).updateScore = FALSE as u32;
+        if (*crate::gl!(sPokemonJump)).showBonus != 0 {
+            let numPlayers: i32 =
+                DoSameJumpTimeBonus((*crate::gl!(sPokemonJump)).comm.receivedBonusFlags);
             PlaySE(sSoundEffects[numPlayers - 2]);
-            (*sPokemonJump).showBonus = FALSE;
+            (*crate::gl!(sPokemonJump)).showBonus = FALSE;
         }
     }
-    PrintJumpsInRow((*sPokemonJump).comm.jumpsInRow);
+    PrintJumpsInRow((*crate::gl!(sPokemonJump)).comm.jumpsInRow);
     HandleMonState();
     TryUpdateVineSwing();
 }
 unsafe fn TryUpdateVineSwing() {
-    if (*sPokemonJump).allowVineUpdates != 0 {
-        UpdateVineSwing((*sPokemonJump).vineState as i32);
+    if (*crate::gl!(sPokemonJump)).allowVineUpdates != 0 {
+        UpdateVineSwing((*crate::gl!(sPokemonJump)).vineState as i32);
     }
 }
 unsafe fn DisallowVineUpdates() {
-    (*sPokemonJump).allowVineUpdates = FALSE;
+    (*crate::gl!(sPokemonJump)).allowVineUpdates = FALSE;
 }
 unsafe fn AllowVineUpdates() {
-    (*sPokemonJump).allowVineUpdates = TRUE;
+    (*crate::gl!(sPokemonJump)).allowVineUpdates = TRUE;
 }
 unsafe fn HandleMonState() {
     let mut soundFlags: i32 = 0;
-    let numPlayers: i32 = (*sPokemonJump).numPlayers as i32;
+    let numPlayers: i32 = (*crate::gl!(sPokemonJump)).numPlayers as i32;
     for i in 0..numPlayers {
-        match (*sPokemonJump).players[i].monState {
+        match (*crate::gl!(sPokemonJump)).players[i].monState {
             MONSTATE_NORMAL => {
                 SetMonSpriteY(i as u32, 0);
             }
             MONSTATE_JUMP => {
-                if (*sPokemonJump).players[i].prevMonState != MONSTATE_JUMP
-                    || (*sPokemonJump).players[i].jumpTimeStart != (*sPokemonJump).jumpTimeStarts[i]
+                if (*crate::gl!(sPokemonJump)).players[i].prevMonState != MONSTATE_JUMP
+                    || (*crate::gl!(sPokemonJump)).players[i].jumpTimeStart
+                        != (*crate::gl!(sPokemonJump)).jumpTimeStarts[i]
                 {
-                    if i == (*sPokemonJump).multiplayerId as i32 {
-                        (*sPokemonJump).players[i].prevMonState = MONSTATE_JUMP;
+                    if i == (*crate::gl!(sPokemonJump)).multiplayerId as i32 {
+                        (*crate::gl!(sPokemonJump)).players[i].prevMonState = MONSTATE_JUMP;
                     }
                     soundFlags |= F_SE_JUMP;
-                    (*sPokemonJump).players[i].jumpOffsetIdx = 2147483647;
-                    (*sPokemonJump).jumpTimeStarts[i] = (*sPokemonJump).players[i].jumpTimeStart;
+                    (*crate::gl!(sPokemonJump)).players[i].jumpOffsetIdx = 2147483647;
+                    (*crate::gl!(sPokemonJump)).jumpTimeStarts[i] =
+                        (*crate::gl!(sPokemonJump)).players[i].jumpTimeStart;
                 }
                 UpdateJump(i);
             }
-            MONSTATE_HIT if (*sPokemonJump).players[i].prevMonState != MONSTATE_HIT => {
-                if i == (*sPokemonJump).multiplayerId as i32 {
-                    (*sPokemonJump).players[i].prevMonState = MONSTATE_HIT;
+            MONSTATE_HIT if (*crate::gl!(sPokemonJump)).players[i].prevMonState != MONSTATE_HIT => {
+                if i == (*crate::gl!(sPokemonJump)).multiplayerId as i32 {
+                    (*crate::gl!(sPokemonJump)).players[i].prevMonState = MONSTATE_HIT;
                 }
                 soundFlags |= F_SE_FAIL;
                 StartMonHitShake(i as u8);
@@ -2012,18 +2046,20 @@ unsafe fn HandleMonState() {
 unsafe fn UpdateJump(multiplayerId: i32) {
     let mut jumpOffsetIdx: i32 = 0;
     let mut jumpOffset: i32 = 0;
-    if (*sPokemonJump).skipJumpUpdate != 0 {
+    if (*crate::gl!(sPokemonJump)).skipJumpUpdate != 0 {
         return;
     }
-    let player: *mut PokemonJump_Player = &raw mut (*sPokemonJump).players[multiplayerId];
+    let player: *mut PokemonJump_Player =
+        &raw mut (*crate::gl!(sPokemonJump)).players[multiplayerId];
     if (*player).jumpOffsetIdx != 2147483647 {
         (*player).jumpOffsetIdx += 1;
         jumpOffsetIdx = (*player).jumpOffsetIdx;
     } else {
-        jumpOffsetIdx = (*sPokemonJump).vineTimer as i32 - (*player).jumpTimeStart as i32;
+        jumpOffsetIdx =
+            (*crate::gl!(sPokemonJump)).vineTimer as i32 - (*player).jumpTimeStart as i32;
         if jumpOffsetIdx >= 65000 {
             jumpOffsetIdx -= 65000;
-            jumpOffsetIdx += (*sPokemonJump).vineTimer as i32;
+            jumpOffsetIdx += (*crate::gl!(sPokemonJump)).vineTimer as i32;
         }
         (*player).jumpOffsetIdx = jumpOffsetIdx;
     }
@@ -2037,142 +2073,147 @@ unsafe fn UpdateJump(multiplayerId: i32) {
         jumpOffset = 0;
     }
     SetMonSpriteY(multiplayerId as u32, jumpOffset as i16);
-    if jumpOffset == 0 && multiplayerId == (*sPokemonJump).multiplayerId as i32 {
+    if jumpOffset == 0 && multiplayerId == (*crate::gl!(sPokemonJump)).multiplayerId as i32 {
         SetMonStateNormal();
     }
     (*player).jumpOffset = jumpOffset;
 }
 unsafe fn TryUpdateScore() {
-    if (*sPokemonJump).vineState == VINE_UPSWING_HIGH
-        && (*sPokemonJump).prevVineState == VINE_UPSWING_LOW
+    if (*crate::gl!(sPokemonJump)).vineState == VINE_UPSWING_HIGH
+        && (*crate::gl!(sPokemonJump)).prevVineState == VINE_UPSWING_LOW
     {
-        if (*sPokemonJump).initScoreUpdate == 0 {
+        if (*crate::gl!(sPokemonJump)).initScoreUpdate == 0 {
             ClearUnreadField();
-            (*sPokemonJump).numPlayersAtPeak = 0;
-            (*sPokemonJump).initScoreUpdate = TRUE as u32;
-            (*sPokemonJump).comm.receivedBonusFlags = 0;
+            (*crate::gl!(sPokemonJump)).numPlayersAtPeak = 0;
+            (*crate::gl!(sPokemonJump)).initScoreUpdate = TRUE as u32;
+            (*crate::gl!(sPokemonJump)).comm.receivedBonusFlags = 0;
         } else {
-            if (*sPokemonJump).numPlayersAtPeak == MAX_RFU_PLAYERS {
-                (*sPokemonJump).excellentsInRow += 1;
-                TryUpdateExcellentsRecord((*sPokemonJump).excellentsInRow);
+            if (*crate::gl!(sPokemonJump)).numPlayersAtPeak == MAX_RFU_PLAYERS {
+                (*crate::gl!(sPokemonJump)).excellentsInRow += 1;
+                TryUpdateExcellentsRecord((*crate::gl!(sPokemonJump)).excellentsInRow);
             } else {
-                (*sPokemonJump).excellentsInRow = 0;
+                (*crate::gl!(sPokemonJump)).excellentsInRow = 0;
             }
-            if (*sPokemonJump).numPlayersAtPeak > 1 {
-                (*sPokemonJump).giveBonus = TRUE as u32;
+            if (*crate::gl!(sPokemonJump)).numPlayersAtPeak > 1 {
+                (*crate::gl!(sPokemonJump)).giveBonus = TRUE as u32;
                 memcpy(
-                    (*sPokemonJump).atJumpPeak3.as_mut_ptr(),
-                    (*sPokemonJump).atJumpPeak2.as_mut_ptr(),
+                    (*crate::gl!(sPokemonJump)).atJumpPeak3.as_mut_ptr(),
+                    (*crate::gl!(sPokemonJump)).atJumpPeak2.as_mut_ptr(),
                     MAX_RFU_PLAYERS as u32,
                 );
             }
             ClearUnreadField();
-            (*sPokemonJump).numPlayersAtPeak = 0;
-            (*sPokemonJump).initScoreUpdate = TRUE as u32;
-            (*sPokemonJump).comm.receivedBonusFlags = 0;
-            if (*sPokemonJump).comm.jumpsInRow < MAX_JUMPS {
-                (*sPokemonJump).comm.jumpsInRow += 1;
+            (*crate::gl!(sPokemonJump)).numPlayersAtPeak = 0;
+            (*crate::gl!(sPokemonJump)).initScoreUpdate = TRUE as u32;
+            (*crate::gl!(sPokemonJump)).comm.receivedBonusFlags = 0;
+            if (*crate::gl!(sPokemonJump)).comm.jumpsInRow < MAX_JUMPS {
+                (*crate::gl!(sPokemonJump)).comm.jumpsInRow += 1;
             }
             AddJumpScore(10);
             SetLinkTimeInterval(LINK_INTERVAL_SHORT);
         }
     }
-    if (*sPokemonJump).giveBonus != 0
-        && (DidAllPlayersClearVine() == TRUE as u32 || (*sPokemonJump).vineState == VINE_HIGHEST)
+    if (*crate::gl!(sPokemonJump)).giveBonus != 0
+        && (DidAllPlayersClearVine() == TRUE as u32
+            || (*crate::gl!(sPokemonJump)).vineState == VINE_HIGHEST)
     {
-        let numPlayers: i32 = GetNumPlayersForBonus((*sPokemonJump).atJumpPeak3.as_mut_ptr());
+        let numPlayers: i32 =
+            GetNumPlayersForBonus((*crate::gl!(sPokemonJump)).atJumpPeak3.as_mut_ptr());
         AddJumpScore(GetScoreBonus(numPlayers));
         SetLinkTimeInterval(LINK_INTERVAL_SHORT);
-        (*sPokemonJump).giveBonus = FALSE as u32;
+        (*crate::gl!(sPokemonJump)).giveBonus = FALSE as u32;
     }
-    if (*sPokemonJump).initScoreUpdate != 0 {
+    if (*crate::gl!(sPokemonJump)).initScoreUpdate != 0 {
         let numAtPeak: i32 = GetPlayersAtJumpPeak();
-        if numAtPeak > (*sPokemonJump).numPlayersAtPeak {
-            (*sPokemonJump).numPlayersAtPeak = numAtPeak;
+        if numAtPeak > (*crate::gl!(sPokemonJump)).numPlayersAtPeak {
+            (*crate::gl!(sPokemonJump)).numPlayersAtPeak = numAtPeak;
             memcpy(
-                (*sPokemonJump).atJumpPeak2.as_mut_ptr(),
-                (*sPokemonJump).atJumpPeak.as_mut_ptr(),
+                (*crate::gl!(sPokemonJump)).atJumpPeak2.as_mut_ptr(),
+                (*crate::gl!(sPokemonJump)).atJumpPeak.as_mut_ptr(),
                 MAX_RFU_PLAYERS as u32,
             );
         }
     }
 }
 unsafe fn UpdateVineHitStates() -> u32 {
-    if (*sPokemonJump).vineState == VINE_UPSWING_LOWER && (*(*sPokemonJump).player).jumpOffset == 0
+    if (*crate::gl!(sPokemonJump)).vineState == VINE_UPSWING_LOWER
+        && (*(*crate::gl!(sPokemonJump)).player).jumpOffset == 0
     {
-        if (*(*sPokemonJump).player).prevMonState == MONSTATE_JUMP && IsGameOver() == TRUE as i32 {
-            (*(*sPokemonJump).player).jumpState = JUMPSTATE_SUCCESS;
+        if (*(*crate::gl!(sPokemonJump)).player).prevMonState == MONSTATE_JUMP
+            && IsGameOver() == TRUE as i32
+        {
+            (*(*crate::gl!(sPokemonJump)).player).jumpState = JUMPSTATE_SUCCESS;
         } else {
             SetMonStateHit();
             SetLinkTimeInterval(LINK_INTERVAL_SHORT);
         }
     }
-    if (*sPokemonJump).vineState == VINE_UPSWING_LOW
-        && (*sPokemonJump).prevVineState == VINE_UPSWING_LOWER
-        && (*(*sPokemonJump).player).monState != MONSTATE_HIT
+    if (*crate::gl!(sPokemonJump)).vineState == VINE_UPSWING_LOW
+        && (*crate::gl!(sPokemonJump)).prevVineState == VINE_UPSWING_LOWER
+        && (*(*crate::gl!(sPokemonJump)).player).monState != MONSTATE_HIT
     {
-        (*(*sPokemonJump).player).jumpState = JUMPSTATE_SUCCESS;
+        (*(*crate::gl!(sPokemonJump)).player).jumpState = JUMPSTATE_SUCCESS;
         SetLinkTimeInterval(LINK_INTERVAL_SHORT);
     }
-    for i in 0..((*sPokemonJump).numPlayers as i32) {
-        if (*sPokemonJump).players[i].monState == MONSTATE_HIT {
+    for i in 0..((*crate::gl!(sPokemonJump)).numPlayers as i32) {
+        if (*crate::gl!(sPokemonJump)).players[i].monState == MONSTATE_HIT {
             return FALSE as u32;
         }
     }
     TRUE as u32
 }
 unsafe fn AllPlayersJumpedOrHit() -> u32 {
-    let numPlayers: i32 = (*sPokemonJump).numPlayers as i32;
+    let numPlayers: i32 = (*crate::gl!(sPokemonJump)).numPlayers as i32;
     let mut numJumpedOrHit: i32 = 0;
     for i in 0..numPlayers {
-        if (*sPokemonJump).players[i].jumpState != JUMPSTATE_NONE {
+        if (*crate::gl!(sPokemonJump)).players[i].jumpState != JUMPSTATE_NONE {
             numJumpedOrHit += 1;
         }
     }
     (numJumpedOrHit == numPlayers) as u32
 }
 unsafe fn DidAllPlayersClearVine() -> u32 {
-    for i in 0..((*sPokemonJump).numPlayers as i32) {
-        if (*sPokemonJump).players[i].jumpState != JUMPSTATE_SUCCESS {
+    for i in 0..((*crate::gl!(sPokemonJump)).numPlayers as i32) {
+        if (*crate::gl!(sPokemonJump)).players[i].jumpState != JUMPSTATE_SUCCESS {
             return FALSE as u32;
         }
     }
     TRUE as u32
 }
 unsafe fn ShouldPlayAgain() -> u32 {
-    if (*sPokemonJump).playAgainState == PLAY_AGAIN_NO {
+    if (*crate::gl!(sPokemonJump)).playAgainState == PLAY_AGAIN_NO {
         return FALSE as u32;
     }
-    for i in 1..((*sPokemonJump).numPlayers as i32) {
-        if (*sPokemonJump).playAgainStates[i] == PLAY_AGAIN_NO as u16 {
+    for i in 1..((*crate::gl!(sPokemonJump)).numPlayers as i32) {
+        if (*crate::gl!(sPokemonJump)).playAgainStates[i] == PLAY_AGAIN_NO as u16 {
             return FALSE as u32;
         }
     }
     TRUE as u32
 }
 unsafe fn AddJumpScore(score: i32) {
-    (*sPokemonJump).comm.jumpScore += score as u32;
-    (*sPokemonJump).updateScore = TRUE as u32;
-    if (*sPokemonJump).comm.jumpScore >= MAX_JUMP_SCORE {
-        (*sPokemonJump).comm.jumpScore = MAX_JUMP_SCORE;
+    (*crate::gl!(sPokemonJump)).comm.jumpScore += score as u32;
+    (*crate::gl!(sPokemonJump)).updateScore = TRUE as u32;
+    if (*crate::gl!(sPokemonJump)).comm.jumpScore >= MAX_JUMP_SCORE {
+        (*crate::gl!(sPokemonJump)).comm.jumpScore = MAX_JUMP_SCORE;
     }
 }
 unsafe fn GetPlayersAtJumpPeak() -> i32 {
     let mut numAtPeak: i32 = 0;
-    let numPlayers: i32 = (*sPokemonJump).numPlayers as i32;
+    let numPlayers: i32 = (*crate::gl!(sPokemonJump)).numPlayers as i32;
     for i in 0..numPlayers {
-        if (*sPokemonJump).players[i].jumpOffset == JUMP_PEAK {
-            (*sPokemonJump).atJumpPeak[i] = TRUE;
+        if (*crate::gl!(sPokemonJump)).players[i].jumpOffset == JUMP_PEAK {
+            (*crate::gl!(sPokemonJump)).atJumpPeak[i] = TRUE;
             numAtPeak += 1;
         } else {
-            (*sPokemonJump).atJumpPeak[i] = FALSE;
+            (*crate::gl!(sPokemonJump)).atJumpPeak[i] = FALSE;
         }
     }
     numAtPeak
 }
 unsafe fn AreLinkQueuesEmpty() -> u32 {
-    ((&raw mut gRfu.recvQueue.count).read_volatile() == 0
-        && (&raw mut gRfu.sendQueue.count).read_volatile() == 0) as u32
+    ((crate::gl!(&raw gRfu.recvQueue.count)).read_volatile() == 0
+        && (crate::gl!(&raw gRfu.sendQueue.count)).read_volatile() == 0) as u32
 }
 unsafe fn GetNumPlayersForBonus(atJumpPeak: *mut u8) -> i32 {
     let mut flags: i32 = 0;
@@ -2183,25 +2224,25 @@ unsafe fn GetNumPlayersForBonus(atJumpPeak: *mut u8) -> i32 {
             count += 1;
         }
     }
-    (*sPokemonJump).comm.receivedBonusFlags = flags as u8;
+    (*crate::gl!(sPokemonJump)).comm.receivedBonusFlags = flags as u8;
     if flags != 0 {
-        (*sPokemonJump).showBonus = TRUE;
+        (*crate::gl!(sPokemonJump)).showBonus = TRUE;
     }
     count
 }
 unsafe fn ClearUnreadField() {
-    (*sPokemonJump).unused3 = 0;
+    (*crate::gl!(sPokemonJump)).unused3 = 0;
 }
 fn GetScoreBonus(numPlayers: i32) -> i32 {
     sScoreBonuses[numPlayers]
 }
 unsafe fn TryUpdateExcellentsRecord(excellentsInRow: u16) {
-    if excellentsInRow > (*sPokemonJump).excellentsInRowRecord {
-        (*sPokemonJump).excellentsInRowRecord = excellentsInRow;
+    if excellentsInRow > (*crate::gl!(sPokemonJump)).excellentsInRowRecord {
+        (*crate::gl!(sPokemonJump)).excellentsInRowRecord = excellentsInRow;
     }
 }
 unsafe fn HasEnoughScoreForPrize() -> u32 {
-    if (*sPokemonJump).comm.jumpScore >= sPrizeQuantityData[0].score {
+    if (*crate::gl!(sPokemonJump)).comm.jumpScore >= sPrizeQuantityData[0].score {
         return TRUE as u32;
     } else {
         return FALSE as u32;
@@ -2227,7 +2268,7 @@ pub(crate) unsafe fn GetPrizeItemId() -> u16 {
 unsafe fn GetPrizeQuantity() -> u16 {
     let mut quantity: u32 = 0;
     for i in 0..5u32 {
-        if (*sPokemonJump).comm.jumpScore >= sPrizeQuantityData[i].score {
+        if (*crate::gl!(sPokemonJump)).comm.jumpScore >= sPrizeQuantityData[i].score {
             quantity = sPrizeQuantityData[i].quantity;
         } else {
             break;
@@ -2245,13 +2286,15 @@ unsafe fn GetNumPokeJumpPlayers() -> u16 {
     GetLinkPlayerCount() as u16
 }
 unsafe fn GetPokeJumpMultiplayerId() -> u16 {
-    (*sPokemonJump).multiplayerId as u16
+    (*crate::gl!(sPokemonJump)).multiplayerId as u16
 }
 unsafe fn GetMonInfoByMultiplayerId(multiplayerId: u8) -> *mut PokemonJump_MonInfo {
-    &raw mut (*sPokemonJump).monInfo[multiplayerId]
+    &raw mut (*crate::gl!(sPokemonJump)).monInfo[multiplayerId]
 }
 unsafe fn GetPokeJumpPlayerName(multiplayerId: u8) -> *mut u8 {
-    (*sPokemonJump).players[multiplayerId].name.as_mut_ptr()
+    (*crate::gl!(sPokemonJump)).players[multiplayerId]
+        .name
+        .as_mut_ptr()
 }
 pub unsafe fn IsSpeciesAllowedInPokemonJump(species: u16) -> u32 {
     (GetPokemonJumpSpeciesIdx(species) > -1) as u32
@@ -2259,9 +2302,13 @@ pub unsafe fn IsSpeciesAllowedInPokemonJump(species: u16) -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn IsPokemonJumpSpeciesInParty() {
     for i in 0..PARTY_SIZE {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_HAS_SPECIES) != 0 {
+        if GetMonData2(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SANITY_HAS_SPECIES,
+        ) != 0
+        {
             let species: u16 =
-                GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16;
+                GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES_OR_EGG) as u16;
             if IsSpeciesAllowedInPokemonJump(species) != 0 {
                 gSpecialVar_Result = TRUE as u16;
                 return;
@@ -2330,7 +2377,7 @@ unsafe fn CreateJumpMonSprite(
         spriteTemplate.paletteTag += multiplayerId as u16;
         spriteId = CreateSprite(&raw mut spriteTemplate, x, y, subpriority);
         if spriteId != MAX_SPRITES {
-            (*jumpGfx).monSprites[multiplayerId] = &raw mut gSprites[spriteId];
+            (*jumpGfx).monSprites[multiplayerId] = crate::gl!(&raw gSprites[spriteId]);
             (*jumpGfx).monSpriteSubpriorities[multiplayerId] = subpriority;
             return;
         }
@@ -2341,7 +2388,7 @@ unsafe fn DoStarAnim(jumpGfx: *mut PokemonJumpGfx, multiplayerId: i32) {
     ResetPokeJumpSpriteData((*jumpGfx).starSprites[multiplayerId]);
     (*(*jumpGfx).starSprites[multiplayerId]).data[sOffset] =
         (((*jumpGfx).monSprites[multiplayerId] as usize)
-            .wrapping_sub(gSprites.as_mut_ptr() as usize) as i32
+            .wrapping_sub((*gSprites.as_ptr()).as_mut_ptr() as usize) as i32
             / 68) as i16;
     (*(*jumpGfx).starSprites[multiplayerId]).set_invisible(FALSE as u16);
     (*(*jumpGfx).starSprites[multiplayerId]).y = 96;
@@ -2491,8 +2538,8 @@ pub(crate) unsafe fn SpriteCB_MonIntroBounce(sprite: *mut Sprite) {
 unsafe fn CreateStarSprite(jumpGfx: *mut PokemonJumpGfx, x: i16, y: i16, multiplayerId: u8) {
     let spriteId: u8 = CreateSprite((&raw const *sSpriteTemplate_Star).cast_mut(), x, y, 1);
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].set_invisible(TRUE as u16);
-        (*jumpGfx).starSprites[multiplayerId] = &raw mut gSprites[spriteId];
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+        (*jumpGfx).starSprites[multiplayerId] = crate::gl!(&raw gSprites[spriteId]);
     }
 }
 unsafe fn CreateVineSprites(jumpGfx: *mut PokemonJumpGfx) {
@@ -2505,7 +2552,7 @@ unsafe fn CreateVineSprites(jumpGfx: *mut PokemonJumpGfx) {
             sVineYCoords[i][0],
             2,
         );
-        (*jumpGfx).vineSprites[count] = &raw mut gSprites[spriteId];
+        (*jumpGfx).vineSprites[count] = crate::gl!(&raw gSprites[spriteId]);
         count += 1;
     }
     let mut i: i32 = 3;
@@ -2516,7 +2563,7 @@ unsafe fn CreateVineSprites(jumpGfx: *mut PokemonJumpGfx) {
             sVineYCoords[i][0],
             2,
         );
-        (*jumpGfx).vineSprites[count] = &raw mut gSprites[spriteId];
+        (*jumpGfx).vineSprites[count] = crate::gl!(&raw gSprites[spriteId]);
         (*(*jumpGfx).vineSprites[count]).set_hFlip(TRUE as u16);
         count += 1;
         i -= 1;
@@ -2567,14 +2614,14 @@ unsafe fn IsPokeJumpCountdownRunning() -> u32 {
     IsMinigameCountdownRunning()
 }
 unsafe fn StartPokeJumpGfx(jumpGfx: *mut PokemonJumpGfx) {
-    sPokemonJumpGfx = jumpGfx;
-    InitPokeJumpGfx(sPokemonJumpGfx);
+    crate::gl!(sPokemonJumpGfx = jumpGfx);
+    InitPokeJumpGfx(crate::gl!(sPokemonJumpGfx));
     let taskId: u8 = CreateTask(Some(Task_RunPokeJumpGfxFunc), 3);
-    (*sPokemonJumpGfx).taskId = taskId;
+    (*crate::gl!(sPokemonJumpGfx)).taskId = taskId;
     SetWordTaskArg(
-        (*sPokemonJumpGfx).taskId,
+        (*crate::gl!(sPokemonJumpGfx)).taskId,
         2,
-        sPokemonJumpGfx as usize as u32,
+        crate::gl!(sPokemonJumpGfx) as usize as u32,
     );
     SetUpPokeJumpGfxFunc(Some(LoadPokeJumpGfx));
 }
@@ -2595,19 +2642,19 @@ unsafe fn SetUpPokeJumpGfxFuncById(id: i32) {
     }
 }
 unsafe fn IsPokeJumpGfxFuncFinished() -> u32 {
-    ((*sPokemonJumpGfx).funcFinished != TRUE as u32) as u32
+    ((*crate::gl!(sPokemonJumpGfx)).funcFinished != TRUE as u32) as u32
 }
 unsafe fn SetUpPokeJumpGfxFunc(func: Option<unsafe fn()>) {
     SetWordTaskArg(
-        (*sPokemonJumpGfx).taskId,
+        (*crate::gl!(sPokemonJumpGfx)).taskId,
         0,
         core::mem::transmute::<_, usize>(func) as u32,
     );
-    (*sPokemonJumpGfx).mainState = 0;
-    (*sPokemonJumpGfx).funcFinished = FALSE as u32;
+    (*crate::gl!(sPokemonJumpGfx)).mainState = 0;
+    (*crate::gl!(sPokemonJumpGfx)).funcFinished = FALSE as u32;
 }
 pub(crate) unsafe fn Task_RunPokeJumpGfxFunc(taskId: u8) {
-    if (*sPokemonJumpGfx).funcFinished == 0 {
+    if (*crate::gl!(sPokemonJumpGfx)).funcFinished == 0 {
         let func: Option<unsafe fn()> = core::mem::transmute::<_, Option<unsafe fn()>>(
             GetWordTaskArg(taskId, 0) as usize as *mut c_void,
         );
@@ -2615,13 +2662,13 @@ pub(crate) unsafe fn Task_RunPokeJumpGfxFunc(taskId: u8) {
     }
 }
 pub(crate) unsafe fn LoadPokeJumpGfx() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
             InitWindows(sWindowTemplates.as_ptr().cast_mut());
             ResetTempTileDataBuffers();
-            LoadSpriteSheetsAndPalettes(sPokemonJumpGfx);
+            LoadSpriteSheetsAndPalettes(crate::gl!(sPokemonJumpGfx));
             InitDigitPrinters();
             LoadPalette(sBg_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
             DecompressAndCopyTileDataToVram(
@@ -2671,7 +2718,7 @@ pub(crate) unsafe fn LoadPokeJumpGfx() {
             LoadPalette(sInterface_Pal.as_ptr().cast_mut() as *mut c_void, 32, 32);
             SetBgTilemapBuffer(
                 BG_INTERFACE,
-                (*sPokemonJumpGfx).tilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sPokemonJumpGfx)).tilemapBuffer.as_mut_ptr() as *mut c_void,
             );
             FillBgTilemapBufferRect_Palette0(BG_INTERFACE, 0, 0, 0, 0x20, 0x20);
             PrintScoreSuffixes();
@@ -2681,99 +2728,99 @@ pub(crate) unsafe fn LoadPokeJumpGfx() {
             CopyBgTilemapBufferToVram(BG_VENUSAUR);
             CopyBgTilemapBufferToVram(BG_BONUSES);
             ResetBgPositions();
-            (*sPokemonJumpGfx).mainState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if FreeTempTileDataBuffersIfPossible() == 0 {
                 CreateJumpMonSprites();
-                CreateVineSprites(sPokemonJumpGfx);
-                UpdateVineAnim(sPokemonJumpGfx, VINE_UPSWING_LOWER as i32);
+                CreateVineSprites(crate::gl!(sPokemonJumpGfx));
+                UpdateVineAnim(crate::gl!(sPokemonJumpGfx), VINE_UPSWING_LOWER as i32);
                 ShowBg(BG_SCENERY);
                 ShowBg(BG_INTERFACE);
                 ShowBg(BG_VENUSAUR);
                 HideBg(BG_BONUSES);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn PrintPlayerNamesNoHighlight() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
             AddPlayerNameWindows();
-            (*sPokemonJumpGfx).mainState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 PrintPokeJumpPlayerNames(FALSE as u32);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 DrawPlayerNameWindows();
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn PrintPlayerNamesWithHighlight() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
             AddPlayerNameWindows();
-            (*sPokemonJumpGfx).mainState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 PrintPokeJumpPlayerNames(TRUE as u32);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 DrawPlayerNameWindows();
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn ErasePlayerNames() {
     let numPlayers: i32 = GetNumPokeJumpPlayers() as i32;
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
             for i in 0..numPlayers {
-                ClearWindowTilemap((*sPokemonJumpGfx).nameWindowIds[i] as u8);
+                ClearWindowTilemap((*crate::gl!(sPokemonJumpGfx)).nameWindowIds[i] as u8);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sPokemonJumpGfx).mainState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 if IsDma3ManagerBusyWithBgCopy() == 0 => {
             for i in 0..numPlayers {
-                RemoveWindow((*sPokemonJumpGfx).nameWindowIds[i] as u8);
+                RemoveWindow((*crate::gl!(sPokemonJumpGfx)).nameWindowIds[i] as u8);
             }
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Msg_WantToPlayAgain() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
-            (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(1, 8, 20, 2) as u16;
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(1, 8, 20, 2) as u16;
             AddTextPrinterParameterized(
-                (*sPokemonJumpGfx).msgWindowId as u8,
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_WantToPlayAgain2)
                     .cast::<CArray<u8, 0>>())
@@ -2784,30 +2831,33 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-            (*sPokemonJumpGfx).mainState += 1;
+            CopyWindowToVram(
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+                COPYWIN_GFX,
+            );
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sPokemonJumpGfx).msgWindowId as u8);
-                DrawTextBorderOuter((*sPokemonJumpGfx).msgWindowId as u8, 1, 14);
+                PutWindowTilemap((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+                DrawTextBorderOuter((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8, 1, 14);
                 CreatePokeJumpYesNoMenu(23, 7, 0);
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Msg_SavingDontTurnOff() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
-            (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(2, 7, 26, 4) as u16;
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(2, 7, 26, 4) as u16;
             AddTextPrinterParameterized(
-                (*sPokemonJumpGfx).msgWindowId as u8,
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
                 FONT_NORMAL,
                 (*crate::asmdata::gText_SavingDontTurnOffPower.cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -2817,43 +2867,46 @@ pub(crate) unsafe fn Msg_SavingDontTurnOff() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-            (*sPokemonJumpGfx).mainState += 1;
+            CopyWindowToVram(
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+                COPYWIN_GFX,
+            );
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sPokemonJumpGfx).msgWindowId as u8);
-                DrawTextBorderOuter((*sPokemonJumpGfx).msgWindowId as u8, 1, 14);
+                PutWindowTilemap((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+                DrawTextBorderOuter((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8, 1, 14);
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn EraseMessage() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
             ClearMessageWindow();
             EraseYesNoWindow();
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sPokemonJumpGfx).mainState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 if RemoveMessageWindow() == 0 && IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Msg_SomeoneDroppedOut() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
-            (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(2, 8, 22, 4) as u16;
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(2, 8, 22, 4) as u16;
             AddTextPrinterParameterized(
-                (*sPokemonJumpGfx).msgWindowId as u8,
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_SomeoneDroppedOut2)
                     .cast::<CArray<u8, 0>>())
@@ -2864,29 +2917,32 @@ pub(crate) unsafe fn Msg_SomeoneDroppedOut() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-            (*sPokemonJumpGfx).mainState += 1;
+            CopyWindowToVram(
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+                COPYWIN_GFX,
+            );
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sPokemonJumpGfx).msgWindowId as u8);
-                DrawTextBorderOuter((*sPokemonJumpGfx).msgWindowId as u8, 1, 14);
+                PutWindowTilemap((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+                DrawTextBorderOuter((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8, 1, 14);
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Msg_CommunicationStandby() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
-            (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(7, 10, 16, 2) as u16;
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(7, 10, 16, 2) as u16;
             AddTextPrinterParameterized(
-                (*sPokemonJumpGfx).msgWindowId as u8,
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_CommunicationStandby4)
                     .cast::<CArray<u8, 0>>())
@@ -2897,58 +2953,61 @@ pub(crate) unsafe fn Msg_CommunicationStandby() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-            (*sPokemonJumpGfx).mainState += 1;
+            CopyWindowToVram(
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+                COPYWIN_GFX,
+            );
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sPokemonJumpGfx).msgWindowId as u8);
-                DrawTextBorderOuter((*sPokemonJumpGfx).msgWindowId as u8, 1, 14);
+                PutWindowTilemap((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+                DrawTextBorderOuter((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8, 1, 14);
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sPokemonJumpGfx).mainState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
             }
         }
         2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn DoPokeJumpCountdown() {
-    match (*sPokemonJumpGfx).mainState {
+    match (*crate::gl!(sPokemonJumpGfx)).mainState {
         0 => {
-            StartPokeJumpCountdown(sPokemonJumpGfx);
-            (*sPokemonJumpGfx).mainState += 1;
+            StartPokeJumpCountdown(crate::gl!(sPokemonJumpGfx));
+            (*crate::gl!(sPokemonJumpGfx)).mainState += 1;
         }
         1 if IsPokeJumpCountdownRunning() == 0 => {
-            (*sPokemonJumpGfx).funcFinished = TRUE as u32;
+            (*crate::gl!(sPokemonJumpGfx)).funcFinished = TRUE as u32;
         }
         _ => {}
     }
 }
 unsafe fn SetUpResetVineGfx() {
-    (*sPokemonJumpGfx).resetVineState = 0;
-    (*sPokemonJumpGfx).resetVineTimer = 0;
-    (*sPokemonJumpGfx).vineState = VINE_UPSWING_LOWER as u8;
-    UpdateVineSwing((*sPokemonJumpGfx).vineState as i32);
+    (*crate::gl!(sPokemonJumpGfx)).resetVineState = 0;
+    (*crate::gl!(sPokemonJumpGfx)).resetVineTimer = 0;
+    (*crate::gl!(sPokemonJumpGfx)).vineState = VINE_UPSWING_LOWER as u8;
+    UpdateVineSwing((*crate::gl!(sPokemonJumpGfx)).vineState as i32);
 }
 unsafe fn ResetVineGfx() -> u32 {
     'l1: {
-        let sw1: u8 = (*sPokemonJumpGfx).resetVineState;
+        let sw1: u8 = (*crate::gl!(sPokemonJumpGfx)).resetVineState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*sPokemonJumpGfx).resetVineTimer += 1;
-            if (*sPokemonJumpGfx).resetVineTimer > 10 {
-                (*sPokemonJumpGfx).resetVineTimer = 0;
-                (*sPokemonJumpGfx).vineState += 1;
-                if (*sPokemonJumpGfx).vineState >= NUM_VINESTATES as u8 {
-                    (*sPokemonJumpGfx).vineState = VINE_HIGHEST as u8;
-                    (*sPokemonJumpGfx).resetVineState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).resetVineTimer += 1;
+            if (*crate::gl!(sPokemonJumpGfx)).resetVineTimer > 10 {
+                (*crate::gl!(sPokemonJumpGfx)).resetVineTimer = 0;
+                (*crate::gl!(sPokemonJumpGfx)).vineState += 1;
+                if (*crate::gl!(sPokemonJumpGfx)).vineState >= NUM_VINESTATES as u8 {
+                    (*crate::gl!(sPokemonJumpGfx)).vineState = VINE_HIGHEST as u8;
+                    (*crate::gl!(sPokemonJumpGfx)).resetVineState += 1;
                 }
             }
-            UpdateVineSwing((*sPokemonJumpGfx).vineState as i32);
-            if (*sPokemonJumpGfx).vineState != VINE_UPSWING_LOW as u8 {
+            UpdateVineSwing((*crate::gl!(sPokemonJumpGfx)).vineState as i32);
+            if (*crate::gl!(sPokemonJumpGfx)).vineState != VINE_UPSWING_LOW as u8 {
                 break 'l1;
             }
         }
@@ -2961,99 +3020,117 @@ unsafe fn ResetVineGfx() -> u32 {
 unsafe fn PrintPrizeMessage(itemId: u16, quantity: u16) {
     CopyItemNameHandlePlural(
         itemId,
-        (*sPokemonJumpGfx).itemName.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).itemName.as_mut_ptr(),
         quantity as u32,
     );
     ConvertIntToDecimalStringN(
-        (*sPokemonJumpGfx).itemQuantityStr.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).itemQuantityStr.as_mut_ptr(),
         quantity as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         1,
     );
     DynamicPlaceholderTextUtil_Reset();
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*sPokemonJumpGfx).itemName.as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+        0,
+        (*crate::gl!(sPokemonJumpGfx)).itemName.as_mut_ptr(),
+    );
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(
         1,
-        (*sPokemonJumpGfx).itemQuantityStr.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).itemQuantityStr.as_mut_ptr(),
     );
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
-        (*sPokemonJumpGfx).prizeMsg.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).prizeMsg.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_AwesomeWonF701F700).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(4, 8, 22, 4) as u16;
+    (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(4, 8, 22, 4) as u16;
     AddTextPrinterParameterized(
-        (*sPokemonJumpGfx).msgWindowId as u8,
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
         FONT_NORMAL,
-        (*sPokemonJumpGfx).prizeMsg.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).prizeMsg.as_mut_ptr(),
         0,
         1,
         TEXT_SKIP_DRAW,
         None,
     );
-    CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-    (*sPokemonJumpGfx).fanfare = MUS_LEVEL_UP;
-    (*sPokemonJumpGfx).msgWindowState = 0;
+    CopyWindowToVram(
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+        COPYWIN_GFX,
+    );
+    (*crate::gl!(sPokemonJumpGfx)).fanfare = MUS_LEVEL_UP;
+    (*crate::gl!(sPokemonJumpGfx)).msgWindowState = 0;
 }
 unsafe fn PrintPrizeFilledBagMessage(itemId: u16) {
-    CopyItemName(itemId, (*sPokemonJumpGfx).itemName.as_mut_ptr());
+    CopyItemName(itemId, (*crate::gl!(sPokemonJumpGfx)).itemName.as_mut_ptr());
     DynamicPlaceholderTextUtil_Reset();
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*sPokemonJumpGfx).itemName.as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+        0,
+        (*crate::gl!(sPokemonJumpGfx)).itemName.as_mut_ptr(),
+    );
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
-        (*sPokemonJumpGfx).prizeMsg.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).prizeMsg.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_FilledStorageSpace2).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(4, 8, 22, 4) as u16;
+    (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(4, 8, 22, 4) as u16;
     AddTextPrinterParameterized(
-        (*sPokemonJumpGfx).msgWindowId as u8,
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
         FONT_NORMAL,
-        (*sPokemonJumpGfx).prizeMsg.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).prizeMsg.as_mut_ptr(),
         0,
         1,
         TEXT_SKIP_DRAW,
         None,
     );
-    CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-    (*sPokemonJumpGfx).fanfare = MUS_DUMMY;
-    (*sPokemonJumpGfx).msgWindowState = 0;
+    CopyWindowToVram(
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+        COPYWIN_GFX,
+    );
+    (*crate::gl!(sPokemonJumpGfx)).fanfare = MUS_DUMMY;
+    (*crate::gl!(sPokemonJumpGfx)).msgWindowState = 0;
 }
 unsafe fn PrintNoRoomForPrizeMessage(itemId: u16) {
-    CopyItemName(itemId, (*sPokemonJumpGfx).itemName.as_mut_ptr());
+    CopyItemName(itemId, (*crate::gl!(sPokemonJumpGfx)).itemName.as_mut_ptr());
     DynamicPlaceholderTextUtil_Reset();
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*sPokemonJumpGfx).itemName.as_mut_ptr());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+        0,
+        (*crate::gl!(sPokemonJumpGfx)).itemName.as_mut_ptr(),
+    );
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
-        (*sPokemonJumpGfx).prizeMsg.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).prizeMsg.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_CantHoldMore).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*sPokemonJumpGfx).msgWindowId = AddMessageWindow(4, 9, 22, 2) as u16;
+    (*crate::gl!(sPokemonJumpGfx)).msgWindowId = AddMessageWindow(4, 9, 22, 2) as u16;
     AddTextPrinterParameterized(
-        (*sPokemonJumpGfx).msgWindowId as u8,
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
         FONT_NORMAL,
-        (*sPokemonJumpGfx).prizeMsg.as_mut_ptr(),
+        (*crate::gl!(sPokemonJumpGfx)).prizeMsg.as_mut_ptr(),
         0,
         1,
         TEXT_SKIP_DRAW,
         None,
     );
-    CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_GFX);
-    (*sPokemonJumpGfx).fanfare = MUS_DUMMY;
-    (*sPokemonJumpGfx).msgWindowState = 0;
+    CopyWindowToVram(
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+        COPYWIN_GFX,
+    );
+    (*crate::gl!(sPokemonJumpGfx)).fanfare = MUS_DUMMY;
+    (*crate::gl!(sPokemonJumpGfx)).msgWindowState = 0;
 }
 unsafe fn DoPrizeMessageAndFanfare() -> u32 {
     'l1: {
-        let sw1: u8 = (*sPokemonJumpGfx).msgWindowState;
+        let sw1: u8 = (*crate::gl!(sPokemonJumpGfx)).msgWindowState;
         let mut fall = false;
         if sw1 == 0 {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sPokemonJumpGfx).msgWindowId as u8);
-                DrawTextBorderOuter((*sPokemonJumpGfx).msgWindowId as u8, 1, 14);
+                PutWindowTilemap((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+                DrawTextBorderOuter((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8, 1, 14);
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sPokemonJumpGfx).msgWindowState += 1;
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowState += 1;
             }
             break 'l1;
         }
@@ -3062,19 +3139,19 @@ unsafe fn DoPrizeMessageAndFanfare() -> u32 {
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 break 'l1;
             }
-            if (*sPokemonJumpGfx).fanfare == MUS_DUMMY {
-                (*sPokemonJumpGfx).msgWindowState += 2;
+            if (*crate::gl!(sPokemonJumpGfx)).fanfare == MUS_DUMMY {
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowState += 2;
                 return FALSE as u32;
             }
-            PlayFanfare((*sPokemonJumpGfx).fanfare);
-            (*sPokemonJumpGfx).msgWindowState += 1;
+            PlayFanfare((*crate::gl!(sPokemonJumpGfx)).fanfare);
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowState += 1;
         }
         if fall || sw1 == 2 {
             fall = true;
             if IsFanfareTaskInactive() == 0 {
                 break 'l1;
             }
-            (*sPokemonJumpGfx).msgWindowState += 1;
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowState += 1;
         }
         if fall || sw1 == 3 {
             return FALSE as u32;
@@ -3083,25 +3160,28 @@ unsafe fn DoPrizeMessageAndFanfare() -> u32 {
     TRUE as u32
 }
 unsafe fn ClearMessageWindow() {
-    if (*sPokemonJumpGfx).msgWindowId != WINDOW_NONE as u16 {
-        rbox_fill_rectangle((*sPokemonJumpGfx).msgWindowId as u8);
-        CopyWindowToVram((*sPokemonJumpGfx).msgWindowId as u8, COPYWIN_MAP);
-        (*sPokemonJumpGfx).msgWindowState = 0;
+    if (*crate::gl!(sPokemonJumpGfx)).msgWindowId != WINDOW_NONE as u16 {
+        rbox_fill_rectangle((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+        CopyWindowToVram(
+            (*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8,
+            COPYWIN_MAP,
+        );
+        (*crate::gl!(sPokemonJumpGfx)).msgWindowState = 0;
     }
 }
 unsafe fn RemoveMessageWindow() -> u32 {
-    if (*sPokemonJumpGfx).msgWindowId == WINDOW_NONE as u16 {
+    if (*crate::gl!(sPokemonJumpGfx)).msgWindowId == WINDOW_NONE as u16 {
         return FALSE as u32;
     }
     'l1: {
-        let sw1: u8 = (*sPokemonJumpGfx).msgWindowState;
+        let sw1: u8 = (*crate::gl!(sPokemonJumpGfx)).msgWindowState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                RemoveWindow((*sPokemonJumpGfx).msgWindowId as u8);
-                (*sPokemonJumpGfx).msgWindowId = WINDOW_NONE as u16;
-                (*sPokemonJumpGfx).msgWindowState += 1;
+                RemoveWindow((*crate::gl!(sPokemonJumpGfx)).msgWindowId as u8);
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowId = WINDOW_NONE as u16;
+                (*crate::gl!(sPokemonJumpGfx)).msgWindowState += 1;
             } else {
                 break 'l1;
             }
@@ -3177,16 +3257,22 @@ unsafe fn CreateJumpMonSprites() {
         y = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
             .cast::<CArray<MonCoords, 0>>())[(*monInfo).species]
             .y_offset as i32;
-        CreateJumpMonSprite(sPokemonJumpGfx, monInfo, *xCoords, y as i16 + 112, i as u8);
-        CreateStarSprite(sPokemonJumpGfx, *xCoords, 112, i as u8);
+        CreateJumpMonSprite(
+            crate::gl!(sPokemonJumpGfx),
+            monInfo,
+            *xCoords,
+            y as i16 + 112,
+            i as u8,
+        );
+        CreateStarSprite(crate::gl!(sPokemonJumpGfx), *xCoords, 112, i as u8);
         xCoords = xCoords.at(1);
     }
 }
 unsafe fn SetMonSpriteY(id: u32, y: i16) {
-    (*(*sPokemonJumpGfx).monSprites[id]).y2 = y;
+    (*(*crate::gl!(sPokemonJumpGfx)).monSprites[id]).y2 = y;
 }
 unsafe fn UpdateVineSwing(vineState: i32) {
-    UpdateVineAnim(sPokemonJumpGfx, vineState);
+    UpdateVineAnim(crate::gl!(sPokemonJumpGfx), vineState);
     ChangeBgY(
         BG_VENUSAUR,
         (sVenusaurStates[vineState] as i32 * 5) << 13,
@@ -3197,7 +3283,7 @@ unsafe fn DoSameJumpTimeBonus(mut flags: u8) -> i32 {
     let mut numPlayers: i32 = 0;
     for i in 0..MAX_RFU_PLAYERS {
         if flags as i32 & 1 != 0 {
-            DoStarAnim(sPokemonJumpGfx, i);
+            DoStarAnim(crate::gl!(sPokemonJumpGfx), i);
             numPlayers += 1;
         }
         flags >>= 1;
@@ -3232,25 +3318,25 @@ unsafe fn PrintJumpsInRow(num: u16) {
     DigitObjUtil_PrintNumOn(WIN_TIMES as u32, num as i32);
 }
 unsafe fn StartMonHitShake(multiplayerId: u8) {
-    Gfx_StartMonHitShake(sPokemonJumpGfx, multiplayerId as i32);
+    Gfx_StartMonHitShake(crate::gl!(sPokemonJumpGfx), multiplayerId as i32);
 }
 unsafe fn StartMonHitFlash(multiplayerId: u8) {
-    Gfx_StartMonHitFlash(sPokemonJumpGfx, multiplayerId as i32);
+    Gfx_StartMonHitFlash(crate::gl!(sPokemonJumpGfx), multiplayerId as i32);
 }
 unsafe fn IsMonHitShakeActive(multiplayerId: i32) -> i32 {
-    Gfx_IsMonHitShakeActive(sPokemonJumpGfx, multiplayerId) as i32
+    Gfx_IsMonHitShakeActive(crate::gl!(sPokemonJumpGfx), multiplayerId) as i32
 }
 unsafe fn StopMonHitFlash() {
-    Gfx_StopMonHitFlash(sPokemonJumpGfx);
+    Gfx_StopMonHitFlash(crate::gl!(sPokemonJumpGfx));
 }
 unsafe fn ResetMonSpriteSubpriorities() {
-    Gfx_ResetMonSpriteSubpriorities(sPokemonJumpGfx);
+    Gfx_ResetMonSpriteSubpriorities(crate::gl!(sPokemonJumpGfx));
 }
 unsafe fn StartMonIntroBounce(multiplayerId: i32) {
-    Gfx_StartMonIntroBounce(sPokemonJumpGfx, multiplayerId);
+    Gfx_StartMonIntroBounce(crate::gl!(sPokemonJumpGfx), multiplayerId);
 }
 unsafe fn IsMonIntroBounceActive() -> i32 {
-    Gfx_IsMonIntroBounceActive(sPokemonJumpGfx) as i32
+    Gfx_IsMonIntroBounceActive(crate::gl!(sPokemonJumpGfx)) as i32
 }
 unsafe fn AddPlayerNameWindows() {
     let mut window: WindowTemplate = zeroed();
@@ -3264,8 +3350,8 @@ unsafe fn AddPlayerNameWindows() {
     for i in 0..playersCount {
         window.tilemapLeft = *winCoords as u8;
         window.tilemapTop = *winCoords.at(1) as u8;
-        (*sPokemonJumpGfx).nameWindowIds[i] = AddWindow(&raw mut window);
-        ClearWindowTilemap((*sPokemonJumpGfx).nameWindowIds[i] as u8);
+        (*crate::gl!(sPokemonJumpGfx)).nameWindowIds[i] = AddWindow(&raw mut window);
+        ClearWindowTilemap((*crate::gl!(sPokemonJumpGfx)).nameWindowIds[i] as u8);
         window.baseBlock += 0x10;
         winCoords = winCoords.at(2);
     }
@@ -3276,12 +3362,15 @@ unsafe fn PrintPokeJumpPlayerName(multiplayerId: i32, bgColor: u8, fgColor: u8, 
     colors[0] = bgColor;
     colors[1] = fgColor;
     colors[2] = shadow;
-    FillWindowPixelBuffer((*sPokemonJumpGfx).nameWindowIds[multiplayerId] as u8, 0);
+    FillWindowPixelBuffer(
+        (*crate::gl!(sPokemonJumpGfx)).nameWindowIds[multiplayerId] as u8,
+        0,
+    );
     let mut x: u32 =
         64 - GetStringWidth(FONT_NORMAL, GetPokeJumpPlayerName(multiplayerId as u8), -1) as u32;
     x /= 2;
     AddTextPrinterParameterized3(
-        (*sPokemonJumpGfx).nameWindowIds[multiplayerId] as u8,
+        (*crate::gl!(sPokemonJumpGfx)).nameWindowIds[multiplayerId] as u8,
         FONT_NORMAL,
         x as u8,
         1,
@@ -3290,7 +3379,7 @@ unsafe fn PrintPokeJumpPlayerName(multiplayerId: i32, bgColor: u8, fgColor: u8, 
         GetPokeJumpPlayerName(multiplayerId as u8),
     );
     CopyWindowToVram(
-        (*sPokemonJumpGfx).nameWindowIds[multiplayerId] as u8,
+        (*crate::gl!(sPokemonJumpGfx)).nameWindowIds[multiplayerId] as u8,
         COPYWIN_GFX,
     );
 }
@@ -3330,12 +3419,12 @@ unsafe fn PrintPokeJumpPlayerNames(highlightSelf: u32) {
 pub(crate) unsafe fn DrawPlayerNameWindows() {
     let playersCount: i32 = GetNumPokeJumpPlayers() as i32;
     for i in 0..playersCount {
-        PutWindowTilemap((*sPokemonJumpGfx).nameWindowIds[i] as u8);
+        PutWindowTilemap((*crate::gl!(sPokemonJumpGfx)).nameWindowIds[i] as u8);
     }
     CopyBgTilemapBufferToVram(BG_INTERFACE);
 }
 unsafe fn ShowBonus(bonusId: u8) {
-    (*sPokemonJumpGfx).bonusTimer = 0;
+    (*crate::gl!(sPokemonJumpGfx)).bonusTimer = 0;
     ChangeBgX(BG_BONUSES, bonusId as i32 / 2 * 256 * 256, BG_COORD_SET);
     ChangeBgY(
         BG_BONUSES,
@@ -3346,13 +3435,13 @@ unsafe fn ShowBonus(bonusId: u8) {
     CreateTask(Some(Task_UpdateBonus), 4);
 }
 unsafe fn UpdateBonus() -> u32 {
-    if (*sPokemonJumpGfx).bonusTimer >= 32 {
+    if (*crate::gl!(sPokemonJumpGfx)).bonusTimer >= 32 {
         return FALSE as u32;
     } else {
         ChangeBgY(BG_BONUSES, 128, BG_COORD_ADD);
         if ({
-            (*sPokemonJumpGfx).bonusTimer += 1;
-            (*sPokemonJumpGfx).bonusTimer
+            (*crate::gl!(sPokemonJumpGfx)).bonusTimer += 1;
+            (*crate::gl!(sPokemonJumpGfx)).bonusTimer
         }) >= 32
         {
             HideBg(BG_BONUSES);
@@ -3379,12 +3468,12 @@ unsafe fn SendPacket_MonInfo(monInfo: *mut PokemonJump_MonInfo) {
 }
 unsafe fn RecvPacket_MonInfo(multiplayerId: i32, monInfo: *mut PokemonJump_MonInfo) -> u32 {
     let mut packet: MonInfoPacket = zeroed();
-    if gRecvCmds[multiplayerId][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[multiplayerId][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
     memcpy(
         &raw mut packet as *mut u8,
-        &raw mut (*(&raw const crate::link::gRecvCmds)
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
             .cast::<CArray<CArray<u16, 8>, 5>>()
             .cast_mut())[multiplayerId][1] as *mut u8,
         12,
@@ -3421,12 +3510,12 @@ unsafe fn RecvPacket_LeaderState(
     comm: *mut PokemonJump_CommData,
 ) -> u32 {
     let mut packet: LeaderStatePacket = zeroed();
-    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[0][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
     memcpy(
         &raw mut packet as *mut u8,
-        &raw mut (*(&raw const crate::link::gRecvCmds)
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
             .cast::<CArray<CArray<u16, 8>, 5>>()
             .cast_mut())[0][1] as *mut u8,
         12,
@@ -3462,12 +3551,12 @@ unsafe fn RecvPacket_MemberStateToLeader(
     playAgainState: *mut u16,
 ) -> u32 {
     let mut packet: MemberStatePacket = zeroed();
-    if gRecvCmds[multiplayerId][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[multiplayerId][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
     memcpy(
         &raw mut packet as *mut u8,
-        &raw mut (*(&raw const crate::link::gRecvCmds)
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
             .cast::<CArray<CArray<u16, 8>, 5>>()
             .cast_mut())[multiplayerId][1] as *mut u8,
         12,
@@ -3488,12 +3577,12 @@ unsafe fn RecvPacket_MemberStateToMember(
     multiplayerId: i32,
 ) -> u32 {
     let mut packet: MemberStatePacket = zeroed();
-    if gRecvCmds[multiplayerId][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[multiplayerId][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
     memcpy(
         &raw mut packet as *mut u8,
-        &raw mut (*(&raw const crate::link::gRecvCmds)
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
             .cast::<CArray<CArray<u16, 8>, 5>>()
             .cast_mut())[multiplayerId][1] as *mut u8,
         12,
@@ -3508,7 +3597,7 @@ unsafe fn RecvPacket_MemberStateToMember(
     TRUE as u32
 }
 unsafe fn GetPokeJumpRecords() -> *mut PokemonJumpRecords {
-    &raw mut (*gSaveBlock2Ptr).pokeJump
+    &raw mut (*crate::gl!(gSaveBlock2Ptr)).pokeJump
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ResetPokemonJumpRecords() {
@@ -3590,7 +3679,7 @@ pub(crate) unsafe fn Task_ShowPokemonJumpRecords(taskId: u8) {
             }
         }
         2 => {
-            if gMain.newKeys as i32 & 3 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 rbox_fill_rectangle(*data.at(1) as u8);
                 CopyWindowToVram(*data.at(1) as u8, COPYWIN_MAP);
                 *data += 1;

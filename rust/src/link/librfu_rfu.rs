@@ -41,14 +41,8 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `STWI_init_all` with this module's view of its types.
 #[inline]
-unsafe fn STWI_init_all(
-    a0: *mut RfuIntrStruct,
-    a1: *mut Option<crate::agb_main::IntrFunc>,
-    a2: u8,
-) {
-    unsafe {
-        crate::librfu_stwi::STWI_init_all(a0 as _, a1 as _, a2);
-    }
+fn STWI_init_all(a0: *mut RfuIntrStruct, a1: *mut Option<crate::agb_main::IntrFunc>, a2: u8) {
+    crate::librfu_stwi::STWI_init_all(a0 as _, a1 as _, a2);
 }
 // Data tables (translate with cdata.py): llsf_struct version_string str_checkMbootLL
 
@@ -123,20 +117,24 @@ static llsf_struct: Table<CArray<LLSFStruct, 2>> =
 static str_checkMbootLL: Table<CArray<u8, 10>> =
     Table((&raw const crate::data::librfu_rfu::str_checkMbootLL).cast());
 
-#[unsafe(link_section = "common_data")]
-pub static mut gRfuSlotStatusUNI: CArray<*mut RfuSlotStatusUNI, 4> = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gRfuSlotStatusNI: CArray<*mut RfuSlotStatusNI, 4> = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gRfuLinkStatus: *mut RfuLinkStatus = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gRfuStatic: *mut RfuStatic = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gRfuFixed: *mut RfuFixed = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gRfuSlotStatusUNI: crate::global::Global<CArray<*mut RfuSlotStatusUNI, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gRfuSlotStatusNI: crate::global::Global<CArray<*mut RfuSlotStatusNI, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gRfuLinkStatus: crate::global::Global<*mut RfuLinkStatus> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gRfuStatic: crate::global::Global<*mut RfuStatic> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gRfuFixed: crate::global::Global<*mut RfuFixed> = crate::global::Global::new(null_mut());
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -172,38 +170,47 @@ pub unsafe fn rfu_initializeAPI(
             return ERR_RFU_API_BUFF_SIZE;
         }
     }
-    gRfuLinkStatus = APIBuffer as *mut c_void as *mut RfuLinkStatus;
-    gRfuStatic = (APIBuffer as *mut c_void as *mut u8).at(180) as *mut c_void as *mut RfuStatic;
-    gRfuFixed = (APIBuffer as *mut c_void as *mut u8).at(220) as *mut c_void as *mut RfuFixed;
-    gRfuSlotStatusNI[0] =
-        (APIBuffer as *mut c_void as *mut u8).at(444) as *mut c_void as *mut RfuSlotStatusNI;
-    gRfuSlotStatusUNI[0] =
-        (APIBuffer as *mut c_void as *mut u8).at(892) as *mut c_void as *mut RfuSlotStatusUNI;
+    crate::gl!(gRfuLinkStatus = APIBuffer as *mut c_void as *mut RfuLinkStatus);
+    crate::gl!(
+        gRfuStatic = (APIBuffer as *mut c_void as *mut u8).at(180) as *mut c_void as *mut RfuStatic
+    );
+    crate::gl!(
+        gRfuFixed = (APIBuffer as *mut c_void as *mut u8).at(220) as *mut c_void as *mut RfuFixed
+    );
+    crate::gl!(
+        gRfuSlotStatusNI[0] =
+            (APIBuffer as *mut c_void as *mut u8).at(444) as *mut c_void as *mut RfuSlotStatusNI
+    );
+    crate::gl!(
+        gRfuSlotStatusUNI[0] =
+            (APIBuffer as *mut c_void as *mut u8).at(892) as *mut c_void as *mut RfuSlotStatusUNI
+    );
     let mut i: u16 = 1;
     while i < RFU_CHILD_MAX as u16 {
-        gRfuSlotStatusNI[i] = gRfuSlotStatusNI[i as i32 - 1].at(1);
-        gRfuSlotStatusUNI[i] = gRfuSlotStatusUNI[i as i32 - 1].at(1);
+        crate::gl!(gRfuSlotStatusNI[i] = (*gRfuSlotStatusNI.as_ptr())[i as i32 - 1].at(1));
+        crate::gl!(gRfuSlotStatusUNI[i] = (*gRfuSlotStatusUNI.as_ptr())[i as i32 - 1].at(1));
         i += 1;
     }
-    (*gRfuFixed).STWIBuffer = gRfuSlotStatusUNI[3].at(1) as *mut RfuIntrStruct;
+    (*crate::gl!(gRfuFixed)).STWIBuffer =
+        (*gRfuSlotStatusUNI.as_ptr())[3].at(1) as *mut RfuIntrStruct;
     STWI_init_all(
-        gRfuSlotStatusUNI[3].at(1) as *mut RfuIntrStruct,
+        (*gRfuSlotStatusUNI.as_ptr())[3].at(1) as *mut RfuIntrStruct,
         sioIntrTable_p,
         copyInterruptToRam,
     );
     rfu_STC_clearAPIVariables();
     for i in 0..(RFU_CHILD_MAX as u16) {
-        (*gRfuSlotStatusNI[i]).recvBuffer = null_mut();
-        (*gRfuSlotStatusNI[i]).recvBufferSize = 0;
-        (*gRfuSlotStatusUNI[i]).recvBuffer = null_mut();
-        (*gRfuSlotStatusUNI[i]).recvBufferSize = 0;
+        (*crate::gl!(gRfuSlotStatusNI[i])).recvBuffer = null_mut();
+        (*crate::gl!(gRfuSlotStatusNI[i])).recvBufferSize = 0;
+        (*crate::gl!(gRfuSlotStatusUNI[i])).recvBuffer = null_mut();
+        (*crate::gl!(gRfuSlotStatusUNI[i])).recvBufferSize = 0;
     }
     {
         let mut _src: *mut u16 = (core::mem::transmute::<_, usize>(Some(
             rfu_STC_fastCopy as unsafe fn(*mut *mut u8, *mut *mut u8, i32),
         )) as u32
             & 0xfffffffe) as usize as *mut u16;
-        let mut _dst: *mut u16 = (*gRfuFixed).fastCopyBuffer.as_mut_ptr();
+        let mut _dst: *mut u16 = (*crate::gl!(gRfuFixed)).fastCopyBuffer.as_mut_ptr();
         buffByteSizeMax = 48;
         while ({
             let t1 = buffByteSizeMax;
@@ -222,9 +229,9 @@ pub unsafe fn rfu_initializeAPI(
             });
         }
     }
-    (*gRfuFixed).fastCopyPtr =
+    (*crate::gl!(gRfuFixed)).fastCopyPtr =
         core::mem::transmute::<_, Option<unsafe fn(*mut *mut u8, *mut *mut u8, i32)>>(
-            ((*gRfuFixed).fastCopyBuffer.as_mut_ptr() as *mut c_void as *mut u8).at(1)
+            ((*crate::gl!(gRfuFixed)).fastCopyBuffer.as_mut_ptr() as *mut c_void as *mut u8).at(1)
                 as *mut c_void,
         );
     0
@@ -233,37 +240,37 @@ unsafe fn rfu_STC_clearAPIVariables() {
     let IMEBackup: u16 = (67109384_usize as *mut u16).read_volatile();
     let mut flags: u8 = 0;
     volatile_write(67109384_usize as *mut u16, 0);
-    flags = (*gRfuStatic).flags;
+    flags = (*crate::gl!(gRfuStatic)).flags;
     {
         {
             let mut tmp: u16 = 0;
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                gRfuStatic as *mut c_void,
+                crate::gl!(gRfuStatic) as *mut c_void,
                 0x1000014,
             );
         }
     }
-    (*gRfuStatic).flags = flags & 8;
+    (*crate::gl!(gRfuStatic)).flags = flags & 8;
     {
         {
             let mut tmp: u16 = 0;
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                gRfuLinkStatus as *mut c_void,
+                crate::gl!(gRfuLinkStatus) as *mut c_void,
                 0x100005a,
             );
         }
     }
-    (*gRfuLinkStatus).watchInterval = 4;
-    (*gRfuStatic).nowWatchInterval = 0;
-    (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
+    (*crate::gl!(gRfuLinkStatus)).watchInterval = 4;
+    (*crate::gl!(gRfuStatic)).nowWatchInterval = 0;
+    (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_NEUTRAL;
     rfu_clearAllSlot();
-    (*gRfuStatic).SCStartFlag = 0;
+    (*crate::gl!(gRfuStatic)).SCStartFlag = 0;
     for i in 0..RFU_CHILD_MAX {
-        (*gRfuStatic).cidBak[i] = 0;
+        (*crate::gl!(gRfuStatic)).cidBak[i] = 0;
     }
     volatile_write(67109384_usize as *mut u16, IMEBackup);
 }
@@ -276,14 +283,14 @@ pub unsafe fn rfu_REQ_PARENT_resumeRetransmitAndChange() {
 }
 pub unsafe fn rfu_UNI_PARENT_getDRAC_ACK(ackFlag: *mut u8) -> u16 {
     *ackFlag = 0;
-    if (*gRfuLinkStatus).parentChild != MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild != MODE_PARENT {
         return ERR_MODE_NOT_PARENT;
     }
     let buf: *mut u8 = rfu_getSTWIRecvBuffer();
     match *buf {
         40 | 54 => {
             if *buf.at(1) == 0 {
-                *ackFlag = (*gRfuLinkStatus).connSlotFlag;
+                *ackFlag = (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
             } else {
                 *ackFlag = *buf.at(4);
             }
@@ -305,20 +312,20 @@ pub unsafe fn rfu_setTimerInterrupt(
     STWI_init_timer(timerIntrTable_p, timerNo as i32);
 }
 pub unsafe fn rfu_getSTWIRecvBuffer() -> *mut u8 {
-    (*gRfuFixed).STWIBuffer as *mut u8
+    (*crate::gl!(gRfuFixed)).STWIBuffer as *mut u8
 }
 pub unsafe fn rfu_setMSCCallback(callback: Option<unsafe fn(u16)>) {
     STWI_set_Callback_S(callback);
 }
 pub unsafe fn rfu_setREQCallback(callback: Option<unsafe fn(u16, u16)>) {
-    (*gRfuFixed).reqCallback = callback;
+    (*crate::gl!(gRfuFixed)).reqCallback = callback;
     rfu_enableREQCallback(callback.is_some() as u8);
 }
 unsafe fn rfu_enableREQCallback(enable: u8) {
     if enable != 0 {
-        (*gRfuStatic).flags |= 8;
+        (*crate::gl!(gRfuStatic)).flags |= 8;
     } else {
-        (*gRfuStatic).flags &= 0xF7;
+        (*crate::gl!(gRfuStatic)).flags &= 0xF7;
     }
 }
 pub(crate) unsafe fn rfu_STC_REQ_callback(reqCommand: u8, reqResult: u16) {
@@ -326,31 +333,31 @@ pub(crate) unsafe fn rfu_STC_REQ_callback(reqCommand: u8, reqResult: u16) {
         Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_defaultCallback)));
-    (*gRfuStatic).reqResult = reqResult;
-    if (*gRfuStatic).flags as i32 & 8 != 0 {
-        (*gRfuFixed).reqCallback.unwrap_unchecked()(reqCommand as u16, reqResult);
+    (*crate::gl!(gRfuStatic)).reqResult = reqResult;
+    if (*crate::gl!(gRfuStatic)).flags as i32 & 8 != 0 {
+        (*crate::gl!(gRfuFixed)).reqCallback.unwrap_unchecked()(reqCommand as u16, reqResult);
     }
 }
 pub(crate) unsafe fn rfu_CB_defaultCallback(reqCommand: u8, reqResult: u16) {
     let mut bmSlotFlags: i32 = 0;
     if reqCommand == ID_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA_REQ {
-        if (*gRfuStatic).flags as i32 & 8 != 0 {
-            (*gRfuFixed).reqCallback.unwrap_unchecked()(reqCommand as u16, reqResult);
+        if (*crate::gl!(gRfuStatic)).flags as i32 & 8 != 0 {
+            (*crate::gl!(gRfuFixed)).reqCallback.unwrap_unchecked()(reqCommand as u16, reqResult);
         }
-        bmSlotFlags =
-            (*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32;
+        bmSlotFlags = (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32
+            | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32;
         for i in 0..RFU_CHILD_MAX {
             if shr_i32(bmSlotFlags, i as u32) & 1 != 0 {
                 rfu_STC_removeLinkData(i, 1);
             }
         }
-        (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
+        (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_NEUTRAL;
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn rfu_waitREQComplete() -> u16 {
     STWI_poll_CommandEnd();
-    (*gRfuStatic).reqResult
+    (*crate::gl!(gRfuStatic)).reqResult
 }
 pub unsafe fn rfu_REQ_RFUStatus() {
     STWI_set_Callback_M(core::mem::transmute::<
@@ -360,11 +367,19 @@ pub unsafe fn rfu_REQ_RFUStatus() {
     STWI_send_SystemStatusREQ();
 }
 pub unsafe fn rfu_getRFUStatus(rfuState: *mut u8) -> u16 {
-    if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0] != 0x93 {
+    if (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[0]
+        != 0x93
+    {
         return ERR_REQ_CMD_ID;
     }
     if STWI_poll_CommandEnd() == 0 {
-        *rfuState = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[7];
+        *rfuState = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[7];
     } else {
         *rfuState = 0xFF;
     }
@@ -400,10 +415,10 @@ pub unsafe fn rfu_MBOOT_CHILD_inheritanceLinkStatus() -> u16 {
     }
     CpuSet(
         IWRAM_START as usize as *mut u16 as *mut c_void,
-        gRfuLinkStatus as *mut c_void,
+        crate::gl!(gRfuLinkStatus) as *mut c_void,
         90,
     );
-    (*gRfuStatic).flags |= 0x80;
+    (*crate::gl!(gRfuStatic)).flags |= 0x80;
     0
 }
 #[unsafe(no_mangle)]
@@ -411,12 +426,16 @@ pub unsafe fn rfu_REQ_stopMode() {
     let mut timerReg: *mut u32 = null_mut();
     if (67109384_usize as *mut u16).read_volatile() == 0 {
         rfu_STC_REQ_callback(ID_STOP_MODE_REQ as u8, 6);
-        volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_IME_DISABLE);
+        volatile_write(
+            &raw mut (*crate::gl!(gSTWIStatus)).error,
+            ERR_REQ_CMD_IME_DISABLE,
+        );
     } else {
         AgbRFU_SoftReset();
         rfu_STC_clearAPIVariables();
         if AgbRFU_checkID(8) == RFU_ID as i32 {
-            timerReg = (0x4000100 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u32;
+            timerReg = (0x4000100 + (*crate::gl!(gSTWIStatus)).timerSelect as i32 * 4) as usize
+                as *mut u32;
             volatile_write(timerReg, 0);
             volatile_write(timerReg, 0x830000);
             while (timerReg).read_volatile() << 16 < 0x1060000 {}
@@ -474,11 +493,11 @@ pub unsafe fn rfu_REQ_configSystem(availSlotFlag: u16, maxMFrame: u8, mcTimer: u
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_SystemConfigREQ(availSlotFlag & AVAIL_SLOT1 | 0x3C, maxMFrame, mcTimer);
     if mcTimer == 0 {
-        (*gRfuStatic).linkEmergencyLimit = 1;
+        (*crate::gl!(gRfuStatic)).linkEmergencyLimit = 1;
     } else {
         let IMEBackup: u16 = (67109384_usize as *mut u16).read_volatile();
         volatile_write(67109384_usize as *mut u16, 0);
-        (*gRfuStatic).linkEmergencyLimit = Div(600, mcTimer as i32) as u16;
+        (*crate::gl!(gRfuStatic)).linkEmergencyLimit = Div(600, mcTimer as i32) as u16;
         volatile_write(67109384_usize as *mut u16, IMEBackup);
     }
 }
@@ -531,21 +550,24 @@ pub(crate) unsafe fn rfu_CB_configGameData(reqCommand: u8, reqResult: u16) {
     let mut gname_uname_p: *mut u8 = null_mut();
     let mut packet_p: *mut u8 = null_mut();
     if reqResult == 0 {
-        packet_p = (*(*gSTWIStatus).txPacket).rfuPacket8.data.as_mut_ptr();
+        packet_p = (*(*crate::gl!(gSTWIStatus)).txPacket)
+            .rfuPacket8
+            .data
+            .as_mut_ptr();
         serialNo = ({
-            (*gRfuLinkStatus).my.serialNo = *packet_p.at(4) as u16;
-            (*gRfuLinkStatus).my.serialNo
+            (*crate::gl!(gRfuLinkStatus)).my.serialNo = *packet_p.at(4) as u16;
+            (*crate::gl!(gRfuLinkStatus)).my.serialNo
         }) as i32;
-        (*gRfuLinkStatus).my.serialNo = (*packet_p.at(5) as u16) << 8 | serialNo as u16;
+        (*crate::gl!(gRfuLinkStatus)).my.serialNo = (*packet_p.at(5) as u16) << 8 | serialNo as u16;
         gname_uname_p = packet_p.at(6);
-        if (*gRfuLinkStatus).my.serialNo as i32 & 0x8000 != 0 {
-            (*gRfuLinkStatus).my.serialNo ^= 0x8000;
-            (*gRfuLinkStatus).my.mbootFlag = 1;
+        if (*crate::gl!(gRfuLinkStatus)).my.serialNo as i32 & 0x8000 != 0 {
+            (*crate::gl!(gRfuLinkStatus)).my.serialNo ^= 0x8000;
+            (*crate::gl!(gRfuLinkStatus)).my.mbootFlag = 1;
         } else {
-            (*gRfuLinkStatus).my.mbootFlag = 0;
+            (*crate::gl!(gRfuLinkStatus)).my.mbootFlag = 0;
         }
         for i in 0..(RFU_GAME_NAME_LENGTH as u8) {
-            (*gRfuLinkStatus).my.gname[i] = *({
+            (*crate::gl!(gRfuLinkStatus)).my.gname[i] = *({
                 let t2 = gname_uname_p;
                 gname_uname_p = gname_uname_p.at(1);
                 t2
@@ -553,7 +575,7 @@ pub(crate) unsafe fn rfu_CB_configGameData(reqCommand: u8, reqResult: u16) {
         }
         gname_uname_p = gname_uname_p.at(1);
         for i in 0..8u8 {
-            (*gRfuLinkStatus).my.uname[i] = *({
+            (*crate::gl!(gRfuLinkStatus)).my.uname[i] = *({
                 let t4 = gname_uname_p;
                 gname_uname_p = gname_uname_p.at(1);
                 t4
@@ -564,7 +586,7 @@ pub(crate) unsafe fn rfu_CB_configGameData(reqCommand: u8, reqResult: u16) {
 }
 pub unsafe fn rfu_REQ_startSearchChild() {
     for i in 0..(RFU_CHILD_MAX as u16) {
-        (*gRfuStatic).lsFixedCount[i] = 0;
+        (*crate::gl!(gRfuStatic)).lsFixedCount[i] = 0;
     }
     STWI_set_Callback_M(core::mem::transmute::<
         Option<unsafe fn(u8, u16)>,
@@ -573,7 +595,12 @@ pub unsafe fn rfu_REQ_startSearchChild() {
     STWI_send_SystemStatusREQ();
     let result: u16 = STWI_poll_CommandEnd();
     if result == 0 {
-        if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[7] == 0 {
+        if (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[7]
+            == 0
+        {
             rfu_STC_clearLinkStatus(MODE_PARENT);
         }
     } else {
@@ -587,7 +614,7 @@ pub unsafe fn rfu_REQ_startSearchChild() {
 }
 pub(crate) unsafe fn rfu_CB_startSearchChild(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
-        (*gRfuStatic).SCStartFlag = 1;
+        (*crate::gl!(gRfuStatic)).SCStartFlag = 1;
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
@@ -600,20 +627,20 @@ unsafe fn rfu_STC_clearLinkStatus(parentChild: u8) {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    (*gRfuLinkStatus).partner.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(gRfuLinkStatus)).partner.as_mut_ptr() as *mut c_void,
                     0x1000040,
                 );
             }
         }
-        (*gRfuLinkStatus).findParentCount = 0;
+        (*crate::gl!(gRfuLinkStatus)).findParentCount = 0;
     }
     for i in 0..RFU_CHILD_MAX {
-        (*gRfuLinkStatus).strength[i] = 0;
+        (*crate::gl!(gRfuLinkStatus)).strength[i] = 0;
     }
-    (*gRfuLinkStatus).connCount = 0;
-    (*gRfuLinkStatus).connSlotFlag = 0;
-    (*gRfuLinkStatus).linkLossSlotFlag = 0;
-    (*gRfuLinkStatus).getNameFlag = 0;
+    (*crate::gl!(gRfuLinkStatus)).connCount = 0;
+    (*crate::gl!(gRfuLinkStatus)).connSlotFlag = 0;
+    (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag = 0;
+    (*crate::gl!(gRfuLinkStatus)).getNameFlag = 0;
 }
 pub unsafe fn rfu_REQ_pollSearchChild() {
     STWI_set_Callback_M(core::mem::transmute::<
@@ -634,45 +661,62 @@ pub(crate) unsafe fn rfu_CB_pollAndEndSearchChild(reqCommand: u8, reqResult: u16
         rfu_STC_readChildList();
     }
     if reqCommand == ID_SC_POLL_REQ {
-        if (*gRfuLinkStatus).my.id == 0 {
+        if (*crate::gl!(gRfuLinkStatus)).my.id == 0 {
             STWI_set_Callback_M(core::mem::transmute::<
                 Option<unsafe fn(u8, u16)>,
                 *mut c_void,
             >(Some(rfu_CB_defaultCallback)));
             STWI_send_SystemStatusREQ();
             if STWI_poll_CommandEnd() == 0 {
-                (*gRfuLinkStatus).my.id =
-                    *(&raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0]
-                        as *mut u16);
+                (*crate::gl!(gRfuLinkStatus)).my.id = *(&raw mut (*(*crate::gl!(gRfuFixed))
+                    .STWIBuffer)
+                    .rxPacketAlloc
+                    .rfuPacket32
+                    .data[0] as *mut u16);
             }
         }
     } else if reqCommand == ID_SC_END_REQ {
-        if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
-            (*gRfuLinkStatus).my.id = 0;
+        if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL {
+            (*crate::gl!(gRfuLinkStatus)).my.id = 0;
         }
-        (*gRfuStatic).SCStartFlag = 0;
+        (*crate::gl!(gRfuStatic)).SCStartFlag = 0;
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
 unsafe fn rfu_STC_readChildList() {
-    let mut numSlots: u8 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[1];
+    let mut numSlots: u8 = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[1];
     let mut bm_slot_id: u8 = 0;
-    let mut data_p: *mut u8 = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
+    let mut data_p: *mut u8 = &raw mut (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[4];
     while numSlots != 0 {
         bm_slot_id = *data_p.at(2);
         if bm_slot_id < RFU_CHILD_MAX
-            && shr_i32((*gRfuLinkStatus).connSlotFlag as i32, bm_slot_id as u32) & 1 == 0
-            && shr_i32((*gRfuLinkStatus).linkLossSlotFlag as i32, bm_slot_id as u32) & 1 == 0
+            && shr_i32(
+                (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32,
+                bm_slot_id as u32,
+            ) & 1
+                == 0
+            && shr_i32(
+                (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32,
+                bm_slot_id as u32,
+            ) & 1
+                == 0
         {
-            (*gRfuStatic).lsFixedCount[bm_slot_id] = 0xF0;
-            (*gRfuLinkStatus).strength[bm_slot_id] = 16;
-            (*gRfuLinkStatus).connSlotFlag |= shl_i32(1, bm_slot_id as u32) as u8;
-            (*gRfuLinkStatus).connCount += 1;
-            (*gRfuLinkStatus).partner[bm_slot_id].id = *(data_p as *mut u16);
-            (*gRfuLinkStatus).partner[bm_slot_id].slot = bm_slot_id;
-            (*gRfuLinkStatus).parentChild = MODE_PARENT;
-            (*gRfuStatic).flags &= 0x7F;
-            (*gRfuStatic).cidBak[bm_slot_id] = (*gRfuLinkStatus).partner[bm_slot_id].id;
+            (*crate::gl!(gRfuStatic)).lsFixedCount[bm_slot_id] = 0xF0;
+            (*crate::gl!(gRfuLinkStatus)).strength[bm_slot_id] = 16;
+            (*crate::gl!(gRfuLinkStatus)).connSlotFlag |= shl_i32(1, bm_slot_id as u32) as u8;
+            (*crate::gl!(gRfuLinkStatus)).connCount += 1;
+            (*crate::gl!(gRfuLinkStatus)).partner[bm_slot_id].id = *(data_p as *mut u16);
+            (*crate::gl!(gRfuLinkStatus)).partner[bm_slot_id].slot = bm_slot_id;
+            (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_PARENT;
+            (*crate::gl!(gRfuStatic)).flags &= 0x7F;
+            (*crate::gl!(gRfuStatic)).cidBak[bm_slot_id] =
+                (*crate::gl!(gRfuLinkStatus)).partner[bm_slot_id].id;
         }
         numSlots -= 1;
         data_p = data_p.at(4);
@@ -723,16 +767,18 @@ unsafe fn rfu_STC_readParentCandidateList() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gRfuLinkStatus).partner.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gRfuLinkStatus)).partner.as_mut_ptr() as *mut c_void,
                 0x1000040,
             );
         }
     }
-    let mut packet_p: *mut u8 =
-        &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0];
+    let mut packet_p: *mut u8 = &raw mut (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[0];
     let mut numSlots: u8 = *packet_p.at(1);
     packet_p = packet_p.at(4);
-    (*gRfuLinkStatus).findParentCount = 0;
+    (*crate::gl!(gRfuLinkStatus)).findParentCount = 0;
     let mut i: u8 = 0;
     while i < RFU_CHILD_MAX && numSlots != 0 {
         numSlots -= 7;
@@ -757,7 +803,8 @@ unsafe fn rfu_STC_readParentCandidateList() {
         }
         if my_check_sum == check_sum {
             packet_p = packet_p.at(-28);
-            target = &raw mut (*gRfuLinkStatus).partner[(*gRfuLinkStatus).findParentCount];
+            target = &raw mut (*crate::gl!(gRfuLinkStatus)).partner
+                [(*crate::gl!(gRfuLinkStatus)).findParentCount];
             (*target).id = *(packet_p as *mut u16);
             packet_p = packet_p.at(2);
             (*target).slot = *packet_p;
@@ -784,7 +831,7 @@ unsafe fn rfu_STC_readParentCandidateList() {
                     t8
                 });
             }
-            (*gRfuLinkStatus).findParentCount += 1;
+            (*crate::gl!(gRfuLinkStatus)).findParentCount += 1;
         }
         i += 1;
     }
@@ -792,14 +839,14 @@ unsafe fn rfu_STC_readParentCandidateList() {
 pub unsafe fn rfu_REQ_startConnectParent(pid: u16) {
     let mut result: u16 = 0;
     let mut i: u8 = 0;
-    while i < RFU_CHILD_MAX && (*gRfuLinkStatus).partner[i].id != pid {
+    while i < RFU_CHILD_MAX && (*crate::gl!(gRfuLinkStatus)).partner[i].id != pid {
         i += 1;
     }
     if i == RFU_CHILD_MAX {
         result = ERR_PID_NOT_FOUND;
     }
     if result == 0 {
-        (*gRfuStatic).tryPid = pid;
+        (*crate::gl!(gRfuStatic)).tryPid = pid;
         STWI_set_Callback_M(core::mem::transmute::<
             Option<unsafe fn(u8, u16)>,
             *mut c_void,
@@ -824,24 +871,37 @@ pub(crate) unsafe fn rfu_CB_pollConnectParent(reqCommand: u8, reqResult: u16) {
     let mut target_p: *mut RfuTgtData = null_mut();
     let mut target_local: RfuTgtData = zeroed();
     if reqResult == 0 {
-        id = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] as u16;
-        slot = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[6];
-        if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[7] == 0 {
+        id = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket32
+            .data[0] as u16;
+        slot = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[6];
+        if (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[7]
+            == 0
+        {
             bm_slot_flag = shl_i32(1, slot as u32) as u8;
-            if bm_slot_flag as i32 & (*gRfuLinkStatus).connSlotFlag as i32 == 0 {
-                (*gRfuLinkStatus).connSlotFlag |= bm_slot_flag;
-                (*gRfuLinkStatus).linkLossSlotFlag &= !bm_slot_flag;
-                (*gRfuLinkStatus).my.id = id;
-                (*gRfuLinkStatus).connCount += 1;
-                (*gRfuLinkStatus).parentChild = MODE_CHILD;
-                (*gRfuStatic).flags |= 0x80;
+            if bm_slot_flag as i32 & (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32 == 0 {
+                (*crate::gl!(gRfuLinkStatus)).connSlotFlag |= bm_slot_flag;
+                (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag &= !bm_slot_flag;
+                (*crate::gl!(gRfuLinkStatus)).my.id = id;
+                (*crate::gl!(gRfuLinkStatus)).connCount += 1;
+                (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_CHILD;
+                (*crate::gl!(gRfuStatic)).flags |= 0x80;
                 i = 0;
                 while i < RFU_CHILD_MAX {
-                    if (*gRfuLinkStatus).partner[i].id == (*gRfuStatic).tryPid {
-                        if (*gRfuLinkStatus).findParentCount != 0 {
+                    if (*crate::gl!(gRfuLinkStatus)).partner[i].id
+                        == (*crate::gl!(gRfuStatic)).tryPid
+                    {
+                        if (*crate::gl!(gRfuLinkStatus)).findParentCount != 0 {
                             target_p = &raw mut target_local;
                             CpuSet(
-                                &raw mut (*gRfuLinkStatus).partner[i] as *mut c_void,
+                                &raw mut (*crate::gl!(gRfuLinkStatus)).partner[i] as *mut c_void,
                                 &raw mut target_local as *mut c_void,
                                 16,
                             );
@@ -851,14 +911,15 @@ pub(crate) unsafe fn rfu_CB_pollConnectParent(reqCommand: u8, reqResult: u16) {
                                     volatile_write(&raw mut tmp, 0);
                                     CpuSet(
                                         &raw mut tmp as *mut c_void,
-                                        (*gRfuLinkStatus).partner.as_mut_ptr() as *mut c_void,
+                                        (*crate::gl!(gRfuLinkStatus)).partner.as_mut_ptr()
+                                            as *mut c_void,
                                         0x1000040,
                                     );
                                 }
                             }
-                            (*gRfuLinkStatus).findParentCount = 0;
+                            (*crate::gl!(gRfuLinkStatus)).findParentCount = 0;
                         } else {
-                            target_p = &raw mut (*gRfuLinkStatus).partner[i];
+                            target_p = &raw mut (*crate::gl!(gRfuLinkStatus)).partner[i];
                         }
                         break;
                     }
@@ -867,10 +928,10 @@ pub(crate) unsafe fn rfu_CB_pollConnectParent(reqCommand: u8, reqResult: u16) {
                 if i < RFU_CHILD_MAX {
                     CpuSet(
                         target_p as *mut c_void,
-                        &raw mut (*gRfuLinkStatus).partner[slot] as *mut c_void,
+                        &raw mut (*crate::gl!(gRfuLinkStatus)).partner[slot] as *mut c_void,
                         16,
                     );
-                    (*gRfuLinkStatus).partner[slot].slot = slot;
+                    (*crate::gl!(gRfuLinkStatus)).partner[slot].slot = slot;
                 }
             }
         }
@@ -879,7 +940,7 @@ pub(crate) unsafe fn rfu_CB_pollConnectParent(reqCommand: u8, reqResult: u16) {
 }
 pub unsafe fn rfu_getConnectParentStatus(status: *mut u8, connectSlotNo: *mut u8) -> u16 {
     *status = 0xFF;
-    let mut packet_p: *mut u8 = (*(*gRfuFixed).STWIBuffer)
+    let mut packet_p: *mut u8 = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
         .rxPacketAlloc
         .rfuPacket8
         .data
@@ -898,50 +959,57 @@ pub unsafe fn rfu_REQ_endConnectParent() {
         *mut c_void,
     >(Some(rfu_CB_pollConnectParent)));
     STWI_send_CP_EndREQ();
-    if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[6] < 4 {
-        (*gRfuStatic).linkEmergencyFlag
-            [(*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[6]] = 0;
+    if (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[6]
+        < 4
+    {
+        (*crate::gl!(gRfuStatic)).linkEmergencyFlag[(*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[6]] = 0;
     }
 }
 pub unsafe fn rfu_syncVBlank() -> u16 {
     let mut bmSlotFlag: i32 = 0;
     rfu_NI_checkCommFailCounter();
-    if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL {
         return 0;
     }
-    if (*gRfuStatic).nowWatchInterval != 0 {
-        (*gRfuStatic).nowWatchInterval -= 1;
+    if (*crate::gl!(gRfuStatic)).nowWatchInterval != 0 {
+        (*crate::gl!(gRfuStatic)).nowWatchInterval -= 1;
     }
     let masterSlave: u8 = rfu_getMasterSlave();
-    if (*gRfuStatic).flags as i32 & 2 == 0 {
+    if (*crate::gl!(gRfuStatic)).flags as i32 & 2 == 0 {
         if masterSlave == AGB_CLK_SLAVE {
-            (*gRfuStatic).flags |= 4;
-            (*gRfuStatic).watchdogTimer = 360;
+            (*crate::gl!(gRfuStatic)).flags |= 4;
+            (*crate::gl!(gRfuStatic)).watchdogTimer = 360;
         }
     } else if masterSlave != AGB_CLK_SLAVE {
-        (*gRfuStatic).flags &= 0xFB;
+        (*crate::gl!(gRfuStatic)).flags &= 0xFB;
     }
     if masterSlave != AGB_CLK_SLAVE {
-        (*gRfuStatic).flags &= 0xFD;
+        (*crate::gl!(gRfuStatic)).flags &= 0xFD;
     } else {
-        (*gRfuStatic).flags |= 2;
+        (*crate::gl!(gRfuStatic)).flags |= 2;
     }
-    if (*gRfuStatic).flags as i32 & 4 == 0 {
+    if (*crate::gl!(gRfuStatic)).flags as i32 & 4 == 0 {
         return 0;
     }
-    if (*gRfuStatic).watchdogTimer == 0 {
-        (*gRfuStatic).flags &= 0xFB;
-        bmSlotFlag =
-            (*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32;
+    if (*crate::gl!(gRfuStatic)).watchdogTimer == 0 {
+        (*crate::gl!(gRfuStatic)).flags &= 0xFB;
+        bmSlotFlag = (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32
+            | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32;
         for i in 0..RFU_CHILD_MAX {
             if shr_i32(bmSlotFlag, i as u32) & 1 != 0 {
                 rfu_STC_removeLinkData(i, 1);
             }
         }
-        (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
+        (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_NEUTRAL;
         return 1;
     }
-    (*gRfuStatic).watchdogTimer -= 1;
+    (*crate::gl!(gRfuStatic)).watchdogTimer -= 1;
     0
 }
 pub unsafe fn rfu_REQBN_watchLink(
@@ -961,20 +1029,20 @@ pub unsafe fn rfu_REQBN_watchLink(
     *bmLinkLossSlot = 0;
     *linkLossReason = REASON_DISCONNECTED;
     *parentBmLinkRecoverySlot = 0;
-    if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL
-        || (&raw mut (*gSTWIStatus).msMode).read_volatile() == 0
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL
+        || (&raw mut (*crate::gl!(gSTWIStatus)).msMode).read_volatile() == 0
     {
         return 0;
     }
-    if (*gRfuStatic).flags as i32 & 4 != 0 {
-        (*gRfuStatic).watchdogTimer = 360;
+    if (*crate::gl!(gRfuStatic)).flags as i32 & 4 != 0 {
+        (*crate::gl!(gRfuStatic)).watchdogTimer = 360;
     }
-    if (*gRfuStatic).nowWatchInterval == 0 {
-        (*gRfuStatic).nowWatchInterval = 4;
+    if (*crate::gl!(gRfuStatic)).nowWatchInterval == 0 {
+        (*crate::gl!(gRfuStatic)).nowWatchInterval = 4;
         reasonMaybe = 1;
     }
     if reqCommandId as u8 == ID_DISCONNECTED_AND_CHANGE_REQ {
-        let packet_p_2: *mut u8 = (*(*gRfuFixed).STWIBuffer)
+        let packet_p_2: *mut u8 = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
             .rxPacketAlloc
             .rfuPacket8
             .data
@@ -982,18 +1050,21 @@ pub unsafe fn rfu_REQBN_watchLink(
         *bmLinkLossSlot = *packet_p_2.at(4);
         *linkLossReason = *packet_p_2.at(5);
         if *linkLossReason == REASON_LINK_LOSS {
-            *bmLinkLossSlot = (*gRfuLinkStatus).connSlotFlag;
+            *bmLinkLossSlot = (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
         }
         reasonMaybe = 2;
     } else {
         if reqCommandId == 0x0136 {
-            newLinkLossFlag = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[5];
-            newLinkLossFlag ^= (*gRfuLinkStatus).connSlotFlag;
-            *bmLinkLossSlot = newLinkLossFlag & (*gRfuLinkStatus).connSlotFlag;
+            newLinkLossFlag = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+                .rxPacketAlloc
+                .rfuPacket8
+                .data[5];
+            newLinkLossFlag ^= (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
+            *bmLinkLossSlot = newLinkLossFlag & (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
             *linkLossReason = REASON_LINK_LOSS;
             for i in 0..RFU_CHILD_MAX {
                 if shr_i32(*bmLinkLossSlot as i32, i as u32) & 1 != 0 {
-                    (*gRfuLinkStatus).strength[i] = 0;
+                    (*crate::gl!(gRfuLinkStatus)).strength[i] = 0;
                     rfu_STC_removeLinkData(i, 0);
                 }
             }
@@ -1002,8 +1073,14 @@ pub unsafe fn rfu_REQBN_watchLink(
             return 0;
         }
     }
-    let stwiCommand: i32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.command as i32;
-    let stwiParam: i32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] as i32;
+    let stwiCommand: i32 = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket32
+        .command as i32;
+    let stwiParam: i32 = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket32
+        .data[0] as i32;
     STWI_set_Callback_M(core::mem::transmute::<
         Option<unsafe fn(u8, u16)>,
         *mut c_void,
@@ -1011,9 +1088,12 @@ pub unsafe fn rfu_REQBN_watchLink(
     STWI_send_LinkStatusREQ();
     let reqResult: u8 = STWI_poll_CommandEnd() as u8;
     if reqResult == 0 {
-        packet_p = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
+        packet_p = &raw mut (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[4];
         for i in 0..RFU_CHILD_MAX {
-            (*gRfuLinkStatus).strength[i] = *({
+            (*crate::gl!(gRfuLinkStatus)).strength[i] = *({
                 let t2 = packet_p;
                 packet_p = packet_p.at(1);
                 t2
@@ -1026,39 +1106,46 @@ pub unsafe fn rfu_REQBN_watchLink(
         return reqResult as u16;
     }
     while i < RFU_CHILD_MAX {
-        if (*gRfuStatic).lsFixedCount[i] != 0 {
-            (*gRfuStatic).lsFixedCount[i] -= 4;
-            if (*gRfuLinkStatus).strength[i] <= 15 {
-                (*gRfuLinkStatus).strength[i] = 16;
+        if (*crate::gl!(gRfuStatic)).lsFixedCount[i] != 0 {
+            (*crate::gl!(gRfuStatic)).lsFixedCount[i] -= 4;
+            if (*crate::gl!(gRfuLinkStatus)).strength[i] <= 15 {
+                (*crate::gl!(gRfuLinkStatus)).strength[i] = 16;
             }
         }
         newLinkLossFlag = shl_i32(1, i as u32) as u8;
         if reqResult == 0 {
             if reasonMaybe == 1
-                && (*gRfuLinkStatus).connSlotFlag as i32 & newLinkLossFlag as i32 != 0
+                && (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32 & newLinkLossFlag as i32 != 0
             {
-                if (*gRfuLinkStatus).strength[i] == 0 {
-                    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-                        (*gRfuStatic).linkEmergencyFlag[i] += 1;
-                        if (*gRfuStatic).linkEmergencyFlag[i] > 3 {
+                if (*crate::gl!(gRfuLinkStatus)).strength[i] == 0 {
+                    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+                        (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] += 1;
+                        if (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] > 3 {
                             *bmLinkLossSlot |= newLinkLossFlag;
                             *linkLossReason = REASON_LINK_LOSS;
                         }
                     } else {
                         STWI_send_SystemStatusREQ();
                         if STWI_poll_CommandEnd() == 0 {
-                            if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[7] == 0 {
+                            if (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+                                .rxPacketAlloc
+                                .rfuPacket8
+                                .data[7]
+                                == 0
+                            {
                                 *bmLinkLossSlot |= newLinkLossFlag;
                                 *linkLossReason = REASON_LINK_LOSS;
                             } else {
                                 if ({
-                                    (*gRfuStatic).linkEmergencyFlag[i] += 1;
-                                    (*gRfuStatic).linkEmergencyFlag[i]
+                                    (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] += 1;
+                                    (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i]
                                 }) as u16
-                                    > (*gRfuStatic).linkEmergencyLimit
+                                    > (*crate::gl!(gRfuStatic)).linkEmergencyLimit
                                 {
-                                    (*gRfuStatic).linkEmergencyFlag[i] = 0;
-                                    STWI_send_DisconnectREQ((*gRfuLinkStatus).connSlotFlag);
+                                    (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] = 0;
+                                    STWI_send_DisconnectREQ(
+                                        (*crate::gl!(gRfuLinkStatus)).connSlotFlag,
+                                    );
                                     STWI_poll_CommandEnd();
                                     *bmLinkLossSlot |= newLinkLossFlag;
                                     *linkLossReason = REASON_LINK_LOSS;
@@ -1067,29 +1154,33 @@ pub unsafe fn rfu_REQBN_watchLink(
                         }
                     }
                 } else {
-                    (*gRfuStatic).linkEmergencyFlag[i] = 0;
+                    (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] = 0;
                 }
             }
-            if (*gRfuLinkStatus).parentChild == MODE_PARENT && (*gRfuLinkStatus).strength[i] != 0 {
-                if newLinkLossFlag as i32 & (*gRfuLinkStatus).linkLossSlotFlag as i32 != 0 {
-                    if (*gRfuLinkStatus).strength[i] > 10 {
+            if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT
+                && (*crate::gl!(gRfuLinkStatus)).strength[i] != 0
+            {
+                if newLinkLossFlag as i32 & (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32
+                    != 0
+                {
+                    if (*crate::gl!(gRfuLinkStatus)).strength[i] > 10 {
                         *parentBmLinkRecoverySlot |= newLinkLossFlag;
-                        (*gRfuLinkStatus).connSlotFlag |= newLinkLossFlag;
-                        (*gRfuLinkStatus).linkLossSlotFlag &= !newLinkLossFlag;
-                        (*gRfuLinkStatus).connCount += 1;
-                        (*gRfuStatic).linkEmergencyFlag[i] = 0;
+                        (*crate::gl!(gRfuLinkStatus)).connSlotFlag |= newLinkLossFlag;
+                        (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag &= !newLinkLossFlag;
+                        (*crate::gl!(gRfuLinkStatus)).connCount += 1;
+                        (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] = 0;
                     } else {
-                        (*gRfuLinkStatus).strength[i] = 0;
+                        (*crate::gl!(gRfuLinkStatus)).strength[i] = 0;
                     }
                 } else {
-                    if ((*gRfuLinkStatus).connSlotFlag as i32
-                        | (*gRfuLinkStatus).linkLossSlotFlag as i32)
+                    if ((*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32
+                        | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32)
                         & newLinkLossFlag as i32
                         == 0
                     {
                         STWI_send_SlotStatusREQ();
                         STWI_poll_CommandEnd();
-                        packet_p = (*(*gRfuFixed).STWIBuffer)
+                        packet_p = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
                             .rxPacketAlloc
                             .rfuPacket8
                             .data
@@ -1098,7 +1189,7 @@ pub unsafe fn rfu_REQBN_watchLink(
                         packet_p = packet_p.at(8);
                         while num_packets != 0 {
                             let cid: u16 = *(packet_p as *mut u16);
-                            if *packet_p.at(2) == i && cid == (*gRfuStatic).cidBak[i] {
+                            if *packet_p.at(2) == i && cid == (*crate::gl!(gRfuStatic)).cidBak[i] {
                                 to_req_disconnect |= shl_i32(1, i as u32) as u8;
                                 break;
                             }
@@ -1109,7 +1200,7 @@ pub unsafe fn rfu_REQBN_watchLink(
                 }
             }
         }
-        connSlotFlag = (*gRfuLinkStatus).connSlotFlag;
+        connSlotFlag = (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
         to_disconnect = *bmLinkLossSlot;
         to_disconnect &= connSlotFlag;
         if newLinkLossFlag as i32 & to_disconnect as i32 != 0 {
@@ -1121,30 +1212,35 @@ pub unsafe fn rfu_REQBN_watchLink(
         STWI_send_DisconnectREQ(to_req_disconnect);
         STWI_poll_CommandEnd();
     }
-    *((*(*gRfuFixed).STWIBuffer)
+    *((*(*crate::gl!(gRfuFixed)).STWIBuffer)
         .rxPacketAlloc
         .rfuPacket8
         .data
         .as_mut_ptr() as *mut u32) = stwiCommand as u32;
-    (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] = stwiParam as u32;
+    (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket32
+        .data[0] = stwiParam as u32;
     0
 }
 unsafe fn rfu_STC_removeLinkData(bmConnectedPartnerId: u8, bmDisconnect: u8) {
     let bmLinkLossFlag: u8 = shl_i32(1, bmConnectedPartnerId as u32) as u8;
     let mut bmLinkRetainedFlag: i32 = 0;
-    (*gRfuStatic).lsFixedCount[bmConnectedPartnerId] = 0;
-    if (*gRfuLinkStatus).connSlotFlag as i32 & bmLinkLossFlag as i32 != 0
-        && (*gRfuLinkStatus).connCount != 0
+    (*crate::gl!(gRfuStatic)).lsFixedCount[bmConnectedPartnerId] = 0;
+    if (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32 & bmLinkLossFlag as i32 != 0
+        && (*crate::gl!(gRfuLinkStatus)).connCount != 0
     {
-        (*gRfuLinkStatus).connCount -= 1;
+        (*crate::gl!(gRfuLinkStatus)).connCount -= 1;
     }
-    (*gRfuLinkStatus).connSlotFlag &= ({
+    (*crate::gl!(gRfuLinkStatus)).connSlotFlag &= ({
         bmLinkRetainedFlag = !(bmLinkLossFlag as i32);
         bmLinkRetainedFlag
     }) as u8;
-    (*gRfuLinkStatus).linkLossSlotFlag |= bmLinkLossFlag;
-    if (*gRfuLinkStatus).parentChild == 0x00 && (*gRfuLinkStatus).connSlotFlag == 0 {
-        (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
+    (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag |= bmLinkLossFlag;
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == 0x00
+        && (*crate::gl!(gRfuLinkStatus)).connSlotFlag == 0
+    {
+        (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_NEUTRAL;
     }
     if bmDisconnect != 0 {
         {
@@ -1153,28 +1249,33 @@ unsafe fn rfu_STC_removeLinkData(bmConnectedPartnerId: u8, bmDisconnect: u8) {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    &raw mut (*gRfuLinkStatus).partner[bmConnectedPartnerId] as *mut c_void,
+                    &raw mut (*crate::gl!(gRfuLinkStatus)).partner[bmConnectedPartnerId]
+                        as *mut c_void,
                     0x1000010,
                 );
             }
         }
-        (*gRfuLinkStatus).linkLossSlotFlag &= bmLinkRetainedFlag as u8;
-        (*gRfuLinkStatus).getNameFlag &= bmLinkRetainedFlag as u8;
-        (*gRfuLinkStatus).strength[bmConnectedPartnerId] = 0;
+        (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag &= bmLinkRetainedFlag as u8;
+        (*crate::gl!(gRfuLinkStatus)).getNameFlag &= bmLinkRetainedFlag as u8;
+        (*crate::gl!(gRfuLinkStatus)).strength[bmConnectedPartnerId] = 0;
     }
 }
 pub unsafe fn rfu_REQ_disconnect(bmDisconnectSlot: u8) {
     let mut result: u16 = 0;
-    if ((*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32)
+    if ((*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32
+        | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32)
         & bmDisconnectSlot as i32
         != 0
     {
-        (*gRfuStatic).recoveryBmSlot = bmDisconnectSlot;
-        if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL && (*gRfuStatic).flags as i32 & 0x80 != 0 {
-            if (*gRfuLinkStatus).linkLossSlotFlag as i32 & bmDisconnectSlot as i32 != 0 {
+        (*crate::gl!(gRfuStatic)).recoveryBmSlot = bmDisconnectSlot;
+        if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL
+            && (*crate::gl!(gRfuStatic)).flags as i32 & 0x80 != 0
+        {
+            if (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32 & bmDisconnectSlot as i32 != 0
+            {
                 rfu_CB_disconnect(48, 0);
             }
-        } else if (*gRfuStatic).SCStartFlag != 0
+        } else if (*crate::gl!(gRfuStatic)).SCStartFlag != 0
             && ({
                 STWI_set_Callback_M(core::mem::transmute::<
                     Option<unsafe fn(u8, u16)>,
@@ -1199,34 +1300,44 @@ pub unsafe fn rfu_REQ_disconnect(bmDisconnectSlot: u8) {
 }
 pub(crate) unsafe fn rfu_CB_disconnect(reqCommand: u8, mut reqResult: u16) {
     let mut bm_slot_flag: u8 = 0;
-    if reqResult == 3 && (*gRfuLinkStatus).parentChild == MODE_CHILD {
+    if reqResult == 3 && (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_CHILD {
         STWI_set_Callback_M(core::mem::transmute::<
             Option<unsafe fn(u8, u16)>,
             *mut c_void,
         >(Some(rfu_CB_defaultCallback)));
         STWI_send_SystemStatusREQ();
         if STWI_poll_CommandEnd() == 0
-            && (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[7] == 0
+            && (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+                .rxPacketAlloc
+                .rfuPacket8
+                .data[7]
+                == 0
         {
             reqResult = 0;
         }
     }
-    (*gRfuStatic).recoveryBmSlot &=
-        (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag;
-    (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8] = (*gRfuStatic).recoveryBmSlot;
+    (*crate::gl!(gRfuStatic)).recoveryBmSlot &=
+        (*crate::gl!(gRfuLinkStatus)).connSlotFlag | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag;
+    (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[8] = (*crate::gl!(gRfuStatic)).recoveryBmSlot;
     if reqResult == 0 {
         for i in 0..RFU_CHILD_MAX {
             bm_slot_flag = shl_i32(1, i as u32) as u8;
-            if bm_slot_flag as i32 & (*gRfuStatic).recoveryBmSlot as i32 != 0 {
+            if bm_slot_flag as i32 & (*crate::gl!(gRfuStatic)).recoveryBmSlot as i32 != 0 {
                 rfu_STC_removeLinkData(i, 1);
             }
         }
     }
-    if (*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32 == 0 {
-        (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
+    if (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32
+        | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32
+        == 0
+    {
+        (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_NEUTRAL;
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
-    if (*gRfuStatic).SCStartFlag != 0 {
+    if (*crate::gl!(gRfuStatic)).SCStartFlag != 0 {
         STWI_set_Callback_M(core::mem::transmute::<
             Option<unsafe fn(u8, u16)>,
             *mut c_void,
@@ -1239,7 +1350,7 @@ pub(crate) unsafe fn rfu_CB_disconnect(reqCommand: u8, mut reqResult: u16) {
     }
 }
 pub unsafe fn rfu_REQ_CHILD_startConnectRecovery(bmRecoverySlot: u8) {
-    (*gRfuStatic).recoveryBmSlot = bmRecoverySlot;
+    (*crate::gl!(gRfuStatic)).recoveryBmSlot = bmRecoverySlot;
     let mut i: u8 = 0;
     while i < RFU_CHILD_MAX && shr_i32(bmRecoverySlot as i32, i as u32) & 1 == 0 {
         i += 1;
@@ -1249,8 +1360,8 @@ pub unsafe fn rfu_REQ_CHILD_startConnectRecovery(bmRecoverySlot: u8) {
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_CPR_StartREQ(
-        (*gRfuLinkStatus).partner[i].id,
-        (*gRfuLinkStatus).my.id,
+        (*crate::gl!(gRfuLinkStatus)).partner[i].id,
+        (*crate::gl!(gRfuLinkStatus)).my.id,
         bmRecoverySlot,
     );
 }
@@ -1265,34 +1376,49 @@ pub(crate) unsafe fn rfu_CB_CHILD_pollConnectRecovery(reqCommand: u8, reqResult:
     let mut bm_slot_flag: u8 = 0;
     let mut rfuLinkStatus: *mut RfuLinkStatus = null_mut();
     if reqResult == 0
-        && (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4] == 0
-        && (*gRfuStatic).recoveryBmSlot != 0
+        && (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[4]
+            == 0
+        && (*crate::gl!(gRfuStatic)).recoveryBmSlot != 0
     {
-        (*gRfuLinkStatus).parentChild = MODE_CHILD;
+        (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_CHILD;
         for i in 0..RFU_CHILD_MAX {
             bm_slot_flag = shl_i32(1, i as u32) as u8;
-            rfuLinkStatus = gRfuLinkStatus;
-            if (*gRfuStatic).recoveryBmSlot as i32
+            rfuLinkStatus = crate::gl!(gRfuLinkStatus);
+            if (*crate::gl!(gRfuStatic)).recoveryBmSlot as i32
                 & bm_slot_flag as i32
                 & (*rfuLinkStatus).linkLossSlotFlag as i32
                 != 0
             {
-                (*gRfuLinkStatus).connSlotFlag |= bm_slot_flag;
-                (*gRfuLinkStatus).linkLossSlotFlag &= !bm_slot_flag;
-                (*gRfuLinkStatus).connCount += 1;
-                (*gRfuStatic).linkEmergencyFlag[i] = 0;
+                (*crate::gl!(gRfuLinkStatus)).connSlotFlag |= bm_slot_flag;
+                (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag &= !bm_slot_flag;
+                (*crate::gl!(gRfuLinkStatus)).connCount += 1;
+                (*crate::gl!(gRfuStatic)).linkEmergencyFlag[i] = 0;
             }
         }
-        (*gRfuStatic).recoveryBmSlot = 0;
+        (*crate::gl!(gRfuStatic)).recoveryBmSlot = 0;
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
 pub unsafe fn rfu_CHILD_getConnectRecoveryStatus(status: *mut u8) -> u16 {
     *status = 0xFF;
-    if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0] == 0xB3
-        || (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0] == 0xB4
+    if (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[0]
+        == 0xB3
+        || (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[0]
+            == 0xB4
     {
-        *status = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
+        *status = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[4];
         return 0;
     }
     ERR_REQ_CMD_ID
@@ -1340,10 +1466,10 @@ pub unsafe fn rfu_REQ_changeMasterSlave() {
 pub unsafe fn rfu_getMasterSlave() -> u8 {
     let mut masterSlave: u8 = STWI_read_status(1) as u8;
     if masterSlave == AGB_CLK_MASTER
-        && (&raw mut (*gSTWIStatus).sending).read_volatile() != 0
-        && ((*gSTWIStatus).reqActiveCommand == ID_MS_CHANGE_REQ
-            || (*gSTWIStatus).reqActiveCommand == ID_DATA_TX_AND_CHANGE_REQ
-            || (*gSTWIStatus).reqActiveCommand == ID_RESUME_RETRANSMIT_AND_CHANGE_REQ)
+        && (&raw mut (*crate::gl!(gSTWIStatus)).sending).read_volatile() != 0
+        && ((*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_MS_CHANGE_REQ
+            || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_DATA_TX_AND_CHANGE_REQ
+            || (*crate::gl!(gSTWIStatus)).reqActiveCommand == ID_RESUME_RETRANSMIT_AND_CHANGE_REQ)
     {
         masterSlave = AGB_CLK_SLAVE;
     }
@@ -1359,7 +1485,7 @@ pub unsafe fn rfu_clearAllSlot() {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    gRfuSlotStatusNI[i] as *mut c_void,
+                    crate::gl!(gRfuSlotStatusNI[i]) as *mut c_void,
                     0x1000034,
                 );
             }
@@ -1370,31 +1496,32 @@ pub unsafe fn rfu_clearAllSlot() {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    gRfuSlotStatusUNI[i] as *mut c_void,
+                    crate::gl!(gRfuSlotStatusUNI[i]) as *mut c_void,
                     0x100000a,
                 );
             }
         }
-        (*gRfuLinkStatus).remainLLFrameSizeChild[i] = 16;
+        (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[i] = 16;
     }
-    (*gRfuLinkStatus).remainLLFrameSizeParent = LLF_P_SIZE;
-    (*gRfuLinkStatus).sendSlotNIFlag = 0;
-    (*gRfuLinkStatus).recvSlotNIFlag = 0;
-    (*gRfuLinkStatus).sendSlotUNIFlag = 0;
-    (*gRfuStatic).recvRenewalFlag = 0;
+    (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent = LLF_P_SIZE;
+    (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag = 0;
+    (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag = 0;
+    (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag = 0;
+    (*crate::gl!(gRfuStatic)).recvRenewalFlag = 0;
     volatile_write(67109384_usize as *mut u16, IMEBackup);
 }
 unsafe fn rfu_STC_releaseFrame(bm_slot_id: u8, send_recv: u8, NI_comm: *mut NIComm) {
-    if (*gRfuStatic).flags as i32 & 0x80 == 0 {
+    if (*crate::gl!(gRfuStatic)).flags as i32 & 0x80 == 0 {
         if send_recv == 0 {
-            (*gRfuLinkStatus).remainLLFrameSizeParent += (*NI_comm).payloadSize as u8;
+            (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent += (*NI_comm).payloadSize as u8;
         }
-        (*gRfuLinkStatus).remainLLFrameSizeParent += 3;
+        (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent += 3;
     } else {
         if send_recv == 0 {
-            (*gRfuLinkStatus).remainLLFrameSizeChild[bm_slot_id] += (*NI_comm).payloadSize as u8;
+            (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[bm_slot_id] +=
+                (*NI_comm).payloadSize as u8;
         }
-        (*gRfuLinkStatus).remainLLFrameSizeChild[bm_slot_id] += 2;
+        (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[bm_slot_id] += 2;
     }
 }
 pub unsafe fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) -> u16 {
@@ -1412,13 +1539,14 @@ pub unsafe fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) -> u16 {
             NI_comm = null_mut();
             if send_recv == 0 {
                 if connTypeFlag as i32 & TYPE_NI_SEND as i32 != 0 {
-                    NI_comm = &raw mut (*gRfuSlotStatusNI[slotStatusIndex]).send;
-                    (*gRfuLinkStatus).sendSlotNIFlag &= !(*NI_comm).bmSlotOrg;
+                    NI_comm = &raw mut (*crate::gl!(gRfuSlotStatusNI[slotStatusIndex])).send;
+                    (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag &= !(*NI_comm).bmSlotOrg;
                 }
             } else {
                 if connTypeFlag as i32 & TYPE_NI_RECV as i32 != 0 {
-                    NI_comm = &raw mut (*gRfuSlotStatusNI[slotStatusIndex]).recv;
-                    (*gRfuLinkStatus).recvSlotNIFlag &= !(shl_i32(1, slotStatusIndex as u32) as u8);
+                    NI_comm = &raw mut (*crate::gl!(gRfuSlotStatusNI[slotStatusIndex])).recv;
+                    (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag &=
+                        !(shl_i32(1, slotStatusIndex as u32) as u8);
                 }
             }
             if !NI_comm.is_null() {
@@ -1445,16 +1573,16 @@ pub unsafe fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) -> u16 {
         }
     }
     if connTypeFlag as i32 & TYPE_UNI_SEND != 0 {
-        let slotStatusUNI: *mut RfuSlotStatusUNI = gRfuSlotStatusUNI[slotStatusIndex];
+        let slotStatusUNI: *mut RfuSlotStatusUNI = crate::gl!(gRfuSlotStatusUNI[slotStatusIndex]);
         if (*slotStatusUNI).send.state as i32 & SLOT_BUSY_FLAG != 0 {
-            if (*gRfuStatic).flags as i32 & 0x80 == 0 {
-                (*gRfuLinkStatus).remainLLFrameSizeParent +=
+            if (*crate::gl!(gRfuStatic)).flags as i32 & 0x80 == 0 {
+                (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent +=
                     3 + (*slotStatusUNI).send.payloadSize as u8;
             } else {
-                (*gRfuLinkStatus).remainLLFrameSizeChild[slotStatusIndex] +=
+                (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[slotStatusIndex] +=
                     2 + (*slotStatusUNI).send.payloadSize as u8;
             }
-            (*gRfuLinkStatus).sendSlotUNIFlag &= !(*slotStatusUNI).send.bmSlot;
+            (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag &= !(*slotStatusUNI).send.bmSlot;
         }
         {
             {
@@ -1475,7 +1603,7 @@ pub unsafe fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) -> u16 {
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    &raw mut (*gRfuSlotStatusUNI[slotStatusIndex]).recv as *mut c_void,
+                    &raw mut (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex])).recv as *mut c_void,
                     0x1000004,
                 );
             }
@@ -1494,13 +1622,13 @@ pub unsafe fn rfu_setRecvBuffer(
         return ERR_SLOT_NO;
     }
     if connType as i32 & TYPE_NI as i32 != 0 {
-        (*gRfuSlotStatusNI[slotNo]).recvBuffer = buffer;
-        (*gRfuSlotStatusNI[slotNo]).recvBufferSize = buffSize;
+        (*crate::gl!(gRfuSlotStatusNI[slotNo])).recvBuffer = buffer;
+        (*crate::gl!(gRfuSlotStatusNI[slotNo])).recvBufferSize = buffSize;
     } else if connType as i32 & TYPE_UNI as i32 == 0 {
         return ERR_COMM_TYPE;
     } else {
-        (*gRfuSlotStatusUNI[slotNo]).recvBuffer = buffer;
-        (*gRfuSlotStatusUNI[slotNo]).recvBufferSize = buffSize;
+        (*crate::gl!(gRfuSlotStatusUNI[slotNo])).recvBuffer = buffer;
+        (*crate::gl!(gRfuSlotStatusUNI[slotNo])).recvBufferSize = buffSize;
     }
     0
 }
@@ -1514,7 +1642,7 @@ pub unsafe fn rfu_NI_setSendData(
 }
 pub unsafe fn rfu_UNI_setSendData(bmSendSlot: u8, src: *mut c_void, size: u8) -> u16 {
     let mut subFrameSize: u8 = 0;
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         subFrameSize = size + 3;
     } else {
         subFrameSize = size + 2;
@@ -1526,7 +1654,7 @@ pub unsafe fn rfu_NI_CHILD_setSendGameName(slotNo: u8, subFrameSize: u8) -> u16 
         64,
         shl_i32(1, slotNo as u32) as u8,
         subFrameSize,
-        &raw mut (*gRfuLinkStatus).my.serialNo as *mut c_void,
+        &raw mut (*crate::gl!(gRfuLinkStatus)).my.serialNo as *mut c_void,
         26,
     )
 }
@@ -1542,22 +1670,23 @@ unsafe fn rfu_STC_setSendData_org(
     let mut llFrameSize_p: *mut u8 = null_mut();
     let mut slotStatus_UNI: *mut RfuSlotStatusUNI = null_mut();
     let mut slotStatus_NI: *mut RfuSlotStatusNI = null_mut();
-    if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL {
         return ERR_MODE_NOT_CONNECTED;
     }
     if bmSendSlot as i32 & 0xF == 0 {
         return ERR_SLOT_NO;
     }
-    if ((*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32)
+    if ((*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32
+        | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32)
         & bmSendSlot as i32
         != bmSendSlot as i32
     {
         return ERR_SLOT_NOT_CONNECTED;
     }
     if ni_or_uni as i32 & 0x10 != 0 {
-        sendSlotFlag = (*gRfuLinkStatus).sendSlotUNIFlag;
+        sendSlotFlag = (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag;
     } else {
-        sendSlotFlag = (*gRfuLinkStatus).sendSlotNIFlag;
+        sendSlotFlag = (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag;
     }
     if sendSlotFlag as i32 & bmSendSlot as i32 != 0 {
         return ERR_SLOT_BUSY;
@@ -1566,12 +1695,12 @@ unsafe fn rfu_STC_setSendData_org(
     while bm_slot_id < RFU_CHILD_MAX && shr_i32(bmSendSlot as i32, bm_slot_id as u32) & 1 == 0 {
         bm_slot_id += 1;
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-        llFrameSize_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeParent;
-    } else if (*gRfuLinkStatus).parentChild == MODE_CHILD {
-        llFrameSize_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeChild[bm_slot_id];
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+        llFrameSize_p = &raw mut (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent;
+    } else if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_CHILD {
+        llFrameSize_p = &raw mut (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[bm_slot_id];
     }
-    frameSize = llsf_struct[(*gRfuLinkStatus).parentChild].frameSize;
+    frameSize = llsf_struct[(*crate::gl!(gRfuLinkStatus)).parentChild].frameSize;
     if !llFrameSize_p.is_null() && subFrameSize > *llFrameSize_p || subFrameSize <= frameSize {
         return ERR_SUBFRAME_SIZE;
     }
@@ -1579,7 +1708,7 @@ unsafe fn rfu_STC_setSendData_org(
     volatile_write(67109384_usize as *mut u16, 0);
     let sending: u8 = ni_or_uni & 0x20;
     if sending != 0 || ni_or_uni == 0x40 {
-        slotStatus_NI = gRfuSlotStatusNI[bm_slot_id];
+        slotStatus_NI = crate::gl!(gRfuSlotStatusNI[bm_slot_id]);
         (*slotStatus_NI).send.errorCode = 0;
         (*slotStatus_NI).send.now_p[0] = &raw mut (*slotStatus_NI).send.dataType;
         (*slotStatus_NI).send.remainSize = 7;
@@ -1601,16 +1730,16 @@ unsafe fn rfu_STC_setSendData_org(
         }
         for bm_slot_id in 0..RFU_CHILD_MAX {
             if shr_i32(bmSendSlot as i32, bm_slot_id as u32) & 1 != 0 {
-                (*gRfuSlotStatusNI[bm_slot_id]).send.failCounter = 0;
+                (*crate::gl!(gRfuSlotStatusNI[bm_slot_id])).send.failCounter = 0;
             }
         }
-        (*gRfuLinkStatus).sendSlotNIFlag |= bmSendSlot;
+        (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag |= bmSendSlot;
         if !llFrameSize_p.is_null() {
             *llFrameSize_p -= subFrameSize;
         }
         (*slotStatus_NI).send.state = SLOT_STATE_SEND_START;
     } else if ni_or_uni as i32 & 0x10 != 0 {
-        slotStatus_UNI = gRfuSlotStatusUNI[bm_slot_id];
+        slotStatus_UNI = crate::gl!(gRfuSlotStatusUNI[bm_slot_id]);
         (*slotStatus_UNI).send.bmSlot = bmSendSlot;
         (*slotStatus_UNI).send.src = src;
         (*slotStatus_UNI).send.payloadSize = subFrameSize as u16 - frameSize as u16;
@@ -1618,7 +1747,7 @@ unsafe fn rfu_STC_setSendData_org(
             *llFrameSize_p -= subFrameSize;
         }
         (*slotStatus_UNI).send.state = SLOT_STATE_SEND_UNI;
-        (*gRfuLinkStatus).sendSlotUNIFlag |= bmSendSlot;
+        (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag |= bmSendSlot;
     }
     volatile_write(67109384_usize as *mut u16, imeBak);
     0
@@ -1630,7 +1759,7 @@ pub unsafe fn rfu_changeSendTarget(mut connType: u8, slotStatusIndex: u8, bmNewT
         return ERR_SLOT_NO;
     }
     if connType == 0x20 {
-        slotStatusNI = gRfuSlotStatusNI[slotStatusIndex];
+        slotStatusNI = crate::gl!(gRfuSlotStatusNI[slotStatusIndex]);
         if (*slotStatusNI).send.state as i32 & SLOT_BUSY_FLAG != 0
             && (*slotStatusNI).send.state as i32 & SLOT_SEND_FLAG != 0
         {
@@ -1641,10 +1770,10 @@ pub unsafe fn rfu_changeSendTarget(mut connType: u8, slotStatusIndex: u8, bmNewT
                     volatile_write(67109384_usize as *mut u16, 0);
                     for i in 0..RFU_CHILD_MAX {
                         if shr_i32(connType as i32, i as u32) & 1 != 0 {
-                            (*gRfuSlotStatusNI[i]).send.failCounter = 0;
+                            (*crate::gl!(gRfuSlotStatusNI[i])).send.failCounter = 0;
                         }
                     }
-                    (*gRfuLinkStatus).sendSlotNIFlag &= !connType;
+                    (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag &= !connType;
                     (*slotStatusNI).send.bmSlot = bmNewTgtSlot;
                     if (*slotStatusNI).send.bmSlot == 0 {
                         rfu_STC_releaseFrame(slotStatusIndex, 0, &raw mut (*slotStatusNI).send);
@@ -1660,13 +1789,13 @@ pub unsafe fn rfu_changeSendTarget(mut connType: u8, slotStatusIndex: u8, bmNewT
         }
     } else {
         if connType == 16 {
-            if (*gRfuSlotStatusUNI[slotStatusIndex]).send.state != SLOT_STATE_SEND_UNI {
+            if (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex])).send.state != SLOT_STATE_SEND_UNI {
                 return ERR_SLOT_NOT_SENDING;
             }
             let mut bmSlot: i32 = 0;
             for i in 0..RFU_CHILD_MAX {
                 if i != slotStatusIndex {
-                    bmSlot |= (*gRfuSlotStatusUNI[i]).send.bmSlot as i32;
+                    bmSlot |= (*crate::gl!(gRfuSlotStatusUNI[i])).send.bmSlot as i32;
                 }
             }
             if bmNewTgtSlot as i32 & bmSlot != 0 {
@@ -1674,9 +1803,14 @@ pub unsafe fn rfu_changeSendTarget(mut connType: u8, slotStatusIndex: u8, bmNewT
             }
             imeBak = (67109384_usize as *mut u16).read_volatile();
             volatile_write(67109384_usize as *mut u16, 0);
-            (*gRfuLinkStatus).sendSlotUNIFlag &= !(*gRfuSlotStatusUNI[slotStatusIndex]).send.bmSlot;
-            (*gRfuLinkStatus).sendSlotUNIFlag |= bmNewTgtSlot;
-            (*gRfuSlotStatusUNI[slotStatusIndex]).send.bmSlot = bmNewTgtSlot;
+            (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag &=
+                !(*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex]))
+                    .send
+                    .bmSlot;
+            (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag |= bmNewTgtSlot;
+            (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex]))
+                .send
+                .bmSlot = bmNewTgtSlot;
             volatile_write(67109384_usize as *mut u16, imeBak);
         } else {
             return ERR_COMM_TYPE;
@@ -1688,7 +1822,7 @@ pub unsafe fn rfu_NI_stopReceivingData(slotStatusIndex: u8) -> u16 {
     if slotStatusIndex >= RFU_CHILD_MAX {
         return ERR_SLOT_NO;
     }
-    let NI_comm: *mut NIComm = &raw mut (*gRfuSlotStatusNI[slotStatusIndex]).recv;
+    let NI_comm: *mut NIComm = &raw mut (*crate::gl!(gRfuSlotStatusNI[slotStatusIndex])).recv;
     let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
     volatile_write(67109384_usize as *mut u16, 0);
     if (*NI_comm).state as i32 & SLOT_BUSY_FLAG != 0 {
@@ -1697,7 +1831,7 @@ pub unsafe fn rfu_NI_stopReceivingData(slotStatusIndex: u8) -> u16 {
         } else {
             (*NI_comm).state = SLOT_STATE_RECV_FAILED;
         }
-        (*gRfuLinkStatus).recvSlotNIFlag &= !(shl_i32(1, slotStatusIndex as u32) as u8);
+        (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag &= !(shl_i32(1, slotStatusIndex as u32) as u8);
         rfu_STC_releaseFrame(slotStatusIndex, 1, NI_comm);
     }
     volatile_write(67109384_usize as *mut u16, imeBak);
@@ -1713,16 +1847,17 @@ pub unsafe fn rfu_UNI_changeAndReadySendData(
     if slotStatusIndex >= RFU_CHILD_MAX {
         return ERR_SLOT_NO;
     }
-    let UNI_send: *mut UNISend = &raw mut (*gRfuSlotStatusUNI[slotStatusIndex]).send;
+    let UNI_send: *mut UNISend = &raw mut (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex])).send;
     if (*UNI_send).state != SLOT_STATE_SEND_UNI {
         return ERR_SLOT_NOT_SENDING;
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-        frame_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeParent;
-        frameEnd = (*gRfuLinkStatus).remainLLFrameSizeParent + (*UNI_send).payloadSize as u8;
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+        frame_p = &raw mut (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent;
+        frameEnd =
+            (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent + (*UNI_send).payloadSize as u8;
     } else {
-        frame_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeChild[slotStatusIndex];
-        frameEnd = (*gRfuLinkStatus).remainLLFrameSizeChild[slotStatusIndex]
+        frame_p = &raw mut (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[slotStatusIndex];
+        frameEnd = (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[slotStatusIndex]
             + (*UNI_send).payloadSize as u8;
     }
     if frameEnd < size {
@@ -1739,76 +1874,85 @@ pub unsafe fn rfu_UNI_changeAndReadySendData(
 }
 pub unsafe fn rfu_UNI_readySendData(slotStatusIndex: u8) {
     if slotStatusIndex < RFU_CHILD_MAX
-        && (*gRfuSlotStatusUNI[slotStatusIndex]).send.state == SLOT_STATE_SEND_UNI
+        && (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex])).send.state == SLOT_STATE_SEND_UNI
     {
-        (*gRfuSlotStatusUNI[slotStatusIndex]).send.dataReadyFlag = 1;
+        (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex]))
+            .send
+            .dataReadyFlag = 1;
     }
 }
 pub unsafe fn rfu_UNI_clearRecvNewDataFlag(slotStatusIndex: u8) {
     if slotStatusIndex < RFU_CHILD_MAX {
-        (*gRfuSlotStatusUNI[slotStatusIndex]).recv.newDataFlag = 0;
+        (*crate::gl!(gRfuSlotStatusUNI[slotStatusIndex]))
+            .recv
+            .newDataFlag = 0;
     }
 }
 pub unsafe fn rfu_REQ_sendData(clockChangeFlag: u8) {
-    if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL {
-        if (*gRfuLinkStatus).parentChild == MODE_PARENT
-            && (*gRfuLinkStatus).sendSlotNIFlag as i32
-                | (*gRfuLinkStatus).recvSlotNIFlag as i32
-                | (*gRfuLinkStatus).sendSlotUNIFlag as i32
+    if (*crate::gl!(gRfuLinkStatus)).parentChild != MODE_NEUTRAL {
+        if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT
+            && (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32
+                | (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag as i32
+                | (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag as i32
                 == 0
         {
-            if (*gRfuStatic).commExistFlag != 0 {
-                (*gRfuStatic).emberCount = 16;
-                (*gRfuStatic).nullFrameCount = 0;
+            if (*crate::gl!(gRfuStatic)).commExistFlag != 0 {
+                (*crate::gl!(gRfuStatic)).emberCount = 16;
+                (*crate::gl!(gRfuStatic)).nullFrameCount = 0;
             }
-            if (*gRfuStatic).emberCount != 0 {
-                (*gRfuStatic).emberCount -= 1;
+            if (*crate::gl!(gRfuStatic)).emberCount != 0 {
+                (*crate::gl!(gRfuStatic)).emberCount -= 1;
             } else {
-                (*gRfuStatic).nullFrameCount += 1;
+                (*crate::gl!(gRfuStatic)).nullFrameCount += 1;
             }
-            if (*gRfuStatic).emberCount != 0 || (*gRfuStatic).nullFrameCount as i32 & 0xF == 0 {
-                (*gRfuFixed).LLFBuffer[0] = 1;
-                (*gRfuFixed).LLFBuffer[4] = 0xFF;
+            if (*crate::gl!(gRfuStatic)).emberCount != 0
+                || (*crate::gl!(gRfuStatic)).nullFrameCount as i32 & 0xF == 0
+            {
+                (*crate::gl!(gRfuFixed)).LLFBuffer[0] = 1;
+                (*crate::gl!(gRfuFixed)).LLFBuffer[4] = 0xFF;
                 STWI_set_Callback_M(core::mem::transmute::<
                     Option<unsafe fn(u8, u16)>,
                     *mut c_void,
                 >(Some(rfu_CB_sendData3)));
                 if clockChangeFlag == 0 {
-                    STWI_send_DataTxREQ((*gRfuFixed).LLFBuffer.as_mut_ptr() as *mut c_void, 1);
+                    STWI_send_DataTxREQ(
+                        (*crate::gl!(gRfuFixed)).LLFBuffer.as_mut_ptr() as *mut c_void,
+                        1,
+                    );
                 } else {
                     STWI_send_DataTxAndChangeREQ(
-                        (*gRfuFixed).LLFBuffer.as_mut_ptr() as *mut c_void,
+                        (*crate::gl!(gRfuFixed)).LLFBuffer.as_mut_ptr() as *mut c_void,
                         1,
                     );
                 }
                 return;
             }
         } else {
-            if (&raw mut (*gRfuLinkStatus).LLFReadyFlag).read_volatile() == 0 {
+            if (&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag).read_volatile() == 0 {
                 rfu_constructSendLLFrame();
             }
-            if (&raw mut (*gRfuLinkStatus).LLFReadyFlag).read_volatile() != 0 {
+            if (&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag).read_volatile() != 0 {
                 STWI_set_Callback_M(core::mem::transmute::<
                     Option<unsafe fn(u8, u16)>,
                     *mut c_void,
                 >(Some(rfu_CB_sendData)));
                 if clockChangeFlag != 0 {
                     STWI_send_DataTxAndChangeREQ(
-                        (*gRfuFixed).LLFBuffer.as_mut_ptr() as *mut c_void,
-                        (*gRfuStatic).totalPacketSize as u8 + 4,
+                        (*crate::gl!(gRfuFixed)).LLFBuffer.as_mut_ptr() as *mut c_void,
+                        (*crate::gl!(gRfuStatic)).totalPacketSize as u8 + 4,
                     );
                     return;
                 }
                 STWI_send_DataTxREQ(
-                    (*gRfuFixed).LLFBuffer.as_mut_ptr() as *mut c_void,
-                    (*gRfuStatic).totalPacketSize as u8 + 4,
+                    (*crate::gl!(gRfuFixed)).LLFBuffer.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(gRfuStatic)).totalPacketSize as u8 + 4,
                 );
             }
         }
         if clockChangeFlag != 0 {
-            if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-                if (*gSTWIStatus).callbackS.is_some() {
-                    (*gSTWIStatus).callbackS.unwrap_unchecked()(39);
+            if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+                if (*crate::gl!(gSTWIStatus)).callbackS.is_some() {
+                    (*crate::gl!(gSTWIStatus)).callbackS.unwrap_unchecked()(39);
                 }
             } else {
                 STWI_set_Callback_M(core::mem::transmute::<
@@ -1824,21 +1968,21 @@ pub(crate) unsafe fn rfu_CB_sendData(reqCommand: u8, reqResult: u16) {
     let mut NI_comm: *mut NIComm = null_mut();
     if reqResult == 0 {
         for i in 0..RFU_CHILD_MAX {
-            if (*gRfuSlotStatusUNI[i]).send.dataReadyFlag != 0 {
-                (*gRfuSlotStatusUNI[i]).send.dataReadyFlag = 0;
+            if (*crate::gl!(gRfuSlotStatusUNI[i])).send.dataReadyFlag != 0 {
+                (*crate::gl!(gRfuSlotStatusUNI[i])).send.dataReadyFlag = 0;
             }
-            NI_comm = &raw mut (*gRfuSlotStatusNI[i]).send;
+            NI_comm = &raw mut (*crate::gl!(gRfuSlotStatusNI[i])).send;
             if (*NI_comm).state == SLOT_STATE_SEND_NULL {
                 rfu_STC_releaseFrame(i, 0, NI_comm);
-                (*gRfuLinkStatus).sendSlotNIFlag &= !(*NI_comm).bmSlot;
+                (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag &= !(*NI_comm).bmSlot;
                 if (*NI_comm).dataType == 1 {
-                    (*gRfuLinkStatus).getNameFlag |= shl_i32(1, i as u32) as u8;
+                    (*crate::gl!(gRfuLinkStatus)).getNameFlag |= shl_i32(1, i as u32) as u8;
                 }
                 (*NI_comm).state = SLOT_STATE_SEND_SUCCESS;
             }
         }
     }
-    volatile_write(&raw mut (*gRfuLinkStatus).LLFReadyFlag, 0);
+    volatile_write(&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag, 0);
     rfu_STC_REQ_callback(ID_DATA_TX_REQ, reqResult);
 }
 pub(crate) unsafe fn rfu_CB_sendData2(reqCommand: u8, reqResult: u16) {
@@ -1855,36 +1999,36 @@ unsafe fn rfu_constructSendLLFrame() {
     let mut pakcketSize: u32 = 0;
     let mut currSize: u32 = 0;
     let mut llf_p: *mut u8 = null_mut();
-    if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL
-        && (*gRfuLinkStatus).sendSlotNIFlag as i32
-            | (*gRfuLinkStatus).recvSlotNIFlag as i32
-            | (*gRfuLinkStatus).sendSlotUNIFlag as i32
+    if (*crate::gl!(gRfuLinkStatus)).parentChild != MODE_NEUTRAL
+        && (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32
+            | (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag as i32
+            | (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag as i32
             != 0
     {
-        volatile_write(&raw mut (*gRfuLinkStatus).LLFReadyFlag, 0);
+        volatile_write(&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag, 0);
         pakcketSize = 0;
-        llf_p = &raw mut (*gRfuFixed).LLFBuffer[1] as *mut u8;
+        llf_p = &raw mut (*crate::gl!(gRfuFixed)).LLFBuffer[1] as *mut u8;
         for i in 0..RFU_CHILD_MAX {
             currSize = 0;
-            if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0 {
+            if (*crate::gl!(gRfuSlotStatusNI[i])).send.state as i32 & SLOT_BUSY_FLAG != 0 {
                 currSize = rfu_STC_NI_constructLLSF(
                     i,
                     &raw mut llf_p,
-                    &raw mut (*gRfuSlotStatusNI[i]).send,
+                    &raw mut (*crate::gl!(gRfuSlotStatusNI[i])).send,
                 ) as u32;
             }
-            if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0 {
+            if (*crate::gl!(gRfuSlotStatusNI[i])).recv.state as i32 & SLOT_BUSY_FLAG != 0 {
                 currSize += rfu_STC_NI_constructLLSF(
                     i,
                     &raw mut llf_p,
-                    &raw mut (*gRfuSlotStatusNI[i]).recv,
+                    &raw mut (*crate::gl!(gRfuSlotStatusNI[i])).recv,
                 ) as u32;
             }
-            if (*gRfuSlotStatusUNI[i]).send.state == SLOT_STATE_SEND_UNI {
+            if (*crate::gl!(gRfuSlotStatusUNI[i])).send.state == SLOT_STATE_SEND_UNI {
                 currSize += rfu_STC_UNI_constructLLSF(i, &raw mut llf_p) as u32;
             }
             if currSize != 0 {
-                if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+                if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
                     pakcketSize += currSize;
                 } else {
                     pakcketSize |= shl_u32(currSize, 5 * i as u32 + 8);
@@ -1899,15 +2043,15 @@ unsafe fn rfu_constructSendLLFrame() {
                     t1
                 }) = 0;
             }
-            (*gRfuFixed).LLFBuffer[0] = pakcketSize;
-            if (*gRfuLinkStatus).parentChild == MODE_CHILD {
+            (*crate::gl!(gRfuFixed)).LLFBuffer[0] = pakcketSize;
+            if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_CHILD {
                 let maxSize: *mut u8 = llf_p.at(-108);
-                pakcketSize = (maxSize as usize)
-                    .wrapping_sub((&raw mut gRfuFixed as *mut *mut u8).read_volatile() as usize)
-                    as i32 as u32;
+                pakcketSize = (maxSize as usize).wrapping_sub(
+                    (crate::gl!(&raw gRfuFixed) as *mut *mut u8).read_volatile() as usize,
+                ) as i32 as u32;
             }
         }
-        (*gRfuStatic).totalPacketSize = pakcketSize;
+        (*crate::gl!(gRfuStatic)).totalPacketSize = pakcketSize;
     }
 }
 unsafe fn rfu_STC_NI_constructLLSF(
@@ -1916,7 +2060,8 @@ unsafe fn rfu_STC_NI_constructLLSF(
     NI_comm: *mut NIComm,
 ) -> u16 {
     let mut size: u16 = 0;
-    let llsf: *mut LLSFStruct = (&raw const llsf_struct[(*gRfuLinkStatus).parentChild]).cast_mut();
+    let llsf: *mut LLSFStruct =
+        (&raw const llsf_struct[(*crate::gl!(gRfuLinkStatus)).parentChild]).cast_mut();
     if (*NI_comm).state == SLOT_STATE_SENDING {
         while (*NI_comm).now_p[(*NI_comm).phase]
             >= ((*NI_comm).src as *mut u8).at((*NI_comm).dataSize)
@@ -1952,7 +2097,7 @@ unsafe fn rfu_STC_NI_constructLLSF(
         | shl_i32((*NI_comm).phase as i32, (*llsf).phaseShift as u32) as u32
         | shl_i32((*NI_comm).n[(*NI_comm).phase] as i32, (*llsf).nShift as u32) as u32
         | size as u32;
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         frame |= ((*NI_comm).bmSlot as u32) << 18;
     }
     let mut frame8_p: *mut u8 = &raw mut frame as *mut u8;
@@ -1969,7 +2114,7 @@ unsafe fn rfu_STC_NI_constructLLSF(
     }
     if size != 0 {
         let mut src: *mut u8 = (*NI_comm).now_p[(*NI_comm).phase];
-        (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(&raw mut src, dest_pp, size as i32);
+        (*crate::gl!(gRfuFixed)).fastCopyPtr.unwrap_unchecked()(&raw mut src, dest_pp, size as i32);
     }
     if (*NI_comm).state == SLOT_STATE_SENDING {
         (*NI_comm).phase += 1;
@@ -1977,29 +2122,30 @@ unsafe fn rfu_STC_NI_constructLLSF(
             (*NI_comm).phase = 0;
         }
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-        volatile_write(&raw mut (*gRfuLinkStatus).LLFReadyFlag, 1);
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+        volatile_write(&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag, 1);
     } else {
         volatile_write(
-            &raw mut (*gRfuLinkStatus).LLFReadyFlag,
-            (&raw mut (*gRfuLinkStatus).LLFReadyFlag).read_volatile()
+            &raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag,
+            (&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag).read_volatile()
                 | shl_i32(1, bm_slot_id as u32) as u8,
         );
     }
     size + (*llsf).frameSize as u16
 }
 unsafe fn rfu_STC_UNI_constructLLSF(bm_slot_id: u8, dest_p: *mut *mut u8) -> u16 {
-    let UNI_send: *mut UNISend = &raw mut (*gRfuSlotStatusUNI[bm_slot_id]).send;
+    let UNI_send: *mut UNISend = &raw mut (*crate::gl!(gRfuSlotStatusUNI[bm_slot_id])).send;
     if (*UNI_send).dataReadyFlag == 0 || (*UNI_send).bmSlot == 0 {
         return 0;
     }
-    let llsf: *mut LLSFStruct = (&raw const llsf_struct[(*gRfuLinkStatus).parentChild]).cast_mut();
+    let llsf: *mut LLSFStruct =
+        (&raw const llsf_struct[(*crate::gl!(gRfuLinkStatus)).parentChild]).cast_mut();
     let mut frame: u32 = shl_i32(
         (*UNI_send).state as i32 & 0xF,
         (*llsf).slotStateShift as u32,
     ) as u32
         | (*UNI_send).payloadSize as u32;
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         frame |= ((*UNI_send).bmSlot as u32) << 18;
     }
     let mut frame8_p: *mut u8 = &raw mut frame as *mut u8;
@@ -2015,28 +2161,28 @@ unsafe fn rfu_STC_UNI_constructLLSF(bm_slot_id: u8, dest_p: *mut *mut u8) -> u16
         });
     }
     let mut src_p: *mut u8 = (*UNI_send).src as *mut u8;
-    (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(
+    (*crate::gl!(gRfuFixed)).fastCopyPtr.unwrap_unchecked()(
         &raw mut src_p,
         dest_p,
         (*UNI_send).payloadSize as i32,
     );
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-        volatile_write(&raw mut (*gRfuLinkStatus).LLFReadyFlag, 16);
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+        volatile_write(&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag, 16);
     } else {
         volatile_write(
-            &raw mut (*gRfuLinkStatus).LLFReadyFlag,
-            (&raw mut (*gRfuLinkStatus).LLFReadyFlag).read_volatile()
+            &raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag,
+            (&raw mut (*crate::gl!(gRfuLinkStatus)).LLFReadyFlag).read_volatile()
                 | shl_i32(16, bm_slot_id as u32) as u8,
         );
     }
     (*llsf).frameSize as u16 + (*UNI_send).payloadSize
 }
 pub unsafe fn rfu_REQ_recvData() {
-    if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL {
-        (*gRfuStatic).commExistFlag = (*gRfuLinkStatus).sendSlotNIFlag
-            | (*gRfuLinkStatus).recvSlotNIFlag
-            | (*gRfuLinkStatus).sendSlotUNIFlag;
-        (*gRfuStatic).recvErrorFlag = 0;
+    if (*crate::gl!(gRfuLinkStatus)).parentChild != MODE_NEUTRAL {
+        (*crate::gl!(gRfuStatic)).commExistFlag = (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag
+            | (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag
+            | (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag;
+        (*crate::gl!(gRfuStatic)).recvErrorFlag = 0;
         STWI_set_Callback_M(core::mem::transmute::<
             Option<unsafe fn(u8, u16)>,
             *mut c_void,
@@ -2047,47 +2193,59 @@ pub unsafe fn rfu_REQ_recvData() {
 pub(crate) unsafe fn rfu_CB_recvData(reqCommand: u8, mut reqResult: u16) {
     let mut slotStatusNI: *mut RfuSlotStatusNI = null_mut();
     let mut NI_comm: *mut NIComm = null_mut();
-    if reqResult == 0 && (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[1] != 0 {
-        (*gRfuStatic).NIEndRecvFlag = 0;
-        if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if reqResult == 0
+        && (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+            .rxPacketAlloc
+            .rfuPacket8
+            .data[1]
+            != 0
+    {
+        (*crate::gl!(gRfuStatic)).NIEndRecvFlag = 0;
+        if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
             rfu_STC_PARENT_analyzeRecvPacket();
         } else {
             rfu_STC_CHILD_analyzeRecvPacket();
         }
         for i in 0..RFU_CHILD_MAX {
-            slotStatusNI = gRfuSlotStatusNI[i];
+            slotStatusNI = crate::gl!(gRfuSlotStatusNI[i]);
             if (*slotStatusNI).recv.state == SLOT_STATE_RECV_LAST
-                && shr_i32((*gRfuStatic).NIEndRecvFlag as i32, i as u32) & 1 == 0
+                && shr_i32((*crate::gl!(gRfuStatic)).NIEndRecvFlag as i32, i as u32) & 1 == 0
             {
                 NI_comm = &raw mut (*slotStatusNI).recv;
                 if (*NI_comm).dataType == 1 {
-                    (*gRfuLinkStatus).getNameFlag |= shl_i32(1, i as u32) as u8;
+                    (*crate::gl!(gRfuLinkStatus)).getNameFlag |= shl_i32(1, i as u32) as u8;
                 }
                 rfu_STC_releaseFrame(i, 1, NI_comm);
-                (*gRfuLinkStatus).recvSlotNIFlag &= !(*NI_comm).bmSlot;
+                (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag &= !(*NI_comm).bmSlot;
                 (*slotStatusNI).recv.state = SLOT_STATE_RECV_SUCCESS;
             }
         }
-        if (*gRfuStatic).recvErrorFlag != 0 {
-            reqResult = (*gRfuStatic).recvErrorFlag as u16 | ERR_DATA_RECV;
+        if (*crate::gl!(gRfuStatic)).recvErrorFlag != 0 {
+            reqResult = (*crate::gl!(gRfuStatic)).recvErrorFlag as u16 | ERR_DATA_RECV;
         }
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
 unsafe fn rfu_STC_PARENT_analyzeRecvPacket() {
     let mut frame_counts: CArray<u8, 4> = zeroed();
-    let mut frames32: u32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] >> 8;
+    let mut frames32: u32 = (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket32
+        .data[0]
+        >> 8;
     let mut bm_slot_id: u8 = 0;
     while bm_slot_id < RFU_CHILD_MAX {
         frame_counts[bm_slot_id] = frames32 as u8 & 0x1F;
         frames32 >>= 5;
         if frame_counts[bm_slot_id] == 0 {
-            (*gRfuStatic).NIEndRecvFlag |= shl_i32(1, bm_slot_id as u32) as u8;
+            (*crate::gl!(gRfuStatic)).NIEndRecvFlag |= shl_i32(1, bm_slot_id as u32) as u8;
         }
         bm_slot_id += 1;
     }
-    let mut packet_p: *mut u8 =
-        &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8];
+    let mut packet_p: *mut u8 = &raw mut (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[8];
     for bm_slot_id in 0..RFU_CHILD_MAX {
         if frame_counts[bm_slot_id] != 0 {
             let frames_p: *mut u8 = &raw mut frame_counts[bm_slot_id];
@@ -2105,12 +2263,17 @@ unsafe fn rfu_STC_PARENT_analyzeRecvPacket() {
 }
 unsafe fn rfu_STC_CHILD_analyzeRecvPacket() {
     let mut analyzed_frames: u16 = 0;
-    let mut frames_remaining: u16 =
-        *(&raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4] as *mut u16) & 0x7F;
-    let mut packet_p: *mut u8 =
-        &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8];
+    let mut frames_remaining: u16 = *(&raw mut (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[4] as *mut u16)
+        & 0x7F;
+    let mut packet_p: *mut u8 = &raw mut (*(*crate::gl!(gRfuFixed)).STWIBuffer)
+        .rxPacketAlloc
+        .rfuPacket8
+        .data[8];
     if frames_remaining == 0 {
-        (*gRfuStatic).NIEndRecvFlag = 15;
+        (*crate::gl!(gRfuStatic)).NIEndRecvFlag = 15;
     }
     loop {
         if frames_remaining == 0 {
@@ -2127,7 +2290,7 @@ unsafe fn rfu_STC_CHILD_analyzeRecvPacket() {
 unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) -> u16 {
     let mut llsf_NI: RfuLocalStruct = zeroed();
     let llsf_p: *mut LLSFStruct = (&raw const llsf_struct
-        [!((*gRfuLinkStatus).parentChild as i32) & MODE_PARENT as i32])
+        [!((*crate::gl!(gRfuLinkStatus)).parentChild as i32) & MODE_PARENT as i32])
         .cast_mut();
     if last_frame < (*llsf_p).frameSize as u16 {
         return last_frame;
@@ -2157,8 +2320,13 @@ unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) ->
     llsf_NI.frame = frames as u16 & (*llsf_p).framesMask & frames as u16;
     let retVal: u16 = llsf_NI.frame + (*llsf_p).frameSize as u16;
     if llsf_NI.recvFirst == 0 {
-        if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-            if shr_i32((*gRfuLinkStatus).connSlotFlag as i32, slot_id as u32) & 1 != 0 {
+        if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
+            if shr_i32(
+                (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32,
+                slot_id as u32,
+            ) & 1
+                != 0
+            {
                 if llsf_NI.slotState == LCOM_UNI {
                     rfu_STC_UNI_receive(slot_id, &raw mut llsf_NI, src);
                 } else if llsf_NI.ack == 0 {
@@ -2166,9 +2334,15 @@ unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) ->
                 } else {
                     i = 0;
                     while i < RFU_CHILD_MAX {
-                        if shr_i32((*gRfuSlotStatusNI[i]).send.bmSlot as i32, slot_id as u32) & 1
+                        if shr_i32(
+                            (*crate::gl!(gRfuSlotStatusNI[i])).send.bmSlot as i32,
+                            slot_id as u32,
+                        ) & 1
                             != 0
-                            && shr_i32((*gRfuLinkStatus).sendSlotNIFlag as i32, slot_id as u32) & 1
+                            && shr_i32(
+                                (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32,
+                                slot_id as u32,
+                            ) & 1
                                 != 0
                         {
                             break;
@@ -2181,7 +2355,8 @@ unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) ->
                 }
             }
         } else {
-            let conSlots: i32 = (*gRfuLinkStatus).connSlotFlag as i32 & llsf_NI.connSlotFlag as i32;
+            let conSlots: i32 =
+                (*crate::gl!(gRfuLinkStatus)).connSlotFlag as i32 & llsf_NI.connSlotFlag as i32;
             if conSlots != 0 {
                 for i in 0..RFU_CHILD_MAX {
                     if shr_i32(conSlots, i as u32) & 1 != 0 {
@@ -2189,7 +2364,10 @@ unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) ->
                             rfu_STC_UNI_receive(i, &raw mut llsf_NI, src);
                         } else if llsf_NI.ack == 0 {
                             rfu_STC_NI_receive_Receiver(i, &raw mut llsf_NI, src);
-                        } else if shr_i32((*gRfuLinkStatus).sendSlotNIFlag as i32, i as u32) & 1
+                        } else if shr_i32(
+                            (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32,
+                            i as u32,
+                        ) & 1
                             != 0
                         {
                             rfu_STC_NI_receive_Sender(i, i, &raw mut llsf_NI, src);
@@ -2204,11 +2382,11 @@ unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) ->
 unsafe fn rfu_STC_UNI_receive(bm_slot_id: u8, llsf_NI: *mut RfuLocalStruct, mut src: *mut u8) {
     let mut dest: *mut u8 = null_mut();
     let mut size: u32 = 0;
-    let slotStatusUNI: *mut RfuSlotStatusUNI = gRfuSlotStatusUNI[bm_slot_id];
+    let slotStatusUNI: *mut RfuSlotStatusUNI = crate::gl!(gRfuSlotStatusUNI[bm_slot_id]);
     let UNI_recv: *mut UNIRecv = &raw mut (*slotStatusUNI).recv;
     (*UNI_recv).errorCode = 0;
     'force_tail_merge: {
-        if (*gRfuSlotStatusUNI[bm_slot_id]).recvBufferSize < (*llsf_NI).frame as u32 {
+        if (*crate::gl!(gRfuSlotStatusUNI[bm_slot_id])).recvBufferSize < (*llsf_NI).frame as u32 {
             (*slotStatusUNI).recv.state = SLOT_STATE_RECV_IGNORE;
             (*UNI_recv).errorCode = ERR_RECV_BUFF_OVER;
         } else {
@@ -2227,14 +2405,18 @@ unsafe fn rfu_STC_UNI_receive(bm_slot_id: u8, llsf_NI: *mut RfuLocalStruct, mut 
                 (*UNI_recv).dataSize = (*llsf_NI).frame;
                 (*UNI_recv).dataSize
             }) as u32;
-            dest = (*gRfuSlotStatusUNI[bm_slot_id]).recvBuffer as *mut u8;
-            (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(&raw mut src, &raw mut dest, size as i32);
+            dest = (*crate::gl!(gRfuSlotStatusUNI[bm_slot_id])).recvBuffer as *mut u8;
+            (*crate::gl!(gRfuFixed)).fastCopyPtr.unwrap_unchecked()(
+                &raw mut src,
+                &raw mut dest,
+                size as i32,
+            );
             (*UNI_recv).newDataFlag = 1;
             (*UNI_recv).state = 0;
         }
     }
     if (*UNI_recv).errorCode != 0 {
-        (*gRfuStatic).recvErrorFlag |= shl_i32(16, bm_slot_id as u32) as u8;
+        (*crate::gl!(gRfuStatic)).recvErrorFlag |= shl_i32(16, bm_slot_id as u32) as u8;
     }
 }
 unsafe fn rfu_STC_NI_receive_Sender(
@@ -2243,7 +2425,7 @@ unsafe fn rfu_STC_NI_receive_Sender(
     llsf_NI: *mut RfuLocalStruct,
     data_p: *mut u8,
 ) {
-    let NI_comm: *mut NIComm = &raw mut (*gRfuSlotStatusNI[NI_slot]).send;
+    let NI_comm: *mut NIComm = &raw mut (*crate::gl!(gRfuSlotStatusNI[NI_slot])).send;
     let state: u16 = (*NI_comm).state;
     let n: u8 = (*NI_comm).n[(*llsf_NI).phase];
     let mut imeBak: u16 = 0;
@@ -2303,8 +2485,8 @@ unsafe fn rfu_STC_NI_receive_Sender(
     {
         imeBak = (67109384_usize as *mut u16).read_volatile();
         volatile_write(67109384_usize as *mut u16, 0);
-        (*gRfuStatic).recvRenewalFlag |= shl_i32(16, bm_flag as u32) as u8;
-        (*gRfuSlotStatusNI[bm_flag]).send.failCounter = 0;
+        (*crate::gl!(gRfuStatic)).recvRenewalFlag |= shl_i32(16, bm_flag as u32) as u8;
+        (*crate::gl!(gRfuSlotStatusNI[bm_flag])).send.failCounter = 0;
         volatile_write(67109384_usize as *mut u16, imeBak);
     }
 }
@@ -2315,12 +2497,12 @@ unsafe fn rfu_STC_NI_receive_Receiver(
 ) {
     let mut imeBak: u16 = 0;
     let mut state_check: u32 = 0;
-    let slotStatus_NI: *mut RfuSlotStatusNI = gRfuSlotStatusNI[bm_slot_id];
+    let slotStatus_NI: *mut RfuSlotStatusNI = crate::gl!(gRfuSlotStatusNI[bm_slot_id]);
     let recvSlot: *mut NIComm = &raw mut (*slotStatus_NI).recv;
     let state: u16 = (*slotStatus_NI).recv.state;
     let n: u8 = (*slotStatus_NI).recv.n[(*llsf_NI).phase];
     if (*llsf_NI).slotState == LCOM_NI_END {
-        (*gRfuStatic).NIEndRecvFlag |= shl_i32(1, bm_slot_id as u32) as u8;
+        (*crate::gl!(gRfuStatic)).NIEndRecvFlag |= shl_i32(1, bm_slot_id as u32) as u8;
         if (*slotStatus_NI).recv.state == SLOT_STATE_RECEIVING {
             (*slotStatus_NI).recv.phase = 0;
             (*slotStatus_NI).recv.n[0] = 0;
@@ -2345,7 +2527,7 @@ unsafe fn rfu_STC_NI_receive_Receiver(
         }
     }
     if state_check != 0 && (*llsf_NI).n as i32 == ((*recvSlot).n[(*llsf_NI).phase] as i32 + 1) & 3 {
-        (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(
+        (*crate::gl!(gRfuFixed)).fastCopyPtr.unwrap_unchecked()(
             &raw mut data_p,
             &raw mut (*recvSlot).now_p[(*llsf_NI).phase],
             (*llsf_NI).frame as i32,
@@ -2365,7 +2547,7 @@ unsafe fn rfu_STC_NI_receive_Receiver(
         {
             imeBak = (67109384_usize as *mut u16).read_volatile();
             volatile_write(67109384_usize as *mut u16, 0);
-            (*gRfuStatic).recvRenewalFlag |= shl_i32(1, bm_slot_id as u32) as u8;
+            (*crate::gl!(gRfuStatic)).recvRenewalFlag |= shl_i32(1, bm_slot_id as u32) as u8;
             (*recvSlot).failCounter = 0;
             volatile_write(67109384_usize as *mut u16, imeBak);
         }
@@ -2374,19 +2556,19 @@ unsafe fn rfu_STC_NI_receive_Receiver(
 unsafe fn rfu_STC_NI_initSlot_asRecvControllData(bm_slot_id: u8, NI_comm: *mut NIComm) {
     let mut llFrameSize_p: *mut u8 = null_mut();
     let mut llFrameSize: u32 = 0;
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         llFrameSize = 3;
-        llFrameSize_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeParent;
+        llFrameSize_p = &raw mut (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeParent;
     } else {
         llFrameSize = 2;
-        llFrameSize_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeChild[bm_slot_id];
+        llFrameSize_p = &raw mut (*crate::gl!(gRfuLinkStatus)).remainLLFrameSizeChild[bm_slot_id];
     }
     let bm_slot_flag: u8 = shl_i32(1, bm_slot_id as u32) as u8;
     if (*NI_comm).state == 0 {
         if (*llFrameSize_p as u32) < llFrameSize {
             (*NI_comm).state = SLOT_STATE_RECV_IGNORE;
             (*NI_comm).errorCode = ERR_RECV_REPLY_SUBFRAME_SIZE;
-            (*gRfuStatic).recvErrorFlag |= bm_slot_flag;
+            (*crate::gl!(gRfuStatic)).recvErrorFlag |= bm_slot_flag;
         } else {
             (*NI_comm).errorCode = 0;
             *llFrameSize_p -= llFrameSize as u8;
@@ -2396,26 +2578,26 @@ unsafe fn rfu_STC_NI_initSlot_asRecvControllData(bm_slot_id: u8, NI_comm: *mut N
             (*NI_comm).payloadSize = 0;
             (*NI_comm).bmSlot = bm_slot_flag;
             (*NI_comm).state = SLOT_STATE_RECV_START;
-            (*gRfuLinkStatus).recvSlotNIFlag |= bm_slot_flag;
+            (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag |= bm_slot_flag;
         }
     }
 }
 unsafe fn rfu_STC_NI_initSlot_asRecvDataEntity(bm_slot_id: u8, NI_comm: *mut NIComm) {
     let mut bm_slot_flag: u8 = 0;
     if (*NI_comm).dataType == 1 {
-        (*NI_comm).now_p[0] =
-            &raw mut (*gRfuLinkStatus).partner[bm_slot_id].serialNo as *mut c_void as *mut u8;
+        (*NI_comm).now_p[0] = &raw mut (*crate::gl!(gRfuLinkStatus)).partner[bm_slot_id].serialNo
+            as *mut c_void as *mut u8;
     } else {
-        if (*NI_comm).dataSize > (*gRfuSlotStatusNI[bm_slot_id]).recvBufferSize {
+        if (*NI_comm).dataSize > (*crate::gl!(gRfuSlotStatusNI[bm_slot_id])).recvBufferSize {
             bm_slot_flag = shl_i32(1, bm_slot_id as u32) as u8;
-            (*gRfuStatic).recvErrorFlag |= bm_slot_flag;
-            (*gRfuLinkStatus).recvSlotNIFlag &= !bm_slot_flag;
+            (*crate::gl!(gRfuStatic)).recvErrorFlag |= bm_slot_flag;
+            (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag &= !bm_slot_flag;
             (*NI_comm).errorCode = ERR_RECV_BUFF_OVER;
             (*NI_comm).state = SLOT_STATE_RECV_FAILED;
             rfu_STC_releaseFrame(bm_slot_id, 1, NI_comm);
             return;
         }
-        (*NI_comm).now_p[0] = (*gRfuSlotStatusNI[bm_slot_id]).recvBuffer as *mut u8;
+        (*NI_comm).now_p[0] = (*crate::gl!(gRfuSlotStatusNI[bm_slot_id])).recvBuffer as *mut u8;
     }
     for win_id in 0..WINDOW_COUNT {
         (*NI_comm).n[win_id] = 0;
@@ -2429,24 +2611,27 @@ unsafe fn rfu_NI_checkCommFailCounter() {
     let mut imeBak: u16 = 0;
     let mut recvRenewalFlag: u32 = 0;
     let mut bm_slot_flag: u8 = 0;
-    if (*gRfuLinkStatus).sendSlotNIFlag as i32 | (*gRfuLinkStatus).recvSlotNIFlag as i32 != 0 {
+    if (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32
+        | (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag as i32
+        != 0
+    {
         imeBak = (67109384_usize as *mut u16).read_volatile();
         volatile_write(67109384_usize as *mut u16, 0);
-        recvRenewalFlag = ((*gRfuStatic).recvRenewalFlag >> 4) as u32;
+        recvRenewalFlag = ((*crate::gl!(gRfuStatic)).recvRenewalFlag >> 4) as u32;
         for bm_slot_id in 0..RFU_CHILD_MAX {
             bm_slot_flag = shl_i32(1, bm_slot_id as u32) as u8;
-            if (*gRfuLinkStatus).sendSlotNIFlag as i32 & bm_slot_flag as i32 != 0
-                && (*gRfuStatic).recvRenewalFlag as i32 & bm_slot_flag as i32 == 0
+            if (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32 & bm_slot_flag as i32 != 0
+                && (*crate::gl!(gRfuStatic)).recvRenewalFlag as i32 & bm_slot_flag as i32 == 0
             {
-                (*gRfuSlotStatusNI[bm_slot_id]).send.failCounter += 1;
+                (*crate::gl!(gRfuSlotStatusNI[bm_slot_id])).send.failCounter += 1;
             }
-            if (*gRfuLinkStatus).recvSlotNIFlag as i32 & bm_slot_flag as i32 != 0
+            if (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag as i32 & bm_slot_flag as i32 != 0
                 && recvRenewalFlag & bm_slot_flag as u32 == 0
             {
-                (*gRfuSlotStatusNI[bm_slot_id]).recv.failCounter += 1;
+                (*crate::gl!(gRfuSlotStatusNI[bm_slot_id])).recv.failCounter += 1;
             }
         }
-        (*gRfuStatic).recvRenewalFlag = 0;
+        (*crate::gl!(gRfuStatic)).recvRenewalFlag = 0;
         volatile_write(67109384_usize as *mut u16, imeBak);
     }
 }

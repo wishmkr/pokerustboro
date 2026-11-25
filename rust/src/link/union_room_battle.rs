@@ -36,8 +36,8 @@ const PALETTES_ALL: u32 = 0xffff_ffff;
 const RGB_BLACK: u16 = 0;
 
 /// `struct UnionRoomBattle { s16 textState; }`
-#[unsafe(link_section = "ewram_data")]
-static mut BATTLE: *mut i16 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static BATTLE: crate::global::Global<*mut i16> = crate::global::Global::new(core::ptr::null_mut());
 
 static BG_TEMPLATES: [BgTemplate; 1] = [BgTemplate::new(0, 3, 31, 0, 0, 0, 0)];
 
@@ -131,9 +131,7 @@ unsafe fn TransferPlttBuffer() {
 /// `ResetTempTileDataBuffers` with this module's view of its types.
 #[inline]
 unsafe fn ResetTempTileDataBuffers() {
-    unsafe {
-        crate::menu::ResetTempTileDataBuffers();
-    }
+    crate::menu::ResetTempTileDataBuffers();
 }
 /// `DeactivateAllTextPrinters` with this module's view of its types.
 #[inline]
@@ -191,9 +189,7 @@ unsafe fn GetBlockReceivedStatus() -> u8 {
 /// `ResetBlockReceivedFlags` with this module's view of its types.
 #[inline]
 unsafe fn ResetBlockReceivedFlags() {
-    unsafe {
-        crate::link::ResetBlockReceivedFlags();
-    }
+    crate::link::ResetBlockReceivedFlags();
 }
 /// `SetCloseLinkCallback` with this module's view of its types.
 #[inline]
@@ -227,17 +223,18 @@ unsafe fn mon(party: *mut u8, index: usize) -> *mut u8 {
 
 unsafe fn cb2_set_up_parties_and_start_battle() {
     unsafe { StartUnionRoomBattle(BATTLE_TYPE_LINK_TRAINER) };
-    let player = (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+    let player = (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
         .cast::<u8>()
         .cast_mut()))
         .cast::<u8>();
-    let enemy = (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+    let enemy = (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gEnemyParty;).cast_const())
         .cast::<u8>()
         .cast_mut()))
         .cast::<u8>();
-    let order = (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
-        .cast::<[u8; 3]>()
-        .cast_mut()))
+    let order = (&raw const (*(crate::gl!(&raw @at crate::party_menu::gSelectedOrderFromParty;)
+        .cast_const())
+    .cast::<[u8; 3]>()
+    .cast_mut()))
         .cast::<u8>();
     for i in 0..UNION_ROOM_PARTY_SIZE {
         let slot = usize::from(unsafe { order.add(i).read() }).wrapping_sub(1);
@@ -249,7 +246,7 @@ unsafe fn cb2_set_up_parties_and_start_battle() {
     unsafe { core::ptr::copy(enemy, player, UNION_ROOM_PARTY_SIZE * POKEMON_SIZE) };
     unsafe { IncrementGameStat(GAME_STAT_NUM_UNION_ROOM_BATTLES) };
     unsafe { CalculatePlayerPartyCount() };
-    unsafe { (&raw mut gTrainerBattleOpponent_A).write(TRAINER_UNION_ROOM) };
+    unsafe { (gTrainerBattleOpponent_A.as_ptr()).write(TRAINER_UNION_ROOM) };
     unsafe { SetMainCallback2(CB2_InitBattle) };
 }
 
@@ -295,19 +292,20 @@ unsafe fn vblank_cb() {
 
 #[inline]
 unsafe fn received(player: usize) -> u16 {
-    let buffer = &raw const (*(&raw const crate::link::gBlockRecvBuffer).cast::<u8>());
+    let buffer = &raw const (*(crate::gl!(&raw @at crate::link::gBlockRecvBuffer;).cast_const())
+        .cast::<u8>());
     unsafe { buffer.add(player * BLOCK_RECV_ROW).cast::<u16>().read() }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn CB2_UnionRoomBattle() {
     let state = unsafe { main_state() };
-    let text_state = unsafe { (&raw const BATTLE).read() };
+    let text_state = unsafe { (crate::gl!(&raw BATTLE).cast_const()).read() };
     match unsafe { state.read() } {
         0 => {
             unsafe { SetGpuReg(0, 0) };
             let battle = unsafe { AllocZeroed(2) }.cast::<i16>();
-            unsafe { (&raw mut BATTLE).write(battle) };
+            unsafe { (crate::gl!(&raw BATTLE)).write(battle) };
             unsafe { ResetSpriteData() };
             unsafe { FreeAllSpritePalettes() };
             ResetTasks();
@@ -348,12 +346,13 @@ pub unsafe fn CB2_UnionRoomBattle() {
         }
         3 => {
             if unsafe { UpdatePaletteFade() } == 0 {
-                let send = (&raw mut (*(&raw const crate::link::gBlockSendBuffer)
-                    .cast::<[u8; 0x100]>()
-                    .cast_mut()))
+                let send = (&raw mut (*(crate::gl!(&raw @at crate::link::gBlockSendBuffer;)
+                    .cast_const())
+                .cast::<[u8; 0x100]>()
+                .cast_mut()))
                     .cast::<u8>();
                 unsafe { send.write_bytes(0, 0x20) };
-                let order = (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
+                let order = (&raw const (*(crate::gl!(&raw @at crate::party_menu::gSelectedOrderFromParty;).cast_const())
                     .cast::<[u8; 3]>()
                     .cast_mut()))
                     .cast::<u8>();
@@ -396,7 +395,7 @@ pub unsafe fn CB2_UnionRoomBattle() {
             }
         }
         6 | 8 => {
-            if unsafe { (&raw const gReceivedRemoteLinkPlayers).read() } == 0 {
+            if unsafe { (gReceivedRemoteLinkPlayers.as_ptr().cast_const()).read() } == 0 {
                 let current = unsafe { state.read() };
                 unsafe { state.write(current + 1) };
             }

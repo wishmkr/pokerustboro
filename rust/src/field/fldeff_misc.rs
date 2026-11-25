@@ -78,7 +78,7 @@ unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -95,7 +95,7 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `FreeSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn FreeSpritePalette(a0: *mut Sprite) {
+fn FreeSpritePalette(a0: *mut Sprite) {
     unsafe {
         crate::sprite::FreeSpritePalette(a0 as _);
     }
@@ -150,8 +150,9 @@ static sSpriteTemplate_SecretPowerTree: Table<SpriteTemplate> =
     Table((&raw const crate::data::fldeff_misc::sSpriteTemplate_SecretPowerTree).cast());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerFacingPosition: MapPosition = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPlayerFacingPosition: crate::global::Global<MapPosition> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 pub unsafe fn ComputerScreenOpenEffect(increment: u16, unused: u16, priority: u8) {
     CreateComputerScreenEffectTask(
@@ -230,7 +231,7 @@ pub(crate) unsafe fn Task_ComputerScreenOpenEffect(taskId: u8) {
                 SetGpuReg(REG_OFFSET_BLDY, 0);
                 SetGpuReg(REG_OFFSET_BLDCNT, (*task).data[tBlendCnt] as u16);
                 BlendPalettes(PALETTES_ALL, 0, 0);
-                gPlttBufferFaded[0] = 0;
+                crate::gl!(gPlttBufferFaded[0] = 0);
             }
             SetGpuReg(
                 REG_OFFSET_WIN0H,
@@ -268,7 +269,7 @@ pub(crate) unsafe fn Task_ComputerScreenCloseEffect(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     match (*task).data[0] {
         0 => {
-            gPlttBufferFaded[0] = 0;
+            crate::gl!(gPlttBufferFaded[0] = 0);
         }
         1 => {
             (*task).data[tWinLeft] = 0;
@@ -311,7 +312,7 @@ pub(crate) unsafe fn Task_ComputerScreenCloseEffect(taskId: u8) {
                 (*task).data[tWinLeft] = 120;
                 (*task).data[tWinRight] = 120;
                 BlendPalettes(PALETTES_ALL, 16, 0);
-                gPlttBufferFaded[0] = 0;
+                crate::gl!(gPlttBufferFaded[0] = 0);
             }
             SetGpuReg(
                 REG_OFFSET_WIN0H,
@@ -332,47 +333,50 @@ pub(crate) unsafe fn Task_ComputerScreenCloseEffect(taskId: u8) {
     (*task).data[0] += 1;
 }
 unsafe fn SetCurrentSecretBase() {
-    SetCurSecretBaseIdFromPosition(&raw mut gPlayerFacingPosition, gMapHeader.events);
+    SetCurSecretBaseIdFromPosition(
+        crate::gl!(&raw gPlayerFacingPosition),
+        crate::gl!(gMapHeader.events),
+    );
     TrySetCurSecretBaseIndex();
 }
-unsafe fn AdjustSecretPowerSpritePixelOffsets() {
-    if gPlayerAvatar.flags as i32 & 6 != 0 {
-        match gFieldEffectArguments[1] {
+fn AdjustSecretPowerSpritePixelOffsets() {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & 6 != 0 {
+        match crate::gl!(gFieldEffectArguments[1]) {
             1 => {
-                gFieldEffectArguments[5] = 16;
-                gFieldEffectArguments[6] = 40;
+                crate::gl!(gFieldEffectArguments[5] = 16);
+                crate::gl!(gFieldEffectArguments[6] = 40);
             }
             2 => {
-                gFieldEffectArguments[5] = 16;
-                gFieldEffectArguments[6] = 8;
+                crate::gl!(gFieldEffectArguments[5] = 16);
+                crate::gl!(gFieldEffectArguments[6] = 8);
             }
             3 => {
-                gFieldEffectArguments[5] = -8;
-                gFieldEffectArguments[6] = 24;
+                crate::gl!(gFieldEffectArguments[5] = -8);
+                crate::gl!(gFieldEffectArguments[6] = 24);
             }
             4 => {
-                gFieldEffectArguments[5] = 24;
-                gFieldEffectArguments[6] = 24;
+                crate::gl!(gFieldEffectArguments[5] = 24);
+                crate::gl!(gFieldEffectArguments[6] = 24);
             }
             _ => {}
         }
     } else {
-        match gFieldEffectArguments[1] {
+        match crate::gl!(gFieldEffectArguments[1]) {
             1 => {
-                gFieldEffectArguments[5] = 8;
-                gFieldEffectArguments[6] = 40;
+                crate::gl!(gFieldEffectArguments[5] = 8);
+                crate::gl!(gFieldEffectArguments[6] = 40);
             }
             2 => {
-                gFieldEffectArguments[5] = 8;
-                gFieldEffectArguments[6] = 8;
+                crate::gl!(gFieldEffectArguments[5] = 8);
+                crate::gl!(gFieldEffectArguments[6] = 8);
             }
             3 => {
-                gFieldEffectArguments[5] = -8;
-                gFieldEffectArguments[6] = 24;
+                crate::gl!(gFieldEffectArguments[5] = -8);
+                crate::gl!(gFieldEffectArguments[6] = 24);
             }
             4 => {
-                gFieldEffectArguments[5] = 24;
-                gFieldEffectArguments[6] = 24;
+                crate::gl!(gFieldEffectArguments[5] = 24);
+                crate::gl!(gFieldEffectArguments[6] = 24);
             }
             _ => {}
         }
@@ -384,35 +388,35 @@ pub unsafe fn SetUpFieldMove_SecretPower() -> u8 {
         return FALSE;
     }
     GetXYCoordsOneStepInFrontOfPlayer(
-        &raw mut gPlayerFacingPosition.x,
-        &raw mut gPlayerFacingPosition.y,
+        crate::gl!(&raw gPlayerFacingPosition.x),
+        crate::gl!(&raw gPlayerFacingPosition.y),
     );
     let mb: u8 = MapGridGetMetatileBehaviorAt(
-        gPlayerFacingPosition.x as i32,
-        gPlayerFacingPosition.y as i32,
+        crate::gl!(gPlayerFacingPosition.x) as i32,
+        crate::gl!(gPlayerFacingPosition.y) as i32,
     ) as u8;
     if MetatileBehavior_IsSecretBaseCave(mb) == TRUE {
         SetCurrentSecretBase();
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_SecretBaseCave);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_SecretBaseCave));
         return TRUE;
     }
     if MetatileBehavior_IsSecretBaseTree(mb) == TRUE {
         SetCurrentSecretBase();
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_SecretBaseTree);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_SecretBaseTree));
         return TRUE;
     }
     if MetatileBehavior_IsSecretBaseShrub(mb) == TRUE {
         SetCurrentSecretBase();
-        gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
-        gPostMenuFieldCallback = Some(FieldCallback_SecretBaseShrub);
+        crate::gl!(gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu));
+        crate::gl!(gPostMenuFieldCallback = Some(FieldCallback_SecretBaseShrub));
         return TRUE;
     }
     FALSE
 }
 pub(crate) unsafe fn FieldCallback_SecretBaseCave() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     ScriptContext_SetupScript(
         (*crate::asmdata::SecretBase_EventScript_CaveUseSecretPower.cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -443,8 +447,14 @@ pub unsafe fn FldEff_SecretPowerCave() -> u8 {
     AdjustSecretPowerSpritePixelOffsets();
     CreateSprite(
         (&raw const *sSpriteTemplate_SecretPowerCave).cast_mut(),
-        gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + gFieldEffectArguments[5] as i16,
-        gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + gFieldEffectArguments[6] as i16,
+        (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+            .oam
+            .x() as i16
+            + crate::gl!(gFieldEffectArguments[5]) as i16,
+        (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+            .oam
+            .y() as i16
+            + crate::gl!(gFieldEffectArguments[6]) as i16,
         148,
     );
     FALSE
@@ -473,7 +483,7 @@ pub(crate) unsafe fn SpriteCB_CaveEntranceEnd(sprite: *mut Sprite) {
     ScriptContext_Enable();
 }
 pub(crate) unsafe fn FieldCallback_SecretBaseTree() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     ScriptContext_SetupScript(
         (*crate::asmdata::SecretBase_EventScript_TreeUseSecretPower.cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -502,38 +512,44 @@ pub(crate) unsafe fn StartSecretBaseTreeFieldEffect() {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_SecretPowerTree() -> u8 {
     let mb: i16 = MapGridGetMetatileBehaviorAt(
-        gPlayerFacingPosition.x as i32,
-        gPlayerFacingPosition.y as i32,
+        crate::gl!(gPlayerFacingPosition.x) as i32,
+        crate::gl!(gPlayerFacingPosition.y) as i32,
     ) as i16
         & 0xFFF;
     if mb == MB_SECRET_BASE_SPOT_TREE_LEFT {
-        gFieldEffectArguments[7] = 0;
+        crate::gl!(gFieldEffectArguments[7] = 0);
     }
     if mb == MB_SECRET_BASE_SPOT_TREE_RIGHT {
-        gFieldEffectArguments[7] = 2;
+        crate::gl!(gFieldEffectArguments[7] = 2);
     }
     AdjustSecretPowerSpritePixelOffsets();
     CreateSprite(
         (&raw const *sSpriteTemplate_SecretPowerTree).cast_mut(),
-        gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + gFieldEffectArguments[5] as i16,
-        gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + gFieldEffectArguments[6] as i16,
+        (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+            .oam
+            .x() as i16
+            + crate::gl!(gFieldEffectArguments[5]) as i16,
+        (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+            .oam
+            .y() as i16
+            + crate::gl!(gFieldEffectArguments[6]) as i16,
         148,
     );
-    if gFieldEffectArguments[7] == 1 || gFieldEffectArguments[7] == 3 {
+    if crate::gl!(gFieldEffectArguments[7]) == 1 || crate::gl!(gFieldEffectArguments[7]) == 3 {
         ToggleSecretBaseEntranceMetatile();
     }
     FALSE
 }
 pub(crate) unsafe fn SpriteCB_TreeEntranceInit(sprite: *mut Sprite) {
     PlaySE(SE_M_SCRATCH);
-    (*sprite).animNum = gFieldEffectArguments[7] as u8;
+    (*sprite).animNum = crate::gl!(gFieldEffectArguments[7]) as u8;
     (*sprite).data[0] = 0;
     (*sprite).callback = Some(SpriteCB_TreeEntranceOpen);
 }
 pub(crate) unsafe fn SpriteCB_TreeEntranceOpen(sprite: *mut Sprite) {
     (*sprite).data[0] += 1;
     if (*sprite).data[0] >= 40 {
-        if gFieldEffectArguments[7] == 0 || gFieldEffectArguments[7] == 2 {
+        if crate::gl!(gFieldEffectArguments[7]) == 0 || crate::gl!(gFieldEffectArguments[7]) == 2 {
             ToggleSecretBaseEntranceMetatile();
         }
         (*sprite).data[0] = 0;
@@ -545,7 +561,7 @@ pub(crate) unsafe fn SpriteCB_TreeEntranceEnd(sprite: *mut Sprite) {
     ScriptContext_Enable();
 }
 pub(crate) unsafe fn FieldCallback_SecretBaseShrub() {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
+    crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
     ScriptContext_SetupScript(
         (*crate::asmdata::SecretBase_EventScript_ShrubUseSecretPower.cast::<CArray<u8, 0>>())
             .as_ptr()
@@ -576,8 +592,14 @@ pub unsafe fn FldEff_SecretPowerShrub() -> u8 {
     AdjustSecretPowerSpritePixelOffsets();
     CreateSprite(
         (&raw const *sSpriteTemplate_SecretPowerShrub).cast_mut(),
-        gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + gFieldEffectArguments[5] as i16,
-        gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + gFieldEffectArguments[6] as i16,
+        (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+            .oam
+            .x() as i16
+            + crate::gl!(gFieldEffectArguments[5]) as i16,
+        (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+            .oam
+            .y() as i16
+            + crate::gl!(gFieldEffectArguments[6]) as i16,
         148,
     );
     FALSE
@@ -789,8 +811,12 @@ pub(crate) unsafe fn SpriteCB_GlitterMatSparkle(sprite: *mut Sprite) {
     }
 }
 pub unsafe fn DoSecretBaseGlitterMatSparkle() {
-    let mut x: i16 = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.x;
-    let mut y: i16 = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y;
+    let mut x: i16 = (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)]
+        .currentCoords
+        .x;
+    let mut y: i16 = (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)]
+        .currentCoords
+        .y;
     SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 4);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
@@ -800,11 +826,11 @@ pub unsafe fn DoSecretBaseGlitterMatSparkle() {
         0,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
-        gSprites[spriteId].oam.set_priority(1);
-        gSprites[spriteId].oam.set_paletteNum(5);
-        gSprites[spriteId].callback = Some(SpriteCB_GlitterMatSparkle);
-        gSprites[spriteId].data[0] = 0;
+        (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
+        (*gSprites.as_ptr())[spriteId].oam.set_paletteNum(5);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_GlitterMatSparkle));
+        crate::gl!(gSprites[spriteId].data[0] = 0);
     }
 }
 #[unsafe(no_mangle)]
@@ -813,38 +839,61 @@ pub unsafe fn FldEff_SandPillar() -> u8 {
     let mut y: i16 = 0;
     LockPlayerFieldControls();
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
-    gFieldEffectArguments[5] = x as i32;
-    gFieldEffectArguments[6] = y as i32;
+    crate::gl!(gFieldEffectArguments[5] = x as i32);
+    crate::gl!(gFieldEffectArguments[6] = y as i32);
     match GetPlayerFacingDirection() {
         DIR_SOUTH => {
             CreateSprite(
                 (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
-                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 8,
-                gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 32,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .x() as i16
+                    + 8,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .y() as i16
+                    + 32,
                 0,
             );
         }
         DIR_NORTH => {
             CreateSprite(
                 (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
-                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 8,
-                gSprites[gPlayerAvatar.spriteId].oam.y() as i16,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .x() as i16
+                    + 8,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .y() as i16,
                 148,
             );
         }
         DIR_WEST => {
             CreateSprite(
                 (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
-                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 - 8,
-                gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 16,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .x() as i16
+                    - 8,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .y() as i16
+                    + 16,
                 148,
             );
         }
         DIR_EAST => {
             CreateSprite(
                 (&raw const *sSpriteTemplate_SandPillar).cast_mut(),
-                gSprites[gPlayerAvatar.spriteId].oam.x() as i16 + 24,
-                gSprites[gPlayerAvatar.spriteId].oam.y() as i16 + 16,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .x() as i16
+                    + 24,
+                (*gSprites.as_ptr())[crate::gl!(gPlayerAvatar.spriteId)]
+                    .oam
+                    .y() as i16
+                    + 16,
                 148,
             );
         }
@@ -854,24 +903,36 @@ pub unsafe fn FldEff_SandPillar() -> u8 {
 }
 pub(crate) unsafe fn SpriteCB_SandPillar_BreakTop(sprite: *mut Sprite) {
     PlaySE(SE_M_ROCK_THROW);
-    if MapGridGetMetatileIdAt(gFieldEffectArguments[5], gFieldEffectArguments[6] - 1)
-        == METATILE_SecretBase_SandOrnament_TopWall
+    if MapGridGetMetatileIdAt(
+        crate::gl!(gFieldEffectArguments[5]),
+        crate::gl!(gFieldEffectArguments[6]) - 1,
+    ) == METATILE_SecretBase_SandOrnament_TopWall
     {
-        MapGridSetMetatileIdAt(gFieldEffectArguments[5], gFieldEffectArguments[6] - 1, 3586);
+        MapGridSetMetatileIdAt(
+            crate::gl!(gFieldEffectArguments[5]),
+            crate::gl!(gFieldEffectArguments[6]) - 1,
+            3586,
+        );
     } else {
         MapGridSetMetatileIdAt(
-            gFieldEffectArguments[5],
-            gFieldEffectArguments[6] - 1,
+            crate::gl!(gFieldEffectArguments[5]),
+            crate::gl!(gFieldEffectArguments[6]) - 1,
             METATILE_SecretBase_SandOrnament_BrokenTop,
         );
     }
     MapGridSetMetatileIdAt(
-        gFieldEffectArguments[5],
-        gFieldEffectArguments[6],
+        crate::gl!(gFieldEffectArguments[5]),
+        crate::gl!(gFieldEffectArguments[6]),
         METATILE_SecretBase_Ground,
     );
-    CurrentMapDrawMetatileAt(gFieldEffectArguments[5], gFieldEffectArguments[6] - 1);
-    CurrentMapDrawMetatileAt(gFieldEffectArguments[5], gFieldEffectArguments[6]);
+    CurrentMapDrawMetatileAt(
+        crate::gl!(gFieldEffectArguments[5]),
+        crate::gl!(gFieldEffectArguments[6]) - 1,
+    );
+    CurrentMapDrawMetatileAt(
+        crate::gl!(gFieldEffectArguments[5]),
+        crate::gl!(gFieldEffectArguments[6]),
+    );
     (*sprite).data[0] = 0;
     (*sprite).callback = Some(SpriteCB_SandPillar_BreakBase);
 }
@@ -879,8 +940,15 @@ pub(crate) unsafe fn SpriteCB_SandPillar_BreakBase(sprite: *mut Sprite) {
     if (*sprite).data[0] < 18 {
         (*sprite).data[0] += 1;
     } else {
-        MapGridSetMetatileIdAt(gFieldEffectArguments[5], gFieldEffectArguments[6], 3724);
-        CurrentMapDrawMetatileAt(gFieldEffectArguments[5], gFieldEffectArguments[6]);
+        MapGridSetMetatileIdAt(
+            crate::gl!(gFieldEffectArguments[5]),
+            crate::gl!(gFieldEffectArguments[6]),
+            3724,
+        );
+        CurrentMapDrawMetatileAt(
+            crate::gl!(gFieldEffectArguments[5]),
+            crate::gl!(gFieldEffectArguments[6]),
+        );
         (*sprite).data[0] = 0;
         (*sprite).callback = Some(SpriteCB_SandPillar_End);
     }
@@ -899,7 +967,7 @@ pub unsafe fn InteractWithShieldOrTVDecoration() {
         METATILE_SecretBase_GoldShield_Base1 => {
             ConvertIntToDecimalStringN(gStringVar1.as_mut_ptr(), 100, STR_CONV_MODE_LEFT_ALIGN, 3);
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_Gold).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -916,7 +984,7 @@ pub unsafe fn InteractWithShieldOrTVDecoration() {
         METATILE_SecretBase_SilverShield_Base1 => {
             ConvertIntToDecimalStringN(gStringVar1.as_mut_ptr(), 50, STR_CONV_MODE_LEFT_ALIGN, 2);
             StringCopy(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_Silver).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -1024,7 +1092,8 @@ pub(crate) unsafe fn Task_WateringBerryTreeAnim(taskId: u8) {
     task_set_func(taskId, Some(Task_WateringBerryTreeAnim_Start));
 }
 pub(crate) unsafe fn Task_WateringBerryTreeAnim_Start(taskId: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(playerObjEvent) == 0
         || ObjectEventClearHeldMovementIfFinished(playerObjEvent) != 0
     {
@@ -1037,7 +1106,8 @@ pub(crate) unsafe fn Task_WateringBerryTreeAnim_Start(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_WateringBerryTreeAnim_Continue(taskId: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventClearHeldMovementIfFinished(playerObjEvent) != 0 {
         let value: i16 = {
             let t1 = task_get(taskId, 1);
@@ -1074,7 +1144,7 @@ pub unsafe fn CreateRecordMixingLights() -> u8 {
     if spriteId == MAX_SPRITES {
         return MAX_SPRITES;
     } else {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         GetMapCoordsFromSpritePos(16, 13, &raw mut (*sprite).x, &raw mut (*sprite).y);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).x += 16;
@@ -1084,9 +1154,11 @@ pub unsafe fn CreateRecordMixingLights() -> u8 {
 }
 pub unsafe fn DestroyRecordMixingLights() {
     for i in 0..(MAX_SPRITES as i32) {
-        if gSprites[i].template == (&raw const *sSpriteTemplate_RecordMixLights).cast_mut() {
-            FreeSpritePalette(&raw mut gSprites[i]);
-            DestroySprite(&raw mut gSprites[i]);
+        if crate::gl!(gSprites[i].template)
+            == (&raw const *sSpriteTemplate_RecordMixLights).cast_mut()
+        {
+            FreeSpritePalette(crate::gl!(&raw gSprites[i]));
+            DestroySprite(crate::gl!(&raw gSprites[i]));
         }
     }
 }

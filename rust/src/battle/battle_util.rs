@@ -137,465 +137,636 @@ static sSoundMovesTable: Table<CArray<u16, 11>> =
 
 pub unsafe fn HandleAction_UseMove() {
     let mut var: u8 = 4;
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    if (*gBattleStruct).absentBattlerFlags as u32
-        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerAttacker]
+    gBattlerAttacker.set({
+        let gl_i0 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i0])
+    });
+    if (*crate::gl!(gBattleStruct)).absentBattlerFlags as u32
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerAttacker.get()]
         != 0
     {
-        gCurrentActionFuncId = B_ACTION_FINISHED;
+        gCurrentActionFuncId.set(B_ACTION_FINISHED);
         return;
     }
-    gCritMultiplier = 1;
-    gBattleScripting.dmgMultiplier = 1;
-    (*gBattleStruct).atkCancelerTracker = 0;
-    gMoveResultFlags = 0;
-    gMultiHitCounter = 0;
-    gBattleCommunication[6] = 0;
-    gCurrMovePos = {
-        gChosenMovePos = *(*gBattleStruct)
-            .chosenMovePositions
-            .as_mut_ptr()
-            .at(gBattlerAttacker);
-        gChosenMovePos
-    };
-    if gProtectStructs[gBattlerAttacker].noValidMoves() != 0 {
-        gProtectStructs[gBattlerAttacker].set_noValidMoves(FALSE as u32);
-        gCurrentMove = {
-            gChosenMove = MOVE_STRUGGLE;
-            gChosenMove
-        };
-        gHitMarker |= HITMARKER_NO_PPDEDUCT;
-        *(*gBattleStruct)
+    gCritMultiplier.set(1);
+    crate::gl!(gBattleScripting.dmgMultiplier = 1);
+    (*crate::gl!(gBattleStruct)).atkCancelerTracker = 0;
+    gMoveResultFlags.set(0);
+    gMultiHitCounter.set(0);
+    crate::gl!(gBattleCommunication[6] = 0);
+    gCurrMovePos.set({
+        gChosenMovePos.set(
+            *(*crate::gl!(gBattleStruct))
+                .chosenMovePositions
+                .as_mut_ptr()
+                .at(gBattlerAttacker.get()),
+        );
+        gChosenMovePos.get()
+    });
+    if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].noValidMoves() != 0 {
+        (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].set_noValidMoves(FALSE as u32);
+        gCurrentMove.set({
+            gChosenMove.set(MOVE_STRUGGLE);
+            gChosenMove.get()
+        });
+        gHitMarker.set(gHitMarker.get() | (HITMARKER_NO_PPDEDUCT));
+        *(*crate::gl!(gBattleStruct))
             .moveTarget
             .as_mut_ptr()
-            .at(gBattlerAttacker) = GetMoveTarget(MOVE_STRUGGLE, NO_TARGET_OVERRIDE);
-    } else if gBattleMons[gBattlerAttacker].status2 & STATUS2_MULTIPLETURNS != 0
-        || gBattleMons[gBattlerAttacker].status2 & STATUS2_RECHARGE != 0
+            .at(gBattlerAttacker.get()) = GetMoveTarget(MOVE_STRUGGLE, NO_TARGET_OVERRIDE);
+    } else if ({
+        let gl_i0 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i0].status2)
+    }) & STATUS2_MULTIPLETURNS
+        != 0
+        || ({
+            let gl_i1 = gBattlerAttacker.get();
+            crate::gl!(gBattleMons[gl_i1].status2)
+        }) & STATUS2_RECHARGE
+            != 0
     {
-        gCurrentMove = {
-            gChosenMove = gLockedMoves[gBattlerAttacker];
-            gChosenMove
-        };
-    } else if gDisableStructs[gBattlerAttacker].encoredMove != MOVE_NONE
-        && gDisableStructs[gBattlerAttacker].encoredMove
-            == gBattleMons[gBattlerAttacker].moves[gDisableStructs[gBattlerAttacker].encoredMovePos]
+        gCurrentMove.set({
+            gChosenMove.set({
+                let gl_i1 = gBattlerAttacker.get();
+                crate::gl!(gLockedMoves[gl_i1])
+            });
+            gChosenMove.get()
+        });
+    } else if ({
+        let gl_i2 = gBattlerAttacker.get();
+        crate::gl!(gDisableStructs[gl_i2].encoredMove)
+    }) != MOVE_NONE
+        && ({
+            let gl_i3 = gBattlerAttacker.get();
+            crate::gl!(gDisableStructs[gl_i3].encoredMove)
+        }) == (*gBattleMons.as_ptr())[gBattlerAttacker.get()].moves[{
+            let gl_i5 = gBattlerAttacker.get();
+            crate::gl!(gDisableStructs[gl_i5].encoredMovePos)
+        }]
     {
-        gCurrentMove = {
-            gChosenMove = gDisableStructs[gBattlerAttacker].encoredMove;
-            gChosenMove
-        };
-        gCurrMovePos = {
-            gChosenMovePos = gDisableStructs[gBattlerAttacker].encoredMovePos;
-            gChosenMovePos
-        };
-        *(*gBattleStruct)
+        gCurrentMove.set({
+            gChosenMove.set({
+                let gl_i6 = gBattlerAttacker.get();
+                crate::gl!(gDisableStructs[gl_i6].encoredMove)
+            });
+            gChosenMove.get()
+        });
+        gCurrMovePos.set({
+            gChosenMovePos.set({
+                let gl_i7 = gBattlerAttacker.get();
+                crate::gl!(gDisableStructs[gl_i7].encoredMovePos)
+            });
+            gChosenMovePos.get()
+        });
+        *(*crate::gl!(gBattleStruct))
             .moveTarget
             .as_mut_ptr()
-            .at(gBattlerAttacker) = GetMoveTarget(gCurrentMove, NO_TARGET_OVERRIDE);
-    } else if gDisableStructs[gBattlerAttacker].encoredMove != MOVE_NONE
-        && gDisableStructs[gBattlerAttacker].encoredMove
-            != gBattleMons[gBattlerAttacker].moves[gDisableStructs[gBattlerAttacker].encoredMovePos]
+            .at(gBattlerAttacker.get()) = GetMoveTarget(gCurrentMove.get(), NO_TARGET_OVERRIDE);
+    } else if ({
+        let gl_i8 = gBattlerAttacker.get();
+        crate::gl!(gDisableStructs[gl_i8].encoredMove)
+    }) != MOVE_NONE
+        && ({
+            let gl_i9 = gBattlerAttacker.get();
+            crate::gl!(gDisableStructs[gl_i9].encoredMove)
+        }) != (*gBattleMons.as_ptr())[gBattlerAttacker.get()].moves[{
+            let gl_i11 = gBattlerAttacker.get();
+            crate::gl!(gDisableStructs[gl_i11].encoredMovePos)
+        }]
     {
-        gCurrMovePos = {
-            gChosenMovePos = gDisableStructs[gBattlerAttacker].encoredMovePos;
-            gChosenMovePos
+        gCurrMovePos.set({
+            gChosenMovePos.set({
+                let gl_i12 = gBattlerAttacker.get();
+                crate::gl!(gDisableStructs[gl_i12].encoredMovePos)
+            });
+            gChosenMovePos.get()
+        });
+        gCurrentMove.set({
+            gChosenMove.set({
+                let gl_i13 = gBattlerAttacker.get();
+                let gl_i14 = gCurrMovePos.get();
+                crate::gl!(gBattleMons[gl_i13].moves[gl_i14])
+            });
+            gChosenMove.get()
+        });
+        {
+            let gl_i15 = gBattlerAttacker.get();
+            crate::gl!(gDisableStructs[gl_i15].encoredMove = MOVE_NONE)
         };
-        gCurrentMove = {
-            gChosenMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
-            gChosenMove
+        {
+            let gl_i16 = gBattlerAttacker.get();
+            crate::gl!(gDisableStructs[gl_i16].encoredMovePos = 0)
         };
-        gDisableStructs[gBattlerAttacker].encoredMove = MOVE_NONE;
-        gDisableStructs[gBattlerAttacker].encoredMovePos = 0;
-        gDisableStructs[gBattlerAttacker].set_encoreTimer(0);
-        *(*gBattleStruct)
+        (*gDisableStructs.as_ptr())[gBattlerAttacker.get()].set_encoreTimer(0);
+        *(*crate::gl!(gBattleStruct))
             .moveTarget
             .as_mut_ptr()
-            .at(gBattlerAttacker) = GetMoveTarget(gCurrentMove, NO_TARGET_OVERRIDE);
-    } else if gBattleMons[gBattlerAttacker].moves[gCurrMovePos]
-        != gChosenMoveByBattler[gBattlerAttacker]
-    {
-        gCurrentMove = {
-            gChosenMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
-            gChosenMove
-        };
-        *(*gBattleStruct)
+            .at(gBattlerAttacker.get()) = GetMoveTarget(gCurrentMove.get(), NO_TARGET_OVERRIDE);
+    } else if ({
+        let gl_i17 = gBattlerAttacker.get();
+        let gl_i18 = gCurrMovePos.get();
+        crate::gl!(gBattleMons[gl_i17].moves[gl_i18])
+    }) != {
+        let gl_i2 = gBattlerAttacker.get();
+        crate::gl!(gChosenMoveByBattler[gl_i2])
+    } {
+        gCurrentMove.set({
+            gChosenMove.set({
+                let gl_i19 = gBattlerAttacker.get();
+                let gl_i20 = gCurrMovePos.get();
+                crate::gl!(gBattleMons[gl_i19].moves[gl_i20])
+            });
+            gChosenMove.get()
+        });
+        *(*crate::gl!(gBattleStruct))
             .moveTarget
             .as_mut_ptr()
-            .at(gBattlerAttacker) = GetMoveTarget(gCurrentMove, NO_TARGET_OVERRIDE);
+            .at(gBattlerAttacker.get()) = GetMoveTarget(gCurrentMove.get(), NO_TARGET_OVERRIDE);
     } else {
-        gCurrentMove = {
-            gChosenMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
-            gChosenMove
-        };
+        gCurrentMove.set({
+            gChosenMove.set({
+                let gl_i21 = gBattlerAttacker.get();
+                let gl_i22 = gCurrMovePos.get();
+                crate::gl!(gBattleMons[gl_i21].moves[gl_i22])
+            });
+            gChosenMove.get()
+        });
     }
-    if gBattleMons[gBattlerAttacker].hp != 0 {
-        if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
-            gBattleResults.lastUsedMovePlayer = gCurrentMove;
+    if ({
+        let gl_i23 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i23].hp)
+    }) != 0
+    {
+        if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
+            crate::gl!(gBattleResults.lastUsedMovePlayer = gCurrentMove.get());
         } else {
-            gBattleResults.lastUsedMoveOpponent = gCurrentMove;
+            crate::gl!(gBattleResults.lastUsedMoveOpponent = gCurrentMove.get());
         }
     }
-    let mut side: u8 = GetBattlerSide(gBattlerAttacker) ^ 1;
-    if gSideTimers[side].followmeTimer != 0
+    let mut side: u8 = GetBattlerSide(gBattlerAttacker.get()) ^ 1;
+    if crate::gl!(gSideTimers[side].followmeTimer) != 0
         && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-            [gCurrentMove]
-            .target
+            [gCurrentMove.get()]
+        .target
             == MOVE_TARGET_SELECTED
-        && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gSideTimers[side].followmeTarget)
-        && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
+        && GetBattlerSide(gBattlerAttacker.get())
+            != GetBattlerSide(crate::gl!(gSideTimers[side].followmeTarget))
+        && ({
+            let gl_i24 = crate::gl!(gSideTimers[side].followmeTarget);
+            crate::gl!(gBattleMons[gl_i24].hp)
+        }) != 0
     {
-        gBattlerTarget = gSideTimers[side].followmeTarget;
-    } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
-        && gSideTimers[side].followmeTimer == 0
+        gBattlerTarget.set(crate::gl!(gSideTimers[side].followmeTarget));
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
+        && crate::gl!(gSideTimers[side].followmeTimer) == 0
         && ((*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-            [gCurrentMove]
-            .power
+            [gCurrentMove.get()]
+        .power
             != 0
             || (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-                [gCurrentMove]
-                .target
+                [gCurrentMove.get()]
+            .target
                 != MOVE_TARGET_USER)
-        && gBattleMons[*(*gBattleStruct)
+        && (*gBattleMons.as_ptr())[*(*crate::gl!(gBattleStruct))
             .moveTarget
             .as_mut_ptr()
-            .at(gBattlerAttacker)]
+            .at(gBattlerAttacker.get())]
         .ability
             != ABILITY_LIGHTNING_ROD
         && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-            [gCurrentMove]
-            .r#type
+            [gCurrentMove.get()]
+        .r#type
             == TYPE_ELECTRIC
     {
-        side = GetBattlerSide(gBattlerAttacker);
-        gActiveBattler = 0;
-        while gActiveBattler < gBattlersCount {
-            if side != GetBattlerSide(gActiveBattler)
-                && *(*gBattleStruct)
+        side = GetBattlerSide(gBattlerAttacker.get());
+        gActiveBattler.set(0);
+        while gActiveBattler.get() < gBattlersCount.get() {
+            if side != GetBattlerSide(gActiveBattler.get())
+                && *(*crate::gl!(gBattleStruct))
                     .moveTarget
                     .as_mut_ptr()
-                    .at(gBattlerAttacker)
-                    != gActiveBattler
-                && gBattleMons[gActiveBattler].ability == ABILITY_LIGHTNING_ROD
-                && GetBattlerTurnOrderNum(gActiveBattler) < var
+                    .at(gBattlerAttacker.get())
+                    != gActiveBattler.get()
+                && ({
+                    let gl_i25 = gActiveBattler.get();
+                    crate::gl!(gBattleMons[gl_i25].ability)
+                }) == ABILITY_LIGHTNING_ROD
+                && GetBattlerTurnOrderNum(gActiveBattler.get()) < var
             {
-                var = GetBattlerTurnOrderNum(gActiveBattler);
+                var = GetBattlerTurnOrderNum(gActiveBattler.get());
             }
-            gActiveBattler += 1;
+            gActiveBattler.set(gActiveBattler.get() + (1));
         }
         if var == 4 {
             if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-                [gChosenMove]
-                .target as i32
+                [gChosenMove.get()]
+            .target as i32
                 & MOVE_TARGET_RANDOM
                 != 0
             {
-                if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
                     if Random() as i32 & 1 != 0 {
-                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+                        gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT));
                     } else {
-                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+                        gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT));
                     }
                 } else {
                     if Random() as i32 & 1 != 0 {
-                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+                        gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_PLAYER_LEFT));
                     } else {
-                        gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+                        gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT));
                     }
                 }
             } else {
-                gBattlerTarget = *(*gBattleStruct)
-                    .moveTarget
-                    .as_mut_ptr()
-                    .at(gBattlerAttacker);
+                gBattlerTarget.set(
+                    *(*crate::gl!(gBattleStruct))
+                        .moveTarget
+                        .as_mut_ptr()
+                        .at(gBattlerAttacker.get()),
+                );
             }
-            if gAbsentBattlerFlags as u32
-                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+            if gAbsentBattlerFlags.get() as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                    [gBattlerTarget.get()]
                 != 0
             {
-                if GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget) {
-                    gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+                if GetBattlerSide(gBattlerAttacker.get()) != GetBattlerSide(gBattlerTarget.get()) {
+                    gBattlerTarget.set(GetBattlerAtPosition(
+                        GetBattlerPosition(gBattlerTarget.get()) ^ 2,
+                    ));
                 } else {
-                    gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) ^ 1);
-                    if gAbsentBattlerFlags as u32
+                    gBattlerTarget.set(GetBattlerAtPosition(
+                        GetBattlerPosition(gBattlerAttacker.get()) ^ 1,
+                    ));
+                    if gAbsentBattlerFlags.get() as u32
                         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                            [gBattlerTarget]
+                            [gBattlerTarget.get()]
                         != 0
                     {
-                        gBattlerTarget =
-                            GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+                        gBattlerTarget.set(GetBattlerAtPosition(
+                            GetBattlerPosition(gBattlerTarget.get()) ^ 2,
+                        ));
                     }
                 }
             }
         } else {
-            gActiveBattler = gBattlerByTurnOrder[var];
-            RecordAbilityBattle(gActiveBattler, gBattleMons[gActiveBattler].ability);
-            gSpecialStatuses[gActiveBattler].set_lightningRodRedirected(1);
-            gBattlerTarget = gActiveBattler;
+            gActiveBattler.set(crate::gl!(gBattlerByTurnOrder[var]));
+            RecordAbilityBattle(gActiveBattler.get(), {
+                let gl_i26 = gActiveBattler.get();
+                crate::gl!(gBattleMons[gl_i26].ability)
+            });
+            (*gSpecialStatuses.as_ptr())[gActiveBattler.get()].set_lightningRodRedirected(1);
+            gBattlerTarget.set(gActiveBattler.get());
         }
-    } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
         && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-            [gChosenMove]
-            .target as i32
+            [gChosenMove.get()]
+        .target as i32
             & MOVE_TARGET_RANDOM
             != 0
     {
-        if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+        if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
             if Random() as i32 & 1 != 0 {
-                gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+                gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT));
             } else {
-                gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+                gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT));
             }
         } else {
             if Random() as i32 & 1 != 0 {
-                gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+                gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_PLAYER_LEFT));
             } else {
-                gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+                gBattlerTarget.set(GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT));
             }
         }
-        if gAbsentBattlerFlags as u32
-            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+        if gAbsentBattlerFlags.get() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget.get()]
             != 0
-            && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget)
+            && GetBattlerSide(gBattlerAttacker.get()) != GetBattlerSide(gBattlerTarget.get())
         {
-            gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+            gBattlerTarget.set(GetBattlerAtPosition(
+                GetBattlerPosition(gBattlerTarget.get()) ^ 2,
+            ));
         }
     } else {
-        gBattlerTarget = *(*gBattleStruct)
-            .moveTarget
-            .as_mut_ptr()
-            .at(gBattlerAttacker);
-        if gAbsentBattlerFlags as u32
-            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+        gBattlerTarget.set(
+            *(*crate::gl!(gBattleStruct))
+                .moveTarget
+                .as_mut_ptr()
+                .at(gBattlerAttacker.get()),
+        );
+        if gAbsentBattlerFlags.get() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget.get()]
             != 0
         {
-            if GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget) {
-                gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+            if GetBattlerSide(gBattlerAttacker.get()) != GetBattlerSide(gBattlerTarget.get()) {
+                gBattlerTarget.set(GetBattlerAtPosition(
+                    GetBattlerPosition(gBattlerTarget.get()) ^ 2,
+                ));
             } else {
-                gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) ^ 1);
-                if gAbsentBattlerFlags as u32
+                gBattlerTarget.set(GetBattlerAtPosition(
+                    GetBattlerPosition(gBattlerAttacker.get()) ^ 1,
+                ));
+                if gAbsentBattlerFlags.get() as u32
                     & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                        [gBattlerTarget]
+                        [gBattlerTarget.get()]
                     != 0
                 {
-                    gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
+                    gBattlerTarget.set(GetBattlerAtPosition(
+                        GetBattlerPosition(gBattlerTarget.get()) ^ 2,
+                    ));
                 }
             }
         }
     }
-    if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0
-        && gProtectStructs[gBattlerAttacker].palaceUnableToUseMove() != 0
+    if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0
+        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].palaceUnableToUseMove() != 0
     {
-        if gBattleMons[gBattlerAttacker].hp == 0 {
-            gCurrentActionFuncId = B_ACTION_FINISHED;
+        if ({
+            let gl_i27 = gBattlerAttacker.get();
+            crate::gl!(gBattleMons[gl_i27].hp)
+        }) == 0
+        {
+            gCurrentActionFuncId.set(B_ACTION_FINISHED);
             return;
-        } else if !gPalaceSelectionBattleScripts[gBattlerAttacker].is_null() {
-            gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER;
-            gBattlescriptCurrInstr = gPalaceSelectionBattleScripts[gBattlerAttacker];
-            gPalaceSelectionBattleScripts[gBattlerAttacker] = null_mut();
+        } else if !(*gPalaceSelectionBattleScripts.as_ptr())[gBattlerAttacker.get()].is_null() {
+            crate::gl!(gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER);
+            crate::gl!(
+                gBattlescriptCurrInstr = {
+                    let gl_i3 = gBattlerAttacker.get();
+                    crate::gl!(gPalaceSelectionBattleScripts[gl_i3])
+                }
+            );
+            {
+                let gl_v = null_mut();
+                let gl_i4 = gBattlerAttacker.get();
+                crate::gl!(gPalaceSelectionBattleScripts[gl_i4] = gl_v)
+            };
         } else {
-            gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER;
-            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
-                .cast::<CArray<u8, 0>>())
-            .as_ptr()
-            .cast_mut();
+            crate::gl!(gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER);
+            crate::gl!(
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+            );
         }
     } else {
-        gBattlescriptCurrInstr = (*crate::asmdata::gBattleScriptsForMoveEffects
-            .cast::<CArray<*mut u8, 0>>())[(*(&raw const crate::data::pokemon::gBattleMoves)
-            .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
-            .effect];
+        crate::gl!(
+            gBattlescriptCurrInstr =
+                (*crate::asmdata::gBattleScriptsForMoveEffects.cast::<CArray<*mut u8, 0>>())
+                    [(*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())[gCurrentMove.get()]
+                    .effect]
+        );
     }
-    if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
-        BattleArena_AddMindPoints(gBattlerAttacker);
+    if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0 {
+        BattleArena_AddMindPoints(gBattlerAttacker.get());
     }
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
 }
 pub unsafe fn HandleAction_Switch() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gActionSelectionCursor[gBattlerAttacker] = 0;
-    gMoveSelectionCursor[gBattlerAttacker] = 0;
-    gBattleTextBuff1[0] = 0xFD;
-    gBattleTextBuff1[1] = 7;
-    gBattleTextBuff1[2] = gBattlerAttacker;
-    gBattleTextBuff1[3] = *(*gBattleStruct)
-        .battlerPartyIndexes
-        .as_mut_ptr()
-        .at(gBattlerAttacker);
-    gBattleTextBuff1[4] = 0xFF;
-    gBattleScripting.battler = gBattlerAttacker;
-    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ActionSwitch.cast::<CArray<u8, 0>>())
+    gBattlerAttacker.set({
+        let gl_i5 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i5])
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    {
+        let gl_i28 = gBattlerAttacker.get();
+        crate::gl!(gActionSelectionCursor[gl_i28] = 0)
+    };
+    {
+        let gl_i29 = gBattlerAttacker.get();
+        crate::gl!(gMoveSelectionCursor[gl_i29] = 0)
+    };
+    crate::gl!(gBattleTextBuff1[0] = 0xFD);
+    crate::gl!(gBattleTextBuff1[1] = 7);
+    crate::gl!(gBattleTextBuff1[2] = gBattlerAttacker.get());
+    crate::gl!(
+        gBattleTextBuff1[3] = *(*crate::gl!(gBattleStruct))
+            .battlerPartyIndexes
+            .as_mut_ptr()
+            .at(gBattlerAttacker.get())
+    );
+    crate::gl!(gBattleTextBuff1[4] = 0xFF);
+    crate::gl!(gBattleScripting.battler = gBattlerAttacker.get());
+    crate::gl!(
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ActionSwitch
+            .cast::<CArray<u8, 0>>())
         .as_ptr()
-        .cast_mut();
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
-    gBattleResults.playerSwitchesCounter = gBattleResults.playerSwitchesCounter.saturating_add(1);
+        .cast_mut()
+    );
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
+    crate::gl!(
+        gBattleResults.playerSwitchesCounter = (*gBattleResults.as_ptr())
+            .playerSwitchesCounter
+            .saturating_add(1)
+    );
 }
 pub unsafe fn HandleAction_UseItem() {
-    gBattlerAttacker = {
-        gBattlerTarget = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-        gBattlerTarget
-    };
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    ClearFuryCutterDestinyBondGrudge(gBattlerAttacker);
-    gLastUsedItem = gBattleBufferB[gBattlerAttacker][1] as u16
-        | (gBattleBufferB[gBattlerAttacker][2] as u16) << 8;
-    if gLastUsedItem <= ITEM_PREMIER_BALL {
-        gBattlescriptCurrInstr = (*crate::asmdata::gBattlescriptsForBallThrow
-            .cast::<CArray<*mut u8, 0>>())[gLastUsedItem];
-    } else if gLastUsedItem == ITEM_POKE_DOLL || gLastUsedItem == ITEM_FLUFFY_TAIL {
-        gBattlescriptCurrInstr =
-            (*crate::asmdata::gBattlescriptsForRunningByItem.cast::<CArray<*mut u8, 0>>())[0];
-    } else if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
-        gBattlescriptCurrInstr =
-            (*crate::asmdata::gBattlescriptsForUsingItem.cast::<CArray<*mut u8, 0>>())[0];
+    gBattlerAttacker.set({
+        gBattlerTarget.set({
+            let gl_i6 = gCurrentTurnActionNumber.get();
+            crate::gl!(gBattlerByTurnOrder[gl_i6])
+        });
+        gBattlerTarget.get()
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    ClearFuryCutterDestinyBondGrudge(gBattlerAttacker.get());
+    gLastUsedItem.set(
+        {
+            let gl_i7 = gBattlerAttacker.get();
+            crate::gl!(gBattleBufferB[gl_i7][1])
+        } as u16
+            | ({
+                let gl_i8 = gBattlerAttacker.get();
+                crate::gl!(gBattleBufferB[gl_i8][2])
+            } as u16)
+                << 8,
+    );
+    if gLastUsedItem.get() <= ITEM_PREMIER_BALL {
+        crate::gl!(
+            gBattlescriptCurrInstr = (*crate::asmdata::gBattlescriptsForBallThrow
+                .cast::<CArray<*mut u8, 0>>())[gLastUsedItem.get()]
+        );
+    } else if gLastUsedItem.get() == ITEM_POKE_DOLL || gLastUsedItem.get() == ITEM_FLUFFY_TAIL {
+        crate::gl!(
+            gBattlescriptCurrInstr =
+                (*crate::asmdata::gBattlescriptsForRunningByItem.cast::<CArray<*mut u8, 0>>())[0]
+        );
+    } else if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
+        crate::gl!(
+            gBattlescriptCurrInstr =
+                (*crate::asmdata::gBattlescriptsForUsingItem.cast::<CArray<*mut u8, 0>>())[0]
+        );
     } else {
-        gBattleScripting.battler = gBattlerAttacker;
-        match *(*gBattleStruct)
+        crate::gl!(gBattleScripting.battler = gBattlerAttacker.get());
+        match *(*crate::gl!(gBattleStruct))
             .AI_itemType
             .as_mut_ptr()
-            .at(gBattlerAttacker >> 1)
+            .at(gBattlerAttacker.get() >> 1)
         {
             AI_ITEM_FULL_RESTORE | AI_ITEM_HEAL_HP => {}
             AI_ITEM_CURE_CONDITION => {
-                gBattleCommunication[5] = AI_HEAL_CONFUSION;
-                if *(*gBattleStruct)
+                crate::gl!(gBattleCommunication[5] = AI_HEAL_CONFUSION);
+                if *(*crate::gl!(gBattleStruct))
                     .AI_itemFlags
                     .as_mut_ptr()
-                    .at(gBattlerAttacker as i32 / 2) as i32
+                    .at(gBattlerAttacker.get() as i32 / 2) as i32
                     & 1
                     != 0
                 {
-                    if *(*gBattleStruct)
+                    if *(*crate::gl!(gBattleStruct))
                         .AI_itemFlags
                         .as_mut_ptr()
-                        .at(gBattlerAttacker as i32 / 2) as i32
+                        .at(gBattlerAttacker.get() as i32 / 2) as i32
                         & 62
                         != 0
                     {
-                        gBattleCommunication[5] = AI_HEAL_SLEEP;
+                        crate::gl!(gBattleCommunication[5] = AI_HEAL_SLEEP);
                     }
                 } else {
-                    while *(*gBattleStruct)
+                    while *(*crate::gl!(gBattleStruct))
                         .AI_itemFlags
                         .as_mut_ptr()
-                        .at(gBattlerAttacker as i32 / 2) as i32
+                        .at(gBattlerAttacker.get() as i32 / 2) as i32
                         & 1
                         == 0
                     {
-                        *(*gBattleStruct)
+                        *(*crate::gl!(gBattleStruct))
                             .AI_itemFlags
                             .as_mut_ptr()
-                            .at(gBattlerAttacker as i32 / 2) >>= 1;
-                        gBattleCommunication[5] += 1;
+                            .at(gBattlerAttacker.get() as i32 / 2) >>= 1;
+                        crate::gl!(gBattleCommunication[5] += 1);
                     }
                 }
             }
             AI_ITEM_X_STAT => {
-                gBattleCommunication[5] = B_MSG_STAT_ROSE_ITEM;
-                if *(*gBattleStruct)
+                crate::gl!(gBattleCommunication[5] = B_MSG_STAT_ROSE_ITEM);
+                if *(*crate::gl!(gBattleStruct))
                     .AI_itemFlags
                     .as_mut_ptr()
-                    .at(gBattlerAttacker >> 1) as i32
+                    .at(gBattlerAttacker.get() >> 1) as i32
                     & 128
                     != 0
                 {
-                    gBattleCommunication[5] = 5;
+                    crate::gl!(gBattleCommunication[5] = 5);
                 } else {
-                    gBattleTextBuff1[0] = 0xFD;
-                    gBattleTextBuff1[1] = 5;
-                    gBattleTextBuff1[2] = STAT_ATK;
-                    gBattleTextBuff1[3] = 0xFF;
-                    gBattleTextBuff2[0] = 0xFD;
-                    gBattleTextBuff2[1] = 0;
-                    gBattleTextBuff2[2] = CHAR_X;
-                    gBattleTextBuff2[3] = 0;
-                    gBattleTextBuff2[4] = 0xFF;
-                    while *(*gBattleStruct)
+                    crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                    crate::gl!(gBattleTextBuff1[1] = 5);
+                    crate::gl!(gBattleTextBuff1[2] = STAT_ATK);
+                    crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                    crate::gl!(gBattleTextBuff2[0] = 0xFD);
+                    crate::gl!(gBattleTextBuff2[1] = 0);
+                    crate::gl!(gBattleTextBuff2[2] = CHAR_X);
+                    crate::gl!(gBattleTextBuff2[3] = 0);
+                    crate::gl!(gBattleTextBuff2[4] = 0xFF);
+                    while *(*crate::gl!(gBattleStruct))
                         .AI_itemFlags
                         .as_mut_ptr()
-                        .at(gBattlerAttacker >> 1) as i32
+                        .at(gBattlerAttacker.get() >> 1) as i32
                         & 1
                         == 0
                     {
-                        *(*gBattleStruct)
+                        *(*crate::gl!(gBattleStruct))
                             .AI_itemFlags
                             .as_mut_ptr()
-                            .at(gBattlerAttacker as i32 / 2) >>= 1;
-                        gBattleTextBuff1[2] += 1;
+                            .at(gBattlerAttacker.get() as i32 / 2) >>= 1;
+                        crate::gl!(gBattleTextBuff1[2] += 1);
                     }
-                    gBattleScripting.animArg1 = gBattleTextBuff1[2] + STAT_ANIM_PLUS1 as u8;
-                    gBattleScripting.animArg2 = 0;
+                    crate::gl!(
+                        gBattleScripting.animArg1 =
+                            crate::gl!(gBattleTextBuff1[2]) + STAT_ANIM_PLUS1 as u8
+                    );
+                    crate::gl!(gBattleScripting.animArg2 = 0);
                 }
             }
             AI_ITEM_GUARD_SPEC => {
-                gBattleCommunication[5] = B_MSG_SET_MIST;
+                crate::gl!(gBattleCommunication[5] = B_MSG_SET_MIST);
             }
             _ => {}
         }
-        gBattlescriptCurrInstr = (*crate::asmdata::gBattlescriptsForUsingItem
-            .cast::<CArray<*mut u8, 0>>())[*(*gBattleStruct)
-            .AI_itemType
-            .as_mut_ptr()
-            .at(gBattlerAttacker as i32 / 2)];
+        crate::gl!(
+            gBattlescriptCurrInstr = (*crate::asmdata::gBattlescriptsForUsingItem
+                .cast::<CArray<*mut u8, 0>>())[*(*crate::gl!(gBattleStruct))
+                .AI_itemType
+                .as_mut_ptr()
+                .at(gBattlerAttacker.get() as i32 / 2)]
+        );
     }
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
 }
 pub unsafe fn TryRunFromBattle(battler: u8) -> u8 {
     let mut effect: u8 = FALSE;
     let mut holdEffect: u8 = 0;
     let mut pyramidMultiplier: u8 = 0;
     let mut speedVar: u8 = 0;
-    if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
-        holdEffect = gEnigmaBerries[battler].holdEffect;
+    if crate::gl!(gBattleMons[battler].item) == ITEM_ENIGMA_BERRY {
+        holdEffect = crate::gl!(gEnigmaBerries[battler].holdEffect);
     } else {
-        holdEffect = GetItemHoldEffect(gBattleMons[battler].item);
+        holdEffect = GetItemHoldEffect(crate::gl!(gBattleMons[battler].item));
     }
-    gPotentialItemEffectBattler = battler;
+    gPotentialItemEffectBattler.set(battler);
     if holdEffect == HOLD_EFFECT_CAN_ALWAYS_RUN {
-        gLastUsedItem = gBattleMons[battler].item;
-        gProtectStructs[battler].set_fleeType(FLEE_ITEM);
+        gLastUsedItem.set(crate::gl!(gBattleMons[battler].item));
+        (*gProtectStructs.as_ptr())[battler].set_fleeType(FLEE_ITEM);
         effect += 1;
-    } else if gBattleMons[battler].ability == ABILITY_RUN_AWAY {
+    } else if crate::gl!(gBattleMons[battler].ability) == ABILITY_RUN_AWAY {
         if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
-            (*gBattleStruct).runTries += 1;
+            (*crate::gl!(gBattleStruct)).runTries += 1;
             pyramidMultiplier = GetPyramidRunMultiplier();
             speedVar = div_i32(
-                gBattleMons[battler].speed as i32 * pyramidMultiplier as i32,
-                gBattleMons[battler as i32 ^ 1].speed as i32,
+                crate::gl!(gBattleMons[battler].speed) as i32 * pyramidMultiplier as i32,
+                ({
+                    let gl_i30 = battler as i32 ^ 1;
+                    crate::gl!(gBattleMons[gl_i30].speed)
+                }) as i32,
             ) as u8
-                + (*gBattleStruct).runTries * 30;
+                + (*crate::gl!(gBattleStruct)).runTries * 30;
             if speedVar as i32 > Random() as i32 & 0xFF {
-                gLastUsedAbility = ABILITY_RUN_AWAY;
-                gProtectStructs[battler].set_fleeType(FLEE_ABILITY);
+                gLastUsedAbility.set(ABILITY_RUN_AWAY);
+                (*gProtectStructs.as_ptr())[battler].set_fleeType(FLEE_ABILITY);
                 effect += 1;
             }
         } else {
-            gLastUsedAbility = ABILITY_RUN_AWAY;
-            gProtectStructs[battler].set_fleeType(FLEE_ABILITY);
+            gLastUsedAbility.set(ABILITY_RUN_AWAY);
+            (*gProtectStructs.as_ptr())[battler].set_fleeType(FLEE_ABILITY);
             effect += 1;
         }
-    } else if gBattleTypeFlags & 0x43f0100 != 0 && gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+    } else if gBattleTypeFlags.get() & 0x43f0100 != 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0
+    {
         effect += 1;
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE == 0 {
             if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
                 pyramidMultiplier = GetPyramidRunMultiplier();
                 speedVar = div_i32(
-                    gBattleMons[battler].speed as i32 * pyramidMultiplier as i32,
-                    gBattleMons[battler as i32 ^ 1].speed as i32,
+                    crate::gl!(gBattleMons[battler].speed) as i32 * pyramidMultiplier as i32,
+                    ({
+                        let gl_i31 = battler as i32 ^ 1;
+                        crate::gl!(gBattleMons[gl_i31].speed)
+                    }) as i32,
                 ) as u8
-                    + (*gBattleStruct).runTries * 30;
+                    + (*crate::gl!(gBattleStruct)).runTries * 30;
                 if speedVar as i32 > Random() as i32 & 0xFF {
                     effect += 1;
                 }
-            } else if gBattleMons[battler].speed < gBattleMons[battler as i32 ^ 1].speed {
+            } else if crate::gl!(gBattleMons[battler].speed)
+                < ({
+                    let gl_i32 = battler as i32 ^ 1;
+                    crate::gl!(gBattleMons[gl_i32].speed)
+                })
+            {
                 speedVar = div_i32(
-                    gBattleMons[battler].speed as i32 * 128,
-                    gBattleMons[battler as i32 ^ 1].speed as i32,
+                    crate::gl!(gBattleMons[battler].speed) as i32 * 128,
+                    ({
+                        let gl_i33 = battler as i32 ^ 1;
+                        crate::gl!(gBattleMons[gl_i33].speed)
+                    }) as i32,
                 ) as u8
-                    + (*gBattleStruct).runTries * 30;
+                    + (*crate::gl!(gBattleStruct)).runTries * 30;
                 if speedVar as i32 > Random() as i32 & 0xFF {
                     effect += 1;
                 }
@@ -603,203 +774,288 @@ pub unsafe fn TryRunFromBattle(battler: u8) -> u8 {
                 effect += 1;
             }
         }
-        (*gBattleStruct).runTries += 1;
+        (*crate::gl!(gBattleStruct)).runTries += 1;
     }
     if effect != 0 {
-        gCurrentTurnActionNumber = gBattlersCount;
-        gBattleOutcome = B_OUTCOME_RAN;
+        gCurrentTurnActionNumber.set(gBattlersCount.get());
+        gBattleOutcome.set(B_OUTCOME_RAN);
     }
     effect
 }
 pub unsafe fn HandleAction_Run() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    if gBattleTypeFlags & 0x2000002 != 0 {
-        gCurrentTurnActionNumber = gBattlersCount;
-        gActiveBattler = 0;
-        while gActiveBattler < gBattlersCount {
-            if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
-                if gChosenActionByBattler[gActiveBattler] == B_ACTION_RUN {
-                    gBattleOutcome |= B_OUTCOME_LOST;
+    gBattlerAttacker.set({
+        let gl_i9 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i9])
+    });
+    if gBattleTypeFlags.get() & 0x2000002 != 0 {
+        gCurrentTurnActionNumber.set(gBattlersCount.get());
+        gActiveBattler.set(0);
+        while gActiveBattler.get() < gBattlersCount.get() {
+            if GetBattlerSide(gActiveBattler.get()) == B_SIDE_PLAYER {
+                if {
+                    let gl_i10 = gActiveBattler.get();
+                    crate::gl!(gChosenActionByBattler[gl_i10])
+                } == B_ACTION_RUN
+                {
+                    gBattleOutcome.set(gBattleOutcome.get() | (B_OUTCOME_LOST));
                 }
             } else {
-                if gChosenActionByBattler[gActiveBattler] == B_ACTION_RUN {
-                    gBattleOutcome |= B_OUTCOME_WON;
+                if {
+                    let gl_i11 = gActiveBattler.get();
+                    crate::gl!(gChosenActionByBattler[gl_i11])
+                } == B_ACTION_RUN
+                {
+                    gBattleOutcome.set(gBattleOutcome.get() | (B_OUTCOME_WON));
                 }
             }
-            gActiveBattler += 1;
+            gActiveBattler.set(gActiveBattler.get() + (1));
         }
-        gBattleOutcome |= B_OUTCOME_LINK_BATTLE_RAN as u8;
-        (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
+        gBattleOutcome.set(gBattleOutcome.get() | (B_OUTCOME_LINK_BATTLE_RAN as u8));
+        (*crate::gl!(gSaveBlock2Ptr))
+            .frontier
+            .set_disableRecordBattle(TRUE);
     } else {
-        if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
-            if TryRunFromBattle(gBattlerAttacker) == 0 {
-                ClearFuryCutterDestinyBondGrudge(gBattlerAttacker);
-                gBattleCommunication[5] = B_MSG_CANT_ESCAPE_2;
-                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintFailedToRunString
-                    .cast::<CArray<u8, 0>>())
-                .as_ptr()
-                .cast_mut();
-                gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+        if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
+            if TryRunFromBattle(gBattlerAttacker.get()) == 0 {
+                ClearFuryCutterDestinyBondGrudge(gBattlerAttacker.get());
+                crate::gl!(gBattleCommunication[5] = B_MSG_CANT_ESCAPE_2);
+                crate::gl!(
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintFailedToRunString
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
+                );
+                gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
             }
         } else {
-            if gBattleMons[gBattlerAttacker].status2 & 0x400e000 != 0 {
-                gBattleCommunication[5] = B_MSG_ATTACKER_CANT_ESCAPE;
-                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintFailedToRunString
-                    .cast::<CArray<u8, 0>>())
-                .as_ptr()
-                .cast_mut();
-                gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+            if ({
+                let gl_i34 = gBattlerAttacker.get();
+                crate::gl!(gBattleMons[gl_i34].status2)
+            }) & 0x400e000
+                != 0
+            {
+                crate::gl!(gBattleCommunication[5] = B_MSG_ATTACKER_CANT_ESCAPE);
+                crate::gl!(
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintFailedToRunString
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
+                );
+                gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
             } else {
-                gCurrentTurnActionNumber = gBattlersCount;
-                gBattleOutcome = B_OUTCOME_MON_FLED;
+                gCurrentTurnActionNumber.set(gBattlersCount.get());
+                gBattleOutcome.set(B_OUTCOME_MON_FLED);
             }
         }
     }
 }
 pub unsafe fn HandleAction_WatchesCarefully() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gBattlescriptCurrInstr =
-        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[0];
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    gBattlerAttacker.set({
+        let gl_i12 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i12])
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    crate::gl!(
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[0]
+    );
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
 }
 pub unsafe fn HandleAction_SafariZoneBallThrow() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gNumSafariBalls -= 1;
-    gLastUsedItem = ITEM_SAFARI_BALL;
-    gBattlescriptCurrInstr =
-        (*crate::asmdata::gBattlescriptsForBallThrow.cast::<CArray<*mut u8, 0>>())[5];
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    gBattlerAttacker.set({
+        let gl_i13 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i13])
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    gNumSafariBalls.set(gNumSafariBalls.get() - (1));
+    gLastUsedItem.set(ITEM_SAFARI_BALL);
+    crate::gl!(
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForBallThrow.cast::<CArray<*mut u8, 0>>())[5]
+    );
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
 }
 pub unsafe fn HandleAction_ThrowPokeblock() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gBattleCommunication[5] = gBattleBufferB[gBattlerAttacker][1] - 1;
-    gLastUsedItem = gBattleBufferB[gBattlerAttacker][2] as u16;
-    gBattleResults.pokeblockThrows = gBattleResults.pokeblockThrows.saturating_add(1);
-    if (*gBattleStruct).safariPkblThrowCounter < 3 {
-        (*gBattleStruct).safariPkblThrowCounter += 1;
+    gBattlerAttacker.set({
+        let gl_i14 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i14])
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    crate::gl!(
+        gBattleCommunication[5] = {
+            let gl_i15 = gBattlerAttacker.get();
+            crate::gl!(gBattleBufferB[gl_i15][1])
+        } - 1
+    );
+    gLastUsedItem.set({
+        let gl_i16 = gBattlerAttacker.get();
+        crate::gl!(gBattleBufferB[gl_i16][2])
+    } as u16);
+    crate::gl!(
+        gBattleResults.pokeblockThrows =
+            (*gBattleResults.as_ptr()).pokeblockThrows.saturating_add(1)
+    );
+    if (*crate::gl!(gBattleStruct)).safariPkblThrowCounter < 3 {
+        (*crate::gl!(gBattleStruct)).safariPkblThrowCounter += 1;
     }
-    if (*gBattleStruct).safariEscapeFactor > 1 {
-        if (*gBattleStruct).safariEscapeFactor
-            < sPkblToEscapeFactor[(*gBattleStruct).safariPkblThrowCounter][gBattleCommunication[5]]
+    if (*crate::gl!(gBattleStruct)).safariEscapeFactor > 1 {
+        if (*crate::gl!(gBattleStruct)).safariEscapeFactor
+            < sPkblToEscapeFactor[(*crate::gl!(gBattleStruct)).safariPkblThrowCounter]
+                [crate::gl!(gBattleCommunication[5])]
         {
-            (*gBattleStruct).safariEscapeFactor = 1;
+            (*crate::gl!(gBattleStruct)).safariEscapeFactor = 1;
         } else {
-            (*gBattleStruct).safariEscapeFactor -= sPkblToEscapeFactor
-                [(*gBattleStruct).safariPkblThrowCounter][gBattleCommunication[5]];
+            (*crate::gl!(gBattleStruct)).safariEscapeFactor -= sPkblToEscapeFactor
+                [(*crate::gl!(gBattleStruct)).safariPkblThrowCounter]
+                [crate::gl!(gBattleCommunication[5])];
         }
     }
-    gBattlescriptCurrInstr =
-        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[2];
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    crate::gl!(
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[2]
+    );
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
 }
 pub unsafe fn HandleAction_GoNear() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    (*gBattleStruct).safariCatchFactor +=
-        sGoNearCounterToCatchFactor[(*gBattleStruct).safariGoNearCounter];
-    if (*gBattleStruct).safariCatchFactor > 20 {
-        (*gBattleStruct).safariCatchFactor = 20;
+    gBattlerAttacker.set({
+        let gl_i17 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i17])
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    (*crate::gl!(gBattleStruct)).safariCatchFactor +=
+        sGoNearCounterToCatchFactor[(*crate::gl!(gBattleStruct)).safariGoNearCounter];
+    if (*crate::gl!(gBattleStruct)).safariCatchFactor > 20 {
+        (*crate::gl!(gBattleStruct)).safariCatchFactor = 20;
     }
-    (*gBattleStruct).safariEscapeFactor +=
-        sGoNearCounterToEscapeFactor[(*gBattleStruct).safariGoNearCounter];
-    if (*gBattleStruct).safariEscapeFactor > 20 {
-        (*gBattleStruct).safariEscapeFactor = 20;
+    (*crate::gl!(gBattleStruct)).safariEscapeFactor +=
+        sGoNearCounterToEscapeFactor[(*crate::gl!(gBattleStruct)).safariGoNearCounter];
+    if (*crate::gl!(gBattleStruct)).safariEscapeFactor > 20 {
+        (*crate::gl!(gBattleStruct)).safariEscapeFactor = 20;
     }
-    if (*gBattleStruct).safariGoNearCounter < 3 {
-        (*gBattleStruct).safariGoNearCounter += 1;
-        gBattleCommunication[5] = B_MSG_CREPT_CLOSER;
+    if (*crate::gl!(gBattleStruct)).safariGoNearCounter < 3 {
+        (*crate::gl!(gBattleStruct)).safariGoNearCounter += 1;
+        crate::gl!(gBattleCommunication[5] = B_MSG_CREPT_CLOSER);
     } else {
-        gBattleCommunication[5] = B_MSG_CANT_GET_CLOSER;
+        crate::gl!(gBattleCommunication[5] = B_MSG_CANT_GET_CLOSER);
     }
-    gBattlescriptCurrInstr =
-        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[1];
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
+    crate::gl!(
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[1]
+    );
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
 }
 pub unsafe fn HandleAction_SafariZoneRun() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
+    gBattlerAttacker.set({
+        let gl_i18 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i18])
+    });
     PlaySE(SE_FLEE);
-    gCurrentTurnActionNumber = gBattlersCount;
-    gBattleOutcome = B_OUTCOME_RAN;
+    gCurrentTurnActionNumber.set(gBattlersCount.get());
+    gBattleOutcome.set(B_OUTCOME_RAN);
 }
 pub unsafe fn HandleAction_WallyBallThrow() {
-    gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    gBattleTextBuff1[0] = 0xFD;
-    gBattleTextBuff1[1] = 7;
-    gBattleTextBuff1[2] = gBattlerAttacker;
-    gBattleTextBuff1[3] = gBattlerPartyIndexes[gBattlerAttacker] as u8;
-    gBattleTextBuff1[4] = 0xFF;
-    gBattlescriptCurrInstr =
-        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[3];
-    gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
-    gActionsByTurnOrder[1] = B_ACTION_FINISHED;
+    gBattlerAttacker.set({
+        let gl_i19 = gCurrentTurnActionNumber.get();
+        crate::gl!(gBattlerByTurnOrder[gl_i19])
+    });
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    crate::gl!(gBattleTextBuff1[0] = 0xFD);
+    crate::gl!(gBattleTextBuff1[1] = 7);
+    crate::gl!(gBattleTextBuff1[2] = gBattlerAttacker.get());
+    crate::gl!(
+        gBattleTextBuff1[3] = ({
+            let gl_i35 = gBattlerAttacker.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i35])
+        }) as u8
+    );
+    crate::gl!(gBattleTextBuff1[4] = 0xFF);
+    crate::gl!(
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[3]
+    );
+    gCurrentActionFuncId.set(B_ACTION_EXEC_SCRIPT);
+    crate::gl!(gActionsByTurnOrder[1] = B_ACTION_FINISHED);
 }
 pub unsafe fn HandleAction_TryFinish() {
     if HandleFaintedMonActions() == 0 {
-        (*gBattleStruct).faintedActionsState = 0;
-        gCurrentActionFuncId = B_ACTION_FINISHED;
+        (*crate::gl!(gBattleStruct)).faintedActionsState = 0;
+        gCurrentActionFuncId.set(B_ACTION_FINISHED);
     }
 }
-pub unsafe fn HandleAction_NothingIsFainted() {
-    gCurrentTurnActionNumber += 1;
-    gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
-    gHitMarker &= 0xf1e892af;
+pub fn HandleAction_NothingIsFainted() {
+    gCurrentTurnActionNumber.set(gCurrentTurnActionNumber.get() + (1));
+    gCurrentActionFuncId.set({
+        let gl_i20 = gCurrentTurnActionNumber.get();
+        crate::gl!(gActionsByTurnOrder[gl_i20])
+    });
+    gHitMarker.set(gHitMarker.get() & (0xf1e892af));
 }
 pub unsafe fn HandleAction_ActionFinished() {
-    *(*gBattleStruct)
+    *(*crate::gl!(gBattleStruct))
         .monToSwitchIntoId
         .as_mut_ptr()
-        .at(gBattlerByTurnOrder[gCurrentTurnActionNumber]) = PARTY_SIZE as u8;
-    gCurrentTurnActionNumber += 1;
-    gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+        .at({
+            let gl_i21 = gCurrentTurnActionNumber.get();
+            crate::gl!(gBattlerByTurnOrder[gl_i21])
+        }) = PARTY_SIZE as u8;
+    gCurrentTurnActionNumber.set(gCurrentTurnActionNumber.get() + (1));
+    gCurrentActionFuncId.set({
+        let gl_i22 = gCurrentTurnActionNumber.get();
+        crate::gl!(gActionsByTurnOrder[gl_i22])
+    });
     SpecialStatusesClear();
-    gHitMarker &= 0xf1e892af;
-    gCurrentMove = 0;
-    gBattleMoveDamage = 0;
-    gMoveResultFlags = 0;
-    gBattleScripting.animTurn = 0;
-    gBattleScripting.animTargetsHit = 0;
-    gLastLandedMoves[gBattlerAttacker] = 0;
-    gLastHitByType[gBattlerAttacker] = 0;
-    (*gBattleStruct).dynamicMoveType = 0;
-    gDynamicBasePower = 0;
-    gBattleScripting.moveendState = 0;
-    gBattleCommunication[3] = 0;
-    gBattleCommunication[4] = 0;
-    gBattleScripting.multihitMoveEffect = 0;
-    (*(*gBattleResources).battleScriptsStack).size = 0;
+    gHitMarker.set(gHitMarker.get() & (0xf1e892af));
+    gCurrentMove.set(0);
+    gBattleMoveDamage.set(0);
+    gMoveResultFlags.set(0);
+    crate::gl!(gBattleScripting.animTurn = 0);
+    crate::gl!(gBattleScripting.animTargetsHit = 0);
+    {
+        let gl_v = 0;
+        let gl_i23 = gBattlerAttacker.get();
+        crate::gl!(gLastLandedMoves[gl_i23] = gl_v)
+    };
+    {
+        let gl_v = 0;
+        let gl_i24 = gBattlerAttacker.get();
+        crate::gl!(gLastHitByType[gl_i24] = gl_v)
+    };
+    (*crate::gl!(gBattleStruct)).dynamicMoveType = 0;
+    gDynamicBasePower.set(0);
+    crate::gl!(gBattleScripting.moveendState = 0);
+    crate::gl!(gBattleCommunication[3] = 0);
+    crate::gl!(gBattleCommunication[4] = 0);
+    crate::gl!(gBattleScripting.multihitMoveEffect = 0);
+    (*(*crate::gl!(gBattleResources)).battleScriptsStack).size = 0;
 }
 pub unsafe fn GetBattlerForBattleScript(caseId: u8) -> u8 {
     let mut ret: u8 = 0;
     match caseId {
         BS_TARGET => {
-            ret = gBattlerTarget;
+            ret = gBattlerTarget.get();
         }
         BS_ATTACKER => {
-            ret = gBattlerAttacker;
+            ret = gBattlerAttacker.get();
         }
         BS_EFFECT_BATTLER => {
-            ret = gEffectBattler;
+            ret = gEffectBattler.get();
         }
         BS_BATTLER_0 => {
             ret = 0;
         }
         BS_SCRIPTING => {
-            ret = gBattleScripting.battler;
+            ret = crate::gl!(gBattleScripting.battler);
         }
         BS_FAINTED => {
-            ret = gBattlerFainted;
+            ret = gBattlerFainted.get();
         }
         BS_FAINTED_LINK_MULTIPLE_1 => {
-            ret = gBattlerFainted;
+            ret = gBattlerFainted.get();
         }
         BS_ATTACKER_WITH_PARTNER
         | BS_FAINTED_LINK_MULTIPLE_2
@@ -822,12 +1078,12 @@ pub unsafe fn GetBattlerForBattleScript(caseId: u8) -> u8 {
     ret
 }
 pub unsafe fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
-    if gBattleMons[target].ability != ABILITY_PRESSURE {
+    if crate::gl!(gBattleMons[target].ability) != ABILITY_PRESSURE {
         return;
     }
     let mut moveIndex: i32 = 0;
     while moveIndex < MAX_MON_MOVES {
-        if gBattleMons[attacker].moves[moveIndex] == r#move {
+        if crate::gl!(gBattleMons[attacker].moves[moveIndex]) == r#move {
             break;
         }
         moveIndex += 1;
@@ -835,23 +1091,26 @@ pub unsafe fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
     if moveIndex == MAX_MON_MOVES {
         return;
     }
-    if gBattleMons[attacker].pp[moveIndex] != 0 {
-        gBattleMons[attacker].pp[moveIndex] -= 1;
+    if crate::gl!(gBattleMons[attacker].pp[moveIndex]) != 0 {
+        crate::gl!(gBattleMons[attacker].pp[moveIndex] -= 1);
     }
-    if gBattleMons[attacker].status2 & 0x200000 == 0
-        && gDisableStructs[attacker].mimickedMoves() as u32
+    if crate::gl!(gBattleMons[attacker].status2) & 0x200000 == 0
+        && (*gDisableStructs.as_ptr())[attacker].mimickedMoves() as u32
             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[moveIndex]
             == 0
     {
-        gActiveBattler = attacker;
+        gActiveBattler.set(attacker);
         BtlController_EmitSetMonData(
             B_COMM_TO_CONTROLLER,
             REQUEST_PPMOVE1_BATTLE + moveIndex as u8,
             0,
             1,
-            &raw mut gBattleMons[gActiveBattler].pp[moveIndex] as *mut c_void,
+            ({
+                let gl_i36 = gActiveBattler.get();
+                crate::gl!(&raw gBattleMons[gl_i36].pp[moveIndex])
+            }) as *mut c_void,
         );
-        MarkBattlerForControllerExec(gActiveBattler);
+        MarkBattlerForControllerExec(gActiveBattler.get());
     }
 }
 pub unsafe fn PressurePPLoseOnUsingImprison(attacker: u8) {
@@ -859,124 +1118,139 @@ pub unsafe fn PressurePPLoseOnUsingImprison(attacker: u8) {
     let mut imprisonPos: i32 = MAX_MON_MOVES;
     let atkSide: u8 = GetBattlerSide(attacker);
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
-        if atkSide != GetBattlerSide(i as u8) && gBattleMons[i].ability == ABILITY_PRESSURE {
+    while i < gBattlersCount.get() as i32 {
+        if atkSide != GetBattlerSide(i as u8)
+            && crate::gl!(gBattleMons[i].ability) == ABILITY_PRESSURE
+        {
             j = 0;
             while j < MAX_MON_MOVES {
-                if gBattleMons[attacker].moves[j] == MOVE_IMPRISON {
+                if crate::gl!(gBattleMons[attacker].moves[j]) == MOVE_IMPRISON {
                     break;
                 }
                 j += 1;
             }
             if j != MAX_MON_MOVES {
                 imprisonPos = j;
-                if gBattleMons[attacker].pp[j] != 0 {
-                    gBattleMons[attacker].pp[j] -= 1;
+                if crate::gl!(gBattleMons[attacker].pp[j]) != 0 {
+                    crate::gl!(gBattleMons[attacker].pp[j] -= 1);
                 }
             }
         }
         i += 1;
     }
     if imprisonPos != MAX_MON_MOVES
-        && (gBattleMons[attacker].status2 & 0x200000 == 0
-            && gDisableStructs[attacker].mimickedMoves() as u32
+        && (crate::gl!(gBattleMons[attacker].status2) & 0x200000 == 0
+            && (*gDisableStructs.as_ptr())[attacker].mimickedMoves() as u32
                 & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[imprisonPos]
                 == 0)
     {
-        gActiveBattler = attacker;
+        gActiveBattler.set(attacker);
         BtlController_EmitSetMonData(
             B_COMM_TO_CONTROLLER,
             REQUEST_PPMOVE1_BATTLE + imprisonPos as u8,
             0,
             1,
-            &raw mut gBattleMons[gActiveBattler].pp[imprisonPos] as *mut c_void,
+            ({
+                let gl_i37 = gActiveBattler.get();
+                crate::gl!(&raw gBattleMons[gl_i37].pp[imprisonPos])
+            }) as *mut c_void,
         );
-        MarkBattlerForControllerExec(gActiveBattler);
+        MarkBattlerForControllerExec(gActiveBattler.get());
     }
 }
 pub unsafe fn PressurePPLoseOnUsingPerishSong(attacker: u8) {
     let mut j: i32 = 0;
     let mut perishSongPos: i32 = MAX_MON_MOVES;
-    for i in 0..(gBattlersCount as i32) {
-        if gBattleMons[i].ability == ABILITY_PRESSURE && i != attacker as i32 {
+    for i in 0..(gBattlersCount.get() as i32) {
+        if crate::gl!(gBattleMons[i].ability) == ABILITY_PRESSURE && i != attacker as i32 {
             j = 0;
             while j < MAX_MON_MOVES {
-                if gBattleMons[attacker].moves[j] == MOVE_PERISH_SONG {
+                if crate::gl!(gBattleMons[attacker].moves[j]) == MOVE_PERISH_SONG {
                     break;
                 }
                 j += 1;
             }
             if j != MAX_MON_MOVES {
                 perishSongPos = j;
-                if gBattleMons[attacker].pp[j] != 0 {
-                    gBattleMons[attacker].pp[j] -= 1;
+                if crate::gl!(gBattleMons[attacker].pp[j]) != 0 {
+                    crate::gl!(gBattleMons[attacker].pp[j] -= 1);
                 }
             }
         }
     }
     if perishSongPos != MAX_MON_MOVES
-        && (gBattleMons[attacker].status2 & 0x200000 == 0
-            && gDisableStructs[attacker].mimickedMoves() as u32
+        && (crate::gl!(gBattleMons[attacker].status2) & 0x200000 == 0
+            && (*gDisableStructs.as_ptr())[attacker].mimickedMoves() as u32
                 & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[perishSongPos]
                 == 0)
     {
-        gActiveBattler = attacker;
+        gActiveBattler.set(attacker);
         BtlController_EmitSetMonData(
             B_COMM_TO_CONTROLLER,
             REQUEST_PPMOVE1_BATTLE + perishSongPos as u8,
             0,
             1,
-            &raw mut gBattleMons[gActiveBattler].pp[perishSongPos] as *mut c_void,
+            ({
+                let gl_i38 = gActiveBattler.get();
+                crate::gl!(&raw gBattleMons[gl_i38].pp[perishSongPos])
+            }) as *mut c_void,
         );
-        MarkBattlerForControllerExec(gActiveBattler);
+        MarkBattlerForControllerExec(gActiveBattler.get());
     }
 }
-unsafe fn MarkAllBattlersForControllerExec() {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-        for i in 0..(gBattlersCount as i32) {
-            gBattleControllerExecFlags |= gBitTable[i] << 28;
+fn MarkAllBattlersForControllerExec() {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
+        for i in 0..(gBattlersCount.get() as i32) {
+            gBattleControllerExecFlags.set(gBattleControllerExecFlags.get() | (gBitTable[i] << 28));
         }
     } else {
-        for i in 0..(gBattlersCount as i32) {
-            gBattleControllerExecFlags |= gBitTable[i];
+        for i in 0..(gBattlersCount.get() as i32) {
+            gBattleControllerExecFlags.set(gBattleControllerExecFlags.get() | (gBitTable[i]));
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn MarkBattlerForControllerExec(battler: u8) {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-        gBattleControllerExecFlags |= gBitTable[battler] << 28;
+pub fn MarkBattlerForControllerExec(battler: u8) {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
+        gBattleControllerExecFlags
+            .set(gBattleControllerExecFlags.get() | (gBitTable[battler] << 28));
     } else {
-        gBattleControllerExecFlags |= gBitTable[battler];
+        gBattleControllerExecFlags.set(gBattleControllerExecFlags.get() | (gBitTable[battler]));
     }
 }
 pub unsafe fn MarkBattlerReceivedLinkData(battler: u8) {
     let mut i: i32 = 0;
     while i < GetLinkPlayerCount() as i32 {
-        gBattleControllerExecFlags |= shl_u32(gBitTable[battler], (i as u32) << 2);
+        {
+            let rhs = shl_u32(gBitTable[battler], (i as u32) << 2);
+            gBattleControllerExecFlags.set(gBattleControllerExecFlags.get() | rhs)
+        };
         i += 1;
     }
-    gBattleControllerExecFlags &= !(shl_i32(0x10000000, battler as u32) as u32);
+    {
+        let rhs = !(shl_i32(0x10000000, battler as u32) as u32);
+        gBattleControllerExecFlags.set(gBattleControllerExecFlags.get() & rhs)
+    };
 }
 pub unsafe fn CancelMultiTurnMoves(battler: u8) {
-    gBattleMons[battler].status2 &= 0xffffefff;
-    gBattleMons[battler].status2 &= 0xfffff3ff;
-    gBattleMons[battler].status2 &= 0xffffff8f;
-    gBattleMons[battler].status2 &= 0xfffffcff;
-    gStatuses3[battler] &= 0xfffbff3f;
-    gDisableStructs[battler].set_rolloutTimer(0);
-    gDisableStructs[battler].furyCutterCounter = 0;
+    crate::gl!(gBattleMons[battler].status2 &= 0xffffefff);
+    crate::gl!(gBattleMons[battler].status2 &= 0xfffff3ff);
+    crate::gl!(gBattleMons[battler].status2 &= 0xffffff8f);
+    crate::gl!(gBattleMons[battler].status2 &= 0xfffffcff);
+    crate::gl!(gStatuses3[battler] &= 0xfffbff3f);
+    (*gDisableStructs.as_ptr())[battler].set_rolloutTimer(0);
+    crate::gl!(gDisableStructs[battler].furyCutterCounter = 0);
 }
 pub unsafe fn WasUnableToUseMove(battler: u8) -> u8 {
-    if gProtectStructs[battler].prlzImmobility() != 0
-        || gProtectStructs[battler].targetNotAffected() != 0
-        || gProtectStructs[battler].usedImprisonedMove() != 0
-        || gProtectStructs[battler].loveImmobility() != 0
-        || gProtectStructs[battler].usedDisabledMove() != 0
-        || gProtectStructs[battler].usedTauntedMove() != 0
-        || gProtectStructs[battler].flag2Unknown() != 0
-        || gProtectStructs[battler].flinchImmobility() != 0
-        || gProtectStructs[battler].confusionSelfDmg() != 0
+    if (*gProtectStructs.as_ptr())[battler].prlzImmobility() != 0
+        || (*gProtectStructs.as_ptr())[battler].targetNotAffected() != 0
+        || (*gProtectStructs.as_ptr())[battler].usedImprisonedMove() != 0
+        || (*gProtectStructs.as_ptr())[battler].loveImmobility() != 0
+        || (*gProtectStructs.as_ptr())[battler].usedDisabledMove() != 0
+        || (*gProtectStructs.as_ptr())[battler].usedTauntedMove() != 0
+        || (*gProtectStructs.as_ptr())[battler].flag2Unknown() != 0
+        || (*gProtectStructs.as_ptr())[battler].flinchImmobility() != 0
+        || (*gProtectStructs.as_ptr())[battler].confusionSelfDmg() != 0
     {
         return TRUE;
     } else {
@@ -988,22 +1262,26 @@ pub unsafe fn WasUnableToUseMove(battler: u8) -> u8 {
     }
 }
 pub unsafe fn PrepareStringBattle(stringId: u16, battler: u8) {
-    gActiveBattler = battler;
+    gActiveBattler.set(battler);
     BtlController_EmitPrintString(B_COMM_TO_CONTROLLER, stringId);
-    MarkBattlerForControllerExec(gActiveBattler);
+    MarkBattlerForControllerExec(gActiveBattler.get());
 }
-pub unsafe fn ResetSentPokesToOpponentValue() {
+pub fn ResetSentPokesToOpponentValue() {
     let mut bits: u32 = 0;
-    gSentPokesToOpponent[0] = 0;
-    gSentPokesToOpponent[1] = 0;
+    crate::gl!(gSentPokesToOpponent[0] = 0);
+    crate::gl!(gSentPokesToOpponent[1] = 0);
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
-        bits |= gBitTable[gBattlerPartyIndexes[i]];
+    while i < gBattlersCount.get() as i32 {
+        bits |= gBitTable[crate::gl!(gBattlerPartyIndexes[i])];
         i += 2;
     }
     i = 1;
-    while i < gBattlersCount as i32 {
-        gSentPokesToOpponent[(i & BIT_FLANK as i32) >> 1] = bits as u8;
+    while i < gBattlersCount.get() as i32 {
+        {
+            let gl_v = bits as u8;
+            let gl_i25 = (i & BIT_FLANK as i32) >> 1;
+            crate::gl!(gSentPokesToOpponent[gl_i25] = gl_v)
+        };
         i += 2;
     }
 }
@@ -1012,166 +1290,251 @@ pub unsafe fn OpponentSwitchInResetSentPokesToOpponentValue(battler: u8) {
     let mut bits: u32 = 0;
     if GetBattlerSide(battler) == B_SIDE_OPPONENT {
         let flank: u8 = ((battler as i32 & BIT_FLANK as i32) >> 1) as u8;
-        gSentPokesToOpponent[flank] = 0;
+        crate::gl!(gSentPokesToOpponent[flank] = 0);
         i = 0;
-        while i < gBattlersCount as i32 {
-            if gAbsentBattlerFlags as u32
+        while i < gBattlersCount.get() as i32 {
+            if gAbsentBattlerFlags.get() as u32
                 & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
                 == 0
             {
-                bits |= gBitTable[gBattlerPartyIndexes[i]];
+                bits |= gBitTable[crate::gl!(gBattlerPartyIndexes[i])];
             }
             i += 2;
         }
-        gSentPokesToOpponent[flank] = bits as u8;
+        crate::gl!(gSentPokesToOpponent[flank] = bits as u8);
     }
 }
 pub unsafe fn UpdateSentPokesToOpponentValue(battler: u8) {
     if GetBattlerSide(battler) == B_SIDE_OPPONENT {
         OpponentSwitchInResetSentPokesToOpponentValue(battler);
     } else {
-        for i in 1..(gBattlersCount as i32) {
-            gSentPokesToOpponent[(i & BIT_FLANK as i32) >> 1] |=
-                gBitTable[gBattlerPartyIndexes[battler]] as u8;
+        for i in 1..(gBattlersCount.get() as i32) {
+            {
+                let gl_v = gBitTable[crate::gl!(gBattlerPartyIndexes[battler])] as u8;
+                let gl_i26 = (i & BIT_FLANK as i32) >> 1;
+                crate::gl!(gSentPokesToOpponent[gl_i26] |= gl_v)
+            };
         }
     }
 }
 pub unsafe fn BattleScriptPush(bsPtr: *mut u8) {
-    (*(*gBattleResources).battleScriptsStack).ptr[{
-        let t1 = (*(*gBattleResources).battleScriptsStack).size;
-        (*(*gBattleResources).battleScriptsStack).size += 1;
+    (*(*crate::gl!(gBattleResources)).battleScriptsStack).ptr[{
+        let t1 = (*(*crate::gl!(gBattleResources)).battleScriptsStack).size;
+        (*(*crate::gl!(gBattleResources)).battleScriptsStack).size += 1;
         t1
     }] = bsPtr;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn BattleScriptPushCursor() {
-    (*(*gBattleResources).battleScriptsStack).ptr[{
-        let t1 = (*(*gBattleResources).battleScriptsStack).size;
-        (*(*gBattleResources).battleScriptsStack).size += 1;
+    (*(*crate::gl!(gBattleResources)).battleScriptsStack).ptr[{
+        let t1 = (*(*crate::gl!(gBattleResources)).battleScriptsStack).size;
+        (*(*crate::gl!(gBattleResources)).battleScriptsStack).size += 1;
         t1
-    }] = gBattlescriptCurrInstr;
+    }] = crate::gl!(gBattlescriptCurrInstr);
 }
 pub unsafe fn BattleScriptPop() {
-    gBattlescriptCurrInstr = (*(*gBattleResources).battleScriptsStack).ptr[{
-        (*(*gBattleResources).battleScriptsStack).size -= 1;
-        (*(*gBattleResources).battleScriptsStack).size
-    }];
+    crate::gl!(
+        gBattlescriptCurrInstr = (*(*crate::gl!(gBattleResources)).battleScriptsStack).ptr[{
+            (*(*crate::gl!(gBattleResources)).battleScriptsStack).size -= 1;
+            (*(*crate::gl!(gBattleResources)).battleScriptsStack).size
+        }]
+    );
 }
 pub unsafe fn TrySetCantSelectMoveBattleScript() -> u8 {
     let mut limitations: u8 = 0;
-    let r#move: u16 = gBattleMons[gActiveBattler].moves[gBattleBufferB[gActiveBattler][2]];
+    let r#move: u16 = {
+        let gl_i39 = gActiveBattler.get();
+        let gl_i40 = {
+            let gl_i27 = gActiveBattler.get();
+            crate::gl!(gBattleBufferB[gl_i27][2])
+        };
+        crate::gl!(gBattleMons[gl_i39].moves[gl_i40])
+    };
     let mut holdEffect: u8 = 0;
-    let choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[gActiveBattler];
-    if gDisableStructs[gActiveBattler].disabledMove == r#move && r#move != MOVE_NONE {
-        gBattleScripting.battler = gActiveBattler;
-        gCurrentMove = r#move;
-        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-            gPalaceSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingDisabledMoveInPalace
+    let choicedMove: *mut u16 =
+        &raw mut (*crate::gl!(gBattleStruct)).choicedMove[gActiveBattler.get()];
+    if ({
+        let gl_i41 = gActiveBattler.get();
+        crate::gl!(gDisableStructs[gl_i41].disabledMove)
+    }) == r#move
+        && r#move != MOVE_NONE
+    {
+        crate::gl!(gBattleScripting.battler = gActiveBattler.get());
+        gCurrentMove.set(r#move);
+        if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0 {
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingDisabledMoveInPalace
                     .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+                let gl_i28 = gActiveBattler.get();
+                crate::gl!(gPalaceSelectionBattleScripts[gl_i28] = gl_v)
+            };
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingDisabledMove.cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingDisabledMove
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+                let gl_i29 = gActiveBattler.get();
+                crate::gl!(gSelectionBattleScripts[gl_i29] = gl_v)
+            };
             limitations = 1;
         }
     }
-    if r#move == gLastMoves[gActiveBattler]
-        && r#move != MOVE_STRUGGLE
-        && gBattleMons[gActiveBattler].status2 & 0x80000000 != 0
+    if r#move == {
+        let gl_i30 = gActiveBattler.get();
+        crate::gl!(gLastMoves[gl_i30])
+    } && r#move != MOVE_STRUGGLE
+        && ({
+            let gl_i42 = gActiveBattler.get();
+            crate::gl!(gBattleMons[gl_i42].status2)
+        }) & 0x80000000
+            != 0
     {
-        CancelMultiTurnMoves(gActiveBattler);
-        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-            gPalaceSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingTormentedMoveInPalace
+        CancelMultiTurnMoves(gActiveBattler.get());
+        if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0 {
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingTormentedMoveInPalace
                     .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+                let gl_i31 = gActiveBattler.get();
+                crate::gl!(gPalaceSelectionBattleScripts[gl_i31] = gl_v)
+            };
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingTormentedMove.cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingTormentedMove
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+                let gl_i32 = gActiveBattler.get();
+                crate::gl!(gSelectionBattleScripts[gl_i32] = gl_v)
+            };
             limitations += 1;
         }
     }
-    if gDisableStructs[gActiveBattler].tauntTimer() != 0
+    if (*gDisableStructs.as_ptr())[gActiveBattler.get()].tauntTimer() != 0
         && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
             [r#move]
             .power
             == 0
     {
-        gCurrentMove = r#move;
-        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-            gPalaceSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingNotAllowedMoveTauntInPalace
+        gCurrentMove.set(r#move);
+        if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0 {
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingNotAllowedMoveTauntInPalace
                     .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+                let gl_i33 = gActiveBattler.get();
+                crate::gl!(gPalaceSelectionBattleScripts[gl_i33] = gl_v)
+            };
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingNotAllowedMoveTaunt
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingNotAllowedMoveTaunt
                     .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
+                let gl_i34 = gActiveBattler.get();
+                crate::gl!(gSelectionBattleScripts[gl_i34] = gl_v)
+            };
             limitations += 1;
         }
     }
-    if GetImprisonedMovesCount(gActiveBattler, r#move) != 0 {
-        gCurrentMove = r#move;
-        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-            gPalaceSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingImprisonedMoveInPalace
+    if GetImprisonedMovesCount(gActiveBattler.get(), r#move) != 0 {
+        gCurrentMove.set(r#move);
+        if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0 {
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingImprisonedMoveInPalace
                     .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+                let gl_i35 = gActiveBattler.get();
+                crate::gl!(gPalaceSelectionBattleScripts[gl_i35] = gl_v)
+            };
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingImprisonedMove.cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingImprisonedMove
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+                let gl_i36 = gActiveBattler.get();
+                crate::gl!(gSelectionBattleScripts[gl_i36] = gl_v)
+            };
             limitations += 1;
         }
     }
-    if gBattleMons[gActiveBattler].item == ITEM_ENIGMA_BERRY {
-        holdEffect = gEnigmaBerries[gActiveBattler].holdEffect;
+    if ({
+        let gl_i43 = gActiveBattler.get();
+        crate::gl!(gBattleMons[gl_i43].item)
+    }) == ITEM_ENIGMA_BERRY
+    {
+        holdEffect = {
+            let gl_i37 = gActiveBattler.get();
+            crate::gl!(gEnigmaBerries[gl_i37].holdEffect)
+        };
     } else {
-        holdEffect = GetItemHoldEffect(gBattleMons[gActiveBattler].item);
+        holdEffect = GetItemHoldEffect({
+            let gl_i44 = gActiveBattler.get();
+            crate::gl!(gBattleMons[gl_i44].item)
+        });
     }
-    gPotentialItemEffectBattler = gActiveBattler;
+    gPotentialItemEffectBattler.set(gActiveBattler.get());
     if holdEffect == HOLD_EFFECT_CHOICE_BAND
         && *choicedMove != MOVE_NONE
         && *choicedMove != MOVE_UNAVAILABLE
         && *choicedMove != r#move
     {
-        gCurrentMove = *choicedMove;
-        gLastUsedItem = gBattleMons[gActiveBattler].item;
-        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+        gCurrentMove.set(*choicedMove);
+        gLastUsedItem.set({
+            let gl_i45 = gActiveBattler.get();
+            crate::gl!(gBattleMons[gl_i45].item)
+        });
+        if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0 {
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingNotAllowedMoveChoiceItem
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingNotAllowedMoveChoiceItem
                     .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
+                let gl_i38 = gActiveBattler.get();
+                crate::gl!(gSelectionBattleScripts[gl_i38] = gl_v)
+            };
             limitations += 1;
         }
     }
-    if gBattleMons[gActiveBattler].pp[gBattleBufferB[gActiveBattler][2]] == 0 {
-        if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-            gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
+    if ({
+        let gl_i46 = gActiveBattler.get();
+        let gl_i47 = {
+            let gl_i39 = gActiveBattler.get();
+            crate::gl!(gBattleBufferB[gl_i39][2])
+        };
+        crate::gl!(gBattleMons[gl_i46].pp[gl_i47])
+    }) == 0
+    {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_PALACE != 0 {
+            (*gProtectStructs.as_ptr())[gActiveBattler.get()]
+                .set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] =
-                (*crate::asmdata::BattleScript_SelectingMoveWithNoPP.cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
+            {
+                let gl_v = (*crate::asmdata::BattleScript_SelectingMoveWithNoPP
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+                let gl_i40 = gActiveBattler.get();
+                crate::gl!(gSelectionBattleScripts[gl_i40] = gl_v)
+            };
             limitations += 1;
         }
     }
@@ -1179,56 +1542,58 @@ pub unsafe fn TrySetCantSelectMoveBattleScript() -> u8 {
 }
 pub unsafe fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8, check: u8) -> u8 {
     let mut holdEffect: u8 = 0;
-    let choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[battler];
-    if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
-        holdEffect = gEnigmaBerries[battler].holdEffect;
+    let choicedMove: *mut u16 = &raw mut (*crate::gl!(gBattleStruct)).choicedMove[battler];
+    if crate::gl!(gBattleMons[battler].item) == ITEM_ENIGMA_BERRY {
+        holdEffect = crate::gl!(gEnigmaBerries[battler].holdEffect);
     } else {
-        holdEffect = GetItemHoldEffect(gBattleMons[battler].item);
+        holdEffect = GetItemHoldEffect(crate::gl!(gBattleMons[battler].item));
     }
-    gPotentialItemEffectBattler = battler;
+    gPotentialItemEffectBattler.set(battler);
     for i in 0..MAX_MON_MOVES {
-        if gBattleMons[battler].moves[i] == MOVE_NONE
+        if crate::gl!(gBattleMons[battler].moves[i]) == MOVE_NONE
             && check as i32 & MOVE_LIMITATION_ZEROMOVE != 0
         {
             unusableMoves |= gBitTable[i] as u8;
         }
-        if gBattleMons[battler].pp[i] == 0 && check as i32 & MOVE_LIMITATION_PP != 0 {
+        if crate::gl!(gBattleMons[battler].pp[i]) == 0 && check as i32 & MOVE_LIMITATION_PP != 0 {
             unusableMoves |= gBitTable[i] as u8;
         }
-        if gBattleMons[battler].moves[i] == gDisableStructs[battler].disabledMove
+        if crate::gl!(gBattleMons[battler].moves[i])
+            == crate::gl!(gDisableStructs[battler].disabledMove)
             && check as i32 & MOVE_LIMITATION_DISABLED != 0
         {
             unusableMoves |= gBitTable[i] as u8;
         }
-        if gBattleMons[battler].moves[i] == gLastMoves[battler]
+        if crate::gl!(gBattleMons[battler].moves[i]) == crate::gl!(gLastMoves[battler])
             && check as i32 & MOVE_LIMITATION_TORMENTED != 0
-            && gBattleMons[battler].status2 & 0x80000000 != 0
+            && crate::gl!(gBattleMons[battler].status2) & 0x80000000 != 0
         {
             unusableMoves |= gBitTable[i] as u8;
         }
-        if gDisableStructs[battler].tauntTimer() != 0
+        if (*gDisableStructs.as_ptr())[battler].tauntTimer() != 0
             && check as i32 & MOVE_LIMITATION_TAUNT != 0
             && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
-                [gBattleMons[battler].moves[i]]
-                .power
+                [crate::gl!(gBattleMons[battler].moves[i])]
+            .power
                 == 0
         {
             unusableMoves |= gBitTable[i] as u8;
         }
-        if GetImprisonedMovesCount(battler, gBattleMons[battler].moves[i]) != 0
+        if GetImprisonedMovesCount(battler, crate::gl!(gBattleMons[battler].moves[i])) != 0
             && check as i32 & MOVE_LIMITATION_IMPRISON != 0
         {
             unusableMoves |= gBitTable[i] as u8;
         }
-        if gDisableStructs[battler].encoreTimer() != 0
-            && gDisableStructs[battler].encoredMove != gBattleMons[battler].moves[i]
+        if (*gDisableStructs.as_ptr())[battler].encoreTimer() != 0
+            && crate::gl!(gDisableStructs[battler].encoredMove)
+                != crate::gl!(gBattleMons[battler].moves[i])
         {
             unusableMoves |= gBitTable[i] as u8;
         }
         if holdEffect == HOLD_EFFECT_CHOICE_BAND
             && *choicedMove != MOVE_NONE
             && *choicedMove != MOVE_UNAVAILABLE
-            && *choicedMove != gBattleMons[battler].moves[i]
+            && *choicedMove != crate::gl!(gBattleMons[battler].moves[i])
         {
             unusableMoves |= gBitTable[i] as u8;
         }
@@ -1236,15 +1601,18 @@ pub unsafe fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8, check: u8
     unusableMoves
 }
 pub unsafe fn AreAllMovesUnusable() -> u8 {
-    let unusable: u8 = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
+    let unusable: u8 = CheckMoveLimitations(gActiveBattler.get(), 0, MOVE_LIMITATIONS_ALL);
     if unusable == ALL_MOVES_MASK {
-        gProtectStructs[gActiveBattler].set_noValidMoves(TRUE as u32);
-        gSelectionBattleScripts[gActiveBattler] = (*crate::asmdata::BattleScript_NoMovesLeft
-            .cast::<CArray<u8, 0>>())
-        .as_ptr()
-        .cast_mut();
+        (*gProtectStructs.as_ptr())[gActiveBattler.get()].set_noValidMoves(TRUE as u32);
+        {
+            let gl_v = (*crate::asmdata::BattleScript_NoMovesLeft.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+            let gl_i41 = gActiveBattler.get();
+            crate::gl!(gSelectionBattleScripts[gl_i41] = gl_v)
+        };
     } else {
-        gProtectStructs[gActiveBattler].set_noValidMoves(FALSE as u32);
+        (*gProtectStructs.as_ptr())[gActiveBattler.get()].set_noValidMoves(FALSE as u32);
     }
     (unusable == ALL_MOVES_MASK) as u8
 }
@@ -1252,12 +1620,13 @@ pub unsafe fn GetImprisonedMovesCount(battler: u8, r#move: u16) -> u8 {
     let mut imprisonedMoves: u8 = 0;
     let battlerSide: u8 = GetBattlerSide(battler);
     let mut i: i32 = 0;
-    while i < gBattlersCount as i32 {
-        if battlerSide != GetBattlerSide(i as u8) && gStatuses3[i] & STATUS3_IMPRISONED_OTHERS != 0
+    while i < gBattlersCount.get() as i32 {
+        if battlerSide != GetBattlerSide(i as u8)
+            && crate::gl!(gStatuses3[i]) & STATUS3_IMPRISONED_OTHERS != 0
         {
             let mut j: i32 = 0;
             while j < MAX_MON_MOVES {
-                if r#move == gBattleMons[i].moves[j] {
+                if r#move == crate::gl!(gBattleMons[i].moves[j]) {
                     break;
                 }
                 j += 1;
@@ -1273,38 +1642,42 @@ pub unsafe fn GetImprisonedMovesCount(battler: u8, r#move: u16) -> u8 {
 pub unsafe fn DoFieldEndTurnEffects() -> u8 {
     let mut effect: u8 = 0;
     let mut i: i32 = 0;
-    gBattlerAttacker = 0;
-    while gBattlerAttacker < gBattlersCount
-        && gAbsentBattlerFlags as u32
-            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerAttacker]
+    gBattlerAttacker.set(0);
+    while gBattlerAttacker.get() < gBattlersCount.get()
+        && gAbsentBattlerFlags.get() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                [gBattlerAttacker.get()]
             != 0
     {
-        gBattlerAttacker += 1;
+        gBattlerAttacker.set(gBattlerAttacker.get() + (1));
     }
-    gBattlerTarget = 0;
-    while gBattlerTarget < gBattlersCount
-        && gAbsentBattlerFlags as u32
-            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+    gBattlerTarget.set(0);
+    while gBattlerTarget.get() < gBattlersCount.get()
+        && gAbsentBattlerFlags.get() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget.get()]
             != 0
     {
-        gBattlerTarget += 1;
+        gBattlerTarget.set(gBattlerTarget.get() + (1));
     }
     loop {
         let mut side: u8 = 0;
         'l4: {
-            let sw1: u8 = (*gBattleStruct).turnCountersTracker;
+            let sw1: u8 = (*crate::gl!(gBattleStruct)).turnCountersTracker;
             let mut fall = false;
             if sw1 == ENDTURN_ORDER {
                 fall = true;
-                for i in 0..(gBattlersCount as i32) {
-                    gBattlerByTurnOrder[i] = i as u8;
+                for i in 0..(gBattlersCount.get() as i32) {
+                    crate::gl!(gBattlerByTurnOrder[i] = i as u8);
                 }
                 i = 0;
-                while i < gBattlersCount as i32 - 1 {
+                while i < gBattlersCount.get() as i32 - 1 {
                     let mut j: i32 = i + 1;
-                    while j < gBattlersCount as i32 {
-                        if GetWhoStrikesFirst(gBattlerByTurnOrder[i], gBattlerByTurnOrder[j], FALSE)
-                            != 0
+                    while j < gBattlersCount.get() as i32 {
+                        if GetWhoStrikesFirst(
+                            crate::gl!(gBattlerByTurnOrder[i]),
+                            crate::gl!(gBattlerByTurnOrder[j]),
+                            FALSE,
+                        ) != 0
                         {
                             SwapTurnOrder(i as u8, j as u8);
                         }
@@ -1312,139 +1685,139 @@ pub unsafe fn DoFieldEndTurnEffects() -> u8 {
                     }
                     i += 1;
                 }
-                (*gBattleStruct).turnCountersTracker += 1;
-                (*gBattleStruct).turnSideTracker = 0;
+                (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
+                (*crate::gl!(gBattleStruct)).turnSideTracker = 0;
             }
             if fall || sw1 == ENDTURN_REFLECT {
-                while (*gBattleStruct).turnSideTracker < 2 {
-                    side = (*gBattleStruct).turnSideTracker;
-                    gActiveBattler = {
-                        gBattlerAttacker = gSideTimers[side].reflectBattlerId;
-                        gBattlerAttacker
-                    };
-                    if gSideStatuses[side] as i32 & SIDE_STATUS_REFLECT != 0
+                while (*crate::gl!(gBattleStruct)).turnSideTracker < 2 {
+                    side = (*crate::gl!(gBattleStruct)).turnSideTracker;
+                    gActiveBattler.set({
+                        gBattlerAttacker.set(crate::gl!(gSideTimers[side].reflectBattlerId));
+                        gBattlerAttacker.get()
+                    });
+                    if crate::gl!(gSideStatuses[side]) as i32 & SIDE_STATUS_REFLECT != 0
                         && ({
-                            gSideTimers[side].reflectTimer -= 1;
-                            gSideTimers[side].reflectTimer
+                            crate::gl!(gSideTimers[side].reflectTimer -= 1);
+                            crate::gl!(gSideTimers[side].reflectTimer)
                         }) == 0
                     {
-                        gSideStatuses[side] &= 65534;
+                        crate::gl!(gSideStatuses[side] &= 65534);
                         BattleScriptExecute(
                             (*crate::asmdata::BattleScript_SideStatusWoreOff
                                 .cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
                         );
-                        gBattleTextBuff1[0] = 0xFD;
-                        gBattleTextBuff1[1] = 2;
-                        gBattleTextBuff1[2] = MOVE_REFLECT as u8;
-                        gBattleTextBuff1[3] = 0;
-                        gBattleTextBuff1[4] = 0xFF;
+                        crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                        crate::gl!(gBattleTextBuff1[1] = 2);
+                        crate::gl!(gBattleTextBuff1[2] = MOVE_REFLECT as u8);
+                        crate::gl!(gBattleTextBuff1[3] = 0);
+                        crate::gl!(gBattleTextBuff1[4] = 0xFF);
                         effect += 1;
                     }
-                    (*gBattleStruct).turnSideTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker += 1;
                     if effect != 0 {
                         break;
                     }
                 }
                 if effect == 0 {
-                    (*gBattleStruct).turnCountersTracker += 1;
-                    (*gBattleStruct).turnSideTracker = 0;
+                    (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker = 0;
                 }
                 break 'l4;
             }
             if sw1 == ENDTURN_LIGHT_SCREEN {
-                while (*gBattleStruct).turnSideTracker < 2 {
-                    side = (*gBattleStruct).turnSideTracker;
-                    gActiveBattler = {
-                        gBattlerAttacker = gSideTimers[side].lightscreenBattlerId;
-                        gBattlerAttacker
-                    };
-                    if gSideStatuses[side] as i32 & SIDE_STATUS_LIGHTSCREEN != 0
+                while (*crate::gl!(gBattleStruct)).turnSideTracker < 2 {
+                    side = (*crate::gl!(gBattleStruct)).turnSideTracker;
+                    gActiveBattler.set({
+                        gBattlerAttacker.set(crate::gl!(gSideTimers[side].lightscreenBattlerId));
+                        gBattlerAttacker.get()
+                    });
+                    if crate::gl!(gSideStatuses[side]) as i32 & SIDE_STATUS_LIGHTSCREEN != 0
                         && ({
-                            gSideTimers[side].lightscreenTimer -= 1;
-                            gSideTimers[side].lightscreenTimer
+                            crate::gl!(gSideTimers[side].lightscreenTimer -= 1);
+                            crate::gl!(gSideTimers[side].lightscreenTimer)
                         }) == 0
                     {
-                        gSideStatuses[side] &= 65533;
+                        crate::gl!(gSideStatuses[side] &= 65533);
                         BattleScriptExecute(
                             (*crate::asmdata::BattleScript_SideStatusWoreOff
                                 .cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
                         );
-                        gBattleCommunication[5] = side;
-                        gBattleTextBuff1[0] = 0xFD;
-                        gBattleTextBuff1[1] = 2;
-                        gBattleTextBuff1[2] = MOVE_LIGHT_SCREEN as u8;
-                        gBattleTextBuff1[3] = 0;
-                        gBattleTextBuff1[4] = 0xFF;
+                        crate::gl!(gBattleCommunication[5] = side);
+                        crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                        crate::gl!(gBattleTextBuff1[1] = 2);
+                        crate::gl!(gBattleTextBuff1[2] = MOVE_LIGHT_SCREEN as u8);
+                        crate::gl!(gBattleTextBuff1[3] = 0);
+                        crate::gl!(gBattleTextBuff1[4] = 0xFF);
                         effect += 1;
                     }
-                    (*gBattleStruct).turnSideTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker += 1;
                     if effect != 0 {
                         break;
                     }
                 }
                 if effect == 0 {
-                    (*gBattleStruct).turnCountersTracker += 1;
-                    (*gBattleStruct).turnSideTracker = 0;
+                    (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker = 0;
                 }
                 break 'l4;
             }
             if sw1 == ENDTURN_MIST {
-                while (*gBattleStruct).turnSideTracker < 2 {
-                    side = (*gBattleStruct).turnSideTracker;
-                    gActiveBattler = {
-                        gBattlerAttacker = gSideTimers[side].mistBattlerId;
-                        gBattlerAttacker
-                    };
-                    if gSideTimers[side].mistTimer != 0
+                while (*crate::gl!(gBattleStruct)).turnSideTracker < 2 {
+                    side = (*crate::gl!(gBattleStruct)).turnSideTracker;
+                    gActiveBattler.set({
+                        gBattlerAttacker.set(crate::gl!(gSideTimers[side].mistBattlerId));
+                        gBattlerAttacker.get()
+                    });
+                    if crate::gl!(gSideTimers[side].mistTimer) != 0
                         && ({
-                            gSideTimers[side].mistTimer -= 1;
-                            gSideTimers[side].mistTimer
+                            crate::gl!(gSideTimers[side].mistTimer -= 1);
+                            crate::gl!(gSideTimers[side].mistTimer)
                         }) == 0
                     {
-                        gSideStatuses[side] &= 65279;
+                        crate::gl!(gSideStatuses[side] &= 65279);
                         BattleScriptExecute(
                             (*crate::asmdata::BattleScript_SideStatusWoreOff
                                 .cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
                         );
-                        gBattleCommunication[5] = side;
-                        gBattleTextBuff1[0] = 0xFD;
-                        gBattleTextBuff1[1] = 2;
-                        gBattleTextBuff1[2] = MOVE_MIST as u8;
-                        gBattleTextBuff1[3] = 0;
-                        gBattleTextBuff1[4] = 0xFF;
+                        crate::gl!(gBattleCommunication[5] = side);
+                        crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                        crate::gl!(gBattleTextBuff1[1] = 2);
+                        crate::gl!(gBattleTextBuff1[2] = MOVE_MIST as u8);
+                        crate::gl!(gBattleTextBuff1[3] = 0);
+                        crate::gl!(gBattleTextBuff1[4] = 0xFF);
                         effect += 1;
                     }
-                    (*gBattleStruct).turnSideTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker += 1;
                     if effect != 0 {
                         break;
                     }
                 }
                 if effect == 0 {
-                    (*gBattleStruct).turnCountersTracker += 1;
-                    (*gBattleStruct).turnSideTracker = 0;
+                    (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker = 0;
                 }
                 break 'l4;
             }
             if sw1 == ENDTURN_SAFEGUARD {
-                while (*gBattleStruct).turnSideTracker < 2 {
-                    side = (*gBattleStruct).turnSideTracker;
-                    gActiveBattler = {
-                        gBattlerAttacker = gSideTimers[side].safeguardBattlerId;
-                        gBattlerAttacker
-                    };
-                    if gSideStatuses[side] as i32 & SIDE_STATUS_SAFEGUARD != 0
+                while (*crate::gl!(gBattleStruct)).turnSideTracker < 2 {
+                    side = (*crate::gl!(gBattleStruct)).turnSideTracker;
+                    gActiveBattler.set({
+                        gBattlerAttacker.set(crate::gl!(gSideTimers[side].safeguardBattlerId));
+                        gBattlerAttacker.get()
+                    });
+                    if crate::gl!(gSideStatuses[side]) as i32 & SIDE_STATUS_SAFEGUARD != 0
                         && ({
-                            gSideTimers[side].safeguardTimer -= 1;
-                            gSideTimers[side].safeguardTimer
+                            crate::gl!(gSideTimers[side].safeguardTimer -= 1);
+                            crate::gl!(gSideTimers[side].safeguardTimer)
                         }) == 0
                     {
-                        gSideStatuses[side] &= 65503;
+                        crate::gl!(gSideStatuses[side] &= 65503);
                         BattleScriptExecute(
                             (*crate::asmdata::BattleScript_SafeguardEnds.cast::<CArray<u8, 0>>())
                                 .as_ptr()
@@ -1452,28 +1825,44 @@ pub unsafe fn DoFieldEndTurnEffects() -> u8 {
                         );
                         effect += 1;
                     }
-                    (*gBattleStruct).turnSideTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker += 1;
                     if effect != 0 {
                         break;
                     }
                 }
                 if effect == 0 {
-                    (*gBattleStruct).turnCountersTracker += 1;
-                    (*gBattleStruct).turnSideTracker = 0;
+                    (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker = 0;
                 }
                 break 'l4;
             }
             if sw1 == ENDTURN_WISH {
-                while (*gBattleStruct).turnSideTracker < gBattlersCount {
-                    gActiveBattler = gBattlerByTurnOrder[(*gBattleStruct).turnSideTracker];
-                    if gWishFutureKnock.wishCounter[gActiveBattler] != 0
+                while (*crate::gl!(gBattleStruct)).turnSideTracker < gBattlersCount.get() {
+                    gActiveBattler.set({
+                        let gl_i42 = (*crate::gl!(gBattleStruct)).turnSideTracker;
+                        crate::gl!(gBattlerByTurnOrder[gl_i42])
+                    });
+                    if {
+                        let gl_i43 = gActiveBattler.get();
+                        crate::gl!(gWishFutureKnock.wishCounter[gl_i43])
+                    } != 0
                         && ({
-                            gWishFutureKnock.wishCounter[gActiveBattler] -= 1;
-                            gWishFutureKnock.wishCounter[gActiveBattler]
+                            {
+                                let gl_v = 1;
+                                let gl_i44 = gActiveBattler.get();
+                                crate::gl!(gWishFutureKnock.wishCounter[gl_i44] -= gl_v)
+                            };
+                            {
+                                let gl_i45 = gActiveBattler.get();
+                                crate::gl!(gWishFutureKnock.wishCounter[gl_i45])
+                            }
                         }) == 0
-                        && gBattleMons[gActiveBattler].hp != 0
+                        && ({
+                            let gl_i48 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i48].hp)
+                        }) != 0
                     {
-                        gBattlerTarget = gActiveBattler;
+                        gBattlerTarget.set(gActiveBattler.get());
                         BattleScriptExecute(
                             (*crate::asmdata::BattleScript_WishComesTrue.cast::<CArray<u8, 0>>())
                                 .as_ptr()
@@ -1481,36 +1870,36 @@ pub unsafe fn DoFieldEndTurnEffects() -> u8 {
                         );
                         effect += 1;
                     }
-                    (*gBattleStruct).turnSideTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnSideTracker += 1;
                     if effect != 0 {
                         break;
                     }
                 }
                 if effect == 0 {
-                    (*gBattleStruct).turnCountersTracker += 1;
+                    (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
                 }
                 break 'l4;
             }
             if sw1 == ENDTURN_RAIN {
-                if gBattleWeather as i32 & B_WEATHER_RAIN != 0 {
-                    if gBattleWeather as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
+                if gBattleWeather.get() as i32 & B_WEATHER_RAIN != 0 {
+                    if gBattleWeather.get() as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
                         if ({
-                            gWishFutureKnock.weatherDuration -= 1;
-                            gWishFutureKnock.weatherDuration
+                            crate::gl!(gWishFutureKnock.weatherDuration -= 1);
+                            crate::gl!(gWishFutureKnock.weatherDuration)
                         }) == 0
                         {
-                            gBattleWeather &= 65534;
-                            gBattleWeather &= 65533;
-                            gBattleCommunication[5] = B_MSG_RAIN_STOPPED;
-                        } else if gBattleWeather as i32 & B_WEATHER_RAIN_DOWNPOUR != 0 {
-                            gBattleCommunication[5] = B_MSG_DOWNPOUR_CONTINUES;
+                            gBattleWeather.set(gBattleWeather.get() & (65534));
+                            gBattleWeather.set(gBattleWeather.get() & (65533));
+                            crate::gl!(gBattleCommunication[5] = B_MSG_RAIN_STOPPED);
+                        } else if gBattleWeather.get() as i32 & B_WEATHER_RAIN_DOWNPOUR != 0 {
+                            crate::gl!(gBattleCommunication[5] = B_MSG_DOWNPOUR_CONTINUES);
                         } else {
-                            gBattleCommunication[5] = B_MSG_RAIN_CONTINUES;
+                            crate::gl!(gBattleCommunication[5] = B_MSG_RAIN_CONTINUES);
                         }
-                    } else if gBattleWeather as i32 & B_WEATHER_RAIN_DOWNPOUR != 0 {
-                        gBattleCommunication[5] = B_MSG_DOWNPOUR_CONTINUES;
+                    } else if gBattleWeather.get() as i32 & B_WEATHER_RAIN_DOWNPOUR != 0 {
+                        crate::gl!(gBattleCommunication[5] = B_MSG_DOWNPOUR_CONTINUES);
                     } else {
-                        gBattleCommunication[5] = B_MSG_RAIN_CONTINUES;
+                        crate::gl!(gBattleCommunication[5] = B_MSG_RAIN_CONTINUES);
                     }
                     BattleScriptExecute(
                         (*crate::asmdata::BattleScript_RainContinuesOrEnds.cast::<CArray<u8, 0>>())
@@ -1519,87 +1908,102 @@ pub unsafe fn DoFieldEndTurnEffects() -> u8 {
                     );
                     effect += 1;
                 }
-                (*gBattleStruct).turnCountersTracker += 1;
+                (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
                 break 'l4;
             }
             if sw1 == ENDTURN_SANDSTORM {
-                if gBattleWeather as i32 & B_WEATHER_SANDSTORM != 0 {
-                    if gBattleWeather as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0
+                if gBattleWeather.get() as i32 & B_WEATHER_SANDSTORM != 0 {
+                    if gBattleWeather.get() as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0
                         && ({
-                            gWishFutureKnock.weatherDuration -= 1;
-                            gWishFutureKnock.weatherDuration
+                            crate::gl!(gWishFutureKnock.weatherDuration -= 1);
+                            crate::gl!(gWishFutureKnock.weatherDuration)
                         }) == 0
                     {
-                        gBattleWeather &= 65527;
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SandStormHailEnds
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
+                        gBattleWeather.set(gBattleWeather.get() & (65527));
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_SandStormHailEnds
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                     } else {
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_DamagingWeatherContinues
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_DamagingWeatherContinues
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                     }
-                    gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES;
-                    gBattleCommunication[5] = B_MSG_SANDSTORM;
-                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    crate::gl!(gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES);
+                    crate::gl!(gBattleCommunication[5] = B_MSG_SANDSTORM);
+                    BattleScriptExecute(crate::gl!(gBattlescriptCurrInstr));
                     effect += 1;
                 }
-                (*gBattleStruct).turnCountersTracker += 1;
+                (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
                 break 'l4;
             }
             if sw1 == ENDTURN_SUN {
-                if gBattleWeather as i32 & B_WEATHER_SUN != 0 {
-                    if gBattleWeather as i32 & B_WEATHER_SUN_PERMANENT == 0
+                if gBattleWeather.get() as i32 & B_WEATHER_SUN != 0 {
+                    if gBattleWeather.get() as i32 & B_WEATHER_SUN_PERMANENT == 0
                         && ({
-                            gWishFutureKnock.weatherDuration -= 1;
-                            gWishFutureKnock.weatherDuration
+                            crate::gl!(gWishFutureKnock.weatherDuration -= 1);
+                            crate::gl!(gWishFutureKnock.weatherDuration)
                         }) == 0
                     {
-                        gBattleWeather &= 65503;
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SunlightFaded
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
+                        gBattleWeather.set(gBattleWeather.get() & (65503));
+                        crate::gl!(
+                            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SunlightFaded
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut()
+                        );
                     } else {
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SunlightContinues
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_SunlightContinues
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                     }
-                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    BattleScriptExecute(crate::gl!(gBattlescriptCurrInstr));
                     effect += 1;
                 }
-                (*gBattleStruct).turnCountersTracker += 1;
+                (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
                 break 'l4;
             }
             if sw1 == ENDTURN_HAIL {
-                if gBattleWeather as i32 & B_WEATHER_HAIL != 0 {
+                if gBattleWeather.get() as i32 & B_WEATHER_HAIL != 0 {
                     if ({
-                        gWishFutureKnock.weatherDuration -= 1;
-                        gWishFutureKnock.weatherDuration
+                        crate::gl!(gWishFutureKnock.weatherDuration -= 1);
+                        crate::gl!(gWishFutureKnock.weatherDuration)
                     }) == 0
                     {
-                        gBattleWeather &= 65407;
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SandStormHailEnds
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
+                        gBattleWeather.set(gBattleWeather.get() & (65407));
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_SandStormHailEnds
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                     } else {
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_DamagingWeatherContinues
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_DamagingWeatherContinues
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                     }
-                    gBattleScripting.animArg1 = B_ANIM_HAIL_CONTINUES;
-                    gBattleCommunication[5] = B_MSG_HAIL;
-                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    crate::gl!(gBattleScripting.animArg1 = B_ANIM_HAIL_CONTINUES);
+                    crate::gl!(gBattleCommunication[5] = B_MSG_HAIL);
+                    BattleScriptExecute(crate::gl!(gBattlescriptCurrInstr));
                     effect += 1;
                 }
-                (*gBattleStruct).turnCountersTracker += 1;
+                (*crate::gl!(gBattleStruct)).turnCountersTracker += 1;
                 break 'l4;
             }
             if sw1 == ENDTURN_FIELD_COUNT {
@@ -1611,36 +2015,58 @@ pub unsafe fn DoFieldEndTurnEffects() -> u8 {
             break;
         }
     }
-    (gBattleMainFunc != Some(BattleTurnPassed as unsafe fn())) as u8
+    (crate::gl!(gBattleMainFunc) != Some(BattleTurnPassed as unsafe fn())) as u8
 }
 pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
     let mut effect: u8 = 0;
-    gHitMarker |= 0x1000020;
-    while (*gBattleStruct).turnEffectsBattlerId < gBattlersCount
-        && (*gBattleStruct).turnEffectsTracker <= ENDTURN_BATTLER_COUNT
+    gHitMarker.set(gHitMarker.get() | (0x1000020));
+    while (*crate::gl!(gBattleStruct)).turnEffectsBattlerId < gBattlersCount.get()
+        && (*crate::gl!(gBattleStruct)).turnEffectsTracker <= ENDTURN_BATTLER_COUNT
     {
-        gActiveBattler = {
-            gBattlerAttacker = gBattlerByTurnOrder[(*gBattleStruct).turnEffectsBattlerId];
-            gBattlerAttacker
-        };
-        if gAbsentBattlerFlags as u32
-            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler]
+        gActiveBattler.set({
+            gBattlerAttacker.set({
+                let gl_i46 = (*crate::gl!(gBattleStruct)).turnEffectsBattlerId;
+                crate::gl!(gBattlerByTurnOrder[gl_i46])
+            });
+            gBattlerAttacker.get()
+        });
+        if gAbsentBattlerFlags.get() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler.get()]
             != 0
         {
-            (*gBattleStruct).turnEffectsBattlerId += 1;
+            (*crate::gl!(gBattleStruct)).turnEffectsBattlerId += 1;
         } else {
             'l2: {
-                match (*gBattleStruct).turnEffectsTracker {
+                match (*crate::gl!(gBattleStruct)).turnEffectsTracker {
                     ENDTURN_INGRAIN => {
-                        if gStatuses3[gActiveBattler] & STATUS3_ROOTED != 0
-                            && gBattleMons[gActiveBattler].hp != gBattleMons[gActiveBattler].maxHP
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if {
+                            let gl_i47 = gActiveBattler.get();
+                            crate::gl!(gStatuses3[gl_i47])
+                        } & STATUS3_ROOTED
+                            != 0
+                            && ({
+                                let gl_i49 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i49].hp)
+                            }) != ({
+                                let gl_i50 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i50].maxHP)
+                            })
+                            && ({
+                                let gl_i51 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i51].hp)
+                            }) != 0
                         {
-                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattleMoveDamage.set(
+                                ({
+                                    let gl_i52 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i52].maxHP)
+                                }) as i32
+                                    / 16,
+                            );
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_IngrainTurnHeal
                                     .cast::<CArray<u8, 0>>())
@@ -1649,42 +2075,70 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             );
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_ABILITIES => {
-                        if AbilityBattleEffects(ABILITYEFFECT_ENDTURN, gActiveBattler, 0, 0, 0) != 0
+                        if AbilityBattleEffects(
+                            ABILITYEFFECT_ENDTURN,
+                            gActiveBattler.get(),
+                            0,
+                            0,
+                            0,
+                        ) != 0
                         {
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_ITEMS1 => {
-                        if ItemBattleEffects(ITEMEFFECT_NORMAL, gActiveBattler, FALSE) != 0 {
+                        if ItemBattleEffects(ITEMEFFECT_NORMAL, gActiveBattler.get(), FALSE) != 0 {
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_ITEMS2 => {
-                        if ItemBattleEffects(1, gActiveBattler, 1) != 0 {
+                        if ItemBattleEffects(1, gActiveBattler.get(), 1) != 0 {
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_LEECH_SEED => {
-                        if gStatuses3[gActiveBattler] & STATUS3_LEECHSEED != 0
-                            && gBattleMons[gStatuses3[gActiveBattler] & STATUS3_LEECHSEED_BATTLER]
-                                .hp
-                                != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if {
+                            let gl_i48 = gActiveBattler.get();
+                            crate::gl!(gStatuses3[gl_i48])
+                        } & STATUS3_LEECHSEED
+                            != 0
+                            && ({
+                                let gl_i53 = {
+                                    let gl_i49 = gActiveBattler.get();
+                                    crate::gl!(gStatuses3[gl_i49])
+                                } & STATUS3_LEECHSEED_BATTLER;
+                                crate::gl!(gBattleMons[gl_i53].hp)
+                            }) != 0
+                            && ({
+                                let gl_i54 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i54].hp)
+                            }) != 0
                         {
-                            gBattlerTarget =
-                                gStatuses3[gActiveBattler] as u8 & STATUS3_LEECHSEED_BATTLER as u8;
-                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 8;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattlerTarget.set(
+                                {
+                                    let gl_i50 = gActiveBattler.get();
+                                    crate::gl!(gStatuses3[gl_i50])
+                                } as u8
+                                    & STATUS3_LEECHSEED_BATTLER as u8,
+                            );
+                            gBattleMoveDamage.set(
+                                ({
+                                    let gl_i55 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i55].maxHP)
+                                }) as i32
+                                    / 8,
+                            );
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            gBattleScripting.animArg1 = gBattlerTarget;
-                            gBattleScripting.animArg2 = gBattlerAttacker;
+                            crate::gl!(gBattleScripting.animArg1 = gBattlerTarget.get());
+                            crate::gl!(gBattleScripting.animArg2 = gBattlerAttacker.get());
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_LeechSeedTurnDrain
                                     .cast::<CArray<u8, 0>>())
@@ -1693,15 +2147,28 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             );
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_POISON => {
-                        if gBattleMons[gActiveBattler].status1 & STATUS1_POISON != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if ({
+                            let gl_i56 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i56].status1)
+                        }) & STATUS1_POISON
+                            != 0
+                            && ({
+                                let gl_i57 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i57].hp)
+                            }) != 0
                         {
-                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 8;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattleMoveDamage.set(
+                                ({
+                                    let gl_i58 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i58].maxHP)
+                                }) as i32
+                                    / 8,
+                            );
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_PoisonTurnDmg
@@ -1711,24 +2178,48 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             );
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_BAD_POISON => {
-                        if gBattleMons[gActiveBattler].status1 & STATUS1_TOXIC_POISON != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if ({
+                            let gl_i59 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i59].status1)
+                        }) & STATUS1_TOXIC_POISON
+                            != 0
+                            && ({
+                                let gl_i60 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i60].hp)
+                            }) != 0
                         {
-                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattleMoveDamage.set(
+                                ({
+                                    let gl_i61 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i61].maxHP)
+                                }) as i32
+                                    / 16,
+                            );
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            if gBattleMons[gActiveBattler].status1 & STATUS1_TOXIC_COUNTER
+                            if ({
+                                let gl_i62 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i62].status1)
+                            }) & STATUS1_TOXIC_COUNTER
                                 != STATUS1_TOXIC_COUNTER
                             {
-                                gBattleMons[gActiveBattler].status1 += 256;
+                                {
+                                    let gl_i63 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i63].status1 += 256)
+                                };
                             }
-                            gBattleMoveDamage *= ((gBattleMons[gActiveBattler].status1
-                                & STATUS1_TOXIC_COUNTER)
-                                >> 8) as i32;
+                            gBattleMoveDamage.set(
+                                gBattleMoveDamage.get()
+                                    * (((({
+                                        let gl_i64 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i64].status1)
+                                    }) & STATUS1_TOXIC_COUNTER)
+                                        >> 8) as i32),
+                            );
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_PoisonTurnDmg
                                     .cast::<CArray<u8, 0>>())
@@ -1737,15 +2228,28 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             );
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_BURN => {
-                        if gBattleMons[gActiveBattler].status1 & STATUS1_BURN != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if ({
+                            let gl_i65 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i65].status1)
+                        }) & STATUS1_BURN
+                            != 0
+                            && ({
+                                let gl_i66 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i66].hp)
+                            }) != 0
                         {
-                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 8;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattleMoveDamage.set(
+                                ({
+                                    let gl_i67 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i67].maxHP)
+                                }) as i32
+                                    / 8,
+                            );
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BurnTurnDmg.cast::<CArray<u8, 0>>())
@@ -1754,16 +2258,34 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             );
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_NIGHTMARES => {
-                        if gBattleMons[gActiveBattler].status2 & STATUS2_NIGHTMARE != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if ({
+                            let gl_i68 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i68].status2)
+                        }) & STATUS2_NIGHTMARE
+                            != 0
+                            && ({
+                                let gl_i69 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i69].hp)
+                            }) != 0
                         {
-                            if gBattleMons[gActiveBattler].status1 & STATUS1_SLEEP != 0 {
-                                gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 4;
-                                if gBattleMoveDamage == 0 {
-                                    gBattleMoveDamage = 1;
+                            if ({
+                                let gl_i70 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i70].status1)
+                            }) & STATUS1_SLEEP
+                                != 0
+                            {
+                                gBattleMoveDamage.set(
+                                    ({
+                                        let gl_i71 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i71].maxHP)
+                                    }) as i32
+                                        / 4,
+                                );
+                                if gBattleMoveDamage.get() == 0 {
+                                    gBattleMoveDamage.set(1);
                                 }
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_NightmareTurnDmg
@@ -1773,18 +2295,34 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                                 );
                                 effect += 1;
                             } else {
-                                gBattleMons[gActiveBattler].status2 &= 0xf7ffffff;
+                                {
+                                    let gl_i72 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i72].status2 &= 0xf7ffffff)
+                                };
                             }
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_CURSE => {
-                        if gBattleMons[gActiveBattler].status2 & STATUS2_CURSED != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if ({
+                            let gl_i73 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i73].status2)
+                        }) & STATUS2_CURSED
+                            != 0
+                            && ({
+                                let gl_i74 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i74].hp)
+                            }) != 0
                         {
-                            gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 4;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattleMoveDamage.set(
+                                ({
+                                    let gl_i75 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i75].maxHP)
+                                }) as i32
+                                    / 4,
+                            );
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_CurseTurnDmg
@@ -1794,112 +2332,183 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             );
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_WRAP => {
-                        if gBattleMons[gActiveBattler].status2 & STATUS2_WRAPPED != 0
-                            && gBattleMons[gActiveBattler].hp != 0
+                        if ({
+                            let gl_i76 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i76].status2)
+                        }) & STATUS2_WRAPPED
+                            != 0
+                            && ({
+                                let gl_i77 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i77].hp)
+                            }) != 0
                         {
-                            gBattleMons[gActiveBattler].status2 -= 8192;
-                            if gBattleMons[gActiveBattler].status2 & STATUS2_WRAPPED != 0 {
-                                gBattleScripting.animArg1 = *(*gBattleStruct)
-                                    .wrappedMove
-                                    .as_mut_ptr()
-                                    .at(gActiveBattler as i32 * 2);
-                                gBattleScripting.animArg2 = *(*gBattleStruct)
-                                    .wrappedMove
-                                    .as_mut_ptr()
-                                    .at(gActiveBattler as i32 * 2)
-                                    .at(1);
-                                gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN;
-                                gBattleTextBuff1[1] = B_BUFF_MOVE;
-                                gBattleTextBuff1[2] = *(*gBattleStruct)
-                                    .wrappedMove
-                                    .as_mut_ptr()
-                                    .at(gActiveBattler as i32 * 2);
-                                gBattleTextBuff1[3] = *(*gBattleStruct)
-                                    .wrappedMove
-                                    .as_mut_ptr()
-                                    .at(gActiveBattler as i32 * 2)
-                                    .at(1);
-                                gBattleTextBuff1[4] = EOS;
-                                gBattlescriptCurrInstr =
-                                    (*crate::asmdata::BattleScript_WrapTurnDmg
-                                        .cast::<CArray<u8, 0>>())
-                                    .as_ptr()
-                                    .cast_mut();
-                                gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
-                                if gBattleMoveDamage == 0 {
-                                    gBattleMoveDamage = 1;
+                            {
+                                let gl_i78 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i78].status2 -= 8192)
+                            };
+                            if ({
+                                let gl_i79 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i79].status2)
+                            }) & STATUS2_WRAPPED
+                                != 0
+                            {
+                                crate::gl!(
+                                    gBattleScripting.animArg1 = *(*crate::gl!(gBattleStruct))
+                                        .wrappedMove
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler.get() as i32 * 2)
+                                );
+                                crate::gl!(
+                                    gBattleScripting.animArg2 = *(*crate::gl!(gBattleStruct))
+                                        .wrappedMove
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler.get() as i32 * 2)
+                                        .at(1)
+                                );
+                                crate::gl!(gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN);
+                                crate::gl!(gBattleTextBuff1[1] = B_BUFF_MOVE);
+                                crate::gl!(
+                                    gBattleTextBuff1[2] = *(*crate::gl!(gBattleStruct))
+                                        .wrappedMove
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler.get() as i32 * 2)
+                                );
+                                crate::gl!(
+                                    gBattleTextBuff1[3] = *(*crate::gl!(gBattleStruct))
+                                        .wrappedMove
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler.get() as i32 * 2)
+                                        .at(1)
+                                );
+                                crate::gl!(gBattleTextBuff1[4] = EOS);
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_WrapTurnDmg
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
+                                gBattleMoveDamage.set(
+                                    ({
+                                        let gl_i80 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i80].maxHP)
+                                    }) as i32
+                                        / 16,
+                                );
+                                if gBattleMoveDamage.get() == 0 {
+                                    gBattleMoveDamage.set(1);
                                 }
                             } else {
-                                gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN;
-                                gBattleTextBuff1[1] = B_BUFF_MOVE;
-                                gBattleTextBuff1[2] = *(*gBattleStruct)
-                                    .wrappedMove
-                                    .as_mut_ptr()
-                                    .at(gActiveBattler as i32 * 2);
-                                gBattleTextBuff1[3] = *(*gBattleStruct)
-                                    .wrappedMove
-                                    .as_mut_ptr()
-                                    .at(gActiveBattler as i32 * 2)
-                                    .at(1);
-                                gBattleTextBuff1[4] = EOS;
-                                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_WrapEnds
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                                crate::gl!(gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN);
+                                crate::gl!(gBattleTextBuff1[1] = B_BUFF_MOVE);
+                                crate::gl!(
+                                    gBattleTextBuff1[2] = *(*crate::gl!(gBattleStruct))
+                                        .wrappedMove
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler.get() as i32 * 2)
+                                );
+                                crate::gl!(
+                                    gBattleTextBuff1[3] = *(*crate::gl!(gBattleStruct))
+                                        .wrappedMove
+                                        .as_mut_ptr()
+                                        .at(gActiveBattler.get() as i32 * 2)
+                                        .at(1)
+                                );
+                                crate::gl!(gBattleTextBuff1[4] = EOS);
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_WrapEnds
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
                             }
-                            BattleScriptExecute(gBattlescriptCurrInstr);
+                            BattleScriptExecute(crate::gl!(gBattlescriptCurrInstr));
                             effect += 1;
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_UPROAR => {
-                        if gBattleMons[gActiveBattler].status2 & STATUS2_UPROAR != 0 {
-                            gBattlerAttacker = 0;
-                            while gBattlerAttacker < gBattlersCount {
-                                if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0
-                                    && gBattleMons[gBattlerAttacker].ability != ABILITY_SOUNDPROOF
+                        if ({
+                            let gl_i81 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i81].status2)
+                        }) & STATUS2_UPROAR
+                            != 0
+                        {
+                            gBattlerAttacker.set(0);
+                            while gBattlerAttacker.get() < gBattlersCount.get() {
+                                if ({
+                                    let gl_i82 = gBattlerAttacker.get();
+                                    crate::gl!(gBattleMons[gl_i82].status1)
+                                }) & STATUS1_SLEEP
+                                    != 0
+                                    && ({
+                                        let gl_i83 = gBattlerAttacker.get();
+                                        crate::gl!(gBattleMons[gl_i83].ability)
+                                    }) != ABILITY_SOUNDPROOF
                                 {
-                                    gBattleMons[gBattlerAttacker].status1 &= 0xfffffff8;
-                                    gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
-                                    gBattleCommunication[5] = 1;
+                                    {
+                                        let gl_i84 = gBattlerAttacker.get();
+                                        crate::gl!(gBattleMons[gl_i84].status1 &= 0xfffffff8)
+                                    };
+                                    {
+                                        let gl_i85 = gBattlerAttacker.get();
+                                        crate::gl!(gBattleMons[gl_i85].status2 &= 0xf7ffffff)
+                                    };
+                                    crate::gl!(gBattleCommunication[5] = 1);
                                     BattleScriptExecute(
                                         (*crate::asmdata::BattleScript_MonWokeUpInUproar
                                             .cast::<CArray<u8, 0>>())
                                         .as_ptr()
                                         .cast_mut(),
                                     );
-                                    gActiveBattler = gBattlerAttacker;
+                                    gActiveBattler.set(gBattlerAttacker.get());
                                     BtlController_EmitSetMonData(
                                         B_COMM_TO_CONTROLLER,
                                         REQUEST_STATUS_BATTLE,
                                         0,
                                         4,
-                                        &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                                        ({
+                                            let gl_i86 = gActiveBattler.get();
+                                            crate::gl!(&raw gBattleMons[gl_i86].status1)
+                                        }) as *mut c_void,
                                     );
-                                    MarkBattlerForControllerExec(gActiveBattler);
+                                    MarkBattlerForControllerExec(gActiveBattler.get());
                                     break;
                                 }
-                                gBattlerAttacker += 1;
+                                gBattlerAttacker.set(gBattlerAttacker.get() + (1));
                             }
-                            if gBattlerAttacker != gBattlersCount {
+                            if gBattlerAttacker.get() != gBattlersCount.get() {
                                 effect = 2;
                                 break 'l2;
                             } else {
-                                gBattlerAttacker = gActiveBattler;
-                                gBattleMons[gActiveBattler].status2 -= 16;
-                                if WasUnableToUseMove(gActiveBattler) != 0 {
-                                    CancelMultiTurnMoves(gActiveBattler);
-                                    gBattleCommunication[5] = B_MSG_UPROAR_ENDS;
-                                } else if gBattleMons[gActiveBattler].status2 & STATUS2_UPROAR != 0
+                                gBattlerAttacker.set(gActiveBattler.get());
                                 {
-                                    gBattleCommunication[5] = B_MSG_UPROAR_CONTINUES;
-                                    gBattleMons[gActiveBattler].status2 |= STATUS2_MULTIPLETURNS;
+                                    let gl_i87 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i87].status2 -= 16)
+                                };
+                                if WasUnableToUseMove(gActiveBattler.get()) != 0 {
+                                    CancelMultiTurnMoves(gActiveBattler.get());
+                                    crate::gl!(gBattleCommunication[5] = B_MSG_UPROAR_ENDS);
+                                } else if ({
+                                    let gl_i88 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i88].status2)
+                                }) & STATUS2_UPROAR
+                                    != 0
+                                {
+                                    crate::gl!(gBattleCommunication[5] = B_MSG_UPROAR_CONTINUES);
+                                    {
+                                        let gl_i89 = gActiveBattler.get();
+                                        crate::gl!(
+                                            gBattleMons[gl_i89].status2 |= STATUS2_MULTIPLETURNS
+                                        )
+                                    };
                                 } else {
-                                    gBattleCommunication[5] = B_MSG_UPROAR_ENDS;
-                                    CancelMultiTurnMoves(gActiveBattler);
+                                    crate::gl!(gBattleCommunication[5] = B_MSG_UPROAR_ENDS);
+                                    CancelMultiTurnMoves(gActiveBattler.get());
                                 }
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_PrintUproarOverTurns
@@ -1911,23 +2520,50 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                             }
                         }
                         if effect != 2 {
-                            (*gBattleStruct).turnEffectsTracker += 1;
+                            (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                         }
                     }
                     ENDTURN_THRASH => {
-                        if gBattleMons[gActiveBattler].status2 & STATUS2_LOCK_CONFUSE != 0 {
-                            gBattleMons[gActiveBattler].status2 -= 1024;
-                            if WasUnableToUseMove(gActiveBattler) != 0 {
-                                CancelMultiTurnMoves(gActiveBattler);
-                            } else if gBattleMons[gActiveBattler].status2 & STATUS2_LOCK_CONFUSE
-                                == 0
-                                && gBattleMons[gActiveBattler].status2 & STATUS2_MULTIPLETURNS != 0
+                        if ({
+                            let gl_i90 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i90].status2)
+                        }) & STATUS2_LOCK_CONFUSE
+                            != 0
+                        {
                             {
-                                gBattleMons[gActiveBattler].status2 &= 0xffffefff;
-                                if gBattleMons[gActiveBattler].status2 & STATUS2_CONFUSION == 0 {
-                                    gBattleCommunication[3] = 71;
+                                let gl_i91 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i91].status2 -= 1024)
+                            };
+                            if WasUnableToUseMove(gActiveBattler.get()) != 0 {
+                                CancelMultiTurnMoves(gActiveBattler.get());
+                            } else if ({
+                                let gl_i92 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i92].status2)
+                            }) & STATUS2_LOCK_CONFUSE
+                                == 0
+                                && ({
+                                    let gl_i93 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i93].status2)
+                                }) & STATUS2_MULTIPLETURNS
+                                    != 0
+                            {
+                                {
+                                    let gl_i94 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i94].status2 &= 0xffffefff)
+                                };
+                                if ({
+                                    let gl_i95 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i95].status2)
+                                }) & STATUS2_CONFUSION
+                                    == 0
+                                {
+                                    crate::gl!(gBattleCommunication[3] = 71);
                                     SetMoveEffect(TRUE, 0);
-                                    if gBattleMons[gActiveBattler].status2 & STATUS2_CONFUSION != 0
+                                    if ({
+                                        let gl_i96 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i96].status2)
+                                    }) & STATUS2_CONFUSION
+                                        != 0
                                     {
                                         BattleScriptExecute(
                                             (*crate::asmdata::BattleScript_ThrashConfuses
@@ -1940,30 +2576,43 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                                 }
                             }
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_DISABLE => {
-                        if gDisableStructs[gActiveBattler].disableTimer() != 0 {
+                        if (*gDisableStructs.as_ptr())[gActiveBattler.get()].disableTimer() != 0 {
                             let mut i: i32 = 0;
                             while i < MAX_MON_MOVES {
-                                if gDisableStructs[gActiveBattler].disabledMove
-                                    == gBattleMons[gActiveBattler].moves[i]
-                                {
+                                if ({
+                                    let gl_i97 = gActiveBattler.get();
+                                    crate::gl!(gDisableStructs[gl_i97].disabledMove)
+                                }) == ({
+                                    let gl_i98 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i98].moves[i])
+                                }) {
                                     break;
                                 }
                                 i += 1;
                             }
                             if i == MAX_MON_MOVES {
-                                gDisableStructs[gActiveBattler].disabledMove = MOVE_NONE;
-                                gDisableStructs[gActiveBattler].set_disableTimer(0);
+                                {
+                                    let gl_i99 = gActiveBattler.get();
+                                    crate::gl!(gDisableStructs[gl_i99].disabledMove = MOVE_NONE)
+                                };
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()]
+                                    .set_disableTimer(0);
                             } else if ({
-                                gDisableStructs[gActiveBattler].set_disableTimer(
-                                    gDisableStructs[gActiveBattler].disableTimer() - 1,
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].set_disableTimer(
+                                    (*gDisableStructs.as_ptr())[gActiveBattler.get()]
+                                        .disableTimer()
+                                        - 1,
                                 );
-                                gDisableStructs[gActiveBattler].disableTimer()
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].disableTimer()
                             }) == 0
                             {
-                                gDisableStructs[gActiveBattler].disabledMove = MOVE_NONE;
+                                {
+                                    let gl_i100 = gActiveBattler.get();
+                                    crate::gl!(gDisableStructs[gl_i100].disabledMove = MOVE_NONE)
+                                };
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_DisabledNoMore
                                         .cast::<CArray<u8, 0>>())
@@ -1973,28 +2622,41 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                                 effect += 1;
                             }
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_ENCORE => {
-                        if gDisableStructs[gActiveBattler].encoreTimer() != 0 {
-                            if gBattleMons[gActiveBattler].moves
-                                [gDisableStructs[gActiveBattler].encoredMovePos]
-                                != gDisableStructs[gActiveBattler].encoredMove
-                            {
-                                gDisableStructs[gActiveBattler].encoredMove = MOVE_NONE;
-                                gDisableStructs[gActiveBattler].set_encoreTimer(0);
+                        if (*gDisableStructs.as_ptr())[gActiveBattler.get()].encoreTimer() != 0 {
+                            if (*gBattleMons.as_ptr())[gActiveBattler.get()].moves[{
+                                let gl_i102 = gActiveBattler.get();
+                                crate::gl!(gDisableStructs[gl_i102].encoredMovePos)
+                            }] != ({
+                                let gl_i103 = gActiveBattler.get();
+                                crate::gl!(gDisableStructs[gl_i103].encoredMove)
+                            }) {
+                                {
+                                    let gl_i104 = gActiveBattler.get();
+                                    crate::gl!(gDisableStructs[gl_i104].encoredMove = MOVE_NONE)
+                                };
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()]
+                                    .set_encoreTimer(0);
                             } else if ({
-                                gDisableStructs[gActiveBattler].set_encoreTimer(
-                                    gDisableStructs[gActiveBattler].encoreTimer() - 1,
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].set_encoreTimer(
+                                    (*gDisableStructs.as_ptr())[gActiveBattler.get()].encoreTimer()
+                                        - 1,
                                 );
-                                gDisableStructs[gActiveBattler].encoreTimer()
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].encoreTimer()
                             }) == 0
-                                || gBattleMons[gActiveBattler].pp
-                                    [gDisableStructs[gActiveBattler].encoredMovePos]
-                                    == 0
+                                || (*gBattleMons.as_ptr())[gActiveBattler.get()].pp[{
+                                    let gl_i106 = gActiveBattler.get();
+                                    crate::gl!(gDisableStructs[gl_i106].encoredMovePos)
+                                }] == 0
                             {
-                                gDisableStructs[gActiveBattler].encoredMove = MOVE_NONE;
-                                gDisableStructs[gActiveBattler].set_encoreTimer(0);
+                                {
+                                    let gl_i107 = gActiveBattler.get();
+                                    crate::gl!(gDisableStructs[gl_i107].encoredMove = MOVE_NONE)
+                                };
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()]
+                                    .set_encoreTimer(0);
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_EncoredNoMore
                                         .cast::<CArray<u8, 0>>())
@@ -2004,54 +2666,99 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                                 effect += 1;
                             }
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_LOCK_ON => {
-                        if gStatuses3[gActiveBattler] & STATUS3_ALWAYS_HITS != 0 {
-                            gStatuses3[gActiveBattler] -= 8;
+                        if {
+                            let gl_i51 = gActiveBattler.get();
+                            crate::gl!(gStatuses3[gl_i51])
+                        } & STATUS3_ALWAYS_HITS
+                            != 0
+                        {
+                            {
+                                let gl_v = 8;
+                                let gl_i52 = gActiveBattler.get();
+                                crate::gl!(gStatuses3[gl_i52] -= gl_v)
+                            };
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_CHARGE => {
-                        if gDisableStructs[gActiveBattler].chargeTimer() != 0
+                        if (*gDisableStructs.as_ptr())[gActiveBattler.get()].chargeTimer() != 0
                             && ({
-                                gDisableStructs[gActiveBattler].set_chargeTimer(
-                                    gDisableStructs[gActiveBattler].chargeTimer() - 1,
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].set_chargeTimer(
+                                    (*gDisableStructs.as_ptr())[gActiveBattler.get()].chargeTimer()
+                                        - 1,
                                 );
-                                gDisableStructs[gActiveBattler].chargeTimer()
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].chargeTimer()
                             }) == 0
                         {
-                            gStatuses3[gActiveBattler] &= 0xfffffdff;
+                            {
+                                let gl_v = 0xfffffdff;
+                                let gl_i53 = gActiveBattler.get();
+                                crate::gl!(gStatuses3[gl_i53] &= gl_v)
+                            };
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_TAUNT => {
-                        if gDisableStructs[gActiveBattler].tauntTimer() != 0 {
-                            gDisableStructs[gActiveBattler]
-                                .set_tauntTimer(gDisableStructs[gActiveBattler].tauntTimer() - 1);
+                        if (*gDisableStructs.as_ptr())[gActiveBattler.get()].tauntTimer() != 0 {
+                            (*gDisableStructs.as_ptr())[gActiveBattler.get()].set_tauntTimer(
+                                (*gDisableStructs.as_ptr())[gActiveBattler.get()].tauntTimer() - 1,
+                            );
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_YAWN => {
-                        if gStatuses3[gActiveBattler] & STATUS3_YAWN != 0 {
-                            gStatuses3[gActiveBattler] -= 2048;
-                            if gStatuses3[gActiveBattler] & STATUS3_YAWN == 0
-                                && gBattleMons[gActiveBattler].status1 & STATUS1_ANY == 0
-                                && gBattleMons[gActiveBattler].ability != ABILITY_VITAL_SPIRIT
-                                && gBattleMons[gActiveBattler].ability != ABILITY_INSOMNIA
-                                && UproarWakeUpCheck(gActiveBattler) == 0
+                        if {
+                            let gl_i54 = gActiveBattler.get();
+                            crate::gl!(gStatuses3[gl_i54])
+                        } & STATUS3_YAWN
+                            != 0
+                        {
                             {
-                                CancelMultiTurnMoves(gActiveBattler);
-                                gBattleMons[gActiveBattler].status1 |= (Random() as u32 & 3) + 2;
+                                let gl_v = 2048;
+                                let gl_i55 = gActiveBattler.get();
+                                crate::gl!(gStatuses3[gl_i55] -= gl_v)
+                            };
+                            if {
+                                let gl_i56 = gActiveBattler.get();
+                                crate::gl!(gStatuses3[gl_i56])
+                            } & STATUS3_YAWN
+                                == 0
+                                && ({
+                                    let gl_i108 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i108].status1)
+                                }) & STATUS1_ANY
+                                    == 0
+                                && ({
+                                    let gl_i109 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i109].ability)
+                                }) != ABILITY_VITAL_SPIRIT
+                                && ({
+                                    let gl_i110 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i110].ability)
+                                }) != ABILITY_INSOMNIA
+                                && UproarWakeUpCheck(gActiveBattler.get()) == 0
+                            {
+                                CancelMultiTurnMoves(gActiveBattler.get());
+                                {
+                                    let gl_v = (Random() as u32 & 3) + 2;
+                                    let gl_i111 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i111].status1 |= gl_v)
+                                };
                                 BtlController_EmitSetMonData(
                                     B_COMM_TO_CONTROLLER,
                                     REQUEST_STATUS_BATTLE,
                                     0,
                                     4,
-                                    &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                                    ({
+                                        let gl_i112 = gActiveBattler.get();
+                                        crate::gl!(&raw gBattleMons[gl_i112].status1)
+                                    }) as *mut c_void,
                                 );
-                                MarkBattlerForControllerExec(gActiveBattler);
-                                gEffectBattler = gActiveBattler;
+                                MarkBattlerForControllerExec(gActiveBattler.get());
+                                gEffectBattler.set(gActiveBattler.get());
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_YawnMakesAsleep
                                         .cast::<CArray<u8, 0>>())
@@ -2061,11 +2768,11 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
                                 effect += 1;
                             }
                         }
-                        (*gBattleStruct).turnEffectsTracker += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker += 1;
                     }
                     ENDTURN_BATTLER_COUNT => {
-                        (*gBattleStruct).turnEffectsTracker = 0;
-                        (*gBattleStruct).turnEffectsBattlerId += 1;
+                        (*crate::gl!(gBattleStruct)).turnEffectsTracker = 0;
+                        (*crate::gl!(gBattleStruct)).turnEffectsBattlerId += 1;
                     }
                     _ => {}
                 }
@@ -2075,181 +2782,257 @@ pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
             }
         }
     }
-    gHitMarker &= 0xfeffffdf;
+    gHitMarker.set(gHitMarker.get() & (0xfeffffdf));
     0
 }
 pub unsafe fn HandleWishPerishSongOnTurnEnd() -> u8 {
-    gHitMarker |= 0x1000020;
+    gHitMarker.set(gHitMarker.get() | (0x1000020));
     'l1: {
-        let sw1: u8 = (*gBattleStruct).wishPerishSongState;
+        let sw1: u8 = (*crate::gl!(gBattleStruct)).wishPerishSongState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            while (*gBattleStruct).wishPerishSongBattlerId < gBattlersCount {
-                gActiveBattler = (*gBattleStruct).wishPerishSongBattlerId;
-                if gAbsentBattlerFlags as u32
+            while (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId < gBattlersCount.get() {
+                gActiveBattler.set((*crate::gl!(gBattleStruct)).wishPerishSongBattlerId);
+                if gAbsentBattlerFlags.get() as u32
                     & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                        [gActiveBattler]
+                        [gActiveBattler.get()]
                     != 0
                 {
-                    (*gBattleStruct).wishPerishSongBattlerId += 1;
+                    (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId += 1;
                     continue;
                 }
-                (*gBattleStruct).wishPerishSongBattlerId += 1;
-                if gWishFutureKnock.futureSightCounter[gActiveBattler] != 0
+                (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId += 1;
+                if {
+                    let gl_i57 = gActiveBattler.get();
+                    crate::gl!(gWishFutureKnock.futureSightCounter[gl_i57])
+                } != 0
                     && ({
-                        gWishFutureKnock.futureSightCounter[gActiveBattler] -= 1;
-                        gWishFutureKnock.futureSightCounter[gActiveBattler]
+                        {
+                            let gl_v = 1;
+                            let gl_i58 = gActiveBattler.get();
+                            crate::gl!(gWishFutureKnock.futureSightCounter[gl_i58] -= gl_v)
+                        };
+                        {
+                            let gl_i59 = gActiveBattler.get();
+                            crate::gl!(gWishFutureKnock.futureSightCounter[gl_i59])
+                        }
                     }) == 0
-                    && gBattleMons[gActiveBattler].hp != 0
+                    && ({
+                        let gl_i113 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i113].hp)
+                    }) != 0
                 {
-                    if gWishFutureKnock.futureSightMove[gActiveBattler] == MOVE_FUTURE_SIGHT {
-                        gBattleCommunication[5] = B_MSG_FUTURE_SIGHT;
+                    if {
+                        let gl_i60 = gActiveBattler.get();
+                        crate::gl!(gWishFutureKnock.futureSightMove[gl_i60])
+                    } == MOVE_FUTURE_SIGHT
+                    {
+                        crate::gl!(gBattleCommunication[5] = B_MSG_FUTURE_SIGHT);
                     } else {
-                        gBattleCommunication[5] = B_MSG_DOOM_DESIRE;
+                        crate::gl!(gBattleCommunication[5] = B_MSG_DOOM_DESIRE);
                     }
-                    gBattleTextBuff1[0] = 0xFD;
-                    gBattleTextBuff1[1] = 2;
-                    gBattleTextBuff1[2] = gWishFutureKnock.futureSightMove[gActiveBattler] as u8;
-                    gBattleTextBuff1[3] =
-                        ((gWishFutureKnock.futureSightMove[gActiveBattler] as i32 & 0xFF00) >> 8)
-                            as u8;
-                    gBattleTextBuff1[4] = 0xFF;
-                    gBattlerTarget = gActiveBattler;
-                    gBattlerAttacker = gWishFutureKnock.futureSightAttacker[gActiveBattler];
-                    gBattleMoveDamage = gWishFutureKnock.futureSightDmg[gActiveBattler];
-                    gSpecialStatuses[gBattlerTarget].shellBellDmg = IGNORE_SHELL_BELL;
+                    crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                    crate::gl!(gBattleTextBuff1[1] = 2);
+                    crate::gl!(
+                        gBattleTextBuff1[2] = {
+                            let gl_i61 = gActiveBattler.get();
+                            crate::gl!(gWishFutureKnock.futureSightMove[gl_i61])
+                        } as u8
+                    );
+                    crate::gl!(
+                        gBattleTextBuff1[3] = (({
+                            let gl_i62 = gActiveBattler.get();
+                            crate::gl!(gWishFutureKnock.futureSightMove[gl_i62])
+                        } as i32
+                            & 0xFF00)
+                            >> 8) as u8
+                    );
+                    crate::gl!(gBattleTextBuff1[4] = 0xFF);
+                    gBattlerTarget.set(gActiveBattler.get());
+                    gBattlerAttacker.set({
+                        let gl_i63 = gActiveBattler.get();
+                        crate::gl!(gWishFutureKnock.futureSightAttacker[gl_i63])
+                    });
+                    gBattleMoveDamage.set({
+                        let gl_i64 = gActiveBattler.get();
+                        crate::gl!(gWishFutureKnock.futureSightDmg[gl_i64])
+                    });
+                    {
+                        let gl_v = IGNORE_SHELL_BELL;
+                        let gl_i65 = gBattlerTarget.get();
+                        crate::gl!(gSpecialStatuses[gl_i65].shellBellDmg = gl_v)
+                    };
                     BattleScriptExecute(
                         (*crate::asmdata::BattleScript_MonTookFutureAttack.cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
                     );
-                    if gWishFutureKnock.futureSightCounter[gActiveBattler] == 0
-                        && gWishFutureKnock.futureSightCounter[gActiveBattler as i32 ^ 2] == 0
+                    if {
+                        let gl_i66 = gActiveBattler.get();
+                        crate::gl!(gWishFutureKnock.futureSightCounter[gl_i66])
+                    } == 0
+                        && {
+                            let gl_i67 = gActiveBattler.get() as i32 ^ 2;
+                            crate::gl!(gWishFutureKnock.futureSightCounter[gl_i67])
+                        } == 0
                     {
-                        gSideStatuses[GetBattlerPosition(gBattlerTarget) as i32 & 1] &= 65471;
+                        {
+                            let gl_v = 65471;
+                            let gl_i68 = GetBattlerPosition(gBattlerTarget.get()) as i32 & 1;
+                            crate::gl!(gSideStatuses[gl_i68] &= gl_v)
+                        };
                     }
                     return TRUE;
                 }
             }
-            (*gBattleStruct).wishPerishSongState = 1;
-            (*gBattleStruct).wishPerishSongBattlerId = 0;
+            (*crate::gl!(gBattleStruct)).wishPerishSongState = 1;
+            (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId = 0;
         }
         if fall || sw1 == 1 {
             fall = true;
-            while (*gBattleStruct).wishPerishSongBattlerId < gBattlersCount {
-                gActiveBattler = {
-                    gBattlerAttacker =
-                        gBattlerByTurnOrder[(*gBattleStruct).wishPerishSongBattlerId];
-                    gBattlerAttacker
-                };
-                if gAbsentBattlerFlags as u32
+            while (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId < gBattlersCount.get() {
+                gActiveBattler.set({
+                    gBattlerAttacker.set({
+                        let gl_i69 = (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId;
+                        crate::gl!(gBattlerByTurnOrder[gl_i69])
+                    });
+                    gBattlerAttacker.get()
+                });
+                if gAbsentBattlerFlags.get() as u32
                     & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                        [gActiveBattler]
+                        [gActiveBattler.get()]
                     != 0
                 {
-                    (*gBattleStruct).wishPerishSongBattlerId += 1;
+                    (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId += 1;
                     continue;
                 }
-                (*gBattleStruct).wishPerishSongBattlerId += 1;
-                if gStatuses3[gActiveBattler] & STATUS3_PERISH_SONG != 0 {
-                    gBattleTextBuff1[0] = 0xFD;
-                    gBattleTextBuff1[1] = 1;
-                    gBattleTextBuff1[2] = 1;
-                    gBattleTextBuff1[3] = 1;
-                    gBattleTextBuff1[4] = gDisableStructs[gActiveBattler].perishSongTimer();
-                    gBattleTextBuff1[5] = 0xFF;
-                    if gDisableStructs[gActiveBattler].perishSongTimer() == 0 {
-                        gStatuses3[gActiveBattler] &= 0xffffffdf;
-                        gBattleMoveDamage = gBattleMons[gActiveBattler].hp as i32;
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_PerishSongTakesLife
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                    } else {
-                        gDisableStructs[gActiveBattler].set_perishSongTimer(
-                            gDisableStructs[gActiveBattler].perishSongTimer() - 1,
+                (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId += 1;
+                if {
+                    let gl_i70 = gActiveBattler.get();
+                    crate::gl!(gStatuses3[gl_i70])
+                } & STATUS3_PERISH_SONG
+                    != 0
+                {
+                    crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                    crate::gl!(gBattleTextBuff1[1] = 1);
+                    crate::gl!(gBattleTextBuff1[2] = 1);
+                    crate::gl!(gBattleTextBuff1[3] = 1);
+                    crate::gl!(
+                        gBattleTextBuff1[4] =
+                            (*gDisableStructs.as_ptr())[gActiveBattler.get()].perishSongTimer()
+                    );
+                    crate::gl!(gBattleTextBuff1[5] = 0xFF);
+                    if (*gDisableStructs.as_ptr())[gActiveBattler.get()].perishSongTimer() == 0 {
+                        {
+                            let gl_v = 0xffffffdf;
+                            let gl_i71 = gActiveBattler.get();
+                            crate::gl!(gStatuses3[gl_i71] &= gl_v)
+                        };
+                        gBattleMoveDamage.set(
+                            ({
+                                let gl_i114 = gActiveBattler.get();
+                                crate::gl!(gBattleMons[gl_i114].hp)
+                            }) as i32,
                         );
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_PerishSongCountGoesDown
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_PerishSongTakesLife
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                    } else {
+                        (*gDisableStructs.as_ptr())[gActiveBattler.get()].set_perishSongTimer(
+                            (*gDisableStructs.as_ptr())[gActiveBattler.get()].perishSongTimer() - 1,
+                        );
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_PerishSongCountGoesDown
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                     }
-                    BattleScriptExecute(gBattlescriptCurrInstr);
+                    BattleScriptExecute(crate::gl!(gBattlescriptCurrInstr));
                     return TRUE;
                 }
             }
-            (*gBattleStruct).wishPerishSongState = 2;
-            (*gBattleStruct).wishPerishSongBattlerId = 0;
+            (*crate::gl!(gBattleStruct)).wishPerishSongState = 2;
+            (*crate::gl!(gBattleStruct)).wishPerishSongBattlerId = 0;
         }
         if fall || sw1 == 2 {
-            if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
-                && (*gBattleStruct).arenaTurnCounter == 2
-                && gBattleMons[0].hp != 0
-                && gBattleMons[1].hp != 0
+            if gBattleTypeFlags.get() & BATTLE_TYPE_ARENA != 0
+                && (*crate::gl!(gBattleStruct)).arenaTurnCounter == 2
+                && crate::gl!(gBattleMons[0].hp) != 0
+                && crate::gl!(gBattleMons[1].hp) != 0
             {
                 for i in 0..2i32 {
                     CancelMultiTurnMoves(i as u8);
                 }
-                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ArenaDoJudgment
-                    .cast::<CArray<u8, 0>>())
-                .as_ptr()
-                .cast_mut();
+                crate::gl!(
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ArenaDoJudgment
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
+                );
                 BattleScriptExecute(
                     (*crate::asmdata::BattleScript_ArenaDoJudgment.cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
-                (*gBattleStruct).wishPerishSongState += 1;
+                (*crate::gl!(gBattleStruct)).wishPerishSongState += 1;
                 return TRUE;
             }
             break 'l1;
         }
     }
-    gHitMarker &= 0xfeffffdf;
+    gHitMarker.set(gHitMarker.get() & (0xfeffffdf));
     FALSE
 }
 pub unsafe fn HandleFaintedMonActions() -> u8 {
-    if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI != 0 {
         return FALSE;
     }
     loop {
         let mut i: i32 = 0;
         'l2: {
-            let sw1: u8 = (*gBattleStruct).faintedActionsState;
+            let sw1: u8 = (*crate::gl!(gBattleStruct)).faintedActionsState;
             let mut fall = false;
             if sw1 == 0 {
                 fall = true;
-                (*gBattleStruct).faintedActionsBattlerId = 0;
-                (*gBattleStruct).faintedActionsState += 1;
+                (*crate::gl!(gBattleStruct)).faintedActionsBattlerId = 0;
+                (*crate::gl!(gBattleStruct)).faintedActionsState += 1;
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if gAbsentBattlerFlags as u32
+                while i < gBattlersCount.get() as i32 {
+                    if gAbsentBattlerFlags.get() as u32
                         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
                         != 0
                         && HasNoMonsToSwitch(i as u8, PARTY_SIZE as u8, PARTY_SIZE as u8) == 0
                     {
-                        gAbsentBattlerFlags &= !(gBitTable[i] as u8);
+                        gAbsentBattlerFlags
+                            .set(gAbsentBattlerFlags.get() & (!(gBitTable[i] as u8)));
                     }
                     i += 1;
                 }
             }
             if fall || sw1 == 1 {
                 loop {
-                    gBattlerFainted = {
-                        gBattlerTarget = (*gBattleStruct).faintedActionsBattlerId;
-                        gBattlerTarget
-                    };
-                    if gBattleMons[(*gBattleStruct).faintedActionsBattlerId].hp == 0
-                        && (*gBattleStruct).givenExpMons as u32
+                    gBattlerFainted.set({
+                        gBattlerTarget.set((*crate::gl!(gBattleStruct)).faintedActionsBattlerId);
+                        gBattlerTarget.get()
+                    });
+                    if (*gBattleMons.as_ptr())[(*crate::gl!(gBattleStruct)).faintedActionsBattlerId]
+                        .hp
+                        == 0
+                        && (*crate::gl!(gBattleStruct)).givenExpMons as u32
                             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                                [gBattlerPartyIndexes[(*gBattleStruct).faintedActionsBattlerId]]
+                                [(*gBattlerPartyIndexes.as_ptr())
+                                    [(*crate::gl!(gBattleStruct)).faintedActionsBattlerId]]
                             == 0
-                        && gAbsentBattlerFlags as u32
+                        && gAbsentBattlerFlags.get() as u32
                             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                                [(*gBattleStruct).faintedActionsBattlerId]
+                                [(*crate::gl!(gBattleStruct)).faintedActionsBattlerId]
                             == 0
                     {
                         BattleScriptExecute(
@@ -2257,48 +3040,50 @@ pub unsafe fn HandleFaintedMonActions() -> u8 {
                                 .as_ptr()
                                 .cast_mut(),
                         );
-                        (*gBattleStruct).faintedActionsState = 2;
+                        (*crate::gl!(gBattleStruct)).faintedActionsState = 2;
                         return TRUE;
                     }
                     if ({
-                        (*gBattleStruct).faintedActionsBattlerId += 1;
-                        (*gBattleStruct).faintedActionsBattlerId
-                    }) == gBattlersCount
+                        (*crate::gl!(gBattleStruct)).faintedActionsBattlerId += 1;
+                        (*crate::gl!(gBattleStruct)).faintedActionsBattlerId
+                    }) == gBattlersCount.get()
                     {
                         break;
                     }
                 }
-                (*gBattleStruct).faintedActionsState = 3;
+                (*crate::gl!(gBattleStruct)).faintedActionsState = 3;
                 break 'l2;
             }
             if sw1 == 2 {
-                OpponentSwitchInResetSentPokesToOpponentValue(gBattlerFainted);
+                OpponentSwitchInResetSentPokesToOpponentValue(gBattlerFainted.get());
                 if ({
-                    (*gBattleStruct).faintedActionsBattlerId += 1;
-                    (*gBattleStruct).faintedActionsBattlerId
-                }) == gBattlersCount
+                    (*crate::gl!(gBattleStruct)).faintedActionsBattlerId += 1;
+                    (*crate::gl!(gBattleStruct)).faintedActionsBattlerId
+                }) == gBattlersCount.get()
                 {
-                    (*gBattleStruct).faintedActionsState = 3;
+                    (*crate::gl!(gBattleStruct)).faintedActionsState = 3;
                 } else {
-                    (*gBattleStruct).faintedActionsState = 1;
+                    (*crate::gl!(gBattleStruct)).faintedActionsState = 1;
                 }
                 break 'l2;
             }
             if sw1 == 3 {
                 fall = true;
-                (*gBattleStruct).faintedActionsBattlerId = 0;
-                (*gBattleStruct).faintedActionsState += 1;
+                (*crate::gl!(gBattleStruct)).faintedActionsBattlerId = 0;
+                (*crate::gl!(gBattleStruct)).faintedActionsState += 1;
             }
             if fall || sw1 == 4 {
                 loop {
-                    gBattlerFainted = {
-                        gBattlerTarget = (*gBattleStruct).faintedActionsBattlerId;
-                        gBattlerTarget
-                    };
-                    if gBattleMons[(*gBattleStruct).faintedActionsBattlerId].hp == 0
-                        && gAbsentBattlerFlags as u32
+                    gBattlerFainted.set({
+                        gBattlerTarget.set((*crate::gl!(gBattleStruct)).faintedActionsBattlerId);
+                        gBattlerTarget.get()
+                    });
+                    if (*gBattleMons.as_ptr())[(*crate::gl!(gBattleStruct)).faintedActionsBattlerId]
+                        .hp
+                        == 0
+                        && gAbsentBattlerFlags.get() as u32
                             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-                                [(*gBattleStruct).faintedActionsBattlerId]
+                                [(*crate::gl!(gBattleStruct)).faintedActionsBattlerId]
                             == 0
                     {
                         BattleScriptExecute(
@@ -2307,29 +3092,29 @@ pub unsafe fn HandleFaintedMonActions() -> u8 {
                             .as_ptr()
                             .cast_mut(),
                         );
-                        (*gBattleStruct).faintedActionsState = 5;
+                        (*crate::gl!(gBattleStruct)).faintedActionsState = 5;
                         return TRUE;
                     }
                     if ({
-                        (*gBattleStruct).faintedActionsBattlerId += 1;
-                        (*gBattleStruct).faintedActionsBattlerId
-                    }) == gBattlersCount
+                        (*crate::gl!(gBattleStruct)).faintedActionsBattlerId += 1;
+                        (*crate::gl!(gBattleStruct)).faintedActionsBattlerId
+                    }) == gBattlersCount.get()
                     {
                         break;
                     }
                 }
-                (*gBattleStruct).faintedActionsState = 6;
+                (*crate::gl!(gBattleStruct)).faintedActionsState = 6;
                 break 'l2;
             }
             if sw1 == 5 {
                 if ({
-                    (*gBattleStruct).faintedActionsBattlerId += 1;
-                    (*gBattleStruct).faintedActionsBattlerId
-                }) == gBattlersCount
+                    (*crate::gl!(gBattleStruct)).faintedActionsBattlerId += 1;
+                    (*crate::gl!(gBattleStruct)).faintedActionsBattlerId
+                }) == gBattlersCount.get()
                 {
-                    (*gBattleStruct).faintedActionsState = 6;
+                    (*crate::gl!(gBattleStruct)).faintedActionsState = 6;
                 } else {
-                    (*gBattleStruct).faintedActionsState = 4;
+                    (*crate::gl!(gBattleStruct)).faintedActionsState = 4;
                 }
                 break 'l2;
             }
@@ -2341,276 +3126,425 @@ pub unsafe fn HandleFaintedMonActions() -> u8 {
                 {
                     return TRUE;
                 }
-                (*gBattleStruct).faintedActionsState += 1;
+                (*crate::gl!(gBattleStruct)).faintedActionsState += 1;
                 break 'l2;
             }
             if sw1 == FAINTED_ACTIONS_MAX_CASE {
                 break 'l2;
             }
         }
-        if (*gBattleStruct).faintedActionsState == FAINTED_ACTIONS_MAX_CASE {
+        if (*crate::gl!(gBattleStruct)).faintedActionsState == FAINTED_ACTIONS_MAX_CASE {
             break;
         }
     }
     FALSE
 }
-pub unsafe fn TryClearRageStatuses() {
-    for i in 0..(gBattlersCount as i32) {
-        if gBattleMons[i].status2 & STATUS2_RAGE != 0 && gChosenMoveByBattler[i] != MOVE_RAGE {
-            gBattleMons[i].status2 &= 0xff7fffff;
+pub fn TryClearRageStatuses() {
+    for i in 0..(gBattlersCount.get() as i32) {
+        if crate::gl!(gBattleMons[i].status2) & STATUS2_RAGE != 0
+            && crate::gl!(gChosenMoveByBattler[i]) != MOVE_RAGE
+        {
+            crate::gl!(gBattleMons[i].status2 &= 0xff7fffff);
         }
     }
 }
 pub unsafe fn AtkCanceler_UnableToUseMove() -> u8 {
     let mut effect: u8 = 0;
-    let bideDmg: *mut i32 = &raw mut gBattleScripting.bideDmg;
+    let bideDmg: *mut i32 = crate::gl!(&raw gBattleScripting.bideDmg);
     loop {
         'l2: {
-            match (*gBattleStruct).atkCancelerTracker {
+            match (*crate::gl!(gBattleStruct)).atkCancelerTracker {
                 CANCELER_FLAGS => {
-                    gBattleMons[gBattlerAttacker].status2 &= 0xfdffffff;
-                    gStatuses3[gBattlerAttacker] &= 0xffffbfff;
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    {
+                        let gl_i115 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i115].status2 &= 0xfdffffff)
+                    };
+                    {
+                        let gl_v = 0xffffbfff;
+                        let gl_i72 = gBattlerAttacker.get();
+                        crate::gl!(gStatuses3[gl_i72] &= gl_v)
+                    };
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_ASLEEP => {
-                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0 {
-                        if UproarWakeUpCheck(gBattlerAttacker) != 0 {
-                            gBattleMons[gBattlerAttacker].status1 &= 0xfffffff8;
-                            gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
-                            BattleScriptPushCursor();
-                            gBattleCommunication[5] = B_MSG_WOKE_UP_UPROAR;
-                            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedWokeUp
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                            effect = 2;
-                        } else {
-                            let mut toSub: u8 = 0;
-                            if gBattleMons[gBattlerAttacker].ability == ABILITY_EARLY_BIRD {
-                                toSub = 2;
-                            } else {
-                                toSub = 1;
-                            }
-                            if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP < toSub as u32
+                    if ({
+                        let gl_i116 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i116].status1)
+                    }) & STATUS1_SLEEP
+                        != 0
+                    {
+                        if UproarWakeUpCheck(gBattlerAttacker.get()) != 0 {
                             {
-                                gBattleMons[gBattlerAttacker].status1 &= 0xfffffff8;
-                            } else {
-                                gBattleMons[gBattlerAttacker].status1 -= toSub as u32;
-                            }
-                            if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0 {
-                                if gCurrentMove != MOVE_SNORE && gCurrentMove != MOVE_SLEEP_TALK {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_MoveUsedIsAsleep
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
-                                    gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
-                                    effect = 2;
-                                }
-                            } else {
-                                gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
-                                BattleScriptPushCursor();
-                                gBattleCommunication[5] = B_MSG_WOKE_UP;
+                                let gl_i117 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i117].status1 &= 0xfffffff8)
+                            };
+                            {
+                                let gl_i118 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i118].status2 &= 0xf7ffffff)
+                            };
+                            BattleScriptPushCursor();
+                            crate::gl!(gBattleCommunication[5] = B_MSG_WOKE_UP_UPROAR);
+                            crate::gl!(
                                 gBattlescriptCurrInstr =
                                     (*crate::asmdata::BattleScript_MoveUsedWokeUp
                                         .cast::<CArray<u8, 0>>())
                                     .as_ptr()
-                                    .cast_mut();
+                                    .cast_mut()
+                            );
+                            effect = 2;
+                        } else {
+                            let mut toSub: u8 = 0;
+                            if ({
+                                let gl_i119 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i119].ability)
+                            }) == ABILITY_EARLY_BIRD
+                            {
+                                toSub = 2;
+                            } else {
+                                toSub = 1;
+                            }
+                            if ({
+                                let gl_i120 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i120].status1)
+                            }) & STATUS1_SLEEP
+                                < toSub as u32
+                            {
+                                {
+                                    let gl_i121 = gBattlerAttacker.get();
+                                    crate::gl!(gBattleMons[gl_i121].status1 &= 0xfffffff8)
+                                };
+                            } else {
+                                {
+                                    let gl_i122 = gBattlerAttacker.get();
+                                    crate::gl!(gBattleMons[gl_i122].status1 -= toSub as u32)
+                                };
+                            }
+                            if ({
+                                let gl_i123 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i123].status1)
+                            }) & STATUS1_SLEEP
+                                != 0
+                            {
+                                if gCurrentMove.get() != MOVE_SNORE
+                                    && gCurrentMove.get() != MOVE_SLEEP_TALK
+                                {
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_MoveUsedIsAsleep
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
+                                    gHitMarker
+                                        .set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
+                                    effect = 2;
+                                }
+                            } else {
+                                {
+                                    let gl_i124 = gBattlerAttacker.get();
+                                    crate::gl!(gBattleMons[gl_i124].status2 &= 0xf7ffffff)
+                                };
+                                BattleScriptPushCursor();
+                                crate::gl!(gBattleCommunication[5] = B_MSG_WOKE_UP);
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_MoveUsedWokeUp
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
                                 effect = 2;
                             }
                         }
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_FROZEN => {
-                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_FREEZE != 0 {
+                    if ({
+                        let gl_i125 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i125].status1)
+                    }) & STATUS1_FREEZE
+                        != 0
+                    {
                         if Random() as i32 % 5 != 0 {
                             if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<
                                 BattleMove,
                                 0,
                             >>(
-                            ))[gCurrentMove]
-                                .effect
+                            ))[gCurrentMove.get()]
+                            .effect
                                 != EFFECT_THAW_HIT
                             {
-                                gBattlescriptCurrInstr =
-                                    (*crate::asmdata::BattleScript_MoveUsedIsFrozen
-                                        .cast::<CArray<u8, 0>>())
-                                    .as_ptr()
-                                    .cast_mut();
-                                gHitMarker |= HITMARKER_NO_ATTACKSTRING;
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_MoveUsedIsFrozen
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
+                                gHitMarker.set(gHitMarker.get() | (HITMARKER_NO_ATTACKSTRING));
                             } else {
-                                (*gBattleStruct).atkCancelerTracker += 1;
+                                (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                                 break 'l2;
                             }
                         } else {
-                            gBattleMons[gBattlerAttacker].status1 &= 0xffffffdf;
+                            {
+                                let gl_i126 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i126].status1 &= 0xffffffdf)
+                            };
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_MoveUsedUnfroze
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
-                            gBattleCommunication[5] = B_MSG_DEFROSTED;
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_MoveUsedUnfroze
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
+                            crate::gl!(gBattleCommunication[5] = B_MSG_DEFROSTED);
                         }
                         effect = 2;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_TRUANT => {
-                    if gBattleMons[gBattlerAttacker].ability == ABILITY_TRUANT
-                        && gDisableStructs[gBattlerAttacker].truantCounter() != 0
+                    if ({
+                        let gl_i127 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i127].ability)
+                    }) == ABILITY_TRUANT
+                        && (*gDisableStructs.as_ptr())[gBattlerAttacker.get()].truantCounter() != 0
                     {
-                        CancelMultiTurnMoves(gBattlerAttacker);
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
-                        gBattleCommunication[5] = B_MSG_LOAFING;
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_MoveUsedLoafingAround
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gMoveResultFlags |= MOVE_RESULT_MISSED;
+                        CancelMultiTurnMoves(gBattlerAttacker.get());
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
+                        crate::gl!(gBattleCommunication[5] = B_MSG_LOAFING);
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gMoveResultFlags.set(gMoveResultFlags.get() | (MOVE_RESULT_MISSED));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_RECHARGE => {
-                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_RECHARGE != 0 {
-                        gBattleMons[gBattlerAttacker].status2 &= 0xffbfffff;
-                        gDisableStructs[gBattlerAttacker].rechargeTimer = 0;
-                        CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_MoveUsedMustRecharge
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                    if ({
+                        let gl_i128 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i128].status2)
+                    }) & STATUS2_RECHARGE
+                        != 0
+                    {
+                        {
+                            let gl_i129 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i129].status2 &= 0xffbfffff)
+                        };
+                        {
+                            let gl_i130 = gBattlerAttacker.get();
+                            crate::gl!(gDisableStructs[gl_i130].rechargeTimer = 0)
+                        };
+                        CancelMultiTurnMoves(gBattlerAttacker.get());
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedMustRecharge
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_FLINCH => {
-                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_FLINCHED != 0 {
-                        gBattleMons[gBattlerAttacker].status2 &= 0xfffffff7;
-                        gProtectStructs[gBattlerAttacker].set_flinchImmobility(1);
-                        CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedFlinched
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                    if ({
+                        let gl_i131 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i131].status2)
+                    }) & STATUS2_FLINCHED
+                        != 0
+                    {
+                        {
+                            let gl_i132 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i132].status2 &= 0xfffffff7)
+                        };
+                        (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].set_flinchImmobility(1);
+                        CancelMultiTurnMoves(gBattlerAttacker.get());
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedFlinched
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_DISABLED => {
-                    if gDisableStructs[gBattlerAttacker].disabledMove == gCurrentMove
-                        && gDisableStructs[gBattlerAttacker].disabledMove != MOVE_NONE
+                    if ({
+                        let gl_i133 = gBattlerAttacker.get();
+                        crate::gl!(gDisableStructs[gl_i133].disabledMove)
+                    }) == gCurrentMove.get()
+                        && ({
+                            let gl_i134 = gBattlerAttacker.get();
+                            crate::gl!(gDisableStructs[gl_i134].disabledMove)
+                        }) != MOVE_NONE
                     {
-                        gProtectStructs[gBattlerAttacker].set_usedDisabledMove(1);
-                        gBattleScripting.battler = gBattlerAttacker;
-                        CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedIsDisabled
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].set_usedDisabledMove(1);
+                        crate::gl!(gBattleScripting.battler = gBattlerAttacker.get());
+                        CancelMultiTurnMoves(gBattlerAttacker.get());
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedIsDisabled
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_TAUNTED => {
-                    if gDisableStructs[gBattlerAttacker].tauntTimer() != 0
+                    if (*gDisableStructs.as_ptr())[gBattlerAttacker.get()].tauntTimer() != 0
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
-                            .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
-                            .power
+                            .cast::<CArray<BattleMove, 0>>())[gCurrentMove.get()]
+                        .power
                             == 0
                     {
-                        gProtectStructs[gBattlerAttacker].set_usedTauntedMove(1);
-                        CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedIsTaunted
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].set_usedTauntedMove(1);
+                        CancelMultiTurnMoves(gBattlerAttacker.get());
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedIsTaunted
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_IMPRISONED => {
-                    if GetImprisonedMovesCount(gBattlerAttacker, gCurrentMove) != 0 {
-                        gProtectStructs[gBattlerAttacker].set_usedImprisonedMove(1);
-                        CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_MoveUsedIsImprisoned
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                    if GetImprisonedMovesCount(gBattlerAttacker.get(), gCurrentMove.get()) != 0 {
+                        (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                            .set_usedImprisonedMove(1);
+                        CancelMultiTurnMoves(gBattlerAttacker.get());
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedIsImprisoned
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_CONFUSED => {
-                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_CONFUSION != 0 {
-                        gBattleMons[gBattlerAttacker].status2 -= 1;
-                        if gBattleMons[gBattlerAttacker].status2 & STATUS2_CONFUSION != 0 {
+                    if ({
+                        let gl_i135 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i135].status2)
+                    }) & STATUS2_CONFUSION
+                        != 0
+                    {
+                        {
+                            let gl_i136 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i136].status2 -= 1)
+                        };
+                        if ({
+                            let gl_i137 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i137].status2)
+                        }) & STATUS2_CONFUSION
+                            != 0
+                        {
                             if Random() as i32 & 1 != 0 {
-                                gBattleCommunication[5] = FALSE;
+                                crate::gl!(gBattleCommunication[5] = FALSE);
                                 BattleScriptPushCursor();
                             } else {
-                                gBattleCommunication[5] = TRUE;
-                                gBattlerTarget = gBattlerAttacker;
-                                gBattleMoveDamage = CalculateBaseDamage(
-                                    &raw mut gBattleMons[gBattlerAttacker],
-                                    &raw mut gBattleMons[gBattlerAttacker],
+                                crate::gl!(gBattleCommunication[5] = TRUE);
+                                gBattlerTarget.set(gBattlerAttacker.get());
+                                gBattleMoveDamage.set(CalculateBaseDamage(
+                                    {
+                                        let gl_i138 = gBattlerAttacker.get();
+                                        crate::gl!(&raw gBattleMons[gl_i138])
+                                    },
+                                    {
+                                        let gl_i139 = gBattlerAttacker.get();
+                                        crate::gl!(&raw gBattleMons[gl_i139])
+                                    },
                                     MOVE_POUND,
                                     0,
                                     40,
                                     0,
-                                    gBattlerAttacker,
-                                    gBattlerAttacker,
-                                );
-                                gProtectStructs[gBattlerAttacker].set_confusionSelfDmg(1);
-                                gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                                    gBattlerAttacker.get(),
+                                    gBattlerAttacker.get(),
+                                ));
+                                (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                                    .set_confusionSelfDmg(1);
+                                gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                             }
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_MoveUsedIsConfused
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_MoveUsedIsConfused
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                         } else {
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_MoveUsedIsConfusedNoMore
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_MoveUsedIsConfusedNoMore
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                         }
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_PARALYZED => {
-                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_PARALYSIS != 0
+                    if ({
+                        let gl_i140 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i140].status1)
+                    }) & STATUS1_PARALYSIS
+                        != 0
                         && Random() as i32 % 4 == 0
                     {
-                        gProtectStructs[gBattlerAttacker].set_prlzImmobility(1);
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_MoveUsedIsParalyzed
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+                        (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].set_prlzImmobility(1);
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedIsParalyzed
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_IN_LOVE => {
-                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION != 0 {
-                        gBattleScripting.battler = CountTrailingZeroBits(
-                            (gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION) >> 16,
-                        ) as u8;
+                    if ({
+                        let gl_i141 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i141].status2)
+                    }) & STATUS2_INFATUATION
+                        != 0
+                    {
+                        crate::gl!(
+                            gBattleScripting.battler = CountTrailingZeroBits(
+                                (({
+                                    let gl_i142 = gBattlerAttacker.get();
+                                    crate::gl!(gBattleMons[gl_i142].status2)
+                                }) & STATUS2_INFATUATION)
+                                    >> 16,
+                            ) as u8
+                        );
                         if Random() as i32 & 1 != 0 {
                             BattleScriptPushCursor();
                         } else {
@@ -2620,93 +3554,140 @@ pub unsafe fn AtkCanceler_UnableToUseMove() -> u8 {
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
-                            gProtectStructs[gBattlerAttacker].set_loveImmobility(1);
-                            CancelMultiTurnMoves(gBattlerAttacker);
+                            gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
+                            (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                                .set_loveImmobility(1);
+                            CancelMultiTurnMoves(gBattlerAttacker.get());
                         }
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedIsInLove
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_MoveUsedIsInLove
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_BIDE => {
-                    if gBattleMons[gBattlerAttacker].status2 & STATUS2_BIDE != 0 {
-                        gBattleMons[gBattlerAttacker].status2 -= 256;
-                        if gBattleMons[gBattlerAttacker].status2 & STATUS2_BIDE != 0 {
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BideStoringEnergy
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
-                        } else {
-                            if gBideDmg[gBattlerAttacker] != 0 {
-                                gCurrentMove = MOVE_BIDE;
-                                *bideDmg = gBideDmg[gBattlerAttacker] * 2;
-                                gBattlerTarget = gBideTarget[gBattlerAttacker];
-                                if gAbsentBattlerFlags as u32
-                                    & (*(&raw const crate::util::gBitTable)
-                                        .cast::<CArray<u32, 0>>())[gBattlerTarget]
-                                    != 0
-                                {
-                                    gBattlerTarget = GetMoveTarget(MOVE_BIDE, 1);
-                                }
-                                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_BideAttack
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
-                            } else {
+                    if ({
+                        let gl_i143 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i143].status2)
+                    }) & STATUS2_BIDE
+                        != 0
+                    {
+                        {
+                            let gl_i144 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i144].status2 -= 256)
+                        };
+                        if ({
+                            let gl_i145 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i145].status2)
+                        }) & STATUS2_BIDE
+                            != 0
+                        {
+                            crate::gl!(
                                 gBattlescriptCurrInstr =
-                                    (*crate::asmdata::BattleScript_BideNoEnergyToAttack
+                                    (*crate::asmdata::BattleScript_BideStoringEnergy
                                         .cast::<CArray<u8, 0>>())
                                     .as_ptr()
-                                    .cast_mut();
+                                    .cast_mut()
+                            );
+                        } else {
+                            if {
+                                let gl_i73 = gBattlerAttacker.get();
+                                crate::gl!(gBideDmg[gl_i73])
+                            } != 0
+                            {
+                                gCurrentMove.set(MOVE_BIDE);
+                                *bideDmg = {
+                                    let gl_i74 = gBattlerAttacker.get();
+                                    crate::gl!(gBideDmg[gl_i74])
+                                } * 2;
+                                gBattlerTarget.set({
+                                    let gl_i75 = gBattlerAttacker.get();
+                                    crate::gl!(gBideTarget[gl_i75])
+                                });
+                                if gAbsentBattlerFlags.get() as u32
+                                    & (*(&raw const crate::util::gBitTable)
+                                        .cast::<CArray<u32, 0>>())[gBattlerTarget.get()]
+                                    != 0
+                                {
+                                    gBattlerTarget.set(GetMoveTarget(MOVE_BIDE, 1));
+                                }
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_BideAttack
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
+                            } else {
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_BideNoEnergyToAttack
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
                             }
                         }
                         effect = 1;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_THAW => {
-                    if gBattleMons[gBattlerAttacker].status1 & STATUS1_FREEZE != 0 {
+                    if ({
+                        let gl_i146 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i146].status1)
+                    }) & STATUS1_FREEZE
+                        != 0
+                    {
                         if (*(&raw const crate::data::pokemon::gBattleMoves)
-                            .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
-                            .effect
+                            .cast::<CArray<BattleMove, 0>>())[gCurrentMove.get()]
+                        .effect
                             == EFFECT_THAW_HIT
                         {
-                            gBattleMons[gBattlerAttacker].status1 &= 0xffffffdf;
+                            {
+                                let gl_i147 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i147].status1 &= 0xffffffdf)
+                            };
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_MoveUsedUnfroze
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
-                            gBattleCommunication[5] = B_MSG_DEFROSTED_BY_MOVE;
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_MoveUsedUnfroze
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
+                            crate::gl!(gBattleCommunication[5] = B_MSG_DEFROSTED_BY_MOVE);
                         }
                         effect = 2;
                     }
-                    (*gBattleStruct).atkCancelerTracker += 1;
+                    (*crate::gl!(gBattleStruct)).atkCancelerTracker += 1;
                 }
                 CANCELER_END => {}
                 _ => {}
             }
         }
-        if !((*gBattleStruct).atkCancelerTracker != CANCELER_END && effect == 0) {
+        if !((*crate::gl!(gBattleStruct)).atkCancelerTracker != CANCELER_END && effect == 0) {
             break;
         }
     }
     if effect == 2 {
-        gActiveBattler = gBattlerAttacker;
+        gActiveBattler.set(gBattlerAttacker.get());
         BtlController_EmitSetMonData(
             B_COMM_TO_CONTROLLER,
             REQUEST_STATUS_BATTLE,
             0,
             4,
-            &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+            ({
+                let gl_i148 = gActiveBattler.get();
+                crate::gl!(&raw gBattleMons[gl_i148].status1)
+            }) as *mut c_void,
         );
-        MarkBattlerForControllerExec(gActiveBattler);
+        MarkBattlerForControllerExec(gActiveBattler.get());
     }
     effect
 }
@@ -2719,14 +3700,14 @@ pub unsafe fn HasNoMonsToSwitch(
     let mut flankId: u8 = 0;
     let mut party: *mut Pokemon = null_mut();
     let mut i: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE == 0 {
         return FALSE;
     }
-    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0 {
         if GetBattlerSide(battler) == B_SIDE_PLAYER {
-            party = gPlayerParty.as_mut_ptr();
+            party = (*gPlayerParty.as_ptr()).as_mut_ptr();
         } else {
-            party = gEnemyParty.as_mut_ptr();
+            party = (*gEnemyParty.as_ptr()).as_mut_ptr();
         }
         playerId = ((battler as i32 & 2) / 2) as u8;
         i = playerId as i32 * MULTI_PARTY_SIZE;
@@ -2740,14 +3721,14 @@ pub unsafe fn HasNoMonsToSwitch(
             i += 1;
         }
         return (i == playerId as i32 * MULTI_PARTY_SIZE + MULTI_PARTY_SIZE) as u8;
-    } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-        if gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_TOWER_LINK_MULTI != 0 {
             if GetBattlerSide(battler) == B_SIDE_PLAYER {
-                party = gPlayerParty.as_mut_ptr();
+                party = (*gPlayerParty.as_ptr()).as_mut_ptr();
                 flankId = GetBattlerMultiplayerId(battler as u16) as u8;
                 playerId = GetLinkTrainerFlankId(flankId) as u8;
             } else {
-                party = gEnemyParty.as_mut_ptr();
+                party = (*gEnemyParty.as_ptr()).as_mut_ptr();
                 if battler == 1 {
                     playerId = 0;
                 } else {
@@ -2757,9 +3738,9 @@ pub unsafe fn HasNoMonsToSwitch(
         } else {
             flankId = GetBattlerMultiplayerId(battler as u16) as u8;
             if GetBattlerSide(battler) == B_SIDE_PLAYER {
-                party = gPlayerParty.as_mut_ptr();
+                party = (*gPlayerParty.as_ptr()).as_mut_ptr();
             } else {
-                party = gEnemyParty.as_mut_ptr();
+                party = (*gEnemyParty.as_ptr()).as_mut_ptr();
             }
             playerId = GetLinkTrainerFlankId(flankId) as u8;
         }
@@ -2774,10 +3755,10 @@ pub unsafe fn HasNoMonsToSwitch(
             i += 1;
         }
         return (i == playerId as i32 * MULTI_PARTY_SIZE + MULTI_PARTY_SIZE) as u8;
-    } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0
         && GetBattlerSide(battler) == B_SIDE_OPPONENT
     {
-        party = gEnemyParty.as_mut_ptr();
+        party = (*gEnemyParty.as_ptr()).as_mut_ptr();
         if battler == 1 {
             playerId = 0;
         } else {
@@ -2798,17 +3779,17 @@ pub unsafe fn HasNoMonsToSwitch(
         if GetBattlerSide(battler) == B_SIDE_OPPONENT {
             flankId = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
             playerId = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
-            party = gEnemyParty.as_mut_ptr();
+            party = (*gEnemyParty.as_ptr()).as_mut_ptr();
         } else {
             flankId = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
             playerId = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
-            party = gPlayerParty.as_mut_ptr();
+            party = (*gPlayerParty.as_ptr()).as_mut_ptr();
         }
         if partyIdBattlerOn1 == PARTY_SIZE as u8 {
-            partyIdBattlerOn1 = gBattlerPartyIndexes[flankId] as u8;
+            partyIdBattlerOn1 = crate::gl!(gBattlerPartyIndexes[flankId]) as u8;
         }
         if partyIdBattlerOn2 == PARTY_SIZE as u8 {
-            partyIdBattlerOn2 = gBattlerPartyIndexes[playerId] as u8;
+            partyIdBattlerOn2 = crate::gl!(gBattlerPartyIndexes[playerId]) as u8;
         }
         i = 0;
         while i < PARTY_SIZE {
@@ -2817,8 +3798,14 @@ pub unsafe fn HasNoMonsToSwitch(
                 && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
                 && i != partyIdBattlerOn1 as i32
                 && i != partyIdBattlerOn2 as i32
-                && i != *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(flankId) as i32
-                && i != *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(playerId) as i32
+                && i != *(*crate::gl!(gBattleStruct))
+                    .monToSwitchIntoId
+                    .as_mut_ptr()
+                    .at(flankId) as i32
+                && i != *(*crate::gl!(gBattleStruct))
+                    .monToSwitchIntoId
+                    .as_mut_ptr()
+                    .at(playerId) as i32
             {
                 break;
             }
@@ -2833,53 +3820,54 @@ pub unsafe fn HasNoMonsToSwitch(
 }
 pub unsafe fn CastformDataTypeChange(battler: u8) -> u8 {
     let mut formChange: u8 = 0;
-    if gBattleMons[battler].species != SPECIES_CASTFORM
-        || gBattleMons[battler].ability != ABILITY_FORECAST
-        || gBattleMons[battler].hp == 0
+    if crate::gl!(gBattleMons[battler].species) != SPECIES_CASTFORM
+        || crate::gl!(gBattleMons[battler].ability) != ABILITY_FORECAST
+        || crate::gl!(gBattleMons[battler].hp) == 0
     {
         return 0;
     }
     if !(AbilityBattleEffects(19, TYPE_NORMAL, 13, TYPE_NORMAL, TYPE_NORMAL as u16) == 0
         && AbilityBattleEffects(19, TYPE_NORMAL, 77, TYPE_NORMAL, TYPE_NORMAL as u16) == 0)
-        && !(gBattleMons[battler].types[0] == TYPE_NORMAL
-            || gBattleMons[battler].types[1] == TYPE_NORMAL)
+        && !(crate::gl!(gBattleMons[battler].types[0]) == TYPE_NORMAL
+            || crate::gl!(gBattleMons[battler].types[1]) == TYPE_NORMAL)
     {
-        gBattleMons[battler].types[0] = TYPE_NORMAL;
-        gBattleMons[battler].types[1] = TYPE_NORMAL;
+        crate::gl!(gBattleMons[battler].types[0] = TYPE_NORMAL);
+        crate::gl!(gBattleMons[battler].types[1] = TYPE_NORMAL);
         return 1;
     }
     if !(AbilityBattleEffects(19, 0, 13, 0, 0) == 0 && AbilityBattleEffects(19, 0, 77, 0, 0) == 0) {
         return 0;
     }
-    if gBattleWeather as i32 & 231 == 0
-        && !(gBattleMons[battler].types[0] == TYPE_NORMAL
-            || gBattleMons[battler].types[1] == TYPE_NORMAL)
+    if gBattleWeather.get() as i32 & 231 == 0
+        && !(crate::gl!(gBattleMons[battler].types[0]) == TYPE_NORMAL
+            || crate::gl!(gBattleMons[battler].types[1]) == TYPE_NORMAL)
     {
-        gBattleMons[battler].types[0] = TYPE_NORMAL;
-        gBattleMons[battler].types[1] = TYPE_NORMAL;
+        crate::gl!(gBattleMons[battler].types[0] = TYPE_NORMAL);
+        crate::gl!(gBattleMons[battler].types[1] = TYPE_NORMAL);
         formChange = 1;
     }
-    if gBattleWeather as i32 & B_WEATHER_SUN != 0
-        && !(gBattleMons[battler].types[0] == TYPE_FIRE
-            || gBattleMons[battler].types[1] == TYPE_FIRE)
+    if gBattleWeather.get() as i32 & B_WEATHER_SUN != 0
+        && !(crate::gl!(gBattleMons[battler].types[0]) == TYPE_FIRE
+            || crate::gl!(gBattleMons[battler].types[1]) == TYPE_FIRE)
     {
-        gBattleMons[battler].types[0] = TYPE_FIRE;
-        gBattleMons[battler].types[1] = TYPE_FIRE;
+        crate::gl!(gBattleMons[battler].types[0] = TYPE_FIRE);
+        crate::gl!(gBattleMons[battler].types[1] = TYPE_FIRE);
         formChange = 2;
     }
-    if gBattleWeather as i32 & B_WEATHER_RAIN != 0
-        && !(gBattleMons[battler].types[0] == TYPE_WATER
-            || gBattleMons[battler].types[1] == TYPE_WATER)
+    if gBattleWeather.get() as i32 & B_WEATHER_RAIN != 0
+        && !(crate::gl!(gBattleMons[battler].types[0]) == TYPE_WATER
+            || crate::gl!(gBattleMons[battler].types[1]) == TYPE_WATER)
     {
-        gBattleMons[battler].types[0] = TYPE_WATER;
-        gBattleMons[battler].types[1] = TYPE_WATER;
+        crate::gl!(gBattleMons[battler].types[0] = TYPE_WATER);
+        crate::gl!(gBattleMons[battler].types[1] = TYPE_WATER);
         formChange = 3;
     }
-    if gBattleWeather as i32 & B_WEATHER_HAIL != 0
-        && !(gBattleMons[battler].types[0] == TYPE_ICE || gBattleMons[battler].types[1] == TYPE_ICE)
+    if gBattleWeather.get() as i32 & B_WEATHER_HAIL != 0
+        && !(crate::gl!(gBattleMons[battler].types[0]) == TYPE_ICE
+            || crate::gl!(gBattleMons[battler].types[1]) == TYPE_ICE)
     {
-        gBattleMons[battler].types[0] = TYPE_ICE;
-        gBattleMons[battler].types[1] = TYPE_ICE;
+        crate::gl!(gBattleMons[battler].types[0] = TYPE_ICE);
+        crate::gl!(gBattleMons[battler].types[1] = TYPE_ICE);
         formChange = 4;
     }
     formChange
@@ -2894,44 +3882,56 @@ pub unsafe fn AbilityBattleEffects(
     let mut effect: u8 = 0;
     let mut pokeAtk: *mut Pokemon = null_mut();
     let mut pokeDef: *mut Pokemon = null_mut();
-    if gBattlerAttacker >= gBattlersCount {
-        gBattlerAttacker = battler;
+    if gBattlerAttacker.get() >= gBattlersCount.get() {
+        gBattlerAttacker.set(battler);
     }
-    if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
-        pokeAtk = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]];
+    if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
+        pokeAtk = &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i149 = gBattlerAttacker.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i149])
+        }];
     } else {
-        pokeAtk = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker]];
+        pokeAtk = &raw mut (*gEnemyParty.as_ptr())[{
+            let gl_i150 = gBattlerAttacker.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i150])
+        }];
     }
-    if gBattlerTarget >= gBattlersCount {
-        gBattlerTarget = battler;
+    if gBattlerTarget.get() >= gBattlersCount.get() {
+        gBattlerTarget.set(battler);
     }
-    if GetBattlerSide(gBattlerTarget) == B_SIDE_PLAYER {
-        pokeDef = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerTarget]];
+    if GetBattlerSide(gBattlerTarget.get()) == B_SIDE_PLAYER {
+        pokeDef = &raw mut (*gPlayerParty.as_ptr())[{
+            let gl_i151 = gBattlerTarget.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i151])
+        }];
     } else {
-        pokeDef = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]];
+        pokeDef = &raw mut (*gEnemyParty.as_ptr())[{
+            let gl_i152 = gBattlerTarget.get();
+            crate::gl!(gBattlerPartyIndexes[gl_i152])
+        }];
     }
     let speciesAtk: u16 = GetMonData2(pokeAtk, MON_DATA_SPECIES) as u16;
     let pidAtk: u32 = GetMonData2(pokeAtk, MON_DATA_PERSONALITY);
     let speciesDef: u16 = GetMonData2(pokeDef, MON_DATA_SPECIES) as u16;
     let pidDef: u32 = GetMonData2(pokeDef, MON_DATA_PERSONALITY);
-    if gBattleTypeFlags & BATTLE_TYPE_SAFARI == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_SAFARI == 0 {
         let mut moveType: u8 = 0;
         let mut i: i32 = 0;
         let mut r#move: u16 = 0;
         let mut side: u8 = 0;
         let mut target1: u8 = 0;
         if special != 0 {
-            gLastUsedAbility = special;
+            gLastUsedAbility.set(special);
         } else {
-            gLastUsedAbility = gBattleMons[battler].ability;
+            gLastUsedAbility.set(crate::gl!(gBattleMons[battler].ability));
         }
         if moveArg != 0 {
             r#move = moveArg;
         } else {
-            r#move = gCurrentMove;
+            r#move = gCurrentMove.get();
         }
-        if (*gBattleStruct).dynamicMoveType != 0 {
-            moveType = (*gBattleStruct).dynamicMoveType & 63;
+        if (*crate::gl!(gBattleStruct)).dynamicMoveType != 0 {
+            moveType = (*crate::gl!(gBattleStruct)).dynamicMoveType & 63;
         } else {
             moveType = (*(&raw const crate::data::pokemon::gBattleMoves)
                 .cast::<CArray<BattleMove, 0>>())[r#move]
@@ -2939,40 +3939,46 @@ pub unsafe fn AbilityBattleEffects(
         }
         match caseID {
             0 => {
-                if gBattlerAttacker >= gBattlersCount {
-                    gBattlerAttacker = battler;
+                if gBattlerAttacker.get() >= gBattlersCount.get() {
+                    gBattlerAttacker.set(battler);
                 }
-                match gLastUsedAbility {
+                match gLastUsedAbility.get() {
                     ABILITYEFFECT_SWITCH_IN_WEATHER => {
-                        if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
+                        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED == 0 {
                             match GetCurrentWeather() {
                                 WEATHER_RAIN | WEATHER_RAIN_THUNDERSTORM | WEATHER_DOWNPOUR => {
-                                    if gBattleWeather as i32 & B_WEATHER_RAIN == 0 {
-                                        gBattleWeather = 5;
-                                        gBattleScripting.animArg1 = B_ANIM_RAIN_CONTINUES;
-                                        gBattleScripting.battler = battler;
+                                    if gBattleWeather.get() as i32 & B_WEATHER_RAIN == 0 {
+                                        gBattleWeather.set(5);
+                                        crate::gl!(
+                                            gBattleScripting.animArg1 = B_ANIM_RAIN_CONTINUES
+                                        );
+                                        crate::gl!(gBattleScripting.battler = battler);
                                         effect += 1;
                                     }
                                 }
                                 WEATHER_SANDSTORM => {
-                                    if gBattleWeather as i32 & B_WEATHER_SANDSTORM == 0 {
-                                        gBattleWeather = B_WEATHER_SANDSTORM as u16;
-                                        gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES;
-                                        gBattleScripting.battler = battler;
+                                    if gBattleWeather.get() as i32 & B_WEATHER_SANDSTORM == 0 {
+                                        gBattleWeather.set(B_WEATHER_SANDSTORM as u16);
+                                        crate::gl!(
+                                            gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES
+                                        );
+                                        crate::gl!(gBattleScripting.battler = battler);
                                         effect += 1;
                                     }
                                 }
-                                WEATHER_DROUGHT if gBattleWeather as i32 & B_WEATHER_SUN == 0 => {
-                                    gBattleWeather = B_WEATHER_SUN as u16;
-                                    gBattleScripting.animArg1 = B_ANIM_SUN_CONTINUES;
-                                    gBattleScripting.battler = battler;
+                                WEATHER_DROUGHT
+                                    if gBattleWeather.get() as i32 & B_WEATHER_SUN == 0 =>
+                                {
+                                    gBattleWeather.set(B_WEATHER_SUN as u16);
+                                    crate::gl!(gBattleScripting.animArg1 = B_ANIM_SUN_CONTINUES);
+                                    crate::gl!(gBattleScripting.battler = battler);
                                     effect += 1;
                                 }
                                 _ => {}
                             }
                         }
                         if effect != 0 {
-                            gBattleCommunication[5] = GetCurrentWeather();
+                            crate::gl!(gBattleCommunication[5] = GetCurrentWeather());
                             BattleScriptPushCursorAndCallback(
                                 (*crate::asmdata::BattleScript_OverworldWeatherStarts
                                     .cast::<CArray<u8, 0>>())
@@ -2982,48 +3988,48 @@ pub unsafe fn AbilityBattleEffects(
                         }
                     }
                     ABILITY_DRIZZLE => {
-                        if gBattleWeather as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
-                            gBattleWeather = 5;
+                        if gBattleWeather.get() as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
+                            gBattleWeather.set(5);
                             BattleScriptPushCursorAndCallback(
                                 (*crate::asmdata::BattleScript_DrizzleActivates
                                     .cast::<CArray<u8, 0>>())
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gBattleScripting.battler = battler;
+                            crate::gl!(gBattleScripting.battler = battler);
                             effect += 1;
                         }
                     }
                     ABILITY_SAND_STREAM => {
-                        if gBattleWeather as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0 {
-                            gBattleWeather = B_WEATHER_SANDSTORM as u16;
+                        if gBattleWeather.get() as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0 {
+                            gBattleWeather.set(B_WEATHER_SANDSTORM as u16);
                             BattleScriptPushCursorAndCallback(
                                 (*crate::asmdata::BattleScript_SandstreamActivates
                                     .cast::<CArray<u8, 0>>())
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gBattleScripting.battler = battler;
+                            crate::gl!(gBattleScripting.battler = battler);
                             effect += 1;
                         }
                     }
                     ABILITY_DROUGHT => {
-                        if gBattleWeather as i32 & B_WEATHER_SUN_PERMANENT == 0 {
-                            gBattleWeather = B_WEATHER_SUN as u16;
+                        if gBattleWeather.get() as i32 & B_WEATHER_SUN_PERMANENT == 0 {
+                            gBattleWeather.set(B_WEATHER_SUN as u16);
                             BattleScriptPushCursorAndCallback(
                                 (*crate::asmdata::BattleScript_DroughtActivates
                                     .cast::<CArray<u8, 0>>())
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gBattleScripting.battler = battler;
+                            crate::gl!(gBattleScripting.battler = battler);
                             effect += 1;
                         }
                     }
                     ABILITY_INTIMIDATE => {
-                        if gSpecialStatuses[battler].intimidatedMon() == 0 {
-                            gStatuses3[battler] |= STATUS3_INTIMIDATE_POKES;
-                            gSpecialStatuses[battler].set_intimidatedMon(1);
+                        if (*gSpecialStatuses.as_ptr())[battler].intimidatedMon() == 0 {
+                            crate::gl!(gStatuses3[battler] |= STATUS3_INTIMIDATE_POKES);
+                            (*gSpecialStatuses.as_ptr())[battler].set_intimidatedMon(1);
                         }
                     }
                     ABILITY_FORECAST => {
@@ -3035,19 +4041,19 @@ pub unsafe fn AbilityBattleEffects(
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gBattleScripting.battler = battler;
-                            (*gBattleStruct).formToChangeInto = effect - 1;
+                            crate::gl!(gBattleScripting.battler = battler);
+                            (*crate::gl!(gBattleStruct)).formToChangeInto = effect - 1;
                         }
                     }
                     ABILITY_TRACE => {
-                        if gSpecialStatuses[battler].traced() == 0 {
-                            gStatuses3[battler] |= STATUS3_TRACE;
-                            gSpecialStatuses[battler].set_traced(1);
+                        if (*gSpecialStatuses.as_ptr())[battler].traced() == 0 {
+                            crate::gl!(gStatuses3[battler] |= STATUS3_TRACE);
+                            (*gSpecialStatuses.as_ptr())[battler].set_traced(1);
                         }
                     }
                     ABILITY_CLOUD_NINE | ABILITY_AIR_LOCK => {
                         target1 = 0;
-                        while target1 < gBattlersCount {
+                        while target1 < gBattlersCount.get() {
                             effect = CastformDataTypeChange(target1);
                             if effect != 0 {
                                 BattleScriptPushCursorAndCallback(
@@ -3056,8 +4062,8 @@ pub unsafe fn AbilityBattleEffects(
                                     .as_ptr()
                                     .cast_mut(),
                                 );
-                                gBattleScripting.battler = target1;
-                                (*gBattleStruct).formToChangeInto = effect - 1;
+                                crate::gl!(gBattleScripting.battler = target1);
+                                (*crate::gl!(gBattleStruct)).formToChangeInto = effect - 1;
                                 break;
                             }
                             target1 += 1;
@@ -3067,70 +4073,75 @@ pub unsafe fn AbilityBattleEffects(
                 }
             }
             1 => {
-                if gBattleMons[battler].hp != 0 {
-                    gBattlerAttacker = battler;
-                    match gLastUsedAbility {
+                if crate::gl!(gBattleMons[battler].hp) != 0 {
+                    gBattlerAttacker.set(battler);
+                    match gLastUsedAbility.get() {
                         ABILITY_RAIN_DISH => {
                             if AbilityBattleEffects(19, 0, 13, 0, 0) == 0
                                 && AbilityBattleEffects(19, 0, 77, 0, 0) == 0
-                                && gBattleWeather as i32 & B_WEATHER_RAIN != 0
-                                && gBattleMons[battler].maxHP > gBattleMons[battler].hp
+                                && gBattleWeather.get() as i32 & B_WEATHER_RAIN != 0
+                                && crate::gl!(gBattleMons[battler].maxHP)
+                                    > crate::gl!(gBattleMons[battler].hp)
                             {
-                                gLastUsedAbility = ABILITY_RAIN_DISH;
+                                gLastUsedAbility.set(ABILITY_RAIN_DISH);
                                 BattleScriptPushCursorAndCallback(
                                     (*crate::asmdata::BattleScript_RainDishActivates
                                         .cast::<CArray<u8, 0>>())
                                     .as_ptr()
                                     .cast_mut(),
                                 );
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 16;
-                                if gBattleMoveDamage == 0 {
-                                    gBattleMoveDamage = 1;
+                                gBattleMoveDamage
+                                    .set(crate::gl!(gBattleMons[battler].maxHP) as i32 / 16);
+                                if gBattleMoveDamage.get() == 0 {
+                                    gBattleMoveDamage.set(1);
                                 }
-                                gBattleMoveDamage *= -1;
+                                gBattleMoveDamage.set(-gBattleMoveDamage.get());
                                 effect += 1;
                             }
                         }
                         ABILITY_SHED_SKIN => {
-                            if gBattleMons[battler].status1 & STATUS1_ANY != 0
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_ANY != 0
                                 && Random() as i32 % 3 == 0
                             {
-                                if gBattleMons[battler].status1 & 136 != 0 {
+                                if crate::gl!(gBattleMons[battler].status1) & 136 != 0 {
                                     StringCopy(
-                                        gBattleTextBuff1.as_mut_ptr(),
+                                        (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                         (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
-                                if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
+                                if crate::gl!(gBattleMons[battler].status1) & STATUS1_SLEEP != 0 {
                                     StringCopy(
-                                        gBattleTextBuff1.as_mut_ptr(),
+                                        (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                         (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
-                                if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                                if crate::gl!(gBattleMons[battler].status1) & STATUS1_PARALYSIS != 0
+                                {
                                     StringCopy(
-                                        gBattleTextBuff1.as_mut_ptr(),
+                                        (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                         (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
-                                if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                                if crate::gl!(gBattleMons[battler].status1) & STATUS1_BURN != 0 {
                                     StringCopy(
-                                        gBattleTextBuff1.as_mut_ptr(),
+                                        (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                         (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
-                                if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                                if crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE != 0 {
                                     StringCopy(
-                                        gBattleTextBuff1.as_mut_ptr(),
+                                        (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                         (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
-                                gBattleMons[battler].status1 = 0;
-                                gBattleMons[battler].status2 &= 0xf7ffffff;
-                                gBattleScripting.battler = {
-                                    gActiveBattler = battler;
-                                    gActiveBattler
-                                };
+                                crate::gl!(gBattleMons[battler].status1 = 0);
+                                crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
+                                crate::gl!(
+                                    gBattleScripting.battler = {
+                                        gActiveBattler.set(battler);
+                                        gActiveBattler.get()
+                                    }
+                                );
                                 BattleScriptPushCursorAndCallback(
                                     (*crate::asmdata::BattleScript_ShedSkinActivates
                                         .cast::<CArray<u8, 0>>())
@@ -3142,32 +4153,33 @@ pub unsafe fn AbilityBattleEffects(
                                     REQUEST_STATUS_BATTLE,
                                     0,
                                     4,
-                                    &raw mut gBattleMons[battler].status1 as *mut c_void,
+                                    crate::gl!(&raw gBattleMons[battler].status1) as *mut c_void,
                                 );
-                                MarkBattlerForControllerExec(gActiveBattler);
+                                MarkBattlerForControllerExec(gActiveBattler.get());
                                 effect += 1;
                             }
                         }
                         ABILITY_SPEED_BOOST => {
-                            if gBattleMons[battler].statStages[3] < MAX_STAT_STAGE
-                                && gDisableStructs[battler].isFirstTurn != 2
+                            if crate::gl!(gBattleMons[battler].statStages[3]) < MAX_STAT_STAGE
+                                && crate::gl!(gDisableStructs[battler].isFirstTurn) != 2
                             {
-                                gBattleMons[battler].statStages[3] += 1;
-                                gBattleScripting.animArg1 = 17;
-                                gBattleScripting.animArg2 = 0;
+                                crate::gl!(gBattleMons[battler].statStages[3] += 1);
+                                crate::gl!(gBattleScripting.animArg1 = 17);
+                                crate::gl!(gBattleScripting.animArg2 = 0);
                                 BattleScriptPushCursorAndCallback(
                                     (*crate::asmdata::BattleScript_SpeedBoostActivates
                                         .cast::<CArray<u8, 0>>())
                                     .as_ptr()
                                     .cast_mut(),
                                 );
-                                gBattleScripting.battler = battler;
+                                crate::gl!(gBattleScripting.battler = battler);
                                 effect += 1;
                             }
                         }
                         ABILITY_TRUANT => {
-                            gDisableStructs[gBattlerAttacker].set_truantCounter(
-                                gDisableStructs[gBattlerAttacker].truantCounter() ^ 1,
+                            (*gDisableStructs.as_ptr())[gBattlerAttacker.get()].set_truantCounter(
+                                (*gDisableStructs.as_ptr())[gBattlerAttacker.get()].truantCounter()
+                                    ^ 1,
                             );
                         }
                         _ => {}
@@ -3175,7 +4187,7 @@ pub unsafe fn AbilityBattleEffects(
                 }
             }
             2 => {
-                if gLastUsedAbility == ABILITY_SOUNDPROOF {
+                if gLastUsedAbility.get() == ABILITY_SOUNDPROOF {
                     i = 0;
                     while sSoundMovesTable[i] != SOUND_MOVES_END {
                         if sSoundMovesTable[i] == r#move {
@@ -3184,21 +4196,28 @@ pub unsafe fn AbilityBattleEffects(
                         i += 1;
                     }
                     if sSoundMovesTable[i] != SOUND_MOVES_END {
-                        if gBattleMons[gBattlerAttacker].status2 & STATUS2_MULTIPLETURNS != 0 {
-                            gHitMarker |= HITMARKER_NO_PPDEDUCT;
+                        if ({
+                            let gl_i153 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i153].status2)
+                        }) & STATUS2_MULTIPLETURNS
+                            != 0
+                        {
+                            gHitMarker.set(gHitMarker.get() | (HITMARKER_NO_PPDEDUCT));
                         }
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_SoundproofProtected
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_SoundproofProtected
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                         effect = 1;
                     }
                 }
             }
             3 => {
                 if r#move != 0 {
-                    match gLastUsedAbility {
+                    match gLastUsedAbility.get() {
                         ABILITY_VOLT_ABSORB => {
                             if moveType == TYPE_ELECTRIC
                                 && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<
@@ -3209,18 +4228,25 @@ pub unsafe fn AbilityBattleEffects(
                                     .power
                                     != 0
                             {
-                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_MoveHPDrain
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                                    .notFirstStrike()
+                                    != 0
+                                {
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_MoveHPDrain
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 } else {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_MoveHPDrain_PPLoss
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_MoveHPDrain_PPLoss
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 }
                                 effect = 1;
                             }
@@ -3235,61 +4261,83 @@ pub unsafe fn AbilityBattleEffects(
                                     .power
                                     != 0
                             {
-                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_MoveHPDrain
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                                    .notFirstStrike()
+                                    != 0
+                                {
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_MoveHPDrain
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 } else {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_MoveHPDrain_PPLoss
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_MoveHPDrain_PPLoss
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 }
                                 effect = 1;
                             }
                         }
                         ABILITY_FLASH_FIRE
                             if moveType == TYPE_FIRE
-                                && gBattleMons[battler].status1 & STATUS1_FREEZE == 0 =>
+                                && crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE
+                                    == 0 =>
                         {
-                            if (*(*gBattleResources).flags).flags[battler]
+                            if (*(*crate::gl!(gBattleResources)).flags).flags[battler]
                                 & RESOURCE_FLAG_FLASH_FIRE
                                 == 0
                             {
-                                gBattleCommunication[5] = B_MSG_FLASH_FIRE_BOOST;
-                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_FlashFireBoost
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                crate::gl!(gBattleCommunication[5] = B_MSG_FLASH_FIRE_BOOST);
+                                if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                                    .notFirstStrike()
+                                    != 0
+                                {
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_FlashFireBoost
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 } else {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_FlashFireBoost_PPLoss
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_FlashFireBoost_PPLoss
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 }
-                                (*(*gBattleResources).flags).flags[battler] |=
+                                (*(*crate::gl!(gBattleResources)).flags).flags[battler] |=
                                     RESOURCE_FLAG_FLASH_FIRE;
                                 effect = 2;
                             } else {
-                                gBattleCommunication[5] = B_MSG_FLASH_FIRE_NO_BOOST;
-                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_FlashFireBoost
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                crate::gl!(gBattleCommunication[5] = B_MSG_FLASH_FIRE_NO_BOOST);
+                                if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                                    .notFirstStrike()
+                                    != 0
+                                {
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_FlashFireBoost
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 } else {
-                                    gBattlescriptCurrInstr =
-                                        (*crate::asmdata::BattleScript_FlashFireBoost_PPLoss
-                                            .cast::<CArray<u8, 0>>())
-                                        .as_ptr()
-                                        .cast_mut();
+                                    crate::gl!(
+                                        gBattlescriptCurrInstr =
+                                            (*crate::asmdata::BattleScript_FlashFireBoost_PPLoss
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut()
+                                    );
                                 }
                                 effect = 2;
                             }
@@ -3297,89 +4345,135 @@ pub unsafe fn AbilityBattleEffects(
                         _ => {}
                     }
                     if effect == 1 {
-                        if gBattleMons[battler].maxHP == gBattleMons[battler].hp {
-                            if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                gBattlescriptCurrInstr =
-                                    (*crate::asmdata::BattleScript_MonMadeMoveUseless
-                                        .cast::<CArray<u8, 0>>())
-                                    .as_ptr()
-                                    .cast_mut();
+                        if crate::gl!(gBattleMons[battler].maxHP)
+                            == crate::gl!(gBattleMons[battler].hp)
+                        {
+                            if (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].notFirstStrike()
+                                != 0
+                            {
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_MonMadeMoveUseless
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
                             } else {
-                                gBattlescriptCurrInstr =
-                                    (*crate::asmdata::BattleScript_MonMadeMoveUseless_PPLoss
-                                        .cast::<CArray<u8, 0>>())
-                                    .as_ptr()
-                                    .cast_mut();
+                                crate::gl!(
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_MonMadeMoveUseless_PPLoss
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut()
+                                );
                             }
                         } else {
-                            gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 4;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            gBattleMoveDamage
+                                .set(crate::gl!(gBattleMons[battler].maxHP) as i32 / 4);
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                         }
                     }
                 }
             }
-            ABILITYEFFECT_ON_DAMAGE => match gLastUsedAbility {
+            ABILITYEFFECT_ON_DAMAGE => match gLastUsedAbility.get() {
                 ABILITY_COLOR_CHANGE => {
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
                         && r#move != MOVE_STRUGGLE
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .power
                             != 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                        && !(gBattleMons[battler].types[0] == moveType
-                            || gBattleMons[battler].types[1] == moveType)
-                        && gBattleMons[battler].hp != 0
+                        && ({
+                            let gl_i76 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i76].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i77 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i77].specialDmg)
+                            } != 0)
+                        && !(crate::gl!(gBattleMons[battler].types[0]) == moveType
+                            || crate::gl!(gBattleMons[battler].types[1]) == moveType)
+                        && crate::gl!(gBattleMons[battler].hp) != 0
                     {
-                        gBattleMons[battler].types[0] = moveType;
-                        gBattleMons[battler].types[1] = moveType;
-                        gBattleTextBuff1[0] = 0xFD;
-                        gBattleTextBuff1[1] = 3;
-                        gBattleTextBuff1[2] = moveType;
-                        gBattleTextBuff1[3] = 0xFF;
+                        crate::gl!(gBattleMons[battler].types[0] = moveType);
+                        crate::gl!(gBattleMons[battler].types[1] = moveType);
+                        crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                        crate::gl!(gBattleTextBuff1[1] = 3);
+                        crate::gl!(gBattleTextBuff1[2] = moveType);
+                        crate::gl!(gBattleTextBuff1[3] = 0xFF);
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_ColorChangeActivates
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_ColorChangeActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                         effect += 1;
                     }
                 }
                 ABILITY_ROUGH_SKIN => {
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                        && gBattleMons[gBattlerAttacker].hp != 0
-                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && ({
+                            let gl_i154 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i154].hp)
+                        }) != 0
+                        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].confusionSelfDmg()
+                            == 0
+                        && ({
+                            let gl_i78 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i78].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i79 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i79].specialDmg)
+                            } != 0)
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .flags as i32
                             & FLAG_MAKES_CONTACT
                             != 0
                     {
-                        gBattleMoveDamage = gBattleMons[gBattlerAttacker].maxHP as i32 / 16;
-                        if gBattleMoveDamage == 0 {
-                            gBattleMoveDamage = 1;
+                        gBattleMoveDamage.set(
+                            ({
+                                let gl_i155 = gBattlerAttacker.get();
+                                crate::gl!(gBattleMons[gl_i155].maxHP)
+                            }) as i32
+                                / 16,
+                        );
+                        if gBattleMoveDamage.get() == 0 {
+                            gBattleMoveDamage.set(1);
                         }
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_RoughSkinActivates
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_RoughSkinActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
                         effect += 1;
                     }
                 }
                 ABILITY_EFFECT_SPORE => {
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                        && gBattleMons[gBattlerAttacker].hp != 0
-                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && ({
+                            let gl_i156 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i156].hp)
+                        }) != 0
+                        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].confusionSelfDmg()
+                            == 0
+                        && ({
+                            let gl_i80 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i80].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i81 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i81].specialDmg)
+                            } != 0)
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .flags as i32
@@ -3388,31 +4482,43 @@ pub unsafe fn AbilityBattleEffects(
                         && Random() as i32 % 10 == 0
                     {
                         loop {
-                            gBattleCommunication[3] = Random() as u8 & 3;
-                            if gBattleCommunication[3] != 0 {
+                            crate::gl!(gBattleCommunication[3] = Random() as u8 & 3);
+                            if crate::gl!(gBattleCommunication[3]) != 0 {
                                 break;
                             }
                         }
-                        if gBattleCommunication[3] == 3 {
-                            gBattleCommunication[3] += 2;
+                        if crate::gl!(gBattleCommunication[3]) == 3 {
+                            crate::gl!(gBattleCommunication[3] += 2);
                         }
-                        gBattleCommunication[3] += MOVE_EFFECT_AFFECTS_USER;
+                        crate::gl!(gBattleCommunication[3] += MOVE_EFFECT_AFFECTS_USER);
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_STATUS_ABILITY_EFFECT));
                         effect += 1;
                     }
                 }
                 ABILITY_POISON_POINT => {
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                        && gBattleMons[gBattlerAttacker].hp != 0
-                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && ({
+                            let gl_i157 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i157].hp)
+                        }) != 0
+                        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].confusionSelfDmg()
+                            == 0
+                        && ({
+                            let gl_i82 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i82].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i83 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i83].specialDmg)
+                            } != 0)
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .flags as i32
@@ -3420,23 +4526,35 @@ pub unsafe fn AbilityBattleEffects(
                             != 0
                         && Random() as i32 % 3 == 0
                     {
-                        gBattleCommunication[3] = 66;
+                        crate::gl!(gBattleCommunication[3] = 66);
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_STATUS_ABILITY_EFFECT));
                         effect += 1;
                     }
                 }
                 ABILITY_STATIC => {
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                        && gBattleMons[gBattlerAttacker].hp != 0
-                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && ({
+                            let gl_i158 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i158].hp)
+                        }) != 0
+                        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].confusionSelfDmg()
+                            == 0
+                        && ({
+                            let gl_i84 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i84].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i85 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i85].specialDmg)
+                            } != 0)
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .flags as i32
@@ -3444,137 +4562,180 @@ pub unsafe fn AbilityBattleEffects(
                             != 0
                         && Random() as i32 % 3 == 0
                     {
-                        gBattleCommunication[3] = 69;
+                        crate::gl!(gBattleCommunication[3] = 69);
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_STATUS_ABILITY_EFFECT));
                         effect += 1;
                     }
                 }
                 ABILITY_FLAME_BODY => {
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                        && gBattleMons[gBattlerAttacker].hp != 0
-                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && ({
+                            let gl_i159 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i159].hp)
+                        }) != 0
+                        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()].confusionSelfDmg()
+                            == 0
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .flags as i32
                             & FLAG_MAKES_CONTACT
                             != 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                        && ({
+                            let gl_i86 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i86].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i87 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i87].specialDmg)
+                            } != 0)
                         && Random() as i32 % 3 == 0
                     {
-                        gBattleCommunication[3] = 67;
+                        crate::gl!(gBattleCommunication[3] = 67);
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        gHitMarker.set(gHitMarker.get() | (HITMARKER_STATUS_ABILITY_EFFECT));
                         effect += 1;
                     }
                 }
                 ABILITY_CUTE_CHARM
-                    if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                        && gBattleMons[gBattlerAttacker].hp != 0
-                        && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
+                    if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                        && ({
+                            let gl_i160 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i160].hp)
+                        }) != 0
+                        && (*gProtectStructs.as_ptr())[gBattlerAttacker.get()]
+                            .confusionSelfDmg()
+                            == 0
                         && (*(&raw const crate::data::pokemon::gBattleMoves)
                             .cast::<CArray<BattleMove, 0>>())[r#move]
                             .flags as i32
                             & FLAG_MAKES_CONTACT
                             != 0
-                        && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                            || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                        && gBattleMons[gBattlerTarget].hp != 0
+                        && ({
+                            let gl_i88 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i88].physicalDmg)
+                        } != 0
+                            || {
+                                let gl_i89 = gBattlerTarget.get();
+                                crate::gl!(gSpecialStatuses[gl_i89].specialDmg)
+                            } != 0)
+                        && ({
+                            let gl_i161 = gBattlerTarget.get();
+                            crate::gl!(gBattleMons[gl_i161].hp)
+                        }) != 0
                         && Random() as i32 % 3 == 0
-                        && gBattleMons[gBattlerAttacker].ability != ABILITY_OBLIVIOUS
+                        && ({
+                            let gl_i162 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i162].ability)
+                        }) != ABILITY_OBLIVIOUS
                         && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk)
                             != GetGenderFromSpeciesAndPersonality(speciesDef, pidDef)
-                        && gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION == 0
+                        && ({
+                            let gl_i163 = gBattlerAttacker.get();
+                            crate::gl!(gBattleMons[gl_i163].status2)
+                        }) & STATUS2_INFATUATION
+                            == 0
                         && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk)
                             != MON_GENDERLESS
                         && GetGenderFromSpeciesAndPersonality(speciesDef, pidDef)
                             != MON_GENDERLESS =>
                 {
-                    gBattleMons[gBattlerAttacker].status2 |= gBitTable[gBattlerTarget] << 16;
+                    {
+                        let gl_i164 = gBattlerAttacker.get();
+                        crate::gl!(
+                            gBattleMons[gl_i164].status2 |= gBitTable[gBattlerTarget.get()] << 16
+                        )
+                    };
                     BattleScriptPushCursor();
-                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_CuteCharmActivates
-                        .cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
+                    crate::gl!(
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_CuteCharmActivates
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut()
+                    );
                     effect += 1;
                 }
                 _ => {}
             },
             5 => {
                 battler = 0;
-                while battler < gBattlersCount {
-                    match gBattleMons[battler].ability {
+                while battler < gBattlersCount.get() {
+                    match crate::gl!(gBattleMons[battler].ability) {
                         ABILITY_IMMUNITY => {
-                            if gBattleMons[battler].status1 & 3976 != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & 3976 != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
                         }
                         ABILITY_OWN_TEMPO => {
-                            if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                            if crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_ConfusionJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 2;
                             }
                         }
                         ABILITY_LIMBER => {
-                            if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_PARALYSIS != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
                         }
                         ABILITY_INSOMNIA | ABILITY_VITAL_SPIRIT => {
-                            if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
-                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_SLEEP != 0 {
+                                crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
                         }
                         ABILITY_WATER_VEIL => {
-                            if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_BURN != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
                         }
                         ABILITY_MAGMA_ARMOR => {
-                            if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
                         }
                         ABILITY_OBLIVIOUS
-                            if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 =>
+                            if crate::gl!(gBattleMons[battler].status2) & STATUS2_INFATUATION
+                                != 0 =>
                         {
                             StringCopy(
-                                gBattleTextBuff1.as_mut_ptr(),
+                                (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                 (*(&raw const crate::data::battle_main::gStatusConditionString_LoveJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                             );
                             effect = 3;
@@ -3584,31 +4745,37 @@ pub unsafe fn AbilityBattleEffects(
                     if effect != 0 {
                         match effect {
                             1 => {
-                                gBattleMons[battler].status1 = 0;
+                                crate::gl!(gBattleMons[battler].status1 = 0);
                             }
                             2 => {
-                                gBattleMons[battler].status2 &= 0xfffffff8;
+                                crate::gl!(gBattleMons[battler].status2 &= 0xfffffff8);
                             }
                             3 => {
-                                gBattleMons[battler].status2 &= 0xfff0ffff;
+                                crate::gl!(gBattleMons[battler].status2 &= 0xfff0ffff);
                             }
                             _ => {}
                         }
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_AbilityCuredStatus
-                            .cast::<CArray<u8, 0>>())
-                        .as_ptr()
-                        .cast_mut();
-                        gBattleScripting.battler = battler;
-                        gActiveBattler = battler;
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_AbilityCuredStatus
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        crate::gl!(gBattleScripting.battler = battler);
+                        gActiveBattler.set(battler);
                         BtlController_EmitSetMonData(
                             B_COMM_TO_CONTROLLER,
                             REQUEST_STATUS_BATTLE,
                             0,
                             4,
-                            &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                            ({
+                                let gl_i165 = gActiveBattler.get();
+                                crate::gl!(&raw gBattleMons[gl_i165].status1)
+                            }) as *mut c_void,
                         );
-                        MarkBattlerForControllerExec(gActiveBattler);
+                        MarkBattlerForControllerExec(gActiveBattler.get());
                         return effect;
                     }
                     battler += 1;
@@ -3616,8 +4783,8 @@ pub unsafe fn AbilityBattleEffects(
             }
             6 => {
                 battler = 0;
-                while battler < gBattlersCount {
-                    if gBattleMons[battler].ability == ABILITY_FORECAST {
+                while battler < gBattlersCount.get() {
+                    if crate::gl!(gBattleMons[battler].ability) == ABILITY_FORECAST {
                         effect = CastformDataTypeChange(battler);
                         if effect != 0 {
                             BattleScriptPushCursorAndCallback(
@@ -3626,8 +4793,8 @@ pub unsafe fn AbilityBattleEffects(
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gBattleScripting.battler = battler;
-                            (*gBattleStruct).formToChangeInto = effect - 1;
+                            crate::gl!(gBattleScripting.battler = battler);
+                            (*crate::gl!(gBattleStruct)).formToChangeInto = effect - 1;
                             return effect;
                         }
                     }
@@ -3635,61 +4802,73 @@ pub unsafe fn AbilityBattleEffects(
                 }
             }
             7 => {
-                if gLastUsedAbility == ABILITY_SYNCHRONIZE
-                    && gHitMarker & HITMARKER_SYNCHRONIZE_EFFECT != 0
+                if gLastUsedAbility.get() == ABILITY_SYNCHRONIZE
+                    && gHitMarker.get() & HITMARKER_SYNCHRONIZE_EFFECT != 0
                 {
-                    gHitMarker &= 0xffffbfff;
-                    (*gBattleStruct).synchronizeMoveEffect &= 63;
-                    if (*gBattleStruct).synchronizeMoveEffect == MOVE_EFFECT_TOXIC {
-                        (*gBattleStruct).synchronizeMoveEffect = MOVE_EFFECT_POISON;
+                    gHitMarker.set(gHitMarker.get() & (0xffffbfff));
+                    (*crate::gl!(gBattleStruct)).synchronizeMoveEffect &= 63;
+                    if (*crate::gl!(gBattleStruct)).synchronizeMoveEffect == MOVE_EFFECT_TOXIC {
+                        (*crate::gl!(gBattleStruct)).synchronizeMoveEffect = MOVE_EFFECT_POISON;
                     }
-                    gBattleCommunication[3] =
-                        (*gBattleStruct).synchronizeMoveEffect + MOVE_EFFECT_AFFECTS_USER;
-                    gBattleScripting.battler = gBattlerTarget;
+                    crate::gl!(
+                        gBattleCommunication[3] = (*crate::gl!(gBattleStruct))
+                            .synchronizeMoveEffect
+                            + MOVE_EFFECT_AFFECTS_USER
+                    );
+                    crate::gl!(gBattleScripting.battler = gBattlerTarget.get());
                     BattleScriptPushCursor();
-                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SynchronizeActivates
-                        .cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
-                    gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                    crate::gl!(
+                        gBattlescriptCurrInstr =
+                            (*crate::asmdata::BattleScript_SynchronizeActivates
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut()
+                    );
+                    gHitMarker.set(gHitMarker.get() | (HITMARKER_STATUS_ABILITY_EFFECT));
                     effect += 1;
                 }
             }
             8 => {
-                if gLastUsedAbility == ABILITY_SYNCHRONIZE
-                    && gHitMarker & HITMARKER_SYNCHRONIZE_EFFECT != 0
+                if gLastUsedAbility.get() == ABILITY_SYNCHRONIZE
+                    && gHitMarker.get() & HITMARKER_SYNCHRONIZE_EFFECT != 0
                 {
-                    gHitMarker &= 0xffffbfff;
-                    (*gBattleStruct).synchronizeMoveEffect &= 63;
-                    if (*gBattleStruct).synchronizeMoveEffect == MOVE_EFFECT_TOXIC {
-                        (*gBattleStruct).synchronizeMoveEffect = MOVE_EFFECT_POISON;
+                    gHitMarker.set(gHitMarker.get() & (0xffffbfff));
+                    (*crate::gl!(gBattleStruct)).synchronizeMoveEffect &= 63;
+                    if (*crate::gl!(gBattleStruct)).synchronizeMoveEffect == MOVE_EFFECT_TOXIC {
+                        (*crate::gl!(gBattleStruct)).synchronizeMoveEffect = MOVE_EFFECT_POISON;
                     }
-                    gBattleCommunication[3] = (*gBattleStruct).synchronizeMoveEffect;
-                    gBattleScripting.battler = gBattlerAttacker;
+                    crate::gl!(
+                        gBattleCommunication[3] =
+                            (*crate::gl!(gBattleStruct)).synchronizeMoveEffect
+                    );
+                    crate::gl!(gBattleScripting.battler = gBattlerAttacker.get());
                     BattleScriptPushCursor();
-                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SynchronizeActivates
-                        .cast::<CArray<u8, 0>>())
-                    .as_ptr()
-                    .cast_mut();
-                    gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
+                    crate::gl!(
+                        gBattlescriptCurrInstr =
+                            (*crate::asmdata::BattleScript_SynchronizeActivates
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut()
+                    );
+                    gHitMarker.set(gHitMarker.get() | (HITMARKER_STATUS_ABILITY_EFFECT));
                     effect += 1;
                 }
             }
             9 => {
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if gBattleMons[i].ability == ABILITY_INTIMIDATE
-                        && gStatuses3[i] & STATUS3_INTIMIDATE_POKES != 0
+                while i < gBattlersCount.get() as i32 {
+                    if crate::gl!(gBattleMons[i].ability) == ABILITY_INTIMIDATE
+                        && crate::gl!(gStatuses3[i]) & STATUS3_INTIMIDATE_POKES != 0
                     {
-                        gLastUsedAbility = ABILITY_INTIMIDATE;
-                        gStatuses3[i] &= 0xfff7ffff;
+                        gLastUsedAbility.set(ABILITY_INTIMIDATE);
+                        crate::gl!(gStatuses3[i] &= 0xfff7ffff);
                         BattleScriptPushCursorAndCallback(
                             (*crate::asmdata::BattleScript_IntimidateActivatesEnd3
                                 .cast::<CArray<u8, 0>>())
                             .as_ptr()
                             .cast_mut(),
                         );
-                        (*gBattleStruct).intimidateBattler = i as u8;
+                        (*crate::gl!(gBattleStruct)).intimidateBattler = i as u8;
                         effect += 1;
                         break;
                     }
@@ -3698,43 +4877,73 @@ pub unsafe fn AbilityBattleEffects(
             }
             11 => {
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if gBattleMons[i].ability == ABILITY_TRACE && gStatuses3[i] & STATUS3_TRACE != 0
+                while i < gBattlersCount.get() as i32 {
+                    if crate::gl!(gBattleMons[i].ability) == ABILITY_TRACE
+                        && crate::gl!(gStatuses3[i]) & STATUS3_TRACE != 0
                     {
                         side = (GetBattlerPosition(i as u8) ^ BIT_SIDE) & BIT_SIDE;
                         target1 = GetBattlerAtPosition(side);
                         let target2: u8 = GetBattlerAtPosition(side + BIT_FLANK);
-                        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
-                            if gBattleMons[target1].ability != 0
-                                && gBattleMons[target1].hp != 0
-                                && gBattleMons[target2].ability != 0
-                                && gBattleMons[target2].hp != 0
+                        if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 {
+                            if crate::gl!(gBattleMons[target1].ability) != 0
+                                && crate::gl!(gBattleMons[target1].hp) != 0
+                                && crate::gl!(gBattleMons[target2].ability) != 0
+                                && crate::gl!(gBattleMons[target2].hp) != 0
                             {
-                                gActiveBattler =
-                                    GetBattlerAtPosition(((Random() as u8 & 1) * 2) | side);
-                                gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
-                                gLastUsedAbility = gBattleMons[gActiveBattler].ability;
+                                gActiveBattler
+                                    .set(GetBattlerAtPosition(((Random() as u8 & 1) * 2) | side));
+                                crate::gl!(
+                                    gBattleMons[i].ability = ({
+                                        let gl_i166 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i166].ability)
+                                    })
+                                );
+                                gLastUsedAbility.set({
+                                    let gl_i167 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i167].ability)
+                                });
                                 effect += 1;
-                            } else if gBattleMons[target1].ability != 0
-                                && gBattleMons[target1].hp != 0
+                            } else if crate::gl!(gBattleMons[target1].ability) != 0
+                                && crate::gl!(gBattleMons[target1].hp) != 0
                             {
-                                gActiveBattler = target1;
-                                gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
-                                gLastUsedAbility = gBattleMons[gActiveBattler].ability;
+                                gActiveBattler.set(target1);
+                                crate::gl!(
+                                    gBattleMons[i].ability = ({
+                                        let gl_i168 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i168].ability)
+                                    })
+                                );
+                                gLastUsedAbility.set({
+                                    let gl_i169 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i169].ability)
+                                });
                                 effect += 1;
-                            } else if gBattleMons[target2].ability != 0
-                                && gBattleMons[target2].hp != 0
+                            } else if crate::gl!(gBattleMons[target2].ability) != 0
+                                && crate::gl!(gBattleMons[target2].hp) != 0
                             {
-                                gActiveBattler = target2;
-                                gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
-                                gLastUsedAbility = gBattleMons[gActiveBattler].ability;
+                                gActiveBattler.set(target2);
+                                crate::gl!(
+                                    gBattleMons[i].ability = ({
+                                        let gl_i170 = gActiveBattler.get();
+                                        crate::gl!(gBattleMons[gl_i170].ability)
+                                    })
+                                );
+                                gLastUsedAbility.set({
+                                    let gl_i171 = gActiveBattler.get();
+                                    crate::gl!(gBattleMons[gl_i171].ability)
+                                });
                                 effect += 1;
                             }
                         } else {
-                            gActiveBattler = target1;
-                            if gBattleMons[target1].ability != 0 && gBattleMons[target1].hp != 0 {
-                                gBattleMons[i].ability = gBattleMons[target1].ability;
-                                gLastUsedAbility = gBattleMons[target1].ability;
+                            gActiveBattler.set(target1);
+                            if crate::gl!(gBattleMons[target1].ability) != 0
+                                && crate::gl!(gBattleMons[target1].hp) != 0
+                            {
+                                crate::gl!(
+                                    gBattleMons[i].ability =
+                                        crate::gl!(gBattleMons[target1].ability)
+                                );
+                                gLastUsedAbility.set(crate::gl!(gBattleMons[target1].ability));
                                 effect += 1;
                             }
                         }
@@ -3745,17 +4954,22 @@ pub unsafe fn AbilityBattleEffects(
                                 .as_ptr()
                                 .cast_mut(),
                             );
-                            gStatuses3[i] &= 0xffefffff;
-                            gBattleScripting.battler = i as u8;
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 4;
-                            gBattleTextBuff1[2] = gActiveBattler;
-                            gBattleTextBuff1[3] = gBattlerPartyIndexes[gActiveBattler] as u8;
-                            gBattleTextBuff1[4] = 0xFF;
-                            gBattleTextBuff2[0] = 0xFD;
-                            gBattleTextBuff2[1] = 9;
-                            gBattleTextBuff2[2] = gLastUsedAbility;
-                            gBattleTextBuff2[3] = 0xFF;
+                            crate::gl!(gStatuses3[i] &= 0xffefffff);
+                            crate::gl!(gBattleScripting.battler = i as u8);
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 4);
+                            crate::gl!(gBattleTextBuff1[2] = gActiveBattler.get());
+                            crate::gl!(
+                                gBattleTextBuff1[3] = ({
+                                    let gl_i172 = gActiveBattler.get();
+                                    crate::gl!(gBattlerPartyIndexes[gl_i172])
+                                }) as u8
+                            );
+                            crate::gl!(gBattleTextBuff1[4] = 0xFF);
+                            crate::gl!(gBattleTextBuff2[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff2[1] = 9);
+                            crate::gl!(gBattleTextBuff2[2] = gLastUsedAbility.get());
+                            crate::gl!(gBattleTextBuff2[3] = 0xFF);
                             break;
                         }
                     }
@@ -3764,19 +4978,21 @@ pub unsafe fn AbilityBattleEffects(
             }
             10 => {
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if gBattleMons[i].ability == ABILITY_INTIMIDATE
-                        && gStatuses3[i] & STATUS3_INTIMIDATE_POKES != 0
+                while i < gBattlersCount.get() as i32 {
+                    if crate::gl!(gBattleMons[i].ability) == ABILITY_INTIMIDATE
+                        && crate::gl!(gStatuses3[i]) & STATUS3_INTIMIDATE_POKES != 0
                     {
-                        gLastUsedAbility = ABILITY_INTIMIDATE;
-                        gStatuses3[i] &= 0xfff7ffff;
+                        gLastUsedAbility.set(ABILITY_INTIMIDATE);
+                        crate::gl!(gStatuses3[i] &= 0xfff7ffff);
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            (*crate::asmdata::BattleScript_IntimidateActivates
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
-                        (*gBattleStruct).intimidateBattler = i as u8;
+                        crate::gl!(
+                            gBattlescriptCurrInstr =
+                                (*crate::asmdata::BattleScript_IntimidateActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut()
+                        );
+                        (*crate::gl!(gBattleStruct)).intimidateBattler = i as u8;
                         effect += 1;
                         break;
                     }
@@ -3786,9 +5002,11 @@ pub unsafe fn AbilityBattleEffects(
             12 => {
                 side = GetBattlerSide(battler);
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if GetBattlerSide(i as u8) != side && gBattleMons[i].ability == ability {
-                        gLastUsedAbility = ability;
+                while i < gBattlersCount.get() as i32 {
+                    if GetBattlerSide(i as u8) != side
+                        && crate::gl!(gBattleMons[i].ability) == ability
+                    {
+                        gLastUsedAbility.set(ability);
                         effect = i as u8 + 1;
                     }
                     i += 1;
@@ -3797,50 +5015,54 @@ pub unsafe fn AbilityBattleEffects(
             13 => {
                 side = GetBattlerSide(battler);
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if GetBattlerSide(i as u8) == side && gBattleMons[i].ability == ability {
-                        gLastUsedAbility = ability;
+                while i < gBattlersCount.get() as i32 {
+                    if GetBattlerSide(i as u8) == side
+                        && crate::gl!(gBattleMons[i].ability) == ability
+                    {
+                        gLastUsedAbility.set(ability);
                         effect = i as u8 + 1;
                     }
                     i += 1;
                 }
             }
-            14 => match gLastUsedAbility {
+            14 => match gLastUsedAbility.get() {
                 ABILITYEFFECT_MUD_SPORT => {
-                    for i in 0..(gBattlersCount as i32) {
-                        if gStatuses3[i] & STATUS3_MUDSPORT != 0 {
+                    for i in 0..(gBattlersCount.get() as i32) {
+                        if crate::gl!(gStatuses3[i]) & STATUS3_MUDSPORT != 0 {
                             effect = i as u8 + 1;
                         }
                     }
                 }
                 ABILITYEFFECT_WATER_SPORT => {
-                    for i in 0..(gBattlersCount as i32) {
-                        if gStatuses3[i] & STATUS3_WATERSPORT != 0 {
+                    for i in 0..(gBattlersCount.get() as i32) {
+                        if crate::gl!(gStatuses3[i]) & STATUS3_WATERSPORT != 0 {
                             effect = i as u8 + 1;
                         }
                     }
                 }
                 _ => {
-                    for i in 0..(gBattlersCount as i32) {
-                        if gBattleMons[i].ability == ability {
-                            gLastUsedAbility = ability;
+                    for i in 0..(gBattlersCount.get() as i32) {
+                        if crate::gl!(gBattleMons[i].ability) == ability {
+                            gLastUsedAbility.set(ability);
                             effect = i as u8 + 1;
                         }
                     }
                 }
             },
             19 => {
-                for i in 0..(gBattlersCount as i32) {
-                    if gBattleMons[i].ability == ability && gBattleMons[i].hp != 0 {
-                        gLastUsedAbility = ability;
+                for i in 0..(gBattlersCount.get() as i32) {
+                    if crate::gl!(gBattleMons[i].ability) == ability
+                        && crate::gl!(gBattleMons[i].hp) != 0
+                    {
+                        gLastUsedAbility.set(ability);
                         effect = i as u8 + 1;
                     }
                 }
             }
             15 => {
-                for i in 0..(gBattlersCount as i32) {
-                    if gBattleMons[i].ability == ability && i != battler as i32 {
-                        gLastUsedAbility = ability;
+                for i in 0..(gBattlersCount.get() as i32) {
+                    if crate::gl!(gBattleMons[i].ability) == ability && i != battler as i32 {
+                        gLastUsedAbility.set(ability);
                         effect = i as u8 + 1;
                     }
                 }
@@ -3848,9 +5070,11 @@ pub unsafe fn AbilityBattleEffects(
             16 => {
                 side = GetBattlerSide(battler);
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if GetBattlerSide(i as u8) != side && gBattleMons[i].ability == ability {
-                        gLastUsedAbility = ability;
+                while i < gBattlersCount.get() as i32 {
+                    if GetBattlerSide(i as u8) != side
+                        && crate::gl!(gBattleMons[i].ability) == ability
+                    {
+                        gLastUsedAbility.set(ability);
                         effect += 1;
                     }
                     i += 1;
@@ -3859,49 +5083,52 @@ pub unsafe fn AbilityBattleEffects(
             17 => {
                 side = GetBattlerSide(battler);
                 i = 0;
-                while i < gBattlersCount as i32 {
-                    if GetBattlerSide(i as u8) == side && gBattleMons[i].ability == ability {
-                        gLastUsedAbility = ability;
+                while i < gBattlersCount.get() as i32 {
+                    if GetBattlerSide(i as u8) == side
+                        && crate::gl!(gBattleMons[i].ability) == ability
+                    {
+                        gLastUsedAbility.set(ability);
                         effect += 1;
                     }
                     i += 1;
                 }
             }
             18 => {
-                for i in 0..(gBattlersCount as i32) {
-                    if gBattleMons[i].ability == ability && i != battler as i32 {
-                        gLastUsedAbility = ability;
+                for i in 0..(gBattlersCount.get() as i32) {
+                    if crate::gl!(gBattleMons[i].ability) == ability && i != battler as i32 {
+                        gLastUsedAbility.set(ability);
                         effect += 1;
                     }
                 }
             }
             _ => {}
         }
-        if effect != 0 && caseID < ABILITYEFFECT_CHECK_OTHER_SIDE && gLastUsedAbility != 0xFF {
-            RecordAbilityBattle(battler, gLastUsedAbility);
+        if effect != 0 && caseID < ABILITYEFFECT_CHECK_OTHER_SIDE && gLastUsedAbility.get() != 0xFF
+        {
+            RecordAbilityBattle(battler, gLastUsedAbility.get());
         }
     }
     effect
 }
 pub unsafe fn BattleScriptExecute(BS_ptr: *mut u8) {
-    gBattlescriptCurrInstr = BS_ptr;
-    (*(*gBattleResources).battleCallbackStack).function[{
-        let t1 = (*(*gBattleResources).battleCallbackStack).size;
-        (*(*gBattleResources).battleCallbackStack).size += 1;
+    crate::gl!(gBattlescriptCurrInstr = BS_ptr);
+    (*(*crate::gl!(gBattleResources)).battleCallbackStack).function[{
+        let t1 = (*(*crate::gl!(gBattleResources)).battleCallbackStack).size;
+        (*(*crate::gl!(gBattleResources)).battleCallbackStack).size += 1;
         t1
-    }] = gBattleMainFunc;
-    gBattleMainFunc = Some(RunBattleScriptCommands_PopCallbacksStack);
-    gCurrentActionFuncId = 0;
+    }] = crate::gl!(gBattleMainFunc);
+    crate::gl!(gBattleMainFunc = Some(RunBattleScriptCommands_PopCallbacksStack));
+    gCurrentActionFuncId.set(0);
 }
 pub unsafe fn BattleScriptPushCursorAndCallback(BS_ptr: *mut u8) {
     BattleScriptPushCursor();
-    gBattlescriptCurrInstr = BS_ptr;
-    (*(*gBattleResources).battleCallbackStack).function[{
-        let t1 = (*(*gBattleResources).battleCallbackStack).size;
-        (*(*gBattleResources).battleCallbackStack).size += 1;
+    crate::gl!(gBattlescriptCurrInstr = BS_ptr);
+    (*(*crate::gl!(gBattleResources)).battleCallbackStack).function[{
+        let t1 = (*(*crate::gl!(gBattleResources)).battleCallbackStack).size;
+        (*(*crate::gl!(gBattleResources)).battleCallbackStack).size += 1;
         t1
-    }] = gBattleMainFunc;
-    gBattleMainFunc = Some(RunBattleScriptCommands);
+    }] = crate::gl!(gBattleMainFunc);
+    crate::gl!(gBattleMainFunc = Some(RunBattleScriptCommands));
 }
 pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8 {
     let mut i: i32 = 0;
@@ -3913,26 +5140,44 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
     let mut battlerHoldEffectParam: u8 = 0;
     let mut atkHoldEffectParam: u8 = 0;
     let mut defHoldEffectParam: u8 = 0;
-    gLastUsedItem = gBattleMons[battler].item;
-    if gLastUsedItem == ITEM_ENIGMA_BERRY {
-        battlerHoldEffect = gEnigmaBerries[battler].holdEffect;
-        battlerHoldEffectParam = gEnigmaBerries[battler].holdEffectParam;
+    gLastUsedItem.set(crate::gl!(gBattleMons[battler].item));
+    if gLastUsedItem.get() == ITEM_ENIGMA_BERRY {
+        battlerHoldEffect = crate::gl!(gEnigmaBerries[battler].holdEffect);
+        battlerHoldEffectParam = crate::gl!(gEnigmaBerries[battler].holdEffectParam);
     } else {
-        battlerHoldEffect = GetItemHoldEffect(gLastUsedItem);
-        battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem);
+        battlerHoldEffect = GetItemHoldEffect(gLastUsedItem.get());
+        battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem.get());
     }
-    let atkItem: u16 = gBattleMons[gBattlerAttacker].item;
+    let atkItem: u16 = {
+        let gl_i173 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i173].item)
+    };
     if atkItem == ITEM_ENIGMA_BERRY {
-        atkHoldEffect = gEnigmaBerries[gBattlerAttacker].holdEffect;
-        atkHoldEffectParam = gEnigmaBerries[gBattlerAttacker].holdEffectParam;
+        atkHoldEffect = {
+            let gl_i90 = gBattlerAttacker.get();
+            crate::gl!(gEnigmaBerries[gl_i90].holdEffect)
+        };
+        atkHoldEffectParam = {
+            let gl_i91 = gBattlerAttacker.get();
+            crate::gl!(gEnigmaBerries[gl_i91].holdEffectParam)
+        };
     } else {
         atkHoldEffect = GetItemHoldEffect(atkItem);
         atkHoldEffectParam = GetItemHoldEffectParam(atkItem);
     }
-    let defItem: u16 = gBattleMons[gBattlerTarget].item;
+    let defItem: u16 = {
+        let gl_i174 = gBattlerTarget.get();
+        crate::gl!(gBattleMons[gl_i174].item)
+    };
     if defItem == ITEM_ENIGMA_BERRY {
-        defHoldEffect = gEnigmaBerries[gBattlerTarget].holdEffect;
-        defHoldEffectParam = gEnigmaBerries[gBattlerTarget].holdEffectParam;
+        defHoldEffect = {
+            let gl_i92 = gBattlerTarget.get();
+            crate::gl!(gEnigmaBerries[gl_i92].holdEffect)
+        };
+        defHoldEffectParam = {
+            let gl_i93 = gBattlerTarget.get();
+            crate::gl!(gEnigmaBerries[gl_i93].holdEffectParam)
+        };
     } else {
         defHoldEffect = GetItemHoldEffect(defItem);
         defHoldEffectParam = GetItemHoldEffectParam(defItem);
@@ -3941,23 +5186,23 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
         ITEMEFFECT_ON_SWITCH_IN => match battlerHoldEffect {
             HOLD_EFFECT_DOUBLE_PRIZE => {
                 if GetBattlerSide(battler) == B_SIDE_PLAYER {
-                    (*gBattleStruct).moneyMultiplier = 2;
+                    (*crate::gl!(gBattleStruct)).moneyMultiplier = 2;
                 }
             }
             HOLD_EFFECT_RESTORE_STATS => {
                 for i in 0..NUM_BATTLE_STATS {
-                    if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
-                        gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+                    if crate::gl!(gBattleMons[battler].statStages[i]) < DEFAULT_STAT_STAGE {
+                        crate::gl!(gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE);
                         effect = ITEM_STATS_CHANGE;
                     }
                 }
                 if effect != 0 {
-                    gBattleScripting.battler = battler;
-                    gPotentialItemEffectBattler = battler;
-                    gActiveBattler = {
-                        gBattlerAttacker = battler;
-                        gBattlerAttacker
-                    };
+                    crate::gl!(gBattleScripting.battler = battler);
+                    gPotentialItemEffectBattler.set(battler);
+                    gActiveBattler.set({
+                        gBattlerAttacker.set(battler);
+                        gBattlerAttacker.get()
+                    });
                     BattleScriptExecute(
                         (*crate::asmdata::BattleScript_WhiteHerbEnd2.cast::<CArray<u8, 0>>())
                             .as_ptr()
@@ -3968,20 +5213,24 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
             _ => {}
         },
         ITEMEFFECT_NORMAL => {
-            if gBattleMons[battler].hp != 0 {
+            if crate::gl!(gBattleMons[battler].hp) != 0 {
                 match battlerHoldEffect {
                     HOLD_EFFECT_RESTORE_HP => {
-                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                        if crate::gl!(gBattleMons[battler].hp) as i32
+                            <= crate::gl!(gBattleMons[battler].maxHP) as i32 / 2
                             && moveTurn == 0
                         {
-                            gBattleMoveDamage = battlerHoldEffectParam as i32;
-                            if gBattleMons[battler].hp as i32 + battlerHoldEffectParam as i32
-                                > gBattleMons[battler].maxHP as i32
+                            gBattleMoveDamage.set(battlerHoldEffectParam as i32);
+                            if crate::gl!(gBattleMons[battler].hp) as i32
+                                + battlerHoldEffectParam as i32
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
                                     .cast::<CArray<u8, 0>>())
@@ -3997,9 +5246,11 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                             let mut ppBonuses: u8 = 0;
                             let mut r#move: u16 = 0;
                             if GetBattlerSide(battler) == B_SIDE_PLAYER {
-                                mon = &raw mut gPlayerParty[gBattlerPartyIndexes[battler]];
+                                mon = &raw mut (*gPlayerParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[battler])];
                             } else {
-                                mon = &raw mut gEnemyParty[gBattlerPartyIndexes[battler]];
+                                mon = &raw mut (*gEnemyParty.as_ptr())
+                                    [crate::gl!(gBattlerPartyIndexes[battler])];
                             }
                             i = 0;
                             while i < MAX_MON_MOVES {
@@ -4018,11 +5269,13 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                                 } else {
                                     changedPP += battlerHoldEffectParam;
                                 }
-                                gBattleTextBuff1[0] = 0xFD;
-                                gBattleTextBuff1[1] = 2;
-                                gBattleTextBuff1[2] = r#move as u8;
-                                gBattleTextBuff1[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
-                                gBattleTextBuff1[4] = 0xFF;
+                                crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                                crate::gl!(gBattleTextBuff1[1] = 2);
+                                crate::gl!(gBattleTextBuff1[2] = r#move as u8);
+                                crate::gl!(
+                                    gBattleTextBuff1[3] = ((r#move as i32 & 0xFF00) >> 8) as u8
+                                );
+                                crate::gl!(gBattleTextBuff1[4] = 0xFF);
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_BerryPPHealEnd2
                                         .cast::<CArray<u8, 0>>())
@@ -4036,25 +5289,25 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                                     1,
                                     &raw mut changedPP as *mut c_void,
                                 );
-                                MarkBattlerForControllerExec(gActiveBattler);
+                                MarkBattlerForControllerExec(gActiveBattler.get());
                                 effect = ITEM_PP_CHANGE;
                             }
                         }
                     }
                     HOLD_EFFECT_RESTORE_STATS => {
                         for i in 0..NUM_BATTLE_STATS {
-                            if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
-                                gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+                            if crate::gl!(gBattleMons[battler].statStages[i]) < DEFAULT_STAT_STAGE {
+                                crate::gl!(gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE);
                                 effect = ITEM_STATS_CHANGE;
                             }
                         }
                         if effect != 0 {
-                            gBattleScripting.battler = battler;
-                            gPotentialItemEffectBattler = battler;
-                            gActiveBattler = {
-                                gBattlerAttacker = battler;
-                                gBattlerAttacker
-                            };
+                            crate::gl!(gBattleScripting.battler = battler);
+                            gPotentialItemEffectBattler.set(battler);
+                            gActiveBattler.set({
+                                gBattlerAttacker.set(battler);
+                                gBattlerAttacker.get()
+                            });
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_WhiteHerbEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4064,18 +5317,24 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_LEFTOVERS => {
-                        if gBattleMons[battler].hp < gBattleMons[battler].maxHP && moveTurn == 0 {
-                            gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 16;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                        if crate::gl!(gBattleMons[battler].hp)
+                            < crate::gl!(gBattleMons[battler].maxHP)
+                            && moveTurn == 0
+                        {
+                            gBattleMoveDamage
+                                .set(crate::gl!(gBattleMons[battler].maxHP) as i32 / 16);
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
-                                > gBattleMons[battler].maxHP as i32
+                            if crate::gl!(gBattleMons[battler].hp) as i32 + gBattleMoveDamage.get()
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_ItemHealHP_End2
                                     .cast::<CArray<u8, 0>>())
@@ -4087,29 +5346,32 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CONFUSE_SPICY => {
-                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                        if crate::gl!(gBattleMons[battler].hp) as i32
+                            <= crate::gl!(gBattleMons[battler].maxHP) as i32 / 2
                             && moveTurn == 0
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 8;
-                            gBattleTextBuff1[2] = FLAVOR_SPICY;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gBattleMoveDamage = div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 8);
+                            crate::gl!(gBattleTextBuff1[2] = FLAVOR_SPICY);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gBattleMoveDamage.set(div_i32(
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
-                            );
-                            if gBattleMoveDamage == FLAVOR_SPICY as i32 {
-                                gBattleMoveDamage = 1;
+                            ));
+                            if gBattleMoveDamage.get() == FLAVOR_SPICY as i32 {
+                                gBattleMoveDamage.set(1);
                             }
-                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
-                                > gBattleMons[battler].maxHP as i32
+                            if crate::gl!(gBattleMons[battler].hp) as i32 + gBattleMoveDamage.get()
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             if GetFlavorRelationByPersonality(
-                                gBattleMons[battler].personality,
+                                crate::gl!(gBattleMons[battler].personality),
                                 FLAVOR_SPICY,
                             ) < FLAVOR_SPICY as i8
                             {
@@ -4131,29 +5393,32 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CONFUSE_DRY => {
-                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                        if crate::gl!(gBattleMons[battler].hp) as i32
+                            <= crate::gl!(gBattleMons[battler].maxHP) as i32 / 2
                             && moveTurn == 0
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 8;
-                            gBattleTextBuff1[2] = FLAVOR_DRY;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gBattleMoveDamage = div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 8);
+                            crate::gl!(gBattleTextBuff1[2] = FLAVOR_DRY);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gBattleMoveDamage.set(div_i32(
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
-                            );
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = FLAVOR_DRY as i32;
+                            ));
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(FLAVOR_DRY as i32);
                             }
-                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
-                                > gBattleMons[battler].maxHP as i32
+                            if crate::gl!(gBattleMons[battler].hp) as i32 + gBattleMoveDamage.get()
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             if GetFlavorRelationByPersonality(
-                                gBattleMons[battler].personality,
+                                crate::gl!(gBattleMons[battler].personality),
                                 FLAVOR_DRY,
                             ) < 0
                             {
@@ -4175,29 +5440,32 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CONFUSE_SWEET => {
-                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                        if crate::gl!(gBattleMons[battler].hp) as i32
+                            <= crate::gl!(gBattleMons[battler].maxHP) as i32 / 2
                             && moveTurn == 0
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 8;
-                            gBattleTextBuff1[2] = FLAVOR_SWEET;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gBattleMoveDamage = div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 8);
+                            crate::gl!(gBattleTextBuff1[2] = FLAVOR_SWEET);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gBattleMoveDamage.set(div_i32(
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
-                            );
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            ));
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
-                                > gBattleMons[battler].maxHP as i32
+                            if crate::gl!(gBattleMons[battler].hp) as i32 + gBattleMoveDamage.get()
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             if GetFlavorRelationByPersonality(
-                                gBattleMons[battler].personality,
+                                crate::gl!(gBattleMons[battler].personality),
                                 FLAVOR_SWEET,
                             ) < 0
                             {
@@ -4219,29 +5487,32 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CONFUSE_BITTER => {
-                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                        if crate::gl!(gBattleMons[battler].hp) as i32
+                            <= crate::gl!(gBattleMons[battler].maxHP) as i32 / 2
                             && moveTurn == 0
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 8;
-                            gBattleTextBuff1[2] = FLAVOR_BITTER;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gBattleMoveDamage = div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 8);
+                            crate::gl!(gBattleTextBuff1[2] = FLAVOR_BITTER);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gBattleMoveDamage.set(div_i32(
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
-                            );
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            ));
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
-                                > gBattleMons[battler].maxHP as i32
+                            if crate::gl!(gBattleMons[battler].hp) as i32 + gBattleMoveDamage.get()
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             if GetFlavorRelationByPersonality(
-                                gBattleMons[battler].personality,
+                                crate::gl!(gBattleMons[battler].personality),
                                 FLAVOR_BITTER,
                             ) < 0
                             {
@@ -4263,29 +5534,32 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CONFUSE_SOUR => {
-                        if gBattleMons[battler].hp as i32 <= gBattleMons[battler].maxHP as i32 / 2
+                        if crate::gl!(gBattleMons[battler].hp) as i32
+                            <= crate::gl!(gBattleMons[battler].maxHP) as i32 / 2
                             && moveTurn == 0
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 8;
-                            gBattleTextBuff1[2] = FLAVOR_SOUR;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gBattleMoveDamage = div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 8);
+                            crate::gl!(gBattleTextBuff1[2] = FLAVOR_SOUR);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gBattleMoveDamage.set(div_i32(
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
-                            );
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = 1;
+                            ));
+                            if gBattleMoveDamage.get() == 0 {
+                                gBattleMoveDamage.set(1);
                             }
-                            if gBattleMons[battler].hp as i32 + gBattleMoveDamage
-                                > gBattleMons[battler].maxHP as i32
+                            if crate::gl!(gBattleMons[battler].hp) as i32 + gBattleMoveDamage.get()
+                                > crate::gl!(gBattleMons[battler].maxHP) as i32
                             {
-                                gBattleMoveDamage = gBattleMons[battler].maxHP as i32
-                                    - gBattleMons[battler].hp as i32;
+                                gBattleMoveDamage.set(
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32
+                                        - crate::gl!(gBattleMons[battler].hp) as i32,
+                                );
                             }
-                            gBattleMoveDamage *= -1;
+                            gBattleMoveDamage.set(-gBattleMoveDamage.get());
                             if GetFlavorRelationByPersonality(
-                                gBattleMons[battler].personality,
+                                crate::gl!(gBattleMons[battler].personality),
                                 FLAVOR_SOUR,
                             ) < 0
                             {
@@ -4307,27 +5581,27 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_ATTACK_UP => {
-                        if gBattleMons[battler].hp as i32
+                        if crate::gl!(gBattleMons[battler].hp) as i32
                             <= div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
                             )
                             && moveTurn == 0
-                            && gBattleMons[battler].statStages[1] < MAX_STAT_STAGE
+                            && crate::gl!(gBattleMons[battler].statStages[1]) < MAX_STAT_STAGE
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 5;
-                            gBattleTextBuff1[2] = STAT_ATK;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gBattleTextBuff2[0] = 0xFD;
-                            gBattleTextBuff2[1] = 0;
-                            gBattleTextBuff2[2] = STRINGID_STATROSE;
-                            gBattleTextBuff2[3] = 0;
-                            gBattleTextBuff2[4] = 0xFF;
-                            gEffectBattler = battler;
-                            gBattleScripting.statChanger = 17;
-                            gBattleScripting.animArg1 = 15;
-                            gBattleScripting.animArg2 = 0;
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 5);
+                            crate::gl!(gBattleTextBuff1[2] = STAT_ATK);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            crate::gl!(gBattleTextBuff2[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff2[1] = 0);
+                            crate::gl!(gBattleTextBuff2[2] = STRINGID_STATROSE);
+                            crate::gl!(gBattleTextBuff2[3] = 0);
+                            crate::gl!(gBattleTextBuff2[4] = 0xFF);
+                            gEffectBattler.set(battler);
+                            crate::gl!(gBattleScripting.statChanger = 17);
+                            crate::gl!(gBattleScripting.animArg1 = 15);
+                            crate::gl!(gBattleScripting.animArg2 = 0);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4338,22 +5612,22 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_DEFENSE_UP => {
-                        if gBattleMons[battler].hp as i32
+                        if crate::gl!(gBattleMons[battler].hp) as i32
                             <= div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
                             )
                             && moveTurn == 0
-                            && gBattleMons[battler].statStages[2] < 12
+                            && crate::gl!(gBattleMons[battler].statStages[2]) < 12
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 5;
-                            gBattleTextBuff1[2] = STAT_DEF as u8;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gEffectBattler = battler;
-                            gBattleScripting.statChanger = 18;
-                            gBattleScripting.animArg1 = 16;
-                            gBattleScripting.animArg2 = 0;
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 5);
+                            crate::gl!(gBattleTextBuff1[2] = STAT_DEF as u8);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gEffectBattler.set(battler);
+                            crate::gl!(gBattleScripting.statChanger = 18);
+                            crate::gl!(gBattleScripting.animArg1 = 16);
+                            crate::gl!(gBattleScripting.animArg2 = 0);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4364,22 +5638,22 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_SPEED_UP => {
-                        if gBattleMons[battler].hp as i32
+                        if crate::gl!(gBattleMons[battler].hp) as i32
                             <= div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
                             )
                             && moveTurn == 0
-                            && gBattleMons[battler].statStages[3] < 12
+                            && crate::gl!(gBattleMons[battler].statStages[3]) < 12
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 5;
-                            gBattleTextBuff1[2] = STAT_SPEED;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gEffectBattler = battler;
-                            gBattleScripting.statChanger = 19;
-                            gBattleScripting.animArg1 = 17;
-                            gBattleScripting.animArg2 = 0;
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 5);
+                            crate::gl!(gBattleTextBuff1[2] = STAT_SPEED);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gEffectBattler.set(battler);
+                            crate::gl!(gBattleScripting.statChanger = 19);
+                            crate::gl!(gBattleScripting.animArg1 = 17);
+                            crate::gl!(gBattleScripting.animArg2 = 0);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4390,22 +5664,22 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_SP_ATTACK_UP => {
-                        if gBattleMons[battler].hp as i32
+                        if crate::gl!(gBattleMons[battler].hp) as i32
                             <= div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
                             )
                             && moveTurn == 0
-                            && gBattleMons[battler].statStages[4] < 12
+                            && crate::gl!(gBattleMons[battler].statStages[4]) < 12
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 5;
-                            gBattleTextBuff1[2] = STAT_SPATK;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gEffectBattler = battler;
-                            gBattleScripting.statChanger = 20;
-                            gBattleScripting.animArg1 = 18;
-                            gBattleScripting.animArg2 = 0;
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = 5);
+                            crate::gl!(gBattleTextBuff1[2] = STAT_SPATK);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gEffectBattler.set(battler);
+                            crate::gl!(gBattleScripting.statChanger = 20);
+                            crate::gl!(gBattleScripting.animArg1 = 18);
+                            crate::gl!(gBattleScripting.animArg2 = 0);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4416,22 +5690,22 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_SP_DEFENSE_UP => {
-                        if gBattleMons[battler].hp as i32
+                        if crate::gl!(gBattleMons[battler].hp) as i32
                             <= div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
                             )
                             && moveTurn == 0
-                            && gBattleMons[battler].statStages[5] < 12
+                            && crate::gl!(gBattleMons[battler].statStages[5]) < 12
                         {
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = STAT_SPDEF as u8;
-                            gBattleTextBuff1[2] = STAT_SPDEF as u8;
-                            gBattleTextBuff1[3] = 0xFF;
-                            gEffectBattler = battler;
-                            gBattleScripting.statChanger = 21;
-                            gBattleScripting.animArg1 = 19;
-                            gBattleScripting.animArg2 = 0;
+                            crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                            crate::gl!(gBattleTextBuff1[1] = STAT_SPDEF as u8);
+                            crate::gl!(gBattleTextBuff1[2] = STAT_SPDEF as u8);
+                            crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                            gEffectBattler.set(battler);
+                            crate::gl!(gBattleScripting.statChanger = 21);
+                            crate::gl!(gBattleScripting.animArg1 = 19);
+                            crate::gl!(gBattleScripting.animArg2 = 0);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4442,15 +5716,15 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CRITICAL_UP => {
-                        if gBattleMons[battler].hp as i32
+                        if crate::gl!(gBattleMons[battler].hp) as i32
                             <= div_i32(
-                                gBattleMons[battler].maxHP as i32,
+                                crate::gl!(gBattleMons[battler].maxHP) as i32,
                                 battlerHoldEffectParam as i32,
                             )
                             && moveTurn == 0
-                            && gBattleMons[battler].status2 & STATUS2_FOCUS_ENERGY == 0
+                            && crate::gl!(gBattleMons[battler].status2) & STATUS2_FOCUS_ENERGY == 0
                         {
-                            gBattleMons[battler].status2 |= STATUS2_FOCUS_ENERGY;
+                            crate::gl!(gBattleMons[battler].status2 |= STATUS2_FOCUS_ENERGY);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryFocusEnergyEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4462,16 +5736,18 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                     }
                     HOLD_EFFECT_RANDOM_STAT_UP => {
                         if moveTurn == 0
-                            && gBattleMons[battler].hp as i32
+                            && crate::gl!(gBattleMons[battler].hp) as i32
                                 <= div_i32(
-                                    gBattleMons[battler].maxHP as i32,
+                                    crate::gl!(gBattleMons[battler].maxHP) as i32,
                                     battlerHoldEffectParam as i32,
                                 )
                         {
                             i = 0;
                             while i < 5 {
-                                if gBattleMons[battler].statStages[STAT_ATK as i32 + i]
-                                    < MAX_STAT_STAGE
+                                if ({
+                                    let gl_i175 = STAT_ATK as i32 + i;
+                                    crate::gl!(gBattleMons[battler].statStages[gl_i175])
+                                }) < MAX_STAT_STAGE
                                 {
                                     break;
                                 }
@@ -4480,28 +5756,33 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                             if i != 5 {
                                 loop {
                                     i = Random() as i32 % 5;
-                                    if gBattleMons[battler].statStages[STAT_ATK as i32 + i]
-                                        != MAX_STAT_STAGE
+                                    if ({
+                                        let gl_i176 = STAT_ATK as i32 + i;
+                                        crate::gl!(gBattleMons[battler].statStages[gl_i176])
+                                    }) != MAX_STAT_STAGE
                                     {
                                         break;
                                     }
                                 }
-                                gBattleTextBuff1[0] = 0xFD;
-                                gBattleTextBuff1[1] = 5;
-                                gBattleTextBuff1[2] = i as u8 + 1;
-                                gBattleTextBuff1[3] = 0xFF;
-                                gBattleTextBuff2[0] = B_BUFF_PLACEHOLDER_BEGIN;
-                                gBattleTextBuff2[1] = B_BUFF_STRING;
-                                gBattleTextBuff2[2] = STRINGID_STATSHARPLY;
-                                gBattleTextBuff2[3] = 0;
-                                gBattleTextBuff2[4] = B_BUFF_STRING;
-                                gBattleTextBuff2[5] = STRINGID_STATROSE;
-                                gBattleTextBuff2[6] = 0;
-                                gBattleTextBuff2[7] = EOS;
-                                gEffectBattler = battler;
-                                gBattleScripting.statChanger = i as u8 + 1 + 32 + FALSE;
-                                gBattleScripting.animArg1 = STAT_ANIM_PLUS2 as u8 + (i as u8 + 1);
-                                gBattleScripting.animArg2 = 0;
+                                crate::gl!(gBattleTextBuff1[0] = 0xFD);
+                                crate::gl!(gBattleTextBuff1[1] = 5);
+                                crate::gl!(gBattleTextBuff1[2] = i as u8 + 1);
+                                crate::gl!(gBattleTextBuff1[3] = 0xFF);
+                                crate::gl!(gBattleTextBuff2[0] = B_BUFF_PLACEHOLDER_BEGIN);
+                                crate::gl!(gBattleTextBuff2[1] = B_BUFF_STRING);
+                                crate::gl!(gBattleTextBuff2[2] = STRINGID_STATSHARPLY);
+                                crate::gl!(gBattleTextBuff2[3] = 0);
+                                crate::gl!(gBattleTextBuff2[4] = B_BUFF_STRING);
+                                crate::gl!(gBattleTextBuff2[5] = STRINGID_STATROSE);
+                                crate::gl!(gBattleTextBuff2[6] = 0);
+                                crate::gl!(gBattleTextBuff2[7] = EOS);
+                                gEffectBattler.set(battler);
+                                crate::gl!(gBattleScripting.statChanger = i as u8 + 1 + 32 + FALSE);
+                                crate::gl!(
+                                    gBattleScripting.animArg1 =
+                                        STAT_ANIM_PLUS2 as u8 + (i as u8 + 1)
+                                );
+                                crate::gl!(gBattleScripting.animArg2 = 0);
                                 BattleScriptExecute(
                                     (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
                                         .cast::<CArray<u8, 0>>())
@@ -4513,8 +5794,8 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_PAR => {
-                        if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
-                            gBattleMons[battler].status1 &= 0xffffffbf;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_PARALYSIS != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xffffffbf);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCurePrlzEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4525,8 +5806,8 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_PSN => {
-                        if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
-                            gBattleMons[battler].status1 &= 0xfffff077;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_PSN_ANY != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xfffff077);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCurePsnEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4537,8 +5818,8 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_BRN => {
-                        if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
-                            gBattleMons[battler].status1 &= 0xffffffef;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_BURN != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xffffffef);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCureBrnEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4549,8 +5830,8 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_FRZ => {
-                        if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
-                            gBattleMons[battler].status1 &= 0xffffffdf;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xffffffdf);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCureFrzEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4561,9 +5842,9 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_SLP => {
-                        if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
-                            gBattleMons[battler].status1 &= 0xfffffff8;
-                            gBattleMons[battler].status2 &= 0xf7ffffff;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_SLEEP != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xfffffff8);
+                            crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCureSlpEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4574,8 +5855,8 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_CONFUSION => {
-                        if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
-                            gBattleMons[battler].status2 &= 0xfffffff8;
+                        if crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0 {
+                            crate::gl!(gBattleMons[battler].status2 &= 0xfffffff8);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCureConfusionEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4586,60 +5867,60 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_STATUS => {
-                        if gBattleMons[battler].status1 & STATUS1_ANY != 0
-                            || gBattleMons[battler].status2 & STATUS2_CONFUSION != 0
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_ANY != 0
+                            || crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0
                         {
                             i = 0;
-                            if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_PSN_ANY != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
-                            if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
-                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_SLEEP != 0 {
+                                crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
-                            if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_PARALYSIS != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
-                            if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_BURN != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
-                            if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
-                            if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                            if crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_ConfusionJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
                             if i <= 1 {
-                                gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                                crate::gl!(gBattleCommunication[5] = B_MSG_CURED_PROBLEM);
                             } else {
-                                gBattleCommunication[5] = B_MSG_NORMALIZED_STATUS;
+                                crate::gl!(gBattleCommunication[5] = B_MSG_NORMALIZED_STATUS);
                             }
-                            gBattleMons[battler].status1 = 0;
-                            gBattleMons[battler].status2 &= 0xfffffff8;
+                            crate::gl!(gBattleMons[battler].status1 = 0);
+                            crate::gl!(gBattleMons[battler].status2 &= 0xfffffff8);
                             BattleScriptExecute(
                                 (*crate::asmdata::BattleScript_BerryCureChosenStatusEnd2
                                     .cast::<CArray<u8, 0>>())
@@ -4650,11 +5931,11 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                         }
                     }
                     HOLD_EFFECT_CURE_ATTRACT
-                        if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 =>
+                        if crate::gl!(gBattleMons[battler].status2) & STATUS2_INFATUATION != 0 =>
                     {
-                        gBattleMons[battler].status2 &= 0xfff0ffff;
+                        crate::gl!(gBattleMons[battler].status2 &= 0xfff0ffff);
                         StringCopy(
-                            gBattleTextBuff1.as_mut_ptr(),
+                            (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                             (*(&raw const crate::data::battle_main::gStatusConditionString_LoveJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                         );
                         BattleScriptExecute(
@@ -4663,18 +5944,18 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                             .as_ptr()
                             .cast_mut(),
                         );
-                        gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                        crate::gl!(gBattleCommunication[5] = B_MSG_CURED_PROBLEM);
                         effect = ITEM_EFFECT_OTHER;
                     }
                     _ => {}
                 }
                 if effect != 0 {
-                    gBattleScripting.battler = battler;
-                    gPotentialItemEffectBattler = battler;
-                    gActiveBattler = {
-                        gBattlerAttacker = battler;
-                        gBattlerAttacker
-                    };
+                    crate::gl!(gBattleScripting.battler = battler);
+                    gPotentialItemEffectBattler.set(battler);
+                    gActiveBattler.set({
+                        gBattlerAttacker.set(battler);
+                        gBattlerAttacker.get()
+                    });
                     match effect {
                         ITEM_STATUS_CHANGE => {
                             BtlController_EmitSetMonData(
@@ -4682,18 +5963,18 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
                                 REQUEST_STATUS_BATTLE,
                                 0,
                                 4,
-                                &raw mut gBattleMons[battler].status1 as *mut c_void,
+                                crate::gl!(&raw gBattleMons[battler].status1) as *mut c_void,
                             );
-                            MarkBattlerForControllerExec(gActiveBattler);
+                            MarkBattlerForControllerExec(gActiveBattler.get());
                         }
                         ITEM_PP_CHANGE
-                            if gBattleMons[battler].status2 & 0x200000 == 0
-                                && gDisableStructs[battler].mimickedMoves() as u32
+                            if crate::gl!(gBattleMons[battler].status2) & 0x200000 == 0
+                                && (*gDisableStructs.as_ptr())[battler].mimickedMoves() as u32
                                     & (*(&raw const crate::util::gBitTable)
                                         .cast::<CArray<u32, 0>>())[i]
                                     == 0 =>
                         {
-                            gBattleMons[battler].pp[i] = changedPP;
+                            crate::gl!(gBattleMons[battler].pp[i] = changedPP);
                         }
                         _ => {}
                     }
@@ -4703,239 +5984,294 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
         ITEMEFFECT_DUMMY => {}
         ITEMEFFECT_MOVE_END => {
             battler = 0;
-            while battler < gBattlersCount {
-                gLastUsedItem = gBattleMons[battler].item;
-                if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
-                    battlerHoldEffect = gEnigmaBerries[battler].holdEffect;
-                    battlerHoldEffectParam = gEnigmaBerries[battler].holdEffectParam;
+            while battler < gBattlersCount.get() {
+                gLastUsedItem.set(crate::gl!(gBattleMons[battler].item));
+                if crate::gl!(gBattleMons[battler].item) == ITEM_ENIGMA_BERRY {
+                    battlerHoldEffect = crate::gl!(gEnigmaBerries[battler].holdEffect);
+                    battlerHoldEffectParam = crate::gl!(gEnigmaBerries[battler].holdEffectParam);
                 } else {
-                    battlerHoldEffect = GetItemHoldEffect(gLastUsedItem);
-                    battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem);
+                    battlerHoldEffect = GetItemHoldEffect(gLastUsedItem.get());
+                    battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem.get());
                 }
                 match battlerHoldEffect {
                     HOLD_EFFECT_CURE_PAR => {
-                        if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
-                            gBattleMons[battler].status1 &= 0xffffffbf;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_PARALYSIS != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xffffffbf);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureParRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureParRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_PSN => {
-                        if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
-                            gBattleMons[battler].status1 &= 0xfffff077;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_PSN_ANY != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xfffff077);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCurePsnRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCurePsnRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_BRN => {
-                        if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
-                            gBattleMons[battler].status1 &= 0xffffffef;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_BURN != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xffffffef);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureBrnRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureBrnRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_FRZ => {
-                        if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
-                            gBattleMons[battler].status1 &= 0xffffffdf;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xffffffdf);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureFrzRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureFrzRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_SLP => {
-                        if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
-                            gBattleMons[battler].status1 &= 0xfffffff8;
-                            gBattleMons[battler].status2 &= 0xf7ffffff;
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_SLEEP != 0 {
+                            crate::gl!(gBattleMons[battler].status1 &= 0xfffffff8);
+                            crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureSlpRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureSlpRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_CONFUSION => {
-                        if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
-                            gBattleMons[battler].status2 &= 0xfffffff8;
+                        if crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0 {
+                            crate::gl!(gBattleMons[battler].status2 &= 0xfffffff8);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureConfusionRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureConfusionRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_EFFECT_OTHER;
                         }
                     }
                     HOLD_EFFECT_CURE_ATTRACT => {
-                        if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 {
-                            gBattleMons[battler].status2 &= 0xfff0ffff;
+                        if crate::gl!(gBattleMons[battler].status2) & STATUS2_INFATUATION != 0 {
+                            crate::gl!(gBattleMons[battler].status2 &= 0xfff0ffff);
                             StringCopy(
-                                gBattleTextBuff1.as_mut_ptr(),
+                                (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                 (*(&raw const crate::data::battle_main::gStatusConditionString_LoveJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                             );
                             BattleScriptPushCursor();
-                            gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureChosenStatusRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(gBattleCommunication[5] = B_MSG_CURED_PROBLEM);
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureChosenStatusRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_EFFECT_OTHER;
                         }
                     }
                     HOLD_EFFECT_CURE_STATUS => {
-                        if gBattleMons[battler].status1 & STATUS1_ANY != 0
-                            || gBattleMons[battler].status2 & STATUS2_CONFUSION != 0
+                        if crate::gl!(gBattleMons[battler].status1) & STATUS1_ANY != 0
+                            || crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0
                         {
-                            if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_PSN_ANY != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
-                            if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
-                                gBattleMons[battler].status2 &= 0xf7ffffff;
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_SLEEP != 0 {
+                                crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
-                            if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_PARALYSIS != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
-                            if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_BURN != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
-                            if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
+                            if crate::gl!(gBattleMons[battler].status1) & STATUS1_FREEZE != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
-                            if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
+                            if crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0 {
                                 StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
+                                    (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
                                     (*(&raw const crate::data::battle_main::gStatusConditionString_ConfusionJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
-                            gBattleMons[battler].status1 = 0;
-                            gBattleMons[battler].status2 &= 0xfffffff8;
+                            crate::gl!(gBattleMons[battler].status1 = 0);
+                            crate::gl!(gBattleMons[battler].status2 &= 0xfffffff8);
                             BattleScriptPushCursor();
-                            gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
-                            gBattlescriptCurrInstr =
-                                (*crate::asmdata::BattleScript_BerryCureChosenStatusRet
-                                    .cast::<CArray<u8, 0>>())
-                                .as_ptr()
-                                .cast_mut();
+                            crate::gl!(gBattleCommunication[5] = B_MSG_CURED_PROBLEM);
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_BerryCureChosenStatusRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_RESTORE_STATS => {
                         for i in 0..NUM_BATTLE_STATS {
-                            if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
-                                gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+                            if crate::gl!(gBattleMons[battler].statStages[i]) < DEFAULT_STAT_STAGE {
+                                crate::gl!(gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE);
                                 effect = ITEM_STATS_CHANGE;
                             }
                         }
                         if effect != 0 {
-                            gBattleScripting.battler = battler;
-                            gPotentialItemEffectBattler = battler;
+                            crate::gl!(gBattleScripting.battler = battler);
+                            gPotentialItemEffectBattler.set(battler);
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_WhiteHerbRet
-                                .cast::<CArray<u8, 0>>())
-                            .as_ptr()
-                            .cast_mut();
+                            crate::gl!(
+                                gBattlescriptCurrInstr =
+                                    (*crate::asmdata::BattleScript_WhiteHerbRet
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut()
+                            );
                             return effect;
                         }
                     }
                     _ => {}
                 }
                 if effect != 0 {
-                    gBattleScripting.battler = battler;
-                    gPotentialItemEffectBattler = battler;
-                    gActiveBattler = battler;
+                    crate::gl!(gBattleScripting.battler = battler);
+                    gPotentialItemEffectBattler.set(battler);
+                    gActiveBattler.set(battler);
                     BtlController_EmitSetMonData(
                         B_COMM_TO_CONTROLLER,
                         REQUEST_STATUS_BATTLE,
                         0,
                         4,
-                        &raw mut gBattleMons[gActiveBattler].status1 as *mut c_void,
+                        ({
+                            let gl_i177 = gActiveBattler.get();
+                            crate::gl!(&raw gBattleMons[gl_i177].status1)
+                        }) as *mut c_void,
                     );
-                    MarkBattlerForControllerExec(gActiveBattler);
+                    MarkBattlerForControllerExec(gActiveBattler.get());
                     break;
                 }
                 battler += 1;
             }
         }
-        ITEMEFFECT_KINGSROCK_SHELLBELL if gBattleMoveDamage != 0 => match atkHoldEffect {
+        ITEMEFFECT_KINGSROCK_SHELLBELL if gBattleMoveDamage.get() != 0 => match atkHoldEffect {
             HOLD_EFFECT_FLINCH => {
-                if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                    && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                        || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                    && ({
+                        let gl_i94 = gBattlerTarget.get();
+                        crate::gl!(gSpecialStatuses[gl_i94].physicalDmg)
+                    } != 0
+                        || {
+                            let gl_i95 = gBattlerTarget.get();
+                            crate::gl!(gSpecialStatuses[gl_i95].specialDmg)
+                        } != 0)
                     && Random() as i32 % 100 < atkHoldEffectParam as i32
                     && (*(&raw const crate::data::pokemon::gBattleMoves)
-                        .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
-                        .flags as i32
+                        .cast::<CArray<BattleMove, 0>>())[gCurrentMove.get()]
+                    .flags as i32
                         & FLAG_KINGS_ROCK_AFFECTED
                         != 0
-                    && gBattleMons[gBattlerTarget].hp != 0
+                    && ({
+                        let gl_i178 = gBattlerTarget.get();
+                        crate::gl!(gBattleMons[gl_i178].hp)
+                    }) != 0
                 {
-                    gBattleCommunication[3] = MOVE_EFFECT_FLINCH;
+                    crate::gl!(gBattleCommunication[3] = MOVE_EFFECT_FLINCH);
                     BattleScriptPushCursor();
                     SetMoveEffect(0, 0);
                     BattleScriptPop();
                 }
             }
             HOLD_EFFECT_SHELL_BELL
-                if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                    && gSpecialStatuses[gBattlerTarget].shellBellDmg != 0
-                    && gSpecialStatuses[gBattlerTarget].shellBellDmg != IGNORE_SHELL_BELL
-                    && gBattlerAttacker != gBattlerTarget
-                    && gBattleMons[gBattlerAttacker].hp != gBattleMons[gBattlerAttacker].maxHP
-                    && gBattleMons[gBattlerAttacker].hp != 0 =>
+                if gMoveResultFlags.get() as i32 & MOVE_RESULT_NO_EFFECT == 0
+                    && {
+                        let gl_i96 = gBattlerTarget.get();
+                        crate::gl!(gSpecialStatuses[gl_i96].shellBellDmg)
+                    } != 0
+                    && {
+                        let gl_i97 = gBattlerTarget.get();
+                        crate::gl!(gSpecialStatuses[gl_i97].shellBellDmg)
+                    } != IGNORE_SHELL_BELL
+                    && gBattlerAttacker.get() != gBattlerTarget.get()
+                    && ({
+                        let gl_i179 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i179].hp)
+                    }) != ({
+                        let gl_i180 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i180].maxHP)
+                    })
+                    && ({
+                        let gl_i181 = gBattlerAttacker.get();
+                        crate::gl!(gBattleMons[gl_i181].hp)
+                    }) != 0 =>
             {
-                gLastUsedItem = atkItem;
-                gPotentialItemEffectBattler = gBattlerAttacker;
-                gBattleScripting.battler = gBattlerAttacker;
-                gBattleMoveDamage = -div_i32(
-                    gSpecialStatuses[gBattlerTarget].shellBellDmg,
+                gLastUsedItem.set(atkItem);
+                gPotentialItemEffectBattler.set(gBattlerAttacker.get());
+                crate::gl!(gBattleScripting.battler = gBattlerAttacker.get());
+                gBattleMoveDamage.set(-div_i32(
+                    {
+                        let gl_i98 = gBattlerTarget.get();
+                        crate::gl!(gSpecialStatuses[gl_i98].shellBellDmg)
+                    },
                     atkHoldEffectParam as i32,
-                );
-                if gBattleMoveDamage == 0 {
-                    gBattleMoveDamage = -1;
+                ));
+                if gBattleMoveDamage.get() == 0 {
+                    gBattleMoveDamage.set(-1);
                 }
-                gSpecialStatuses[gBattlerTarget].shellBellDmg = 0;
+                {
+                    let gl_v = 0;
+                    let gl_i99 = gBattlerTarget.get();
+                    crate::gl!(gSpecialStatuses[gl_i99].shellBellDmg = gl_v)
+                };
                 BattleScriptPushCursor();
-                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ItemHealHP_Ret
-                    .cast::<CArray<u8, 0>>())
-                .as_ptr()
-                .cast_mut();
+                crate::gl!(
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ItemHealHP_Ret
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
+                );
                 effect += 1;
             }
             _ => {}
@@ -4944,16 +6280,16 @@ pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8
     }
     effect
 }
-pub unsafe fn ClearFuryCutterDestinyBondGrudge(battler: u8) {
-    gDisableStructs[battler].furyCutterCounter = 0;
-    gBattleMons[battler].status2 &= 0xfdffffff;
-    gStatuses3[battler] &= 0xffffbfff;
+pub fn ClearFuryCutterDestinyBondGrudge(battler: u8) {
+    crate::gl!(gDisableStructs[battler].furyCutterCounter = 0);
+    crate::gl!(gBattleMons[battler].status2 &= 0xfdffffff);
+    crate::gl!(gStatuses3[battler] &= 0xffffbfff);
 }
 pub unsafe fn HandleAction_RunBattleScript() {
-    if gBattleControllerExecFlags == 0 {
+    if gBattleControllerExecFlags.get() == 0 {
         (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable)
-            .cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr]
-            .unwrap_unchecked()();
+            .cast::<CArray<Option<unsafe fn()>, 0>>())[*crate::gl!(gBattlescriptCurrInstr)]
+        .unwrap_unchecked()();
     }
 }
 pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
@@ -4969,18 +6305,21 @@ pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
     }
     match moveTarget {
         MOVE_TARGET_SELECTED => {
-            side = GetBattlerSide(gBattlerAttacker) ^ 1;
-            if gSideTimers[side].followmeTimer != 0
-                && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
+            side = GetBattlerSide(gBattlerAttacker.get()) ^ 1;
+            if crate::gl!(gSideTimers[side].followmeTimer) != 0
+                && ({
+                    let gl_i182 = crate::gl!(gSideTimers[side].followmeTarget);
+                    crate::gl!(gBattleMons[gl_i182].hp)
+                }) != 0
             {
-                targetBattler = gSideTimers[side].followmeTarget;
+                targetBattler = crate::gl!(gSideTimers[side].followmeTarget);
             } else {
-                side = GetBattlerSide(gBattlerAttacker);
+                side = GetBattlerSide(gBattlerAttacker.get());
                 loop {
-                    targetBattler = rem_i32(Random() as i32, gBattlersCount as i32) as u8;
-                    if !(targetBattler == gBattlerAttacker
+                    targetBattler = rem_i32(Random() as i32, gBattlersCount.get() as i32) as u8;
+                    if !(targetBattler == gBattlerAttacker.get()
                         || side == GetBattlerSide(targetBattler)
-                        || gAbsentBattlerFlags as u32
+                        || gAbsentBattlerFlags.get() as u32
                             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
                                 [targetBattler]
                             != 0)
@@ -4994,16 +6333,19 @@ pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
                     == TYPE_ELECTRIC
                     && AbilityBattleEffects(
                         ABILITYEFFECT_COUNT_OTHER_SIDE,
-                        gBattlerAttacker,
+                        gBattlerAttacker.get(),
                         ABILITY_LIGHTNING_ROD,
                         0,
                         0,
                     ) != 0
-                    && gBattleMons[targetBattler].ability != ABILITY_LIGHTNING_ROD
+                    && crate::gl!(gBattleMons[targetBattler].ability) != ABILITY_LIGHTNING_ROD
                 {
                     targetBattler ^= BIT_FLANK;
-                    RecordAbilityBattle(targetBattler, gBattleMons[targetBattler].ability);
-                    gSpecialStatuses[targetBattler].set_lightningRodRedirected(1);
+                    RecordAbilityBattle(
+                        targetBattler,
+                        crate::gl!(gBattleMons[targetBattler].ability),
+                    );
+                    (*gSpecialStatuses.as_ptr())[targetBattler].set_lightningRodRedirected(1);
                 }
             }
         }
@@ -5011,8 +6353,9 @@ pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
         | MOVE_TARGET_BOTH
         | MOVE_TARGET_FOES_AND_ALLY
         | MOVE_TARGET_OPPONENTS_FIELD => {
-            targetBattler = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1 ^ 1);
-            if gAbsentBattlerFlags as u32
+            targetBattler =
+                GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker.get()) & 1 ^ 1);
+            if gAbsentBattlerFlags.get() as u32
                 & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[targetBattler]
                 != 0
             {
@@ -5020,15 +6363,18 @@ pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
             }
         }
         4 => {
-            side = GetBattlerSide(gBattlerAttacker) ^ 1;
-            if gSideTimers[side].followmeTimer != 0
-                && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
+            side = GetBattlerSide(gBattlerAttacker.get()) ^ 1;
+            if crate::gl!(gSideTimers[side].followmeTimer) != 0
+                && ({
+                    let gl_i183 = crate::gl!(gSideTimers[side].followmeTarget);
+                    crate::gl!(gBattleMons[gl_i183].hp)
+                }) != 0
             {
-                targetBattler = gSideTimers[side].followmeTarget;
-            } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+                targetBattler = crate::gl!(gSideTimers[side].followmeTarget);
+            } else if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
                 && moveTarget as i32 & MOVE_TARGET_RANDOM != 0
             {
-                if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
+                if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_PLAYER {
                     if Random() as i32 & 1 != 0 {
                         targetBattler = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
                     } else {
@@ -5041,25 +6387,26 @@ pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
                         targetBattler = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
                     }
                 }
-                if gAbsentBattlerFlags as u32
+                if gAbsentBattlerFlags.get() as u32
                     & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[targetBattler]
                     != 0
                 {
                     targetBattler ^= BIT_FLANK;
                 }
             } else {
-                targetBattler = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1 ^ 1);
+                targetBattler =
+                    GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker.get()) & 1 ^ 1);
             }
         }
         MOVE_TARGET_USER_OR_SELECTED | MOVE_TARGET_USER => {
-            targetBattler = gBattlerAttacker;
+            targetBattler = gBattlerAttacker.get();
         }
         _ => {}
     }
-    *(*gBattleStruct)
+    *(*crate::gl!(gBattleStruct))
         .moveTarget
         .as_mut_ptr()
-        .at(gBattlerAttacker) = targetBattler;
+        .at(gBattlerAttacker.get()) = targetBattler;
     targetBattler
 }
 unsafe fn IsBattlerModernFatefulEncounter(battler: u8) -> u32 {
@@ -5067,12 +6414,12 @@ unsafe fn IsBattlerModernFatefulEncounter(battler: u8) -> u32 {
         return TRUE as u32;
     }
     if GetMonData3(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+        &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
         MON_DATA_SPECIES,
         null_mut(),
     ) != SPECIES_DEOXYS
         && GetMonData3(
-            &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+            &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
             MON_DATA_SPECIES,
             null_mut(),
         ) != SPECIES_MEW
@@ -5080,34 +6427,39 @@ unsafe fn IsBattlerModernFatefulEncounter(battler: u8) -> u32 {
         return TRUE as u32;
     }
     GetMonData3(
-        &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
+        &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])],
         MON_DATA_MODERN_FATEFUL_ENCOUNTER,
         null_mut(),
     )
 }
 pub unsafe fn IsMonDisobedient() -> u8 {
     let mut obedienceLevel: u8 = 0;
-    if gBattleTypeFlags & 0x2000002 != 0 {
+    if gBattleTypeFlags.get() & 0x2000002 != 0 {
         return DISOBEDIENCE_OBEDIENT;
     }
-    if GetBattlerSide(gBattlerAttacker) == B_SIDE_OPPONENT {
+    if GetBattlerSide(gBattlerAttacker.get()) == B_SIDE_OPPONENT {
         return DISOBEDIENCE_OBEDIENT;
     }
-    if IsBattlerModernFatefulEncounter(gBattlerAttacker) != 0 {
-        if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
-            && GetBattlerPosition(gBattlerAttacker) == 2
+    if IsBattlerModernFatefulEncounter(gBattlerAttacker.get()) != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0
+            && GetBattlerPosition(gBattlerAttacker.get()) == 2
         {
             return DISOBEDIENCE_OBEDIENT;
         }
-        if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
             return DISOBEDIENCE_OBEDIENT;
         }
-        if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED != 0 {
             return DISOBEDIENCE_OBEDIENT;
         }
         if IsOtherTrainer(
-            gBattleMons[gBattlerAttacker].otId,
-            gBattleMons[gBattlerAttacker].otName.as_mut_ptr(),
+            {
+                let gl_i184 = gBattlerAttacker.get();
+                crate::gl!(gBattleMons[gl_i184].otId)
+            },
+            (*gBattleMons.as_ptr())[gBattlerAttacker.get()]
+                .otName
+                .as_mut_ptr(),
         ) == 0
         {
             return DISOBEDIENCE_OBEDIENT;
@@ -5126,121 +6478,184 @@ pub unsafe fn IsMonDisobedient() -> u8 {
             obedienceLevel = 70;
         }
     }
-    if gBattleMons[gBattlerAttacker].level <= obedienceLevel {
+    if ({
+        let gl_i185 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i185].level)
+    }) <= obedienceLevel
+    {
         return DISOBEDIENCE_OBEDIENT;
     }
     let mut rnd: i32 = Random() as i32 & 255;
-    let mut calc: i32 =
-        ((gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd) >> 8;
+    let mut calc: i32 = ((({
+        let gl_i186 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i186].level)
+    }) as i32
+        + obedienceLevel as i32)
+        * rnd)
+        >> 8;
     if calc < obedienceLevel as i32 {
         return DISOBEDIENCE_OBEDIENT;
     }
-    if gCurrentMove == MOVE_RAGE {
-        gBattleMons[gBattlerAttacker].status2 &= 0xff7fffff;
+    if gCurrentMove.get() == MOVE_RAGE {
+        {
+            let gl_i187 = gBattlerAttacker.get();
+            crate::gl!(gBattleMons[gl_i187].status2 &= 0xff7fffff)
+        };
     }
-    if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0
-        && (gCurrentMove == MOVE_SNORE || gCurrentMove == MOVE_SLEEP_TALK)
+    if ({
+        let gl_i188 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i188].status1)
+    }) & STATUS1_SLEEP
+        != 0
+        && (gCurrentMove.get() == MOVE_SNORE || gCurrentMove.get() == MOVE_SLEEP_TALK)
     {
-        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresWhileAsleep
-            .cast::<CArray<u8, 0>>())
-        .as_ptr()
-        .cast_mut();
+        crate::gl!(
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresWhileAsleep
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+        );
         return DISOBEDIENCE_IGNORED;
     }
     rnd = Random() as i32 & 255;
-    calc = ((gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd) >> 8;
+    calc = ((({
+        let gl_i189 = gBattlerAttacker.get();
+        crate::gl!(gBattleMons[gl_i189].level)
+    }) as i32
+        + obedienceLevel as i32)
+        * rnd)
+        >> 8;
     if calc < obedienceLevel as i32 {
         calc = CheckMoveLimitations(
-            gBattlerAttacker,
-            gBitTable[gCurrMovePos] as u8,
+            gBattlerAttacker.get(),
+            gBitTable[gCurrMovePos.get()] as u8,
             MOVE_LIMITATIONS_ALL,
         ) as i32;
         if calc == ALL_MOVES_MASK as i32 {
-            gBattleCommunication[5] = (if 0 != 0 {
-                Random() as i32 % 4
-            } else {
-                Random() as i32 & 3
-            }) as u8;
-            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
-                .cast::<CArray<u8, 0>>())
-            .as_ptr()
-            .cast_mut();
+            crate::gl!(
+                gBattleCommunication[5] = (if 0 != 0 {
+                    Random() as i32 % 4
+                } else {
+                    Random() as i32 & 3
+                }) as u8
+            );
+            crate::gl!(
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+            );
             return DISOBEDIENCE_IGNORED;
         } else {
             loop {
-                gCurrMovePos = {
-                    gChosenMovePos = (if 0 != 0 {
-                        Random() as i32 % 4
-                    } else {
-                        Random() as i32 & 3
-                    }) as u8;
-                    gChosenMovePos
-                };
-                if gBitTable[gCurrMovePos] & calc as u32 == 0 {
+                gCurrMovePos.set({
+                    gChosenMovePos.set(
+                        (if 0 != 0 {
+                            Random() as i32 % 4
+                        } else {
+                            Random() as i32 & 3
+                        }) as u8,
+                    );
+                    gChosenMovePos.get()
+                });
+                if gBitTable[gCurrMovePos.get()] & calc as u32 == 0 {
                     break;
                 }
             }
-            gCalledMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
-            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndUsesRandomMove
-                .cast::<CArray<u8, 0>>())
-            .as_ptr()
-            .cast_mut();
-            gBattlerTarget = GetMoveTarget(gCalledMove, NO_TARGET_OVERRIDE);
-            gHitMarker |= HITMARKER_DISOBEDIENT_MOVE;
+            gCalledMove.set({
+                let gl_i190 = gBattlerAttacker.get();
+                let gl_i191 = gCurrMovePos.get();
+                crate::gl!(gBattleMons[gl_i190].moves[gl_i191])
+            });
+            crate::gl!(
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndUsesRandomMove
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+            );
+            gBattlerTarget.set(GetMoveTarget(gCalledMove.get(), NO_TARGET_OVERRIDE));
+            gHitMarker.set(gHitMarker.get() | (HITMARKER_DISOBEDIENT_MOVE));
             return DISOBEDIENCE_OTHER;
         }
     } else {
-        obedienceLevel = gBattleMons[gBattlerAttacker].level - obedienceLevel;
+        obedienceLevel = ({
+            let gl_i192 = gBattlerAttacker.get();
+            crate::gl!(gBattleMons[gl_i192].level)
+        }) - obedienceLevel;
         calc = Random() as i32 & 255;
         if calc < obedienceLevel as i32
-            && gBattleMons[gBattlerAttacker].status1 & STATUS1_ANY == 0
-            && gBattleMons[gBattlerAttacker].ability != ABILITY_VITAL_SPIRIT
-            && gBattleMons[gBattlerAttacker].ability != ABILITY_INSOMNIA
+            && ({
+                let gl_i193 = gBattlerAttacker.get();
+                crate::gl!(gBattleMons[gl_i193].status1)
+            }) & STATUS1_ANY
+                == 0
+            && ({
+                let gl_i194 = gBattlerAttacker.get();
+                crate::gl!(gBattleMons[gl_i194].ability)
+            }) != ABILITY_VITAL_SPIRIT
+            && ({
+                let gl_i195 = gBattlerAttacker.get();
+                crate::gl!(gBattleMons[gl_i195].ability)
+            }) != ABILITY_INSOMNIA
         {
             let mut i: i32 = 0;
-            while i < gBattlersCount as i32 {
-                if gBattleMons[i].status2 & STATUS2_UPROAR != 0 {
+            while i < gBattlersCount.get() as i32 {
+                if crate::gl!(gBattleMons[i].status2) & STATUS2_UPROAR != 0 {
                     break;
                 }
                 i += 1;
             }
-            if i == gBattlersCount as i32 {
-                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndFallsAsleep
-                    .cast::<CArray<u8, 0>>())
-                .as_ptr()
-                .cast_mut();
+            if i == gBattlersCount.get() as i32 {
+                crate::gl!(
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndFallsAsleep
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
+                );
                 return DISOBEDIENCE_IGNORED;
             }
         }
         calc -= obedienceLevel as i32;
         if calc < obedienceLevel as i32 {
-            gBattleMoveDamage = CalculateBaseDamage(
-                &raw mut gBattleMons[gBattlerAttacker],
-                &raw mut gBattleMons[gBattlerAttacker],
+            gBattleMoveDamage.set(CalculateBaseDamage(
+                {
+                    let gl_i196 = gBattlerAttacker.get();
+                    crate::gl!(&raw gBattleMons[gl_i196])
+                },
+                {
+                    let gl_i197 = gBattlerAttacker.get();
+                    crate::gl!(&raw gBattleMons[gl_i197])
+                },
                 MOVE_POUND,
                 0,
                 40,
                 0,
-                gBattlerAttacker,
-                gBattlerAttacker,
+                gBattlerAttacker.get(),
+                gBattlerAttacker.get(),
+            ));
+            gBattlerTarget.set(gBattlerAttacker.get());
+            crate::gl!(
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndHitsItself
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             );
-            gBattlerTarget = gBattlerAttacker;
-            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndHitsItself
-                .cast::<CArray<u8, 0>>())
-            .as_ptr()
-            .cast_mut();
-            gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
+            gHitMarker.set(gHitMarker.get() | (HITMARKER_UNABLE_TO_USE_MOVE));
             return DISOBEDIENCE_OTHER;
         } else {
-            gBattleCommunication[5] = (if 0 != 0 {
-                Random() as i32 % 4
-            } else {
-                Random() as i32 & 3
-            }) as u8;
-            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
-                .cast::<CArray<u8, 0>>())
-            .as_ptr()
-            .cast_mut();
+            crate::gl!(
+                gBattleCommunication[5] = (if 0 != 0 {
+                    Random() as i32 % 4
+                } else {
+                    Random() as i32 & 3
+                }) as u8
+            );
+            crate::gl!(
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+            );
             return DISOBEDIENCE_IGNORED;
         }
     }

@@ -25,12 +25,12 @@ use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
 
-pub(crate) static mut MultiBoot_required_data: Aligned<CArray<u16, 3>> =
-    Aligned(unsafe { zeroed() });
+pub(crate) static MultiBoot_required_data: crate::global::Global<Aligned<CArray<u16, 3>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `MultiBoot` with this module's view of its types.
 #[inline]
-unsafe fn MultiBoot(a0: *mut MultiBootParam) -> i32 {
+fn MultiBoot(a0: *mut MultiBootParam) -> i32 {
     unsafe { crate::syscall::MultiBoot(a0 as _) }
 }
 
@@ -101,7 +101,7 @@ pub unsafe fn MultiBootMain(mp: *mut u8) -> i32 {
         let siocnt = || i32::from((0x0400_0128 as *const u16).read_volatile());
         let siomulti =
             |i: i32| i32::from((0x0400_0120 as *const u16).add(i as usize).read_volatile());
-        let required = (&raw mut MultiBoot_required_data).cast::<u16>();
+        let required = (crate::gl!(&raw MultiBoot_required_data)).cast::<u16>();
         let masterp = || b(MASTERP).cast::<*const u8>().read();
 
         if MultiBootCheckComplete(mp.cast()) != 0 {

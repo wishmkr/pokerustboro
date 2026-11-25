@@ -386,8 +386,8 @@ pub unsafe fn GetDoorSoundEffect(x: u32, y: u32) -> u32 {
 }
 unsafe fn ShouldUseMultiCorridorDoor() -> u8 {
     if FlagGet(FLAG_ENABLE_MULTI_CORRIDOR_DOOR) != 0
-        && (*gSaveBlock1Ptr).location.mapGroup == 26
-        && (*gSaveBlock1Ptr).location.mapNum == 16
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 26
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 16
     {
         return TRUE;
     }

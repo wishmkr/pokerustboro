@@ -48,12 +48,13 @@ const RN_ACCEPT: u8 = 1;
 const RN_DISCONNECT: u8 = 4;
 const RN_NAME_TIMER_CLEAR: u8 = 2;
 
-#[unsafe(link_section = "common_data")]
-pub static mut lman: linkManagerTag = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static lman: crate::global::Global<linkManagerTag> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -62,33 +63,36 @@ unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 pub unsafe fn rfu_LMAN_REQBN_softReset_and_checkID() -> u32 {
     let id: u32 = rfu_REQBN_softReset_and_checkID();
     if id == RFU_ID {
-        lman.RFU_powerOn_flag = 1;
+        crate::gl!(lman.RFU_powerOn_flag = 1);
     }
-    if lman.state != LMAN_FORCED_STOP_AND_RFU_RESET
-        && lman.state != LMAN_STATE_SOFT_RESET_AND_CHECK_ID
+    if crate::gl!(lman.state) != LMAN_FORCED_STOP_AND_RFU_RESET
+        && crate::gl!(lman.state) != LMAN_STATE_SOFT_RESET_AND_CHECK_ID
     {
-        lman.state = {
-            lman.next_state = LMAN_STATE_READY;
-            lman.next_state
-        };
+        crate::gl!(
+            lman.state = {
+                crate::gl!(lman.next_state = LMAN_STATE_READY);
+                crate::gl!(lman.next_state)
+            }
+        );
     }
-    lman.pcswitch_flag = 0;
-    lman.reserveDisconnectSlot_flag = 0;
-    lman.acceptCount = 0;
-    lman.acceptSlot_flag = 0;
-    lman.parent_child = MODE_NEUTRAL;
+    crate::gl!(lman.pcswitch_flag = 0);
+    crate::gl!(lman.reserveDisconnectSlot_flag = 0);
+    crate::gl!(lman.acceptCount = 0);
+    crate::gl!(lman.acceptSlot_flag = 0);
+    crate::gl!(lman.parent_child = MODE_NEUTRAL);
     rfu_LMAN_managerChangeAgbClockMaster();
     id
 }
 pub unsafe fn rfu_LMAN_REQ_sendData(mut clockChangeFlag: u8) {
-    if (*gRfuLinkStatus).parentChild == MODE_CHILD {
-        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_CHILD {
+        if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON
+        {
             clockChangeFlag = TRUE;
         } else {
             clockChangeFlag = FALSE;
         }
     } else {
-        volatile_write(&raw mut lman.parentAck_flag, 0);
+        volatile_write(crate::gl!(&raw lman.parentAck_flag), 0);
     }
     rfu_REQ_sendData(clockChangeFlag);
 }
@@ -105,14 +109,14 @@ pub unsafe fn rfu_LMAN_initializeManager(
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut lman as *mut c_void,
+                crate::gl!(&raw lman) as *mut c_void,
                 0x1000024,
             );
         }
     }
-    lman.parent_child = MODE_NEUTRAL;
-    lman.LMAN_callback = LMAN_callback_p;
-    lman.MSC_callback = MSC_callback_p;
+    crate::gl!(lman.parent_child = MODE_NEUTRAL);
+    crate::gl!(lman.LMAN_callback = LMAN_callback_p);
+    crate::gl!(lman.MSC_callback = MSC_callback_p);
     rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
     rfu_setREQCallback(Some(rfu_LMAN_REQ_callback));
     0
@@ -124,43 +128,45 @@ unsafe fn rfu_LMAN_endManager() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut lman as *mut c_void,
+                crate::gl!(&raw lman) as *mut c_void,
                 0x1000020,
             );
         }
     }
-    lman.parent_child = MODE_NEUTRAL;
+    crate::gl!(lman.parent_child = MODE_NEUTRAL);
 }
 pub unsafe fn rfu_LMAN_initializeRFU(init_parameters: *mut InitializeParametersTag) {
     rfu_LMAN_clearVariables();
-    lman.state = LMAN_STATE_SOFT_RESET_AND_CHECK_ID;
-    lman.next_state = LMAN_STATE_RESET;
-    lman.init_param = init_parameters;
-    lman.linkRecovery_enable = (*init_parameters).linkRecovery_enable;
-    lman.linkRecoveryTimer.count_max = (*init_parameters).linkRecovery_period;
-    lman.NI_failCounter_limit = (*init_parameters).NI_failCounter_limit;
+    crate::gl!(lman.state = LMAN_STATE_SOFT_RESET_AND_CHECK_ID);
+    crate::gl!(lman.next_state = LMAN_STATE_RESET);
+    crate::gl!(lman.init_param = init_parameters);
+    crate::gl!(lman.linkRecovery_enable = (*init_parameters).linkRecovery_enable);
+    crate::gl!(lman.linkRecoveryTimer.count_max = (*init_parameters).linkRecovery_period);
+    crate::gl!(lman.NI_failCounter_limit = (*init_parameters).NI_failCounter_limit);
     if (*init_parameters).fastSearchParent_flag != 0 {
-        lman.fastSearchParent_flag = FSP_ON;
+        crate::gl!(lman.fastSearchParent_flag = FSP_ON);
     }
 }
-unsafe fn rfu_LMAN_clearVariables() {
-    lman.state = {
-        lman.next_state = LMAN_STATE_READY;
-        lman.next_state
-    };
-    lman.parent_child = MODE_NEUTRAL;
-    lman.pcswitch_flag = 0;
-    lman.child_slot = 0;
-    lman.connectSlot_flag_old = 0;
-    lman.nameAcceptTimer.active = 0;
-    lman.linkRecoveryTimer.active = 0;
+fn rfu_LMAN_clearVariables() {
+    crate::gl!(
+        lman.state = {
+            crate::gl!(lman.next_state = LMAN_STATE_READY);
+            crate::gl!(lman.next_state)
+        }
+    );
+    crate::gl!(lman.parent_child = MODE_NEUTRAL);
+    crate::gl!(lman.pcswitch_flag = 0);
+    crate::gl!(lman.child_slot = 0);
+    crate::gl!(lman.connectSlot_flag_old = 0);
+    crate::gl!(lman.nameAcceptTimer.active = 0);
+    crate::gl!(lman.linkRecoveryTimer.active = 0);
     for i in 0..RFU_CHILD_MAX {
-        lman.nameAcceptTimer.count[i] = 0;
-        lman.linkRecoveryTimer.count[i] = 0;
+        crate::gl!(lman.nameAcceptTimer.count[i] = 0);
+        crate::gl!(lman.linkRecoveryTimer.count[i] = 0);
     }
 }
-pub unsafe fn rfu_LMAN_powerDownRFU() {
-    lman.state = LMAN_STATE_STOP_MODE;
+pub fn rfu_LMAN_powerDownRFU() {
+    crate::gl!(lman.state = LMAN_STATE_STOP_MODE);
 }
 pub unsafe fn rfu_LMAN_establishConnection(
     mut parent_child: u8,
@@ -168,15 +174,16 @@ pub unsafe fn rfu_LMAN_establishConnection(
     name_accept_period: u16,
     acceptable_serialNo_list: *mut u16,
 ) -> u8 {
-    if lman.state != LMAN_STATE_READY
-        && (lman.state != LMAN_STATE_WAIT_RECV_CHILD_NAME || parent_child != MODE_PARENT)
+    if crate::gl!(lman.state) != LMAN_STATE_READY
+        && (crate::gl!(lman.state) != LMAN_STATE_WAIT_RECV_CHILD_NAME
+            || parent_child != MODE_PARENT)
     {
-        lman.param[0] = 1;
+        crate::gl!(lman.param[0] = 1);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_MANAGER_BUSY;
     }
     if rfu_getMasterSlave() == AGB_CLK_SLAVE {
-        lman.param[0] = 2;
+        crate::gl!(lman.param[0] = 2);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_AGB_CLK_SLAVE;
     }
@@ -194,160 +201,172 @@ pub unsafe fn rfu_LMAN_establishConnection(
         i += 1;
     }
     if i == 16 {
-        lman.param[0] = 4;
+        crate::gl!(lman.param[0] = 4);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_ILLEGAL_PARAMETER;
     }
     if parent_child > MODE_PARENT {
-        lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
+        crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC_START);
         parent_child = MODE_PARENT;
         connect_period = 0;
     } else {
-        lman.pcswitch_flag = 0;
+        crate::gl!(lman.pcswitch_flag = 0);
     }
     if parent_child != MODE_CHILD {
-        lman.state = LMAN_STATE_START_SEARCH_CHILD;
+        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
     } else {
-        lman.state = LMAN_STATE_START_SEARCH_PARENT;
-        if lman.fastSearchParent_flag != 0 {
-            lman.fastSearchParent_flag = FSP_START;
+        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_PARENT);
+        if crate::gl!(lman.fastSearchParent_flag) != 0 {
+            crate::gl!(lman.fastSearchParent_flag = FSP_START);
         }
     }
-    lman.parent_child = parent_child;
-    lman.connect_period = connect_period;
-    lman.nameAcceptTimer.count_max = name_accept_period;
-    lman.acceptable_serialNo_list = acceptable_serialNo_list;
+    crate::gl!(lman.parent_child = parent_child);
+    crate::gl!(lman.connect_period = connect_period);
+    crate::gl!(lman.nameAcceptTimer.count_max = name_accept_period);
+    crate::gl!(lman.acceptable_serialNo_list = acceptable_serialNo_list);
     0
 }
 pub unsafe fn rfu_LMAN_CHILD_connectParent(parentId: u16, connect_period: u16) -> u8 {
-    if lman.state != LMAN_STATE_READY && (lman.state < 9 || lman.state > 11) {
-        lman.param[0] = 1;
+    if crate::gl!(lman.state) != LMAN_STATE_READY
+        && (crate::gl!(lman.state) < 9 || crate::gl!(lman.state) > 11)
+    {
+        crate::gl!(lman.param[0] = 1);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_MANAGER_BUSY;
     }
     if rfu_getMasterSlave() == AGB_CLK_SLAVE {
-        lman.param[0] = 2;
+        crate::gl!(lman.param[0] = 2);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_AGB_CLK_SLAVE;
     }
     let mut i: u8 = 0;
-    while i < (*gRfuLinkStatus).findParentCount {
-        if (*gRfuLinkStatus).partner[i].id == parentId {
+    while i < (*crate::gl!(gRfuLinkStatus)).findParentCount {
+        if (*crate::gl!(gRfuLinkStatus)).partner[i].id == parentId {
             break;
         }
         i += 1;
     }
-    if (*gRfuLinkStatus).findParentCount == 0 || i == (*gRfuLinkStatus).findParentCount {
-        lman.param[0] = 3;
+    if (*crate::gl!(gRfuLinkStatus)).findParentCount == 0
+        || i == (*crate::gl!(gRfuLinkStatus)).findParentCount
+    {
+        crate::gl!(lman.param[0] = 3);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_PID_NOT_FOUND;
     }
-    if lman.state == LMAN_STATE_READY || lman.state == LMAN_STATE_START_SEARCH_PARENT {
-        lman.state = LMAN_STATE_START_CONNECT_PARENT;
-        lman.next_state = LMAN_STATE_POLL_CONNECT_PARENT;
+    if crate::gl!(lman.state) == LMAN_STATE_READY
+        || crate::gl!(lman.state) == LMAN_STATE_START_SEARCH_PARENT
+    {
+        crate::gl!(lman.state = LMAN_STATE_START_CONNECT_PARENT);
+        crate::gl!(lman.next_state = LMAN_STATE_POLL_CONNECT_PARENT);
     } else {
-        lman.state = LMAN_STATE_END_SEARCH_PARENT;
-        lman.next_state = LMAN_STATE_START_CONNECT_PARENT;
+        crate::gl!(lman.state = LMAN_STATE_END_SEARCH_PARENT);
+        crate::gl!(lman.next_state = LMAN_STATE_START_CONNECT_PARENT);
     }
-    lman.work = parentId;
-    lman.connect_period = connect_period;
-    if lman.pcswitch_flag != 0 {
-        lman.pcswitch_flag = PCSWITCH_CP;
+    crate::gl!(lman.work = parentId);
+    crate::gl!(lman.connect_period = connect_period);
+    if crate::gl!(lman.pcswitch_flag) != 0 {
+        crate::gl!(lman.pcswitch_flag = PCSWITCH_CP);
     }
     0
 }
 unsafe fn rfu_LMAN_PARENT_stopWaitLinkRecoveryAndDisconnect(bm_targetSlot: u8) {
-    if bm_targetSlot as i32 & lman.linkRecoveryTimer.active as i32 == 0 {
+    if bm_targetSlot as i32 & crate::gl!(lman.linkRecoveryTimer.active) as i32 == 0 {
         return;
     }
-    lman.linkRecoveryTimer.active &= !bm_targetSlot;
+    crate::gl!(lman.linkRecoveryTimer.active &= !bm_targetSlot);
     for i in 0..RFU_CHILD_MAX {
         if shr_i32(bm_targetSlot as i32, i as u32) & 1 != 0 {
-            lman.linkRecoveryTimer.count[i] = 0;
+            crate::gl!(lman.linkRecoveryTimer.count[i] = 0);
         }
     }
-    let i: u8 = (*gRfuLinkStatus).linkLossSlotFlag & bm_targetSlot;
+    let i: u8 = (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag & bm_targetSlot;
     if i != 0 {
         rfu_LMAN_disconnect(i);
     }
-    lman.param[0] = i as u16;
+    crate::gl!(lman.param[0] = i as u16);
     rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, i);
 }
 pub unsafe fn rfu_LMAN_stopManager(forced_stop_and_RFU_reset_flag: u8) {
     let mut msg: u8 = 0;
-    lman.pcswitch_flag = 0;
+    crate::gl!(lman.pcswitch_flag = 0);
     if forced_stop_and_RFU_reset_flag != 0 {
         rfu_LMAN_clearVariables();
-        lman.state = LMAN_FORCED_STOP_AND_RFU_RESET;
+        crate::gl!(lman.state = LMAN_FORCED_STOP_AND_RFU_RESET);
         return;
     }
-    match lman.state {
+    match crate::gl!(lman.state) {
         LMAN_STATE_START_SEARCH_CHILD => {
-            lman.state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
-            lman.next_state = LMAN_STATE_READY;
+            crate::gl!(lman.state = LMAN_STATE_WAIT_RECV_CHILD_NAME);
+            crate::gl!(lman.next_state = LMAN_STATE_READY);
             msg = LMAN_MSG_SEARCH_CHILD_PERIOD_EXPIRED;
         }
         LMAN_STATE_POLL_SEARCH_CHILD => {
-            lman.state = LMAN_STATE_END_SEARCH_CHILD;
-            lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+            crate::gl!(lman.state = LMAN_STATE_END_SEARCH_CHILD);
+            crate::gl!(lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME);
         }
         LMAN_STATE_END_SEARCH_CHILD => {
-            lman.state = LMAN_STATE_END_SEARCH_CHILD;
-            lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+            crate::gl!(lman.state = LMAN_STATE_END_SEARCH_CHILD);
+            crate::gl!(lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME);
         }
         LMAN_STATE_WAIT_RECV_CHILD_NAME => {}
         LMAN_STATE_START_SEARCH_PARENT => {
-            lman.state = {
-                lman.next_state = LMAN_STATE_READY;
-                lman.next_state
-            };
+            crate::gl!(
+                lman.state = {
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
+                    crate::gl!(lman.next_state)
+                }
+            );
             msg = LMAN_MSG_SEARCH_PARENT_PERIOD_EXPIRED;
         }
         LMAN_STATE_POLL_SEARCH_PARENT => {
-            lman.state = LMAN_STATE_END_SEARCH_PARENT;
-            lman.next_state = LMAN_STATE_READY;
+            crate::gl!(lman.state = LMAN_STATE_END_SEARCH_PARENT);
+            crate::gl!(lman.next_state = LMAN_STATE_READY);
         }
         LMAN_STATE_END_SEARCH_PARENT => {
-            lman.state = LMAN_STATE_END_SEARCH_PARENT;
-            lman.next_state = LMAN_STATE_READY;
+            crate::gl!(lman.state = LMAN_STATE_END_SEARCH_PARENT);
+            crate::gl!(lman.next_state = LMAN_STATE_READY);
         }
         LMAN_STATE_START_CONNECT_PARENT => {
-            lman.state = {
-                lman.next_state = LMAN_STATE_READY;
-                lman.next_state
-            };
+            crate::gl!(
+                lman.state = {
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
+                    crate::gl!(lman.next_state)
+                }
+            );
             msg = LMAN_MSG_CONNECT_PARENT_FAILED;
         }
         LMAN_STATE_POLL_CONNECT_PARENT => {
-            lman.state = LMAN_STATE_END_CONNECT_PARENT;
+            crate::gl!(lman.state = LMAN_STATE_END_CONNECT_PARENT);
         }
         LMAN_STATE_END_CONNECT_PARENT => {
-            lman.state = LMAN_STATE_END_CONNECT_PARENT;
+            crate::gl!(lman.state = LMAN_STATE_END_CONNECT_PARENT);
         }
         LMAN_STATE_SEND_CHILD_NAME => {}
         LMAN_STATE_START_LINK_RECOVERY => {
-            lman.state = lman.state_bak[0];
-            lman.next_state = lman.state_bak[1];
-            rfu_LMAN_disconnect((*gRfuLinkStatus).linkLossSlotFlag);
-            lman.param[0] = (*gRfuLinkStatus).linkLossSlotFlag as u16;
+            crate::gl!(lman.state = crate::gl!(lman.state_bak[0]));
+            crate::gl!(lman.next_state = crate::gl!(lman.state_bak[1]));
+            rfu_LMAN_disconnect((*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag);
+            crate::gl!(lman.param[0] = (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as u16);
             rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, 1);
             return;
         }
         LMAN_STATE_POLL_LINK_RECOVERY => {
-            lman.state = LMAN_STATE_END_LINK_RECOVERY;
+            crate::gl!(lman.state = LMAN_STATE_END_LINK_RECOVERY);
         }
         LMAN_STATE_END_LINK_RECOVERY => {
-            lman.state = LMAN_STATE_END_LINK_RECOVERY;
+            crate::gl!(lman.state = LMAN_STATE_END_LINK_RECOVERY);
         }
         _ => {
-            lman.state = {
-                lman.next_state = LMAN_STATE_READY;
-                lman.next_state
-            };
+            crate::gl!(
+                lman.state = {
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
+                    crate::gl!(lman.next_state)
+                }
+            );
             msg = LMAN_MSG_MANAGER_STOPPED;
         }
     }
-    if lman.state == LMAN_STATE_READY {
+    if crate::gl!(lman.state) == LMAN_STATE_READY {
         rfu_LMAN_occureCallback(msg, 0);
     }
 }
@@ -364,23 +383,26 @@ unsafe fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
         &raw mut bm_linkRecoverySlot,
     );
     if bm_linkLossSlot != 0 {
-        lman.param[0] = bm_linkLossSlot as u16;
-        lman.param[1] = reason as u16;
-        if lman.linkRecovery_enable != 0 {
-            lman.linkRecovery_start_flag = LINK_RECOVERY_START;
-            if lman.parent_child == 0x00 && reason == 0x00 {
-                lman.linkRecovery_start_flag = LINK_RECOVERY_IMPOSSIBLE;
+        crate::gl!(lman.param[0] = bm_linkLossSlot as u16);
+        crate::gl!(lman.param[1] = reason as u16);
+        if crate::gl!(lman.linkRecovery_enable) != 0 {
+            crate::gl!(lman.linkRecovery_start_flag = LINK_RECOVERY_START);
+            if crate::gl!(lman.parent_child) == 0x00 && reason == 0x00 {
+                crate::gl!(lman.linkRecovery_start_flag = LINK_RECOVERY_IMPOSSIBLE);
             }
-            if lman.linkRecovery_start_flag == LINK_RECOVERY_START {
+            if crate::gl!(lman.linkRecovery_start_flag) == LINK_RECOVERY_START {
                 for i in 0..RFU_CHILD_MAX {
                     if shr_i32(bm_linkLossSlot as i32, i as u32) & 1 != 0 {
-                        lman.linkRecoveryTimer.active |= shl_i32(1, i as u32) as u8;
-                        lman.linkRecoveryTimer.count[i] = lman.linkRecoveryTimer.count_max;
+                        crate::gl!(lman.linkRecoveryTimer.active |= shl_i32(1, i as u32) as u8);
+                        crate::gl!(
+                            lman.linkRecoveryTimer.count[i] =
+                                crate::gl!(lman.linkRecoveryTimer.count_max)
+                        );
                     }
                 }
                 rfu_LMAN_occureCallback(LMAN_MSG_LINK_LOSS_DETECTED_AND_START_RECOVERY, 1);
             } else {
-                lman.linkRecovery_start_flag = 0;
+                crate::gl!(lman.linkRecovery_start_flag = 0);
                 rfu_LMAN_disconnect(bm_linkLossSlot);
                 disconnect_occure_flag = TRUE;
                 rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, 1);
@@ -392,42 +414,42 @@ unsafe fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
         }
         rfu_LMAN_managerChangeAgbClockMaster();
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         if bm_linkRecoverySlot != 0 {
             for i in 0..RFU_CHILD_MAX {
-                if shr_i32(lman.linkRecoveryTimer.active as i32, i as u32) & 1 != 0
+                if shr_i32(crate::gl!(lman.linkRecoveryTimer.active) as i32, i as u32) & 1 != 0
                     && shr_i32(bm_linkRecoverySlot as i32, i as u32) & 1 != 0
                 {
-                    lman.linkRecoveryTimer.count[i] = 0;
+                    crate::gl!(lman.linkRecoveryTimer.count[i] = 0);
                 }
             }
-            lman.linkRecoveryTimer.active &= !bm_linkRecoverySlot;
-            lman.param[0] = bm_linkRecoverySlot as u16;
+            crate::gl!(lman.linkRecoveryTimer.active &= !bm_linkRecoverySlot);
+            crate::gl!(lman.param[0] = bm_linkRecoverySlot as u16);
             rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_SUCCESSED, 1);
         }
-        if lman.linkRecoveryTimer.active != 0 {
+        if crate::gl!(lman.linkRecoveryTimer.active) != 0 {
             bm_disconnectSlot = 0;
             for i in 0..RFU_CHILD_MAX {
-                if shr_i32(lman.linkRecoveryTimer.active as i32, i as u32) & 1 != 0
-                    && lman.linkRecoveryTimer.count[i] != 0
+                if shr_i32(crate::gl!(lman.linkRecoveryTimer.active) as i32, i as u32) & 1 != 0
+                    && crate::gl!(lman.linkRecoveryTimer.count[i]) != 0
                     && ({
-                        lman.linkRecoveryTimer.count[i] -= 1;
-                        lman.linkRecoveryTimer.count[i]
+                        crate::gl!(lman.linkRecoveryTimer.count[i] -= 1);
+                        crate::gl!(lman.linkRecoveryTimer.count[i])
                     }) == 0
                 {
-                    lman.linkRecoveryTimer.active &= !(shl_i32(1, i as u32) as u8);
+                    crate::gl!(lman.linkRecoveryTimer.active &= !(shl_i32(1, i as u32) as u8));
                     bm_disconnectSlot |= shl_i32(1, i as u32) as u8;
                 }
             }
             if bm_disconnectSlot != 0 {
                 rfu_LMAN_disconnect(bm_disconnectSlot);
                 disconnect_occure_flag = TRUE;
-                lman.param[0] = bm_disconnectSlot as u16;
+                crate::gl!(lman.param[0] = bm_disconnectSlot as u16);
                 rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, 1);
             }
         }
-        if lman.linkRecoveryTimer.active == 0 {
-            lman.linkRecovery_start_flag = 0;
+        if crate::gl!(lman.linkRecoveryTimer.active) == 0 {
+            crate::gl!(lman.linkRecovery_start_flag = 0);
         }
     }
     disconnect_occure_flag
@@ -440,39 +462,43 @@ pub unsafe fn rfu_LMAN_syncVBlank() {
 }
 pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
     let mut msg: u8 = 0;
-    if lman.LMAN_callback.is_none() && lman.state != LMAN_STATE_READY {
-        lman.state = LMAN_STATE_READY;
+    if (*lman.as_ptr()).LMAN_callback.is_none() && crate::gl!(lman.state) != LMAN_STATE_READY {
+        crate::gl!(lman.state = LMAN_STATE_READY);
         return;
     }
-    if lman.pcswitch_flag != 0 {
+    if crate::gl!(lman.pcswitch_flag) != 0 {
         rfu_LMAN_settingPCSWITCH(rand);
     }
     loop {
-        if lman.state != LMAN_STATE_READY {
+        if crate::gl!(lman.state) != LMAN_STATE_READY {
             rfu_waitREQComplete();
-            lman.active = 1;
-            match lman.state {
+            crate::gl!(lman.active = 1);
+            match crate::gl!(lman.state) {
                 LMAN_FORCED_STOP_AND_RFU_RESET => {
                     if rfu_LMAN_REQBN_softReset_and_checkID() == RFU_ID {
                         msg = LMAN_MSG_MANAGER_FORCED_STOPPED_AND_RFU_RESET;
                     } else {
                         msg = LMAN_MSG_RFU_FATAL_ERROR;
                     }
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_READY;
-                        lman.next_state
-                    };
+                    crate::gl!(
+                        lman.state = {
+                            crate::gl!(lman.next_state = LMAN_STATE_READY);
+                            crate::gl!(lman.next_state)
+                        }
+                    );
                     rfu_LMAN_occureCallback(msg, 0);
                 }
                 LMAN_STATE_SOFT_RESET_AND_CHECK_ID => {
                     if rfu_LMAN_REQBN_softReset_and_checkID() == RFU_ID {
-                        lman.state = lman.next_state;
-                        lman.next_state = LMAN_STATE_CONFIG_SYSTEM;
+                        crate::gl!(lman.state = crate::gl!(lman.next_state));
+                        crate::gl!(lman.next_state = LMAN_STATE_CONFIG_SYSTEM);
                     } else {
-                        lman.state = {
-                            lman.next_state = LMAN_STATE_READY;
-                            lman.next_state
-                        };
+                        crate::gl!(
+                            lman.state = {
+                                crate::gl!(lman.next_state = LMAN_STATE_READY);
+                                crate::gl!(lman.next_state)
+                            }
+                        );
                         rfu_LMAN_occureCallback(LMAN_MSG_RFU_FATAL_ERROR, 0);
                     }
                 }
@@ -481,17 +507,17 @@ pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
                 }
                 LMAN_STATE_CONFIG_SYSTEM => {
                     rfu_REQ_configSystem(
-                        (*lman.init_param).availSlot_flag,
-                        (*lman.init_param).maxMFrame,
-                        (*lman.init_param).MC_TimerCount,
+                        (*crate::gl!(lman.init_param)).availSlot_flag,
+                        (*crate::gl!(lman.init_param)).maxMFrame,
+                        (*crate::gl!(lman.init_param)).MC_TimerCount,
                     );
                 }
                 LMAN_STATE_CONFIG_GAME_DATA => {
                     rfu_REQ_configGameData(
-                        (*lman.init_param).mboot_flag,
-                        (*lman.init_param).serialNo,
-                        (*lman.init_param).gameName,
-                        (*lman.init_param).userName,
+                        (*crate::gl!(lman.init_param)).mboot_flag,
+                        (*crate::gl!(lman.init_param)).serialNo,
+                        (*crate::gl!(lman.init_param)).gameName,
+                        (*crate::gl!(lman.init_param)).userName,
                     );
                 }
                 LMAN_STATE_START_SEARCH_CHILD => {
@@ -514,7 +540,7 @@ pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
                     rfu_REQ_endSearchParent();
                 }
                 LMAN_STATE_START_CONNECT_PARENT => {
-                    rfu_REQ_startConnectParent(lman.work);
+                    rfu_REQ_startConnectParent(crate::gl!(lman.work));
                 }
                 LMAN_STATE_POLL_CONNECT_PARENT => {
                     rfu_REQ_pollConnectParent();
@@ -524,7 +550,9 @@ pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
                 }
                 LMAN_STATE_SEND_CHILD_NAME => {}
                 LMAN_STATE_START_LINK_RECOVERY => {
-                    rfu_REQ_CHILD_startConnectRecovery((*gRfuLinkStatus).linkLossSlotFlag);
+                    rfu_REQ_CHILD_startConnectRecovery(
+                        (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag,
+                    );
                 }
                 LMAN_STATE_POLL_LINK_RECOVERY => {
                     rfu_REQ_CHILD_pollConnectRecovery();
@@ -543,14 +571,16 @@ pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
                 _ => {}
             }
             rfu_waitREQComplete();
-            lman.active = 0;
+            crate::gl!(lman.active = 0);
         }
-        if lman.state == LMAN_STATE_END_LINK_RECOVERY || lman.state == LMAN_STATE_MS_CHANGE {
+        if crate::gl!(lman.state) == LMAN_STATE_END_LINK_RECOVERY
+            || crate::gl!(lman.state) == LMAN_STATE_MS_CHANGE
+        {
         } else {
             break;
         }
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT && rfu_LMAN_linkWatcher(0) != 0 {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT && rfu_LMAN_linkWatcher(0) != 0 {
         return;
     }
     rfu_LMAN_PARENT_checkRecvChildName();
@@ -558,208 +588,226 @@ pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
     rfu_LMAN_CHILD_linkRecoveryProcess();
     rfu_LMAN_checkNICommunicateStatus();
 }
-unsafe fn rfu_LMAN_settingPCSWITCH(rand: u32) {
-    if lman.pcswitch_flag == PCSWITCH_3RD_SC_START {
-        lman.parent_child = MODE_PARENT;
-        lman.state = LMAN_STATE_START_SEARCH_CHILD;
-        lman.connect_period = lman.pcswitch_period_bak;
-        if lman.connect_period != 0 {
-            lman.pcswitch_flag = PCSWITCH_3RD_SC;
+fn rfu_LMAN_settingPCSWITCH(rand: u32) {
+    if crate::gl!(lman.pcswitch_flag) == PCSWITCH_3RD_SC_START {
+        crate::gl!(lman.parent_child = MODE_PARENT);
+        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
+        crate::gl!(lman.connect_period = crate::gl!(lman.pcswitch_period_bak));
+        if crate::gl!(lman.connect_period) != 0 {
+            crate::gl!(lman.pcswitch_flag = PCSWITCH_3RD_SC);
         } else {
-            lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
+            crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC_START);
         }
     }
-    if lman.pcswitch_flag == PCSWITCH_1ST_SC_START {
-        lman.parent_child = MODE_PARENT;
-        lman.state = LMAN_STATE_START_SEARCH_CHILD;
-        lman.connect_period = (rand % 140) as u16;
-        lman.pcswitch_period_bak = 140 - lman.connect_period;
-        if lman.connect_period != 0 {
-            lman.pcswitch_flag = PCSWITCH_1ST_SC;
+    if crate::gl!(lman.pcswitch_flag) == PCSWITCH_1ST_SC_START {
+        crate::gl!(lman.parent_child = MODE_PARENT);
+        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
+        crate::gl!(lman.connect_period = (rand % 140) as u16);
+        crate::gl!(lman.pcswitch_period_bak = 140 - crate::gl!(lman.connect_period));
+        if crate::gl!(lman.connect_period) != 0 {
+            crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC);
         } else {
-            lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
+            crate::gl!(lman.pcswitch_flag = PCSWITCH_2ND_SP_START);
         }
     }
-    if lman.pcswitch_flag == PCSWITCH_2ND_SP_START {
-        lman.parent_child = MODE_CHILD;
-        lman.connect_period = PCSWITCH_SP_PERIOD;
-        lman.pcswitch_flag = PCSWITCH_2ND_SP;
-        lman.state = LMAN_STATE_START_SEARCH_PARENT;
+    if crate::gl!(lman.pcswitch_flag) == PCSWITCH_2ND_SP_START {
+        crate::gl!(lman.parent_child = MODE_CHILD);
+        crate::gl!(lman.connect_period = PCSWITCH_SP_PERIOD);
+        crate::gl!(lman.pcswitch_flag = PCSWITCH_2ND_SP);
+        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_PARENT);
     }
 }
 pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16) {
     let mut status: u8 = 0;
     let mut stwiRecvBuffer: *mut u8 = null_mut();
-    if lman.active != 0 {
-        lman.active = 0;
+    if crate::gl!(lman.active) != 0 {
+        crate::gl!(lman.active = 0);
         match reqCommandId {
             ID_RESET_REQ => {
                 if reqResult == 0 {
-                    lman.state = lman.next_state;
-                    lman.next_state = LMAN_STATE_CONFIG_GAME_DATA;
+                    crate::gl!(lman.state = crate::gl!(lman.next_state));
+                    crate::gl!(lman.next_state = LMAN_STATE_CONFIG_GAME_DATA);
                 }
             }
             ID_SYSTEM_CONFIG_REQ => {
                 if reqResult == 0 {
-                    lman.state = lman.next_state;
-                    lman.next_state = LMAN_STATE_READY;
+                    crate::gl!(lman.state = crate::gl!(lman.next_state));
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
                 }
             }
             ID_GAME_CONFIG_REQ => {
                 if reqResult == 0 {
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_READY;
-                        lman.next_state
-                    };
+                    crate::gl!(
+                        lman.state = {
+                            crate::gl!(lman.next_state = LMAN_STATE_READY);
+                            crate::gl!(lman.next_state)
+                        }
+                    );
                     rfu_LMAN_occureCallback(0x00, 0);
                 }
             }
             25 => {
                 if reqResult == 0 {
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_POLL_SEARCH_CHILD;
-                        lman.next_state
-                    };
+                    crate::gl!(
+                        lman.state = {
+                            crate::gl!(lman.next_state = LMAN_STATE_POLL_SEARCH_CHILD);
+                            crate::gl!(lman.next_state)
+                        }
+                    );
                 }
             }
             26 => {
-                if lman.connect_period != 0
+                if crate::gl!(lman.connect_period) != 0
                     && ({
-                        lman.connect_period -= 1;
-                        lman.connect_period
+                        crate::gl!(lman.connect_period -= 1);
+                        crate::gl!(lman.connect_period)
                     }) == 0
                 {
-                    lman.state = LMAN_STATE_END_SEARCH_CHILD;
-                    lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME;
+                    crate::gl!(lman.state = LMAN_STATE_END_SEARCH_CHILD);
+                    crate::gl!(lman.next_state = LMAN_STATE_WAIT_RECV_CHILD_NAME);
                 }
             }
             27 => {
                 if reqResult == 0 {
-                    lman.state = lman.next_state;
-                    lman.next_state = LMAN_STATE_READY;
-                    if lman.pcswitch_flag == 0 {
+                    crate::gl!(lman.state = crate::gl!(lman.next_state));
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
+                    if crate::gl!(lman.pcswitch_flag) == 0 {
                         rfu_LMAN_occureCallback(LMAN_MSG_SEARCH_CHILD_PERIOD_EXPIRED, 0);
                     }
                 }
             }
             ID_SP_START_REQ => {
                 if reqResult == 0 {
-                    if lman.fastSearchParent_flag == FSP_ON && lman.connect_period > 1 {
-                        lman.connect_period -= 1;
+                    if crate::gl!(lman.fastSearchParent_flag) == FSP_ON
+                        && crate::gl!(lman.connect_period) > 1
+                    {
+                        crate::gl!(lman.connect_period -= 1);
                     }
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_POLL_SEARCH_PARENT;
-                        lman.next_state
-                    };
+                    crate::gl!(
+                        lman.state = {
+                            crate::gl!(lman.next_state = LMAN_STATE_POLL_SEARCH_PARENT);
+                            crate::gl!(lman.next_state)
+                        }
+                    );
                 }
             }
             ID_SP_POLL_REQ => {
                 if reqResult == 0 {
                     status = rfu_LMAN_CHILD_checkEnableParentCandidate();
-                    lman.param[0] = status as u16;
+                    crate::gl!(lman.param[0] = status as u16);
                     if status != 0 {
                         rfu_LMAN_occureCallback(LMAN_MSG_PARENT_FOUND, 1);
                     }
-                    if lman.fastSearchParent_flag != 0
-                        && lman.connect_period != 1
-                        && (*gRfuLinkStatus).findParentCount == RFU_CHILD_MAX
+                    if crate::gl!(lman.fastSearchParent_flag) != 0
+                        && crate::gl!(lman.connect_period) != 1
+                        && (*crate::gl!(gRfuLinkStatus)).findParentCount == RFU_CHILD_MAX
                     {
                         rfu_REQ_endSearchParent();
                         rfu_waitREQComplete();
-                        lman.state = LMAN_STATE_START_SEARCH_PARENT;
-                        lman.fastSearchParent_flag = FSP_ON;
+                        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_PARENT);
+                        crate::gl!(lman.fastSearchParent_flag = FSP_ON);
                     }
                 }
-                if lman.connect_period != 0
+                if crate::gl!(lman.connect_period) != 0
                     && ({
-                        lman.connect_period -= 1;
-                        lman.connect_period
+                        crate::gl!(lman.connect_period -= 1);
+                        crate::gl!(lman.connect_period)
                     }) == 0
                 {
-                    lman.state = LMAN_STATE_END_SEARCH_PARENT;
-                    lman.next_state = LMAN_STATE_READY;
+                    crate::gl!(lman.state = LMAN_STATE_END_SEARCH_PARENT);
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
                 }
             }
             ID_SP_END_REQ => {
                 if reqResult == 0 {
-                    lman.state = lman.next_state;
-                    if lman.pcswitch_flag == 0 {
-                        if lman.state == LMAN_STATE_READY {
+                    crate::gl!(lman.state = crate::gl!(lman.next_state));
+                    if crate::gl!(lman.pcswitch_flag) == 0 {
+                        if crate::gl!(lman.state) == LMAN_STATE_READY {
                             rfu_LMAN_occureCallback(LMAN_MSG_SEARCH_PARENT_PERIOD_EXPIRED, 0);
                         }
-                    } else if lman.pcswitch_flag != PCSWITCH_CP {
-                        lman.state = LMAN_STATE_START_SEARCH_CHILD;
-                        lman.pcswitch_flag = PCSWITCH_3RD_SC_START;
+                    } else if crate::gl!(lman.pcswitch_flag) != PCSWITCH_CP {
+                        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
+                        crate::gl!(lman.pcswitch_flag = PCSWITCH_3RD_SC_START);
                     }
                 }
             }
             31 => {
                 if reqResult == 0 {
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_POLL_CONNECT_PARENT;
-                        lman.next_state
-                    };
+                    crate::gl!(
+                        lman.state = {
+                            crate::gl!(lman.next_state = LMAN_STATE_POLL_CONNECT_PARENT);
+                            crate::gl!(lman.next_state)
+                        }
+                    );
                 }
             }
             ID_CP_POLL_REQ => {
                 if reqResult == 0
-                    && rfu_getConnectParentStatus(&raw mut status, &raw mut lman.child_slot) == 0
+                    && rfu_getConnectParentStatus(&raw mut status, crate::gl!(&raw lman.child_slot))
+                        == 0
                     && status == 0
                 {
-                    lman.state = LMAN_STATE_END_CONNECT_PARENT;
+                    crate::gl!(lman.state = LMAN_STATE_END_CONNECT_PARENT);
                 }
-                if lman.connect_period != 0
+                if crate::gl!(lman.connect_period) != 0
                     && ({
-                        lman.connect_period -= 1;
-                        lman.connect_period
+                        crate::gl!(lman.connect_period -= 1);
+                        crate::gl!(lman.connect_period)
                     }) == 0
                 {
-                    lman.state = LMAN_STATE_END_CONNECT_PARENT;
+                    crate::gl!(lman.state = LMAN_STATE_END_CONNECT_PARENT);
                 }
             }
             ID_CP_END_REQ => {
                 if reqResult == 0
-                    && rfu_getConnectParentStatus(&raw mut status, &raw mut lman.child_slot) == 0
+                    && rfu_getConnectParentStatus(&raw mut status, crate::gl!(&raw lman.child_slot))
+                        == 0
                 {
                     if status == 0 {
-                        lman.state = LMAN_STATE_MS_CHANGE;
-                        lman.next_state = LMAN_STATE_SEND_CHILD_NAME;
-                        lman.work = 0x22;
-                        lman.param[0] = lman.child_slot as u16;
+                        crate::gl!(lman.state = LMAN_STATE_MS_CHANGE);
+                        crate::gl!(lman.next_state = LMAN_STATE_SEND_CHILD_NAME);
+                        crate::gl!(lman.work = 0x22);
+                        crate::gl!(lman.param[0] = crate::gl!(lman.child_slot) as u16);
                     } else {
-                        lman.state = {
-                            lman.next_state = LMAN_STATE_READY;
-                            lman.next_state
-                        };
-                        lman.work = 0x23;
-                        lman.param[0] = status as u16;
-                        if lman.pcswitch_flag != 0 {
-                            lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
-                            lman.state = LMAN_STATE_START_SEARCH_PARENT;
+                        crate::gl!(
+                            lman.state = {
+                                crate::gl!(lman.next_state = LMAN_STATE_READY);
+                                crate::gl!(lman.next_state)
+                            }
+                        );
+                        crate::gl!(lman.work = 0x23);
+                        crate::gl!(lman.param[0] = status as u16);
+                        if crate::gl!(lman.pcswitch_flag) != 0 {
+                            crate::gl!(lman.pcswitch_flag = PCSWITCH_2ND_SP_START);
+                            crate::gl!(lman.state = LMAN_STATE_START_SEARCH_PARENT);
                         }
                     }
-                    rfu_LMAN_occureCallback(lman.work as u8, 0x01);
-                    lman.work = 0;
+                    rfu_LMAN_occureCallback(crate::gl!(lman.work) as u8, 0x01);
+                    crate::gl!(lman.work = 0);
                 }
             }
             ID_CPR_START_REQ => {
                 if reqResult == 0 {
-                    lman.param[0] = (*gRfuLinkStatus).linkLossSlotFlag as u16;
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_POLL_LINK_RECOVERY;
-                        lman.next_state
-                    };
-                    lman.child_slot = 0;
-                    while lman.child_slot < RFU_CHILD_MAX {
+                    crate::gl!(
+                        lman.param[0] = (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as u16
+                    );
+                    crate::gl!(
+                        lman.state = {
+                            crate::gl!(lman.next_state = LMAN_STATE_POLL_LINK_RECOVERY);
+                            crate::gl!(lman.next_state)
+                        }
+                    );
+                    crate::gl!(lman.child_slot = 0);
+                    while crate::gl!(lman.child_slot) < RFU_CHILD_MAX {
                         if shr_i32(
-                            (*gRfuLinkStatus).linkLossSlotFlag as i32,
-                            lman.child_slot as u32,
+                            (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag as i32,
+                            crate::gl!(lman.child_slot) as u32,
                         ) & 1
                             != 0
                         {
                             break;
                         }
-                        lman.child_slot += 1;
+                        crate::gl!(lman.child_slot += 1);
                     }
                 }
             }
@@ -768,70 +816,79 @@ pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16
                     && rfu_CHILD_getConnectRecoveryStatus(&raw mut status) == 0
                     && status < 2
                 {
-                    lman.state = LMAN_STATE_END_LINK_RECOVERY;
+                    crate::gl!(lman.state = LMAN_STATE_END_LINK_RECOVERY);
                 }
-                if lman.linkRecoveryTimer.count[lman.child_slot] != 0
+                if (*lman.as_ptr()).linkRecoveryTimer.count[crate::gl!(lman.child_slot)] != 0
                     && ({
-                        lman.linkRecoveryTimer.count[lman.child_slot] -= 1;
-                        lman.linkRecoveryTimer.count[lman.child_slot]
+                        (*lman.as_ptr()).linkRecoveryTimer.count[crate::gl!(lman.child_slot)] -= 1;
+                        (*lman.as_ptr()).linkRecoveryTimer.count[crate::gl!(lman.child_slot)]
                     }) == 0
                 {
-                    lman.state = LMAN_STATE_END_LINK_RECOVERY;
+                    crate::gl!(lman.state = LMAN_STATE_END_LINK_RECOVERY);
                 }
             }
             ID_CPR_END_REQ => {
                 if reqResult == 0 && rfu_CHILD_getConnectRecoveryStatus(&raw mut status) == 0 {
                     if status == 0 {
-                        lman.state = LMAN_STATE_MS_CHANGE;
-                        lman.next_state = LMAN_STATE_BACK_STATE;
-                        lman.work = 0x32;
+                        crate::gl!(lman.state = LMAN_STATE_MS_CHANGE);
+                        crate::gl!(lman.next_state = LMAN_STATE_BACK_STATE);
+                        crate::gl!(lman.work = 0x32);
                     } else {
-                        lman.state = {
-                            lman.next_state = LMAN_STATE_READY;
-                            lman.next_state
-                        };
-                        rfu_LMAN_disconnect((*gRfuLinkStatus).linkLossSlotFlag);
-                        lman.work = 0x33;
+                        crate::gl!(
+                            lman.state = {
+                                crate::gl!(lman.next_state = LMAN_STATE_READY);
+                                crate::gl!(lman.next_state)
+                            }
+                        );
+                        rfu_LMAN_disconnect((*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag);
+                        crate::gl!(lman.work = 0x33);
                     }
-                    lman.linkRecoveryTimer.count[lman.child_slot] = 0;
-                    lman.linkRecoveryTimer.active = 0;
-                    lman.linkRecovery_start_flag = 0;
-                    rfu_LMAN_occureCallback(lman.work as u8, 0x01);
-                    lman.work = 0;
+                    (*lman.as_ptr()).linkRecoveryTimer.count[crate::gl!(lman.child_slot)] = 0;
+                    crate::gl!(lman.linkRecoveryTimer.active = 0);
+                    crate::gl!(lman.linkRecovery_start_flag = 0);
+                    rfu_LMAN_occureCallback(crate::gl!(lman.work) as u8, 0x01);
+                    crate::gl!(lman.work = 0);
                 }
             }
             39 => {
                 if reqResult == 0 {
-                    if lman.next_state == LMAN_STATE_BACK_STATE {
-                        lman.state = lman.state_bak[0];
-                        lman.next_state = lman.state_bak[1];
+                    if crate::gl!(lman.next_state) == LMAN_STATE_BACK_STATE {
+                        crate::gl!(lman.state = crate::gl!(lman.state_bak[0]));
+                        crate::gl!(lman.next_state = crate::gl!(lman.state_bak[1]));
                         volatile_write(
-                            &raw mut lman.childClockSlave_flag,
+                            crate::gl!(&raw lman.childClockSlave_flag),
                             RFU_CHILD_CLOCK_SLAVE_ON,
                         );
                         rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_SLAVE, 0);
-                    } else if lman.next_state == LMAN_STATE_SEND_CHILD_NAME {
-                        lman.state = lman.next_state;
+                    } else if crate::gl!(lman.next_state) == LMAN_STATE_SEND_CHILD_NAME {
+                        crate::gl!(lman.state = crate::gl!(lman.next_state));
                         volatile_write(
-                            &raw mut lman.childClockSlave_flag,
+                            crate::gl!(&raw lman.childClockSlave_flag),
                             RFU_CHILD_CLOCK_SLAVE_ON,
                         );
                         rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_SLAVE, 0);
-                        lman.nameAcceptTimer.active |= shl_i32(1, lman.child_slot as u32) as u8;
-                        lman.nameAcceptTimer.count[lman.child_slot] =
-                            lman.nameAcceptTimer.count_max;
-                        rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
-                        status = rfu_NI_CHILD_setSendGameName(lman.child_slot, 0x0e) as u8;
+                        crate::gl!(
+                            lman.nameAcceptTimer.active |=
+                                shl_i32(1, crate::gl!(lman.child_slot) as u32) as u8
+                        );
+                        (*lman.as_ptr()).nameAcceptTimer.count[crate::gl!(lman.child_slot)] =
+                            crate::gl!(lman.nameAcceptTimer.count_max);
+                        rfu_clearSlot(TYPE_NI_SEND, crate::gl!(lman.child_slot));
+                        status =
+                            rfu_NI_CHILD_setSendGameName(crate::gl!(lman.child_slot), 0x0e) as u8;
                         if status != 0 {
-                            lman.state = {
-                                lman.next_state = LMAN_STATE_READY;
-                                lman.next_state
-                            };
+                            crate::gl!(
+                                lman.state = {
+                                    crate::gl!(lman.next_state = LMAN_STATE_READY);
+                                    crate::gl!(lman.next_state)
+                                }
+                            );
                             rfu_LMAN_managerChangeAgbClockMaster();
                             rfu_LMAN_disconnect(
-                                (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag,
+                                (*crate::gl!(gRfuLinkStatus)).connSlotFlag
+                                    | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag,
                             );
-                            lman.param[0] = status as u16;
+                            crate::gl!(lman.param[0] = status as u16);
                             rfu_LMAN_occureCallback(
                                 LMAN_MSG_CHILD_NAME_SEND_FAILED_AND_DISCONNECTED,
                                 1,
@@ -841,17 +898,19 @@ pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16
                 }
             }
             ID_STOP_MODE_REQ if reqResult == 0 => {
-                lman.state = {
-                    lman.next_state = LMAN_STATE_READY;
-                    lman.next_state
-                };
+                crate::gl!(
+                    lman.state = {
+                        crate::gl!(lman.next_state = LMAN_STATE_READY);
+                        crate::gl!(lman.next_state)
+                    }
+                );
                 rfu_LMAN_occureCallback(LMAN_MSG_RFU_POWER_DOWN, 0);
             }
             _ => {}
         }
-        lman.active = 1;
+        crate::gl!(lman.active = 1);
     } else if reqResult == 3
-        && lman.msc_exe_flag != 0
+        && crate::gl!(lman.msc_exe_flag) != 0
         && (reqCommandId == ID_DATA_TX_REQ as u16
             || reqCommandId == ID_DATA_RX_REQ
             || reqCommandId == ID_MS_CHANGE_REQ as u16)
@@ -859,13 +918,13 @@ pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16
         rfu_REQ_RFUStatus();
         rfu_waitREQComplete();
         rfu_getRFUStatus(&raw mut status);
-        if status == 0 && (*gRfuLinkStatus).parentChild == 0x00 {
+        if status == 0 && (*crate::gl!(gRfuLinkStatus)).parentChild == 0x00 {
             stwiRecvBuffer = rfu_getSTWIRecvBuffer().at(4);
             *({
                 let t5 = stwiRecvBuffer;
                 stwiRecvBuffer = stwiRecvBuffer.at(1);
                 t5
-            }) = (*gRfuLinkStatus).connSlotFlag;
+            }) = (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
             *stwiRecvBuffer = REASON_LINK_LOSS;
             rfu_LMAN_linkWatcher(ID_DISCONNECTED_AND_CHANGE_REQ as u16);
             reqResult = 0;
@@ -874,60 +933,68 @@ pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16
     match reqCommandId {
         ID_DISCONNECT_REQ => {
             if reqResult == 0 {
-                lman.param[0] = *rfu_getSTWIRecvBuffer().at(8) as u16;
-                rfu_LMAN_reflectCommunicationStatus(lman.param[0] as u8);
-                if lman.linkRecoveryTimer.active != 0 {
-                    lman.linkRecoveryTimer.active &= !(lman.param[0] as u8);
+                crate::gl!(lman.param[0] = *rfu_getSTWIRecvBuffer().at(8) as u16);
+                rfu_LMAN_reflectCommunicationStatus(crate::gl!(lman.param[0]) as u8);
+                if crate::gl!(lman.linkRecoveryTimer.active) != 0 {
+                    crate::gl!(lman.linkRecoveryTimer.active &= !(crate::gl!(lman.param[0]) as u8));
                     for i in 0..RFU_CHILD_MAX {
-                        if shr_i32(lman.param[0] as i32, i as u32) & 1 != 0 {
-                            lman.linkRecoveryTimer.count[i] = 0;
+                        if shr_i32(crate::gl!(lman.param[0]) as i32, i as u32) & 1 != 0 {
+                            crate::gl!(lman.linkRecoveryTimer.count[i] = 0);
                         }
                     }
-                    if lman.parent_child == MODE_CHILD {
-                        lman.state = {
-                            lman.next_state = LMAN_STATE_READY;
-                            lman.next_state
-                        };
+                    if crate::gl!(lman.parent_child) == MODE_CHILD {
+                        crate::gl!(
+                            lman.state = {
+                                crate::gl!(lman.next_state = LMAN_STATE_READY);
+                                crate::gl!(lman.next_state)
+                            }
+                        );
                     }
                 }
-                status = lman.acceptSlot_flag & lman.param[0] as u8;
+                status = crate::gl!(lman.acceptSlot_flag) & crate::gl!(lman.param[0]) as u8;
                 for i in 0..RFU_CHILD_MAX {
-                    if shr_i32(status as i32, i as u32) & 1 != 0 && lman.acceptCount != 0 {
-                        lman.acceptCount -= 1;
-                    }
-                }
-                lman.acceptSlot_flag &= !(lman.param[0] as u8);
-                if lman.pcswitch_flag != 0 && (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
-                    if lman.pcswitch_flag == PCSWITCH_SC_LOCK {
-                        lman.connect_period = lman.pcswitch_period_bak;
-                        lman.pcswitch_flag = PCSWITCH_3RD_SC;
-                        lman.state = LMAN_STATE_POLL_SEARCH_CHILD;
-                    } else if lman.state != LMAN_STATE_POLL_SEARCH_CHILD
-                        && lman.state != LMAN_STATE_END_SEARCH_CHILD
+                    if shr_i32(status as i32, i as u32) & 1 != 0
+                        && crate::gl!(lman.acceptCount) != 0
                     {
-                        lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
-                        lman.state = LMAN_STATE_START_SEARCH_CHILD;
+                        crate::gl!(lman.acceptCount -= 1);
                     }
                 }
-                if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL && lman.state == LMAN_STATE_READY {
-                    lman.parent_child = MODE_NEUTRAL;
+                crate::gl!(lman.acceptSlot_flag &= !(crate::gl!(lman.param[0]) as u8));
+                if crate::gl!(lman.pcswitch_flag) != 0
+                    && (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL
+                {
+                    if crate::gl!(lman.pcswitch_flag) == PCSWITCH_SC_LOCK {
+                        crate::gl!(lman.connect_period = crate::gl!(lman.pcswitch_period_bak));
+                        crate::gl!(lman.pcswitch_flag = PCSWITCH_3RD_SC);
+                        crate::gl!(lman.state = LMAN_STATE_POLL_SEARCH_CHILD);
+                    } else if crate::gl!(lman.state) != LMAN_STATE_POLL_SEARCH_CHILD
+                        && crate::gl!(lman.state) != LMAN_STATE_END_SEARCH_CHILD
+                    {
+                        crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC_START);
+                        crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
+                    }
                 }
-                if lman.active == 0 {
+                if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_NEUTRAL
+                    && crate::gl!(lman.state) == LMAN_STATE_READY
+                {
+                    crate::gl!(lman.parent_child = MODE_NEUTRAL);
+                }
+                if crate::gl!(lman.active) == 0 {
                     rfu_LMAN_occureCallback(LMAN_MSG_LINK_DISCONNECTED_BY_USER, 1);
                 }
             }
         }
         ID_DATA_RX_REQ => {
             rfu_LMAN_CHILD_checkSendChildName2();
-            if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL {
+            if (*crate::gl!(gRfuLinkStatus)).parentChild != MODE_NEUTRAL {
                 rfu_LMAN_occureCallback(LMAN_MSG_RECV_DATA_REQ_COMPLETED, 0);
             }
         }
         ID_RESET_REQ | ID_STOP_MODE_REQ if reqResult == 0 => {
-            lman.reserveDisconnectSlot_flag = 0;
-            lman.acceptCount = 0;
-            lman.acceptSlot_flag = 0;
-            lman.parent_child = MODE_NEUTRAL;
+            crate::gl!(lman.reserveDisconnectSlot_flag = 0);
+            crate::gl!(lman.acceptCount = 0);
+            crate::gl!(lman.acceptSlot_flag = 0);
+            crate::gl!(lman.parent_child = MODE_NEUTRAL);
             rfu_LMAN_managerChangeAgbClockMaster();
             if reqCommandId == ID_STOP_MODE_REQ {
                 rfu_LMAN_endManager();
@@ -938,21 +1005,23 @@ pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16
     if reqResult != 0 {
         if reqCommandId == ID_SP_START_REQ
             && reqResult != 0
-            && lman.pcswitch_flag == PCSWITCH_2ND_SP
+            && crate::gl!(lman.pcswitch_flag) == PCSWITCH_2ND_SP
         {
-            (*gRfuLinkStatus).parentChild = MODE_PARENT;
-            (*gRfuLinkStatus).connSlotFlag = 0xF;
+            (*crate::gl!(gRfuLinkStatus)).parentChild = MODE_PARENT;
+            (*crate::gl!(gRfuLinkStatus)).connSlotFlag = 0xF;
             rfu_LMAN_disconnect(15);
             rfu_waitREQComplete();
             return;
         } else {
-            lman.param[0] = reqCommandId;
-            lman.param[1] = reqResult;
-            if lman.active != 0 {
-                lman.state = {
-                    lman.next_state = LMAN_STATE_READY;
-                    lman.next_state
-                };
+            crate::gl!(lman.param[0] = reqCommandId);
+            crate::gl!(lman.param[1] = reqResult);
+            if crate::gl!(lman.active) != 0 {
+                crate::gl!(
+                    lman.state = {
+                        crate::gl!(lman.next_state = LMAN_STATE_READY);
+                        crate::gl!(lman.next_state)
+                    }
+                );
             }
             rfu_LMAN_occureCallback(LMAN_MSG_REQ_API_ERROR, 2);
             rfu_LMAN_managerChangeAgbClockMaster();
@@ -965,34 +1034,37 @@ pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16
 }
 pub(crate) unsafe fn rfu_LMAN_MSC_callback(reqCommandId: u16) {
     let mut thisAck_flag: u8 = 0;
-    let active_bak: u8 = lman.active;
-    lman.active = 0;
-    lman.msc_exe_flag = 1;
-    if (*gRfuLinkStatus).parentChild == MODE_CHILD {
+    let active_bak: u8 = crate::gl!(lman.active);
+    crate::gl!(lman.active = 0);
+    crate::gl!(lman.msc_exe_flag = 1);
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_CHILD {
         rfu_LMAN_linkWatcher(reqCommandId);
-        if (&raw mut lman.childClockSlave_flag).read_volatile() != RFU_CHILD_CLOCK_SLAVE_ON {
+        if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile() != RFU_CHILD_CLOCK_SLAVE_ON
+        {
             rfu_LMAN_managerChangeAgbClockMaster();
-            lman.msc_exe_flag = 0;
-            lman.active = active_bak;
+            crate::gl!(lman.msc_exe_flag = 0);
+            crate::gl!(lman.active = active_bak);
             return;
         }
     } else {
         if rfu_UNI_PARENT_getDRAC_ACK(&raw mut thisAck_flag) == 0 {
             volatile_write(
-                &raw mut lman.parentAck_flag,
-                (&raw mut lman.parentAck_flag).read_volatile() | thisAck_flag,
+                crate::gl!(&raw lman.parentAck_flag),
+                (crate::gl!(&raw lman.parentAck_flag)).read_volatile() | thisAck_flag,
             );
         }
     }
-    if lman.MSC_callback.is_some() {
-        lman.MSC_callback.unwrap_unchecked()(reqCommandId);
+    if (*lman.as_ptr()).MSC_callback.is_some() {
+        (*lman.as_ptr()).MSC_callback.unwrap_unchecked()(reqCommandId);
         rfu_waitREQComplete();
-        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF_REQ {
+        if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile()
+            == RFU_CHILD_CLOCK_SLAVE_OFF_REQ
+        {
             rfu_LMAN_managerChangeAgbClockMaster();
         }
     }
-    lman.msc_exe_flag = 0;
-    lman.active = active_bak;
+    crate::gl!(lman.msc_exe_flag = 0);
+    crate::gl!(lman.active = active_bak);
 }
 unsafe fn rfu_LMAN_PARENT_checkRecvChildName() {
     let mut newSlot: u8 = 0;
@@ -1000,17 +1072,18 @@ unsafe fn rfu_LMAN_PARENT_checkRecvChildName() {
     let mut flags: u8 = 0;
     let mut tgtSlot: u8 = 0;
     let mut ptr: *mut u16 = null_mut();
-    if lman.state == LMAN_STATE_START_SEARCH_CHILD
-        || lman.state == LMAN_STATE_POLL_SEARCH_CHILD
-        || lman.state == LMAN_STATE_END_SEARCH_CHILD
-        || lman.state == LMAN_STATE_WAIT_RECV_CHILD_NAME
+    if crate::gl!(lman.state) == LMAN_STATE_START_SEARCH_CHILD
+        || crate::gl!(lman.state) == LMAN_STATE_POLL_SEARCH_CHILD
+        || crate::gl!(lman.state) == LMAN_STATE_END_SEARCH_CHILD
+        || crate::gl!(lman.state) == LMAN_STATE_WAIT_RECV_CHILD_NAME
     {
-        newSlot = ((*gRfuLinkStatus).connSlotFlag ^ lman.connectSlot_flag_old)
-            & (*gRfuLinkStatus).connSlotFlag
-            & !(*gRfuLinkStatus).getNameFlag;
-        lman.connectSlot_flag_old = (*gRfuLinkStatus).connSlotFlag;
+        newSlot = ((*crate::gl!(gRfuLinkStatus)).connSlotFlag
+            ^ crate::gl!(lman.connectSlot_flag_old))
+            & (*crate::gl!(gRfuLinkStatus)).connSlotFlag
+            & !(*crate::gl!(gRfuLinkStatus)).getNameFlag;
+        crate::gl!(lman.connectSlot_flag_old = (*crate::gl!(gRfuLinkStatus)).connSlotFlag);
         if newSlot != 0 {
-            lman.param[0] = newSlot as u16;
+            crate::gl!(lman.param[0] = newSlot as u16);
             rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_DETECTED, 1);
         }
         newAcceptSlot = 0x00;
@@ -1018,17 +1091,19 @@ unsafe fn rfu_LMAN_PARENT_checkRecvChildName() {
             tgtSlot = shl_i32(1, i as u32) as u8;
             flags = 0x00;
             if newSlot as i32 & tgtSlot as i32 != 0 {
-                lman.nameAcceptTimer.count[i] = lman.nameAcceptTimer.count_max;
-                lman.nameAcceptTimer.active |= tgtSlot;
-            } else if lman.nameAcceptTimer.active as i32 & tgtSlot as i32 != 0 {
-                if (*gRfuSlotStatusNI[i]).recv.state == SLOT_STATE_RECV_SUCCESS {
-                    if (*gRfuSlotStatusNI[i]).recv.dataType == 1 {
+                crate::gl!(
+                    lman.nameAcceptTimer.count[i] = crate::gl!(lman.nameAcceptTimer.count_max)
+                );
+                crate::gl!(lman.nameAcceptTimer.active |= tgtSlot);
+            } else if crate::gl!(lman.nameAcceptTimer.active) as i32 & tgtSlot as i32 != 0 {
+                if (*crate::gl!(gRfuSlotStatusNI[i])).recv.state == SLOT_STATE_RECV_SUCCESS {
+                    if (*crate::gl!(gRfuSlotStatusNI[i])).recv.dataType == 1 {
                         flags = RN_NAME_TIMER_CLEAR;
-                        ptr = lman.acceptable_serialNo_list;
+                        ptr = crate::gl!(lman.acceptable_serialNo_list);
                         while *ptr != 0xFFFF {
-                            if (*gRfuLinkStatus).partner[i].serialNo == *ptr {
-                                lman.acceptSlot_flag |= tgtSlot;
-                                lman.acceptCount += 1;
+                            if (*crate::gl!(gRfuLinkStatus)).partner[i].serialNo == *ptr {
+                                crate::gl!(lman.acceptSlot_flag |= tgtSlot);
+                                crate::gl!(lman.acceptCount += 1);
                                 newAcceptSlot |= tgtSlot;
                                 flags |= RN_ACCEPT;
                                 break;
@@ -1040,61 +1115,65 @@ unsafe fn rfu_LMAN_PARENT_checkRecvChildName() {
                         }
                     }
                 } else if ({
-                    lman.nameAcceptTimer.count[i] -= 1;
-                    lman.nameAcceptTimer.count[i]
+                    crate::gl!(lman.nameAcceptTimer.count[i] -= 1);
+                    crate::gl!(lman.nameAcceptTimer.count[i])
                 }) == 0
                 {
                     flags = 6;
                 }
                 if flags as i32 & RN_NAME_TIMER_CLEAR as i32 != 0 {
-                    lman.nameAcceptTimer.active &= !tgtSlot;
-                    lman.nameAcceptTimer.count[i] = 0;
+                    crate::gl!(lman.nameAcceptTimer.active &= !tgtSlot);
+                    crate::gl!(lman.nameAcceptTimer.count[i] = 0);
                     rfu_clearSlot(TYPE_NI_RECV, i);
                 }
                 if flags as i32 & RN_DISCONNECT as i32 != 0 {
-                    lman.reserveDisconnectSlot_flag |= tgtSlot;
+                    crate::gl!(lman.reserveDisconnectSlot_flag |= tgtSlot);
                 }
             }
         }
         if newAcceptSlot != 0 {
-            lman.param[0] = newAcceptSlot as u16;
+            crate::gl!(lman.param[0] = newAcceptSlot as u16);
             rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_ACCEPTED, 1);
         }
-        if lman.reserveDisconnectSlot_flag != 0 {
+        if crate::gl!(lman.reserveDisconnectSlot_flag) != 0 {
             flags = 1;
-            if (*gRfuLinkStatus).sendSlotUNIFlag != 0
-                && (&raw mut lman.parentAck_flag).read_volatile() as i32
-                    & lman.acceptSlot_flag as i32
-                    != lman.acceptSlot_flag as i32
+            if (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag != 0
+                && (crate::gl!(&raw lman.parentAck_flag)).read_volatile() as i32
+                    & crate::gl!(lman.acceptSlot_flag) as i32
+                    != crate::gl!(lman.acceptSlot_flag) as i32
             {
                 flags = 0;
             }
             if flags != 0 {
-                rfu_LMAN_disconnect(lman.reserveDisconnectSlot_flag);
-                lman.param[0] = lman.reserveDisconnectSlot_flag as u16;
-                lman.reserveDisconnectSlot_flag = 0;
+                rfu_LMAN_disconnect(crate::gl!(lman.reserveDisconnectSlot_flag));
+                crate::gl!(lman.param[0] = crate::gl!(lman.reserveDisconnectSlot_flag) as u16);
+                crate::gl!(lman.reserveDisconnectSlot_flag = 0);
                 rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_REJECTED, 1);
             }
         }
-        if lman.nameAcceptTimer.active == 0 && lman.state == LMAN_STATE_WAIT_RECV_CHILD_NAME {
-            if lman.pcswitch_flag == 0 {
-                lman.state = {
-                    lman.next_state = LMAN_STATE_READY;
-                    lman.next_state
-                };
+        if crate::gl!(lman.nameAcceptTimer.active) == 0
+            && crate::gl!(lman.state) == LMAN_STATE_WAIT_RECV_CHILD_NAME
+        {
+            if crate::gl!(lman.pcswitch_flag) == 0 {
+                crate::gl!(
+                    lman.state = {
+                        crate::gl!(lman.next_state = LMAN_STATE_READY);
+                        crate::gl!(lman.next_state)
+                    }
+                );
                 rfu_LMAN_occureCallback(LMAN_MSG_END_WAIT_CHILD_NAME, 0);
             } else {
-                if lman.pcswitch_flag == PCSWITCH_1ST_SC {
-                    lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
-                    lman.state = LMAN_STATE_START_SEARCH_PARENT;
+                if crate::gl!(lman.pcswitch_flag) == PCSWITCH_1ST_SC {
+                    crate::gl!(lman.pcswitch_flag = PCSWITCH_2ND_SP_START);
+                    crate::gl!(lman.state = LMAN_STATE_START_SEARCH_PARENT);
                 } else {
-                    lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
-                    lman.state = LMAN_STATE_START_SEARCH_CHILD;
+                    crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC_START);
+                    crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
                 }
-                if lman.acceptSlot_flag != 0 {
-                    lman.connect_period = 0;
-                    lman.pcswitch_flag = PCSWITCH_SC_LOCK;
-                    lman.state = LMAN_STATE_START_SEARCH_CHILD;
+                if crate::gl!(lman.acceptSlot_flag) != 0 {
+                    crate::gl!(lman.connect_period = 0);
+                    crate::gl!(lman.pcswitch_flag = PCSWITCH_SC_LOCK);
+                    crate::gl!(lman.state = LMAN_STATE_START_SEARCH_CHILD);
                 }
             }
         }
@@ -1103,68 +1182,87 @@ unsafe fn rfu_LMAN_PARENT_checkRecvChildName() {
 unsafe fn rfu_LMAN_CHILD_checkSendChildName() {
     let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
     volatile_write(67109384_usize as *mut u16, 0);
-    if lman.state == LMAN_STATE_SEND_CHILD_NAME
+    if crate::gl!(lman.state) == LMAN_STATE_SEND_CHILD_NAME
         && (({
-            lman.nameAcceptTimer.count[lman.child_slot] -= 1;
-            lman.nameAcceptTimer.count[lman.child_slot]
+            (*lman.as_ptr()).nameAcceptTimer.count[crate::gl!(lman.child_slot)] -= 1;
+            (*lman.as_ptr()).nameAcceptTimer.count[crate::gl!(lman.child_slot)]
         }) == 0
-            || (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_FAILED)
+            || (*(*gRfuSlotStatusNI.as_ptr())[crate::gl!(lman.child_slot)])
+                .send
+                .state
+                == SLOT_STATE_SEND_FAILED)
     {
         rfu_LMAN_requestChangeAgbClockMaster();
-        lman.state = LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER;
-        rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
-        lman.nameAcceptTimer.active &= !(shl_i32(1, lman.child_slot as u32) as u8);
-        lman.nameAcceptTimer.count[lman.child_slot] = 0;
+        crate::gl!(lman.state = LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER);
+        rfu_clearSlot(TYPE_NI_SEND, crate::gl!(lman.child_slot));
+        crate::gl!(
+            lman.nameAcceptTimer.active &= !(shl_i32(1, crate::gl!(lman.child_slot) as u32) as u8)
+        );
+        (*lman.as_ptr()).nameAcceptTimer.count[crate::gl!(lman.child_slot)] = 0;
     }
     volatile_write(67109384_usize as *mut u16, imeBak);
-    if lman.state == LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER {
-        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
+    if crate::gl!(lman.state) == LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER {
+        if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON
+        {
             rfu_LMAN_requestChangeAgbClockMaster();
         }
-        if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF {
-            lman.state = {
-                lman.next_state = LMAN_STATE_READY;
-                lman.next_state
-            };
-            rfu_LMAN_disconnect(
-                (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag,
+        if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF
+        {
+            crate::gl!(
+                lman.state = {
+                    crate::gl!(lman.next_state = LMAN_STATE_READY);
+                    crate::gl!(lman.next_state)
+                }
             );
-            lman.param[0] = 0;
+            rfu_LMAN_disconnect(
+                (*crate::gl!(gRfuLinkStatus)).connSlotFlag
+                    | (*crate::gl!(gRfuLinkStatus)).linkLossSlotFlag,
+            );
+            crate::gl!(lman.param[0] = 0);
             rfu_LMAN_occureCallback(LMAN_MSG_CHILD_NAME_SEND_FAILED_AND_DISCONNECTED, 1);
         }
     }
 }
 unsafe fn rfu_LMAN_CHILD_checkSendChildName2() {
-    if lman.state == LMAN_STATE_SEND_CHILD_NAME
-        && (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_SUCCESS
+    if crate::gl!(lman.state) == LMAN_STATE_SEND_CHILD_NAME
+        && (*(*gRfuSlotStatusNI.as_ptr())[crate::gl!(lman.child_slot)])
+            .send
+            .state
+            == SLOT_STATE_SEND_SUCCESS
     {
-        lman.state = {
-            lman.next_state = LMAN_STATE_READY;
-            lman.next_state
-        };
-        rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
-        lman.nameAcceptTimer.active &= !(shl_i32(1, lman.child_slot as u32) as u8);
-        lman.nameAcceptTimer.count[lman.child_slot] = 0;
+        crate::gl!(
+            lman.state = {
+                crate::gl!(lman.next_state = LMAN_STATE_READY);
+                crate::gl!(lman.next_state)
+            }
+        );
+        rfu_clearSlot(TYPE_NI_SEND, crate::gl!(lman.child_slot));
+        crate::gl!(
+            lman.nameAcceptTimer.active &= !(shl_i32(1, crate::gl!(lman.child_slot) as u32) as u8)
+        );
+        (*lman.as_ptr()).nameAcceptTimer.count[crate::gl!(lman.child_slot)] = 0;
         rfu_LMAN_occureCallback(LMAN_MSG_CHILD_NAME_SEND_COMPLETED, 0);
     }
 }
-unsafe fn rfu_LMAN_CHILD_linkRecoveryProcess() {
-    if lman.parent_child == MODE_CHILD && lman.linkRecovery_start_flag == LINK_RECOVERY_START {
-        lman.state_bak[0] = lman.state;
-        lman.state_bak[1] = lman.next_state;
-        lman.state = LMAN_STATE_START_LINK_RECOVERY;
-        lman.next_state = LMAN_STATE_POLL_LINK_RECOVERY;
-        lman.linkRecovery_start_flag = LINK_RECOVERY_EXE;
+fn rfu_LMAN_CHILD_linkRecoveryProcess() {
+    if crate::gl!(lman.parent_child) == MODE_CHILD
+        && crate::gl!(lman.linkRecovery_start_flag) == LINK_RECOVERY_START
+    {
+        crate::gl!(lman.state_bak[0] = crate::gl!(lman.state));
+        crate::gl!(lman.state_bak[1] = crate::gl!(lman.next_state));
+        crate::gl!(lman.state = LMAN_STATE_START_LINK_RECOVERY);
+        crate::gl!(lman.next_state = LMAN_STATE_POLL_LINK_RECOVERY);
+        crate::gl!(lman.linkRecovery_start_flag = LINK_RECOVERY_EXE);
     }
 }
 unsafe fn rfu_LMAN_CHILD_checkEnableParentCandidate() -> u8 {
     let mut serialNo: *mut u16 = null_mut();
     let mut flags: u8 = 0x00;
     let mut i: u8 = 0;
-    while i < (*gRfuLinkStatus).findParentCount {
-        serialNo = lman.acceptable_serialNo_list;
+    while i < (*crate::gl!(gRfuLinkStatus)).findParentCount {
+        serialNo = crate::gl!(lman.acceptable_serialNo_list);
         while *serialNo != 0xFFFF {
-            if (*gRfuLinkStatus).partner[i].serialNo == *serialNo {
+            if (*crate::gl!(gRfuLinkStatus)).partner[i].serialNo == *serialNo {
                 flags |= shl_i32(1, i as u32) as u8;
             }
             serialNo = serialNo.at(1);
@@ -1174,65 +1272,78 @@ unsafe fn rfu_LMAN_CHILD_checkEnableParentCandidate() -> u8 {
     flags
 }
 unsafe fn rfu_LMAN_occureCallback(msg: u8, param_count: u8) {
-    if lman.LMAN_callback.is_some() {
-        lman.LMAN_callback.unwrap_unchecked()(msg, param_count);
+    if (*lman.as_ptr()).LMAN_callback.is_some() {
+        (*lman.as_ptr()).LMAN_callback.unwrap_unchecked()(msg, param_count);
     }
-    lman.param[0] = {
-        lman.param[1] = 0;
-        lman.param[1]
-    };
+    crate::gl!(
+        lman.param[0] = {
+            crate::gl!(lman.param[1] = 0);
+            crate::gl!(lman.param[1])
+        }
+    );
 }
 unsafe fn rfu_LMAN_disconnect(bm_disconnectedSlot: u8) {
-    let active_bak: u8 = lman.active;
-    lman.active = 1;
+    let active_bak: u8 = crate::gl!(lman.active);
+    crate::gl!(lman.active = 1);
     rfu_REQ_disconnect(bm_disconnectedSlot);
     rfu_waitREQComplete();
-    lman.active = active_bak;
+    crate::gl!(lman.active = active_bak);
 }
 unsafe fn rfu_LMAN_reflectCommunicationStatus(bm_disconnectedSlot: u8) {
-    if (*gRfuLinkStatus).sendSlotNIFlag != 0 {
+    if (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag != 0 {
         for i in 0..RFU_CHILD_MAX {
-            if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0
-                && (*gRfuSlotStatusNI[i]).send.bmSlot as i32 & bm_disconnectedSlot as i32 != 0
+            if (*crate::gl!(gRfuSlotStatusNI[i])).send.state as i32 & SLOT_BUSY_FLAG != 0
+                && (*crate::gl!(gRfuSlotStatusNI[i])).send.bmSlot as i32
+                    & bm_disconnectedSlot as i32
+                    != 0
             {
                 rfu_changeSendTarget(
                     TYPE_NI,
                     i,
-                    (*gRfuSlotStatusNI[i]).send.bmSlot & !bm_disconnectedSlot,
+                    (*crate::gl!(gRfuSlotStatusNI[i])).send.bmSlot & !bm_disconnectedSlot,
                 );
             }
         }
     }
-    if (*gRfuLinkStatus).recvSlotNIFlag != 0 {
+    if (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag != 0 {
         for i in 0..RFU_CHILD_MAX {
-            if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0
-                && (*gRfuSlotStatusNI[i]).recv.bmSlot as i32 & bm_disconnectedSlot as i32 != 0
+            if (*crate::gl!(gRfuSlotStatusNI[i])).recv.state as i32 & SLOT_BUSY_FLAG != 0
+                && (*crate::gl!(gRfuSlotStatusNI[i])).recv.bmSlot as i32
+                    & bm_disconnectedSlot as i32
+                    != 0
             {
                 rfu_NI_stopReceivingData(i);
             }
         }
     }
-    if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
-        (*gRfuLinkStatus).sendSlotUNIFlag &= !bm_disconnectedSlot;
+    if (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag != 0 {
+        (*crate::gl!(gRfuLinkStatus)).sendSlotUNIFlag &= !bm_disconnectedSlot;
         for i in 0..RFU_CHILD_MAX {
-            if (*gRfuSlotStatusUNI[i]).send.state == SLOT_STATE_SEND_UNI
-                && bm_disconnectedSlot as i32 & (*gRfuSlotStatusUNI[i]).send.bmSlot as i32 != 0
+            if (*crate::gl!(gRfuSlotStatusUNI[i])).send.state == SLOT_STATE_SEND_UNI
+                && bm_disconnectedSlot as i32
+                    & (*crate::gl!(gRfuSlotStatusUNI[i])).send.bmSlot as i32
+                    != 0
             {
-                (*gRfuSlotStatusUNI[i]).send.bmSlot &= !bm_disconnectedSlot;
+                (*crate::gl!(gRfuSlotStatusUNI[i])).send.bmSlot &= !bm_disconnectedSlot;
             }
         }
     }
 }
 unsafe fn rfu_LMAN_checkNICommunicateStatus() {
     let mut flags: u8 = 0;
-    if lman.NI_failCounter_limit != 0 {
-        if (*gRfuLinkStatus).sendSlotNIFlag != 0 {
+    if crate::gl!(lman.NI_failCounter_limit) != 0 {
+        if (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag != 0 {
             for i in 0..RFU_CHILD_MAX {
-                if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0 {
+                if (*crate::gl!(gRfuSlotStatusNI[i])).send.state as i32 & SLOT_BUSY_FLAG != 0 {
                     flags = 0;
                     for j in 0..RFU_CHILD_MAX {
-                        if shr_i32((*gRfuSlotStatusNI[i]).send.bmSlot as i32, j as u32) & 1 != 0
-                            && (*gRfuSlotStatusNI[j]).send.failCounter > lman.NI_failCounter_limit
+                        if shr_i32(
+                            (*crate::gl!(gRfuSlotStatusNI[i])).send.bmSlot as i32,
+                            j as u32,
+                        ) & 1
+                            != 0
+                            && (*crate::gl!(gRfuSlotStatusNI[j])).send.failCounter
+                                > crate::gl!(lman.NI_failCounter_limit)
                         {
                             flags |= shl_i32(1, j as u32) as u8;
                         }
@@ -1240,17 +1351,18 @@ unsafe fn rfu_LMAN_checkNICommunicateStatus() {
                             rfu_changeSendTarget(
                                 TYPE_NI,
                                 i,
-                                flags ^ (*gRfuSlotStatusNI[i]).send.bmSlot,
+                                flags ^ (*crate::gl!(gRfuSlotStatusNI[i])).send.bmSlot,
                             );
                         }
                     }
                 }
             }
         }
-        if (*gRfuLinkStatus).recvSlotNIFlag != 0 {
+        if (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag != 0 {
             for i in 0..RFU_CHILD_MAX {
-                if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0
-                    && (*gRfuSlotStatusNI[i]).recv.failCounter > lman.NI_failCounter_limit
+                if (*crate::gl!(gRfuSlotStatusNI[i])).recv.state as i32 & SLOT_BUSY_FLAG != 0
+                    && (*crate::gl!(gRfuSlotStatusNI[i])).recv.failCounter
+                        > crate::gl!(lman.NI_failCounter_limit)
                 {
                     rfu_NI_stopReceivingData(i);
                 }
@@ -1259,87 +1371,95 @@ unsafe fn rfu_LMAN_checkNICommunicateStatus() {
     }
 }
 pub unsafe fn rfu_LMAN_setMSCCallback(MSC_callback_p: Option<unsafe fn(u16)>) {
-    lman.MSC_callback = MSC_callback_p;
+    crate::gl!(lman.MSC_callback = MSC_callback_p);
     rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
 }
-unsafe fn rfu_LMAN_setLMANCallback(func: Option<unsafe fn(u8, u8)>) {
-    lman.LMAN_callback = func;
+fn rfu_LMAN_setLMANCallback(func: Option<unsafe fn(u8, u8)>) {
+    crate::gl!(lman.LMAN_callback = func);
 }
 pub unsafe fn rfu_LMAN_setLinkRecovery(enable_flag: u8, recovery_period: u16) -> u8 {
-    if lman.linkRecovery_enable != 0 && enable_flag == 0 && lman.linkRecoveryTimer.active != 0 {
+    if crate::gl!(lman.linkRecovery_enable) != 0
+        && enable_flag == 0
+        && crate::gl!(lman.linkRecoveryTimer.active) != 0
+    {
         return LMAN_ERROR_NOW_LINK_RECOVERY;
     }
     let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
     volatile_write(67109384_usize as *mut u16, 0);
-    lman.linkRecovery_enable = enable_flag;
-    lman.linkRecoveryTimer.count_max = recovery_period;
+    crate::gl!(lman.linkRecovery_enable = enable_flag);
+    crate::gl!(lman.linkRecoveryTimer.count_max = recovery_period);
     volatile_write(67109384_usize as *mut u16, imeBak);
     0
 }
 unsafe fn rfu_LMAN_setNIFailCounterLimit(NI_failCounter_limit: u16) -> u8 {
-    if (*gRfuLinkStatus).sendSlotNIFlag as i32 | (*gRfuLinkStatus).recvSlotNIFlag as i32 != 0 {
-        lman.param[0] = 6;
+    if (*crate::gl!(gRfuLinkStatus)).sendSlotNIFlag as i32
+        | (*crate::gl!(gRfuLinkStatus)).recvSlotNIFlag as i32
+        != 0
+    {
+        crate::gl!(lman.param[0] = 6);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_NOW_COMMUNICATION;
     }
-    lman.NI_failCounter_limit = NI_failCounter_limit;
+    crate::gl!(lman.NI_failCounter_limit = NI_failCounter_limit);
     0
 }
 unsafe fn rfu_LMAN_setFastSearchParent(enable_flag: u8) -> u8 {
-    if lman.state == LMAN_STATE_START_SEARCH_PARENT
-        || lman.state == LMAN_STATE_POLL_SEARCH_PARENT
-        || lman.state == LMAN_STATE_END_SEARCH_PARENT
+    if crate::gl!(lman.state) == LMAN_STATE_START_SEARCH_PARENT
+        || crate::gl!(lman.state) == LMAN_STATE_POLL_SEARCH_PARENT
+        || crate::gl!(lman.state) == LMAN_STATE_END_SEARCH_PARENT
     {
-        lman.param[0] = 7;
+        crate::gl!(lman.param[0] = 7);
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_NOW_SEARCH_PARENT;
     }
     if enable_flag != 0 {
-        lman.fastSearchParent_flag = FSP_ON;
+        crate::gl!(lman.fastSearchParent_flag = FSP_ON);
     } else {
-        lman.fastSearchParent_flag = 0;
+        crate::gl!(lman.fastSearchParent_flag = 0);
     }
     0
 }
 unsafe fn rfu_LMAN_managerChangeAgbClockMaster() {
-    if (&raw mut lman.childClockSlave_flag).read_volatile() != RFU_CHILD_CLOCK_SLAVE_OFF {
+    if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile() != RFU_CHILD_CLOCK_SLAVE_OFF {
         volatile_write(
-            &raw mut lman.childClockSlave_flag,
+            crate::gl!(&raw lman.childClockSlave_flag),
             RFU_CHILD_CLOCK_SLAVE_OFF,
         );
         rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_MASTER, 0);
     }
 }
 pub unsafe fn rfu_LMAN_requestChangeAgbClockMaster() {
-    if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF {
+    if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF {
         rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_MASTER, 0);
-    } else if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
+    } else if (crate::gl!(&raw lman.childClockSlave_flag)).read_volatile()
+        == RFU_CHILD_CLOCK_SLAVE_ON
+    {
         volatile_write(
-            &raw mut lman.childClockSlave_flag,
+            crate::gl!(&raw lman.childClockSlave_flag),
             RFU_CHILD_CLOCK_SLAVE_OFF_REQ,
         );
     }
 }
-pub unsafe fn rfu_LMAN_forceChangeSP() {
-    if lman.pcswitch_flag != 0 {
-        match lman.state {
+pub fn rfu_LMAN_forceChangeSP() {
+    if crate::gl!(lman.pcswitch_flag) != 0 {
+        match crate::gl!(lman.state) {
             LMAN_STATE_START_SEARCH_CHILD => {
-                lman.pcswitch_flag = PCSWITCH_2ND_SP_START;
-                lman.state = LMAN_STATE_START_SEARCH_PARENT;
+                crate::gl!(lman.pcswitch_flag = PCSWITCH_2ND_SP_START);
+                crate::gl!(lman.state = LMAN_STATE_START_SEARCH_PARENT);
             }
             LMAN_STATE_POLL_SEARCH_CHILD => {
-                lman.pcswitch_flag = PCSWITCH_1ST_SC;
-                lman.connect_period = 1;
+                crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC);
+                crate::gl!(lman.connect_period = 1);
             }
             LMAN_STATE_END_SEARCH_CHILD | LMAN_STATE_WAIT_RECV_CHILD_NAME => {
-                lman.pcswitch_flag = PCSWITCH_1ST_SC;
+                crate::gl!(lman.pcswitch_flag = PCSWITCH_1ST_SC);
             }
             LMAN_STATE_START_SEARCH_PARENT | LMAN_STATE_POLL_SEARCH_PARENT => {
-                lman.connect_period = PCSWITCH_SP_PERIOD;
+                crate::gl!(lman.connect_period = PCSWITCH_SP_PERIOD);
             }
             LMAN_STATE_END_SEARCH_PARENT => {
-                lman.connect_period = PCSWITCH_SP_PERIOD;
-                lman.state = LMAN_STATE_POLL_SEARCH_PARENT;
+                crate::gl!(lman.connect_period = PCSWITCH_SP_PERIOD);
+                crate::gl!(lman.state = LMAN_STATE_POLL_SEARCH_PARENT);
             }
             _ => {}
         }

@@ -57,11 +57,11 @@ const SB1_REGISTERED_ITEM: usize = 0x496;
 const SB1_CONTEST_WINNERS: usize = 0x2e90;
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gDifferentSaveFile: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gDifferentSaveFile: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gEnableContestDebugging: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `GetGeneratedTrainerIdLower` with this module's view of its types.
@@ -121,9 +121,7 @@ unsafe fn ResetBagScrollPositions() {
 /// `ResetPokeblockScrollPositions` with this module's view of its types.
 #[inline]
 unsafe fn ResetPokeblockScrollPositions() {
-    unsafe {
-        crate::pokeblock::ResetPokeblockScrollPositions();
-    }
+    crate::pokeblock::ResetPokeblockScrollPositions();
 }
 /// `RtcReset` with this module's view of its types.
 #[inline]
@@ -170,9 +168,7 @@ unsafe fn ClearBerryTrees() {
 /// `ResetLinkContestBoolean` with this module's view of its types.
 #[inline]
 unsafe fn ResetLinkContestBoolean() {
-    unsafe {
-        crate::contest::ResetLinkContestBoolean();
-    }
+    crate::contest::ResetLinkContestBoolean();
 }
 /// `ResetGameStats` with this module's view of its types.
 #[inline]
@@ -324,12 +320,20 @@ unsafe fn ResetPokemonJumpRecords() {
 
 #[inline]
 unsafe fn sb1() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() }
+    unsafe {
+        (crate::gl!(&raw gSaveBlock1Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    }
 }
 
 #[inline]
 unsafe fn sb2() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() }
+    unsafe {
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -424,7 +428,7 @@ pub unsafe fn Sav2_ClearSetDefault() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn ResetMenuAndMonGlobals() {
-    unsafe { (&raw mut gDifferentSaveFile).write(0) };
+    unsafe { (gDifferentSaveFile.as_ptr()).write(0) };
     unsafe { ResetPokedexScrollPositions() };
     unsafe { ZeroPlayerPartyMons() };
     unsafe { ZeroEnemyPartyMons() };
@@ -435,7 +439,7 @@ pub unsafe fn ResetMenuAndMonGlobals() {
 #[unsafe(no_mangle)]
 pub unsafe fn NewGameInitData() {
     let status = unsafe {
-        (&raw const (*(&raw const crate::save::gSaveFileStatus)
+        (&raw const (*(crate::save::gSaveFileStatus.as_ptr().cast_const())
             .cast::<u8>()
             .cast_mut()))
             .read()
@@ -445,7 +449,7 @@ pub unsafe fn NewGameInitData() {
     }
 
     unsafe {
-        (&raw mut gDifferentSaveFile).write(1);
+        (gDifferentSaveFile.as_ptr()).write(1);
         sb2().add(SB2_ENCRYPTION_KEY).cast::<u32>().write(0);
         ZeroPlayerPartyMons();
         ZeroEnemyPartyMons();
@@ -471,7 +475,7 @@ pub unsafe fn NewGameInitData() {
         ClearPlayerLinkBattleRecords();
         InitSeedotSizeRecord();
         InitLotadSizeRecord();
-        (&raw mut gPlayerPartyCount).write(0);
+        (gPlayerPartyCount.as_ptr()).write(0);
         ZeroPlayerPartyMons();
         ResetPokemonStorageSystem();
         ClearRoamerData();

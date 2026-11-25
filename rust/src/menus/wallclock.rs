@@ -67,14 +67,14 @@ unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -84,7 +84,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -157,12 +157,12 @@ unsafe fn AddTextPrinterParameterized(
 }
 /// `GetOverworldTextboxPalettePtr` with this module's view of its types.
 #[inline]
-unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+fn GetOverworldTextboxPalettePtr() -> *mut u16 {
     unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -353,24 +353,28 @@ pub unsafe fn CB2_StartWallClock() {
         80,
         1,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].oam.set_matrixNum(0);
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(0);
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_HourHand).cast_mut(),
         120,
         80,
         0,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].oam.set_matrixNum(1);
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(1);
     spriteId = CreateSprite((&raw const *sSpriteTemplate_PM).cast_mut(), 120, 80, 2);
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[1] = 45;
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    crate::gl!(gSprites[spriteId].data[1] = 45);
     spriteId = CreateSprite((&raw const *sSpriteTemplate_AM).cast_mut(), 120, 80, 2);
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[1] = 90;
+    crate::gl!(gSprites[spriteId].data[0] = taskId as i16);
+    crate::gl!(gSprites[spriteId].data[1] = 90);
     WallClockInit();
     AddTextPrinterParameterized(
         WIN_BUTTON_LABEL,
@@ -411,24 +415,40 @@ pub unsafe fn CB2_ViewWallClock() {
         80,
         1,
     );
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].oam.set_matrixNum(0);
+    {
+        let gl_i0 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i0] = taskId as i16)
+    };
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(0);
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_HourHand).cast_mut(),
         120,
         80,
         0,
     );
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].oam.set_matrixNum(1);
+    {
+        let gl_i1 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i1] = taskId as i16)
+    };
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(1);
     spriteId = CreateSprite((&raw const *sSpriteTemplate_PM).cast_mut(), 120, 80, 2);
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].data[1] = angle1 as i16;
+    {
+        let gl_i2 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i2] = taskId as i16)
+    };
+    crate::gl!(gSprites[spriteId].data[1] = angle1 as i16);
     spriteId = CreateSprite((&raw const *sSpriteTemplate_AM).cast_mut(), 120, 80, 2);
-    gSprites[spriteId].data[sTaskId] = taskId as i16;
-    gSprites[spriteId].data[1] = angle2 as i16;
+    {
+        let gl_i3 = sTaskId;
+        crate::gl!(gSprites[spriteId].data[gl_i3] = taskId as i16)
+    };
+    crate::gl!(gSprites[spriteId].data[1] = angle2 as i16);
     WallClockInit();
     AddTextPrinterParameterized(
         WIN_BUTTON_LABEL,
@@ -452,11 +472,11 @@ pub(crate) unsafe fn CB2_WallClock() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn Task_SetClock_WaitFadeIn(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set_func(taskId, Some(Task_SetClock_HandleInput));
     }
 }
-pub(crate) unsafe fn Task_SetClock_HandleInput(taskId: u8) {
+pub(crate) fn Task_SetClock_HandleInput(taskId: u8) {
     if task_get(taskId, tMinuteHandAngle) % 6 != 0 {
         task_set(
             taskId,
@@ -474,14 +494,14 @@ pub(crate) unsafe fn Task_SetClock_HandleInput(taskId: u8) {
             tHourHandAngle,
             task_get(taskId, tHours) % 12 * 30 + task_get(taskId, tMinutes) / 10 * 5,
         );
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             task_set_func(taskId, Some(Task_SetClock_AskConfirm));
         } else {
             task_set(taskId, tMoveDir, MOVE_NONE);
-            if gMain.heldKeys as i32 & DPAD_LEFT != 0 {
+            if crate::gl!(gMain.heldKeys) as i32 & DPAD_LEFT != 0 {
                 task_set(taskId, tMoveDir, MOVE_BACKWARD as i16);
             }
-            if gMain.heldKeys as i32 & DPAD_RIGHT != 0 {
+            if crate::gl!(gMain.heldKeys) as i32 & DPAD_RIGHT != 0 {
                 task_set(taskId, tMoveDir, MOVE_FORWARD as i16);
             }
             if task_get(taskId, tMoveDir) != MOVE_NONE {
@@ -551,19 +571,19 @@ pub(crate) unsafe fn Task_SetClock_Confirmed(taskId: u8) {
     task_set_func(taskId, Some(Task_SetClock_Exit));
 }
 pub(crate) unsafe fn Task_SetClock_Exit(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeAllWindowBuffers();
-        SetMainCallback2(gMain.savedCallback);
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }
 pub(crate) unsafe fn Task_ViewClock_WaitFadeIn(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         task_set_func(taskId, Some(Task_ViewClock_HandleInput));
     }
 }
 pub(crate) unsafe fn Task_ViewClock_HandleInput(taskId: u8) {
     InitClockWithRtc(taskId);
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         task_set_func(taskId, Some(Task_ViewClock_FadeOut));
     }
 }
@@ -572,8 +592,8 @@ pub(crate) unsafe fn Task_ViewClock_FadeOut(taskId: u8) {
     task_set_func(taskId, Some(Task_ViewClock_Exit));
 }
 pub(crate) unsafe fn Task_ViewClock_Exit(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        SetMainCallback2(gMain.savedCallback);
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
 }
 fn CalcMinHandDelta(speed: u16) -> u8 {
@@ -667,15 +687,15 @@ fn UpdateClockPeriod(taskId: u8, direction: u8) {
 }
 unsafe fn InitClockWithRtc(taskId: u8) {
     RtcCalcLocalTime();
-    task_set(taskId, tHours, gLocalTime.hours as i16);
-    task_set(taskId, tMinutes, gLocalTime.minutes as i16);
+    task_set(taskId, tHours, crate::gl!(gLocalTime.hours) as i16);
+    task_set(taskId, tMinutes, crate::gl!(gLocalTime.minutes) as i16);
     task_set(taskId, tMinuteHandAngle, task_get(taskId, tMinutes) * 6);
     task_set(
         taskId,
         tHourHandAngle,
         task_get(taskId, tHours) % 12 * 30 + task_get(taskId, tMinutes) / 10 * 5,
     );
-    if gLocalTime.hours < 12 {
+    if crate::gl!(gLocalTime.hours) < 12 {
         task_set(taskId, tPeriod, PERIOD_AM);
     } else {
         task_set(taskId, tPeriod, PERIOD_PM);

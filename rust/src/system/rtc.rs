@@ -62,7 +62,7 @@ const RTC_DUMMY: SiiRtcInfo = SiiRtcInfo {
 static NUM_DAYS_IN_MONTHS: [i32; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 static ERROR_STATUS: crate::global::Global<u16> = crate::global::Global::new(0);
-static mut RTC: SiiRtcInfo = SiiRtcInfo {
+static RTC: crate::global::Global<SiiRtcInfo> = crate::global::Global::new(SiiRtcInfo {
     year: 0,
     month: 0,
     day: 0,
@@ -73,18 +73,18 @@ static mut RTC: SiiRtcInfo = SiiRtcInfo {
     status: 0,
     alarm_hour: 0,
     alarm_minute: 0,
-};
+});
 static PROBE_RESULT: crate::global::Global<u8> = crate::global::Global::new(0);
 static SAVED_IME: crate::global::Global<u16> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gLocalTime: Time = Time {
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gLocalTime: crate::global::Global<Time> = crate::global::Global::new(Time {
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
-};
+});
 
 /// `SiiRtcUnprotect` with this module's view of its types.
 #[inline]
@@ -196,8 +196,8 @@ pub unsafe fn RtcInit() {
         0
     };
     unsafe { (ERROR_STATUS.as_ptr()).write(status) };
-    unsafe { RtcGetRawInfo(&raw mut RTC) };
-    let checked = unsafe { RtcCheckInfo(&raw const RTC) };
+    unsafe { RtcGetRawInfo(crate::gl!(&raw RTC)) };
+    let checked = unsafe { RtcCheckInfo(crate::gl!(&raw RTC).cast_const()) };
     unsafe { (ERROR_STATUS.as_ptr()).write(checked) };
 }
 
@@ -316,7 +316,7 @@ pub unsafe fn RtcCalcTimeDifference(rtc: *const SiiRtcInfo, result: *mut Time, t
 
 unsafe fn local_time_offset() -> *mut Time {
     unsafe {
-        (&raw const gSaveBlock2Ptr)
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
             .read()
             .cast::<u8>()
             .add(SB2_LOCAL_TIME_OFFSET)
@@ -326,8 +326,14 @@ unsafe fn local_time_offset() -> *mut Time {
 
 #[unsafe(no_mangle)]
 pub unsafe fn RtcCalcLocalTime() {
-    unsafe { RtcGetInfo(&raw mut RTC) };
-    unsafe { RtcCalcTimeDifference(&raw const RTC, &raw mut gLocalTime, local_time_offset()) };
+    unsafe { RtcGetInfo(crate::gl!(&raw RTC)) };
+    unsafe {
+        RtcCalcTimeDifference(
+            crate::gl!(&raw RTC).cast_const(),
+            crate::gl!(&raw gLocalTime),
+            local_time_offset(),
+        )
+    };
 }
 
 #[unsafe(no_mangle)]
@@ -343,9 +349,15 @@ pub unsafe fn RtcCalcLocalTimeOffset(days: i32, hours: i32, minutes: i32, second
         minutes: minutes as i8,
         seconds: seconds as i8,
     };
-    unsafe { (&raw mut gLocalTime).write(local) };
-    unsafe { RtcGetInfo(&raw mut RTC) };
-    unsafe { RtcCalcTimeDifference(&raw const RTC, local_time_offset(), &raw const gLocalTime) };
+    unsafe { (crate::gl!(&raw gLocalTime)).write(local) };
+    unsafe { RtcGetInfo(crate::gl!(&raw RTC)) };
+    unsafe {
+        RtcCalcTimeDifference(
+            crate::gl!(&raw RTC).cast_const(),
+            local_time_offset(),
+            crate::gl!(&raw gLocalTime).cast_const(),
+        )
+    };
 }
 
 #[unsafe(no_mangle)]
@@ -363,10 +375,10 @@ pub unsafe fn CalcTimeDifference(result: *mut Time, t1: *const Time, t2: *const 
 
 #[unsafe(no_mangle)]
 pub unsafe fn RtcGetMinuteCount() -> u32 {
-    unsafe { RtcGetInfo(&raw mut RTC) };
-    let rtc = unsafe { (&raw const RTC).read() };
+    unsafe { RtcGetInfo(crate::gl!(&raw RTC)) };
+    let rtc = unsafe { (crate::gl!(&raw RTC).cast_const()).read() };
     // Hour and minute are used as raw BCD here, as in the original.
-    let days = u32::from(unsafe { RtcGetDayCount(&raw const RTC) });
+    let days = u32::from(unsafe { RtcGetDayCount(crate::gl!(&raw RTC).cast_const()) });
     (HOURS_PER_DAY * MINUTES_PER_HOUR) as u32 * days
         + MINUTES_PER_HOUR as u32 * u32::from(rtc.hour)
         + u32::from(rtc.minute)
@@ -374,7 +386,7 @@ pub unsafe fn RtcGetMinuteCount() -> u32 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn RtcGetLocalDayCount() -> u32 {
-    u32::from(unsafe { RtcGetDayCount(&raw const RTC) })
+    u32::from(unsafe { RtcGetDayCount(crate::gl!(&raw RTC).cast_const()) })
 }
 
 #[cfg(test)]

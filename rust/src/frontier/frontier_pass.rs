@@ -96,14 +96,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -113,7 +113,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -370,14 +370,18 @@ static sSpriteTemplates_Cursors: Table<CArray<SpriteTemplate, 2>> =
 static sTextColors: Table<CArray<CArray<u8, 3>, 3>> =
     Table((&raw const crate::data::frontier_pass::sTextColors).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPassData: *mut FrontierPassData = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPassGfx: *mut FrontierPassGfx = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMapData: *mut FrontierMapData = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedPassData: FrontierPassSaved = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPassData: crate::global::Global<*mut FrontierPassData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPassGfx: crate::global::Global<*mut FrontierPassGfx> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMapData: crate::global::Global<*mut FrontierMapData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSavedPassData: crate::global::Global<FrontierPassSaved> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -386,14 +390,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `SetMainCallback2` with this module's view of its types.
@@ -455,91 +459,91 @@ pub unsafe fn ShowFrontierPass(callback: Option<unsafe fn()>) {
     SetMainCallback2(Some(CB2_InitFrontierPass));
 }
 unsafe fn LeaveFrontierPass() {
-    SetMainCallback2((*sPassData).callback);
+    SetMainCallback2((*crate::gl!(sPassData)).callback);
     FreeFrontierPassData();
 }
 unsafe fn AllocateFrontierPassData(callback: Option<unsafe fn()>) -> u32 {
-    if !sPassData.is_null() {
+    if !(*sPassData.as_ptr()).is_null() {
         return ERR_ALREADY_DONE;
     }
-    sPassData = AllocZeroed(24) as *mut FrontierPassData;
-    if sPassData.is_null() {
+    crate::gl!(sPassData = AllocZeroed(24) as *mut FrontierPassData);
+    if (*sPassData.as_ptr()).is_null() {
         return ERR_ALLOC_FAILED;
     }
-    (*sPassData).callback = callback;
+    (*crate::gl!(sPassData)).callback = callback;
     let i: u8 = GetCurrentRegionMapSectionId();
     if i != MAPSEC_BATTLE_FRONTIER && i != MAPSEC_ARTISAN_CAVE {
-        (*sPassData).cursorX = 176;
-        (*sPassData).cursorY = 104;
+        (*crate::gl!(sPassData)).cursorX = 176;
+        (*crate::gl!(sPassData)).cursorY = 104;
     } else {
-        (*sPassData).cursorX = 176;
-        (*sPassData).cursorY = 48;
+        (*crate::gl!(sPassData)).cursorX = 176;
+        (*crate::gl!(sPassData)).cursorY = 48;
     }
-    (*sPassData).battlePoints = (*gSaveBlock2Ptr).frontier.battlePoints;
-    (*sPassData).set_hasBattleRecord(CanCopyRecordedBattleSaveData() as u8);
-    (*sPassData).set_areaToShow(CURSOR_AREA_NOTHING);
-    (*sPassData).set_trainerStars(CountPlayerTrainerStars() as u8);
+    (*crate::gl!(sPassData)).battlePoints = (*crate::gl!(gSaveBlock2Ptr)).frontier.battlePoints;
+    (*crate::gl!(sPassData)).set_hasBattleRecord(CanCopyRecordedBattleSaveData() as u8);
+    (*crate::gl!(sPassData)).set_areaToShow(CURSOR_AREA_NOTHING);
+    (*crate::gl!(sPassData)).set_trainerStars(CountPlayerTrainerStars() as u8);
     for i in 0..NUM_FRONTIER_FACILITIES {
         if FlagGet(FLAG_SYS_TOWER_SILVER + i as u16 * 2) != 0 {
-            (*sPassData).facilitySymbols[i] += 1;
+            (*crate::gl!(sPassData)).facilitySymbols[i] += 1;
         }
         if FlagGet(FLAG_SYS_TOWER_GOLD + i as u16 * 2) != 0 {
-            (*sPassData).facilitySymbols[i] += 1;
+            (*crate::gl!(sPassData)).facilitySymbols[i] += 1;
         }
     }
     SUCCESS
 }
 unsafe fn FreeFrontierPassData() -> u32 {
-    if sPassData.is_null() {
+    if (*sPassData.as_ptr()).is_null() {
         return ERR_ALREADY_DONE;
     }
-    memset(sPassData as *mut u8, 0, 24);
-    Free(sPassData as *mut c_void);
-    sPassData = null_mut();
+    memset(crate::gl!(sPassData) as *mut u8, 0, 24);
+    Free(crate::gl!(sPassData) as *mut c_void);
+    crate::gl!(sPassData = null_mut());
     SUCCESS
 }
 unsafe fn AllocateFrontierPassGfx() -> u32 {
-    if !sPassGfx.is_null() {
+    if !(*sPassGfx.as_ptr()).is_null() {
         return ERR_ALREADY_DONE;
     }
-    sPassGfx = AllocZeroed(9268) as *mut FrontierPassGfx;
-    if sPassGfx.is_null() {
+    crate::gl!(sPassGfx = AllocZeroed(9268) as *mut FrontierPassGfx);
+    if (*sPassGfx.as_ptr()).is_null() {
         return ERR_ALLOC_FAILED;
     }
     SUCCESS
 }
 unsafe fn FreeFrontierPassGfx() -> u32 {
     FreeAllWindowBuffers();
-    if sPassGfx.is_null() {
+    if (*sPassGfx.as_ptr()).is_null() {
         return ERR_ALREADY_DONE;
     }
-    if !(*sPassGfx).battleRecordTilemap.is_null() {
-        Free((*sPassGfx).battleRecordTilemap as *mut c_void);
-        (*sPassGfx).battleRecordTilemap = null_mut();
+    if !(*crate::gl!(sPassGfx)).battleRecordTilemap.is_null() {
+        Free((*crate::gl!(sPassGfx)).battleRecordTilemap as *mut c_void);
+        (*crate::gl!(sPassGfx)).battleRecordTilemap = null_mut();
     }
-    if !(*sPassGfx).mapAndCardTilemap.is_null() {
-        Free((*sPassGfx).mapAndCardTilemap as *mut c_void);
-        (*sPassGfx).mapAndCardTilemap = null_mut();
+    if !(*crate::gl!(sPassGfx)).mapAndCardTilemap.is_null() {
+        Free((*crate::gl!(sPassGfx)).mapAndCardTilemap as *mut c_void);
+        (*crate::gl!(sPassGfx)).mapAndCardTilemap = null_mut();
     }
-    if !(*sPassGfx).mapAndCardZoomTilemap.is_null() {
-        Free((*sPassGfx).mapAndCardZoomTilemap as *mut c_void);
-        (*sPassGfx).mapAndCardZoomTilemap = null_mut();
+    if !(*crate::gl!(sPassGfx)).mapAndCardZoomTilemap.is_null() {
+        Free((*crate::gl!(sPassGfx)).mapAndCardZoomTilemap as *mut c_void);
+        (*crate::gl!(sPassGfx)).mapAndCardZoomTilemap = null_mut();
     }
-    memset(sPassGfx as *mut u8, 0, 9268);
-    Free(sPassGfx as *mut c_void);
-    sPassGfx = null_mut();
+    memset(crate::gl!(sPassGfx) as *mut u8, 0, 9268);
+    Free(crate::gl!(sPassGfx) as *mut c_void);
+    crate::gl!(sPassGfx = null_mut());
     SUCCESS
 }
 pub(crate) unsafe fn VBlankCB_FrontierPass() {
-    if (*sPassGfx).zooming != 0 {
+    if (*crate::gl!(sPassGfx)).zooming != 0 {
         SetBgAffine(
             2,
-            (sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][0] as i32) << 8,
-            (sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][1] as i32) << 8,
-            sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][0],
-            sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][1],
-            (*sPassGfx).scaleX,
-            (*sPassGfx).scaleY,
+            (sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][0] as i32) << 8,
+            (sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][1] as i32) << 8,
+            sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][0],
+            sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][1],
+            (*crate::gl!(sPassGfx)).scaleX,
+            (*crate::gl!(sPassGfx)).scaleY,
             0,
         );
     }
@@ -565,7 +569,7 @@ pub(crate) unsafe fn CB2_HideFrontierPass() {
 }
 unsafe fn InitFrontierPass() -> u32 {
     let mut sizeOut: u32 = 0;
-    match (*sPassData).state {
+    match (*crate::gl!(sPassData)).state {
         0 => {
             SetVBlankCallback(None);
             ScanlineEffect_Stop();
@@ -588,9 +592,18 @@ unsafe fn InitFrontierPass() -> u32 {
         4 => {
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(1, sPassBgTemplates.as_ptr().cast_mut(), 3);
-            SetBgTilemapBuffer(1, (*sPassGfx).tilemapBuff1.as_mut_ptr() as *mut c_void);
-            SetBgTilemapBuffer(2, (*sPassGfx).tilemapBuff2.as_mut_ptr() as *mut c_void);
-            SetBgTilemapBuffer(3, (*sPassGfx).tilemapBuff3.as_mut_ptr() as *mut c_void);
+            SetBgTilemapBuffer(
+                1,
+                (*crate::gl!(sPassGfx)).tilemapBuff1.as_mut_ptr() as *mut c_void,
+            );
+            SetBgTilemapBuffer(
+                2,
+                (*crate::gl!(sPassGfx)).tilemapBuff2.as_mut_ptr() as *mut c_void,
+            );
+            SetBgTilemapBuffer(
+                3,
+                (*crate::gl!(sPassGfx)).tilemapBuff3.as_mut_ptr() as *mut c_void,
+            );
             SetBgAttribute(2, BG_ATTR_WRAPAROUND, 1);
         }
         5 => {
@@ -598,15 +611,15 @@ unsafe fn InitFrontierPass() -> u32 {
             DeactivateAllTextPrinters();
         }
         6 => {
-            (*sPassGfx).mapAndCardZoomTilemap = malloc_and_decompress(
+            (*crate::gl!(sPassGfx)).mapAndCardZoomTilemap = malloc_and_decompress(
                 sMapAndCard_Zooming_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u8;
-            (*sPassGfx).mapAndCardTilemap = malloc_and_decompress(
+            (*crate::gl!(sPassGfx)).mapAndCardTilemap = malloc_and_decompress(
                 sMapAndCard_ZoomedOut_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u8;
-            (*sPassGfx).battleRecordTilemap = malloc_and_decompress(
+            (*crate::gl!(sPassGfx)).battleRecordTilemap = malloc_and_decompress(
                 sBattleRecord_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u8;
@@ -653,7 +666,7 @@ unsafe fn InitFrontierPass() -> u32 {
             LoadPalette(
                 (*(&raw const crate::data::graphics::gFrontierPassBg_Pal)
                     .cast::<CArray<CArray<u16, 16>, 0>>())
-                    [1 + (*sPassData).trainerStars() as i32]
+                    [1 + (*crate::gl!(sPassData)).trainerStars() as i32]
                     .as_ptr()
                     .cast_mut() as *mut c_void,
                 16,
@@ -661,11 +674,14 @@ unsafe fn InitFrontierPass() -> u32 {
             );
             LoadPalette(GetTextWindowPalette(0) as *mut c_void, 240, 32);
             DrawFrontierPassBg();
-            UpdateAreaHighlight((*sPassData).cursorArea, (*sPassData).previousCursorArea);
-            if (*sPassData).areaToShow() == CURSOR_AREA_MAP
-                || (*sPassData).areaToShow() == CURSOR_AREA_CARD
+            UpdateAreaHighlight(
+                (*crate::gl!(sPassData)).cursorArea,
+                (*crate::gl!(sPassData)).previousCursorArea,
+            );
+            if (*crate::gl!(sPassData)).areaToShow() == CURSOR_AREA_MAP
+                || (*crate::gl!(sPassData)).areaToShow() == CURSOR_AREA_CARD
             {
-                (*sPassData).state = 0;
+                (*crate::gl!(sPassData)).state = 0;
                 return TRUE as u32;
             }
         }
@@ -685,23 +701,23 @@ unsafe fn InitFrontierPass() -> u32 {
             if UpdatePaletteFade() != 0 {
                 return FALSE as u32;
             }
-            (*sPassData).state = 0;
+            (*crate::gl!(sPassData)).state = 0;
             return TRUE as u32;
         }
         _ => {}
     }
-    (*sPassData).state += 1;
+    (*crate::gl!(sPassData)).state += 1;
     FALSE as u32
 }
 unsafe fn HideFrontierPass() -> u32 {
-    match (*sPassData).state {
+    match (*crate::gl!(sPassData)).state {
         0 => {
-            if (*sPassData).areaToShow() != CURSOR_AREA_MAP
-                && (*sPassData).areaToShow() != CURSOR_AREA_CARD
+            if (*crate::gl!(sPassData)).areaToShow() != CURSOR_AREA_MAP
+                && (*crate::gl!(sPassData)).areaToShow() != CURSOR_AREA_CARD
             {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             } else {
-                (*sPassData).state = 2;
+                (*crate::gl!(sPassData)).state = 2;
                 return FALSE as u32;
             }
         }
@@ -733,12 +749,12 @@ unsafe fn HideFrontierPass() -> u32 {
             UnsetBgTilemapBuffer(1);
             UnsetBgTilemapBuffer(2);
             FreeFrontierPassGfx();
-            (*sPassData).state = 0;
+            (*crate::gl!(sPassData)).state = 0;
             return TRUE as u32;
         }
         _ => {}
     }
-    (*sPassData).state += 1;
+    (*crate::gl!(sPassData)).state += 1;
     FALSE as u32
 }
 unsafe fn GetCursorAreaFromCoords(x: i16, y: i16) -> u8 {
@@ -748,7 +764,9 @@ unsafe fn GetCursorAreaFromCoords(x: i16, y: i16) -> u8 {
             && sPassAreasLayout[i].xStart <= x
             && sPassAreasLayout[i].xEnd >= x
         {
-            if i >= 6 && (*sPassData).facilitySymbols[i as i32 - CURSOR_AREA_SYMBOL_TOWER + 1] == 0
+            if i >= 6
+                && (*crate::gl!(sPassData)).facilitySymbols[i as i32 - CURSOR_AREA_SYMBOL_TOWER + 1]
+                    == 0
             {
                 break;
             }
@@ -762,23 +780,23 @@ pub unsafe fn CB2_ReshowFrontierPass() {
     if InitFrontierPass() == 0 {
         return;
     }
-    match (*sPassData).areaToShow() {
+    match (*crate::gl!(sPassData)).areaToShow() {
         CURSOR_AREA_MAP | CURSOR_AREA_CARD => {
             taskId = CreateTask(Some(Task_PassAreaZoom), 0);
             task_set(taskId, tZoomOut, TRUE as i16);
         }
         _ => {
-            (*sPassData).set_areaToShow(CURSOR_AREA_NOTHING);
+            (*crate::gl!(sPassData)).set_areaToShow(CURSOR_AREA_NOTHING);
             taskId = CreateTask(Some(Task_HandleFrontierPassInput), 0);
         }
     }
     SetMainCallback2(Some(CB2_FrontierPass));
 }
 pub(crate) unsafe fn CB2_ReturnFromRecord() {
-    AllocateFrontierPassData(sSavedPassData.callback);
-    (*sPassData).cursorX = sSavedPassData.cursorX;
-    (*sPassData).cursorY = sSavedPassData.cursorY;
-    memset(&raw mut sSavedPassData as *mut u8, 0, 8);
+    AllocateFrontierPassData(crate::gl!(sSavedPassData.callback));
+    (*crate::gl!(sPassData)).cursorX = crate::gl!(sSavedPassData.cursorX);
+    (*crate::gl!(sPassData)).cursorY = crate::gl!(sSavedPassData.cursorY);
+    memset(crate::gl!(&raw sSavedPassData) as *mut u8, 0, 8);
     match CurrentBattlePyramidLocation() {
         PYRAMID_LOCATION_FLOOR => {
             PlayBGM(MUS_B_PYRAMID);
@@ -796,14 +814,14 @@ pub(crate) unsafe fn CB2_ShowFrontierPassFeature() {
     if HideFrontierPass() == 0 {
         return;
     }
-    match (*sPassData).areaToShow() {
+    match (*crate::gl!(sPassData)).areaToShow() {
         CURSOR_AREA_MAP => {
             ShowFrontierMap(Some(CB2_ReshowFrontierPass));
         }
         CURSOR_AREA_RECORD => {
-            sSavedPassData.callback = (*sPassData).callback;
-            sSavedPassData.cursorX = (*sPassData).cursorX;
-            sSavedPassData.cursorY = (*sPassData).cursorY;
+            crate::gl!(sSavedPassData.callback = (*crate::gl!(sPassData)).callback);
+            crate::gl!(sSavedPassData.cursorX = (*crate::gl!(sPassData)).cursorX);
+            crate::gl!(sSavedPassData.cursorY = (*crate::gl!(sPassData)).cursorY);
             FreeFrontierPassData();
             PlayRecordedBattle(Some(CB2_ReturnFromRecord));
         }
@@ -816,15 +834,15 @@ pub(crate) unsafe fn CB2_ShowFrontierPassFeature() {
 unsafe fn TryCallPassAreaFunction(taskId: u8, cursorArea: u8) -> u32 {
     match cursorArea {
         CURSOR_AREA_RECORD => {
-            if (*sPassData).hasBattleRecord() == 0 {
+            if (*crate::gl!(sPassData)).hasBattleRecord() == 0 {
                 return FALSE as u32;
             }
-            (*sPassData).set_areaToShow(CURSOR_AREA_RECORD);
+            (*crate::gl!(sPassData)).set_areaToShow(CURSOR_AREA_RECORD);
             DestroyTask(taskId);
             SetMainCallback2(Some(CB2_ShowFrontierPassFeature));
         }
         CURSOR_AREA_MAP | CURSOR_AREA_CARD => {
-            (*sPassData).set_areaToShow(cursorArea);
+            (*crate::gl!(sPassData)).set_areaToShow(cursorArea);
             task_set_func(taskId, Some(Task_PassAreaZoom));
             task_set(taskId, tZoomOut, FALSE as i16);
         }
@@ -832,74 +850,87 @@ unsafe fn TryCallPassAreaFunction(taskId: u8, cursorArea: u8) -> u32 {
             return FALSE as u32;
         }
     }
-    (*sPassData).cursorX = (*(*sPassGfx).cursorSprite).x;
-    (*sPassData).cursorY = (*(*sPassGfx).cursorSprite).y;
+    (*crate::gl!(sPassData)).cursorX = (*(*crate::gl!(sPassGfx)).cursorSprite).x;
+    (*crate::gl!(sPassData)).cursorY = (*(*crate::gl!(sPassGfx)).cursorSprite).y;
     TRUE as u32
 }
 pub(crate) unsafe fn Task_HandleFrontierPassInput(taskId: u8) {
     let mut var: u8 = FALSE;
-    if gMain.heldKeys as i32 & DPAD_UP != 0 && (*(*sPassGfx).cursorSprite).y >= 9 {
-        (*(*sPassGfx).cursorSprite).y -= 2;
-        if (*(*sPassGfx).cursorSprite).y <= 7 {
-            (*(*sPassGfx).cursorSprite).y = 2;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_UP != 0
+        && (*(*crate::gl!(sPassGfx)).cursorSprite).y >= 9
+    {
+        (*(*crate::gl!(sPassGfx)).cursorSprite).y -= 2;
+        if (*(*crate::gl!(sPassGfx)).cursorSprite).y <= 7 {
+            (*(*crate::gl!(sPassGfx)).cursorSprite).y = 2;
         }
         var = TRUE;
     }
-    if gMain.heldKeys as i32 & DPAD_DOWN != 0 && (*(*sPassGfx).cursorSprite).y <= 135 {
-        (*(*sPassGfx).cursorSprite).y += 2;
-        if (*(*sPassGfx).cursorSprite).y >= 137 {
-            (*(*sPassGfx).cursorSprite).y = 136;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_DOWN != 0
+        && (*(*crate::gl!(sPassGfx)).cursorSprite).y <= 135
+    {
+        (*(*crate::gl!(sPassGfx)).cursorSprite).y += 2;
+        if (*(*crate::gl!(sPassGfx)).cursorSprite).y >= 137 {
+            (*(*crate::gl!(sPassGfx)).cursorSprite).y = 136;
         }
         var = TRUE;
     }
-    if gMain.heldKeys as i32 & DPAD_LEFT != 0 && (*(*sPassGfx).cursorSprite).x >= 6 {
-        (*(*sPassGfx).cursorSprite).x -= 2;
-        if (*(*sPassGfx).cursorSprite).x <= 4 {
-            (*(*sPassGfx).cursorSprite).x = 5;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_LEFT != 0
+        && (*(*crate::gl!(sPassGfx)).cursorSprite).x >= 6
+    {
+        (*(*crate::gl!(sPassGfx)).cursorSprite).x -= 2;
+        if (*(*crate::gl!(sPassGfx)).cursorSprite).x <= 4 {
+            (*(*crate::gl!(sPassGfx)).cursorSprite).x = 5;
         }
         var = TRUE;
     }
-    if gMain.heldKeys as i32 & DPAD_RIGHT != 0 && (*(*sPassGfx).cursorSprite).x <= 231 {
-        (*(*sPassGfx).cursorSprite).x += 2;
-        if (*(*sPassGfx).cursorSprite).x >= 233 {
-            (*(*sPassGfx).cursorSprite).x = 232;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_RIGHT != 0
+        && (*(*crate::gl!(sPassGfx)).cursorSprite).x <= 231
+    {
+        (*(*crate::gl!(sPassGfx)).cursorSprite).x += 2;
+        if (*(*crate::gl!(sPassGfx)).cursorSprite).x >= 233 {
+            (*(*crate::gl!(sPassGfx)).cursorSprite).x = 232;
         }
         var = TRUE;
     }
     if var == 0 {
-        if (*sPassData).cursorArea != CURSOR_AREA_NOTHING && gMain.newKeys as i32 & A_BUTTON != 0 {
-            if (*sPassData).cursorArea <= CURSOR_AREA_RECORD {
+        if (*crate::gl!(sPassData)).cursorArea != CURSOR_AREA_NOTHING
+            && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        {
+            if (*crate::gl!(sPassData)).cursorArea <= CURSOR_AREA_RECORD {
                 PlaySE(SE_SELECT);
-                if TryCallPassAreaFunction(taskId, (*sPassData).cursorArea) != 0 {
+                if TryCallPassAreaFunction(taskId, (*crate::gl!(sPassData)).cursorArea) != 0 {
                     return;
                 }
-            } else if (*sPassData).cursorArea == CURSOR_AREA_CANCEL {
+            } else if (*crate::gl!(sPassData)).cursorArea == CURSOR_AREA_CANCEL {
                 PlaySE(SE_PC_OFF);
                 SetMainCallback2(Some(CB2_HideFrontierPass));
                 DestroyTask(taskId);
             }
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_PC_OFF);
             SetMainCallback2(Some(CB2_HideFrontierPass));
             DestroyTask(taskId);
         }
     } else {
         var = GetCursorAreaFromCoords(
-            (*(*sPassGfx).cursorSprite).x - 5,
-            (*(*sPassGfx).cursorSprite).y + 5,
+            (*(*crate::gl!(sPassGfx)).cursorSprite).x - 5,
+            (*(*crate::gl!(sPassGfx)).cursorSprite).y + 5,
         );
-        if (*sPassData).cursorArea != var {
+        if (*crate::gl!(sPassData)).cursorArea != var {
             PrintAreaDescription(var);
-            (*sPassData).previousCursorArea = (*sPassData).cursorArea;
-            (*sPassData).cursorArea = var;
-            UpdateAreaHighlight((*sPassData).cursorArea, (*sPassData).previousCursorArea);
+            (*crate::gl!(sPassData)).previousCursorArea = (*crate::gl!(sPassData)).cursorArea;
+            (*crate::gl!(sPassData)).cursorArea = var;
+            UpdateAreaHighlight(
+                (*crate::gl!(sPassData)).cursorArea,
+                (*crate::gl!(sPassData)).previousCursorArea,
+            );
         }
     }
 }
 pub(crate) unsafe fn Task_PassAreaZoom(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    match (*sPassData).state {
+    match (*crate::gl!(sPassData)).state {
         0 => {
             if *data == 0 {
                 ShowHideZoomingArea(TRUE, FALSE);
@@ -922,16 +953,16 @@ pub(crate) unsafe fn Task_PassAreaZoom(taskId: u8) {
                 BlendPalettes(PALETTES_ALL, 16, 32767);
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 32767);
             }
-            (*sPassGfx).zooming = TRUE;
-            (*sPassGfx).scaleX = MathUtil_Inv16(*data.at(1));
-            (*sPassGfx).scaleY = MathUtil_Inv16(*data.at(2));
+            (*crate::gl!(sPassGfx)).zooming = TRUE;
+            (*crate::gl!(sPassGfx)).scaleX = MathUtil_Inv16(*data.at(1));
+            (*crate::gl!(sPassGfx)).scaleY = MathUtil_Inv16(*data.at(2));
         }
         1 => {
             UpdatePaletteFade();
             *data.at(1) += *data.at(3);
             *data.at(2) += *data.at(4);
-            (*sPassGfx).scaleX = MathUtil_Inv16(*data.at(1));
-            (*sPassGfx).scaleY = MathUtil_Inv16(*data.at(2));
+            (*crate::gl!(sPassGfx)).scaleX = MathUtil_Inv16(*data.at(1));
+            (*crate::gl!(sPassGfx)).scaleY = MathUtil_Inv16(*data.at(2));
             if *data == 0 {
                 if *data.at(1) <= (1_f32 * 256_f32) as i16 {
                     return;
@@ -943,8 +974,8 @@ pub(crate) unsafe fn Task_PassAreaZoom(taskId: u8) {
             }
         }
         2 => {
-            if (*sPassGfx).zooming != 0 {
-                (*sPassGfx).zooming = FALSE;
+            if (*crate::gl!(sPassGfx)).zooming != 0 {
+                (*crate::gl!(sPassGfx)).zooming = FALSE;
             }
             if UpdatePaletteFade() != 0 {
                 return;
@@ -954,16 +985,16 @@ pub(crate) unsafe fn Task_PassAreaZoom(taskId: u8) {
                 SetMainCallback2(Some(CB2_ShowFrontierPassFeature));
             } else {
                 ShowHideZoomingArea(FALSE, FALSE);
-                (*sPassData).set_areaToShow(CURSOR_AREA_NOTHING);
+                (*crate::gl!(sPassData)).set_areaToShow(CURSOR_AREA_NOTHING);
                 task_set_func(taskId, Some(Task_HandleFrontierPassInput));
             }
             SetBgAttribute(2, BG_ATTR_WRAPAROUND, 0);
-            (*sPassData).state = 0;
+            (*crate::gl!(sPassData)).state = 0;
             return;
         }
         _ => {}
     }
-    (*sPassData).state += 1;
+    (*crate::gl!(sPassData)).state += 1;
 }
 unsafe fn ShowAndPrintWindows() {
     let mut i: u8 = 0;
@@ -1021,7 +1052,7 @@ unsafe fn ShowAndPrintWindows() {
     );
     ConvertIntToDecimalStringN(
         gStringVar4.as_mut_ptr(),
-        (*sPassData).battlePoints as i32,
+        (*crate::gl!(sPassData)).battlePoints as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         5,
     );
@@ -1035,10 +1066,12 @@ unsafe fn ShowAndPrintWindows() {
         0,
         gStringVar4.as_mut_ptr(),
     );
-    (*sPassData).cursorArea =
-        GetCursorAreaFromCoords((*sPassData).cursorX - 5, (*sPassData).cursorY + 5);
-    (*sPassData).previousCursorArea = CURSOR_AREA_NOTHING;
-    PrintAreaDescription((*sPassData).cursorArea);
+    (*crate::gl!(sPassData)).cursorArea = GetCursorAreaFromCoords(
+        (*crate::gl!(sPassData)).cursorX - 5,
+        (*crate::gl!(sPassData)).cursorY + 5,
+    );
+    (*crate::gl!(sPassData)).previousCursorArea = CURSOR_AREA_NOTHING;
+    PrintAreaDescription((*crate::gl!(sPassData)).cursorArea);
     for i in 0..WINDOW_COUNT {
         CopyWindowToVram(i, COPYWIN_FULL);
     }
@@ -1046,7 +1079,7 @@ unsafe fn ShowAndPrintWindows() {
 }
 unsafe fn PrintAreaDescription(cursorArea: u8) {
     FillWindowPixelBuffer(WINDOW_DESCRIPTION, 0);
-    if cursorArea == CURSOR_AREA_RECORD && (*sPassData).hasBattleRecord() == 0 {
+    if cursorArea == CURSOR_AREA_RECORD && (*crate::gl!(sPassData)).hasBattleRecord() == 0 {
         AddTextPrinterParameterized3(
             WINDOW_DESCRIPTION,
             FONT_NORMAL,
@@ -1071,12 +1104,12 @@ unsafe fn PrintAreaDescription(cursorArea: u8) {
     CopyBgTilemapBufferToVram(0);
 }
 unsafe fn ShowHideZoomingArea(show: u8, zoomedIn: u8) {
-    match (*sPassData).areaToShow() {
+    match (*crate::gl!(sPassData)).areaToShow() {
         CURSOR_AREA_MAP => {
             if show != 0 {
                 CopyToBgTilemapBufferRect_ChangePalette(
                     2,
-                    (*sPassGfx).mapAndCardZoomTilemap as *mut c_void,
+                    (*crate::gl!(sPassGfx)).mapAndCardZoomTilemap as *mut c_void,
                     16,
                     3,
                     12,
@@ -1091,7 +1124,7 @@ unsafe fn ShowHideZoomingArea(show: u8, zoomedIn: u8) {
             if show != 0 {
                 CopyToBgTilemapBufferRect_ChangePalette(
                     2,
-                    (*sPassGfx).mapAndCardZoomTilemap.at(84) as *mut c_void,
+                    (*crate::gl!(sPassGfx)).mapAndCardZoomTilemap.at(84) as *mut c_void,
                     16,
                     10,
                     12,
@@ -1110,10 +1143,10 @@ unsafe fn ShowHideZoomingArea(show: u8, zoomedIn: u8) {
     if zoomedIn != 0 {
         SetBgAffine(
             2,
-            (sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][0] as i32) << 8,
-            (sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][1] as i32) << 8,
-            sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][0],
-            sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][1],
+            (sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][0] as i32) << 8,
+            (sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][1] as i32) << 8,
+            sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][0],
+            sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][1],
             MathUtil_Inv16((1_f32 * 256_f32) as i16),
             MathUtil_Inv16((1_f32 * 256_f32) as i16),
             0,
@@ -1121,10 +1154,10 @@ unsafe fn ShowHideZoomingArea(show: u8, zoomedIn: u8) {
     } else {
         SetBgAffine(
             2,
-            (sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][0] as i32) << 8,
-            (sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][1] as i32) << 8,
-            sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][0],
-            sBgAffineCoords[(*sPassData).areaToShow() as i32 - 1][1],
+            (sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][0] as i32) << 8,
+            (sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][1] as i32) << 8,
+            sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][0],
+            sBgAffineCoords[(*crate::gl!(sPassData)).areaToShow() as i32 - 1][1],
             MathUtil_Inv16(256),
             MathUtil_Inv16(256),
             0,
@@ -1136,7 +1169,7 @@ unsafe fn UpdateAreaHighlight(cursorArea: u8, previousCursorArea: u8) {
         CURSOR_AREA_MAP => {
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
-                (*sPassGfx).mapAndCardTilemap as *mut c_void,
+                (*crate::gl!(sPassGfx)).mapAndCardTilemap as *mut c_void,
                 16,
                 3,
                 12,
@@ -1147,7 +1180,7 @@ unsafe fn UpdateAreaHighlight(cursorArea: u8, previousCursorArea: u8) {
         CURSOR_AREA_CARD => {
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
-                (*sPassGfx).mapAndCardTilemap.at(336) as *mut c_void,
+                (*crate::gl!(sPassGfx)).mapAndCardTilemap.at(336) as *mut c_void,
                 16,
                 10,
                 12,
@@ -1156,10 +1189,10 @@ unsafe fn UpdateAreaHighlight(cursorArea: u8, previousCursorArea: u8) {
             );
         }
         CURSOR_AREA_RECORD => {
-            if (*sPassData).hasBattleRecord() != 0 {
+            if (*crate::gl!(sPassData)).hasBattleRecord() != 0 {
                 CopyToBgTilemapBufferRect_ChangePalette(
                     1,
-                    (*sPassGfx).battleRecordTilemap as *mut c_void,
+                    (*crate::gl!(sPassGfx)).battleRecordTilemap as *mut c_void,
                     2,
                     10,
                     12,
@@ -1194,7 +1227,7 @@ unsafe fn UpdateAreaHighlight(cursorArea: u8, previousCursorArea: u8) {
         CURSOR_AREA_MAP => {
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
-                (*sPassGfx).mapAndCardTilemap.at(168) as *mut c_void,
+                (*crate::gl!(sPassGfx)).mapAndCardTilemap.at(168) as *mut c_void,
                 16,
                 3,
                 12,
@@ -1205,7 +1238,7 @@ unsafe fn UpdateAreaHighlight(cursorArea: u8, previousCursorArea: u8) {
         CURSOR_AREA_CARD => {
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
-                (*sPassGfx).mapAndCardTilemap.at(504) as *mut c_void,
+                (*crate::gl!(sPassGfx)).mapAndCardTilemap.at(504) as *mut c_void,
                 16,
                 10,
                 12,
@@ -1214,10 +1247,10 @@ unsafe fn UpdateAreaHighlight(cursorArea: u8, previousCursorArea: u8) {
             );
         }
         CURSOR_AREA_RECORD => {
-            if (*sPassData).hasBattleRecord() != 0 {
+            if (*crate::gl!(sPassData)).hasBattleRecord() != 0 {
                 CopyToBgTilemapBufferRect_ChangePalette(
                     1,
-                    (*sPassGfx).battleRecordTilemap.at(72) as *mut c_void,
+                    (*crate::gl!(sPassGfx)).battleRecordTilemap.at(72) as *mut c_void,
                     2,
                     10,
                     12,
@@ -1260,8 +1293,11 @@ unsafe fn DrawFrontierPassBg() {
         0,
         0,
     );
-    UpdateAreaHighlight((*sPassData).cursorArea, (*sPassData).previousCursorArea);
-    ShowHideZoomingArea(TRUE, (*sPassData).areaToShow());
+    UpdateAreaHighlight(
+        (*crate::gl!(sPassData)).cursorArea,
+        (*crate::gl!(sPassData)).previousCursorArea,
+    );
+    ShowHideZoomingArea(TRUE, (*crate::gl!(sPassData)).areaToShow());
     ShowAndPrintWindows();
     CopyBgTilemapBufferToVram(1);
 }
@@ -1273,35 +1309,37 @@ unsafe fn LoadCursorAndSymbolSprites() {
     LoadCompressedSpriteSheet((&raw const sCursorSpriteSheets[2]).cast_mut());
     let mut spriteId: u8 = CreateSprite(
         (&raw const sSpriteTemplates_Cursors[0]).cast_mut(),
-        (*sPassData).cursorX,
-        (*sPassData).cursorY,
+        (*crate::gl!(sPassData)).cursorX,
+        (*crate::gl!(sPassData)).cursorY,
         0,
     );
-    (*sPassGfx).cursorSprite = &raw mut gSprites[spriteId];
-    (*(*sPassGfx).cursorSprite).oam.set_priority(0);
+    (*crate::gl!(sPassGfx)).cursorSprite = crate::gl!(&raw gSprites[spriteId]);
+    (*(*crate::gl!(sPassGfx)).cursorSprite).oam.set_priority(0);
     for i in 0..NUM_FRONTIER_FACILITIES {
-        if (*sPassData).facilitySymbols[i] != 0 {
+        if (*crate::gl!(sPassData)).facilitySymbols[i] != 0 {
             let mut sprite: SpriteTemplate = *sSpriteTemplate_Medal;
-            sprite.paletteTag += (*sPassData).facilitySymbols[i] as u16 - 1;
+            sprite.paletteTag += (*crate::gl!(sPassData)).facilitySymbols[i] as u16 - 1;
             spriteId = CreateSprite(
                 &raw mut sprite,
                 sPassAreasLayout[i as i32 + CURSOR_AREA_SYMBOL_TOWER - 1].xStart + 8,
                 sPassAreasLayout[i as i32 + CURSOR_AREA_SYMBOL_TOWER - 1].yStart + 6,
                 i + 1,
             );
-            (*sPassGfx).symbolSprites[i] = &raw mut gSprites[spriteId];
-            (*(*sPassGfx).symbolSprites[i]).oam.set_priority(2);
-            StartSpriteAnim((*sPassGfx).symbolSprites[i], i);
+            (*crate::gl!(sPassGfx)).symbolSprites[i] = crate::gl!(&raw gSprites[spriteId]);
+            (*(*crate::gl!(sPassGfx)).symbolSprites[i])
+                .oam
+                .set_priority(2);
+            StartSpriteAnim((*crate::gl!(sPassGfx)).symbolSprites[i], i);
         }
     }
 }
 unsafe fn FreeCursorAndSymbolSprites() {
-    DestroySprite((*sPassGfx).cursorSprite);
-    (*sPassGfx).cursorSprite = null_mut();
+    DestroySprite((*crate::gl!(sPassGfx)).cursorSprite);
+    (*crate::gl!(sPassGfx)).cursorSprite = null_mut();
     for i in 0..NUM_FRONTIER_FACILITIES {
-        if !(*sPassGfx).symbolSprites[i].is_null() {
-            DestroySprite((*sPassGfx).symbolSprites[i]);
-            (*sPassGfx).symbolSprites[i] = null_mut();
+        if !(*crate::gl!(sPassGfx)).symbolSprites[i].is_null() {
+            DestroySprite((*crate::gl!(sPassGfx)).symbolSprites[i]);
+            (*crate::gl!(sPassGfx)).symbolSprites[i] = null_mut();
         }
     }
     FreeAllSpritePalettes();
@@ -1310,24 +1348,24 @@ unsafe fn FreeCursorAndSymbolSprites() {
 }
 pub(crate) fn SpriteCB_PlayerHead(sprite: *mut Sprite) {}
 unsafe fn ShowFrontierMap(callback: Option<unsafe fn()>) {
-    if !sMapData.is_null() {
+    if !(*sMapData.as_ptr()).is_null() {
         SetMainCallback2(callback);
     }
-    sMapData = AllocZeroed(12308) as *mut FrontierMapData;
-    (*sMapData).callback = callback;
+    crate::gl!(sMapData = AllocZeroed(12308) as *mut FrontierMapData);
+    (*crate::gl!(sMapData)).callback = callback;
     ResetTasks();
     CreateTask(Some(Task_HandleFrontierMap), 0);
     SetMainCallback2(Some(CB2_FrontierPass));
 }
 unsafe fn FreeFrontierMap() {
     ResetTasks();
-    SetMainCallback2((*sMapData).callback);
-    memset(sMapData as *mut u8, 0, 12308);
-    Free(sMapData as *mut c_void);
-    sMapData = null_mut();
+    SetMainCallback2((*crate::gl!(sMapData)).callback);
+    memset(crate::gl!(sMapData) as *mut u8, 0, 12308);
+    Free(crate::gl!(sMapData) as *mut c_void);
+    crate::gl!(sMapData = null_mut());
 }
 unsafe fn InitFrontierMap() -> u32 {
-    match (*sPassData).state {
+    match (*crate::gl!(sPassData)).state {
         0 => {
             SetVBlankCallback(None);
             ScanlineEffect_Stop();
@@ -1345,9 +1383,18 @@ unsafe fn InitFrontierMap() -> u32 {
         3 => {
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(0, sMapBgTemplates.as_ptr().cast_mut(), 3);
-            SetBgTilemapBuffer(0, (*sMapData).tilemapBuff0.as_mut_ptr() as *mut c_void);
-            SetBgTilemapBuffer(1, (*sMapData).tilemapBuff1.as_mut_ptr() as *mut c_void);
-            SetBgTilemapBuffer(2, (*sMapData).tilemapBuff2.as_mut_ptr() as *mut c_void);
+            SetBgTilemapBuffer(
+                0,
+                (*crate::gl!(sMapData)).tilemapBuff0.as_mut_ptr() as *mut c_void,
+            );
+            SetBgTilemapBuffer(
+                1,
+                (*crate::gl!(sMapData)).tilemapBuff1.as_mut_ptr() as *mut c_void,
+            );
+            SetBgTilemapBuffer(
+                2,
+                (*crate::gl!(sMapData)).tilemapBuff2.as_mut_ptr() as *mut c_void,
+            );
             FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
             FillBgTilemapBufferRect_Palette0(1, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
             FillBgTilemapBufferRect_Palette0(2, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
@@ -1402,16 +1449,16 @@ unsafe fn InitFrontierMap() -> u32 {
             if UpdatePaletteFade() != 0 {
                 return FALSE as u32;
             }
-            (*sPassData).state = 0;
+            (*crate::gl!(sPassData)).state = 0;
             return TRUE as u32;
         }
         _ => {}
     }
-    (*sPassData).state += 1;
+    (*crate::gl!(sPassData)).state += 1;
     FALSE as u32
 }
 unsafe fn ExitFrontierMap() -> u32 {
-    match (*sPassData).state {
+    match (*crate::gl!(sPassData)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 32767);
         }
@@ -1430,16 +1477,16 @@ unsafe fn ExitFrontierMap() -> u32 {
             SetVBlankHBlankCallbacksToNull();
         }
         3 => {
-            if !(*sMapData).cursorSprite.is_null() {
-                DestroySprite((*sMapData).cursorSprite);
+            if !(*crate::gl!(sMapData)).cursorSprite.is_null() {
+                DestroySprite((*crate::gl!(sMapData)).cursorSprite);
                 FreeSpriteTilesByTag(TAG_CURSOR);
             }
-            if !(*sMapData).mapIndicatorSprite.is_null() {
-                DestroySprite((*sMapData).mapIndicatorSprite);
+            if !(*crate::gl!(sMapData)).mapIndicatorSprite.is_null() {
+                DestroySprite((*crate::gl!(sMapData)).mapIndicatorSprite);
                 FreeSpriteTilesByTag(TAG_MAP_INDICATOR);
             }
-            if !(*sMapData).playerHeadSprite.is_null() {
-                DestroySprite((*sMapData).playerHeadSprite);
+            if !(*crate::gl!(sMapData)).playerHeadSprite.is_null() {
+                DestroySprite((*crate::gl!(sMapData)).playerHeadSprite);
                 FreeSpriteTilesByTag(TAG_HEAD_MALE);
             }
             FreeAllWindowBuffers();
@@ -1453,12 +1500,12 @@ unsafe fn ExitFrontierMap() -> u32 {
             UnsetBgTilemapBuffer(0);
             UnsetBgTilemapBuffer(1);
             UnsetBgTilemapBuffer(2);
-            (*sPassData).state = 0;
+            (*crate::gl!(sPassData)).state = 0;
             return TRUE as u32;
         }
         _ => {}
     }
-    (*sPassData).state += 1;
+    (*crate::gl!(sPassData)).state += 1;
     FALSE as u32
 }
 pub(crate) unsafe fn Task_HandleFrontierMap(taskId: u8) {
@@ -1472,17 +1519,17 @@ pub(crate) unsafe fn Task_HandleFrontierMap(taskId: u8) {
                 return;
             }
             1 => {
-                if gMain.newKeys as i32 & B_BUTTON != 0 {
+                if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                     PlaySE(SE_PC_OFF);
                     *data = 4;
-                } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
-                    if (*sMapData).cursorPos >= 6 {
+                } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
+                    if (*crate::gl!(sMapData)).cursorPos >= 6 {
                         HandleFrontierMapCursorMove(0);
                     } else {
                         *data = 2;
                     }
-                } else if gMain.newKeys as i32 & DPAD_UP != 0 {
-                    if (*sMapData).cursorPos == 0 {
+                } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
+                    if (*crate::gl!(sMapData)).cursorPos == 0 {
                         HandleFrontierMapCursorMove(1);
                     } else {
                         *data = 3;
@@ -1496,7 +1543,7 @@ pub(crate) unsafe fn Task_HandleFrontierMap(taskId: u8) {
                     *data.at(1) = 0;
                     *data = 1;
                 } else {
-                    (*(*sMapData).cursorSprite).y += 4;
+                    (*(*crate::gl!(sMapData)).cursorSprite).y += 4;
                     *data.at(1) += 1;
                 }
                 return;
@@ -1507,7 +1554,7 @@ pub(crate) unsafe fn Task_HandleFrontierMap(taskId: u8) {
                     *data.at(1) = 0;
                     *data = 1;
                 } else {
-                    (*(*sMapData).cursorSprite).y -= 4;
+                    (*(*crate::gl!(sMapData)).cursorSprite).y -= 4;
                     *data.at(1) += 1;
                 }
                 return;
@@ -1567,29 +1614,31 @@ unsafe fn InitFrontierMapSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const sSpriteTemplates_Cursors[0]).cast_mut(),
         155,
-        (*sMapData).cursorPos as i16 * 16 + 8,
+        (*crate::gl!(sMapData)).cursorPos as i16 * 16 + 8,
         2,
     );
-    (*sMapData).cursorSprite = &raw mut gSprites[spriteId];
-    (*(*sMapData).cursorSprite).oam.set_priority(0);
-    (*(*sMapData).cursorSprite).set_hFlip(TRUE as u16);
-    StartSpriteAnim((*sMapData).cursorSprite, 1);
+    (*crate::gl!(sMapData)).cursorSprite = crate::gl!(&raw gSprites[spriteId]);
+    (*(*crate::gl!(sMapData)).cursorSprite).oam.set_priority(0);
+    (*(*crate::gl!(sMapData)).cursorSprite).set_hFlip(TRUE as u16);
+    StartSpriteAnim((*crate::gl!(sMapData)).cursorSprite, 1);
     LoadCompressedSpriteSheet((&raw const sCursorSpriteSheets[1]).cast_mut());
     spriteId = CreateSprite(
         (&raw const sSpriteTemplates_Cursors[1]).cast_mut(),
-        sMapLandmarks[(*sMapData).cursorPos].x,
-        sMapLandmarks[(*sMapData).cursorPos].y,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].x,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].y,
         1,
     );
-    (*sMapData).mapIndicatorSprite = &raw mut gSprites[spriteId];
-    (*(*sMapData).mapIndicatorSprite).oam.set_priority(0);
+    (*crate::gl!(sMapData)).mapIndicatorSprite = crate::gl!(&raw gSprites[spriteId]);
+    (*(*crate::gl!(sMapData)).mapIndicatorSprite)
+        .oam
+        .set_priority(0);
     StartSpriteAnim(
-        (*sMapData).mapIndicatorSprite,
-        sMapLandmarks[(*sMapData).cursorPos].animNum,
+        (*crate::gl!(sMapData)).mapIndicatorSprite,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].animNum,
     );
     let mut id: u8 = GetCurrentRegionMapSectionId();
     if id == MAPSEC_BATTLE_FRONTIER || id == MAPSEC_ARTISAN_CAVE {
-        let mapNum: i8 = (*gSaveBlock1Ptr).location.mapNum;
+        let mapNum: i8 = (*crate::gl!(gSaveBlock1Ptr)).location.mapNum;
         if mapNum == 4
             || mapNum == 14
                 && ({
@@ -1597,8 +1646,8 @@ unsafe fn InitFrontierMapSprites() {
                     x
                 }) != 0
         {
-            x += (*gSaveBlock1Ptr).pos.x;
-            y = (*gSaveBlock1Ptr).pos.y;
+            x += (*crate::gl!(gSaveBlock1Ptr)).pos.x;
+            y = (*crate::gl!(gSaveBlock1Ptr)).pos.y;
             x /= 8;
             y /= 8;
             id = 0;
@@ -1608,19 +1657,19 @@ unsafe fn InitFrontierMapSprites() {
                 x = sMapLandmarks[id as i32 - 1].x;
                 y = sMapLandmarks[id as i32 - 1].y;
             } else {
-                if (*gSaveBlock1Ptr).escapeWarp.mapNum == 14 {
-                    x = (*gSaveBlock1Ptr).escapeWarp.x + 55;
+                if (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.mapNum == 14 {
+                    x = (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.x + 55;
                 } else {
-                    x = (*gSaveBlock1Ptr).escapeWarp.x;
+                    x = (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.x;
                 }
-                y = (*gSaveBlock1Ptr).escapeWarp.y;
+                y = (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.y;
                 x /= 8;
                 y /= 8;
             }
         }
         LoadCompressedSpriteSheet(sHeadsSpriteSheet.as_ptr().cast_mut());
         sprite = *sSpriteTemplate_PlayerHead;
-        sprite.paletteTag = (*gSaveBlock2Ptr).playerGender as u16 + TAG_HEAD_MALE;
+        sprite.paletteTag = (*crate::gl!(gSaveBlock2Ptr)).playerGender as u16 + TAG_HEAD_MALE;
         if id != 0 {
             spriteId = CreateSprite(&raw mut sprite, x, y, 0);
         } else {
@@ -1628,10 +1677,12 @@ unsafe fn InitFrontierMapSprites() {
             y *= 8;
             spriteId = CreateSprite(&raw mut sprite, x + 20, y + 36, 0);
         }
-        (*sMapData).playerHeadSprite = &raw mut gSprites[spriteId];
-        (*(*sMapData).playerHeadSprite).oam.set_priority(0);
-        if (*gSaveBlock2Ptr).playerGender != MALE {
-            StartSpriteAnim((*sMapData).playerHeadSprite, 1);
+        (*crate::gl!(sMapData)).playerHeadSprite = crate::gl!(&raw gSprites[spriteId]);
+        (*(*crate::gl!(sMapData)).playerHeadSprite)
+            .oam
+            .set_priority(0);
+        if (*crate::gl!(gSaveBlock2Ptr)).playerGender != MALE {
+            StartSpriteAnim((*crate::gl!(sMapData)).playerHeadSprite, 1);
         }
     }
 }
@@ -1642,7 +1693,7 @@ unsafe fn PrintOnFrontierMap() {
     }
     let mut i: u8 = 0;
     while i < NUM_FRONTIER_FACILITIES {
-        if i == (*sMapData).cursorPos {
+        if i == (*crate::gl!(sMapData)).cursorPos {
             AddTextPrinterParameterized3(
                 MAP_WINDOW_NAME,
                 FONT_NARROW,
@@ -1672,7 +1723,7 @@ unsafe fn PrintOnFrontierMap() {
         0,
         sTextColors[0].as_ptr().cast_mut(),
         0,
-        sMapLandmarks[(*sMapData).cursorPos].description,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].description,
     );
     for i in 0..MAP_WINDOW_COUNT {
         CopyWindowToVram(i, COPYWIN_FULL);
@@ -1682,11 +1733,11 @@ unsafe fn PrintOnFrontierMap() {
 unsafe fn HandleFrontierMapCursorMove(direction: u8) {
     let mut oldCursorPos: u8 = 0;
     if direction != 0 {
-        oldCursorPos = (*sMapData).cursorPos;
-        (*sMapData).cursorPos = ((oldCursorPos as i32 + 6) % 7) as u8;
+        oldCursorPos = (*crate::gl!(sMapData)).cursorPos;
+        (*crate::gl!(sMapData)).cursorPos = ((oldCursorPos as i32 + 6) % 7) as u8;
     } else {
-        oldCursorPos = (*sMapData).cursorPos;
-        (*sMapData).cursorPos = ((oldCursorPos as i32 + 1) % 7) as u8;
+        oldCursorPos = (*crate::gl!(sMapData)).cursorPos;
+        (*crate::gl!(sMapData)).cursorPos = ((oldCursorPos as i32 + 1) % 7) as u8;
     }
     AddTextPrinterParameterized3(
         MAP_WINDOW_NAME,
@@ -1701,18 +1752,20 @@ unsafe fn HandleFrontierMapCursorMove(direction: u8) {
         MAP_WINDOW_NAME,
         FONT_NARROW,
         4,
-        (*sMapData).cursorPos * 16 + 1,
+        (*crate::gl!(sMapData)).cursorPos * 16 + 1,
         sTextColors[2].as_ptr().cast_mut(),
         0,
-        sMapLandmarks[(*sMapData).cursorPos].name,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].name,
     );
-    (*(*sMapData).cursorSprite).y = (*sMapData).cursorPos as i16 * 16 + 8;
+    (*(*crate::gl!(sMapData)).cursorSprite).y = (*crate::gl!(sMapData)).cursorPos as i16 * 16 + 8;
     StartSpriteAnim(
-        (*sMapData).mapIndicatorSprite,
-        sMapLandmarks[(*sMapData).cursorPos].animNum,
+        (*crate::gl!(sMapData)).mapIndicatorSprite,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].animNum,
     );
-    (*(*sMapData).mapIndicatorSprite).x = sMapLandmarks[(*sMapData).cursorPos].x;
-    (*(*sMapData).mapIndicatorSprite).y = sMapLandmarks[(*sMapData).cursorPos].y;
+    (*(*crate::gl!(sMapData)).mapIndicatorSprite).x =
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].x;
+    (*(*crate::gl!(sMapData)).mapIndicatorSprite).y =
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].y;
     FillWindowPixelBuffer(MAP_WINDOW_DESCRIPTION, 0);
     AddTextPrinterParameterized3(
         MAP_WINDOW_DESCRIPTION,
@@ -1721,7 +1774,7 @@ unsafe fn HandleFrontierMapCursorMove(direction: u8) {
         0,
         sTextColors[0].as_ptr().cast_mut(),
         0,
-        sMapLandmarks[(*sMapData).cursorPos].description,
+        sMapLandmarks[(*crate::gl!(sMapData)).cursorPos].description,
     );
     for i in 0..MAP_WINDOW_COUNT {
         CopyWindowToVram(i, COPYWIN_FULL);

@@ -76,14 +76,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -244,8 +244,9 @@ static sTextColors: Table<CArray<u8, 3>> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 2>> =
     Table((&raw const crate::data::mail::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMailRead: *mut MailRead = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMailRead: crate::global::Global<*mut MailRead> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -254,14 +255,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `GetOverworldTextboxPalettePtr` with this module's view of its types.
 #[inline]
-unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+fn GetOverworldTextboxPalettePtr() -> *mut u16 {
     unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
 }
 /// `SetMainCallback2` with this module's view of its types.
@@ -275,11 +276,11 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 pub unsafe fn ReadMail(mail: *mut Mail, exitCallback: Option<unsafe fn()>, mut hasText: u8) {
     let mut buffer: CArray<u16, 2> = zeroed();
     let mut species: u16 = 0;
-    sMailRead = AllocZeroed(8748) as *mut MailRead;
-    (*sMailRead).language = GAME_LANGUAGE;
-    (*sMailRead).international = TRUE;
-    (*sMailRead).parserSingle = Some(CopyEasyChatWord);
-    (*sMailRead).parserMultiple = Some(ConvertEasyChatWordsToString);
+    crate::gl!(sMailRead = AllocZeroed(8748) as *mut MailRead);
+    (*crate::gl!(sMailRead)).language = GAME_LANGUAGE;
+    (*crate::gl!(sMailRead)).international = TRUE;
+    (*crate::gl!(sMailRead)).parserSingle = Some(CopyEasyChatWord);
+    (*crate::gl!(sMailRead)).parserMultiple = Some(ConvertEasyChatWordsToString);
     if (*mail).itemId == ITEM_ORANGE_MAIL
         || (*mail).itemId == ITEM_HARBOR_MAIL
         || (*mail).itemId == ITEM_GLITTER_MAIL
@@ -293,43 +294,45 @@ pub unsafe fn ReadMail(mail: *mut Mail, exitCallback: Option<unsafe fn()>, mut h
         || (*mail).itemId == ITEM_FAB_MAIL
         || (*mail).itemId == ITEM_RETRO_MAIL
     {
-        (*sMailRead).mailType = (*mail).itemId as u8 - ITEM_ORANGE_MAIL as u8;
+        (*crate::gl!(sMailRead)).mailType = (*mail).itemId as u8 - ITEM_ORANGE_MAIL as u8;
     } else {
-        (*sMailRead).mailType = 0;
+        (*crate::gl!(sMailRead)).mailType = 0;
         hasText = FALSE;
     }
-    match (*sMailRead).international {
+    match (*crate::gl!(sMailRead)).international {
         TRUE => {
-            (*sMailRead).layout = (&raw const sMailLayouts_Tall[(*sMailRead).mailType]).cast_mut();
+            (*crate::gl!(sMailRead)).layout =
+                (&raw const sMailLayouts_Tall[(*crate::gl!(sMailRead)).mailType]).cast_mut();
         }
         _ => {
-            (*sMailRead).layout = (&raw const sMailLayouts_Wide[(*sMailRead).mailType]).cast_mut();
+            (*crate::gl!(sMailRead)).layout =
+                (&raw const sMailLayouts_Wide[(*crate::gl!(sMailRead)).mailType]).cast_mut();
         }
     }
     species = MailSpeciesToSpecies((*mail).species, buffer.as_mut_ptr());
     if species > SPECIES_NONE && species < NUM_SPECIES {
-        match (*sMailRead).mailType {
+        match (*crate::gl!(sMailRead)).mailType {
             6 => {
-                (*sMailRead).iconType = ICON_TYPE_BEAD;
+                (*crate::gl!(sMailRead)).iconType = ICON_TYPE_BEAD;
             }
             9 => {
-                (*sMailRead).iconType = ICON_TYPE_DREAM;
+                (*crate::gl!(sMailRead)).iconType = ICON_TYPE_DREAM;
             }
             _ => {
-                (*sMailRead).iconType = ICON_TYPE_NONE;
+                (*crate::gl!(sMailRead)).iconType = ICON_TYPE_NONE;
             }
         }
     } else {
-        (*sMailRead).iconType = ICON_TYPE_NONE;
+        (*crate::gl!(sMailRead)).iconType = ICON_TYPE_NONE;
     }
-    (*sMailRead).mail = mail;
-    (*sMailRead).exitCallback = exitCallback;
-    (*sMailRead).hasText = hasText;
+    (*crate::gl!(sMailRead)).mail = mail;
+    (*crate::gl!(sMailRead)).exitCallback = exitCallback;
+    (*crate::gl!(sMailRead)).hasText = hasText;
     SetMainCallback2(Some(CB2_InitMailRead));
 }
 unsafe fn MailReadBuildGraphics() -> u8 {
     let mut icon: u16 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankCallback(None);
             ScanlineEffect_Stop();
@@ -370,8 +373,14 @@ unsafe fn MailReadBuildGraphics() -> u8 {
         6 => {
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 3);
-            SetBgTilemapBuffer(1, (*sMailRead).bg1TilemapBuffer.as_mut_ptr() as *mut c_void);
-            SetBgTilemapBuffer(2, (*sMailRead).bg2TilemapBuffer.as_mut_ptr() as *mut c_void);
+            SetBgTilemapBuffer(
+                1,
+                (*crate::gl!(sMailRead)).bg1TilemapBuffer.as_mut_ptr() as *mut c_void,
+            );
+            SetBgTilemapBuffer(
+                2,
+                (*crate::gl!(sMailRead)).bg2TilemapBuffer.as_mut_ptr() as *mut c_void,
+            );
         }
         7 => {
             InitWindows(sWindowTemplates.as_ptr().cast_mut());
@@ -380,7 +389,7 @@ unsafe fn MailReadBuildGraphics() -> u8 {
         8 => {
             DecompressAndCopyTileDataToVram(
                 1,
-                sMailGraphics[(*sMailRead).mailType].tiles as *mut c_void,
+                sMailGraphics[(*crate::gl!(sMailRead)).mailType].tiles as *mut c_void,
                 0,
                 0,
                 0,
@@ -396,7 +405,7 @@ unsafe fn MailReadBuildGraphics() -> u8 {
             FillBgTilemapBufferRect_Palette0(2, 1, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
             CopyToBgTilemapBuffer(
                 1,
-                sMailGraphics[(*sMailRead).mailType].tileMap as *mut c_void,
+                sMailGraphics[(*crate::gl!(sMailRead)).mailType].tileMap as *mut c_void,
                 0,
                 0,
             );
@@ -408,27 +417,45 @@ unsafe fn MailReadBuildGraphics() -> u8 {
         }
         12 => {
             LoadPalette(GetOverworldTextboxPalettePtr() as *mut c_void, 240, 32);
-            gPlttBufferUnfaded[250] = sMailGraphics[(*sMailRead).mailType].textColor;
-            gPlttBufferFaded[250] = sMailGraphics[(*sMailRead).mailType].textColor;
-            gPlttBufferUnfaded[251] = sMailGraphics[(*sMailRead).mailType].textShadow;
-            gPlttBufferFaded[251] = sMailGraphics[(*sMailRead).mailType].textShadow;
+            crate::gl!(
+                gPlttBufferUnfaded[250] =
+                    sMailGraphics[(*crate::gl!(sMailRead)).mailType].textColor
+            );
+            crate::gl!(
+                gPlttBufferFaded[250] = sMailGraphics[(*crate::gl!(sMailRead)).mailType].textColor
+            );
+            crate::gl!(
+                gPlttBufferUnfaded[251] =
+                    sMailGraphics[(*crate::gl!(sMailRead)).mailType].textShadow
+            );
+            crate::gl!(
+                gPlttBufferFaded[251] = sMailGraphics[(*crate::gl!(sMailRead)).mailType].textShadow
+            );
             LoadPalette(
-                sMailGraphics[(*sMailRead).mailType].palette as *mut c_void,
+                sMailGraphics[(*crate::gl!(sMailRead)).mailType].palette as *mut c_void,
                 0,
                 32,
             );
-            gPlttBufferUnfaded[10] = sBgColors[(*gSaveBlock2Ptr).playerGender][0];
-            gPlttBufferFaded[10] = sBgColors[(*gSaveBlock2Ptr).playerGender][0];
-            gPlttBufferUnfaded[11] = sBgColors[(*gSaveBlock2Ptr).playerGender][1];
-            gPlttBufferFaded[11] = sBgColors[(*gSaveBlock2Ptr).playerGender][1];
+            crate::gl!(
+                gPlttBufferUnfaded[10] = sBgColors[(*crate::gl!(gSaveBlock2Ptr)).playerGender][0]
+            );
+            crate::gl!(
+                gPlttBufferFaded[10] = sBgColors[(*crate::gl!(gSaveBlock2Ptr)).playerGender][0]
+            );
+            crate::gl!(
+                gPlttBufferUnfaded[11] = sBgColors[(*crate::gl!(gSaveBlock2Ptr)).playerGender][1]
+            );
+            crate::gl!(
+                gPlttBufferFaded[11] = sBgColors[(*crate::gl!(gSaveBlock2Ptr)).playerGender][1]
+            );
         }
         13 => {
-            if (*sMailRead).hasText != 0 {
+            if (*crate::gl!(sMailRead)).hasText != 0 {
                 BufferMailText();
             }
         }
         14 => {
-            if (*sMailRead).hasText != 0 {
+            if (*crate::gl!(sMailRead)).hasText != 0 {
                 PrintMailText();
                 RunTextPrinters();
             }
@@ -440,19 +467,19 @@ unsafe fn MailReadBuildGraphics() -> u8 {
         }
         16 => {
             SetVBlankCallback(Some(VBlankCB_MailRead));
-            gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
         }
         17 => {
-            icon = GetIconSpeciesNoPersonality((*(*sMailRead).mail).species);
-            match (*sMailRead).iconType {
+            icon = GetIconSpeciesNoPersonality((*(*crate::gl!(sMailRead)).mail).species);
+            match (*crate::gl!(sMailRead)).iconType {
                 ICON_TYPE_BEAD => {
                     LoadMonIconPalette(icon);
-                    (*sMailRead).monIconSpriteId =
+                    (*crate::gl!(sMailRead)).monIconSpriteId =
                         CreateMonIconNoPersonality(icon, Some(SpriteCallbackDummy), 96, 128, 0, 0);
                 }
                 ICON_TYPE_DREAM => {
                     LoadMonIconPalette(icon);
-                    (*sMailRead).monIconSpriteId =
+                    (*crate::gl!(sMailRead)).monIconSpriteId =
                         CreateMonIconNoPersonality(icon, Some(SpriteCallbackDummy), 40, 128, 0, 0);
                 }
                 _ => {}
@@ -464,15 +491,15 @@ unsafe fn MailReadBuildGraphics() -> u8 {
             ShowBg(1);
             ShowBg(2);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-            (*sMailRead).callback = Some(CB2_WaitForPaletteExitOnKeyPress);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
+            (*crate::gl!(sMailRead)).callback = Some(CB2_WaitForPaletteExitOnKeyPress);
             return TRUE;
         }
         _ => {
             return FALSE;
         }
     }
-    gMain.state += 1;
+    crate::gl!(gMain.state += 1);
     FALSE
 }
 pub(crate) unsafe fn CB2_InitMailRead() {
@@ -489,32 +516,32 @@ pub(crate) unsafe fn CB2_InitMailRead() {
 unsafe fn BufferMailText() {
     let mut numWords: u8 = 0;
     let mut i: u16 = 0;
-    while i < (*(*sMailRead).layout).numLines as u16 {
+    while i < (*(*crate::gl!(sMailRead)).layout).numLines as u16 {
         ConvertEasyChatWordsToString(
-            (*sMailRead).message[i].as_mut_ptr(),
-            &raw mut (*(*sMailRead).mail).words[numWords],
-            (*(*(*sMailRead).layout).lines.at(i)).numEasyChatWords() as u16,
+            (*crate::gl!(sMailRead)).message[i].as_mut_ptr(),
+            &raw mut (*(*crate::gl!(sMailRead)).mail).words[numWords],
+            (*(*(*crate::gl!(sMailRead)).layout).lines.at(i)).numEasyChatWords() as u16,
             1,
         );
-        numWords += (*(*(*sMailRead).layout).lines.at(i)).numEasyChatWords();
+        numWords += (*(*(*crate::gl!(sMailRead)).layout).lines.at(i)).numEasyChatWords();
         i += 1;
     }
     let ptr: *mut u8 = StringCopy(
-        (*sMailRead).playerName.as_mut_ptr(),
-        (*(*sMailRead).mail).playerName.as_mut_ptr(),
+        (*crate::gl!(sMailRead)).playerName.as_mut_ptr(),
+        (*(*crate::gl!(sMailRead)).mail).playerName.as_mut_ptr(),
     );
-    if (*sMailRead).international == 0 {
+    if (*crate::gl!(sMailRead)).international == 0 {
         StringCopy(
             ptr,
             (*(&raw const crate::data::strings::gText_FromSpace).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
-        (*sMailRead).signatureWidth = (*(*sMailRead).layout).signatureWidth
-            - (StringLength((*sMailRead).playerName.as_mut_ptr()) as u8 * 8 - 96);
+        (*crate::gl!(sMailRead)).signatureWidth = (*(*crate::gl!(sMailRead)).layout).signatureWidth
+            - (StringLength((*crate::gl!(sMailRead)).playerName.as_mut_ptr()) as u8 * 8 - 96);
     } else {
-        ConvertInternationalPlayerName((*sMailRead).playerName.as_mut_ptr());
-        (*sMailRead).signatureWidth = (*(*sMailRead).layout).signatureWidth;
+        ConvertInternationalPlayerName((*crate::gl!(sMailRead)).playerName.as_mut_ptr());
+        (*crate::gl!(sMailRead)).signatureWidth = (*(*crate::gl!(sMailRead)).layout).signatureWidth;
     }
 }
 unsafe fn PrintMailText() {
@@ -525,21 +552,24 @@ unsafe fn PrintMailText() {
     FillWindowPixelBuffer(0, 0);
     FillWindowPixelBuffer(1, 0);
     let mut i: u16 = 0;
-    while i < (*(*sMailRead).layout).numLines as u16 {
+    while i < (*(*crate::gl!(sMailRead)).layout).numLines as u16 {
         'l1: {
-            if (*sMailRead).message[i][0] == EOS || (*sMailRead).message[i][0] == 0x00 {
+            if (*crate::gl!(sMailRead)).message[i][0] == EOS
+                || (*crate::gl!(sMailRead)).message[i][0] == 0x00
+            {
                 break 'l1;
             }
             AddTextPrinterParameterized3(
                 0,
                 FONT_NORMAL,
-                (*(*(*sMailRead).layout).lines.at(i)).xOffset() + (*(*sMailRead).layout).wordsXPos,
-                y + (*(*sMailRead).layout).wordsYPos,
+                (*(*(*crate::gl!(sMailRead)).layout).lines.at(i)).xOffset()
+                    + (*(*crate::gl!(sMailRead)).layout).wordsXPos,
+                y + (*(*crate::gl!(sMailRead)).layout).wordsYPos,
                 sTextColors.as_ptr().cast_mut(),
                 0,
-                (*sMailRead).message[i].as_mut_ptr(),
+                (*crate::gl!(sMailRead)).message[i].as_mut_ptr(),
             );
-            y += (*(*(*sMailRead).layout).lines.at(i)).height;
+            y += (*(*(*crate::gl!(sMailRead)).layout).lines.at(i)).height;
         }
         i += 1;
     }
@@ -549,13 +579,13 @@ unsafe fn PrintMailText() {
             .as_ptr()
             .cast_mut(),
     );
-    StringCopy(bufptr, (*sMailRead).playerName.as_mut_ptr());
+    StringCopy(bufptr, (*crate::gl!(sMailRead)).playerName.as_mut_ptr());
     let box_x: i32 = GetStringCenterAlignXOffset(
         FONT_NORMAL as i32,
         signature.as_mut_ptr(),
-        (*sMailRead).signatureWidth as i32,
+        (*crate::gl!(sMailRead)).signatureWidth as i32,
     ) + 104;
-    let box_y: i32 = (*(*sMailRead).layout).signatureYPos as i32 + 88;
+    let box_y: i32 = (*(*crate::gl!(sMailRead)).layout).signatureYPos as i32 + 88;
     AddTextPrinterParameterized3(
         0,
         FONT_NORMAL,
@@ -574,40 +604,45 @@ pub(crate) unsafe fn VBlankCB_MailRead() {
     TransferPlttBuffer();
 }
 pub(crate) unsafe fn CB2_MailRead() {
-    if (*sMailRead).iconType != ICON_TYPE_NONE {
+    if (*crate::gl!(sMailRead)).iconType != ICON_TYPE_NONE {
         AnimateSprites();
         BuildOamBuffer();
     }
-    (*sMailRead).callback.unwrap_unchecked()();
+    (*crate::gl!(sMailRead)).callback.unwrap_unchecked()();
 }
 pub(crate) unsafe fn CB2_WaitForPaletteExitOnKeyPress() {
     if UpdatePaletteFade() == 0 {
-        (*sMailRead).callback = Some(CB2_ExitOnKeyPress);
+        (*crate::gl!(sMailRead)).callback = Some(CB2_ExitOnKeyPress);
     }
 }
 pub(crate) unsafe fn CB2_ExitOnKeyPress() {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-        (*sMailRead).callback = Some(CB2_ExitMailReadFreeVars);
+        (*crate::gl!(sMailRead)).callback = Some(CB2_ExitMailReadFreeVars);
     }
 }
 pub(crate) unsafe fn CB2_ExitMailReadFreeVars() {
     if UpdatePaletteFade() == 0 {
-        SetMainCallback2((*sMailRead).exitCallback);
-        match (*sMailRead).iconType {
+        SetMainCallback2((*crate::gl!(sMailRead)).exitCallback);
+        match (*crate::gl!(sMailRead)).iconType {
             ICON_TYPE_BEAD | ICON_TYPE_DREAM => {
-                FreeMonIconPalette(GetIconSpeciesNoPersonality((*(*sMailRead).mail).species));
-                FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sMailRead).monIconSpriteId]);
+                FreeMonIconPalette(GetIconSpeciesNoPersonality(
+                    (*(*crate::gl!(sMailRead)).mail).species,
+                ));
+                FreeAndDestroyMonIconSprite({
+                    let gl_i0 = (*crate::gl!(sMailRead)).monIconSpriteId;
+                    crate::gl!(&raw gSprites[gl_i0])
+                });
             }
             _ => {}
         }
-        memset(sMailRead as *mut u8, 0, 8748);
+        memset(crate::gl!(sMailRead) as *mut u8, 0, 8748);
         ResetPaletteFade();
         UnsetBgTilemapBuffer(0);
         UnsetBgTilemapBuffer(1);
         ResetBgsAndClearDma3BusyFlags(0);
         FreeAllWindowBuffers();
-        Free(sMailRead as *mut c_void);
-        sMailRead = null_mut();
+        Free(crate::gl!(sMailRead) as *mut c_void);
+        crate::gl!(sMailRead = null_mut());
     }
 }

@@ -44,33 +44,55 @@ use core::ptr::null_mut;
 
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_ShakeMon(taskId: u8) {
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8);
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8);
     if spriteId == SPRITE_NONE {
         DestroyAnimVisualTask(taskId);
         return;
     }
-    gSprites[spriteId].x2 = gBattleAnimArgs[1];
-    gSprites[spriteId].y2 = gBattleAnimArgs[2];
+    crate::gl!(gSprites[spriteId].x2 = crate::gl!(gBattleAnimArgs[1]));
+    crate::gl!(gSprites[spriteId].y2 = crate::gl!(gBattleAnimArgs[2]));
     task_set(taskId, 0, spriteId as i16);
-    task_set(taskId, 1, gBattleAnimArgs[3]);
-    task_set(taskId, 2, gBattleAnimArgs[4]);
-    task_set(taskId, 3, gBattleAnimArgs[4]);
-    task_set(taskId, 4, gBattleAnimArgs[1]);
-    task_set(taskId, 5, gBattleAnimArgs[2]);
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[3]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[4]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[4]));
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 5, crate::gl!(gBattleAnimArgs[2]));
     task_set_func(taskId, Some(AnimTask_ShakeMon_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
-pub(crate) unsafe fn AnimTask_ShakeMon_Step(taskId: u8) {
+pub(crate) fn AnimTask_ShakeMon_Step(taskId: u8) {
     if task_get(taskId, 3) == 0 {
-        if gSprites[task_get(taskId, 0)].x2 == 0 {
-            gSprites[task_get(taskId, 0)].x2 = task_get(taskId, 4);
+        if ({
+            let gl_i0 = task_get(taskId, 0);
+            crate::gl!(gSprites[gl_i0].x2)
+        }) == 0
+        {
+            {
+                let gl_v = task_get(taskId, 4);
+                let gl_i1 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i1].x2 = gl_v)
+            };
         } else {
-            gSprites[task_get(taskId, 0)].x2 = 0;
+            {
+                let gl_i2 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i2].x2 = 0)
+            };
         }
-        if gSprites[task_get(taskId, 0)].y2 == 0 {
-            gSprites[task_get(taskId, 0)].y2 = task_get(taskId, 5);
+        if ({
+            let gl_i3 = task_get(taskId, 0);
+            crate::gl!(gSprites[gl_i3].y2)
+        }) == 0
+        {
+            {
+                let gl_v = task_get(taskId, 5);
+                let gl_i4 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i4].y2 = gl_v)
+            };
         } else {
-            gSprites[task_get(taskId, 0)].y2 = 0;
+            {
+                let gl_i5 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i5].y2 = 0)
+            };
         }
         task_set(taskId, 3, task_get(taskId, 2));
         if ({
@@ -78,8 +100,14 @@ pub(crate) unsafe fn AnimTask_ShakeMon_Step(taskId: u8) {
             task_get(taskId, 1)
         }) == 0
         {
-            gSprites[task_get(taskId, 0)].x2 = 0;
-            gSprites[task_get(taskId, 0)].y2 = 0;
+            {
+                let gl_i6 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i6].x2 = 0)
+            };
+            {
+                let gl_i7 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i7].y2 = 0)
+            };
             DestroyAnimVisualTask(taskId);
         }
     } else {
@@ -91,13 +119,13 @@ pub unsafe fn AnimTask_ShakeMon2(taskId: u8) {
     let mut spriteId: u8 = 0;
     let mut abort: u8 = FALSE;
     let mut battler: u8 = 0;
-    if gBattleAnimArgs[0] < MAX_BATTLERS_COUNT as i16 {
-        spriteId = GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8);
+    if crate::gl!(gBattleAnimArgs[0]) < MAX_BATTLERS_COUNT as i16 {
+        spriteId = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8);
         if spriteId == SPRITE_NONE {
             abort = TRUE;
         }
-    } else if gBattleAnimArgs[0] != 8 {
-        match gBattleAnimArgs[0] {
+    } else if crate::gl!(gBattleAnimArgs[0]) != 8 {
+        match crate::gl!(gBattleAnimArgs[0]) {
             4 => {
                 battler = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
             }
@@ -114,36 +142,63 @@ pub unsafe fn AnimTask_ShakeMon2(taskId: u8) {
         if IsBattlerSpriteVisible(battler) == FALSE {
             abort = TRUE;
         }
-        spriteId = gBattlerSpriteIds[battler];
+        spriteId = crate::gl!(gBattlerSpriteIds[battler]);
     } else {
-        spriteId = gBattlerSpriteIds[gBattleAnimAttacker];
+        spriteId = {
+            let gl_i8 = gBattleAnimAttacker.get();
+            crate::gl!(gBattlerSpriteIds[gl_i8])
+        };
     }
     if abort != 0 {
         DestroyAnimVisualTask(taskId);
         return;
     }
-    gSprites[spriteId].x2 = gBattleAnimArgs[1];
-    gSprites[spriteId].y2 = gBattleAnimArgs[2];
+    crate::gl!(gSprites[spriteId].x2 = crate::gl!(gBattleAnimArgs[1]));
+    crate::gl!(gSprites[spriteId].y2 = crate::gl!(gBattleAnimArgs[2]));
     task_set(taskId, 0, spriteId as i16);
-    task_set(taskId, 1, gBattleAnimArgs[3]);
-    task_set(taskId, 2, gBattleAnimArgs[4]);
-    task_set(taskId, 3, gBattleAnimArgs[4]);
-    task_set(taskId, 4, gBattleAnimArgs[1]);
-    task_set(taskId, 5, gBattleAnimArgs[2]);
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[3]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[4]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[4]));
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 5, crate::gl!(gBattleAnimArgs[2]));
     task_set_func(taskId, Some(AnimTask_ShakeMon2_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
-pub(crate) unsafe fn AnimTask_ShakeMon2_Step(taskId: u8) {
+pub(crate) fn AnimTask_ShakeMon2_Step(taskId: u8) {
     if task_get(taskId, 3) == 0 {
-        if gSprites[task_get(taskId, 0)].x2 == task_get(taskId, 4) {
-            gSprites[task_get(taskId, 0)].x2 = -task_get(taskId, 4);
+        if ({
+            let gl_i9 = task_get(taskId, 0);
+            crate::gl!(gSprites[gl_i9].x2)
+        }) == task_get(taskId, 4)
+        {
+            {
+                let gl_v = -task_get(taskId, 4);
+                let gl_i10 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i10].x2 = gl_v)
+            };
         } else {
-            gSprites[task_get(taskId, 0)].x2 = task_get(taskId, 4);
+            {
+                let gl_v = task_get(taskId, 4);
+                let gl_i11 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i11].x2 = gl_v)
+            };
         }
-        if gSprites[task_get(taskId, 0)].y2 == task_get(taskId, 5) {
-            gSprites[task_get(taskId, 0)].y2 = -task_get(taskId, 5);
+        if ({
+            let gl_i12 = task_get(taskId, 0);
+            crate::gl!(gSprites[gl_i12].y2)
+        }) == task_get(taskId, 5)
+        {
+            {
+                let gl_v = -task_get(taskId, 5);
+                let gl_i13 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i13].y2 = gl_v)
+            };
         } else {
-            gSprites[task_get(taskId, 0)].y2 = task_get(taskId, 5);
+            {
+                let gl_v = task_get(taskId, 5);
+                let gl_i14 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i14].y2 = gl_v)
+            };
         }
         task_set(taskId, 3, task_get(taskId, 2));
         if ({
@@ -151,8 +206,14 @@ pub(crate) unsafe fn AnimTask_ShakeMon2_Step(taskId: u8) {
             task_get(taskId, 1)
         }) == 0
         {
-            gSprites[task_get(taskId, 0)].x2 = 0;
-            gSprites[task_get(taskId, 0)].y2 = 0;
+            {
+                let gl_i15 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i15].x2 = 0)
+            };
+            {
+                let gl_i16 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i16].y2 = 0)
+            };
             DestroyAnimVisualTask(taskId);
         }
     } else {
@@ -161,31 +222,47 @@ pub(crate) unsafe fn AnimTask_ShakeMon2_Step(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_ShakeMonInPlace(taskId: u8) {
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8);
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8);
     if spriteId == SPRITE_NONE {
         DestroyAnimVisualTask(taskId);
         return;
     }
-    gSprites[spriteId].x2 += gBattleAnimArgs[1];
-    gSprites[spriteId].y2 += gBattleAnimArgs[2];
+    crate::gl!(gSprites[spriteId].x2 += crate::gl!(gBattleAnimArgs[1]));
+    crate::gl!(gSprites[spriteId].y2 += crate::gl!(gBattleAnimArgs[2]));
     task_set(taskId, 0, spriteId as i16);
     task_set(taskId, 1, 0);
-    task_set(taskId, 2, gBattleAnimArgs[3]);
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[3]));
     task_set(taskId, 3, 0);
-    task_set(taskId, 4, gBattleAnimArgs[4]);
-    task_set(taskId, 5, gBattleAnimArgs[1] * 2);
-    task_set(taskId, 6, gBattleAnimArgs[2] * 2);
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[4]));
+    task_set(taskId, 5, crate::gl!(gBattleAnimArgs[1]) * 2);
+    task_set(taskId, 6, crate::gl!(gBattleAnimArgs[2]) * 2);
     task_set_func(taskId, Some(AnimTask_ShakeMonInPlace_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
-pub(crate) unsafe fn AnimTask_ShakeMonInPlace_Step(taskId: u8) {
+pub(crate) fn AnimTask_ShakeMonInPlace_Step(taskId: u8) {
     if task_get(taskId, 3) == 0 {
         if task_get(taskId, 1) as i32 & 1 != 0 {
-            gSprites[task_get(taskId, 0)].x2 += task_get(taskId, 5);
-            gSprites[task_get(taskId, 0)].y2 += task_get(taskId, 6);
+            {
+                let gl_v = task_get(taskId, 5);
+                let gl_i17 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i17].x2 += gl_v)
+            };
+            {
+                let gl_v = task_get(taskId, 6);
+                let gl_i18 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i18].y2 += gl_v)
+            };
         } else {
-            gSprites[task_get(taskId, 0)].x2 -= task_get(taskId, 5);
-            gSprites[task_get(taskId, 0)].y2 -= task_get(taskId, 6);
+            {
+                let gl_v = task_get(taskId, 5);
+                let gl_i19 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i19].x2 -= gl_v)
+            };
+            {
+                let gl_v = task_get(taskId, 6);
+                let gl_i20 = task_get(taskId, 0);
+                crate::gl!(gSprites[gl_i20].y2 -= gl_v)
+            };
         }
         task_set(taskId, 3, task_get(taskId, 4));
         if ({
@@ -194,11 +271,27 @@ pub(crate) unsafe fn AnimTask_ShakeMonInPlace_Step(taskId: u8) {
         }) >= task_get(taskId, 2)
         {
             if task_get(taskId, 1) as i32 & 1 != 0 {
-                gSprites[task_get(taskId, 0)].x2 += task_get(taskId, 5) / 2;
-                gSprites[task_get(taskId, 0)].y2 += task_get(taskId, 6) / 2;
+                {
+                    let gl_v = task_get(taskId, 5) / 2;
+                    let gl_i21 = task_get(taskId, 0);
+                    crate::gl!(gSprites[gl_i21].x2 += gl_v)
+                };
+                {
+                    let gl_v = task_get(taskId, 6) / 2;
+                    let gl_i22 = task_get(taskId, 0);
+                    crate::gl!(gSprites[gl_i22].y2 += gl_v)
+                };
             } else {
-                gSprites[task_get(taskId, 0)].x2 -= task_get(taskId, 5) / 2;
-                gSprites[task_get(taskId, 0)].y2 -= task_get(taskId, 6) / 2;
+                {
+                    let gl_v = task_get(taskId, 5) / 2;
+                    let gl_i23 = task_get(taskId, 0);
+                    crate::gl!(gSprites[gl_i23].x2 -= gl_v)
+                };
+                {
+                    let gl_v = task_get(taskId, 6) / 2;
+                    let gl_i24 = task_get(taskId, 0);
+                    crate::gl!(gSprites[gl_i24].y2 -= gl_v)
+                };
             }
             DestroyAnimVisualTask(taskId);
         }
@@ -208,17 +301,17 @@ pub(crate) unsafe fn AnimTask_ShakeMonInPlace_Step(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_ShakeAndSinkMon(taskId: u8) {
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8);
-    gSprites[spriteId].x2 = gBattleAnimArgs[1];
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8);
+    crate::gl!(gSprites[spriteId].x2 = crate::gl!(gBattleAnimArgs[1]));
     task_set(taskId, 0, spriteId as i16);
-    task_set(taskId, 1, gBattleAnimArgs[1]);
-    task_set(taskId, 2, gBattleAnimArgs[2]);
-    task_set(taskId, 3, gBattleAnimArgs[3]);
-    task_set(taskId, 4, gBattleAnimArgs[4]);
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[2]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[3]));
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[4]));
     task_set_func(taskId, Some(AnimTask_ShakeAndSinkMon_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
-pub(crate) unsafe fn AnimTask_ShakeAndSinkMon_Step(taskId: u8) {
+pub(crate) fn AnimTask_ShakeAndSinkMon_Step(taskId: u8) {
     let spriteId: u8 = task_get(taskId, 0) as u8;
     let mut x: i16 = task_get(taskId, 1);
     if task_get(taskId, 2)
@@ -229,14 +322,14 @@ pub(crate) unsafe fn AnimTask_ShakeAndSinkMon_Step(taskId: u8) {
         })
     {
         task_set(taskId, 8, 0);
-        if gSprites[spriteId].x2 == x {
+        if crate::gl!(gSprites[spriteId].x2) == x {
             x = -x;
         }
-        gSprites[spriteId].x2 += x;
+        crate::gl!(gSprites[spriteId].x2 += x);
     }
     task_set(taskId, 1, x);
     task_set(taskId, 9, task_get(taskId, 9) + (task_get(taskId, 3)));
-    gSprites[spriteId].y2 = task_get(taskId, 9) >> 8;
+    crate::gl!(gSprites[spriteId].y2 = task_get(taskId, 9) >> 8);
     if ({
         task_set(taskId, 4, task_get(taskId, 4) - 1);
         task_get(taskId, 4)
@@ -248,57 +341,60 @@ pub(crate) unsafe fn AnimTask_ShakeAndSinkMon_Step(taskId: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_TranslateMonElliptical(taskId: u8) {
     let mut wavePeriod: u8 = 1;
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8);
-    if gBattleAnimArgs[4] > 5 {
-        gBattleAnimArgs[4] = 5;
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8);
+    if crate::gl!(gBattleAnimArgs[4]) > 5 {
+        crate::gl!(gBattleAnimArgs[4] = 5);
     }
     let mut i: u8 = 0;
-    while (i as i16) < gBattleAnimArgs[4] {
+    while (i as i16) < crate::gl!(gBattleAnimArgs[4]) {
         wavePeriod <<= 1;
         i += 1;
     }
     task_set(taskId, 0, spriteId as i16);
-    task_set(taskId, 1, gBattleAnimArgs[1]);
-    task_set(taskId, 2, gBattleAnimArgs[2]);
-    task_set(taskId, 3, gBattleAnimArgs[3]);
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[2]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[3]));
     task_set(taskId, 4, wavePeriod as i16);
     task_set_func(taskId, Some(AnimTask_TranslateMonElliptical_Step));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
 pub(crate) unsafe fn AnimTask_TranslateMonElliptical_Step(taskId: u8) {
     let spriteId: u8 = task_get(taskId, 0) as u8;
-    gSprites[spriteId].x2 = Sin(task_get(taskId, 5), task_get(taskId, 1));
-    gSprites[spriteId].y2 = -Cos(task_get(taskId, 5), task_get(taskId, 2));
-    gSprites[spriteId].y2 += task_get(taskId, 2);
+    crate::gl!(gSprites[spriteId].x2 = Sin(task_get(taskId, 5), task_get(taskId, 1)));
+    crate::gl!(gSprites[spriteId].y2 = -Cos(task_get(taskId, 5), task_get(taskId, 2)));
+    crate::gl!(gSprites[spriteId].y2 += task_get(taskId, 2));
     task_set(taskId, 5, task_get(taskId, 5) + (task_get(taskId, 4)));
     task_set(taskId, 5, task_get(taskId, 5) & 0xff);
     if task_get(taskId, 5) == 0 {
         task_set(taskId, 3, task_get(taskId, 3) - 1);
     }
     if task_get(taskId, 3) == 0 {
-        gSprites[spriteId].x2 = 0;
-        gSprites[spriteId].y2 = 0;
+        crate::gl!(gSprites[spriteId].x2 = 0);
+        crate::gl!(gSprites[spriteId].y2 = 0);
         DestroyAnimVisualTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_TranslateMonEllipticalRespectSide(taskId: u8) {
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
-        gBattleAnimArgs[1] = -gBattleAnimArgs[1];
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
+        crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
     }
     AnimTask_TranslateMonElliptical(taskId);
 }
 pub(crate) unsafe fn DoHorizontalLunge(sprite: *mut Sprite) {
     (*sprite).set_invisible(TRUE as u16);
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
-        (*sprite).data[1] = -gBattleAnimArgs[1];
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
+        (*sprite).data[1] = -crate::gl!(gBattleAnimArgs[1]);
     } else {
-        (*sprite).data[1] = gBattleAnimArgs[1];
+        (*sprite).data[1] = crate::gl!(gBattleAnimArgs[1]);
     }
-    (*sprite).data[0] = gBattleAnimArgs[0];
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[0]);
     (*sprite).data[2] = 0;
-    (*sprite).data[3] = gBattlerSpriteIds[gBattleAnimAttacker] as i16;
-    (*sprite).data[4] = gBattleAnimArgs[0];
+    (*sprite).data[3] = ({
+        let gl_i25 = gBattleAnimAttacker.get();
+        crate::gl!(gBattlerSpriteIds[gl_i25])
+    }) as i16;
+    (*sprite).data[4] = crate::gl!(gBattleAnimArgs[0]);
     StoreSpriteCallbackInData6(sprite, Some(ReverseHorizontalLungeDirection));
     (*sprite).callback = Some(TranslateSpriteLinearById);
 }
@@ -310,12 +406,12 @@ pub(crate) unsafe fn ReverseHorizontalLungeDirection(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn DoVerticalDip(sprite: *mut Sprite) {
     (*sprite).set_invisible(TRUE as u16);
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[2] as u8);
-    (*sprite).data[0] = gBattleAnimArgs[0];
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[2]) as u8);
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[0]);
     (*sprite).data[1] = 0;
-    (*sprite).data[2] = gBattleAnimArgs[1];
+    (*sprite).data[2] = crate::gl!(gBattleAnimArgs[1]);
     (*sprite).data[3] = spriteId as i16;
-    (*sprite).data[4] = gBattleAnimArgs[0];
+    (*sprite).data[4] = crate::gl!(gBattleAnimArgs[0]);
     StoreSpriteCallbackInData6(sprite, Some(ReverseVerticalDipDirection));
     (*sprite).callback = Some(TranslateSpriteLinearById);
 }
@@ -327,35 +423,41 @@ pub(crate) unsafe fn ReverseVerticalDipDirection(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn SlideMonToOriginalPos(sprite: *mut Sprite) {
     let mut monSpriteId: u32 = 0;
-    if gBattleAnimArgs[0] == 0 {
-        monSpriteId = gBattlerSpriteIds[gBattleAnimAttacker] as u32;
+    if crate::gl!(gBattleAnimArgs[0]) == 0 {
+        monSpriteId = ({
+            let gl_i26 = gBattleAnimAttacker.get();
+            crate::gl!(gBattlerSpriteIds[gl_i26])
+        }) as u32;
     } else {
-        monSpriteId = gBattlerSpriteIds[gBattleAnimTarget] as u32;
+        monSpriteId = ({
+            let gl_i27 = gBattleAnimTarget.get();
+            crate::gl!(gBattlerSpriteIds[gl_i27])
+        }) as u32;
     }
-    (*sprite).data[0] = gBattleAnimArgs[2];
-    (*sprite).data[1] = gSprites[monSpriteId].x + gSprites[monSpriteId].x2;
-    (*sprite).data[2] = gSprites[monSpriteId].x;
-    (*sprite).data[3] = gSprites[monSpriteId].y + gSprites[monSpriteId].y2;
-    (*sprite).data[4] = gSprites[monSpriteId].y;
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[1] = crate::gl!(gSprites[monSpriteId].x) + crate::gl!(gSprites[monSpriteId].x2);
+    (*sprite).data[2] = crate::gl!(gSprites[monSpriteId].x);
+    (*sprite).data[3] = crate::gl!(gSprites[monSpriteId].y) + crate::gl!(gSprites[monSpriteId].y2);
+    (*sprite).data[4] = crate::gl!(gSprites[monSpriteId].y);
     InitSpriteDataForLinearTranslation(sprite);
     (*sprite).data[3] = 0;
     (*sprite).data[4] = 0;
-    (*sprite).data[5] = gSprites[monSpriteId].x2;
-    (*sprite).data[6] = gSprites[monSpriteId].y2;
+    (*sprite).data[5] = crate::gl!(gSprites[monSpriteId].x2);
+    (*sprite).data[6] = crate::gl!(gSprites[monSpriteId].y2);
     (*sprite).set_invisible(TRUE as u16);
-    if gBattleAnimArgs[1] == 1 {
+    if crate::gl!(gBattleAnimArgs[1]) == 1 {
         (*sprite).data[2] = 0;
-    } else if gBattleAnimArgs[1] == 2 {
+    } else if crate::gl!(gBattleAnimArgs[1]) == 2 {
         (*sprite).data[1] = 0;
     }
-    (*sprite).data[7] = gBattleAnimArgs[1];
+    (*sprite).data[7] = crate::gl!(gBattleAnimArgs[1]);
     (*sprite).data[7] |= (monSpriteId as i16) << 8;
     (*sprite).callback = Some(SlideMonToOriginalPos_Step);
 }
 pub(crate) unsafe fn SlideMonToOriginalPos_Step(sprite: *mut Sprite) {
     let lo: u8 = (*sprite).data[7] as u8;
     let monSpriteId: i8 = ((*sprite).data[7] >> 8) as i8;
-    let monSprite: *mut Sprite = &raw mut gSprites[monSpriteId];
+    let monSprite: *mut Sprite = crate::gl!(&raw gSprites[monSpriteId]);
     if (*sprite).data[0] == 0 {
         if lo < 2 {
             (*monSprite).x2 = 0;
@@ -374,23 +476,23 @@ pub(crate) unsafe fn SlideMonToOriginalPos_Step(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn SlideMonToOffset(sprite: *mut Sprite) {
     let mut battler: u8 = 0;
-    if gBattleAnimArgs[0] == 0 {
-        battler = gBattleAnimAttacker;
+    if crate::gl!(gBattleAnimArgs[0]) == 0 {
+        battler = gBattleAnimAttacker.get();
     } else {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     }
-    let monSpriteId: u8 = gBattlerSpriteIds[battler];
+    let monSpriteId: u8 = crate::gl!(gBattlerSpriteIds[battler]);
     if GetBattlerSide(battler) != B_SIDE_PLAYER {
-        gBattleAnimArgs[1] = -gBattleAnimArgs[1];
-        if gBattleAnimArgs[3] == 1 {
-            gBattleAnimArgs[2] = -gBattleAnimArgs[2];
+        crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
+        if crate::gl!(gBattleAnimArgs[3]) == 1 {
+            crate::gl!(gBattleAnimArgs[2] = -crate::gl!(gBattleAnimArgs[2]));
         }
     }
-    (*sprite).data[0] = gBattleAnimArgs[4];
-    (*sprite).data[1] = gSprites[monSpriteId].x;
-    (*sprite).data[2] = gSprites[monSpriteId].x + gBattleAnimArgs[1];
-    (*sprite).data[3] = gSprites[monSpriteId].y;
-    (*sprite).data[4] = gSprites[monSpriteId].y + gBattleAnimArgs[2];
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[4]);
+    (*sprite).data[1] = crate::gl!(gSprites[monSpriteId].x);
+    (*sprite).data[2] = crate::gl!(gSprites[monSpriteId].x) + crate::gl!(gBattleAnimArgs[1]);
+    (*sprite).data[3] = crate::gl!(gSprites[monSpriteId].y);
+    (*sprite).data[4] = crate::gl!(gSprites[monSpriteId].y) + crate::gl!(gBattleAnimArgs[2]);
     InitSpriteDataForLinearTranslation(sprite);
     (*sprite).data[3] = 0;
     (*sprite).data[4] = 0;
@@ -402,29 +504,29 @@ pub(crate) unsafe fn SlideMonToOffset(sprite: *mut Sprite) {
 pub(crate) unsafe fn SlideMonToOffsetAndBack(sprite: *mut Sprite) {
     let mut battler: u8 = 0;
     (*sprite).set_invisible(TRUE as u16);
-    if gBattleAnimArgs[0] == 0 {
-        battler = gBattleAnimAttacker;
+    if crate::gl!(gBattleAnimArgs[0]) == 0 {
+        battler = gBattleAnimAttacker.get();
     } else {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     }
-    let spriteId: u8 = gBattlerSpriteIds[battler];
+    let spriteId: u8 = crate::gl!(gBattlerSpriteIds[battler]);
     if GetBattlerSide(battler) != 0 {
-        gBattleAnimArgs[1] = -gBattleAnimArgs[1];
-        if gBattleAnimArgs[3] == 1 {
-            gBattleAnimArgs[2] = -gBattleAnimArgs[2];
+        crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
+        if crate::gl!(gBattleAnimArgs[3]) == 1 {
+            crate::gl!(gBattleAnimArgs[2] = -crate::gl!(gBattleAnimArgs[2]));
         }
     }
-    (*sprite).data[0] = gBattleAnimArgs[4];
-    (*sprite).data[1] = gSprites[spriteId].x + gSprites[spriteId].x2;
-    (*sprite).data[2] = (*sprite).data[1] + gBattleAnimArgs[1];
-    (*sprite).data[3] = gSprites[spriteId].y + gSprites[spriteId].y2;
-    (*sprite).data[4] = (*sprite).data[3] + gBattleAnimArgs[2];
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[4]);
+    (*sprite).data[1] = crate::gl!(gSprites[spriteId].x) + crate::gl!(gSprites[spriteId].x2);
+    (*sprite).data[2] = (*sprite).data[1] + crate::gl!(gBattleAnimArgs[1]);
+    (*sprite).data[3] = crate::gl!(gSprites[spriteId].y) + crate::gl!(gSprites[spriteId].y2);
+    (*sprite).data[4] = (*sprite).data[3] + crate::gl!(gBattleAnimArgs[2]);
     InitSpriteDataForLinearTranslation(sprite);
-    (*sprite).data[3] = gSprites[spriteId].x2 << 8;
-    (*sprite).data[4] = gSprites[spriteId].y2 << 8;
+    (*sprite).data[3] = crate::gl!(gSprites[spriteId].x2) << 8;
+    (*sprite).data[4] = crate::gl!(gSprites[spriteId].y2) << 8;
     (*sprite).data[5] = spriteId as i16;
-    (*sprite).data[6] = gBattleAnimArgs[5];
-    if gBattleAnimArgs[5] == 0 {
+    (*sprite).data[6] = crate::gl!(gBattleAnimArgs[5]);
+    if crate::gl!(gBattleAnimArgs[5]) == 0 {
         StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
     } else {
         StoreSpriteCallbackInData6(sprite, Some(SlideMonToOffsetAndBack_End));
@@ -432,46 +534,60 @@ pub(crate) unsafe fn SlideMonToOffsetAndBack(sprite: *mut Sprite) {
     (*sprite).callback = Some(TranslateSpriteLinearByIdFixedPoint);
 }
 pub(crate) unsafe fn SlideMonToOffsetAndBack_End(sprite: *mut Sprite) {
-    gSprites[(*sprite).data[5]].x2 = 0;
-    gSprites[(*sprite).data[5]].y2 = 0;
+    {
+        let gl_i28 = (*sprite).data[5];
+        crate::gl!(gSprites[gl_i28].x2 = 0)
+    };
+    {
+        let gl_i29 = (*sprite).data[5];
+        crate::gl!(gSprites[gl_i29].y2 = 0)
+    };
     DestroyAnimSprite(sprite);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_WindUpLunge(taskId: u8) {
-    let wavePeriod: i16 = div_i32(0x8000, gBattleAnimArgs[3] as i32) as i16;
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
-        gBattleAnimArgs[1] = -gBattleAnimArgs[1];
-        gBattleAnimArgs[5] = -gBattleAnimArgs[5];
+    let wavePeriod: i16 = div_i32(0x8000, crate::gl!(gBattleAnimArgs[3]) as i32) as i16;
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
+        crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
+        crate::gl!(gBattleAnimArgs[5] = -crate::gl!(gBattleAnimArgs[5]));
     }
     task_set(
         taskId,
         0,
-        GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8) as i16,
+        GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8) as i16,
     );
     task_set(
         taskId,
         1,
-        div_i32((gBattleAnimArgs[1] as i32) << 8, gBattleAnimArgs[3] as i32) as i16,
+        div_i32(
+            (crate::gl!(gBattleAnimArgs[1]) as i32) << 8,
+            crate::gl!(gBattleAnimArgs[3]) as i32,
+        ) as i16,
     );
-    task_set(taskId, 2, gBattleAnimArgs[2]);
-    task_set(taskId, 3, gBattleAnimArgs[3]);
-    task_set(taskId, 4, gBattleAnimArgs[4]);
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[2]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[3]));
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[4]));
     task_set(
         taskId,
         5,
-        div_i32((gBattleAnimArgs[5] as i32) << 8, gBattleAnimArgs[6] as i32) as i16,
+        div_i32(
+            (crate::gl!(gBattleAnimArgs[5]) as i32) << 8,
+            crate::gl!(gBattleAnimArgs[6]) as i32,
+        ) as i16,
     );
-    task_set(taskId, 6, gBattleAnimArgs[6]);
+    task_set(taskId, 6, crate::gl!(gBattleAnimArgs[6]));
     task_set(taskId, 7, wavePeriod);
     task_set_func(taskId, Some(AnimTask_WindUpLunge_Step1));
 }
 pub(crate) unsafe fn AnimTask_WindUpLunge_Step1(taskId: u8) {
     let spriteId: u8 = task_get(taskId, 0) as u8;
     task_set(taskId, 11, task_get(taskId, 11) + (task_get(taskId, 1)));
-    gSprites[spriteId].x2 = task_get(taskId, 11) >> 8;
-    gSprites[spriteId].y2 = Sin(
-        (task_get(taskId, 10) >> 8) as u8 as i16,
-        task_get(taskId, 2),
+    crate::gl!(gSprites[spriteId].x2 = task_get(taskId, 11) >> 8);
+    crate::gl!(
+        gSprites[spriteId].y2 = Sin(
+            (task_get(taskId, 10) >> 8) as u8 as i16,
+            task_get(taskId, 2),
+        )
     );
     task_set(taskId, 10, task_get(taskId, 10) + (task_get(taskId, 7)));
     if ({
@@ -482,14 +598,16 @@ pub(crate) unsafe fn AnimTask_WindUpLunge_Step1(taskId: u8) {
         task_set_func(taskId, Some(AnimTask_WindUpLunge_Step2));
     }
 }
-pub(crate) unsafe fn AnimTask_WindUpLunge_Step2(taskId: u8) {
+pub(crate) fn AnimTask_WindUpLunge_Step2(taskId: u8) {
     let mut spriteId: u8 = 0;
     if task_get(taskId, 4) > 0 {
         task_set(taskId, 4, task_get(taskId, 4) - 1);
     } else {
         spriteId = task_get(taskId, 0) as u8;
         task_set(taskId, 12, task_get(taskId, 12) + (task_get(taskId, 5)));
-        gSprites[spriteId].x2 = (task_get(taskId, 12) >> 8) + (task_get(taskId, 11) >> 8);
+        crate::gl!(
+            gSprites[spriteId].x2 = (task_get(taskId, 12) >> 8) + (task_get(taskId, 11) >> 8)
+        );
         if ({
             task_set(taskId, 6, task_get(taskId, 6) - 1);
             task_get(taskId, 6)
@@ -502,23 +620,29 @@ pub(crate) unsafe fn AnimTask_WindUpLunge_Step2(taskId: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_SlideOffScreen(taskId: u8) {
     let mut spriteId: u8 = 0;
-    match gBattleAnimArgs[0] {
+    match crate::gl!(gBattleAnimArgs[0]) {
         0 | 1 => {
-            spriteId = GetAnimBattlerSpriteId(gBattleAnimArgs[0] as u8);
+            spriteId = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[0]) as u8);
         }
         2 => {
-            if IsBattlerSpriteVisible(gBattleAnimAttacker ^ 2) == 0 {
+            if IsBattlerSpriteVisible(gBattleAnimAttacker.get() ^ 2) == 0 {
                 DestroyAnimVisualTask(taskId);
                 return;
             }
-            spriteId = gBattlerSpriteIds[gBattleAnimAttacker as i32 ^ 2];
+            spriteId = {
+                let gl_i30 = gBattleAnimAttacker.get() as i32 ^ 2;
+                crate::gl!(gBattlerSpriteIds[gl_i30])
+            };
         }
         3 => {
-            if IsBattlerSpriteVisible(gBattleAnimTarget ^ 2) == 0 {
+            if IsBattlerSpriteVisible(gBattleAnimTarget.get() ^ 2) == 0 {
                 DestroyAnimVisualTask(taskId);
                 return;
             }
-            spriteId = gBattlerSpriteIds[gBattleAnimTarget as i32 ^ 2];
+            spriteId = {
+                let gl_i31 = gBattleAnimTarget.get() as i32 ^ 2;
+                crate::gl!(gBattlerSpriteIds[gl_i31])
+            };
         }
         _ => {
             DestroyAnimVisualTask(taskId);
@@ -526,37 +650,37 @@ pub unsafe fn AnimTask_SlideOffScreen(taskId: u8) {
         }
     }
     task_set(taskId, 0, spriteId as i16);
-    if GetBattlerSide(gBattleAnimTarget) != B_SIDE_PLAYER {
-        task_set(taskId, 1, gBattleAnimArgs[1]);
+    if GetBattlerSide(gBattleAnimTarget.get()) != B_SIDE_PLAYER {
+        task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
     } else {
-        task_set(taskId, 1, -gBattleAnimArgs[1]);
+        task_set(taskId, 1, -crate::gl!(gBattleAnimArgs[1]));
     }
     task_set_func(taskId, Some(AnimTask_SlideOffScreen_Step));
 }
-pub(crate) unsafe fn AnimTask_SlideOffScreen_Step(taskId: u8) {
+pub(crate) fn AnimTask_SlideOffScreen_Step(taskId: u8) {
     let spriteId: u8 = task_get(taskId, 0) as u8;
-    gSprites[spriteId].x2 += task_get(taskId, 1);
-    if (gSprites[spriteId].x2 as i32 + gSprites[spriteId].x as i32) < -32
-        || gSprites[spriteId].x2 as i32 + gSprites[spriteId].x as i32 > 272
+    crate::gl!(gSprites[spriteId].x2 += task_get(taskId, 1));
+    if (crate::gl!(gSprites[spriteId].x2) as i32 + crate::gl!(gSprites[spriteId].x) as i32) < -32
+        || crate::gl!(gSprites[spriteId].x2) as i32 + crate::gl!(gSprites[spriteId].x) as i32 > 272
     {
         DestroyAnimVisualTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_SwayMon(taskId: u8) {
-    if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
-        gBattleAnimArgs[1] = -gBattleAnimArgs[1];
+    if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
+        crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
     }
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[4] as u8);
-    task_set(taskId, 0, gBattleAnimArgs[0]);
-    task_set(taskId, 1, gBattleAnimArgs[1]);
-    task_set(taskId, 2, gBattleAnimArgs[2]);
-    task_set(taskId, 3, gBattleAnimArgs[3]);
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[4]) as u8);
+    task_set(taskId, 0, crate::gl!(gBattleAnimArgs[0]));
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[2]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[3]));
     task_set(taskId, 4, spriteId as i16);
-    if gBattleAnimArgs[4] == 0 {
-        task_set(taskId, 5, gBattleAnimAttacker as i16);
+    if crate::gl!(gBattleAnimArgs[4]) == 0 {
+        task_set(taskId, 5, gBattleAnimAttacker.get() as i16);
     } else {
-        task_set(taskId, 5, gBattleAnimTarget as i16);
+        task_set(taskId, 5, gBattleAnimTarget.get() as i16);
     }
     task_set(taskId, 12, 1);
     task_set_func(taskId, Some(AnimTask_SwayMonStep));
@@ -568,20 +692,24 @@ pub(crate) unsafe fn AnimTask_SwayMonStep(taskId: u8) {
     let waveIndex: i32 = (sineIndex >> 8) as i32;
     let sineValue: i16 = Sin(waveIndex as i16, task_get(taskId, 1));
     if task_get(taskId, 0) == 0 {
-        gSprites[spriteId].x2 = sineValue;
+        crate::gl!(gSprites[spriteId].x2 = sineValue);
     } else {
         if GetBattlerSide(task_get(taskId, 5) as u8) == B_SIDE_PLAYER {
-            gSprites[spriteId].y2 = (if sineValue >= 0 {
-                sineValue as i32
-            } else {
-                -(sineValue as i32)
-            }) as i16;
+            crate::gl!(
+                gSprites[spriteId].y2 = (if sineValue >= 0 {
+                    sineValue as i32
+                } else {
+                    -(sineValue as i32)
+                }) as i16
+            );
         } else {
-            gSprites[spriteId].y2 = (if sineValue >= 0 {
-                -(sineValue as i32)
-            } else {
-                sineValue as i32
-            }) as i16;
+            crate::gl!(
+                gSprites[spriteId].y2 = (if sineValue >= 0 {
+                    -(sineValue as i32)
+                } else {
+                    sineValue as i32
+                }) as i16
+            );
         }
     }
     if waveIndex >= 0x80 && task_get(taskId, 11) == 0 && task_get(taskId, 12) == 1
@@ -594,20 +722,20 @@ pub(crate) unsafe fn AnimTask_SwayMonStep(taskId: u8) {
             task_get(taskId, 3)
         }) == 0
         {
-            gSprites[spriteId].x2 = 0;
-            gSprites[spriteId].y2 = 0;
+            crate::gl!(gSprites[spriteId].x2 = 0);
+            crate::gl!(gSprites[spriteId].y2 = 0);
             DestroyAnimVisualTask(taskId);
         }
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_ScaleMonAndRestore(taskId: u8) {
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[3] as u8);
-    PrepareBattlerSpriteForRotScale(spriteId, gBattleAnimArgs[4] as u8);
-    task_set(taskId, 0, gBattleAnimArgs[0]);
-    task_set(taskId, 1, gBattleAnimArgs[1]);
-    task_set(taskId, 2, gBattleAnimArgs[2]);
-    task_set(taskId, 3, gBattleAnimArgs[2]);
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[3]) as u8);
+    PrepareBattlerSpriteForRotScale(spriteId, crate::gl!(gBattleAnimArgs[4]) as u8);
+    task_set(taskId, 0, crate::gl!(gBattleAnimArgs[0]));
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[2]));
+    task_set(taskId, 3, crate::gl!(gBattleAnimArgs[2]));
     task_set(taskId, 4, spriteId as i16);
     task_set(taskId, 10, 0x100);
     task_set(taskId, 11, 0x100);
@@ -636,32 +764,36 @@ pub(crate) unsafe fn AnimTask_ScaleMonAndRestore_Step(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_RotateMonSpriteToSide(taskId: u8) {
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[2] as u8);
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[2]) as u8);
     PrepareBattlerSpriteForRotScale(spriteId, ST_OAM_OBJ_NORMAL);
     task_set(taskId, 1, 0);
-    task_set(taskId, 2, gBattleAnimArgs[0]);
-    if gBattleAnimArgs[3] != 1 {
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[0]));
+    if crate::gl!(gBattleAnimArgs[3]) != 1 {
         task_set(taskId, 3, 0);
     } else {
-        task_set(taskId, 3, gBattleAnimArgs[0] * gBattleAnimArgs[1]);
+        task_set(
+            taskId,
+            3,
+            crate::gl!(gBattleAnimArgs[0]) * crate::gl!(gBattleAnimArgs[1]),
+        );
     }
-    task_set(taskId, 4, gBattleAnimArgs[1]);
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[1]));
     task_set(taskId, 5, spriteId as i16);
-    task_set(taskId, 6, gBattleAnimArgs[3]);
+    task_set(taskId, 6, crate::gl!(gBattleAnimArgs[3]));
     if IsContest() != 0 {
         task_set(taskId, 7, 1);
     } else {
-        if gBattleAnimArgs[2] == ANIM_ATTACKER as i16 {
+        if crate::gl!(gBattleAnimArgs[2]) == ANIM_ATTACKER as i16 {
             task_set(
                 taskId,
                 7,
-                (GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER) as i16,
+                (GetBattlerSide(gBattleAnimAttacker.get()) == B_SIDE_PLAYER) as i16,
             );
         } else {
             task_set(
                 taskId,
                 7,
-                (GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER) as i16,
+                (GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_PLAYER) as i16,
             );
         }
     }
@@ -673,27 +805,31 @@ pub unsafe fn AnimTask_RotateMonSpriteToSide(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_RotateMonToSideAndRestore(taskId: u8) {
-    let spriteId: u8 = GetAnimBattlerSpriteId(gBattleAnimArgs[2] as u8);
+    let spriteId: u8 = GetAnimBattlerSpriteId(crate::gl!(gBattleAnimArgs[2]) as u8);
     PrepareBattlerSpriteForRotScale(spriteId, ST_OAM_OBJ_NORMAL);
     task_set(taskId, 1, 0);
-    task_set(taskId, 2, gBattleAnimArgs[0]);
-    if gBattleAnimArgs[2] == ANIM_ATTACKER as i16 {
-        if GetBattlerSide(gBattleAnimAttacker) != 0 {
-            gBattleAnimArgs[1] = -gBattleAnimArgs[1];
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[0]));
+    if crate::gl!(gBattleAnimArgs[2]) == ANIM_ATTACKER as i16 {
+        if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
+            crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
         }
     } else {
-        if GetBattlerSide(gBattleAnimTarget) != 0 {
-            gBattleAnimArgs[1] = -gBattleAnimArgs[1];
+        if GetBattlerSide(gBattleAnimTarget.get()) != 0 {
+            crate::gl!(gBattleAnimArgs[1] = -crate::gl!(gBattleAnimArgs[1]));
         }
     }
-    if gBattleAnimArgs[3] != 1 {
+    if crate::gl!(gBattleAnimArgs[3]) != 1 {
         task_set(taskId, 3, 0);
     } else {
-        task_set(taskId, 3, gBattleAnimArgs[0] * gBattleAnimArgs[1]);
+        task_set(
+            taskId,
+            3,
+            crate::gl!(gBattleAnimArgs[0]) * crate::gl!(gBattleAnimArgs[1]),
+        );
     }
-    task_set(taskId, 4, gBattleAnimArgs[1]);
+    task_set(taskId, 4, crate::gl!(gBattleAnimArgs[1]));
     task_set(taskId, 5, spriteId as i16);
-    task_set(taskId, 6, gBattleAnimArgs[3]);
+    task_set(taskId, 6, crate::gl!(gBattleAnimArgs[3]));
     task_set(taskId, 7, 1);
     task_set(taskId, 3, -task_get(taskId, 3));
     task_set(taskId, 4, -task_get(taskId, 4));
@@ -738,8 +874,8 @@ pub(crate) unsafe fn AnimTask_RotateMonSpriteToSide_Step(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_ShakeTargetBasedOnMovePowerOrDmg(taskId: u8) {
-    if gBattleAnimArgs[0] == 0 {
-        task_set(taskId, 15, (gAnimMovePower as i32 / 12) as i16);
+    if crate::gl!(gBattleAnimArgs[0]) == 0 {
+        task_set(taskId, 15, (gAnimMovePower.get() as i32 / 12) as i16);
         if task_get(taskId, 15) < 1 {
             task_set(taskId, 15, 1);
         }
@@ -747,7 +883,7 @@ pub unsafe fn AnimTask_ShakeTargetBasedOnMovePowerOrDmg(taskId: u8) {
             task_set(taskId, 15, 16);
         }
     } else {
-        task_set(taskId, 15, (gAnimMoveDmg / 12) as i16);
+        task_set(taskId, 15, (gAnimMoveDmg.get() / 12) as i16);
         if task_get(taskId, 15) < 1 {
             task_set(taskId, 15, 1);
         }
@@ -762,14 +898,20 @@ pub unsafe fn AnimTask_ShakeTargetBasedOnMovePowerOrDmg(taskId: u8) {
         task_get(taskId, 14) + (task_get(taskId, 15) & 1),
     );
     task_set(taskId, 12, 0);
-    task_set(taskId, 10, gBattleAnimArgs[3]);
-    task_set(taskId, 11, gBattleAnimArgs[4]);
+    task_set(taskId, 10, crate::gl!(gBattleAnimArgs[3]));
+    task_set(taskId, 11, crate::gl!(gBattleAnimArgs[4]));
     task_set(taskId, 7, GetAnimBattlerSpriteId(ANIM_TARGET) as i16);
-    task_set(taskId, 8, gSprites[task_get(taskId, 7)].x2);
-    task_set(taskId, 9, gSprites[task_get(taskId, 7)].y2);
+    task_set(taskId, 8, {
+        let gl_i32 = task_get(taskId, 7);
+        crate::gl!(gSprites[gl_i32].x2)
+    });
+    task_set(taskId, 9, {
+        let gl_i33 = task_get(taskId, 7);
+        crate::gl!(gSprites[gl_i33].y2)
+    });
     task_set(taskId, 0, 0);
-    task_set(taskId, 1, gBattleAnimArgs[1]);
-    task_set(taskId, 2, gBattleAnimArgs[2]);
+    task_set(taskId, 1, crate::gl!(gBattleAnimArgs[1]));
+    task_set(taskId, 2, crate::gl!(gBattleAnimArgs[2]));
     task_set_func(taskId, Some(AnimTask_ShakeTargetBasedOnMovePowerOrDmg_Step));
 }
 pub(crate) unsafe fn AnimTask_ShakeTargetBasedOnMovePowerOrDmg_Step(taskId: u8) {
@@ -783,16 +925,28 @@ pub(crate) unsafe fn AnimTask_ShakeTargetBasedOnMovePowerOrDmg_Step(taskId: u8) 
         (*task).data[12] = ((*task).data[12] + 1) & 1;
         if (*task).data[10] != 0 {
             if (*task).data[12] != 0 {
-                gSprites[(*task).data[7]].x2 = (*task).data[8] + (*task).data[13];
+                {
+                    let gl_i34 = (*task).data[7];
+                    crate::gl!(gSprites[gl_i34].x2 = (*task).data[8] + (*task).data[13])
+                };
             } else {
-                gSprites[(*task).data[7]].x2 = (*task).data[8] - (*task).data[14];
+                {
+                    let gl_i35 = (*task).data[7];
+                    crate::gl!(gSprites[gl_i35].x2 = (*task).data[8] - (*task).data[14])
+                };
             }
         }
         if (*task).data[11] != 0 {
             if (*task).data[12] != 0 {
-                gSprites[(*task).data[7]].y2 = (*task).data[15];
+                {
+                    let gl_i36 = (*task).data[7];
+                    crate::gl!(gSprites[gl_i36].y2 = (*task).data[15])
+                };
             } else {
-                gSprites[(*task).data[7]].y2 = 0;
+                {
+                    let gl_i37 = (*task).data[7];
+                    crate::gl!(gSprites[gl_i37].y2 = 0)
+                };
             }
         }
         if ({
@@ -800,8 +954,14 @@ pub(crate) unsafe fn AnimTask_ShakeTargetBasedOnMovePowerOrDmg_Step(taskId: u8) 
             (*task).data[2]
         }) == 0
         {
-            gSprites[(*task).data[7]].x2 = 0;
-            gSprites[(*task).data[7]].y2 = 0;
+            {
+                let gl_i38 = (*task).data[7];
+                crate::gl!(gSprites[gl_i38].x2 = 0)
+            };
+            {
+                let gl_i39 = (*task).data[7];
+                crate::gl!(gSprites[gl_i39].y2 = 0)
+            };
             DestroyAnimVisualTask(taskId);
         }
     }

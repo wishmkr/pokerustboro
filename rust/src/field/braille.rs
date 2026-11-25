@@ -125,7 +125,11 @@ pub unsafe fn FontFunc_Braille(printer: *mut u8) -> u16 {
 
 /// `sScrollDistances[gSaveBlock2Ptr->optionsTextSpeed]`
 unsafe fn scroll_distance() -> u8 {
-    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
+    let sb2 = unsafe {
+        (crate::gl!(&raw gSaveBlock2Ptr).cast_const())
+            .read()
+            .cast::<u8>()
+    };
     let options = unsafe { sb2.add(SB2_OPTIONS).cast::<u16>().read() };
     let speed = usize::from(options & 7);
     unsafe { sScrollDistances.as_ptr().add(speed).read() }

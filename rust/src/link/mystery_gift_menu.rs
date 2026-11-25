@@ -109,19 +109,19 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `Intl_GetListMenuWidth` with this module's view of its types.
 #[inline]
-unsafe fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32 {
+fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32 {
     unsafe { crate::international_string_util::Intl_GetListMenuWidth(a0 as _) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -259,11 +259,11 @@ static sWindowTemplate_YesNoMsg: Table<WindowTemplate> =
 static sWindowTemplate_YesNoMsg_Wide: Table<WindowTemplate> =
     Table((&raw const crate::data::mystery_gift_menu::sWindowTemplate_YesNoMsg_Wide).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDownArrowCounterAndYCoordIdx: Aligned<CArray<u8, 8>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gGiftIsFromEReader: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDownArrowCounterAndYCoordIdx: crate::global::Global<Aligned<CArray<u8, 8>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gGiftIsFromEReader: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -282,7 +282,7 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `MysteryGiftClient_GetMsg` with this module's view of its types.
@@ -310,7 +310,7 @@ pub unsafe fn CB2_MysteryGiftEReader() {
     BuildOamBuffer();
 }
 unsafe fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankCallback(None);
             ResetPaletteFade();
@@ -339,7 +339,7 @@ unsafe fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
             SetGpuReg(REG_OFFSET_BLDALPHA, 0);
             SetGpuReg(REG_OFFSET_BLDY, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             LoadPalette(sTextboxBorder_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
@@ -352,14 +352,14 @@ unsafe fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
             FillBgTilemapBufferRect(2, 0x000, 0, 0, 32, 32, 17);
             MG_DrawCheckerboardPattern(3);
             PrintMysteryGiftOrEReaderHeader(isEReader as u8, FALSE as u32);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             CopyBgTilemapBufferToVram(3);
             CopyBgTilemapBufferToVram(2);
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ShowBg(0);
@@ -376,7 +376,7 @@ unsafe fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
 pub unsafe fn CB2_InitMysteryGift() {
     if HandleMysteryGiftOrEReaderSetup(FALSE as i32) != 0 {
         SetMainCallback2(Some(CB2_MysteryGiftEReader));
-        gGiftIsFromEReader = FALSE;
+        gGiftIsFromEReader.set(FALSE);
         CreateMysteryGiftTask();
     }
     RunTasks();
@@ -384,12 +384,12 @@ pub unsafe fn CB2_InitMysteryGift() {
 pub unsafe fn CB2_InitEReader() {
     if HandleMysteryGiftOrEReaderSetup(TRUE as i32) != 0 {
         SetMainCallback2(Some(CB2_MysteryGiftEReader));
-        gGiftIsFromEReader = TRUE;
+        gGiftIsFromEReader.set(TRUE);
         CreateEReaderTask();
     }
 }
 pub unsafe fn MainCB_FreeAllBuffersAndReturnToInitTitleScreen() {
-    gGiftIsFromEReader = FALSE;
+    gGiftIsFromEReader.set(FALSE);
     FreeAllWindowBuffers();
     Free(GetBgTilemapBuffer(0));
     Free(GetBgTilemapBuffer(1));
@@ -510,10 +510,10 @@ pub unsafe fn PrintMysteryGiftMenuMessage(textState: *mut u8, str: *mut u8) -> u
                 DOWN_ARROW_Y,
                 1,
                 0,
-                &raw mut sDownArrowCounterAndYCoordIdx[0],
-                &raw mut sDownArrowCounterAndYCoordIdx[1],
+                crate::gl!(&raw sDownArrowCounterAndYCoordIdx[0]),
+                crate::gl!(&raw sDownArrowCounterAndYCoordIdx[1]),
             );
-            if gMain.newKeys as i32 & 3 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 *textState += 1;
             }
         }
@@ -524,8 +524,8 @@ pub unsafe fn PrintMysteryGiftMenuMessage(textState: *mut u8, str: *mut u8) -> u
                 DOWN_ARROW_Y,
                 1,
                 1,
-                &raw mut sDownArrowCounterAndYCoordIdx[0],
-                &raw mut sDownArrowCounterAndYCoordIdx[1],
+                crate::gl!(&raw sDownArrowCounterAndYCoordIdx[0]),
+                crate::gl!(&raw sDownArrowCounterAndYCoordIdx[1]),
             );
             *textState = 0;
             ClearMessage();
@@ -546,8 +546,8 @@ unsafe fn HideDownArrow() {
         DOWN_ARROW_Y,
         1,
         0,
-        &raw mut sDownArrowCounterAndYCoordIdx[0],
-        &raw mut sDownArrowCounterAndYCoordIdx[1],
+        crate::gl!(&raw sDownArrowCounterAndYCoordIdx[0]),
+        crate::gl!(&raw sDownArrowCounterAndYCoordIdx[1]),
     );
 }
 unsafe fn ShowDownArrow() {
@@ -557,15 +557,15 @@ unsafe fn ShowDownArrow() {
         DOWN_ARROW_Y,
         1,
         1,
-        &raw mut sDownArrowCounterAndYCoordIdx[0],
-        &raw mut sDownArrowCounterAndYCoordIdx[1],
+        crate::gl!(&raw sDownArrowCounterAndYCoordIdx[0]),
+        crate::gl!(&raw sDownArrowCounterAndYCoordIdx[1]),
     );
 }
 unsafe fn HideDownArrowAndWaitButton(textState: *mut u8) -> u32 {
     match *textState {
         0 => {
             HideDownArrow();
-            if gMain.newKeys as i32 & 3 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 *textState += 1;
             }
         }
@@ -944,7 +944,7 @@ unsafe fn SaveOnMysteryGiftMenu(state: *mut u8) -> u32 {
             *state += 1;
         }
         3 => {
-            if gMain.newKeys as i32 & 3 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 *state += 1;
             }
         }
@@ -1371,8 +1371,8 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
             }
             MG_STATE_CLIENT_LINK_START => {
                 *gStringVar1.as_mut_ptr() = EOS;
-                *gStringVar2.as_mut_ptr() = EOS;
-                *gStringVar3.as_mut_ptr() = EOS;
+                *(*gStringVar2.as_ptr()).as_mut_ptr() = EOS;
+                *(*gStringVar3.as_ptr()).as_mut_ptr() = EOS;
                 match (*data).isWonderNews {
                     FALSE => {
                         if (*data).sourceIsFriend == TRUE {
@@ -1393,7 +1393,7 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
                 (*data).state = MG_STATE_CLIENT_LINK_WAIT;
             }
             MG_STATE_CLIENT_LINK_WAIT => {
-                if gReceivedRemoteLinkPlayers != 0 {
+                if gReceivedRemoteLinkPlayers.get() != 0 {
                     ClearScreenInBg0(TRUE as u32);
                     (*data).state = MG_STATE_CLIENT_COMMUNICATING;
                     MysteryGiftClient_Create((*data).isWonderNews as u32);
@@ -1433,7 +1433,10 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
                 }
                 CLI_RET_ASK_TOSS => {
                     (*data).state = MG_STATE_CLIENT_ASK_TOSS;
-                    StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[0].name.as_mut_ptr());
+                    StringCopy(
+                        gStringVar1.as_mut_ptr(),
+                        (*gLinkPlayers.as_ptr())[0].name.as_mut_ptr(),
+                    );
                 }
                 _ => {}
             },
@@ -1521,7 +1524,7 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
                 }
             }
             MG_STATE_CLIENT_LINK_END => {
-                if gReceivedRemoteLinkPlayers == 0 {
+                if gReceivedRemoteLinkPlayers.get() == 0 {
                     DestroyWirelessStatusIndicatorSprite();
                     (*data).state = MG_STATE_CLIENT_COMM_COMPLETED;
                 }
@@ -1536,7 +1539,10 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
                 ) != 0
                 {
                     if (*data).sourceIsFriend == TRUE {
-                        StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[0].name.as_mut_ptr());
+                        StringCopy(
+                            gStringVar1.as_mut_ptr(),
+                            (*gLinkPlayers.as_ptr())[0].name.as_mut_ptr(),
+                        );
                     }
                     (*data).state = MG_STATE_CLIENT_RESULT_MSG;
                 }
@@ -1589,14 +1595,14 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
             }
             MG_STATE_HANDLE_GIFT_INPUT => {
                 if (*data).isWonderNews == 0 {
-                    if gMain.newKeys as i32 & A_BUTTON != 0 {
+                    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                         (*data).state = MG_STATE_HANDLE_GIFT_SELECT;
                     }
-                    if gMain.newKeys as i32 & B_BUTTON != 0 {
+                    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                         (*data).state = MG_STATE_GIFT_INPUT_EXIT;
                     }
                 } else {
-                    match WonderNews_GetInput(gMain.newKeys) {
+                    match WonderNews_GetInput(crate::gl!(gMain.newKeys)) {
                         NEWS_INPUT_A => {
                             WonderNews_RemoveScrollIndicatorArrowPair();
                             (*data).state = MG_STATE_HANDLE_GIFT_SELECT;
@@ -1747,7 +1753,7 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
                 }
             }
             MG_STATE_SERVER_LINK_WAIT => {
-                if gReceivedRemoteLinkPlayers != 0 {
+                if gReceivedRemoteLinkPlayers.get() != 0 {
                     ClearScreenInBg0(TRUE as u32);
                     (*data).state = MG_STATE_SERVER_LINK_START;
                 } else if gSpecialVar_Result == LINKUP_FAILED {
@@ -1757,8 +1763,8 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
             }
             MG_STATE_SERVER_LINK_START => {
                 *gStringVar1.as_mut_ptr() = EOS;
-                *gStringVar2.as_mut_ptr() = EOS;
-                *gStringVar3.as_mut_ptr() = EOS;
+                *(*gStringVar2.as_ptr()).as_mut_ptr() = EOS;
+                *(*gStringVar3.as_ptr()).as_mut_ptr() = EOS;
                 if (*data).isWonderNews == 0 {
                     MG_AddMessageTextPrinter(
                         (*(&raw const crate::data::strings::gText_SendingWonderCard)
@@ -1786,11 +1792,14 @@ pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
             }
             MG_STATE_SERVER_LINK_END => {
                 Rfu_SetCloseLinkCallback();
-                StringCopy(gStringVar1.as_mut_ptr(), gLinkPlayers[1].name.as_mut_ptr());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*gLinkPlayers.as_ptr())[1].name.as_mut_ptr(),
+                );
                 (*data).state = MG_STATE_SERVER_LINK_END_WAIT;
             }
             MG_STATE_SERVER_LINK_END_WAIT => {
-                if gReceivedRemoteLinkPlayers == 0 {
+                if gReceivedRemoteLinkPlayers.get() == 0 {
                     DestroyWirelessStatusIndicatorSprite();
                     (*data).state = MG_STATE_SERVER_RESULT_MSG;
                 }

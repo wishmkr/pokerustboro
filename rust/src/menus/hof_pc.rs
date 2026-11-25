@@ -59,7 +59,7 @@ unsafe fn ScriptMenu_DisplayPCStartupPrompt() {
 
 fn palette_fade_active() -> bool {
     // SAFETY: a plain read of the fade state.
-    unsafe { (*(&raw const gPaletteFade)).active() != 0 }
+    unsafe { (*(crate::gl!(&raw gPaletteFade).cast_const())).active() != 0 }
 }
 
 fn task_wait_for_palette_fade(task_id: u8) {
@@ -93,7 +93,7 @@ pub fn return_from_hall_of_fame_pc() {
     // SAFETY: as above; the field reads gFieldCallback once it's back.
     unsafe {
         SetMainCallback2(CB2_ReturnToField);
-        (&raw mut gFieldCallback).write(Some(reshow_pc_menu_after_hall_of_fame_pc));
+        (crate::gl!(&raw gFieldCallback)).write(Some(reshow_pc_menu_after_hall_of_fame_pc));
     }
 }
 

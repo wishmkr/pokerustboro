@@ -121,7 +121,7 @@ pub unsafe fn RemoveCoins(amount: u16) -> u8 {
 // ------------------------------------------------------------ coins window
 
 /// The window showing the player's coins, while it is open.
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static COINS_WINDOW_ID: crate::global::Global<u8> = crate::global::Global::new(0);
 
 const STR_CONV_MODE_RIGHT_ALIGN: c_int = 1;

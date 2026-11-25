@@ -17,7 +17,7 @@ pub const IN_BOX_COUNT: usize = 30;
 /// No other reference to the party may be in use while the result lives.
 pub unsafe fn player_party<'a>() -> &'a mut CArray<Pokemon, PARTY_SIZE> {
     // SAFETY: a static; exclusivity is the caller's promise.
-    unsafe { &mut *(&raw mut crate::pokemon::gPlayerParty) }
+    unsafe { &mut *(crate::gl!(&raw @at crate::pokemon::gPlayerParty;)) }
 }
 
 /// The PC's boxes.
@@ -26,5 +26,5 @@ pub unsafe fn player_party<'a>() -> &'a mut CArray<Pokemon, PARTY_SIZE> {
 /// As for [`player_party`]; the storage is set up at boot.
 pub unsafe fn pc_storage<'a>() -> &'a mut PokemonStorage {
     // SAFETY: set up at boot; exclusivity is the caller's promise.
-    unsafe { &mut *crate::load_save::gPokemonStoragePtr.cast::<PokemonStorage>() }
+    unsafe { &mut *(*crate::load_save::gPokemonStoragePtr.as_ptr()).cast::<PokemonStorage>() }
 }

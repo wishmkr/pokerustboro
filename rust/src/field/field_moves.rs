@@ -33,9 +33,7 @@ unsafe fn FieldEffectStart(a0: u8) -> u32 {
 /// `FieldEffectActiveListRemove` with this module's view of its types.
 #[inline]
 unsafe fn FieldEffectActiveListRemove(a0: u8) {
-    unsafe {
-        crate::field_effect::FieldEffectActiveListRemove(a0);
-    }
+    crate::field_effect::FieldEffectActiveListRemove(a0);
 }
 /// `SetPlayerAvatarTransitionFlags` with this module's view of its types.
 #[inline]
@@ -47,7 +45,7 @@ unsafe fn SetPlayerAvatarTransitionFlags(a0: u16) {
 /// `Overworld_MapTypeAllowsTeleportAndFly` with this module's view of its types.
 #[inline]
 unsafe fn Overworld_MapTypeAllowsTeleportAndFly(a0: u8) -> u8 {
-    unsafe { crate::overworld::Overworld_MapTypeAllowsTeleportAndFly(a0) }
+    crate::overworld::Overworld_MapTypeAllowsTeleportAndFly(a0)
 }
 /// `Overworld_ResetStateAfterTeleport` with this module's view of its types.
 #[inline]
@@ -123,9 +121,10 @@ unsafe fn field_callback_teleport() {
     unsafe { Overworld_ResetStateAfterTeleport() };
     let _ = unsafe { FieldEffectStart(63) };
     unsafe {
-        (&raw mut (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .write(i32::from(GetCursorSelectionMonId()))
     };
@@ -175,9 +174,10 @@ pub unsafe fn FldEff_UseTeleport() -> u8 {
 
 unsafe fn field_callback_strength() {
     unsafe {
-        (&raw mut (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .write(i32::from(GetCursorSelectionMonId()))
     };
@@ -224,9 +224,10 @@ pub unsafe fn FldEff_UseStrength() -> u8 {
     let task_id = unsafe { CreateFieldMoveTask() };
     unsafe { set_field_move_callback(task_id, start_strength_field_effect) };
     let party_index = unsafe {
-        (&raw const (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw const (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .read() as usize
     };
@@ -239,9 +240,10 @@ unsafe fn field_callback_dig() {
     unsafe { Overworld_ResetStateAfterDigEscRope() };
     let _ = unsafe { FieldEffectStart(38) };
     unsafe {
-        (&raw mut (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .write(i32::from(GetCursorSelectionMonId()))
     };

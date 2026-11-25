@@ -33,8 +33,9 @@ const LINES: usize = 0x3c0;
 const WAVE_OFFSET: usize = 320;
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gScanlineEffectRegBuffers: Align4<[[u16; LINES]; 2]> = Align4([[0; LINES]; 2]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gScanlineEffectRegBuffers: crate::global::Global<Align4<[[u16; LINES]; 2]>> =
+    crate::global::Global::new(Align4([[0; LINES]; 2]));
 
 /// `struct ScanlineEffect`, 28 bytes.
 #[repr(C, align(4))]
@@ -61,30 +62,31 @@ pub struct ScanlineEffectParams {
 }
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gScanlineEffect: ScanlineEffect = ScanlineEffect {
-    dma_src_buffers: [core::ptr::null_mut(); 2],
-    dma_dest: core::ptr::null_mut(),
-    dma_control: 0,
-    set_first_scanline_reg: None,
-    src_buffer: 0,
-    state: 0,
-    unused16: 0,
-    unused17: 0,
-    wave_task_id: 0,
-};
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gScanlineEffect: crate::global::Global<ScanlineEffect> =
+    crate::global::Global::new(ScanlineEffect {
+        dma_src_buffers: [core::ptr::null_mut(); 2],
+        dma_dest: core::ptr::null_mut(),
+        dma_control: 0,
+        set_first_scanline_reg: None,
+        src_buffer: 0,
+        state: 0,
+        unused16: 0,
+        unused17: 0,
+        wave_task_id: 0,
+    });
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static SHOULD_STOP_WAVE_TASK: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[inline]
 fn effect() -> *mut ScanlineEffect {
-    &raw mut gScanlineEffect
+    crate::gl!(&raw gScanlineEffect)
 }
 
 #[inline]
 fn buffer(index: usize) -> *mut u16 {
-    (&raw mut gScanlineEffectRegBuffers)
+    (crate::gl!(&raw gScanlineEffectRegBuffers))
         .cast::<u16>()
         .wrapping_add(index * LINES)
 }
@@ -222,14 +224,14 @@ unsafe fn task_update_wave_per_frame(task_id: u8) {
     let mut value = 0i32;
     if data(T_APPLY_BATTLE_BG_OFFSETS) != 0 {
         let register = match data(T_REG_OFFSET) as u8 {
-            REG_BG0HOFS => Some(&raw const gBattle_BG0_X),
-            REG_BG0VOFS => Some(&raw const gBattle_BG0_Y),
-            REG_BG1HOFS => Some(&raw const gBattle_BG1_X),
-            REG_BG1VOFS => Some(&raw const gBattle_BG1_Y),
-            REG_BG2HOFS => Some(&raw const gBattle_BG2_X),
-            REG_BG2VOFS => Some(&raw const gBattle_BG2_Y),
-            REG_BG3HOFS => Some(&raw const gBattle_BG3_X),
-            REG_BG3VOFS => Some(&raw const gBattle_BG3_Y),
+            REG_BG0HOFS => Some(gBattle_BG0_X.as_ptr().cast_const()),
+            REG_BG0VOFS => Some(gBattle_BG0_Y.as_ptr().cast_const()),
+            REG_BG1HOFS => Some(gBattle_BG1_X.as_ptr().cast_const()),
+            REG_BG1VOFS => Some(gBattle_BG1_Y.as_ptr().cast_const()),
+            REG_BG2HOFS => Some(gBattle_BG2_X.as_ptr().cast_const()),
+            REG_BG2VOFS => Some(gBattle_BG2_Y.as_ptr().cast_const()),
+            REG_BG3HOFS => Some(gBattle_BG3_X.as_ptr().cast_const()),
+            REG_BG3VOFS => Some(gBattle_BG3_Y.as_ptr().cast_const()),
             _ => None,
         };
         if let Some(register) = register {

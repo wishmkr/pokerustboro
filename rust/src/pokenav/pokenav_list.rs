@@ -66,14 +66,14 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `FillWindowTilesByRow` with this module's view of its types.
 #[inline]
-unsafe fn FillWindowTilesByRow(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32) {
+fn FillWindowTilesByRow(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32) {
     unsafe {
         crate::international_string_util::FillWindowTilesByRow(a0, a1, a2, a3, a4);
     }
 }
 /// `FuncIsActiveLoopedTask` with this module's view of its types.
 #[inline]
-unsafe fn FuncIsActiveLoopedTask(a0: Option<unsafe fn(i32) -> u32>) -> u32 {
+fn FuncIsActiveLoopedTask(a0: Option<unsafe fn(i32) -> u32>) -> u32 {
     unsafe { crate::pokenav::FuncIsActiveLoopedTask(a0) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -224,7 +224,7 @@ static sSpriteTemplate_RightArrow: Table<SpriteTemplate> =
 static sSpriteTemplate_UpDownArrow: Table<SpriteTemplate> =
     Table((&raw const crate::data::pokenav_list::sSpriteTemplate_UpDownArrow).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMoveWindowDownIndex: crate::global::Global<u32> = crate::global::Global::new(0);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
@@ -279,7 +279,7 @@ pub unsafe fn CreatePokenavList(
     CreateLoopedTask(Some(LoopedTask_CreatePokenavList), 6);
     TRUE as u32
 }
-pub unsafe fn IsCreatePokenavListTaskActive() -> u32 {
+pub fn IsCreatePokenavListTaskActive() -> u32 {
     FuncIsActiveLoopedTask(Some(LoopedTask_CreatePokenavList))
 }
 pub unsafe fn DestroyPokenavList() {
@@ -397,7 +397,7 @@ unsafe fn PrintListItems(
     (*list).printStart = printStart;
     CreateLoopedTask(Some(LoopedTask_PrintListItems), 5);
 }
-unsafe fn IsPrintListItemsTaskActive() -> u32 {
+fn IsPrintListItemsTaskActive() -> u32 {
     FuncIsActiveLoopedTask(Some(LoopedTask_PrintListItems))
 }
 pub(crate) unsafe fn LoopedTask_PrintListItems(state: i32) -> u32 {
@@ -1084,7 +1084,7 @@ unsafe fn CreateListArrowSprites(windowState: *mut PokenavListWindowState, list:
         ((*list).listWindow.y as i16 + 1) * 8,
         7,
     ) as u32;
-    (*list).rightArrow = &raw mut gSprites[spriteId];
+    (*list).rightArrow = crate::gl!(&raw gSprites[spriteId]);
     x = (*list).listWindow.x as i16 * 8 + ((*list).listWindow.width as i16 - 1) * 4;
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_UpDownArrow).cast_mut(),
@@ -1092,7 +1092,7 @@ unsafe fn CreateListArrowSprites(windowState: *mut PokenavListWindowState, list:
         (*list).listWindow.y as i16 * 8 + (*windowState).entriesOnscreen as i16 * 16,
         7,
     ) as u32;
-    (*list).downArrow = &raw mut gSprites[spriteId];
+    (*list).downArrow = crate::gl!(&raw gSprites[spriteId]);
     (*(*list).downArrow)
         .oam
         .set_tileNum((*(*list).downArrow).oam.tileNum() + 2);
@@ -1103,7 +1103,7 @@ unsafe fn CreateListArrowSprites(windowState: *mut PokenavListWindowState, list:
         (*list).listWindow.y as i16 * 8,
         7,
     ) as u32;
-    (*list).upArrow = &raw mut gSprites[spriteId];
+    (*list).upArrow = crate::gl!(&raw gSprites[spriteId]);
     (*(*list).upArrow)
         .oam
         .set_tileNum((*(*list).upArrow).oam.tileNum() + 4);

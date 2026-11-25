@@ -72,16 +72,17 @@ const _: () = {
 static sFanfares: Table<CArray<Fanfare, 18>> =
     Table((&raw const crate::data::sound::sFanfares).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub static mut gMPlay_PokemonCry: *mut MusicPlayerInfo = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gMPlay_PokemonCry: crate::global::Global<*mut MusicPlayerInfo> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gPokemonCryBGMDuckingCounter: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sCurrentMapMusic: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sNextMapMusic: crate::global::Global<u16> = crate::global::Global::new(0);
 pub(crate) static sMapMusicState: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sMapMusicFadeInSpeed: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sFanfareCounter: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gDisableMusic: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
@@ -184,7 +185,7 @@ pub fn IsNotWaitingForBGMStop() -> u8 {
 }
 pub unsafe fn PlayFanfareByFanfareNum(fanfareNum: u8) {
     let mut songNum: u16 = 0;
-    m4aMPlayStop(&raw mut gMPlayInfo_BGM);
+    m4aMPlayStop(crate::gl!(&raw gMPlayInfo_BGM));
     songNum = sFanfares[fanfareNum].songNum;
     sFanfareCounter.set(sFanfares[fanfareNum].duration);
     m4aSongNumStart(songNum);
@@ -195,7 +196,7 @@ pub unsafe fn WaitFanfare(stop: u8) -> u8 {
         return FALSE;
     } else {
         if stop == 0 {
-            m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
+            m4aMPlayContinue(crate::gl!(&raw gMPlayInfo_BGM));
         } else {
             m4aSongNumStart(MUS_DUMMY);
         }
@@ -232,7 +233,7 @@ pub(crate) unsafe fn Task_Fanfare(taskId: u8) {
     if sFanfareCounter.get() != 0 {
         sFanfareCounter.set(sFanfareCounter.get() - 1);
     } else {
-        m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
+        m4aMPlayContinue(crate::gl!(&raw gMPlayInfo_BGM));
         DestroyTask(taskId);
     }
 }
@@ -249,37 +250,37 @@ pub unsafe fn FadeInNewBGM(mut songNum: u16, speed: u8) {
         songNum = 0;
     }
     m4aSongNumStart(songNum);
-    m4aMPlayImmInit(&raw mut gMPlayInfo_BGM);
-    m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0);
+    m4aMPlayImmInit(crate::gl!(&raw gMPlayInfo_BGM));
+    m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 0);
     m4aSongNumStop(songNum);
-    m4aMPlayFadeIn(&raw mut gMPlayInfo_BGM, speed as u16);
+    m4aMPlayFadeIn(crate::gl!(&raw gMPlayInfo_BGM), speed as u16);
 }
 pub unsafe fn FadeOutBGMTemporarily(speed: u8) {
-    m4aMPlayFadeOutTemporarily(&raw mut gMPlayInfo_BGM, speed as u16);
+    m4aMPlayFadeOutTemporarily(crate::gl!(&raw gMPlayInfo_BGM), speed as u16);
 }
-pub unsafe fn IsBGMPausedOrStopped() -> u8 {
-    if gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_PAUSE != 0 {
+pub fn IsBGMPausedOrStopped() -> u8 {
+    if crate::gl!(gMPlayInfo_BGM.status) & MUSICPLAYER_STATUS_PAUSE != 0 {
         return TRUE;
     }
-    if gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_TRACK == 0 {
+    if crate::gl!(gMPlayInfo_BGM.status) & MUSICPLAYER_STATUS_TRACK == 0 {
         return TRUE;
     }
     FALSE
 }
 pub unsafe fn FadeInBGM(speed: u8) {
-    m4aMPlayFadeIn(&raw mut gMPlayInfo_BGM, speed as u16);
+    m4aMPlayFadeIn(crate::gl!(&raw gMPlayInfo_BGM), speed as u16);
 }
 pub unsafe fn FadeOutBGM(speed: u8) {
-    m4aMPlayFadeOut(&raw mut gMPlayInfo_BGM, speed as u16);
+    m4aMPlayFadeOut(crate::gl!(&raw gMPlayInfo_BGM), speed as u16);
 }
 pub unsafe fn IsBGMStopped() -> u8 {
-    if gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_TRACK == 0 {
+    if crate::gl!(gMPlayInfo_BGM.status) & MUSICPLAYER_STATUS_TRACK == 0 {
         return TRUE;
     }
     FALSE
 }
 pub unsafe fn PlayCry_Normal(species: u16, pan: i8) {
-    m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 85);
+    m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 85);
     PlayCryInternal(
         species,
         pan,
@@ -297,7 +298,7 @@ pub unsafe fn PlayCry_ByMode(species: u16, pan: i8, mode: u8) {
     if mode == CRY_MODE_DOUBLES {
         PlayCryInternal(species, pan, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
     } else {
-        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 85);
+        m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 85);
         PlayCryInternal(species, pan, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
         gPokemonCryBGMDuckingCounter.set(2);
         RestoreBGMVolumeAfterPokemonCry();
@@ -307,8 +308,8 @@ pub unsafe fn PlayCry_ReleaseDouble(species: u16, pan: i8, mode: u8) {
     if mode == CRY_MODE_DOUBLES {
         PlayCryInternal(species, pan, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
     } else {
-        if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
-            m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 85);
+        if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI == 0 {
+            m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 85);
         }
         PlayCryInternal(species, pan, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
     }
@@ -317,13 +318,13 @@ pub unsafe fn PlayCry_DuckNoRestore(species: u16, pan: i8, mode: u8) {
     if mode == CRY_MODE_DOUBLES {
         PlayCryInternal(species, pan, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
     } else {
-        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 85);
+        m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 85);
         PlayCryInternal(species, pan, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
         gPokemonCryBGMDuckingCounter.set(2);
     }
 }
 pub unsafe fn PlayCry_Script(species: u16, mode: u8) {
-    m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 85);
+    m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 85);
     PlayCryInternal(species, 0, CRY_VOLUME, CRY_PRIORITY_NORMAL, mode);
     gPokemonCryBGMDuckingCounter.set(2);
     RestoreBGMVolumeAfterPokemonCry();
@@ -430,48 +431,56 @@ pub unsafe fn PlayCryInternal(mut species: u16, pan: i8, mut volume: i8, priorit
     let table: u8 = (species as i32 / 128) as u8;
     match table {
         0 => {
-            gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
-                &raw mut (*crate::asmdata::gCryTable_Reverse
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[index]
-            } else {
-                &raw mut (*crate::asmdata::gCryTable
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[index]
-            });
+            crate::gl!(
+                gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
+                    &raw mut (*crate::asmdata::gCryTable_Reverse
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[index]
+                } else {
+                    &raw mut (*crate::asmdata::gCryTable
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[index]
+                })
+            );
         }
         1 => {
-            gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
-                &raw mut (*crate::asmdata::gCryTable_Reverse
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[128 + index]
-            } else {
-                &raw mut (*crate::asmdata::gCryTable
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[128 + index]
-            });
+            crate::gl!(
+                gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
+                    &raw mut (*crate::asmdata::gCryTable_Reverse
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[128 + index]
+                } else {
+                    &raw mut (*crate::asmdata::gCryTable
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[128 + index]
+                })
+            );
         }
         2 => {
-            gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
-                &raw mut (*crate::asmdata::gCryTable_Reverse
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[256 + index]
-            } else {
-                &raw mut (*crate::asmdata::gCryTable
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[256 + index]
-            });
+            crate::gl!(
+                gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
+                    &raw mut (*crate::asmdata::gCryTable_Reverse
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[256 + index]
+                } else {
+                    &raw mut (*crate::asmdata::gCryTable
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[256 + index]
+                })
+            );
         }
         3 => {
-            gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
-                &raw mut (*crate::asmdata::gCryTable_Reverse
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[384 + index]
-            } else {
-                &raw mut (*crate::asmdata::gCryTable
-                    .cast::<CArray<ToneData, 0>>()
-                    .cast_mut())[384 + index]
-            });
+            crate::gl!(
+                gMPlay_PokemonCry = SetPokemonCryTone(if reverse != 0 {
+                    &raw mut (*crate::asmdata::gCryTable_Reverse
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[384 + index]
+                } else {
+                    &raw mut (*crate::asmdata::gCryTable
+                        .cast::<CArray<ToneData, 0>>()
+                        .cast_mut())[384 + index]
+                })
+            );
         }
         _ => {}
     }
@@ -489,14 +498,14 @@ pub unsafe fn IsCryFinished() -> u8 {
     }
 }
 pub unsafe fn StopCryAndClearCrySongs() {
-    m4aMPlayStop(gMPlay_PokemonCry);
+    m4aMPlayStop(crate::gl!(gMPlay_PokemonCry));
     ClearPokemonCrySongs();
 }
 pub unsafe fn StopCry() {
-    m4aMPlayStop(gMPlay_PokemonCry);
+    m4aMPlayStop(crate::gl!(gMPlay_PokemonCry));
 }
 pub unsafe fn IsCryPlayingOrClearCrySongs() -> u8 {
-    if IsPokemonCryPlaying(gMPlay_PokemonCry) != 0 {
+    if IsPokemonCryPlaying(crate::gl!(gMPlay_PokemonCry)) != 0 {
         return TRUE;
     } else {
         ClearPokemonCrySongs();
@@ -508,7 +517,7 @@ pub unsafe fn IsCryPlayingOrClearCrySongs() -> u8 {
     }
 }
 pub unsafe fn IsCryPlaying() -> u8 {
-    if IsPokemonCryPlaying(gMPlay_PokemonCry) != 0 {
+    if IsPokemonCryPlaying(crate::gl!(gMPlay_PokemonCry)) != 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -523,8 +532,8 @@ pub(crate) unsafe fn Task_DuckBGMForPokemonCry(taskId: u8) {
         gPokemonCryBGMDuckingCounter.set(gPokemonCryBGMDuckingCounter.get() - 1);
         return;
     }
-    if IsPokemonCryPlaying(gMPlay_PokemonCry) == 0 {
-        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 256);
+    if IsPokemonCryPlaying(crate::gl!(gMPlay_PokemonCry)) == 0 {
+        m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 256);
         DestroyTask(taskId);
     }
 }
@@ -549,53 +558,53 @@ pub unsafe fn PlaySE(songNum: u16) {
 }
 pub unsafe fn PlaySE12WithPanning(songNum: u16, pan: i8) {
     m4aSongNumStart(songNum);
-    m4aMPlayImmInit(&raw mut gMPlayInfo_SE1);
-    m4aMPlayImmInit(&raw mut gMPlayInfo_SE2);
-    m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, pan);
-    m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, pan);
+    m4aMPlayImmInit(crate::gl!(&raw gMPlayInfo_SE1));
+    m4aMPlayImmInit(crate::gl!(&raw gMPlayInfo_SE2));
+    m4aMPlayPanpotControl(crate::gl!(&raw gMPlayInfo_SE1), TRACKS_ALL, pan);
+    m4aMPlayPanpotControl(crate::gl!(&raw gMPlayInfo_SE2), TRACKS_ALL, pan);
 }
 pub unsafe fn PlaySE1WithPanning(songNum: u16, pan: i8) {
     m4aSongNumStart(songNum);
-    m4aMPlayImmInit(&raw mut gMPlayInfo_SE1);
-    m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, pan);
+    m4aMPlayImmInit(crate::gl!(&raw gMPlayInfo_SE1));
+    m4aMPlayPanpotControl(crate::gl!(&raw gMPlayInfo_SE1), TRACKS_ALL, pan);
 }
 pub unsafe fn PlaySE2WithPanning(songNum: u16, pan: i8) {
     m4aSongNumStart(songNum);
-    m4aMPlayImmInit(&raw mut gMPlayInfo_SE2);
-    m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, pan);
+    m4aMPlayImmInit(crate::gl!(&raw gMPlayInfo_SE2));
+    m4aMPlayPanpotControl(crate::gl!(&raw gMPlayInfo_SE2), TRACKS_ALL, pan);
 }
 pub unsafe fn SE12PanpotControl(pan: i8) {
-    m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, pan);
-    m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, pan);
+    m4aMPlayPanpotControl(crate::gl!(&raw gMPlayInfo_SE1), TRACKS_ALL, pan);
+    m4aMPlayPanpotControl(crate::gl!(&raw gMPlayInfo_SE2), TRACKS_ALL, pan);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsSEPlaying() -> u8 {
-    if gMPlayInfo_SE1.status & MUSICPLAYER_STATUS_PAUSE != 0
-        && gMPlayInfo_SE2.status & MUSICPLAYER_STATUS_PAUSE != 0
+    if crate::gl!(gMPlayInfo_SE1.status) & MUSICPLAYER_STATUS_PAUSE != 0
+        && crate::gl!(gMPlayInfo_SE2.status) & MUSICPLAYER_STATUS_PAUSE != 0
     {
         return FALSE;
     }
-    if gMPlayInfo_SE1.status & MUSICPLAYER_STATUS_TRACK == 0
-        && gMPlayInfo_SE2.status & MUSICPLAYER_STATUS_TRACK == 0
+    if crate::gl!(gMPlayInfo_SE1.status) & MUSICPLAYER_STATUS_TRACK == 0
+        && crate::gl!(gMPlayInfo_SE2.status) & MUSICPLAYER_STATUS_TRACK == 0
     {
         return FALSE;
     }
     TRUE
 }
-pub unsafe fn IsBGMPlaying() -> u8 {
-    if gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_PAUSE != 0 {
+pub fn IsBGMPlaying() -> u8 {
+    if crate::gl!(gMPlayInfo_BGM.status) & MUSICPLAYER_STATUS_PAUSE != 0 {
         return FALSE;
     }
-    if gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_TRACK == 0 {
+    if crate::gl!(gMPlayInfo_BGM.status) & MUSICPLAYER_STATUS_TRACK == 0 {
         return FALSE;
     }
     TRUE
 }
-pub unsafe fn IsSpecialSEPlaying() -> u8 {
-    if gMPlayInfo_SE3.status & MUSICPLAYER_STATUS_PAUSE != 0 {
+pub fn IsSpecialSEPlaying() -> u8 {
+    if crate::gl!(gMPlayInfo_SE3.status) & MUSICPLAYER_STATUS_PAUSE != 0 {
         return FALSE;
     }
-    if gMPlayInfo_SE3.status & MUSICPLAYER_STATUS_TRACK == 0 {
+    if crate::gl!(gMPlayInfo_SE3.status) & MUSICPLAYER_STATUS_TRACK == 0 {
         return FALSE;
     }
     TRUE

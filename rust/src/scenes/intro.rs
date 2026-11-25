@@ -94,49 +94,49 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `GameCubeMultiBoot_ExecuteProgram` with this module's view of its types.
 #[inline]
-unsafe fn GameCubeMultiBoot_ExecuteProgram(a0: *mut GcmbStruct) {
+fn GameCubeMultiBoot_ExecuteProgram(a0: *mut GcmbStruct) {
     unsafe {
         crate::gcn_multiboot::GameCubeMultiBoot_ExecuteProgram(a0 as _);
     }
 }
 /// `GameCubeMultiBoot_HandleSerialInterrupt` with this module's view of its types.
 #[inline]
-unsafe fn GameCubeMultiBoot_HandleSerialInterrupt(a0: *mut GcmbStruct) {
+fn GameCubeMultiBoot_HandleSerialInterrupt(a0: *mut GcmbStruct) {
     unsafe {
         crate::gcn_multiboot::GameCubeMultiBoot_HandleSerialInterrupt(a0 as _);
     }
 }
 /// `GameCubeMultiBoot_Init` with this module's view of its types.
 #[inline]
-unsafe fn GameCubeMultiBoot_Init(a0: *mut GcmbStruct) {
+fn GameCubeMultiBoot_Init(a0: *mut GcmbStruct) {
     unsafe {
         crate::gcn_multiboot::GameCubeMultiBoot_Init(a0 as _);
     }
 }
 /// `GameCubeMultiBoot_Main` with this module's view of its types.
 #[inline]
-unsafe fn GameCubeMultiBoot_Main(a0: *mut GcmbStruct) {
+fn GameCubeMultiBoot_Main(a0: *mut GcmbStruct) {
     unsafe {
         crate::gcn_multiboot::GameCubeMultiBoot_Main(a0 as _);
     }
 }
 /// `InitHeap` with this module's view of its types.
 #[inline]
-unsafe fn InitHeap(a0: *mut c_void, a1: u32) {
+fn InitHeap(a0: *mut c_void, a1: u32) {
     unsafe {
         crate::malloc::InitHeap(a0 as _, a1);
     }
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePaletteUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8 {
+fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpritePaletteUsingHeap(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -146,7 +146,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `LoadSpritePalette` with this module's view of its types.
@@ -156,7 +156,7 @@ unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -357,34 +357,35 @@ static sSpriteTemplate_Volbeat: Table<SpriteTemplate> =
 static sSpriteTemplate_WaterDrop: Table<SpriteTemplate> =
     Table((&raw const crate::data::intro::sSpriteTemplate_WaterDrop).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sIntroCharacterGender: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sUnusedVar: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sFlygonYOffset: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gIntroFrameCounter: crate::global::Global<u32> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut gMultibootProgramStruct: GcmbStruct = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMultibootProgramStruct: crate::global::Global<GcmbStruct> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `BgAffineSet` with this module's view of its types.
 #[inline]
-unsafe fn BgAffineSet(a0: *mut BgAffineSrcData, a1: *mut BgAffineDstData, a2: i32) {
+fn BgAffineSet(a0: *mut BgAffineSrcData, a1: *mut BgAffineDstData, a2: i32) {
     unsafe {
         crate::syscall::BgAffineSet(a0 as _, a1 as _, a2);
     }
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -408,7 +409,7 @@ pub(crate) unsafe fn MainCB2_Intro() {
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
-    if gMain.newKeys != 0 && gPaletteFade.active() == 0 {
+    if crate::gl!(gMain.newKeys) != 0 && (*gPaletteFade.as_ptr()).active() == 0 {
         SetMainCallback2(Some(MainCB2_EndIntro));
     } else {
         gIntroFrameCounter.set(gIntroFrameCounter.get().saturating_add(1));
@@ -441,11 +442,11 @@ unsafe fn LoadCopyrightGraphics(tilesetAddress: u16, tilemapAddress: u16, palett
     );
 }
 pub(crate) unsafe fn SerialCB_CopyrightScreen() {
-    GameCubeMultiBoot_HandleSerialInterrupt(&raw mut gMultibootProgramStruct);
+    GameCubeMultiBoot_HandleSerialInterrupt(crate::gl!(&raw gMultibootProgramStruct));
 }
 unsafe fn SetUpCopyrightScreen() -> u8 {
     'l1: {
-        let sw1: u8 = gMain.state;
+        let sw1: u8 = crate::gl!(gMain.state);
         let matched = sw1 == COPYRIGHT_INITIALIZE
             || sw1 == COPYRIGHT_START_FADE
             || sw1 == COPYRIGHT_START_INTRO;
@@ -505,19 +506,19 @@ unsafe fn SetUpCopyrightScreen() -> u8 {
             SetVBlankCallback(Some(VBlankCB_Intro));
             volatile_write(0x4000000_usize as *mut u16, 320);
             SetSerialCallback(Some(SerialCB_CopyrightScreen));
-            GameCubeMultiBoot_Init(&raw mut gMultibootProgramStruct);
+            GameCubeMultiBoot_Init(crate::gl!(&raw gMultibootProgramStruct));
         }
         if fall || !matched {
             UpdatePaletteFade();
-            gMain.state += 1;
-            GameCubeMultiBoot_Main(&raw mut gMultibootProgramStruct);
+            crate::gl!(gMain.state += 1);
+            GameCubeMultiBoot_Main(crate::gl!(&raw gMultibootProgramStruct));
             break 'l1;
         }
         if sw1 == COPYRIGHT_START_FADE {
-            GameCubeMultiBoot_Main(&raw mut gMultibootProgramStruct);
-            if (&raw mut gMultibootProgramStruct.gcmb_field_2).read_volatile() != 1 {
+            GameCubeMultiBoot_Main(crate::gl!(&raw gMultibootProgramStruct));
+            if (crate::gl!(&raw gMultibootProgramStruct.gcmb_field_2)).read_volatile() != 1 {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
             break 'l1;
         }
@@ -527,8 +528,8 @@ unsafe fn SetUpCopyrightScreen() -> u8 {
             }
             CreateTask(Some(Task_Scene1_Load), 0);
             SetMainCallback2(Some(MainCB2_Intro));
-            if (&raw mut gMultibootProgramStruct.gcmb_field_2).read_volatile() != 0 {
-                if (&raw mut gMultibootProgramStruct.gcmb_field_2).read_volatile() == 2 {
+            if (crate::gl!(&raw gMultibootProgramStruct.gcmb_field_2)).read_volatile() != 0 {
+                if (crate::gl!(&raw gMultibootProgramStruct.gcmb_field_2)).read_volatile() == 2 {
                     if *(33554604_usize as *mut u32) == COLOSSEUM_GAME_CODE {
                         CpuSet(
                             (&raw const (*crate::asmdata::gMultiBootProgram_PokemonColosseum_Start
@@ -539,7 +540,7 @@ unsafe fn SetUpCopyrightScreen() -> u8 {
                         );
                         *(33554604_usize as *mut u32) = COLOSSEUM_GAME_CODE;
                     }
-                    GameCubeMultiBoot_ExecuteProgram(&raw mut gMultibootProgramStruct);
+                    GameCubeMultiBoot_ExecuteProgram(crate::gl!(&raw gMultibootProgramStruct));
                 }
             } else {
                 GameCubeMultiBoot_Quit();
@@ -557,12 +558,14 @@ pub unsafe fn CB2_InitCopyrightScreenAfterBootup() {
         ResetMenuAndMonGlobals();
         Save_ResetSaveCounters();
         LoadGameSave(SAVE_NORMAL);
-        if gSaveFileStatus == SAVE_STATUS_EMPTY as u16 || gSaveFileStatus == SAVE_STATUS_CORRUPT {
+        if gSaveFileStatus.get() == SAVE_STATUS_EMPTY as u16
+            || gSaveFileStatus.get() == SAVE_STATUS_CORRUPT
+        {
             Sav2_ClearSetDefault();
         }
-        SetPokemonCryStereo((*gSaveBlock2Ptr).optionsSound() as u32);
+        SetPokemonCryStereo((*crate::gl!(gSaveBlock2Ptr)).optionsSound() as u32);
         InitHeap(
-            (*(&raw const crate::malloc::gHeap)
+            (*(crate::gl!(&raw @at crate::malloc::gHeap;).cast_const())
                 .cast::<CArray<u8, 114688>>()
                 .cast_mut())
             .as_mut_ptr() as *mut c_void,
@@ -702,64 +705,64 @@ pub(crate) unsafe fn Task_Scene1_Load(taskId: u8) {
     LoadCompressedSpriteSheet(sSpriteSheet_Sparkle.as_ptr().cast_mut());
     LoadSpritePalettes(sSpritePalette_Sparkle.as_ptr().cast_mut());
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[496] as *mut c_void,
         16,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[481] as *mut c_void,
         15,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[466] as *mut c_void,
         14,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[451] as *mut c_void,
         13,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[436] as *mut c_void,
         12,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[421] as *mut c_void,
         11,
     );
     CpuSet(
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[256] as *mut c_void,
-        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<CArray<u16, 512>>()
             .cast_mut())[406] as *mut c_void,
         10,
@@ -783,13 +786,19 @@ pub(crate) unsafe fn Task_Scene1_FadeIn(taskId: u8) {
 }
 pub(crate) unsafe fn Task_Scene1_WaterDrops(taskId: u8) {
     if gIntroFrameCounter.get() == TIMER_BIG_DROP_START {
-        gSprites[task_get(taskId, 0)].data[0] = 1;
+        {
+            let gl_i0 = task_get(taskId, 0);
+            crate::gl!(gSprites[gl_i0].data[0] = 1)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_LOGO_APPEAR {
         CreateTask(Some(Task_BlendLogoIn), 0);
     }
     if gIntroFrameCounter.get() == TIMER_BIG_DROP_FALLS {
-        gSprites[task_get(taskId, 0)].data[0] = 2;
+        {
+            let gl_i1 = task_get(taskId, 0);
+            crate::gl!(gSprites[gl_i1].data[0] = 2)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_LOGO_BLEND_OUT {
         CreateTask(Some(Task_BlendLogoOut), 0);
@@ -885,7 +894,7 @@ pub(crate) unsafe fn Task_Scene1_PanUp(taskId: u8) {
                 DISPLAY_HEIGHT as i16,
                 10,
             );
-            gSprites[spriteId].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
         }
     } else {
         if gIntroFrameCounter.get() > TIMER_END_SCENE_1 {
@@ -904,8 +913,8 @@ pub(crate) unsafe fn Task_Scene2_Load(taskId: u8) {
     SetVBlankCallback(None);
     ResetSpriteData();
     FreeAllSpritePalettes();
-    gIntroCredits_MovingSceneryVBase = 0;
-    gIntroCredits_MovingSceneryVOffset = 0;
+    gIntroCredits_MovingSceneryVBase.set(0);
+    gIntroCredits_MovingSceneryVOffset.set(0);
     sFlygonYOffset.set(0);
     LoadIntroPart2Graphics(1);
     task_set_func(taskId, Some(Task_Scene2_CreateSprites));
@@ -967,12 +976,12 @@ pub(crate) unsafe fn Task_Scene2_CreateSprites(taskId: u8) {
     } else {
         spriteId = CreateIntroMaySprite(272, 100);
     }
-    gSprites[spriteId].callback = Some(SpriteCB_PlayerOnBicycle);
-    gSprites[spriteId].anims = sAnims_PlayerBicycle.as_ptr().cast_mut();
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PlayerOnBicycle));
+    crate::gl!(gSprites[spriteId].anims = sAnims_PlayerBicycle.as_ptr().cast_mut());
     task_set(taskId, tPlayerSpriteId, spriteId as i16);
     CreateSprite((&raw const *sSpriteTemplate_Volbeat).cast_mut(), 272, 80, 4);
     spriteId = CreateIntroFlygonSprite(-64, 60);
-    gSprites[spriteId].callback = Some(SpriteCB_Flygon);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_Flygon));
     task_set(taskId, tFlygonSpriteId, spriteId as i16);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 65535);
     SetVBlankCallback(Some(VBlankCB_Intro));
@@ -986,7 +995,7 @@ pub(crate) unsafe fn Task_Scene2_CreateSprites(taskId: u8) {
 }
 pub(crate) unsafe fn Task_Scene2_BikeRide(taskId: u8) {
     if gIntroFrameCounter.get() == TIMER_TORCHIC_EXIT {
-        gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_FROZEN;
+        gIntroCredits_MovingSceneryState.set(INTROCRED_SCENERY_FROZEN);
         DestroyTask(task_get(taskId, 0) as u8);
     }
     if gIntroFrameCounter.get() > TIMER_END_SCENE_2 {
@@ -994,22 +1003,40 @@ pub(crate) unsafe fn Task_Scene2_BikeRide(taskId: u8) {
         task_set_func(taskId, Some(Task_Scene2_End));
     }
     if gIntroFrameCounter.get() == TIMER_PLAYER_DRIFT_BACK {
-        gSprites[task_get(taskId, tPlayerSpriteId)].data[0] = 1;
+        {
+            let gl_i2 = task_get(taskId, tPlayerSpriteId);
+            crate::gl!(gSprites[gl_i2].data[0] = 1)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_PLAYER_MOVE_FORWARD {
-        gSprites[task_get(taskId, tPlayerSpriteId)].data[0] = 0;
+        {
+            let gl_i3 = task_get(taskId, tPlayerSpriteId);
+            crate::gl!(gSprites[gl_i3].data[0] = 0)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_FLYGON_ENTER {
-        gSprites[task_get(taskId, tFlygonSpriteId)].data[0] = 1;
+        {
+            let gl_i4 = task_get(taskId, tFlygonSpriteId);
+            crate::gl!(gSprites[gl_i4].data[0] = 1)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_PLAYER_MOVE_BACKWARD {
-        gSprites[task_get(taskId, tPlayerSpriteId)].data[0] = 2;
+        {
+            let gl_i5 = task_get(taskId, tPlayerSpriteId);
+            crate::gl!(gSprites[gl_i5].data[0] = 2)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_PLAYER_HOLD_POSITION {
-        gSprites[task_get(taskId, tPlayerSpriteId)].data[0] = 3;
+        {
+            let gl_i6 = task_get(taskId, tPlayerSpriteId);
+            crate::gl!(gSprites[gl_i6].data[0] = 3)
+        };
     }
     if gIntroFrameCounter.get() == TIMER_PLAYER_EXIT {
-        gSprites[task_get(taskId, tPlayerSpriteId)].data[0] = 4;
+        {
+            let gl_i7 = task_get(taskId, tPlayerSpriteId);
+            crate::gl!(gSprites[gl_i7].data[0] = 4)
+        };
     }
     let offset: u16 = Sin(task_get(taskId, tFlygonTimer) >> 2 & 0x7F, 48) as u16;
     sFlygonYOffset.set(offset);
@@ -1292,11 +1319,11 @@ pub(crate) fn Task_Scene3_WaitGroudon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_Scene3_LoadGroudon(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         IntroResetGpuRegs();
         ResetSpriteData();
         FreeAllSpritePalettes();
-        gReservedSpritePaletteCount = 8;
+        gReservedSpritePaletteCount.set(8);
         LZDecompressVram(
             (*(&raw const crate::data::graphics::gIntroGroudon_Gfx).cast::<CArray<u32, 0>>())
                 .as_ptr()
@@ -1336,7 +1363,7 @@ pub(crate) unsafe fn Task_Scene3_LoadGroudon(taskId: u8) {
                 .cast::<CArray<CArray<u16, 16>, 16>>())
             .as_ptr()
             .cast_mut() as *mut c_void,
-            gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+            (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
             256,
         );
         task_set_func(taskId, Some(Task_Scene3_InitGroudonBg));
@@ -1418,9 +1445,10 @@ pub(crate) unsafe fn Task_Scene3_Groudon(taskId: u8) {
                         .cast::<CArray<CArray<u16, 16>, 16>>()))
                         .cast_mut() as *mut c_void as *mut u8)
                         .at(*data.at(7)) as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[31] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[31] as *mut c_void,
                     1,
                 );
                 *data.at(7) += 2;
@@ -1451,9 +1479,10 @@ pub(crate) unsafe fn Task_Scene3_Groudon(taskId: u8) {
                         .cast::<CArray<CArray<u16, 16>, 16>>()))
                         .cast_mut() as *mut c_void as *mut u8)
                         .at(*data.at(7)) as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[31] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[31] as *mut c_void,
                     1,
                 );
                 *data.at(7) -= 2;
@@ -1518,9 +1547,9 @@ pub(crate) unsafe fn Task_Scene3_Groudon(taskId: u8) {
                 *data += 1;
             }
         }
-        9 if gPaletteFade.active() == 0 => {
+        9 if (*gPaletteFade.as_ptr()).active() == 0 => {
             task_set_func(taskId, Some(Task_Scene3_LoadKyogre));
-            (*(&raw const crate::scanline_effect::gScanlineEffect)
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                 .cast::<ScanlineEffect>()
                 .cast_mut())
             .state = 3;
@@ -1537,11 +1566,17 @@ unsafe fn CreateGroudonRockSprites(taskId: u8) {
             DISPLAY_HEIGHT as i16,
             i as u8,
         );
-        gSprites[spriteId].callback = Some(SpriteCB_GroudonRocks);
-        gSprites[spriteId].oam.set_priority(0);
-        gSprites[spriteId].data[sRockId] = i as i16;
-        gSprites[spriteId].data[4] = taskId as i16;
-        StartSpriteAnim(&raw mut gSprites[spriteId], sGroudonRockData[i][1] as u8);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_GroudonRocks));
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
+        {
+            let gl_i8 = sRockId;
+            crate::gl!(gSprites[spriteId].data[gl_i8] = i as i16)
+        };
+        crate::gl!(gSprites[spriteId].data[4] = taskId as i16);
+        StartSpriteAnim(
+            crate::gl!(&raw gSprites[spriteId]),
+            sGroudonRockData[i][1] as u8,
+        );
     }
 }
 pub(crate) unsafe fn SpriteCB_GroudonRocks(sprite: *mut Sprite) {
@@ -1735,9 +1770,10 @@ pub(crate) unsafe fn Task_Scene3_Kyogre(taskId: u8) {
                         .cast::<CArray<CArray<u16, 16>, 16>>()))
                         .cast_mut() as *mut c_void as *mut u8)
                         .at(*data.at(7)) as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[47] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[47] as *mut c_void,
                     1,
                 );
                 *data.at(7) -= 2;
@@ -1771,9 +1807,10 @@ pub(crate) unsafe fn Task_Scene3_Kyogre(taskId: u8) {
                         .cast::<CArray<CArray<u16, 16>, 16>>()))
                         .cast_mut() as *mut c_void as *mut u8)
                         .at(*data.at(7)) as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[47] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[47] as *mut c_void,
                     1,
                 );
                 *data.at(7) += 2;
@@ -1816,9 +1853,9 @@ pub(crate) unsafe fn Task_Scene3_Kyogre(taskId: u8) {
             break 'l1;
         }
         if sw1 == 13 {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set_func(taskId, Some(Task_Scene3_LoadClouds1));
-                (*(&raw const crate::scanline_effect::gScanlineEffect)
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
                     .cast::<ScanlineEffect>()
                     .cast_mut())
                 .state = 3;
@@ -1836,10 +1873,13 @@ unsafe fn CreateKyogreBubbleSprites_Body(taskId: u8) {
             sKyogreBubbleData[i][1],
             i as u8,
         );
-        gSprites[spriteId].set_invisible(TRUE as u16);
-        gSprites[spriteId].data[5] = taskId as i16;
-        gSprites[spriteId].data[6] = sKyogreBubbleData[i][2];
-        gSprites[spriteId].data[sUnk] = 64;
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+        crate::gl!(gSprites[spriteId].data[5] = taskId as i16);
+        crate::gl!(gSprites[spriteId].data[6] = sKyogreBubbleData[i][2]);
+        {
+            let gl_i9 = sUnk;
+            crate::gl!(gSprites[spriteId].data[gl_i9] = 64)
+        };
     }
 }
 unsafe fn CreateKyogreBubbleSprites_Fins() {
@@ -1851,9 +1891,12 @@ unsafe fn CreateKyogreBubbleSprites_Fins() {
             sKyogreBubbleData[i + NUM_BUBBLES_IN_SET][1],
             i as u8,
         );
-        gSprites[spriteId].set_invisible(TRUE as u16);
-        gSprites[spriteId].data[6] = sKyogreBubbleData[i][2];
-        gSprites[spriteId].data[sUnk] = 64;
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+        crate::gl!(gSprites[spriteId].data[6] = sKyogreBubbleData[i][2]);
+        {
+            let gl_i10 = sUnk;
+            crate::gl!(gSprites[spriteId].data[gl_i10] = 64)
+        };
     }
 }
 pub(crate) unsafe fn SpriteCB_KyogreBubbles(sprite: *mut Sprite) {
@@ -1979,7 +2022,7 @@ pub(crate) unsafe fn Task_Scene3_Clouds(taskId: u8) {
             }
             if *data.at(6) != 0 {
                 *data.at(6) -= 128;
-            } else if gPaletteFade.active() == 0 {
+            } else if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set_func(taskId, Some(Task_Scene3_LoadLightning));
             }
         }
@@ -2042,14 +2085,14 @@ pub(crate) unsafe fn Task_Scene3_Lightning(taskId: u8) {
                     80,
                     1,
                 );
-                StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
                 spriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_Lightning).cast_mut(),
                     200,
                     112,
                     2,
                 );
-                StartSpriteAnim(&raw mut gSprites[spriteId], 2);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 2);
                 *data += 1;
                 *data.at(6) = 72;
             }
@@ -2072,14 +2115,14 @@ pub(crate) unsafe fn Task_Scene3_Lightning(taskId: u8) {
                     80,
                     1,
                 );
-                StartSpriteAnim(&raw mut gSprites[spriteId], 1);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 1);
                 spriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_Lightning).cast_mut(),
                     40,
                     112,
                     2,
                 );
-                StartSpriteAnim(&raw mut gSprites[spriteId], 2);
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), 2);
                 *data += 1;
                 *data.at(6) = 48;
             }
@@ -2116,7 +2159,7 @@ pub(crate) unsafe fn SpriteCB_Lightning(sprite: *mut Sprite) {
                 )))
                     .cast_mut() as *mut c_void as *mut u8)
                     .at((*sprite).data[sPalIdx]) as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[93] as *mut c_void,
                 1,
@@ -2141,9 +2184,10 @@ pub(crate) unsafe fn SpriteCB_Lightning(sprite: *mut Sprite) {
                         .cast::<CArray<CArray<u16, 16>, 16>>()))
                         .cast_mut() as *mut c_void as *mut u8)
                         .at((*sprite).data[sPalIdx]) as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[93] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[93] as *mut c_void,
                     1,
                 );
                 (*sprite).data[sPalIdx] -= 2;
@@ -2197,7 +2241,7 @@ pub(crate) unsafe fn Task_Scene3_Rayquaza(taskId: u8) {
             *data.at(2) -= 2;
             *data.at(3) -= 4;
             *data.at(4) -= 2;
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 *data.at(5) = 0x8C;
                 *data += 1;
             }
@@ -2229,9 +2273,10 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                         .cast_mut() as *mut c_void as *mut u8)
                         .at(418) as *mut c_void as *mut u8)
                         .at(*data.at(1) as i32 * 2) as *mut c_void,
-                    &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                        .cast::<CArray<u16, 512>>()
-                        .cast_mut())[94] as *mut c_void,
+                    &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                        .cast_const())
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[94] as *mut c_void,
                     1,
                 );
                 *data.at(1) += 1;
@@ -2251,9 +2296,10 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                             .cast_mut() as *mut c_void as *mut u8)
                             .at(418) as *mut c_void as *mut u8)
                             .at(*data.at(1) as i32 * 2) as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                            .cast::<CArray<u16, 512>>()
-                            .cast_mut())[88] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                            .cast_const())
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[88] as *mut c_void,
                         1,
                     );
                     *data.at(1) += 1;
@@ -2275,9 +2321,10 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                             .cast_mut() as *mut c_void as *mut u8)
                             .at(386) as *mut c_void as *mut u8)
                             .at(*data.at(1) as i32 * 2) as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                            .cast::<CArray<u16, 512>>()
-                            .cast_mut())[92] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                            .cast_const())
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[92] as *mut c_void,
                         1,
                     );
                     *data.at(1) += 1;
@@ -2290,8 +2337,8 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                         15,
                     );
                     PlaySE(SE_INTRO_BLAST);
-                    gSprites[spriteId].set_invisible(TRUE as u16);
-                    gSprites[spriteId].data[3] = *data.at(4);
+                    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+                    crate::gl!(gSprites[spriteId].data[3] = *data.at(4));
                     *data += 1;
                     *data.at(3) = 16;
                 }
@@ -2312,9 +2359,10 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                             .cast::<CArray<CArray<u16, 16>, 16>>()))
                             .cast_mut() as *mut c_void as *mut u8)
                             .at(428) as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                            .cast::<CArray<u16, 512>>()
-                            .cast_mut())[94] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                            .cast_const())
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[94] as *mut c_void,
                         1,
                     );
                     CpuSet(
@@ -2322,9 +2370,10 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                             .cast::<CArray<CArray<u16, 16>, 16>>()))
                             .cast_mut() as *mut c_void as *mut u8)
                             .at(428) as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                            .cast::<CArray<u16, 512>>()
-                            .cast_mut())[88] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                            .cast_const())
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[88] as *mut c_void,
                         1,
                     );
                     CpuSet(
@@ -2332,9 +2381,10 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                             .cast::<CArray<CArray<u16, 16>, 16>>()))
                             .cast_mut() as *mut c_void as *mut u8)
                             .at(396) as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
-                            .cast::<CArray<u16, 512>>()
-                            .cast_mut())[92] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;)
+                            .cast_const())
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[92] as *mut c_void,
                         1,
                     );
                 } else {
@@ -2353,7 +2403,7 @@ pub(crate) unsafe fn Task_RayquazaAttack(taskId: u8) {
                 *data += 1;
             }
         }
-        5 if gPaletteFade.active() == 0 => {
+        5 if (*gPaletteFade.as_ptr()).active() == 0 => {
             DestroyTask(taskId);
         }
         _ => {}
@@ -2503,7 +2553,11 @@ pub(crate) unsafe fn SpriteCB_WaterDrop_Ripple(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_WaterDropHalf(sprite: *mut Sprite) {
-    if gSprites[(*sprite).data[7]].data[7] != 0 {
+    if ({
+        let gl_i11 = (*sprite).data[7];
+        crate::gl!(gSprites[gl_i11].data[7])
+    }) != 0
+    {
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).x += (*sprite).x2;
         (*sprite).y += (*sprite).y2;
@@ -2515,10 +2569,22 @@ pub(crate) unsafe fn SpriteCB_WaterDropHalf(sprite: *mut Sprite) {
         (*sprite).oam.set_size(3);
         CalcCenterToCornerVec(sprite, 1, 3, ST_OAM_AFFINE_ERASE);
     } else {
-        (*sprite).x2 = gSprites[(*sprite).data[7]].x2;
-        (*sprite).y2 = gSprites[(*sprite).data[7]].y2;
-        (*sprite).x = gSprites[(*sprite).data[7]].x;
-        (*sprite).y = gSprites[(*sprite).data[7]].y;
+        (*sprite).x2 = {
+            let gl_i12 = (*sprite).data[7];
+            crate::gl!(gSprites[gl_i12].x2)
+        };
+        (*sprite).y2 = {
+            let gl_i13 = (*sprite).data[7];
+            crate::gl!(gSprites[gl_i13].y2)
+        };
+        (*sprite).x = {
+            let gl_i14 = (*sprite).data[7];
+            crate::gl!(gSprites[gl_i14].x)
+        };
+        (*sprite).y = {
+            let gl_i15 = (*sprite).data[7];
+            crate::gl!(gSprites[gl_i15].y)
+        };
     }
 }
 pub(crate) unsafe fn SpriteCB_WaterDrop(sprite: *mut Sprite) {
@@ -2662,53 +2728,63 @@ pub(crate) unsafe fn SpriteCB_WaterDropShort(sprite: *mut Sprite) {
 unsafe fn CreateWaterDrop(x: i16, y: i16, c: u16, d: u16, e: u16, fallImmediately: u8) -> u8 {
     let mut spriteId: u8 =
         CreateSprite((&raw const *sSpriteTemplate_WaterDrop).cast_mut(), x, y, 1);
-    gSprites[spriteId].data[0] = 0;
-    gSprites[spriteId].data[7] = 0;
-    gSprites[spriteId].data[1] = d as i16;
-    gSprites[spriteId].data[2] = c as i16;
-    gSprites[spriteId].data[3] = c as i16;
-    gSprites[spriteId].data[5] = e as i16;
-    gSprites[spriteId].data[6] = c as i16;
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
-    gSprites[spriteId].oam.set_matrixNum(d as u32);
+    crate::gl!(gSprites[spriteId].data[0] = 0);
+    crate::gl!(gSprites[spriteId].data[7] = 0);
+    crate::gl!(gSprites[spriteId].data[1] = d as i16);
+    crate::gl!(gSprites[spriteId].data[2] = c as i16);
+    crate::gl!(gSprites[spriteId].data[3] = c as i16);
+    crate::gl!(gSprites[spriteId].data[5] = e as i16);
+    crate::gl!(gSprites[spriteId].data[6] = c as i16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_DOUBLE);
+    (*gSprites.as_ptr())[spriteId].oam.set_matrixNum(d as u32);
     CalcCenterToCornerVec(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         0,
         ST_OAM_AFFINE_ERASE,
         ST_OAM_AFFINE_ERASE,
     );
-    StartSpriteAnim(&raw mut gSprites[spriteId], DROP_ANIM_REFLECTION);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), DROP_ANIM_REFLECTION);
     if fallImmediately == 0 {
-        gSprites[spriteId].callback = Some(SpriteCB_WaterDrop);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_WaterDrop));
     } else {
-        gSprites[spriteId].callback = Some(SpriteCB_WaterDropShort);
+        crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_WaterDropShort));
     }
     let oldSpriteId: u8 = spriteId;
     spriteId = CreateSprite((&raw const *sSpriteTemplate_WaterDrop).cast_mut(), x, y, 1);
-    gSprites[spriteId].data[7] = oldSpriteId as i16;
-    gSprites[spriteId].data[1] = d as i16 + 1;
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
-    gSprites[spriteId].oam.set_matrixNum(d as u32 + 1);
+    crate::gl!(gSprites[spriteId].data[7] = oldSpriteId as i16);
+    crate::gl!(gSprites[spriteId].data[1] = d as i16 + 1);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_DOUBLE);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_matrixNum(d as u32 + 1);
     CalcCenterToCornerVec(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         0,
         ST_OAM_AFFINE_ERASE,
         ST_OAM_AFFINE_ERASE,
     );
-    gSprites[spriteId].callback = Some(SpriteCB_WaterDropHalf);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_WaterDropHalf));
     spriteId = CreateSprite((&raw const *sSpriteTemplate_WaterDrop).cast_mut(), x, y, 1);
-    gSprites[spriteId].data[7] = oldSpriteId as i16;
-    gSprites[spriteId].data[1] = d as i16 + 2;
-    StartSpriteAnim(&raw mut gSprites[spriteId], DROP_ANIM_LOWER_HALF);
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
-    gSprites[spriteId].oam.set_matrixNum(d as u32 + 2);
+    crate::gl!(gSprites[spriteId].data[7] = oldSpriteId as i16);
+    crate::gl!(gSprites[spriteId].data[1] = d as i16 + 2);
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), DROP_ANIM_LOWER_HALF);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_DOUBLE);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_matrixNum(d as u32 + 2);
     CalcCenterToCornerVec(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         0,
         ST_OAM_AFFINE_ERASE,
         ST_OAM_AFFINE_ERASE,
     );
-    gSprites[spriteId].callback = Some(SpriteCB_WaterDropHalf);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_WaterDropHalf));
     SetOamMatrix(d as u8, c + 32, 0, 0, c + 32);
     SetOamMatrix(d as u8 + 1, c + 32, 0, 0, c + 32);
     SetOamMatrix(d as u8 + 2, c + 32, 0, 0, 2 * (c + 32));
@@ -2808,19 +2884,19 @@ pub(crate) unsafe fn SpriteCB_LogoLetter(sprite: *mut Sprite) {
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1]]).cast_mut()
                             as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[287] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[287] as *mut c_void,
                         1,
                     );
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1] as i32 + 16])
                             .cast_mut() as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[276] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[276] as *mut c_void,
                         1,
                     );
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1] as i32 + 32])
                             .cast_mut() as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[282] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[282] as *mut c_void,
                         1,
                     );
                     (*sprite).data[1] -= 1;
@@ -2828,19 +2904,19 @@ pub(crate) unsafe fn SpriteCB_LogoLetter(sprite: *mut Sprite) {
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1]]).cast_mut()
                             as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[287] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[287] as *mut c_void,
                         1,
                     );
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1] as i32 + 16])
                             .cast_mut() as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[276] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[276] as *mut c_void,
                         1,
                     );
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1] as i32 + 32])
                             .cast_mut() as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[282] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[282] as *mut c_void,
                         1,
                     );
                     (*sprite).data[sState] += 1;
@@ -2858,19 +2934,19 @@ pub(crate) unsafe fn SpriteCB_LogoLetter(sprite: *mut Sprite) {
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1]]).cast_mut()
                             as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[287] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[287] as *mut c_void,
                         1,
                     );
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1] as i32 + 16])
                             .cast_mut() as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[276] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[276] as *mut c_void,
                         1,
                     );
                     CpuSet(
                         (&raw const (*(&raw const crate::data::graphics::gIntroGameFreakTextFade_Pal).cast::<CArray<u16, 0>>())[(*sprite).data[1] as i32 + 32])
                             .cast_mut() as *mut c_void,
-                        &raw mut (*(&raw const crate::palette::gPlttBufferFaded).cast::<CArray<u16, 512>>().cast_mut())[282] as *mut c_void,
+                        &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const()).cast::<CArray<u16, 512>>().cast_mut())[282] as *mut c_void,
                         1,
                     );
                     (*sprite).data[1] += 1;
@@ -2930,16 +3006,24 @@ unsafe fn CreateGameFreakLogoSprites(x: i16, y: i16, unused: i16) -> u8 {
             y - 4,
             0,
         );
-        gSprites[spriteId].data[sState] = 0;
-        gSprites[spriteId].data[1] = sGameFreakLetterStartDelays[i] as i16;
-        gSprites[spriteId].data[sLetterId] = i as i16;
-        gSprites[spriteId].set_invisible(TRUE as u16);
-        gSprites[spriteId].oam.set_matrixNum(i as u32 + 12);
+        {
+            let gl_i16 = sState;
+            crate::gl!(gSprites[spriteId].data[gl_i16] = 0)
+        };
+        crate::gl!(gSprites[spriteId].data[1] = sGameFreakLetterStartDelays[i] as i16);
+        {
+            let gl_i17 = sLetterId;
+            crate::gl!(gSprites[spriteId].data[gl_i17] = i as i16)
+        };
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId]
+            .oam
+            .set_matrixNum(i as u32 + 12);
         StartSpriteAnim(
-            &raw mut gSprites[spriteId],
+            crate::gl!(&raw gSprites[spriteId]),
             sGameFreakLetterData[i][0] as u8,
         );
-        StartSpriteAffineAnim(&raw mut gSprites[spriteId], 0);
+        StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), 0);
         i += 1;
     }
     spriteId = CreateSprite(
@@ -2948,10 +3032,15 @@ unsafe fn CreateGameFreakLogoSprites(x: i16, y: i16, unused: i16) -> u8 {
         y - 6,
         0,
     );
-    gSprites[spriteId].data[sState] = 0;
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    gSprites[spriteId].oam.set_matrixNum(i as u32 + 12);
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId], 1);
+    {
+        let gl_i18 = sState;
+        crate::gl!(gSprites[spriteId].data[gl_i18] = 0)
+    };
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_matrixNum(i as u32 + 12);
+    StartSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]), 1);
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_FlygonSilhouette(sprite: *mut Sprite) {

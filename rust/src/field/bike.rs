@@ -70,7 +70,7 @@ static sMachBikeTransitions: Table<CArray<Option<unsafe fn(u8)>, 4>> =
     Table((&raw const crate::data::bike::sMachBikeTransitions).cast());
 
 pub unsafe fn MovePlayerOnBike(direction: u8, newKeys: u16, heldKeys: u16) {
-    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_MACH_BIKE as i32 != 0 {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_MACH_BIKE as i32 != 0 {
         MovePlayerOnMachBike(direction, newKeys, heldKeys);
     } else {
         MovePlayerOnAcroBike(direction, newKeys, heldKeys);
@@ -83,23 +83,23 @@ unsafe fn GetMachBikeTransition(dirTraveling: *mut u8) -> u8 {
     let direction: u8 = GetPlayerMovementDirection();
     if *dirTraveling == 0 {
         *dirTraveling = direction;
-        if gPlayerAvatar.bikeSpeed == PLAYER_SPEED_STANDING {
-            gPlayerAvatar.runningState = NOT_MOVING;
+        if crate::gl!(gPlayerAvatar.bikeSpeed) == PLAYER_SPEED_STANDING {
+            crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
             return MACH_TRANS_FACE_DIRECTION;
         }
-        gPlayerAvatar.runningState = MOVING;
+        crate::gl!(gPlayerAvatar.runningState = MOVING);
         return MACH_TRANS_START_MOVING;
     }
-    if *dirTraveling != direction && gPlayerAvatar.runningState != MOVING {
-        if gPlayerAvatar.bikeSpeed != PLAYER_SPEED_STANDING {
+    if *dirTraveling != direction && crate::gl!(gPlayerAvatar.runningState) != MOVING {
+        if crate::gl!(gPlayerAvatar.bikeSpeed) != PLAYER_SPEED_STANDING {
             *dirTraveling = direction;
-            gPlayerAvatar.runningState = MOVING;
+            crate::gl!(gPlayerAvatar.runningState = MOVING);
             return MACH_TRANS_START_MOVING;
         }
-        gPlayerAvatar.runningState = TURN_DIRECTION;
+        crate::gl!(gPlayerAvatar.runningState = TURN_DIRECTION);
         return MACH_TRANS_TURN_DIRECTION;
     } else {
-        gPlayerAvatar.runningState = MOVING;
+        crate::gl!(gPlayerAvatar.runningState = MOVING);
         return MACH_TRANS_KEEP_MOVING;
     }
     #[allow(unreachable_code)]
@@ -112,7 +112,8 @@ pub(crate) unsafe fn MachBikeTransition_FaceDirection(direction: u8) {
     Bike_SetBikeStill();
 }
 pub(crate) unsafe fn MachBikeTransition_TurnDirection(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) != 0 {
         PlayerTurnInPlace(direction);
         Bike_SetBikeStill();
@@ -121,10 +122,11 @@ pub(crate) unsafe fn MachBikeTransition_TurnDirection(direction: u8) {
     }
 }
 pub(crate) unsafe fn MachBikeTransition_TrySpeedUp(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     let mut collision: u8 = 0;
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == FALSE {
-        if gPlayerAvatar.bikeSpeed != 0 {
+        if crate::gl!(gPlayerAvatar.bikeSpeed) != 0 {
             MachBikeTransition_TrySlowDown((*playerObjEvent).movementDirection() as u8);
         } else {
             MachBikeTransition_FaceDirection((*playerObjEvent).movementDirection() as u8);
@@ -145,21 +147,27 @@ pub(crate) unsafe fn MachBikeTransition_TrySpeedUp(direction: u8) {
                 }
             }
         } else {
-            sMachBikeSpeedCallbacks[gPlayerAvatar.bikeFrameCounter].unwrap_unchecked()(direction);
-            gPlayerAvatar.bikeSpeed =
-                gPlayerAvatar.bikeFrameCounter + (gPlayerAvatar.bikeFrameCounter >> 1);
-            if gPlayerAvatar.bikeFrameCounter < 2 {
-                gPlayerAvatar.bikeFrameCounter += 1;
+            sMachBikeSpeedCallbacks[crate::gl!(gPlayerAvatar.bikeFrameCounter)].unwrap_unchecked()(
+                direction,
+            );
+            crate::gl!(
+                gPlayerAvatar.bikeSpeed = crate::gl!(gPlayerAvatar.bikeFrameCounter)
+                    + (crate::gl!(gPlayerAvatar.bikeFrameCounter) >> 1)
+            );
+            if crate::gl!(gPlayerAvatar.bikeFrameCounter) < 2 {
+                crate::gl!(gPlayerAvatar.bikeFrameCounter += 1);
             }
         }
     }
 }
 pub(crate) unsafe fn MachBikeTransition_TrySlowDown(direction: u8) {
-    if gPlayerAvatar.bikeSpeed != PLAYER_SPEED_STANDING {
-        gPlayerAvatar.bikeFrameCounter = {
-            gPlayerAvatar.bikeSpeed -= 1;
-            gPlayerAvatar.bikeSpeed
-        };
+    if crate::gl!(gPlayerAvatar.bikeSpeed) != PLAYER_SPEED_STANDING {
+        crate::gl!(
+            gPlayerAvatar.bikeFrameCounter = {
+                crate::gl!(gPlayerAvatar.bikeSpeed -= 1);
+                crate::gl!(gPlayerAvatar.bikeSpeed)
+            }
+        );
     }
     let collision: u8 = GetBikeCollision(direction);
     if collision > 0 && collision < COLLISION_VERTICAL_RAIL {
@@ -176,7 +184,9 @@ pub(crate) unsafe fn MachBikeTransition_TrySlowDown(direction: u8) {
             }
         }
     } else {
-        sMachBikeSpeedCallbacks[gPlayerAvatar.bikeFrameCounter].unwrap_unchecked()(direction);
+        sMachBikeSpeedCallbacks[crate::gl!(gPlayerAvatar.bikeFrameCounter)].unwrap_unchecked()(
+            direction,
+        );
     }
 }
 unsafe fn MovePlayerOnAcroBike(mut newDirection: u8, newKeys: u16, heldKeys: u16) {
@@ -184,7 +194,7 @@ unsafe fn MovePlayerOnAcroBike(mut newDirection: u8, newKeys: u16, heldKeys: u16
         .unwrap_unchecked()(newDirection);
 }
 unsafe fn CheckMovementInputAcroBike(newDirection: *mut u8, newKeys: u16, heldKeys: u16) -> u8 {
-    sAcroBikeInputHandlers[gPlayerAvatar.acroBikeState].unwrap_unchecked()(
+    sAcroBikeInputHandlers[crate::gl!(gPlayerAvatar.acroBikeState)].unwrap_unchecked()(
         newDirection,
         newKeys,
         heldKeys,
@@ -196,34 +206,34 @@ pub(crate) unsafe fn AcroBikeHandleInputNormal(
     heldKeys: u16,
 ) -> u8 {
     let direction: u8 = GetPlayerMovementDirection();
-    gPlayerAvatar.bikeFrameCounter = 0;
+    crate::gl!(gPlayerAvatar.bikeFrameCounter = 0);
     if *newDirection == DIR_NONE {
         if newKeys as i32 & B_BUTTON != 0 {
             *newDirection = direction;
-            gPlayerAvatar.runningState = NOT_MOVING;
-            gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+            crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING);
             return ACRO_TRANS_NORMAL_TO_WHEELIE;
         } else {
             *newDirection = direction;
-            gPlayerAvatar.runningState = NOT_MOVING;
+            crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
             return ACRO_TRANS_FACE_DIRECTION;
         }
     }
     if *newDirection == direction
         && heldKeys as i32 & B_BUTTON != 0
-        && gPlayerAvatar.bikeSpeed == PLAYER_SPEED_STANDING
+        && crate::gl!(gPlayerAvatar.bikeSpeed) == PLAYER_SPEED_STANDING
     {
-        gPlayerAvatar.bikeSpeed += 1;
-        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_MOVING;
+        crate::gl!(gPlayerAvatar.bikeSpeed += 1);
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_MOVING);
         return ACRO_TRANS_WHEELIE_RISING_MOVING;
     }
-    if *newDirection != direction && gPlayerAvatar.runningState != MOVING {
-        gPlayerAvatar.acroBikeState = ACRO_STATE_TURNING;
-        gPlayerAvatar.newDirBackup = *newDirection;
-        gPlayerAvatar.runningState = NOT_MOVING;
+    if *newDirection != direction && crate::gl!(gPlayerAvatar.runningState) != MOVING {
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_TURNING);
+        crate::gl!(gPlayerAvatar.newDirBackup = *newDirection);
+        crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
         return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
     }
-    gPlayerAvatar.runningState = MOVING;
+    crate::gl!(gPlayerAvatar.runningState = MOVING);
     ACRO_TRANS_MOVING
 }
 pub(crate) unsafe fn AcroBikeHandleInputTurning(
@@ -231,24 +241,24 @@ pub(crate) unsafe fn AcroBikeHandleInputTurning(
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    *newDirection = gPlayerAvatar.newDirBackup;
-    gPlayerAvatar.bikeFrameCounter += 1;
-    if gPlayerAvatar.bikeFrameCounter > 6 {
-        gPlayerAvatar.runningState = TURN_DIRECTION;
-        gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+    *newDirection = crate::gl!(gPlayerAvatar.newDirBackup);
+    crate::gl!(gPlayerAvatar.bikeFrameCounter += 1);
+    if crate::gl!(gPlayerAvatar.bikeFrameCounter) > 6 {
+        crate::gl!(gPlayerAvatar.runningState = TURN_DIRECTION);
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
         Bike_SetBikeStill();
         return ACRO_TRANS_TURN_DIRECTION;
     }
     let direction: u8 = GetPlayerMovementDirection();
     if *newDirection == AcroBike_GetJumpDirection() {
         Bike_SetBikeStill();
-        gPlayerAvatar.bikeSpeed = PLAYER_SPEED_NORMAL as u8;
+        crate::gl!(gPlayerAvatar.bikeSpeed = PLAYER_SPEED_NORMAL as u8);
         if *newDirection == GetOppositeDirection(direction) {
-            gPlayerAvatar.acroBikeState = ACRO_STATE_TURN_JUMP;
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_TURN_JUMP);
             return ACRO_TRANS_TURN_JUMP;
         } else {
-            gPlayerAvatar.runningState = MOVING;
-            gPlayerAvatar.acroBikeState = ACRO_STATE_SIDE_JUMP;
+            crate::gl!(gPlayerAvatar.runningState = MOVING);
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_SIDE_JUMP);
             return ACRO_TRANS_SIDE_JUMP;
         }
     }
@@ -261,28 +271,29 @@ pub(crate) unsafe fn AcroBikeHandleInputWheelieStanding(
     heldKeys: u16,
 ) -> u8 {
     let direction: u8 = GetPlayerMovementDirection();
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    gPlayerAvatar.runningState = NOT_MOVING;
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+    crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
     if heldKeys as i32 & B_BUTTON != 0 {
-        gPlayerAvatar.bikeFrameCounter += 1;
+        crate::gl!(gPlayerAvatar.bikeFrameCounter += 1);
     } else {
-        gPlayerAvatar.bikeFrameCounter = 0;
+        crate::gl!(gPlayerAvatar.bikeFrameCounter = 0);
         if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) == 0 {
             *newDirection = direction;
-            gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
             Bike_SetBikeStill();
             return ACRO_TRANS_WHEELIE_TO_NORMAL;
         }
     }
-    if gPlayerAvatar.bikeFrameCounter >= 40 {
+    if crate::gl!(gPlayerAvatar.bikeFrameCounter) >= 40 {
         *newDirection = direction;
-        gPlayerAvatar.acroBikeState = ACRO_STATE_BUNNY_HOP;
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_BUNNY_HOP);
         Bike_SetBikeStill();
         return ACRO_TRANS_WHEELIE_HOPPING_STANDING;
     }
     if *newDirection == direction {
-        gPlayerAvatar.runningState = MOVING;
-        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_MOVING;
+        crate::gl!(gPlayerAvatar.runningState = MOVING);
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_MOVING);
         Bike_SetBikeStill();
         return ACRO_TRANS_WHEELIE_MOVING;
     }
@@ -290,7 +301,7 @@ pub(crate) unsafe fn AcroBikeHandleInputWheelieStanding(
         *newDirection = direction;
         return ACRO_TRANS_WHEELIE_IDLE;
     }
-    gPlayerAvatar.runningState = TURN_DIRECTION;
+    crate::gl!(gPlayerAvatar.runningState = TURN_DIRECTION);
     ACRO_TRANS_WHEELIE_IDLE
 }
 pub(crate) unsafe fn AcroBikeHandleInputBunnyHop(
@@ -299,29 +310,30 @@ pub(crate) unsafe fn AcroBikeHandleInputBunnyHop(
     heldKeys: u16,
 ) -> u8 {
     let direction: u8 = GetPlayerMovementDirection();
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if heldKeys as i32 & B_BUTTON == 0 {
         Bike_SetBikeStill();
         if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) != 0 {
-            gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING);
             return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
         } else {
             *newDirection = direction;
-            gPlayerAvatar.runningState = NOT_MOVING;
-            gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+            crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
             return ACRO_TRANS_WHEELIE_TO_NORMAL;
         }
     }
     if *newDirection == DIR_NONE {
         *newDirection = direction;
-        gPlayerAvatar.runningState = NOT_MOVING;
+        crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
         return ACRO_TRANS_WHEELIE_HOPPING_STANDING;
     }
-    if *newDirection != direction && gPlayerAvatar.runningState != MOVING {
-        gPlayerAvatar.runningState = TURN_DIRECTION;
+    if *newDirection != direction && crate::gl!(gPlayerAvatar.runningState) != MOVING {
+        crate::gl!(gPlayerAvatar.runningState = TURN_DIRECTION);
         return ACRO_TRANS_WHEELIE_HOPPING_STANDING;
     }
-    gPlayerAvatar.runningState = MOVING;
+    crate::gl!(gPlayerAvatar.runningState = MOVING);
     ACRO_TRANS_WHEELIE_HOPPING_MOVING
 }
 pub(crate) unsafe fn AcroBikeHandleInputWheelieMoving(
@@ -330,38 +342,39 @@ pub(crate) unsafe fn AcroBikeHandleInputWheelieMoving(
     heldKeys: u16,
 ) -> u8 {
     let direction: u8 = GetPlayerFacingDirection();
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if heldKeys as i32 & B_BUTTON == 0 {
         Bike_SetBikeStill();
         if MetatileBehavior_IsBumpySlope((*playerObjEvent).currentMetatileBehavior) == 0 {
-            gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
             if *newDirection == DIR_NONE {
                 *newDirection = direction;
-                gPlayerAvatar.runningState = NOT_MOVING;
+                crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
                 return ACRO_TRANS_WHEELIE_TO_NORMAL;
             }
-            if *newDirection != direction && gPlayerAvatar.runningState != MOVING {
-                gPlayerAvatar.runningState = NOT_MOVING;
+            if *newDirection != direction && crate::gl!(gPlayerAvatar.runningState) != MOVING {
+                crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
                 return ACRO_TRANS_WHEELIE_TO_NORMAL;
             }
-            gPlayerAvatar.runningState = MOVING;
+            crate::gl!(gPlayerAvatar.runningState = MOVING);
             return ACRO_TRANS_WHEELIE_LOWERING_MOVING;
         }
-        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING);
         return CheckMovementInputAcroBike(newDirection, newKeys, heldKeys);
     }
     if *newDirection == DIR_NONE {
         *newDirection = direction;
-        gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
-        gPlayerAvatar.runningState = NOT_MOVING;
+        crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING);
+        crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
         Bike_SetBikeStill();
         return ACRO_TRANS_WHEELIE_IDLE;
     }
-    if direction != *newDirection && gPlayerAvatar.runningState != MOVING {
-        gPlayerAvatar.runningState = NOT_MOVING;
+    if direction != *newDirection && crate::gl!(gPlayerAvatar.runningState) != MOVING {
+        crate::gl!(gPlayerAvatar.runningState = NOT_MOVING);
         return ACRO_TRANS_WHEELIE_IDLE;
     }
-    gPlayerAvatar.runningState = MOVING;
+    crate::gl!(gPlayerAvatar.runningState = MOVING);
     ACRO_TRANS_WHEELIE_MOVING
 }
 pub(crate) unsafe fn AcroBikeHandleInputSidewaysJump(
@@ -369,28 +382,31 @@ pub(crate) unsafe fn AcroBikeHandleInputSidewaysJump(
     newKeys: u16,
     heldKeys: u16,
 ) -> u8 {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     (*playerObjEvent).set_facingDirectionLocked(0);
     SetObjectEventDirection(playerObjEvent, (*playerObjEvent).facingDirection() as u8);
-    gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+    crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
     CheckMovementInputAcroBike(ptr, newKeys, heldKeys)
 }
 pub(crate) unsafe fn AcroBikeHandleInputTurnJump(ptr: *mut u8, newKeys: u16, heldKeys: u16) -> u8 {
-    gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
+    crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
     CheckMovementInputAcroBike(ptr, newKeys, heldKeys)
 }
 pub(crate) unsafe fn AcroBikeTransition_FaceDirection(direction: u8) {
     PlayerFaceDirection(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_TurnDirection(mut direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         direction = (*playerObjEvent).movementDirection() as u8;
     }
     PlayerFaceDirection(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_Moving(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         AcroBikeTransition_FaceDirection((*playerObjEvent).movementDirection() as u8);
         return;
@@ -411,35 +427,40 @@ pub(crate) unsafe fn AcroBikeTransition_Moving(direction: u8) {
     }
 }
 pub(crate) unsafe fn AcroBikeTransition_NormalToWheelie(mut direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         direction = (*playerObjEvent).movementDirection() as u8;
     }
     PlayerStartWheelie(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieToNormal(mut direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         direction = (*playerObjEvent).movementDirection() as u8;
     }
     PlayerEndWheelie(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieIdle(mut direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         direction = (*playerObjEvent).movementDirection() as u8;
     }
     PlayerIdleWheelie(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieHoppingStanding(mut direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         direction = (*playerObjEvent).movementDirection() as u8;
     }
     PlayerStandingHoppingWheelie(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieHoppingMoving(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         AcroBikeTransition_WheelieHoppingStanding((*playerObjEvent).movementDirection() as u8);
         return;
@@ -475,7 +496,8 @@ pub(crate) unsafe fn AcroBikeTransition_SideJump(direction: u8) {
             return;
         }
     }
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     PlaySE(SE_BIKE_HOP);
     (*playerObjEvent).set_facingDirectionLocked(1);
     PlayerSetAnimId(GetJumpMovementAction(direction as u32), COPY_MOVE_WALK);
@@ -484,7 +506,8 @@ pub(crate) unsafe fn AcroBikeTransition_TurnJump(direction: u8) {
     PlayerAcroTurnJump(direction);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieMoving(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         PlayerIdleWheelie((*playerObjEvent).movementDirection() as u8);
         return;
@@ -505,10 +528,11 @@ pub(crate) unsafe fn AcroBikeTransition_WheelieMoving(direction: u8) {
         return;
     }
     PlayerWheelieMove(direction);
-    gPlayerAvatar.runningState = MOVING;
+    crate::gl!(gPlayerAvatar.runningState = MOVING);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieRisingMoving(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         PlayerStartWheelie((*playerObjEvent).movementDirection() as u8);
         return;
@@ -529,10 +553,11 @@ pub(crate) unsafe fn AcroBikeTransition_WheelieRisingMoving(direction: u8) {
         return;
     }
     PlayerPopWheelieWhileMoving(direction);
-    gPlayerAvatar.runningState = MOVING;
+    crate::gl!(gPlayerAvatar.runningState = MOVING);
 }
 pub(crate) unsafe fn AcroBikeTransition_WheelieLoweringMoving(direction: u8) {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if CanBikeFaceDirOnMetatile(direction, (*playerObjEvent).currentMetatileBehavior) == 0 {
         PlayerEndWheelie((*playerObjEvent).movementDirection() as u8);
         return;
@@ -549,25 +574,30 @@ pub(crate) unsafe fn AcroBikeTransition_WheelieLoweringMoving(direction: u8) {
     PlayerEndWheelieWhileMoving(direction);
 }
 pub unsafe fn Bike_TryAcroBikeHistoryUpdate(newKeys: u16, heldKeys: u16) {
-    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
         AcroBike_TryHistoryUpdate(newKeys, heldKeys);
     }
 }
 unsafe fn AcroBike_TryHistoryUpdate(newKeys: u16, heldKeys: u16) {
     let mut direction: u8 = Bike_DPadToDirection(heldKeys);
-    if direction as u32 == gPlayerAvatar.directionHistory & 0xF {
-        gPlayerAvatar.dirTimerHistory[0] = gPlayerAvatar.dirTimerHistory[0].saturating_add(1);
+    if direction as u32 == crate::gl!(gPlayerAvatar.directionHistory) & 0xF {
+        crate::gl!(
+            gPlayerAvatar.dirTimerHistory[0] =
+                (*gPlayerAvatar.as_ptr()).dirTimerHistory[0].saturating_add(1)
+        );
     } else {
         Bike_UpdateDirTimerHistory(direction);
-        gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
+        crate::gl!(gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING);
     }
     direction = heldKeys as u8 & 15;
-    if direction as u32 == gPlayerAvatar.abStartSelectHistory & 0xF {
-        gPlayerAvatar.abStartSelectTimerHistory[0] =
-            gPlayerAvatar.abStartSelectTimerHistory[0].saturating_add(1);
+    if direction as u32 == crate::gl!(gPlayerAvatar.abStartSelectHistory) & 0xF {
+        crate::gl!(
+            gPlayerAvatar.abStartSelectTimerHistory[0] =
+                (*gPlayerAvatar.as_ptr()).abStartSelectTimerHistory[0].saturating_add(1)
+        );
     } else {
         Bike_UpdateABStartSelectHistory(direction);
-        gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
+        crate::gl!(gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING);
     }
 }
 unsafe fn HasPlayerInputTakenLongerThanList(
@@ -576,14 +606,14 @@ unsafe fn HasPlayerInputTakenLongerThanList(
 ) -> u8 {
     let mut i: u8 = 0;
     while *dirTimerList.at(i) != 0 {
-        if gPlayerAvatar.dirTimerHistory[i] > *dirTimerList.at(i) {
+        if crate::gl!(gPlayerAvatar.dirTimerHistory[i]) > *dirTimerList.at(i) {
             return FALSE;
         }
         i += 1;
     }
     i = 0;
     while *abStartSelectTimerList.at(i) != 0 {
-        if gPlayerAvatar.abStartSelectTimerHistory[i] > *abStartSelectTimerList.at(i) {
+        if crate::gl!(gPlayerAvatar.abStartSelectTimerHistory[i]) > *abStartSelectTimerList.at(i) {
             return FALSE;
         }
         i += 1;
@@ -594,8 +624,8 @@ unsafe fn AcroBike_GetJumpDirection() -> u8 {
     for i in 0..4u32 {
         let historyInputInfo: *mut BikeHistoryInputInfo =
             (&raw const sAcroBikeTricksList[i]).cast_mut();
-        let mut dirHistory: u32 = gPlayerAvatar.directionHistory;
-        let mut abStartSelectHistory: u32 = gPlayerAvatar.abStartSelectHistory;
+        let mut dirHistory: u32 = crate::gl!(gPlayerAvatar.directionHistory);
+        let mut abStartSelectHistory: u32 = crate::gl!(gPlayerAvatar.abStartSelectHistory);
         dirHistory &= (*historyInputInfo).dirHistoryMask;
         abStartSelectHistory &= (*historyInputInfo).abStartSelectHistoryMask;
         if dirHistory == (*historyInputInfo).dirHistoryMatch
@@ -610,25 +640,39 @@ unsafe fn AcroBike_GetJumpDirection() -> u8 {
     }
     0
 }
-unsafe fn Bike_UpdateDirTimerHistory(dir: u8) {
-    gPlayerAvatar.directionHistory = gPlayerAvatar.directionHistory << 4 | dir as u32 & 0xF;
+fn Bike_UpdateDirTimerHistory(dir: u8) {
+    crate::gl!(
+        gPlayerAvatar.directionHistory =
+            crate::gl!(gPlayerAvatar.directionHistory) << 4 | dir as u32 & 0xF
+    );
     let mut i: u8 = 7;
     while i != 0 {
-        gPlayerAvatar.dirTimerHistory[i] = gPlayerAvatar.dirTimerHistory[i as i32 - 1];
+        crate::gl!(
+            gPlayerAvatar.dirTimerHistory[i] = {
+                let gl_i0 = i as i32 - 1;
+                crate::gl!(gPlayerAvatar.dirTimerHistory[gl_i0])
+            }
+        );
         i -= 1;
     }
-    gPlayerAvatar.dirTimerHistory[0] = 1;
+    crate::gl!(gPlayerAvatar.dirTimerHistory[0] = 1);
 }
-unsafe fn Bike_UpdateABStartSelectHistory(input: u8) {
-    gPlayerAvatar.abStartSelectHistory =
-        gPlayerAvatar.abStartSelectHistory << 4 | input as u32 & 0xF;
+fn Bike_UpdateABStartSelectHistory(input: u8) {
+    crate::gl!(
+        gPlayerAvatar.abStartSelectHistory =
+            crate::gl!(gPlayerAvatar.abStartSelectHistory) << 4 | input as u32 & 0xF
+    );
     let mut i: u8 = 7;
     while i != 0 {
-        gPlayerAvatar.abStartSelectTimerHistory[i] =
-            gPlayerAvatar.abStartSelectTimerHistory[i as i32 - 1];
+        crate::gl!(
+            gPlayerAvatar.abStartSelectTimerHistory[i] = {
+                let gl_i1 = i as i32 - 1;
+                crate::gl!(gPlayerAvatar.abStartSelectTimerHistory[gl_i1])
+            }
+        );
         i -= 1;
     }
-    gPlayerAvatar.abStartSelectTimerHistory[0] = 1;
+    crate::gl!(gPlayerAvatar.abStartSelectTimerHistory[0] = 1);
 }
 fn Bike_DPadToDirection(heldKeys: u16) -> u8 {
     if heldKeys as i32 & DPAD_UP != 0 {
@@ -646,7 +690,8 @@ fn Bike_DPadToDirection(heldKeys: u16) -> u8 {
     DIR_NONE
 }
 unsafe fn GetBikeCollision(direction: u8) -> u8 {
-    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     let mut x: i16 = (*playerObjEvent).currentCoords.x;
     let mut y: i16 = (*playerObjEvent).currentCoords.y;
     MoveCoords(direction, &raw mut x, &raw mut y);
@@ -674,7 +719,9 @@ unsafe fn GetBikeCollisionAt(
     collision
 }
 pub unsafe fn RS_IsRunningDisallowed(tile: u8) -> u8 {
-    if IsRunningDisallowedByMetatile(tile) != FALSE || gMapHeader.mapType == MAP_TYPE_INDOOR {
+    if IsRunningDisallowedByMetatile(tile) != FALSE
+        || crate::gl!(gMapHeader.mapType) == MAP_TYPE_INDOOR
+    {
         return TRUE;
     } else {
         return FALSE;
@@ -732,7 +779,7 @@ pub unsafe fn IsBikingDisallowedByPlayer() -> u8 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     let mut tileBehavior: u8 = 0;
-    if gPlayerAvatar.flags as i32 & 24 == 0 {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & 24 == 0 {
         PlayerGetDestCoords(&raw mut x, &raw mut y);
         tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
         if IsRunningDisallowedByMetatile(tileBehavior) == 0 {
@@ -744,7 +791,8 @@ pub unsafe fn IsBikingDisallowedByPlayer() -> u8 {
 pub unsafe fn IsPlayerNotUsingAcroBikeOnBumpySlope() -> u8 {
     if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_ACRO_BIKE) != 0
         && MetatileBehavior_IsBumpySlope(
-            gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior,
+            (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)]
+                .currentMetatileBehavior,
         ) != 0
     {
         return FALSE;
@@ -758,7 +806,7 @@ pub unsafe fn IsPlayerNotUsingAcroBikeOnBumpySlope() -> u8 {
 }
 pub unsafe fn GetOnOffBike(transitionFlags: u8) {
     gUnusedBikeCameraAheadPanback.set(FALSE);
-    if gPlayerAvatar.flags as i32 & 6 != 0 {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & 6 != 0 {
         SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT as u16);
         Overworld_ClearSavedMusic();
         Overworld_PlaySpecialMapMusic();
@@ -768,28 +816,30 @@ pub unsafe fn GetOnOffBike(transitionFlags: u8) {
         Overworld_ChangeMusicTo(MUS_CYCLING);
     }
 }
-pub unsafe fn BikeClearState(newDirHistory: i32, newAbStartHistory: i32) {
-    gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL;
-    gPlayerAvatar.newDirBackup = DIR_NONE;
-    gPlayerAvatar.bikeFrameCounter = 0;
-    gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
-    gPlayerAvatar.directionHistory = newDirHistory as u32;
-    gPlayerAvatar.abStartSelectHistory = newAbStartHistory as u32;
+pub fn BikeClearState(newDirHistory: i32, newAbStartHistory: i32) {
+    crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_NORMAL);
+    crate::gl!(gPlayerAvatar.newDirBackup = DIR_NONE);
+    crate::gl!(gPlayerAvatar.bikeFrameCounter = 0);
+    crate::gl!(gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING);
+    crate::gl!(gPlayerAvatar.directionHistory = newDirHistory as u32);
+    crate::gl!(gPlayerAvatar.abStartSelectHistory = newAbStartHistory as u32);
     for i in 0..8u8 {
-        gPlayerAvatar.dirTimerHistory[i] = 0;
+        crate::gl!(gPlayerAvatar.dirTimerHistory[i] = 0);
     }
     for i in 0..8u8 {
-        gPlayerAvatar.abStartSelectTimerHistory[i] = 0;
+        crate::gl!(gPlayerAvatar.abStartSelectTimerHistory[i] = 0);
     }
 }
-pub unsafe fn Bike_UpdateBikeCounterSpeed(counter: u8) {
-    gPlayerAvatar.bikeFrameCounter = counter;
-    gPlayerAvatar.bikeSpeed =
-        gPlayerAvatar.bikeFrameCounter + (gPlayerAvatar.bikeFrameCounter >> 1);
+pub fn Bike_UpdateBikeCounterSpeed(counter: u8) {
+    crate::gl!(gPlayerAvatar.bikeFrameCounter = counter);
+    crate::gl!(
+        gPlayerAvatar.bikeSpeed = crate::gl!(gPlayerAvatar.bikeFrameCounter)
+            + (crate::gl!(gPlayerAvatar.bikeFrameCounter) >> 1)
+    );
 }
-unsafe fn Bike_SetBikeStill() {
-    gPlayerAvatar.bikeFrameCounter = 0;
-    gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING;
+fn Bike_SetBikeStill() {
+    crate::gl!(gPlayerAvatar.bikeFrameCounter = 0);
+    crate::gl!(gPlayerAvatar.bikeSpeed = PLAYER_SPEED_STANDING);
 }
 pub unsafe fn GetPlayerSpeed() -> i16 {
     let mut machSpeeds: CArray<i16, 3> = zeroed();
@@ -798,11 +848,11 @@ pub unsafe fn GetPlayerSpeed() -> i16 {
         sMachBikeSpeeds.as_ptr().cast_mut() as *mut u8,
         6,
     );
-    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_MACH_BIKE as i32 != 0 {
-        return machSpeeds[gPlayerAvatar.bikeFrameCounter];
-    } else if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_MACH_BIKE as i32 != 0 {
+        return machSpeeds[crate::gl!(gPlayerAvatar.bikeFrameCounter)];
+    } else if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
         return PLAYER_SPEED_FASTER;
-    } else if gPlayerAvatar.flags as i32 & 136 != 0 {
+    } else if crate::gl!(gPlayerAvatar.flags) as i32 & 136 != 0 {
         return PLAYER_SPEED_FAST;
     } else {
         return PLAYER_SPEED_NORMAL;
@@ -816,17 +866,18 @@ pub unsafe fn Bike_HandleBumpySlopeJump() {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     let mut tileBehavior: u8 = 0;
-    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
+    if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_ACRO_BIKE as i32 != 0 {
         PlayerGetDestCoords(&raw mut x, &raw mut y);
         tileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
         if MetatileBehavior_IsBumpySlope(tileBehavior) != 0 {
-            gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING;
+            crate::gl!(gPlayerAvatar.acroBikeState = ACRO_STATE_WHEELIE_STANDING);
             PlayerUseAcroBikeOnBumpySlope(GetPlayerMovementDirection());
         }
     }
 }
 pub unsafe fn IsRunningDisallowed(metatile: u8) -> u32 {
-    if gMapHeader.allowRunning() == 0 || IsRunningDisallowedByMetatile(metatile) == TRUE {
+    if (*gMapHeader.as_ptr()).allowRunning() == 0 || IsRunningDisallowedByMetatile(metatile) == TRUE
+    {
         return TRUE as u32;
     } else {
         return FALSE as u32;

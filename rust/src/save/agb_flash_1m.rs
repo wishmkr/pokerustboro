@@ -53,13 +53,13 @@ pub unsafe fn IdentifyFlash() -> u16 {
         }
         setupInfo = setupInfo.at(1);
     }
-    ProgramFlashByte = (*(*setupInfo)).programFlashByte;
-    ProgramFlashSector = (*(*setupInfo)).programFlashSector;
-    EraseFlashChip = (*(*setupInfo)).eraseFlashChip;
-    EraseFlashSector = (*(*setupInfo)).eraseFlashSector;
-    WaitForFlashWrite = (*(*setupInfo)).WaitForFlashWrite;
-    gFlashMaxTime = (*(*setupInfo)).maxTime;
-    gFlash = &raw mut (*(*setupInfo)).r#type;
+    crate::gl!(ProgramFlashByte = (*(*setupInfo)).programFlashByte);
+    crate::gl!(ProgramFlashSector = (*(*setupInfo)).programFlashSector);
+    crate::gl!(EraseFlashChip = (*(*setupInfo)).eraseFlashChip);
+    crate::gl!(EraseFlashSector = (*(*setupInfo)).eraseFlashSector);
+    crate::gl!(WaitForFlashWrite = (*(*setupInfo)).WaitForFlashWrite);
+    crate::gl!(gFlashMaxTime = (*(*setupInfo)).maxTime);
+    crate::gl!(gFlash = &raw mut (*(*setupInfo)).r#type);
     result
 }
 pub unsafe fn WaitForFlashWrite_Common(phase: u8, addr: *mut u8, lastData: u8) -> u16 {
@@ -67,20 +67,20 @@ pub unsafe fn WaitForFlashWrite_Common(phase: u8, addr: *mut u8, lastData: u8) -
     let mut status: u8 = 0;
     StartFlashTimer(phase);
     while ({
-        status = PollFlashStatus.unwrap_unchecked()(addr);
+        status = (*PollFlashStatus.as_ptr()).unwrap_unchecked()(addr);
         status
     }) != lastData
     {
         if status as i32 & 0x20 != 0 {
-            if PollFlashStatus.unwrap_unchecked()(addr) == lastData {
+            if (*PollFlashStatus.as_ptr()).unwrap_unchecked()(addr) == lastData {
                 break;
             }
             volatile_write((0xE000000_usize as *mut u8).at(21845), 0xF0);
             result = phase as u16 | 0xA000;
             break;
         }
-        if gFlashTimeoutFlag != 0 {
-            if PollFlashStatus.unwrap_unchecked()(addr) == lastData {
+        if gFlashTimeoutFlag.get() != 0 {
+            if (*PollFlashStatus.as_ptr()).unwrap_unchecked()(addr) == lastData {
                 break;
             }
             volatile_write((0xE000000_usize as *mut u8).at(21845), 0xF0);

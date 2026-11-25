@@ -20,7 +20,7 @@ use crate::types::{SaveBlock1, SaveBlock2};
 pub unsafe fn save_block1<'a>() -> &'a mut SaveBlock1 {
     // SAFETY: set up at boot (see the module documentation); exclusivity is
     // the caller's promise.
-    unsafe { &mut *gSaveBlock1Ptr }
+    unsafe { &mut *crate::gl!(gSaveBlock1Ptr) }
 }
 
 /// The second save block.
@@ -29,5 +29,5 @@ pub unsafe fn save_block1<'a>() -> &'a mut SaveBlock1 {
 /// As for [`save_block1`].
 pub unsafe fn save_block2<'a>() -> &'a mut SaveBlock2 {
     // SAFETY: as in save_block1.
-    unsafe { &mut *gSaveBlock2Ptr }
+    unsafe { &mut *crate::gl!(gSaveBlock2Ptr) }
 }

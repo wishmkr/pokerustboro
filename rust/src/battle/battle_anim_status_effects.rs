@@ -76,12 +76,12 @@ unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
 }
 /// `LoadCompressedSpritePaletteUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8 {
+fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpritePaletteUsingHeap(a0 as _) }
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `SetSubspriteTables` with this module's view of its types.
@@ -105,7 +105,7 @@ static sFrozenIceCubeSubspriteTable: Table<CArray<SubspriteTable, 1>> = Table(
 );
 
 unsafe fn Task_FlashingCircleImpacts(battler: u8, red: u8) -> u8 {
-    let battlerSpriteId: u8 = gBattlerSpriteIds[battler];
+    let battlerSpriteId: u8 = crate::gl!(gBattlerSpriteIds[battler]);
     let taskId: u8 = CreateTask(Some(Task_UpdateFlashingCircleImpacts), 10);
     let mut spriteId: u8 = 0;
     LoadCompressedSpriteSheetUsingHeap(
@@ -124,15 +124,15 @@ unsafe fn Task_FlashingCircleImpacts(battler: u8, red: u8) -> u8 {
         for i in 0..10u8 {
             spriteId = CreateSprite(
                 (&raw const *sFlashingCircleImpactSpriteTemplate).cast_mut(),
-                gSprites[battlerSpriteId].x,
-                gSprites[battlerSpriteId].y + 32,
+                crate::gl!(gSprites[battlerSpriteId].x),
+                crate::gl!(gSprites[battlerSpriteId].y) + 32,
                 0,
             );
-            gSprites[spriteId].data[0] = i as i16 * 51;
-            gSprites[spriteId].data[1] = -256;
-            gSprites[spriteId].set_invisible(TRUE as u16);
+            crate::gl!(gSprites[spriteId].data[0] = i as i16 * 51);
+            crate::gl!(gSprites[spriteId].data[1] = -256);
+            (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             if i > 4 {
-                gSprites[spriteId].data[6] = 21;
+                crate::gl!(gSprites[spriteId].data[6] = 21);
             }
         }
     } else {
@@ -140,19 +140,19 @@ unsafe fn Task_FlashingCircleImpacts(battler: u8, red: u8) -> u8 {
         for i in 0..10u8 {
             spriteId = CreateSprite(
                 (&raw const *sFlashingCircleImpactSpriteTemplate).cast_mut(),
-                gSprites[battlerSpriteId].x,
-                gSprites[battlerSpriteId].y - 32,
+                crate::gl!(gSprites[battlerSpriteId].x),
+                crate::gl!(gSprites[battlerSpriteId].y) - 32,
                 0,
             );
-            gSprites[spriteId].data[0] = i as i16 * 51;
-            gSprites[spriteId].data[1] = 256;
-            gSprites[spriteId].set_invisible(TRUE as u16);
+            crate::gl!(gSprites[spriteId].data[0] = i as i16 * 51);
+            crate::gl!(gSprites[spriteId].data[1] = 256);
+            (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
             if i > 4 {
-                gSprites[spriteId].data[6] = 21;
+                crate::gl!(gSprites[spriteId].data[6] = 21);
             }
         }
     }
-    gSprites[spriteId].data[7] = 1;
+    crate::gl!(gSprites[spriteId].data[7] = 1);
     taskId
 }
 pub(crate) unsafe fn Task_UpdateFlashingCircleImpacts(taskId: u8) {
@@ -216,8 +216,9 @@ pub(crate) unsafe fn AnimFlashingCircleImpact_Step(sprite: *mut Sprite) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_FrozenIceCube(taskId: u8) {
-    let mut x: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 - 32;
-    let y: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16 - 36;
+    let mut x: i16 = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16 - 32;
+    let y: i16 =
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16 - 36;
     if IsContest() != 0 {
         x -= 6;
     }
@@ -230,10 +231,10 @@ pub unsafe fn AnimTask_FrozenIceCube(taskId: u8) {
         4,
     );
     if GetSpriteTileStartByTag(ANIM_TAG_ICE_CUBE) == 0xFFFF {
-        gSprites[spriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     }
     SetSubspriteTables(
-        &raw mut gSprites[spriteId],
+        crate::gl!(&raw gSprites[spriteId]),
         sFrozenIceCubeSubspriteTable.as_ptr().cast_mut(),
     );
     task_set(taskId, 15, spriteId as i16);
@@ -259,12 +260,31 @@ pub(crate) unsafe fn AnimTask_FrozenIceCube_Step2(taskId: u8) {
     {
         task_set(taskId, 2, task_get(taskId, 2) + 1);
         if task_get(taskId, 2) == 3 {
-            let temp: u16 = gPlttBufferFaded[0x100 + palIndex as i32 * 16 + 13];
-            gPlttBufferFaded[0x100 + palIndex as i32 * 16 + 13] =
-                gPlttBufferFaded[0x100 + palIndex as i32 * 16 + 14];
-            gPlttBufferFaded[0x100 + palIndex as i32 * 16 + 14] =
-                gPlttBufferFaded[0x100 + palIndex as i32 * 16 + 15];
-            gPlttBufferFaded[0x100 + palIndex as i32 * 16 + 15] = temp;
+            let temp: u16 = {
+                let gl_i0 = 0x100 + palIndex as i32 * 16 + 13;
+                crate::gl!(gPlttBufferFaded[gl_i0])
+            };
+            {
+                let gl_v = {
+                    let gl_i2 = 0x100 + palIndex as i32 * 16 + 14;
+                    crate::gl!(gPlttBufferFaded[gl_i2])
+                };
+                let gl_i1 = 0x100 + palIndex as i32 * 16 + 13;
+                crate::gl!(gPlttBufferFaded[gl_i1] = gl_v)
+            };
+            {
+                let gl_v = {
+                    let gl_i4 = 0x100 + palIndex as i32 * 16 + 15;
+                    crate::gl!(gPlttBufferFaded[gl_i4])
+                };
+                let gl_i3 = 0x100 + palIndex as i32 * 16 + 14;
+                crate::gl!(gPlttBufferFaded[gl_i3] = gl_v)
+            };
+            {
+                let gl_v = temp;
+                let gl_i5 = 0x100 + palIndex as i32 * 16 + 15;
+                crate::gl!(gPlttBufferFaded[gl_i5] = gl_v)
+            };
             task_set(taskId, 2, 0);
             task_set(taskId, 3, task_get(taskId, 3) + 1);
             if task_get(taskId, 3) == 3 {
@@ -293,8 +313,8 @@ pub(crate) unsafe fn AnimTask_FrozenIceCube_Step4(taskId: u8) {
     task_set(taskId, 1, task_get(taskId, 1) + 1);
     if task_get(taskId, 1) == 37 {
         let spriteId: u8 = task_get(taskId, 15) as u8;
-        FreeSpriteOamMatrix(&raw mut gSprites[spriteId]);
-        DestroySprite(&raw mut gSprites[spriteId]);
+        FreeSpriteOamMatrix(crate::gl!(&raw gSprites[spriteId]));
+        DestroySprite(crate::gl!(&raw gSprites[spriteId]));
     } else if task_get(taskId, 1) == 39 {
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
@@ -306,7 +326,7 @@ pub unsafe fn AnimTask_StatsChange(taskId: u8) {
     let mut goesDown: u16 = FALSE as u16;
     let mut animStatId: i16 = 0;
     let mut sharply: u16 = FALSE as u16;
-    match (*(*gBattleSpritesDataPtr).animationData).animArg {
+    match (*(*crate::gl!(gBattleSpritesDataPtr)).animationData).animArg {
         15 => {
             goesDown = FALSE as u16;
             animStatId = STAT_ANIM_PAL_ATK;
@@ -458,17 +478,17 @@ pub unsafe fn AnimTask_StatsChange(taskId: u8) {
             return;
         }
     }
-    gBattleAnimArgs[0] = goesDown as i16;
-    gBattleAnimArgs[1] = animStatId;
-    gBattleAnimArgs[2] = FALSE as i16;
-    gBattleAnimArgs[3] = FALSE as i16;
-    gBattleAnimArgs[4] = sharply as i16;
+    crate::gl!(gBattleAnimArgs[0] = goesDown as i16);
+    crate::gl!(gBattleAnimArgs[1] = animStatId);
+    crate::gl!(gBattleAnimArgs[2] = FALSE as i16);
+    crate::gl!(gBattleAnimArgs[3] = FALSE as i16);
+    crate::gl!(gBattleAnimArgs[4] = sharply as i16);
     task_set_func(taskId, Some(InitStatsChangeAnimation));
     task_func(taskId).unwrap_unchecked()(taskId);
 }
 pub unsafe fn LaunchStatusAnimation(battler: u8, statusAnimId: u8) {
-    gBattleAnimAttacker = battler;
-    gBattleAnimTarget = battler;
+    gBattleAnimAttacker.set(battler);
+    gBattleAnimTarget.set(battler);
     LaunchBattleAnimation(
         (*crate::asmdata::gBattleAnims_StatusConditions.cast::<CArray<*mut u8, 0>>())
             .as_ptr()
@@ -480,9 +500,9 @@ pub unsafe fn LaunchStatusAnimation(battler: u8, statusAnimId: u8) {
     task_set(taskId, 0, battler as i16);
 }
 pub(crate) unsafe fn Task_DoStatusAnimation(taskId: u8) {
-    gAnimScriptCallback.unwrap_unchecked()();
-    if gAnimScriptActive == 0 {
-        (*(*gBattleSpritesDataPtr)
+    (*gAnimScriptCallback.as_ptr()).unwrap_unchecked()();
+    if gAnimScriptActive.get() == 0 {
+        (*(*crate::gl!(gBattleSpritesDataPtr))
             .healthBoxesData
             .at(task_get(taskId, 0)))
         .set_statusAnimActive(0);

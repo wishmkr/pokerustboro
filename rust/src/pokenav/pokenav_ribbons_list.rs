@@ -225,24 +225,24 @@ pub(crate) unsafe fn HandleRibbonsMonListInput_WaitListInit(
     0
 }
 pub(crate) unsafe fn HandleRibbonsMonListInput(list: *mut Pokenav_RibbonsMonList) -> u32 {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         return RIBBONS_MON_LIST_FUNC_MOVE_UP;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         return RIBBONS_MON_LIST_FUNC_MOVE_DOWN;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
         return RIBBONS_MON_LIST_FUNC_PAGE_UP;
     }
-    if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
         return RIBBONS_MON_LIST_FUNC_PAGE_DOWN;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*list).saveMonList = 0;
         (*list).callback = Some(RibbonsMonMenu_ReturnToMainMenu);
         return RIBBONS_MON_LIST_FUNC_EXIT;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         (*(*list).monList).currIndex = PokenavList_GetSelectedIndex() as u16;
         (*list).saveMonList = 1;
         (*list).callback = Some(RibbonsMonMenu_ToSummaryScreen);
@@ -293,7 +293,7 @@ pub(crate) unsafe fn BuildPartyMonRibbonList(state: i32) -> u32 {
     (*(*list).monList).currIndex = 0;
     item.boxId = TOTAL_BOXES_COUNT;
     for i in 0..PARTY_SIZE {
-        let pokemon: *mut Pokemon = &raw mut gPlayerParty[i];
+        let pokemon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
         if GetMonData2(pokemon, MON_DATA_SANITY_HAS_SPECIES) == 0 {
             return LT_INC_AND_CONTINUE;
         }
@@ -377,7 +377,7 @@ unsafe fn PlayerHasRibbonsMon() -> u32 {
     let mut i: i32 = 0;
     while i < PARTY_SIZE {
         'l1: {
-            let mon: *mut Pokemon = &raw mut gPlayerParty[i];
+            let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
             if GetMonData2(mon, MON_DATA_SANITY_HAS_SPECIES) == 0 {
                 break 'l1;
             }
@@ -786,18 +786,26 @@ pub(crate) unsafe fn BufferRibbonMonInfoText(listItem: *mut PokenavListItem, mut
     let mut genderStr: *mut u8 = null_mut();
     let item: *mut PokenavMonListItem = listItem as *mut PokenavMonListItem;
     if (*item).boxId == TOTAL_BOXES_COUNT {
-        let mon: *mut Pokemon = &raw mut gPlayerParty[(*item).monId];
+        let mon: *mut Pokemon = {
+            let gl_i0 = (*item).monId;
+            crate::gl!(&raw gPlayerParty[gl_i0])
+        };
         gender = GetMonGender(mon);
         level = GetLevelFromMonExp(mon);
-        GetMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
+        GetMonData3(mon, MON_DATA_NICKNAME, (*gStringVar3.as_ptr()).as_mut_ptr());
     } else {
         let mon: *mut BoxPokemon = GetBoxedMonPtr((*item).boxId, (*item).monId);
         gender = GetBoxMonGender(mon);
         level = GetLevelFromBoxMonExp(mon);
-        GetBoxMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
+        GetBoxMonData3(mon, MON_DATA_NICKNAME, (*gStringVar3.as_ptr()).as_mut_ptr());
     }
-    StringGet_Nickname(gStringVar3.as_mut_ptr());
-    dest = GetStringClearToWidth(dest, FONT_NORMAL as i32, gStringVar3.as_mut_ptr(), 60);
+    StringGet_Nickname((*gStringVar3.as_ptr()).as_mut_ptr());
+    dest = GetStringClearToWidth(
+        dest,
+        FONT_NORMAL as i32,
+        (*gStringVar3.as_ptr()).as_mut_ptr(),
+        60,
+    );
     match gender {
         MON_MALE => {
             genderStr = sText_MaleSymbol.as_ptr().cast_mut();

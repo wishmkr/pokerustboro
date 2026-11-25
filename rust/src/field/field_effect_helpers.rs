@@ -54,7 +54,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `SeekSpriteAnim` with this module's view of its types.
@@ -126,8 +126,10 @@ pub unsafe fn SetUpReflection(
     sprite: *mut Sprite,
     stillReflection: u8,
 ) {
-    let reflectionSprite: *mut Sprite =
-        &raw mut gSprites[CreateCopySpriteAt(sprite, (*sprite).x, (*sprite).y, 152)];
+    let reflectionSprite: *mut Sprite = {
+        let gl_i0 = CreateCopySpriteAt(sprite, (*sprite).x, (*sprite).y, 152);
+        crate::gl!(&raw gSprites[gl_i0])
+    };
     (*reflectionSprite).callback = Some(UpdateObjectReflectionSprite);
     (*reflectionSprite).oam.set_priority(3);
     (*reflectionSprite).oam.set_paletteNum(
@@ -210,9 +212,14 @@ unsafe fn LoadObjectHighBridgeReflectionPalette(objectEvent: *mut ObjectEvent, p
     }
 }
 pub(crate) unsafe fn UpdateObjectReflectionSprite(reflectionSprite: *mut Sprite) {
-    let objectEvent: *mut ObjectEvent =
-        &raw mut gObjectEvents[(*reflectionSprite).data[sReflectionObjEventId]];
-    let mainSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+    let objectEvent: *mut ObjectEvent = {
+        let gl_i0 = (*reflectionSprite).data[sReflectionObjEventId];
+        crate::gl!(&raw gObjectEvents[gl_i0])
+    };
+    let mainSprite: *mut Sprite = {
+        let gl_i1 = (*objectEvent).spriteId;
+        crate::gl!(&raw gSprites[gl_i1])
+    };
     if (*objectEvent).active() == 0
         || (*objectEvent).hasReflection() == 0
         || (*objectEvent).localId as i16 != (*reflectionSprite).data[sReflectionObjEventLocalId]
@@ -263,7 +270,7 @@ pub unsafe fn CreateWarpArrowSprite() -> u8 {
         82,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).oam.set_priority(1);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).set_invisible(TRUE as u16);
@@ -271,15 +278,15 @@ pub unsafe fn CreateWarpArrowSprite() -> u8 {
     spriteId
 }
 pub unsafe fn SetSpriteInvisible(spriteId: u8) {
-    gSprites[spriteId].set_invisible(TRUE as u16);
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
 }
 pub unsafe fn ShowWarpArrowSprite(spriteId: u8, direction: u8, x: i16, y: i16) {
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let mut sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     if (*sprite).invisible() != 0 || (*sprite).data[0] != x || (*sprite).data[1] != y {
         let mut x2: i16 = 0;
         let mut y2: i16 = 0;
         SetSpritePosToMapCoords(x, y, &raw mut x2, &raw mut y2);
-        sprite = &raw mut gSprites[spriteId];
+        sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).x = x2 + 8;
         (*sprite).y = y2 + 8;
         (*sprite).set_invisible(FALSE as u16);
@@ -291,12 +298,12 @@ pub unsafe fn ShowWarpArrowSprite(spriteId: u8, direction: u8, x: i16, y: i16) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_Shadow() -> u32 {
     let objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     let graphicsInfo: *mut ObjectEventGraphicsInfo =
-        GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
+        GetObjectEventGraphicsInfo(crate::gl!(gObjectEvents[objectEventId].graphicsId));
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())
@@ -306,12 +313,16 @@ pub unsafe fn FldEff_Shadow() -> u32 {
         148,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
-        gSprites[spriteId].data[0] = gFieldEffectArguments[0] as i16;
-        gSprites[spriteId].data[1] = gFieldEffectArguments[1] as i16;
-        gSprites[spriteId].data[2] = gFieldEffectArguments[2] as i16;
-        gSprites[spriteId].data[sYOffset] = ((*graphicsInfo).height >> 1)
-            - gShadowVerticalOffsets[(*graphicsInfo).shadowSize()] as i16;
+        (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        crate::gl!(gSprites[spriteId].data[0] = crate::gl!(gFieldEffectArguments[0]) as i16);
+        crate::gl!(gSprites[spriteId].data[1] = crate::gl!(gFieldEffectArguments[1]) as i16);
+        crate::gl!(gSprites[spriteId].data[2] = crate::gl!(gFieldEffectArguments[2]) as i16);
+        {
+            let gl_v = ((*graphicsInfo).height >> 1)
+                - gShadowVerticalOffsets[(*graphicsInfo).shadowSize()] as i16;
+            let gl_i2 = sYOffset;
+            crate::gl!(gSprites[spriteId].data[gl_i2] = gl_v)
+        };
     }
     0
 }
@@ -326,8 +337,11 @@ pub unsafe fn UpdateShadowFieldEffect(sprite: *mut Sprite) {
     {
         FieldEffectStop(sprite, FLDEFF_SHADOW);
     } else {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
-        let linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
+        let linkedSprite: *mut Sprite = {
+            let gl_i3 = (*objectEvent).spriteId;
+            crate::gl!(&raw gSprites[gl_i3])
+        };
         (*sprite).oam.set_priority((*linkedSprite).oam.priority());
         (*sprite).x = (*linkedSprite).x;
         (*sprite).y = (*linkedSprite).y + (*sprite).data[sYOffset];
@@ -347,8 +361,8 @@ pub unsafe fn UpdateShadowFieldEffect(sprite: *mut Sprite) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_TallGrass() -> u32 {
-    let mut x: i16 = gFieldEffectArguments[0] as i16;
-    let mut y: i16 = gFieldEffectArguments[1] as i16;
+    let mut x: i16 = crate::gl!(gFieldEffectArguments[0]) as i16;
+    let mut y: i16 = crate::gl!(gFieldEffectArguments[1]) as i16;
     SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 8);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
@@ -358,16 +372,18 @@ pub unsafe fn FldEff_TallGrass() -> u32 {
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sElevation] = gFieldEffectArguments[2] as i16;
-        (*sprite).data[sX] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[3] = gFieldEffectArguments[4] as i16;
-        (*sprite).data[4] = gFieldEffectArguments[5] as i16;
-        (*sprite).data[sCurrentMap] = gFieldEffectArguments[6] as i16;
-        if gFieldEffectArguments[7] != 0 {
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
+        (*sprite).data[sX] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[3] = crate::gl!(gFieldEffectArguments[4]) as i16;
+        (*sprite).data[4] = crate::gl!(gFieldEffectArguments[5]) as i16;
+        (*sprite).data[sCurrentMap] = crate::gl!(gFieldEffectArguments[6]) as i16;
+        if crate::gl!(gFieldEffectArguments[7]) != 0 {
             SeekSpriteAnim(sprite, 4);
         }
     }
@@ -377,14 +393,15 @@ pub unsafe fn UpdateTallGrassFieldEffect(sprite: *mut Sprite) {
     let mut objectEventId: u8 = 0;
     let mut mapNum: u8 = ((*sprite).data[sCurrentMap] >> 8) as u8;
     let mut mapGroup: u8 = (*sprite).data[sCurrentMap] as u8;
-    if gCamera.active() != 0
-        && ((*gSaveBlock1Ptr).location.mapNum as i32 != mapNum as i32
-            || (*gSaveBlock1Ptr).location.mapGroup as i32 != mapGroup as i32)
+    if (*gCamera.as_ptr()).active() != 0
+        && ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as i32 != mapNum as i32
+            || (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as i32 != mapGroup as i32)
     {
-        (*sprite).data[sX] -= gCamera.x as i16;
-        (*sprite).data[2] -= gCamera.y as i16;
-        (*sprite).data[sCurrentMap] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i16) << 8
-            | (*gSaveBlock1Ptr).location.mapGroup as u8 as i16;
+        (*sprite).data[sX] -= crate::gl!(gCamera.x) as i16;
+        (*sprite).data[2] -= crate::gl!(gCamera.y) as i16;
+        (*sprite).data[sCurrentMap] = ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 as i16)
+            << 8
+            | (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8 as i16;
     }
     let localId: u8 = ((*sprite).data[3] >> 8) as u8;
     mapNum = (*sprite).data[3] as u8;
@@ -397,7 +414,7 @@ pub unsafe fn UpdateTallGrassFieldEffect(sprite: *mut Sprite) {
     {
         FieldEffectStop(sprite, FLDEFF_TALL_GRASS);
     } else {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
         if ((*objectEvent).currentCoords.x != (*sprite).data[sX]
             || (*objectEvent).currentCoords.y != (*sprite).data[2])
             && ((*objectEvent).previousCoords.x != (*sprite).data[sX]
@@ -420,23 +437,25 @@ pub unsafe fn UpdateTallGrassFieldEffect(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_JumpTallGrass() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         12,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[10],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sJumpElevation] = gFieldEffectArguments[2] as i16;
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sJumpElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[sJumpFldEff] = FLDEFF_JUMP_TALL_GRASS as i16;
     }
     0
@@ -449,8 +468,8 @@ pub unsafe fn FindTallGrassFieldEffectSpriteId(
     y: i16,
 ) -> u8 {
     for i in 0..MAX_SPRITES {
-        if gSprites[i].inUse() != 0 {
-            let sprite: *mut Sprite = &raw mut gSprites[i];
+        if (*gSprites.as_ptr())[i].inUse() != 0 {
+            let sprite: *mut Sprite = crate::gl!(&raw gSprites[i]);
             if (*sprite).callback == Some(UpdateTallGrassFieldEffect as unsafe fn(*mut Sprite))
                 && (x == (*sprite).data[sX] && y == (*sprite).data[2])
                 && localId == ((*sprite).data[3] >> 8) as u8
@@ -465,8 +484,8 @@ pub unsafe fn FindTallGrassFieldEffectSpriteId(
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_LongGrass() -> u32 {
-    let mut x: i16 = gFieldEffectArguments[0] as i16;
-    let mut y: i16 = gFieldEffectArguments[1] as i16;
+    let mut x: i16 = crate::gl!(gFieldEffectArguments[0]) as i16;
+    let mut y: i16 = crate::gl!(gFieldEffectArguments[1]) as i16;
     SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 8);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
@@ -476,18 +495,18 @@ pub unsafe fn FldEff_LongGrass() -> u32 {
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite)
             .oam
-            .set_priority(ElevationToPriority(gFieldEffectArguments[2] as u8) as u16);
-        (*sprite).data[sElevation] = gFieldEffectArguments[2] as i16;
-        (*sprite).data[sX] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[3] = gFieldEffectArguments[4] as i16;
-        (*sprite).data[4] = gFieldEffectArguments[5] as i16;
-        (*sprite).data[sCurrentMap] = gFieldEffectArguments[6] as i16;
-        if gFieldEffectArguments[7] != 0 {
+            .set_priority(ElevationToPriority(crate::gl!(gFieldEffectArguments[2]) as u8) as u16);
+        (*sprite).data[sElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
+        (*sprite).data[sX] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[3] = crate::gl!(gFieldEffectArguments[4]) as i16;
+        (*sprite).data[4] = crate::gl!(gFieldEffectArguments[5]) as i16;
+        (*sprite).data[sCurrentMap] = crate::gl!(gFieldEffectArguments[6]) as i16;
+        if crate::gl!(gFieldEffectArguments[7]) != 0 {
             SeekSpriteAnim(sprite, 6);
         }
     }
@@ -497,14 +516,15 @@ pub unsafe fn UpdateLongGrassFieldEffect(sprite: *mut Sprite) {
     let mut objectEventId: u8 = 0;
     let mut mapNum: u8 = ((*sprite).data[sCurrentMap] >> 8) as u8;
     let mut mapGroup: u8 = (*sprite).data[sCurrentMap] as u8;
-    if gCamera.active() != 0
-        && ((*gSaveBlock1Ptr).location.mapNum as i32 != mapNum as i32
-            || (*gSaveBlock1Ptr).location.mapGroup as i32 != mapGroup as i32)
+    if (*gCamera.as_ptr()).active() != 0
+        && ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as i32 != mapNum as i32
+            || (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as i32 != mapGroup as i32)
     {
-        (*sprite).data[sX] -= gCamera.x as i16;
-        (*sprite).data[2] -= gCamera.y as i16;
-        (*sprite).data[sCurrentMap] = ((*gSaveBlock1Ptr).location.mapNum as u8 as i16) << 8
-            | (*gSaveBlock1Ptr).location.mapGroup as u8 as i16;
+        (*sprite).data[sX] -= crate::gl!(gCamera.x) as i16;
+        (*sprite).data[2] -= crate::gl!(gCamera.y) as i16;
+        (*sprite).data[sCurrentMap] = ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 as i16)
+            << 8
+            | (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8 as i16;
     }
     let localId: u8 = ((*sprite).data[3] >> 8) as u8;
     mapNum = (*sprite).data[3] as u8;
@@ -517,7 +537,7 @@ pub unsafe fn UpdateLongGrassFieldEffect(sprite: *mut Sprite) {
     {
         FieldEffectStop(sprite, FLDEFF_LONG_GRASS);
     } else {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
         if ((*objectEvent).currentCoords.x != (*sprite).data[sX]
             || (*objectEvent).currentCoords.y != (*sprite).data[2])
             && ((*objectEvent).previousCoords.x != (*sprite).data[sX]
@@ -532,23 +552,25 @@ pub unsafe fn UpdateLongGrassFieldEffect(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_JumpLongGrass() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[16],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sJumpElevation] = gFieldEffectArguments[2] as i16;
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sJumpElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[sJumpFldEff] = FLDEFF_JUMP_LONG_GRASS as i16;
     }
     0
@@ -556,11 +578,11 @@ pub unsafe fn FldEff_JumpLongGrass() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_ShortGrass() -> u32 {
     let objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[30],
@@ -569,16 +591,22 @@ pub unsafe fn FldEff_ShortGrass() -> u32 {
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite)
             .oam
-            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
-        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
-        (*sprite).data[3] = gSprites[(*objectEvent).spriteId].x;
-        (*sprite).data[4] = gSprites[(*objectEvent).spriteId].y;
+            .set_priority((*gSprites.as_ptr())[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[1] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[2]) as i16;
+        (*sprite).data[3] = {
+            let gl_i4 = (*objectEvent).spriteId;
+            crate::gl!(gSprites[gl_i4].x)
+        };
+        (*sprite).data[4] = {
+            let gl_i5 = (*objectEvent).spriteId;
+            crate::gl!(gSprites[gl_i5].y)
+        };
     }
     0
 }
@@ -590,13 +618,16 @@ pub unsafe fn UpdateShortGrassFieldEffect(sprite: *mut Sprite) {
         (*sprite).data[2] as u8,
         &raw mut objectEventId,
     ) != 0
-        || gObjectEvents[objectEventId].inShortGrass() == 0
+        || (*gObjectEvents.as_ptr())[objectEventId].inShortGrass() == 0
     {
         FieldEffectStop(sprite, FLDEFF_SHORT_GRASS);
     } else {
         let graphicsInfo: *mut ObjectEventGraphicsInfo =
-            GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
-        let linkedSprite: *mut Sprite = &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+            GetObjectEventGraphicsInfo(crate::gl!(gObjectEvents[objectEventId].graphicsId));
+        let linkedSprite: *mut Sprite = {
+            let gl_i6 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(&raw gSprites[gl_i6])
+        };
         let parentY: i16 = (*linkedSprite).y;
         let parentX: i16 = (*linkedSprite).x;
         if parentX != (*sprite).data[3] || parentY != (*sprite).data[4] {
@@ -617,72 +648,78 @@ pub unsafe fn UpdateShortGrassFieldEffect(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_SandFootprints() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[11],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[7] = FLDEFF_SAND_FOOTPRINTS;
-        StartSpriteAnim(sprite, gFieldEffectArguments[4] as u8);
+        StartSpriteAnim(sprite, crate::gl!(gFieldEffectArguments[4]) as u8);
     }
     0
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_DeepSandFootprints() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[23],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[7] = FLDEFF_DEEP_SAND_FOOTPRINTS;
-        StartSpriteAnim(sprite, gFieldEffectArguments[4] as u8);
+        StartSpriteAnim(sprite, crate::gl!(gFieldEffectArguments[4]) as u8);
     }
     spriteId as u32
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_BikeTireTracks() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[27],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[7] = FLDEFF_BIKE_TIRE_TRACKS as i16;
-        StartSpriteAnim(sprite, gFieldEffectArguments[4] as u8);
+        StartSpriteAnim(sprite, crate::gl!(gFieldEffectArguments[4]) as u8);
     }
     spriteId as u32
 }
@@ -710,11 +747,11 @@ pub(crate) unsafe fn FadeFootprintsTireTracks_Step1(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_Splash() -> u32 {
     let objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[13],
@@ -725,13 +762,16 @@ pub unsafe fn FldEff_Splash() -> u32 {
     if spriteId != MAX_SPRITES {
         let graphicsInfo: *mut ObjectEventGraphicsInfo =
             GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        let linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        let linkedSprite: *mut Sprite = {
+            let gl_i7 = (*objectEvent).spriteId;
+            crate::gl!(&raw gSprites[gl_i7])
+        };
         (*sprite).oam.set_priority((*linkedSprite).oam.priority());
-        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[0] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[1] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).y2 = ((*graphicsInfo).height >> 1) - 4;
         PlaySE(SE_PUDDLE);
     }
@@ -749,31 +789,39 @@ pub unsafe fn UpdateSplashFieldEffect(sprite: *mut Sprite) {
     {
         FieldEffectStop(sprite, FLDEFF_SPLASH);
     } else {
-        (*sprite).x = gSprites[gObjectEvents[objectEventId].spriteId].x;
-        (*sprite).y = gSprites[gObjectEvents[objectEventId].spriteId].y;
+        (*sprite).x = {
+            let gl_i8 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(gSprites[gl_i8].x)
+        };
+        (*sprite).y = {
+            let gl_i9 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(gSprites[gl_i9].y)
+        };
         UpdateObjectEventSpriteInvisibility(sprite, FALSE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_JumpSmallSplash() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         12,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[14],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sJumpElevation] = gFieldEffectArguments[2] as i16;
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sJumpElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[sJumpFldEff] = FLDEFF_JUMP_SMALL_SPLASH as i16;
     }
     0
@@ -781,23 +829,25 @@ pub unsafe fn FldEff_JumpSmallSplash() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_JumpBigSplash() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[12],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sJumpElevation] = gFieldEffectArguments[2] as i16;
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sJumpElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[sJumpFldEff] = FLDEFF_JUMP_BIG_SPLASH as i16;
     }
     0
@@ -805,11 +855,11 @@ pub unsafe fn FldEff_JumpBigSplash() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_FeetInFlowingWater() -> u32 {
     let objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[13],
@@ -820,15 +870,15 @@ pub unsafe fn FldEff_FeetInFlowingWater() -> u32 {
     if spriteId != MAX_SPRITES {
         let graphicsInfo: *mut ObjectEventGraphicsInfo =
             GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).callback = Some(UpdateFeetInFlowingWaterFieldEffect);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite)
             .oam
-            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
-        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
+            .set_priority((*gSprites.as_ptr())[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[1] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[3] = -1;
         (*sprite).data[4] = -1;
         (*sprite).y2 = ((*graphicsInfo).height >> 1) - 4;
@@ -844,12 +894,15 @@ pub(crate) unsafe fn UpdateFeetInFlowingWaterFieldEffect(sprite: *mut Sprite) {
         (*sprite).data[2] as u8,
         &raw mut objectEventId,
     ) != 0
-        || gObjectEvents[objectEventId].inShallowFlowingWater() == 0
+        || (*gObjectEvents.as_ptr())[objectEventId].inShallowFlowingWater() == 0
     {
         FieldEffectStop(sprite, FLDEFF_FEET_IN_FLOWING_WATER);
     } else {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
-        let linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
+        let linkedSprite: *mut Sprite = {
+            let gl_i10 = (*objectEvent).spriteId;
+            crate::gl!(&raw gSprites[gl_i10])
+        };
         (*sprite).x = (*linkedSprite).x;
         (*sprite).y = (*linkedSprite).y;
         (*sprite).subpriority = (*linkedSprite).subpriority;
@@ -870,14 +923,16 @@ pub unsafe fn FldEff_Ripple() -> u32 {
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[5],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[sWaitFldEff] = FLDEFF_RIPPLE as i16;
     }
     0
@@ -885,11 +940,11 @@ pub unsafe fn FldEff_Ripple() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_HotSpringsWater() -> u32 {
     let objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[31],
@@ -898,16 +953,22 @@ pub unsafe fn FldEff_HotSpringsWater() -> u32 {
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite)
             .oam
-            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
-        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
-        (*sprite).data[3] = gSprites[(*objectEvent).spriteId].x;
-        (*sprite).data[4] = gSprites[(*objectEvent).spriteId].y;
+            .set_priority((*gSprites.as_ptr())[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[1] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[2]) as i16;
+        (*sprite).data[3] = {
+            let gl_i11 = (*objectEvent).spriteId;
+            crate::gl!(gSprites[gl_i11].x)
+        };
+        (*sprite).data[4] = {
+            let gl_i12 = (*objectEvent).spriteId;
+            crate::gl!(gSprites[gl_i12].y)
+        };
     }
     0
 }
@@ -919,13 +980,16 @@ pub unsafe fn UpdateHotSpringsWaterFieldEffect(sprite: *mut Sprite) {
         (*sprite).data[2] as u8,
         &raw mut objectEventId,
     ) != 0
-        || gObjectEvents[objectEventId].inHotSprings() == 0
+        || (*gObjectEvents.as_ptr())[objectEventId].inHotSprings() == 0
     {
         FieldEffectStop(sprite, FLDEFF_HOT_SPRINGS_WATER);
     } else {
         let graphicsInfo: *mut ObjectEventGraphicsInfo =
-            GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
-        let linkedSprite: *mut Sprite = &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+            GetObjectEventGraphicsInfo(crate::gl!(gObjectEvents[objectEventId].graphicsId));
+        let linkedSprite: *mut Sprite = {
+            let gl_i13 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(&raw gSprites[gl_i13])
+        };
         (*sprite).x = (*linkedSprite).x;
         (*sprite).y = ((*graphicsInfo).height >> 1) + (*linkedSprite).y - 8;
         (*sprite).subpriority = (*linkedSprite).subpriority - 1;
@@ -935,22 +999,24 @@ pub unsafe fn UpdateHotSpringsWaterFieldEffect(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UnusedGrass() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[17],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[sWaitFldEff] = FLDEFF_UNUSED_GRASS;
     }
     0
@@ -958,22 +1024,24 @@ pub unsafe fn FldEff_UnusedGrass() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UnusedGrass2() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[18],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[sWaitFldEff] = FLDEFF_UNUSED_GRASS_2;
     }
     0
@@ -981,22 +1049,24 @@ pub unsafe fn FldEff_UnusedGrass2() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UnusedSand() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[19],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[sWaitFldEff] = FLDEFF_UNUSED_SAND;
     }
     0
@@ -1004,55 +1074,59 @@ pub unsafe fn FldEff_UnusedSand() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_WaterSurfacing() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[20],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).data[sWaitFldEff] = FLDEFF_WATER_SURFACING;
     }
     0
 }
 pub unsafe fn StartAshFieldEffect(x: i16, y: i16, metatileId: u16, delay: i16) {
-    gFieldEffectArguments[0] = x as i32;
-    gFieldEffectArguments[1] = y as i32;
-    gFieldEffectArguments[2] = 82;
-    gFieldEffectArguments[3] = 1;
-    gFieldEffectArguments[4] = metatileId as i32;
-    gFieldEffectArguments[5] = delay as i32;
+    crate::gl!(gFieldEffectArguments[0] = x as i32);
+    crate::gl!(gFieldEffectArguments[1] = y as i32);
+    crate::gl!(gFieldEffectArguments[2] = 82);
+    crate::gl!(gFieldEffectArguments[3] = 1);
+    crate::gl!(gFieldEffectArguments[4] = metatileId as i32);
+    crate::gl!(gFieldEffectArguments[5] = delay as i32);
     FieldEffectStart(FLDEFF_ASH);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_Ash() -> u32 {
-    let mut x: i16 = gFieldEffectArguments[0] as i16;
-    let mut y: i16 = gFieldEffectArguments[1] as i16;
+    let mut x: i16 = crate::gl!(gFieldEffectArguments[0]) as i16;
+    let mut y: i16 = crate::gl!(gFieldEffectArguments[1]) as i16;
     SetSpritePosToOffsetMapCoords(&raw mut x, &raw mut y, 8, 8);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[6],
         x,
         y,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sX] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[sMetatileId] = gFieldEffectArguments[4] as i16;
-        (*sprite).data[sDelay] = gFieldEffectArguments[5] as i16;
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sX] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[sMetatileId] = crate::gl!(gFieldEffectArguments[4]) as i16;
+        (*sprite).data[sDelay] = crate::gl!(gFieldEffectArguments[5]) as i16;
     }
     0
 }
@@ -1079,7 +1153,8 @@ pub(crate) unsafe fn UpdateAshFieldEffect_Show(sprite: *mut Sprite) {
         (*sprite).data[sMetatileId] as u16,
     );
     CurrentMapDrawMetatileAt((*sprite).data[sX] as i32, (*sprite).data[2] as i32);
-    gObjectEvents[gPlayerAvatar.objectEventId].set_triggerGroundEffectsOnMove(TRUE as u32);
+    (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)]
+        .set_triggerGroundEffectsOnMove(TRUE as u32);
     (*sprite).data[0] = 2;
 }
 pub(crate) unsafe fn UpdateAshFieldEffect_End(sprite: *mut Sprite) {
@@ -1091,23 +1166,23 @@ pub(crate) unsafe fn UpdateAshFieldEffect_End(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_SurfBlob() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[7],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         150,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).oam.set_paletteNum(0);
-        (*sprite).data[sPlayerObjId] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[sPlayerObjId] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[sVelocity] = -1;
         (*sprite).data[6] = -1;
         (*sprite).data[7] = -1;
@@ -1116,17 +1191,44 @@ pub unsafe fn FldEff_SurfBlob() -> u32 {
     spriteId as u32
 }
 pub unsafe fn SetSurfBlob_BobState(spriteId: u8, state: u8) {
-    gSprites[spriteId].data[sBitfield] =
-        gSprites[spriteId].data[sBitfield] & -16 | state as i16 & 0xF;
+    {
+        let gl_i14 = sBitfield;
+        crate::gl!(
+            gSprites[spriteId].data[gl_i14] = ({
+                let gl_i15 = sBitfield;
+                crate::gl!(gSprites[spriteId].data[gl_i15])
+            }) & -16
+                | state as i16 & 0xF
+        )
+    };
 }
 pub unsafe fn SetSurfBlob_DontSyncAnim(spriteId: u8, dontSync: u8) {
-    gSprites[spriteId].data[sBitfield] =
-        gSprites[spriteId].data[sBitfield] & -241 | (dontSync as i16 & 0xF) << 4;
+    {
+        let gl_i16 = sBitfield;
+        crate::gl!(
+            gSprites[spriteId].data[gl_i16] = ({
+                let gl_i17 = sBitfield;
+                crate::gl!(gSprites[spriteId].data[gl_i17])
+            }) & -241
+                | (dontSync as i16 & 0xF) << 4
+        )
+    };
 }
-pub unsafe fn SetSurfBlob_PlayerOffset(spriteId: u8, hasOffset: u8, offset: i16) {
-    gSprites[spriteId].data[sBitfield] =
-        gSprites[spriteId].data[sBitfield] & -3841 | (hasOffset as i16 & 0xF) << 8;
-    gSprites[spriteId].data[sPlayerOffset] = offset;
+pub fn SetSurfBlob_PlayerOffset(spriteId: u8, hasOffset: u8, offset: i16) {
+    {
+        let gl_i18 = sBitfield;
+        crate::gl!(
+            gSprites[spriteId].data[gl_i18] = ({
+                let gl_i19 = sBitfield;
+                crate::gl!(gSprites[spriteId].data[gl_i19])
+            }) & -3841
+                | (hasOffset as i16 & 0xF) << 8
+        )
+    };
+    {
+        let gl_i20 = sPlayerOffset;
+        crate::gl!(gSprites[spriteId].data[gl_i20] = offset)
+    };
 }
 unsafe fn GetSurfBlob_BobState(sprite: *mut Sprite) -> u8 {
     (*sprite).data[sBitfield] as u8 & 0xF
@@ -1138,8 +1240,14 @@ unsafe fn GetSurfBlob_HasPlayerOffset(sprite: *mut Sprite) -> u8 {
     (((*sprite).data[sBitfield] as i32 & 0xF00) >> 8) as u8
 }
 pub unsafe fn UpdateSurfBlobFieldEffect(sprite: *mut Sprite) {
-    let playerObj: *mut ObjectEvent = &raw mut gObjectEvents[(*sprite).data[sPlayerObjId]];
-    let playerSprite: *mut Sprite = &raw mut gSprites[(*playerObj).spriteId];
+    let playerObj: *mut ObjectEvent = {
+        let gl_i1 = (*sprite).data[sPlayerObjId];
+        crate::gl!(&raw gObjectEvents[gl_i1])
+    };
+    let playerSprite: *mut Sprite = {
+        let gl_i21 = (*playerObj).spriteId;
+        crate::gl!(&raw gSprites[gl_i21])
+    };
     SynchronizeSurfAnim(playerObj, sprite);
     SynchronizeSurfPosition(playerObj, sprite);
     UpdateBobbingEffect(playerObj, playerSprite, sprite);
@@ -1224,7 +1332,7 @@ pub unsafe fn StartUnderwaterSurfBlobBobbing(blobSpriteId: u8) -> u8 {
         0,
         255,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).callback = Some(SpriteCB_UnderwaterSurfBlob);
     (*sprite).set_invisible(TRUE as u16);
     (*sprite).data[sSpriteId] = blobSpriteId as i16;
@@ -1232,7 +1340,10 @@ pub unsafe fn StartUnderwaterSurfBlobBobbing(blobSpriteId: u8) -> u8 {
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_UnderwaterSurfBlob(sprite: *mut Sprite) {
-    let blobSprite: *mut Sprite = &raw mut gSprites[(*sprite).data[sSpriteId]];
+    let blobSprite: *mut Sprite = {
+        let gl_i22 = (*sprite).data[sSpriteId];
+        crate::gl!(&raw gSprites[gl_i22])
+    };
     if ({
         let t1 = (*sprite).data[2];
         (*sprite).data[2] += 1;
@@ -1250,23 +1361,25 @@ pub(crate) unsafe fn SpriteCB_UnderwaterSurfBlob(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_Dust() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         12,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[9],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
-        (*sprite).data[sJumpElevation] = gFieldEffectArguments[2] as i16;
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+        (*sprite).data[sJumpElevation] = crate::gl!(gFieldEffectArguments[2]) as i16;
         (*sprite).data[sJumpFldEff] = FLDEFF_DUST as i16;
     }
     0
@@ -1274,11 +1387,11 @@ pub unsafe fn FldEff_Dust() -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_SandPile() -> u32 {
     let objectEventId: u8 = GetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[29],
@@ -1289,16 +1402,22 @@ pub unsafe fn FldEff_SandPile() -> u32 {
     if spriteId != MAX_SPRITES {
         let graphicsInfo: *mut ObjectEventGraphicsInfo =
             GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite)
             .oam
-            .set_priority(gSprites[(*objectEvent).spriteId].oam.priority());
-        (*sprite).data[0] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[1] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[2] = gFieldEffectArguments[2] as i16;
-        (*sprite).data[3] = gSprites[(*objectEvent).spriteId].x;
-        (*sprite).data[4] = gSprites[(*objectEvent).spriteId].y;
+            .set_priority((*gSprites.as_ptr())[(*objectEvent).spriteId].oam.priority());
+        (*sprite).data[0] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[1] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[2]) as i16;
+        (*sprite).data[3] = {
+            let gl_i23 = (*objectEvent).spriteId;
+            crate::gl!(gSprites[gl_i23].x)
+        };
+        (*sprite).data[4] = {
+            let gl_i24 = (*objectEvent).spriteId;
+            crate::gl!(gSprites[gl_i24].y)
+        };
         (*sprite).y2 = ((*graphicsInfo).height >> 1) - 2;
         SeekSpriteAnim(sprite, 2);
     }
@@ -1312,12 +1431,18 @@ pub unsafe fn UpdateSandPileFieldEffect(sprite: *mut Sprite) {
         (*sprite).data[2] as u8,
         &raw mut objectEventId,
     ) != 0
-        || gObjectEvents[objectEventId].inSandPile() == 0
+        || (*gObjectEvents.as_ptr())[objectEventId].inSandPile() == 0
     {
         FieldEffectStop(sprite, FLDEFF_SAND_PILE);
     } else {
-        let parentY: i16 = gSprites[gObjectEvents[objectEventId].spriteId].y;
-        let parentX: i16 = gSprites[gObjectEvents[objectEventId].spriteId].x;
+        let parentY: i16 = {
+            let gl_i25 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(gSprites[gl_i25].y)
+        };
+        let parentX: i16 = {
+            let gl_i26 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(gSprites[gl_i26].x)
+        };
         if parentX != (*sprite).data[3] || parentY != (*sprite).data[4] {
             (*sprite).data[3] = parentX;
             (*sprite).data[4] = parentY;
@@ -1327,27 +1452,30 @@ pub unsafe fn UpdateSandPileFieldEffect(sprite: *mut Sprite) {
         }
         (*sprite).x = parentX;
         (*sprite).y = parentY;
-        (*sprite).subpriority = gSprites[gObjectEvents[objectEventId].spriteId].subpriority;
+        (*sprite).subpriority = {
+            let gl_i27 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+            crate::gl!(gSprites[gl_i27].subpriority)
+        };
         UpdateObjectEventSpriteInvisibility(sprite, FALSE);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_Bubbles() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         0,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[34],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         82,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).oam.set_priority(1);
     }
@@ -1365,22 +1493,24 @@ pub unsafe fn UpdateBubblesFieldEffect(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_BerryTreeGrowthSparkle() -> u32 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         4,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[22],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
-        (*sprite).oam.set_priority(gFieldEffectArguments[3] as u16);
+        (*sprite)
+            .oam
+            .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
         (*sprite).oam.set_paletteNum(5);
         (*sprite).data[sWaitFldEff] = FLDEFF_BERRY_TREE_GROWTH_SPARKLE as i16;
     }
@@ -1401,9 +1531,9 @@ pub unsafe fn ShowSandDisguiseFieldEffect() -> u32 {
 unsafe fn ShowDisguiseFieldEffect(fldEff: u8, fldEffObj: u8, paletteNum: u8) -> u32 {
     let mut spriteId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
         &raw mut spriteId,
     ) != 0
     {
@@ -1418,13 +1548,13 @@ unsafe fn ShowDisguiseFieldEffect(fldEff: u8, fldEffObj: u8, paletteNum: u8) -> 
         0,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         (*sprite).set_coordOffsetEnabled((*sprite).coordOffsetEnabled() + 1);
         (*sprite).oam.set_paletteNum(paletteNum as u16);
         (*sprite).data[1] = fldEff as i16;
-        (*sprite).data[2] = gFieldEffectArguments[0] as i16;
-        (*sprite).data[3] = gFieldEffectArguments[1] as i16;
-        (*sprite).data[4] = gFieldEffectArguments[2] as i16;
+        (*sprite).data[2] = crate::gl!(gFieldEffectArguments[0]) as i16;
+        (*sprite).data[3] = crate::gl!(gFieldEffectArguments[1]) as i16;
+        (*sprite).data[4] = crate::gl!(gFieldEffectArguments[2]) as i16;
     }
     spriteId as u32
 }
@@ -1440,8 +1570,11 @@ pub unsafe fn UpdateDisguiseFieldEffect(sprite: *mut Sprite) {
         FieldEffectStop(sprite, (*sprite).data[1] as u8);
     }
     let graphicsInfo: *mut ObjectEventGraphicsInfo =
-        GetObjectEventGraphicsInfo(gObjectEvents[objectEventId].graphicsId);
-    let linkedSprite: *mut Sprite = &raw mut gSprites[gObjectEvents[objectEventId].spriteId];
+        GetObjectEventGraphicsInfo(crate::gl!(gObjectEvents[objectEventId].graphicsId));
+    let linkedSprite: *mut Sprite = {
+        let gl_i28 = crate::gl!(gObjectEvents[objectEventId].spriteId);
+        crate::gl!(&raw gSprites[gl_i28])
+    };
     (*sprite).set_invisible((*linkedSprite).invisible());
     (*sprite).x = (*linkedSprite).x;
     (*sprite).y = ((*graphicsInfo).height >> 1) + (*linkedSprite).y - 16;
@@ -1459,7 +1592,10 @@ pub unsafe fn UpdateDisguiseFieldEffect(sprite: *mut Sprite) {
 }
 pub unsafe fn StartRevealDisguise(objectEvent: *mut ObjectEvent) {
     if (*objectEvent).directionSequenceIndex == 1 {
-        gSprites[(*objectEvent).fieldEffectSpriteId].data[0] += 1;
+        {
+            let gl_i29 = (*objectEvent).fieldEffectSpriteId;
+            crate::gl!(gSprites[gl_i29].data[0] += 1)
+        };
     }
 }
 pub unsafe fn UpdateRevealDisguise(objectEvent: *mut ObjectEvent) -> u8 {
@@ -1469,7 +1605,10 @@ pub unsafe fn UpdateRevealDisguise(objectEvent: *mut ObjectEvent) -> u8 {
     if (*objectEvent).directionSequenceIndex == 0 {
         return TRUE;
     }
-    let sprite: *mut Sprite = &raw mut gSprites[(*objectEvent).fieldEffectSpriteId];
+    let sprite: *mut Sprite = {
+        let gl_i30 = (*objectEvent).fieldEffectSpriteId;
+        crate::gl!(&raw gSprites[gl_i30])
+    };
     if (*sprite).data[sReadyToEnd] != 0 {
         (*objectEvent).directionSequenceIndex = 2;
         (*sprite).data[0] += 1;
@@ -1479,26 +1618,26 @@ pub unsafe fn UpdateRevealDisguise(objectEvent: *mut ObjectEvent) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_Sparkle() -> u32 {
-    gFieldEffectArguments[0] += MAP_OFFSET;
-    gFieldEffectArguments[1] += MAP_OFFSET;
+    crate::gl!(gFieldEffectArguments[0] += MAP_OFFSET);
+    crate::gl!(gFieldEffectArguments[1] += MAP_OFFSET);
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[35],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         82,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId]
+        (*gSprites.as_ptr())[spriteId]
             .oam
-            .set_priority(gFieldEffectArguments[2] as u16);
-        gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+            .set_priority(crate::gl!(gFieldEffectArguments[2]) as u16);
+        (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
     }
     0
 }
@@ -1687,11 +1826,14 @@ unsafe fn UpdateGrassFieldEffectSubpriority(sprite: *mut Sprite, elevation: u8, 
     let mut ylo: i16 = 0;
     SetObjectSubpriorityByElevation(elevation, sprite, subpriority);
     for i in 0..OBJECT_EVENTS_COUNT {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[i];
+        let objectEvent: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[i]);
         if (*objectEvent).active() != 0 {
             let graphicsInfo: *mut ObjectEventGraphicsInfo =
                 GetObjectEventGraphicsInfo((*objectEvent).graphicsId);
-            let linkedSprite: *mut Sprite = &raw mut gSprites[(*objectEvent).spriteId];
+            let linkedSprite: *mut Sprite = {
+                let gl_i31 = (*objectEvent).spriteId;
+                crate::gl!(&raw gSprites[gl_i31])
+            };
             xhi = (*sprite).x + (*sprite).centerToCornerVecX as i16;
             var = (*sprite).x - (*sprite).centerToCornerVecX as i16;
             if xhi < (*linkedSprite).x && var > (*linkedSprite).x {

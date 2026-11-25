@@ -113,7 +113,7 @@ pub unsafe fn CreateMonIcon(
         iconTemplate.paletteTag = POKE_ICON_BASE_PAL_TAG;
     }
     let spriteId: u8 = CreateMonIconSprite(&raw mut iconTemplate, x, y, subpriority);
-    UpdateMonIconFrame(&raw mut gSprites[spriteId]);
+    UpdateMonIconFrame(crate::gl!(&raw gSprites[spriteId]));
     spriteId
 }
 pub unsafe fn CreateMonIconNoPersonality(
@@ -133,7 +133,7 @@ pub unsafe fn CreateMonIconNoPersonality(
     iconTemplate.paletteTag = POKE_ICON_BASE_PAL_TAG + gMonIconPaletteIndices[species] as u16;
     iconTemplate.image = GetMonIconTiles(species, handleDeoxys);
     let spriteId: u8 = CreateMonIconSprite(&raw mut iconTemplate, x, y, subpriority);
-    UpdateMonIconFrame(&raw mut gSprites[spriteId]);
+    UpdateMonIconFrame(crate::gl!(&raw gSprites[spriteId]));
     spriteId
 }
 pub unsafe fn GetIconSpecies(species: u16, personality: u32) -> u16 {
@@ -257,7 +257,7 @@ pub fn GetValidMonIconPalIndex(mut species: u16) -> u8 {
     }
     gMonIconPaletteIndices[species]
 }
-pub unsafe fn GetMonIconPaletteIndexFromSpecies(species: u16) -> u8 {
+pub fn GetMonIconPaletteIndexFromSpecies(species: u16) -> u8 {
     gMonIconPaletteIndices[species]
 }
 pub unsafe fn GetValidMonIconPalettePtr(mut species: u16) -> *mut u16 {
@@ -318,9 +318,9 @@ pub(crate) unsafe fn CreateMonIconSprite(
     spriteTemplate.affineAnims = (*iconTemplate).affineAnims;
     spriteTemplate.callback = (*iconTemplate).callback;
     let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, x, y, subpriority);
-    gSprites[spriteId].set_animPaused(TRUE);
-    gSprites[spriteId].set_animBeginning(FALSE as u16);
-    gSprites[spriteId].images = (*iconTemplate).image as *mut SpriteFrameImage;
+    (*gSprites.as_ptr())[spriteId].set_animPaused(TRUE);
+    (*gSprites.as_ptr())[spriteId].set_animBeginning(FALSE as u16);
+    crate::gl!(gSprites[spriteId].images = (*iconTemplate).image as *mut SpriteFrameImage);
     spriteId
 }
 unsafe fn FreeAndDestroyMonIconSprite_(sprite: *mut Sprite) {

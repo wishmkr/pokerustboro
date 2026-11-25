@@ -99,14 +99,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -121,7 +121,7 @@ unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -133,7 +133,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
@@ -345,24 +345,31 @@ static sUsePokeblockYesNoWinTemplate: Table<WindowTemplate> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 4>> =
     Table((&raw const crate::data::use_pokeblock::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sInfo: *mut UsePokeblockSession = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sExitCallback: Option<unsafe fn()> = None;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokeblock: *mut Pokeblock = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sInfo: crate::global::Global<*mut UsePokeblockSession> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sExitCallback: crate::global::Global<Option<unsafe fn()>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sPokeblock: crate::global::Global<*mut Pokeblock> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gPokeblockMonId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gPokeblockGain: crate::global::Global<i16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sGraph_Tilemap: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sGraph_Gfx: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMonFrame_TilemapPtr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenu: *mut UsePokeblockMenu = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sGraph_Tilemap: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sGraph_Gfx: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMonFrame_TilemapPtr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMenu: crate::global::Global<*mut UsePokeblockMenu> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -399,14 +406,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -420,20 +427,20 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 pub unsafe fn ChooseMonToGivePokeblock(pokeblock: *mut Pokeblock, callback: Option<unsafe fn()>) {
-    sMenu = AllocZeroed(32876) as *mut UsePokeblockMenu;
-    sInfo = &raw mut (*sMenu).info;
-    (*sInfo).pokeblock = pokeblock;
-    (*sInfo).exitCallback = callback;
+    crate::gl!(sMenu = AllocZeroed(32876) as *mut UsePokeblockMenu);
+    crate::gl!(sInfo = &raw mut (*crate::gl!(sMenu)).info);
+    (*crate::gl!(sInfo)).pokeblock = pokeblock;
+    (*crate::gl!(sInfo)).exitCallback = callback;
     SetUsePokeblockCallback(Some(LoadUsePokeblockMenu));
     SetMainCallback2(Some(CB2_UsePokeblockMenu));
 }
 pub(crate) unsafe fn CB2_ReturnAndChooseMonToGivePokeblock() {
-    sMenu = AllocZeroed(32876) as *mut UsePokeblockMenu;
-    sInfo = &raw mut (*sMenu).info;
-    (*sInfo).pokeblock = sPokeblock;
-    (*sInfo).exitCallback = sExitCallback;
+    crate::gl!(sMenu = AllocZeroed(32876) as *mut UsePokeblockMenu);
+    crate::gl!(sInfo = &raw mut (*crate::gl!(sMenu)).info);
+    (*crate::gl!(sInfo)).pokeblock = crate::gl!(sPokeblock);
+    (*crate::gl!(sInfo)).exitCallback = crate::gl!(sExitCallback);
     gPokeblockMonId.set(GetSelectionIdFromPartyId(gPokeblockMonId.get()));
-    (*sInfo).monInTopHalf = (if gPokeblockMonId.get() <= 3 {
+    (*crate::gl!(sInfo)).monInTopHalf = (if gPokeblockMonId.get() <= 3 {
         FALSE as i32
     } else {
         TRUE as i32
@@ -442,12 +449,12 @@ pub(crate) unsafe fn CB2_ReturnAndChooseMonToGivePokeblock() {
     SetMainCallback2(Some(CB2_ReturnToUsePokeblockMenu));
 }
 pub(crate) unsafe fn CB2_ReturnToUsePokeblockMenu() {
-    (*sInfo).callback.unwrap_unchecked()();
+    (*crate::gl!(sInfo)).callback.unwrap_unchecked()();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
-    if (*sInfo).callback == Some(ShowUsePokeblockMenu as unsafe fn()) {
-        (*sInfo).mainState = 0;
+    if (*crate::gl!(sInfo)).callback == Some(ShowUsePokeblockMenu as unsafe fn()) {
+        (*crate::gl!(sInfo)).mainState = 0;
         SetMainCallback2(Some(CB2_ShowUsePokeblockMenuForResults));
     }
 }
@@ -458,7 +465,7 @@ pub(crate) unsafe fn CB2_ShowUsePokeblockMenuForResults() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn CB2_UsePokeblockMenu() {
-    (*sInfo).callback.unwrap_unchecked()();
+    (*crate::gl!(sInfo)).callback.unwrap_unchecked()();
     AnimateSprites();
     BuildOamBuffer();
     RunTextPrinters();
@@ -468,24 +475,24 @@ pub(crate) unsafe fn VBlankCB_UsePokeblockMenu() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
-    ConditionGraph_Draw(&raw mut (*sMenu).graph);
+    ConditionGraph_Draw(&raw mut (*crate::gl!(sMenu)).graph);
     ScanlineEffect_InitHBlankDmaTransfer();
 }
 unsafe fn SetUsePokeblockCallback(func: Option<unsafe fn()>) {
-    (*sInfo).callback = func;
-    (*sInfo).mainState = 0;
+    (*crate::gl!(sInfo)).callback = func;
+    (*crate::gl!(sInfo)).mainState = 0;
 }
 pub(crate) unsafe fn LoadUsePokeblockMenu() {
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         0 => {
-            (*sMenu).curMonSpriteId = SPRITE_NONE;
-            ConditionGraph_Init(&raw mut (*sMenu).graph);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sMenu)).curMonSpriteId = SPRITE_NONE;
+            ConditionGraph_Init(&raw mut (*crate::gl!(sMenu)).graph);
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         1 => {
             ResetSpriteData();
             FreeAllSpritePalettes();
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         2 => {
             SetVBlankCallback(None);
@@ -500,7 +507,7 @@ pub(crate) unsafe fn LoadUsePokeblockMenu() {
                     );
                 }
             }
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         3 => {
             ResetBgsAndClearDma3BusyFlags(0);
@@ -508,66 +515,66 @@ pub(crate) unsafe fn LoadUsePokeblockMenu() {
             InitWindows(sWindowTemplates.as_ptr().cast_mut());
             DeactivateAllTextPrinters();
             LoadUserWindowBorderGfx(0, 0x97, 224);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         4 => {
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         5 => {
             if LoadConditionTitle() == 0 {
-                (*sInfo).mainState += 1;
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
         6 => {
-            gKeyRepeatStartDelay = 20;
+            gKeyRepeatStartDelay.set(20);
             LoadPartyInfo();
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         7 => {
             if LoadUsePokeblockMenuGfx() == 0 {
-                (*sInfo).mainState += 1;
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
         8 => {
             UpdateMonPic(0);
             LoadAndCreateSelectionIcons();
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         9 => {
-            if MoveConditionMonOnscreen(&raw mut (*sMenu).curMonXOffset) == 0 {
-                (*sInfo).mainState += 1;
+            if MoveConditionMonOnscreen(&raw mut (*crate::gl!(sMenu)).curMonXOffset) == 0 {
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
         10 => {
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         11 => {
             ConditionGraph_CalcPositions(
-                (*sMenu).graph.conditions[0].as_mut_ptr(),
-                (*sMenu).graph.savedPositions[0].as_mut_ptr(),
+                (*crate::gl!(sMenu)).graph.conditions[0].as_mut_ptr(),
+                (*crate::gl!(sMenu)).graph.savedPositions[0].as_mut_ptr(),
             );
-            ConditionGraph_InitResetScanline(&raw mut (*sMenu).graph);
-            (*sInfo).mainState += 1;
+            ConditionGraph_InitResetScanline(&raw mut (*crate::gl!(sMenu)).graph);
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         12 => {
-            if ConditionGraph_ResetScanline(&raw mut (*sMenu).graph) == 0 {
+            if ConditionGraph_ResetScanline(&raw mut (*crate::gl!(sMenu)).graph) == 0 {
                 ConditionGraph_SetNewPositions(
-                    &raw mut (*sMenu).graph,
-                    (*sMenu).graph.savedPositions[0].as_mut_ptr(),
-                    (*sMenu).graph.savedPositions[0].as_mut_ptr(),
+                    &raw mut (*crate::gl!(sMenu)).graph,
+                    (*crate::gl!(sMenu)).graph.savedPositions[0].as_mut_ptr(),
+                    (*crate::gl!(sMenu)).graph.savedPositions[0].as_mut_ptr(),
                 );
-                (*sInfo).mainState += 1;
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
         13 => {
-            ConditionGraph_Update(&raw mut (*sMenu).graph);
-            (*sInfo).mainState += 1;
+            ConditionGraph_Update(&raw mut (*crate::gl!(sMenu)).graph);
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         14 => {
             PutWindowTilemap(WIN_NAME);
             PutWindowTilemap(WIN_NATURE);
             UpdateMonInfoText(0, TRUE);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         15 => {
             SetUsePokeblockCallback(Some(ShowUsePokeblockMenu));
@@ -576,7 +583,7 @@ pub(crate) unsafe fn LoadUsePokeblockMenu() {
     }
 }
 pub(crate) unsafe fn ShowUsePokeblockMenu() {
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             SetVBlankCallback(Some(VBlankCB_UsePokeblockMenu));
@@ -584,15 +591,18 @@ pub(crate) unsafe fn ShowUsePokeblockMenu() {
             ShowBg(1);
             ShowBg(3);
             ShowBg(2);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
-        1 if gPaletteFade.active() == 0 => {
-            ResetConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
-            if (*sMenu).info.curSelection as i32 != (*sMenu).info.numSelections as i32 - 1 {
-                let numSparkles: u8 = (*sMenu).numSparkles[(*sMenu).curLoadId];
+        1 if (*gPaletteFade.as_ptr()).active() == 0 => {
+            ResetConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
+            if (*crate::gl!(sMenu)).info.curSelection as i32
+                != (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+            {
+                let numSparkles: u8 =
+                    (*crate::gl!(sMenu)).numSparkles[(*crate::gl!(sMenu)).curLoadId];
                 CreateConditionSparkleSprites(
-                    (*sMenu).sparkles.as_mut_ptr(),
-                    (*sMenu).curMonSpriteId,
+                    (*crate::gl!(sMenu)).sparkles.as_mut_ptr(),
+                    (*crate::gl!(sMenu)).curMonSpriteId,
                     numSparkles,
                 );
             }
@@ -603,34 +613,39 @@ pub(crate) unsafe fn ShowUsePokeblockMenu() {
 }
 pub(crate) unsafe fn UsePokeblockMenu() {
     let mut loading: u8 = 0;
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         STATE_HANDLE_INPUT => {
-            if gMain.heldKeys as i32 & DPAD_UP != 0 {
+            if crate::gl!(gMain.heldKeys) as i32 & DPAD_UP != 0 {
                 PlaySE(SE_SELECT);
                 UpdateSelection(TRUE);
-                DestroyConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
-                (*sInfo).mainState = STATE_UPDATE_SELECTION;
-            } else if gMain.heldKeys as i32 & DPAD_DOWN != 0 {
+                DestroyConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
+                (*crate::gl!(sInfo)).mainState = STATE_UPDATE_SELECTION;
+            } else if crate::gl!(gMain.heldKeys) as i32 & DPAD_DOWN != 0 {
                 PlaySE(SE_SELECT);
                 UpdateSelection(FALSE);
-                DestroyConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
-                (*sInfo).mainState = STATE_UPDATE_SELECTION;
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                DestroyConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
+                (*crate::gl!(sInfo)).mainState = STATE_UPDATE_SELECTION;
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                (*sInfo).mainState = STATE_CLOSE;
-            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+                (*crate::gl!(sInfo)).mainState = STATE_CLOSE;
+            } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                if (*sMenu).info.curSelection as i32 == (*sMenu).info.numSelections as i32 - 1 {
-                    (*sInfo).mainState = STATE_CLOSE;
+                if (*crate::gl!(sMenu)).info.curSelection as i32
+                    == (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+                {
+                    (*crate::gl!(sInfo)).mainState = STATE_CLOSE;
                 } else {
-                    (*sInfo).mainState = STATE_CONFIRM_SELECTION;
+                    (*crate::gl!(sInfo)).mainState = STATE_CONFIRM_SELECTION;
                 }
             }
         }
         STATE_UPDATE_SELECTION => {
-            loading = (*sMenu).info.loadNewSelection.unwrap_unchecked()();
+            loading = (*crate::gl!(sMenu))
+                .info
+                .loadNewSelection
+                .unwrap_unchecked()();
             if loading == 0 {
-                (*sInfo).mainState = STATE_HANDLE_INPUT;
+                (*crate::gl!(sInfo)).mainState = STATE_HANDLE_INPUT;
             }
         }
         STATE_2 => {}
@@ -640,50 +655,52 @@ pub(crate) unsafe fn UsePokeblockMenu() {
         STATE_4 => {}
         STATE_CONFIRM_SELECTION => {
             AskUsePokeblock();
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         STATE_HANDLE_CONFIRMATION => match HandleAskUsePokeblockInput() {
             1 | MENU_B_PRESSED => {
-                (*sInfo).mainState = STATE_HANDLE_INPUT;
+                (*crate::gl!(sInfo)).mainState = STATE_HANDLE_INPUT;
             }
             0 => {
                 if IsSheenMaxed() != 0 {
                     PrintWontEatAnymore();
-                    (*sInfo).mainState = STATE_WAIT_MSG;
+                    (*crate::gl!(sInfo)).mainState = STATE_WAIT_MSG;
                 } else {
                     SetUsePokeblockCallback(Some(FeedPokeblockToMon));
                 }
             }
             _ => {}
         },
-        STATE_WAIT_MSG if gMain.newKeys as i32 & 3 != 0 => {
+        STATE_WAIT_MSG if crate::gl!(gMain.newKeys) as i32 & 3 != 0 => {
             EraseMenuWindow();
-            (*sInfo).mainState = STATE_HANDLE_INPUT;
+            (*crate::gl!(sInfo)).mainState = STATE_HANDLE_INPUT;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn FeedPokeblockToMon() {
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         0 => {
-            gPokeblockMonId.set(GetPartyIdFromSelectionId((*sMenu).info.curSelection));
-            sExitCallback = (*sInfo).exitCallback;
-            sPokeblock = (*sInfo).pokeblock;
+            gPokeblockMonId.set(GetPartyIdFromSelectionId(
+                (*crate::gl!(sMenu)).info.curSelection,
+            ));
+            crate::gl!(sExitCallback = (*crate::gl!(sInfo)).exitCallback);
+            crate::gl!(sPokeblock = (*crate::gl!(sInfo)).pokeblock);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
-        1 if gPaletteFade.active() == 0 => {
+        1 if (*gPaletteFade.as_ptr()).active() == 0 => {
             SetVBlankCallback(None);
-            Free(sGraph_Tilemap as *mut c_void);
-            sGraph_Tilemap = null_mut();
-            Free(sGraph_Gfx as *mut c_void);
-            sGraph_Gfx = null_mut();
-            Free(sMonFrame_TilemapPtr as *mut c_void);
-            sMonFrame_TilemapPtr = null_mut();
-            Free(sMenu as *mut c_void);
-            sMenu = null_mut();
+            Free(crate::gl!(sGraph_Tilemap) as *mut c_void);
+            crate::gl!(sGraph_Tilemap = null_mut());
+            Free(crate::gl!(sGraph_Gfx) as *mut c_void);
+            crate::gl!(sGraph_Gfx = null_mut());
+            Free(crate::gl!(sMonFrame_TilemapPtr) as *mut c_void);
+            crate::gl!(sMonFrame_TilemapPtr = null_mut());
+            Free(crate::gl!(sMenu) as *mut c_void);
+            crate::gl!(sMenu = null_mut());
             FreeAllWindowBuffers();
-            gMain.savedCallback = Some(CB2_ReturnAndChooseMonToGivePokeblock);
+            crate::gl!(gMain.savedCallback = Some(CB2_ReturnAndChooseMonToGivePokeblock));
             PreparePokeblockFeedScene();
         }
         _ => {}
@@ -691,40 +708,43 @@ pub(crate) unsafe fn FeedPokeblockToMon() {
 }
 unsafe fn ShowUsePokeblockMenuForResults() {
     let mut loading: u8 = 0;
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         0 => {
-            if (*sMenu).info.curSelection != gPokeblockMonId.get() {
-                UpdateSelection((*sInfo).monInTopHalf);
-                (*sInfo).mainState += 1;
+            if (*crate::gl!(sMenu)).info.curSelection != gPokeblockMonId.get() {
+                UpdateSelection((*crate::gl!(sInfo)).monInTopHalf);
+                (*crate::gl!(sInfo)).mainState += 1;
             } else {
-                (*sInfo).mainState = 3;
+                (*crate::gl!(sInfo)).mainState = 3;
             }
         }
         1 => {
-            loading = (*sMenu).info.loadNewSelection.unwrap_unchecked()();
+            loading = (*crate::gl!(sMenu))
+                .info
+                .loadNewSelection
+                .unwrap_unchecked()();
             if loading == 0 {
-                (*sInfo).mainState = 0;
+                (*crate::gl!(sInfo)).mainState = 0;
             }
         }
         2 => {}
         3 => {
             BlendPalettes(PALETTES_ALL, 16, 0);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         4 => {
             ShowBg(0);
             ShowBg(1);
             ShowBg(3);
             ShowBg(2);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         5 => {
             SetVBlankCallback(Some(VBlankCB_UsePokeblockMenu));
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
-        6 if gPaletteFade.active() == 0 => {
-            ResetConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
+        6 if (*gPaletteFade.as_ptr()).active() == 0 => {
+            ResetConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
             SetUsePokeblockCallback(Some(ShowPokeblockResults));
             SetMainCallback2(Some(CB2_UsePokeblockMenu));
         }
@@ -732,109 +752,115 @@ unsafe fn ShowUsePokeblockMenuForResults() {
     }
 }
 pub(crate) unsafe fn ShowPokeblockResults() {
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         0 => {
-            (*sInfo).mon = gPlayerParty.as_mut_ptr();
-            (*sInfo).mon = (*sInfo)
+            (*crate::gl!(sInfo)).mon = (*gPlayerParty.as_ptr()).as_mut_ptr();
+            (*crate::gl!(sInfo)).mon = (*crate::gl!(sInfo))
                 .mon
-                .at((*sMenu).party[(*sMenu).info.curSelection].monId);
-            DestroyConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
-            (*sInfo).mainState += 1;
+                .at((*crate::gl!(sMenu)).party[(*crate::gl!(sMenu)).info.curSelection].monId);
+            DestroyConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         1 => {
-            if gMain.newKeys as i32 & 3 != 0 {
-                (*sInfo).mainState += 1;
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
         2 => {
             CalculateConditionEnhancements();
             ConditionGraph_CalcPositions(
-                (*sInfo).conditionsAfterBlock.as_mut_ptr(),
-                (*sMenu).graph.savedPositions[3].as_mut_ptr(),
+                (*crate::gl!(sInfo)).conditionsAfterBlock.as_mut_ptr(),
+                (*crate::gl!(sMenu)).graph.savedPositions[3].as_mut_ptr(),
             );
             ConditionGraph_SetNewPositions(
-                &raw mut (*sMenu).graph,
-                (*sMenu).graph.savedPositions[(*sMenu).curLoadId].as_mut_ptr(),
-                (*sMenu).graph.savedPositions[3].as_mut_ptr(),
+                &raw mut (*crate::gl!(sMenu)).graph,
+                (*crate::gl!(sMenu)).graph.savedPositions[(*crate::gl!(sMenu)).curLoadId]
+                    .as_mut_ptr(),
+                (*crate::gl!(sMenu)).graph.savedPositions[3].as_mut_ptr(),
             );
             LoadAndCreateUpDownSprites();
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         3 => {
-            if ConditionGraph_TryUpdate(&raw mut (*sMenu).graph) == 0 {
+            if ConditionGraph_TryUpdate(&raw mut (*crate::gl!(sMenu)).graph) == 0 {
                 CalculateNumAdditionalSparkles(GetPartyIdFromSelectionId(
-                    (*sMenu).info.curSelection,
+                    (*crate::gl!(sMenu)).info.curSelection,
                 ));
-                if (*sMenu).info.curSelection as i32 != (*sMenu).info.numSelections as i32 - 1 {
-                    let numSparkles: u8 = (*sMenu).numSparkles[(*sMenu).curLoadId];
+                if (*crate::gl!(sMenu)).info.curSelection as i32
+                    != (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+                {
+                    let numSparkles: u8 =
+                        (*crate::gl!(sMenu)).numSparkles[(*crate::gl!(sMenu)).curLoadId];
                     CreateConditionSparkleSprites(
-                        (*sMenu).sparkles.as_mut_ptr(),
-                        (*sMenu).curMonSpriteId,
+                        (*crate::gl!(sMenu)).sparkles.as_mut_ptr(),
+                        (*crate::gl!(sMenu)).curMonSpriteId,
                         numSparkles,
                     );
                 }
-                (*sInfo).timer = 0;
-                (*sInfo).mainState += 1;
+                (*crate::gl!(sInfo)).timer = 0;
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
         4 => {
             if ({
-                (*sInfo).timer += 1;
-                (*sInfo).timer
+                (*crate::gl!(sInfo)).timer += 1;
+                (*crate::gl!(sInfo)).timer
             }) > 16
             {
                 PrintFirstEnhancement();
-                (*sInfo).mainState += 1;
+                (*crate::gl!(sInfo)).mainState += 1;
             }
         }
-        5 if gMain.newKeys as i32 & 3 != 0 && TryPrintNextEnhancement() == 0 => {
-            TryClearPokeblock(gSpecialVar_ItemId as u8);
+        5 if crate::gl!(gMain.newKeys) as i32 & 3 != 0 && TryPrintNextEnhancement() == 0 => {
+            TryClearPokeblock(gSpecialVar_ItemId.get() as u8);
             SetUsePokeblockCallback(Some(CloseUsePokeblockMenu));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn CloseUsePokeblockMenu() {
-    match (*sInfo).mainState {
+    match (*crate::gl!(sInfo)).mainState {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         1 => {
-            if gPaletteFade.active() == 0 {
-                (*sInfo).mainState = 2;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sInfo)).mainState = 2;
             }
         }
         2 => {
-            gScanlineEffect.state = 3;
+            crate::gl!(gScanlineEffect.state = 3);
             ScanlineEffect_InitHBlankDmaTransfer();
-            (*sInfo).mainState += 1;
+            (*crate::gl!(sInfo)).mainState += 1;
         }
         3 => {
-            SetMainCallback2((*sInfo).exitCallback);
-            FreeConditionSparkles((*sMenu).sparkles.as_mut_ptr());
+            SetMainCallback2((*crate::gl!(sInfo)).exitCallback);
+            FreeConditionSparkles((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
             for i in 0..7u8 {
-                DestroySprite(&raw mut gSprites[(*sMenu).selectionIconSpriteIds[i]]);
+                DestroySprite(
+                    &raw mut (*gSprites.as_ptr())[(*crate::gl!(sMenu)).selectionIconSpriteIds[i]],
+                );
             }
             FreeSpriteTilesByTag(TAG_UP_DOWN);
             FreeSpriteTilesByTag(TAG_CONDITION);
             FreeSpritePaletteByTag(TAG_UP_DOWN);
             FreeSpritePaletteByTag(TAG_CONDITION);
             for i in 0..2u8 {
-                DestroySprite((*sMenu).condition[i]);
+                DestroySprite((*crate::gl!(sMenu)).condition[i]);
             }
-            if (*sMenu).curMonSpriteId != SPRITE_NONE {
-                DestroySprite(&raw mut gSprites[(*sMenu).curMonSpriteId]);
+            if (*crate::gl!(sMenu)).curMonSpriteId != SPRITE_NONE {
+                DestroySprite(&raw mut (*gSprites.as_ptr())[(*crate::gl!(sMenu)).curMonSpriteId]);
             }
             SetVBlankCallback(None);
-            Free(sGraph_Tilemap as *mut c_void);
-            sGraph_Tilemap = null_mut();
-            Free(sGraph_Gfx as *mut c_void);
-            sGraph_Gfx = null_mut();
-            Free(sMonFrame_TilemapPtr as *mut c_void);
-            sMonFrame_TilemapPtr = null_mut();
-            Free(sMenu as *mut c_void);
-            sMenu = null_mut();
+            Free(crate::gl!(sGraph_Tilemap) as *mut c_void);
+            crate::gl!(sGraph_Tilemap = null_mut());
+            Free(crate::gl!(sGraph_Gfx) as *mut c_void);
+            crate::gl!(sGraph_Gfx = null_mut());
+            Free(crate::gl!(sMonFrame_TilemapPtr) as *mut c_void);
+            crate::gl!(sMonFrame_TilemapPtr = null_mut());
+            Free(crate::gl!(sMenu) as *mut c_void);
+            crate::gl!(sMenu = null_mut());
             FreeAllWindowBuffers();
         }
         _ => {}
@@ -843,7 +869,8 @@ pub(crate) unsafe fn CloseUsePokeblockMenu() {
 unsafe fn AskUsePokeblock() {
     let mut stringBuffer: CArray<u8, 64> = zeroed();
     GetMonData3(
-        &raw mut gPlayerParty[GetPartyIdFromSelectionId((*sMenu).info.curSelection)],
+        &raw mut (*gPlayerParty.as_ptr())
+            [GetPartyIdFromSelectionId((*crate::gl!(sMenu)).info.curSelection)],
         MON_DATA_NICKNAME,
         stringBuffer.as_mut_ptr(),
     );
@@ -891,21 +918,21 @@ unsafe fn HandleAskUsePokeblockInput() -> i8 {
 unsafe fn PrintFirstEnhancement() {
     DrawTextBorderOuter(WIN_TEXT, 151, 14);
     FillWindowPixelBuffer(WIN_TEXT, 17);
-    (*sInfo).condition = 0;
-    while (*sInfo).condition < CONDITION_COUNT as u8 {
-        if (*sInfo).enhancements[(*sInfo).condition] != 0 {
+    (*crate::gl!(sInfo)).condition = 0;
+    while (*crate::gl!(sInfo)).condition < CONDITION_COUNT as u8 {
+        if (*crate::gl!(sInfo)).enhancements[(*crate::gl!(sInfo)).condition] != 0 {
             break;
         }
-        (*sInfo).condition += 1;
+        (*crate::gl!(sInfo)).condition += 1;
     }
-    if (*sInfo).condition < CONDITION_COUNT as u8 {
+    if (*crate::gl!(sInfo)).condition < CONDITION_COUNT as u8 {
         BufferEnhancedText(
             gStringVar4.as_mut_ptr(),
-            (*sInfo).condition,
-            (*sInfo).enhancements[(*sInfo).condition] as i16,
+            (*crate::gl!(sInfo)).condition,
+            (*crate::gl!(sInfo)).enhancements[(*crate::gl!(sInfo)).condition] as i16,
         );
     } else {
-        BufferEnhancedText(gStringVar4.as_mut_ptr(), (*sInfo).condition, 0);
+        BufferEnhancedText(gStringVar4.as_mut_ptr(), (*crate::gl!(sInfo)).condition, 0);
     }
     PrintMenuWindowText(gStringVar4.as_mut_ptr());
     PutWindowTilemap(WIN_TEXT);
@@ -914,20 +941,20 @@ unsafe fn PrintFirstEnhancement() {
 unsafe fn TryPrintNextEnhancement() -> u8 {
     FillWindowPixelBuffer(WIN_TEXT, 17);
     loop {
-        (*sInfo).condition += 1;
-        if (*sInfo).condition < CONDITION_COUNT as u8 {
-            if (*sInfo).enhancements[(*sInfo).condition] != 0 {
+        (*crate::gl!(sInfo)).condition += 1;
+        if (*crate::gl!(sInfo)).condition < CONDITION_COUNT as u8 {
+            if (*crate::gl!(sInfo)).enhancements[(*crate::gl!(sInfo)).condition] != 0 {
                 break;
             }
         } else {
-            (*sInfo).condition = CONDITION_COUNT as u8;
+            (*crate::gl!(sInfo)).condition = CONDITION_COUNT as u8;
             return FALSE;
         }
     }
     BufferEnhancedText(
         gStringVar4.as_mut_ptr(),
-        (*sInfo).condition,
-        (*sInfo).enhancements[(*sInfo).condition] as i16,
+        (*crate::gl!(sInfo)).condition,
+        (*crate::gl!(sInfo)).enhancements[(*crate::gl!(sInfo)).condition] as i16,
     );
     PrintMenuWindowText(gStringVar4.as_mut_ptr());
     CopyWindowToVram(WIN_TEXT, COPYWIN_GFX);
@@ -1010,7 +1037,7 @@ unsafe fn AddPokeblockToConditions(pokeblock: *mut Pokeblock, mon: *mut Pokemon)
         CalculatePokeblockEffectiveness(pokeblock, mon);
         for i in 0..CONDITION_COUNT {
             data = GetMonData2(mon, sConditionToMonData[i] as i32) as u8;
-            stat = data as i16 + (*sInfo).pokeblockStatBoosts[i];
+            stat = data as i16 + (*crate::gl!(sInfo)).pokeblockStatBoosts[i];
             if stat < 0 {
                 stat = 0;
             }
@@ -1033,24 +1060,24 @@ unsafe fn AddPokeblockToConditions(pokeblock: *mut Pokeblock, mon: *mut Pokemon)
     }
 }
 unsafe fn CalculateConditionEnhancements() {
-    let mut mon: *mut Pokemon = gPlayerParty.as_mut_ptr();
-    mon = mon.at((*sMenu).party[(*sMenu).info.curSelection].monId);
-    GetMonConditions(mon, (*sInfo).conditionsBeforeBlock.as_mut_ptr());
-    AddPokeblockToConditions((*sInfo).pokeblock, mon);
-    GetMonConditions(mon, (*sInfo).conditionsAfterBlock.as_mut_ptr());
+    let mut mon: *mut Pokemon = (*gPlayerParty.as_ptr()).as_mut_ptr();
+    mon = mon.at((*crate::gl!(sMenu)).party[(*crate::gl!(sMenu)).info.curSelection].monId);
+    GetMonConditions(mon, (*crate::gl!(sInfo)).conditionsBeforeBlock.as_mut_ptr());
+    AddPokeblockToConditions((*crate::gl!(sInfo)).pokeblock, mon);
+    GetMonConditions(mon, (*crate::gl!(sInfo)).conditionsAfterBlock.as_mut_ptr());
     for i in 0..CONDITION_COUNT {
-        (*sInfo).enhancements[i] =
-            (*sInfo).conditionsAfterBlock[i] - (*sInfo).conditionsBeforeBlock[i];
+        (*crate::gl!(sInfo)).enhancements[i] = (*crate::gl!(sInfo)).conditionsAfterBlock[i]
+            - (*crate::gl!(sInfo)).conditionsBeforeBlock[i];
     }
 }
 unsafe fn CalculatePokeblockEffectiveness(pokeblock: *mut Pokeblock, mon: *mut Pokemon) {
     let mut direction: i8 = 0;
     let mut flavor: i8 = 0;
-    (*sInfo).pokeblockStatBoosts[0] = (*pokeblock).spicy as i16;
-    (*sInfo).pokeblockStatBoosts[1] = (*pokeblock).sour as i16;
-    (*sInfo).pokeblockStatBoosts[2] = (*pokeblock).bitter as i16;
-    (*sInfo).pokeblockStatBoosts[3] = (*pokeblock).sweet as i16;
-    (*sInfo).pokeblockStatBoosts[4] = (*pokeblock).dry as i16;
+    (*crate::gl!(sInfo)).pokeblockStatBoosts[0] = (*pokeblock).spicy as i16;
+    (*crate::gl!(sInfo)).pokeblockStatBoosts[1] = (*pokeblock).sour as i16;
+    (*crate::gl!(sInfo)).pokeblockStatBoosts[2] = (*pokeblock).bitter as i16;
+    (*crate::gl!(sInfo)).pokeblockStatBoosts[3] = (*pokeblock).sweet as i16;
+    (*crate::gl!(sInfo)).pokeblockStatBoosts[4] = (*pokeblock).dry as i16;
     if gPokeblockGain.get() > 0 {
         direction = 1;
     } else if gPokeblockGain.get() < 0 {
@@ -1059,21 +1086,21 @@ unsafe fn CalculatePokeblockEffectiveness(pokeblock: *mut Pokeblock, mon: *mut P
         return;
     }
     for i in 0..(CONDITION_COUNT as i8) {
-        let amount: i16 = (*sInfo).pokeblockStatBoosts[i];
+        let amount: i16 = (*crate::gl!(sInfo)).pokeblockStatBoosts[i];
         let mut boost: i8 = (amount / 10) as i8;
         if amount % 10 >= 5 {
             boost += 1;
         }
         flavor = GetMonFlavorRelation(mon, sConditionToFlavor[i]);
         if flavor == direction {
-            (*sInfo).pokeblockStatBoosts[i] += boost as i16 * flavor as i16;
+            (*crate::gl!(sInfo)).pokeblockStatBoosts[i] += boost as i16 * flavor as i16;
         }
     }
 }
 unsafe fn IsSheenMaxed() -> u8 {
     if GetBoxOrPartyMonData(
-        (*sMenu).party[(*sMenu).info.curSelection].boxId as u16,
-        (*sMenu).party[(*sMenu).info.curSelection].monId as u16,
+        (*crate::gl!(sMenu)).party[(*crate::gl!(sMenu)).info.curSelection].boxId as u16,
+        (*crate::gl!(sMenu)).party[(*crate::gl!(sMenu)).info.curSelection].monId as u16,
         MON_DATA_SHEEN,
         null_mut(),
     ) == MAX_SHEEN as i32
@@ -1089,7 +1116,7 @@ unsafe fn IsSheenMaxed() -> u8 {
 }
 unsafe fn GetPartyIdFromSelectionId(mut selectionId: u8) -> u8 {
     for i in 0..(PARTY_SIZE as u8) {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0 {
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0 {
             if selectionId == 0 {
                 return i;
             }
@@ -1101,7 +1128,7 @@ unsafe fn GetPartyIdFromSelectionId(mut selectionId: u8) -> u8 {
 unsafe fn GetSelectionIdFromPartyId(partyId: u8) -> u8 {
     let mut numEggs: u8 = 0;
     for i in 0..partyId {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) != 0 {
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) != 0 {
             numEggs += 1;
         }
     }
@@ -1113,9 +1140,9 @@ unsafe fn GetPartyIdFromSelectionId_(selectionId: u8) -> u8 {
 unsafe fn LoadAndCreateUpDownSprites() {
     LoadSpriteSheet((&raw const *sSpriteSheet_UpDown).cast_mut());
     LoadSpritePalette((&raw const *sSpritePalette_UpDown).cast_mut());
-    (*sInfo).numEnhancements = 0;
+    (*crate::gl!(sInfo)).numEnhancements = 0;
     for i in 0..CONDITION_COUNT {
-        if (*sInfo).enhancements[i] != 0 {
+        if (*crate::gl!(sInfo)).enhancements[i] != 0 {
             let spriteId: u16 = CreateSprite(
                 (&raw const *sSpriteTemplate_UpDown).cast_mut(),
                 sUpDownCoordsOnGraph[i][0],
@@ -1123,10 +1150,10 @@ unsafe fn LoadAndCreateUpDownSprites() {
                 0,
             ) as u16;
             if spriteId != MAX_SPRITES as u16 {
-                if (*sInfo).enhancements[i] != 0 {
-                    gSprites[spriteId].callback = Some(SpriteCB_UpDown);
+                if (*crate::gl!(sInfo)).enhancements[i] != 0 {
+                    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_UpDown));
                 }
-                (*sInfo).numEnhancements += 1;
+                (*crate::gl!(sInfo)).numEnhancements += 1;
             }
         }
     }
@@ -1143,49 +1170,49 @@ pub(crate) unsafe fn SpriteCB_UpDown(sprite: *mut Sprite) {
     }) > 60
     {
         DestroySprite(sprite);
-        (*sInfo).numEnhancements -= 1;
+        (*crate::gl!(sInfo)).numEnhancements -= 1;
     }
 }
 unsafe fn LoadPartyInfo() {
     let mut i: u16 = 0;
     let mut numMons: u16 = 0;
     while i < CalculatePlayerPartyCount() as u16 {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0 {
-            (*sMenu).party[numMons].boxId = TOTAL_BOXES_COUNT;
-            (*sMenu).party[numMons].monId = i as u8;
-            (*sMenu).party[numMons].data = 0;
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0 {
+            (*crate::gl!(sMenu)).party[numMons].boxId = TOTAL_BOXES_COUNT;
+            (*crate::gl!(sMenu)).party[numMons].monId = i as u8;
+            (*crate::gl!(sMenu)).party[numMons].data = 0;
             numMons += 1;
         }
         i += 1;
     }
-    (*sMenu).info.curSelection = 0;
-    (*sMenu).info.numSelections = numMons as u8 + 1;
+    (*crate::gl!(sMenu)).info.curSelection = 0;
+    (*crate::gl!(sMenu)).info.numSelections = numMons as u8 + 1;
     LoadInitialMonInfo();
 }
 unsafe fn LoadInitialMonInfo() {
-    LoadMonInfo((*sMenu).info.curSelection as i16, 0);
-    (*sMenu).curLoadId = 0;
-    (*sMenu).nextLoadId = 1;
-    (*sMenu).prevLoadId = 2;
-    let mut nextSelection: i16 = (*sMenu).info.curSelection as i16 + 1;
-    if nextSelection >= (*sMenu).info.numSelections as i16 {
+    LoadMonInfo((*crate::gl!(sMenu)).info.curSelection as i16, 0);
+    (*crate::gl!(sMenu)).curLoadId = 0;
+    (*crate::gl!(sMenu)).nextLoadId = 1;
+    (*crate::gl!(sMenu)).prevLoadId = 2;
+    let mut nextSelection: i16 = (*crate::gl!(sMenu)).info.curSelection as i16 + 1;
+    if nextSelection >= (*crate::gl!(sMenu)).info.numSelections as i16 {
         nextSelection = 0;
     }
-    let mut prevSelection: i16 = (*sMenu).info.curSelection as i16 - 1;
+    let mut prevSelection: i16 = (*crate::gl!(sMenu)).info.curSelection as i16 - 1;
     if prevSelection < 0 {
-        prevSelection = (*sMenu).info.numSelections as i16 - 1;
+        prevSelection = (*crate::gl!(sMenu)).info.numSelections as i16 - 1;
     }
     LoadMonInfo(nextSelection, 1);
     LoadMonInfo(prevSelection, 2);
 }
 unsafe fn LoadMonInfo(partyId: i16, loadId: u8) {
-    let boxId: u8 = (*sMenu).party[partyId].boxId;
-    let monId: u8 = (*sMenu).party[partyId].monId;
-    let numSelections: u8 = (*sMenu).info.numSelections;
+    let boxId: u8 = (*crate::gl!(sMenu)).party[partyId].boxId;
+    let monId: u8 = (*crate::gl!(sMenu)).party[partyId].monId;
+    let numSelections: u8 = (*crate::gl!(sMenu)).info.numSelections;
     let excludesCancel: u8 = FALSE;
     GetConditionMenuMonNameAndLocString(
-        (*sMenu).locationStrings[loadId].as_mut_ptr(),
-        (*sMenu).monNameStrings[loadId].as_mut_ptr(),
+        (*crate::gl!(sMenu)).locationStrings[loadId].as_mut_ptr(),
+        (*crate::gl!(sMenu)).monNameStrings[loadId].as_mut_ptr(),
         boxId as u16,
         monId as u16,
         partyId as u16,
@@ -1193,8 +1220,8 @@ unsafe fn LoadMonInfo(partyId: i16, loadId: u8) {
         excludesCancel,
     );
     GetConditionMenuMonConditions(
-        &raw mut (*sMenu).graph,
-        (*sMenu).numSparkles.as_mut_ptr(),
+        &raw mut (*crate::gl!(sMenu)).graph,
+        (*crate::gl!(sMenu)).numSparkles.as_mut_ptr(),
         boxId as u16,
         monId as u16,
         partyId as u16,
@@ -1203,8 +1230,8 @@ unsafe fn LoadMonInfo(partyId: i16, loadId: u8) {
         excludesCancel,
     );
     GetConditionMenuMonGfx(
-        (*sMenu).partySheets[loadId].as_mut_ptr() as *mut c_void,
-        (*sMenu).partyPalettes[loadId].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sMenu)).partySheets[loadId].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sMenu)).partyPalettes[loadId].as_mut_ptr() as *mut c_void,
         boxId as u16,
         monId as u16,
         partyId as u16,
@@ -1217,34 +1244,37 @@ unsafe fn UpdateMonPic(loadId: u8) {
     let mut spriteTemplate: SpriteTemplate = zeroed();
     let mut spriteSheet: SpriteSheet = zeroed();
     let mut spritePal: SpritePalette = zeroed();
-    if (*sMenu).curMonSpriteId == SPRITE_NONE {
+    if (*crate::gl!(sMenu)).curMonSpriteId == SPRITE_NONE {
         LoadConditionMonPicTemplate(
             &raw mut spriteSheet,
             &raw mut spriteTemplate,
             &raw mut spritePal,
         );
-        spriteSheet.data = (*sMenu).partySheets[loadId].as_mut_ptr() as *mut c_void;
-        spritePal.data = (*sMenu).partyPalettes[loadId].as_mut_ptr();
-        (*sMenu).curMonPalette = LoadSpritePalette(&raw mut spritePal) as u16;
-        (*sMenu).curMonSheet = LoadSpriteSheet(&raw mut spriteSheet);
+        spriteSheet.data = (*crate::gl!(sMenu)).partySheets[loadId].as_mut_ptr() as *mut c_void;
+        spritePal.data = (*crate::gl!(sMenu)).partyPalettes[loadId].as_mut_ptr();
+        (*crate::gl!(sMenu)).curMonPalette = LoadSpritePalette(&raw mut spritePal) as u16;
+        (*crate::gl!(sMenu)).curMonSheet = LoadSpriteSheet(&raw mut spriteSheet);
         spriteId = CreateSprite(&raw mut spriteTemplate, 38, 104, 0);
-        (*sMenu).curMonSpriteId = spriteId;
+        (*crate::gl!(sMenu)).curMonSpriteId = spriteId;
         if spriteId == MAX_SPRITES {
             FreeSpriteTilesByTag(TAG_CONDITION_MON);
             FreeSpritePaletteByTag(TAG_CONDITION_MON);
-            (*sMenu).curMonSpriteId = SPRITE_NONE;
+            (*crate::gl!(sMenu)).curMonSpriteId = SPRITE_NONE;
         } else {
-            (*sMenu).curMonSpriteId = spriteId;
-            gSprites[(*sMenu).curMonSpriteId].callback = Some(SpriteCB_MonPic);
-            gSprites[(*sMenu).curMonSpriteId].y2 -= 34;
-            (*sMenu).curMonTileStart =
-                (OBJ_VRAM0 + (*sMenu).curMonSheet as i32 * 32) as usize as *mut c_void as *mut u8;
-            (*sMenu).curMonPalette = 0x100 + (*sMenu).curMonPalette * 16;
+            (*crate::gl!(sMenu)).curMonSpriteId = spriteId;
+            (*gSprites.as_ptr())[(*crate::gl!(sMenu)).curMonSpriteId].callback =
+                Some(SpriteCB_MonPic);
+            (*gSprites.as_ptr())[(*crate::gl!(sMenu)).curMonSpriteId].y2 -= 34;
+            (*crate::gl!(sMenu)).curMonTileStart =
+                (OBJ_VRAM0 + (*crate::gl!(sMenu)).curMonSheet as i32 * 32) as usize as *mut c_void
+                    as *mut u8;
+            (*crate::gl!(sMenu)).curMonPalette = 0x100 + (*crate::gl!(sMenu)).curMonPalette * 16;
         }
     } else {
         {
-            let mut _src: *mut c_void = (*sMenu).partySheets[loadId].as_mut_ptr() as *mut c_void;
-            let mut _dest: *mut c_void = (*sMenu).curMonTileStart as *mut c_void;
+            let mut _src: *mut c_void =
+                (*crate::gl!(sMenu)).partySheets[loadId].as_mut_ptr() as *mut c_void;
+            let mut _dest: *mut c_void = (*crate::gl!(sMenu)).curMonTileStart as *mut c_void;
             let mut _size: u32 = MON_PIC_SIZE as u32;
             loop {
                 if _size <= 0x1000 {
@@ -1278,8 +1308,8 @@ unsafe fn UpdateMonPic(loadId: u8) {
             }
         }
         LoadPalette(
-            (*sMenu).partyPalettes[loadId].as_mut_ptr() as *mut c_void,
-            (*sMenu).curMonPalette,
+            (*crate::gl!(sMenu)).partyPalettes[loadId].as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sMenu)).curMonPalette,
             32,
         );
     }
@@ -1299,14 +1329,14 @@ unsafe fn LoadAndCreateSelectionIcons() {
     LoadSpriteSheets(spriteSheets.as_mut_ptr());
     LoadSpritePalettes(spritePals.as_mut_ptr());
     let mut i: u16 = 0;
-    while (i as i32) < (*sMenu).info.numSelections as i32 - 1 {
+    while (i as i32) < (*crate::gl!(sMenu)).info.numSelections as i32 - 1 {
         spriteId = CreateSprite(&raw mut spriteTemplate, 226, i as i16 * 20 + 8, 0) as u16;
         if spriteId != MAX_SPRITES as u16 {
-            (*sMenu).selectionIconSpriteIds[i] = spriteId as u8;
-            gSprites[spriteId].data[0] = i as i16;
-            gSprites[spriteId].callback = Some(SpriteCB_SelectionIconPokeball);
+            (*crate::gl!(sMenu)).selectionIconSpriteIds[i] = spriteId as u8;
+            crate::gl!(gSprites[spriteId].data[0] = i as i16);
+            crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_SelectionIconPokeball));
         } else {
-            (*sMenu).selectionIconSpriteIds[i] = 255;
+            (*crate::gl!(sMenu)).selectionIconSpriteIds[i] = 255;
         }
         i += 1;
     }
@@ -1314,10 +1344,10 @@ unsafe fn LoadAndCreateSelectionIcons() {
     while i < PARTY_SIZE as u16 {
         spriteId = CreateSprite(&raw mut spriteTemplate, 230, i as i16 * 20 + 8, 0) as u16;
         if spriteId != MAX_SPRITES as u16 {
-            (*sMenu).selectionIconSpriteIds[i] = spriteId as u8;
-            gSprites[spriteId].oam.set_size(0);
+            (*crate::gl!(sMenu)).selectionIconSpriteIds[i] = spriteId as u8;
+            (*gSprites.as_ptr())[spriteId].oam.set_size(0);
         } else {
-            (*sMenu).selectionIconSpriteIds[i] = 255;
+            (*crate::gl!(sMenu)).selectionIconSpriteIds[i] = 255;
         }
         i += 1;
     }
@@ -1325,18 +1355,18 @@ unsafe fn LoadAndCreateSelectionIcons() {
     spriteTemplate.callback = Some(SpriteCB_SelectionIconCancel);
     spriteId = CreateSprite(&raw mut spriteTemplate, 222, i as i16 * 20 + 8, 0) as u16;
     if spriteId != MAX_SPRITES as u16 {
-        (*sMenu).selectionIconSpriteIds[i] = spriteId as u8;
-        gSprites[spriteId].oam.set_shape(1);
-        gSprites[spriteId].oam.set_size(2);
+        (*crate::gl!(sMenu)).selectionIconSpriteIds[i] = spriteId as u8;
+        (*gSprites.as_ptr())[spriteId].oam.set_shape(1);
+        (*gSprites.as_ptr())[spriteId].oam.set_size(2);
     } else {
-        (*sMenu).selectionIconSpriteIds[i] = 255;
+        (*crate::gl!(sMenu)).selectionIconSpriteIds[i] = 255;
     }
     LoadConditionSparkle(&raw mut spriteSheet2, &raw mut spritePal2);
     LoadSpriteSheet(&raw mut spriteSheet2);
     LoadSpritePalette(&raw mut spritePal2);
 }
 unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
-    match (*sMenu).info.helperState {
+    match (*crate::gl!(sMenu)).info.helperState {
         0 => {
             ChangeBgX(0, 0, BG_COORD_SET);
             ChangeBgY(0, 0, BG_COORD_SET);
@@ -1351,25 +1381,25 @@ unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
             SetGpuReg(REG_OFFSET_BLDALPHA, 1035);
         }
         1 => {
-            sGraph_Gfx = Alloc(6656) as *mut u8;
-            sGraph_Tilemap = Alloc(1280) as *mut u8;
-            sMonFrame_TilemapPtr = Alloc(1280) as *mut u8;
+            crate::gl!(sGraph_Gfx = Alloc(6656) as *mut u8);
+            crate::gl!(sGraph_Tilemap = Alloc(1280) as *mut u8);
+            crate::gl!(sMonFrame_TilemapPtr = Alloc(1280) as *mut u8);
         }
         2 => {
             LZ77UnCompVram(
                 sMonFrame_Tilemap.as_ptr().cast_mut(),
-                sMonFrame_TilemapPtr as *mut c_void,
+                crate::gl!(sMonFrame_TilemapPtr) as *mut c_void,
             );
         }
         3 => {
             LoadBgTiles(3, sMonFrame_Gfx.as_ptr().cast_mut() as *mut c_void, 224, 0);
         }
         4 => {
-            LoadBgTilemap(3, sMonFrame_TilemapPtr as *mut c_void, 1280, 0);
+            LoadBgTilemap(3, crate::gl!(sMonFrame_TilemapPtr) as *mut c_void, 1280, 0);
         }
         5 => {
             LoadPalette(sMonFrame_Pal.as_ptr().cast_mut() as *mut c_void, 208, 32);
-            (*sMenu).curMonXOffset = -80;
+            (*crate::gl!(sMenu)).curMonXOffset = -80;
         }
         6 => {
             LZ77UnCompVram(
@@ -1377,7 +1407,7 @@ unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                sGraph_Gfx as *mut c_void,
+                crate::gl!(sGraph_Gfx) as *mut c_void,
             );
         }
         7 => {
@@ -1386,7 +1416,7 @@ unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
                     .cast::<CArray<u32, 0>>())
                 .as_ptr()
                 .cast_mut(),
-                sGraph_Tilemap as *mut c_void,
+                crate::gl!(sGraph_Tilemap) as *mut c_void,
             );
             LoadPalette(
                 (*(&raw const crate::data::graphics::gUsePokeblockGraph_Pal)
@@ -1398,10 +1428,10 @@ unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
             );
         }
         8 => {
-            LoadBgTiles(1, sGraph_Gfx as *mut c_void, 6656, 640);
+            LoadBgTiles(1, crate::gl!(sGraph_Gfx) as *mut c_void, 6656, 640);
         }
         9 => {
-            SetBgTilemapBuffer(1, sGraph_Tilemap as *mut c_void);
+            SetBgTilemapBuffer(1, crate::gl!(sGraph_Tilemap) as *mut c_void);
             CopyToBgTilemapBufferRect(
                 1,
                 (*(&raw const crate::data::graphics::gUsePokeblockNatureWin_Pal)
@@ -1418,13 +1448,13 @@ unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
         10 => {
             LZ77UnCompVram(
                 sGraphData_Tilemap.as_ptr().cast_mut(),
-                (*sMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMenu)).tilemapBuffer.as_mut_ptr() as *mut c_void,
             );
         }
         11 => {
             LoadBgTilemap(
                 2,
-                (*sMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sMenu)).tilemapBuffer.as_mut_ptr() as *mut c_void,
                 1280,
                 0,
             );
@@ -1447,11 +1477,11 @@ unsafe fn LoadUsePokeblockMenuGfx() -> u8 {
             ConditionGraph_InitWindow(2);
         }
         _ => {
-            (*sMenu).info.helperState = 0;
+            (*crate::gl!(sMenu)).info.helperState = 0;
             return FALSE;
         }
     }
-    (*sMenu).info.helperState += 1;
+    (*crate::gl!(sMenu)).info.helperState += 1;
     TRUE
 }
 unsafe fn UpdateMonInfoText(loadId: u16, firstPrint: u8) {
@@ -1460,20 +1490,22 @@ unsafe fn UpdateMonInfoText(loadId: u16, firstPrint: u8) {
     let mut str: *mut u8 = null_mut();
     FillWindowPixelBuffer(WIN_NAME, 0);
     FillWindowPixelBuffer(WIN_NATURE, 0);
-    if (*sMenu).info.curSelection as i32 != (*sMenu).info.numSelections as i32 - 1 {
+    if (*crate::gl!(sMenu)).info.curSelection as i32
+        != (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+    {
         AddTextPrinterParameterized(
             WIN_NAME,
             FONT_NORMAL,
-            (*sMenu).monNameStrings[loadId].as_mut_ptr(),
+            (*crate::gl!(sMenu)).monNameStrings[loadId].as_mut_ptr(),
             0,
             1,
             0,
             None,
         );
-        partyIndex = GetPartyIdFromSelectionId((*sMenu).info.curSelection);
-        nature = GetNature(&raw mut gPlayerParty[partyIndex]);
+        partyIndex = GetPartyIdFromSelectionId((*crate::gl!(sMenu)).info.curSelection);
+        nature = GetNature(crate::gl!(&raw gPlayerParty[partyIndex]));
         str = StringCopy(
-            (*sMenu).info.natureText.as_mut_ptr(),
+            (*crate::gl!(sMenu)).info.natureText.as_mut_ptr(),
             (*(&raw const crate::data::strings::gText_NatureSlash).cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
@@ -1491,7 +1523,7 @@ unsafe fn UpdateMonInfoText(loadId: u16, firstPrint: u8) {
             1,
             sNatureTextColors.as_ptr().cast_mut(),
             0,
-            (*sMenu).info.natureText.as_mut_ptr(),
+            (*crate::gl!(sMenu)).info.natureText.as_mut_ptr(),
         );
     }
     if firstPrint != 0 {
@@ -1507,98 +1539,110 @@ unsafe fn UpdateSelection(up: u8) {
     let mut startedOnMon: u32 = 0;
     let mut endedOnMon: u32 = 0;
     if up != 0 {
-        newLoadId = (*sMenu).prevLoadId as u16;
+        newLoadId = (*crate::gl!(sMenu)).prevLoadId as u16;
     } else {
-        newLoadId = (*sMenu).nextLoadId as u16;
+        newLoadId = (*crate::gl!(sMenu)).nextLoadId as u16;
     }
     ConditionGraph_SetNewPositions(
-        &raw mut (*sMenu).graph,
-        (*sMenu).graph.savedPositions[(*sMenu).curLoadId].as_mut_ptr(),
-        (*sMenu).graph.savedPositions[newLoadId].as_mut_ptr(),
+        &raw mut (*crate::gl!(sMenu)).graph,
+        (*crate::gl!(sMenu)).graph.savedPositions[(*crate::gl!(sMenu)).curLoadId].as_mut_ptr(),
+        (*crate::gl!(sMenu)).graph.savedPositions[newLoadId].as_mut_ptr(),
     );
-    if (*sMenu).info.curSelection as i32 == (*sMenu).info.numSelections as i32 - 1 {
+    if (*crate::gl!(sMenu)).info.curSelection as i32
+        == (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+    {
         startedOnMon = FALSE as u32;
     } else {
         startedOnMon = TRUE as u32;
     }
     if up != 0 {
-        (*sMenu).prevLoadId = (*sMenu).nextLoadId;
-        (*sMenu).nextLoadId = (*sMenu).curLoadId;
-        (*sMenu).curLoadId = newLoadId as i8;
-        (*sMenu).toLoadId = (*sMenu).prevLoadId;
-        (*sMenu).info.curSelection = (if (*sMenu).info.curSelection == 0 {
-            (*sMenu).info.numSelections as i32 - 1
+        (*crate::gl!(sMenu)).prevLoadId = (*crate::gl!(sMenu)).nextLoadId;
+        (*crate::gl!(sMenu)).nextLoadId = (*crate::gl!(sMenu)).curLoadId;
+        (*crate::gl!(sMenu)).curLoadId = newLoadId as i8;
+        (*crate::gl!(sMenu)).toLoadId = (*crate::gl!(sMenu)).prevLoadId;
+        (*crate::gl!(sMenu)).info.curSelection = (if (*crate::gl!(sMenu)).info.curSelection == 0 {
+            (*crate::gl!(sMenu)).info.numSelections as i32 - 1
         } else {
-            (*sMenu).info.curSelection as i32 - 1
+            (*crate::gl!(sMenu)).info.curSelection as i32 - 1
         }) as u8;
-        (*sMenu).toLoadSelection = (if (*sMenu).info.curSelection == 0 {
-            (*sMenu).info.numSelections as i32 - 1
+        (*crate::gl!(sMenu)).toLoadSelection = (if (*crate::gl!(sMenu)).info.curSelection == 0 {
+            (*crate::gl!(sMenu)).info.numSelections as i32 - 1
         } else {
-            (*sMenu).info.curSelection as i32 - 1
+            (*crate::gl!(sMenu)).info.curSelection as i32 - 1
         }) as u8;
     } else {
-        (*sMenu).nextLoadId = (*sMenu).prevLoadId;
-        (*sMenu).prevLoadId = (*sMenu).curLoadId;
-        (*sMenu).curLoadId = newLoadId as i8;
-        (*sMenu).toLoadId = (*sMenu).nextLoadId;
-        (*sMenu).info.curSelection =
-            (if ((*sMenu).info.curSelection as i32) < (*sMenu).info.numSelections as i32 - 1 {
-                (*sMenu).info.curSelection as i32 + 1
-            } else {
-                0
-            }) as u8;
-        (*sMenu).toLoadSelection =
-            (if ((*sMenu).info.curSelection as i32) < (*sMenu).info.numSelections as i32 - 1 {
-                (*sMenu).info.curSelection as i32 + 1
-            } else {
-                0
-            }) as u8;
+        (*crate::gl!(sMenu)).nextLoadId = (*crate::gl!(sMenu)).prevLoadId;
+        (*crate::gl!(sMenu)).prevLoadId = (*crate::gl!(sMenu)).curLoadId;
+        (*crate::gl!(sMenu)).curLoadId = newLoadId as i8;
+        (*crate::gl!(sMenu)).toLoadId = (*crate::gl!(sMenu)).nextLoadId;
+        (*crate::gl!(sMenu)).info.curSelection = (if ((*crate::gl!(sMenu)).info.curSelection as i32)
+            < (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+        {
+            (*crate::gl!(sMenu)).info.curSelection as i32 + 1
+        } else {
+            0
+        }) as u8;
+        (*crate::gl!(sMenu)).toLoadSelection = (if ((*crate::gl!(sMenu)).info.curSelection as i32)
+            < (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+        {
+            (*crate::gl!(sMenu)).info.curSelection as i32 + 1
+        } else {
+            0
+        }) as u8;
     }
-    if (*sMenu).info.curSelection as i32 == (*sMenu).info.numSelections as i32 - 1 {
+    if (*crate::gl!(sMenu)).info.curSelection as i32
+        == (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+    {
         endedOnMon = FALSE as u32;
     } else {
         endedOnMon = TRUE as u32;
     }
-    DestroyConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
+    DestroyConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
     if startedOnMon == 0 {
-        (*sMenu).info.loadNewSelection = Some(LoadNewSelection_CancelToMon);
+        (*crate::gl!(sMenu)).info.loadNewSelection = Some(LoadNewSelection_CancelToMon);
     } else if endedOnMon == 0 {
-        (*sMenu).info.loadNewSelection = Some(LoadNewSelection_MonToCancel);
+        (*crate::gl!(sMenu)).info.loadNewSelection = Some(LoadNewSelection_MonToCancel);
     } else {
-        (*sMenu).info.loadNewSelection = Some(LoadNewSelection_MonToMon);
+        (*crate::gl!(sMenu)).info.loadNewSelection = Some(LoadNewSelection_MonToMon);
     }
 }
 pub(crate) unsafe fn LoadNewSelection_CancelToMon() -> u8 {
-    match (*sMenu).info.helperState {
+    match (*crate::gl!(sMenu)).info.helperState {
         0 => {
-            UpdateMonPic((*sMenu).curLoadId as u8);
-            (*sMenu).info.helperState += 1;
+            UpdateMonPic((*crate::gl!(sMenu)).curLoadId as u8);
+            (*crate::gl!(sMenu)).info.helperState += 1;
         }
         1 => {
-            UpdateMonInfoText((*sMenu).curLoadId as u16, FALSE);
-            (*sMenu).info.helperState += 1;
+            UpdateMonInfoText((*crate::gl!(sMenu)).curLoadId as u16, FALSE);
+            (*crate::gl!(sMenu)).info.helperState += 1;
         }
         2 => {
             if ConditionMenu_UpdateMonEnter(
-                &raw mut (*sMenu).graph,
-                &raw mut (*sMenu).curMonXOffset,
+                &raw mut (*crate::gl!(sMenu)).graph,
+                &raw mut (*crate::gl!(sMenu)).curMonXOffset,
             ) == 0
             {
-                LoadMonInfo((*sMenu).toLoadSelection as i16, (*sMenu).toLoadId as u8);
-                (*sMenu).info.helperState += 1;
+                LoadMonInfo(
+                    (*crate::gl!(sMenu)).toLoadSelection as i16,
+                    (*crate::gl!(sMenu)).toLoadId as u8,
+                );
+                (*crate::gl!(sMenu)).info.helperState += 1;
             }
         }
         3 => {
-            ResetConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
-            if (*sMenu).info.curSelection as i32 != (*sMenu).info.numSelections as i32 - 1 {
-                let numSparkles: u8 = (*sMenu).numSparkles[(*sMenu).curLoadId];
+            ResetConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
+            if (*crate::gl!(sMenu)).info.curSelection as i32
+                != (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+            {
+                let numSparkles: u8 =
+                    (*crate::gl!(sMenu)).numSparkles[(*crate::gl!(sMenu)).curLoadId];
                 CreateConditionSparkleSprites(
-                    (*sMenu).sparkles.as_mut_ptr(),
-                    (*sMenu).curMonSpriteId,
+                    (*crate::gl!(sMenu)).sparkles.as_mut_ptr(),
+                    (*crate::gl!(sMenu)).curMonSpriteId,
                     numSparkles,
                 );
             }
-            (*sMenu).info.helperState = 0;
+            (*crate::gl!(sMenu)).info.helperState = 0;
             return FALSE;
         }
         _ => {}
@@ -1606,24 +1650,29 @@ pub(crate) unsafe fn LoadNewSelection_CancelToMon() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn LoadNewSelection_MonToCancel() -> u8 {
-    match (*sMenu).info.helperState {
+    match (*crate::gl!(sMenu)).info.helperState {
         0 => {
-            if ConditionMenu_UpdateMonExit(&raw mut (*sMenu).graph, &raw mut (*sMenu).curMonXOffset)
-                == 0
+            if ConditionMenu_UpdateMonExit(
+                &raw mut (*crate::gl!(sMenu)).graph,
+                &raw mut (*crate::gl!(sMenu)).curMonXOffset,
+            ) == 0
             {
-                (*sMenu).info.helperState += 1;
+                (*crate::gl!(sMenu)).info.helperState += 1;
             }
         }
         1 => {
-            UpdateMonInfoText((*sMenu).curLoadId as u16, FALSE);
-            (*sMenu).info.helperState += 1;
+            UpdateMonInfoText((*crate::gl!(sMenu)).curLoadId as u16, FALSE);
+            (*crate::gl!(sMenu)).info.helperState += 1;
         }
         2 => {
-            LoadMonInfo((*sMenu).toLoadSelection as i16, (*sMenu).toLoadId as u8);
-            (*sMenu).info.helperState += 1;
+            LoadMonInfo(
+                (*crate::gl!(sMenu)).toLoadSelection as i16,
+                (*crate::gl!(sMenu)).toLoadId as u8,
+            );
+            (*crate::gl!(sMenu)).info.helperState += 1;
         }
         3 => {
-            (*sMenu).info.helperState = 0;
+            (*crate::gl!(sMenu)).info.helperState = 0;
             return FALSE;
         }
         _ => {}
@@ -1631,39 +1680,45 @@ pub(crate) unsafe fn LoadNewSelection_MonToCancel() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn LoadNewSelection_MonToMon() -> u8 {
-    match (*sMenu).info.helperState {
+    match (*crate::gl!(sMenu)).info.helperState {
         0 => {
-            ConditionGraph_TryUpdate(&raw mut (*sMenu).graph);
-            if MoveConditionMonOffscreen(&raw mut (*sMenu).curMonXOffset) == 0 {
-                UpdateMonPic((*sMenu).curLoadId as u8);
-                (*sMenu).info.helperState += 1;
+            ConditionGraph_TryUpdate(&raw mut (*crate::gl!(sMenu)).graph);
+            if MoveConditionMonOffscreen(&raw mut (*crate::gl!(sMenu)).curMonXOffset) == 0 {
+                UpdateMonPic((*crate::gl!(sMenu)).curLoadId as u8);
+                (*crate::gl!(sMenu)).info.helperState += 1;
             }
         }
         1 => {
-            UpdateMonInfoText((*sMenu).curLoadId as u16, FALSE);
-            (*sMenu).info.helperState += 1;
+            UpdateMonInfoText((*crate::gl!(sMenu)).curLoadId as u16, FALSE);
+            (*crate::gl!(sMenu)).info.helperState += 1;
         }
         2 => {
             if ConditionMenu_UpdateMonEnter(
-                &raw mut (*sMenu).graph,
-                &raw mut (*sMenu).curMonXOffset,
+                &raw mut (*crate::gl!(sMenu)).graph,
+                &raw mut (*crate::gl!(sMenu)).curMonXOffset,
             ) == 0
             {
-                LoadMonInfo((*sMenu).toLoadSelection as i16, (*sMenu).toLoadId as u8);
-                (*sMenu).info.helperState += 1;
+                LoadMonInfo(
+                    (*crate::gl!(sMenu)).toLoadSelection as i16,
+                    (*crate::gl!(sMenu)).toLoadId as u8,
+                );
+                (*crate::gl!(sMenu)).info.helperState += 1;
             }
         }
         3 => {
-            ResetConditionSparkleSprites((*sMenu).sparkles.as_mut_ptr());
-            if (*sMenu).info.curSelection as i32 != (*sMenu).info.numSelections as i32 - 1 {
-                let numSparkles: u8 = (*sMenu).numSparkles[(*sMenu).curLoadId];
+            ResetConditionSparkleSprites((*crate::gl!(sMenu)).sparkles.as_mut_ptr());
+            if (*crate::gl!(sMenu)).info.curSelection as i32
+                != (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+            {
+                let numSparkles: u8 =
+                    (*crate::gl!(sMenu)).numSparkles[(*crate::gl!(sMenu)).curLoadId];
                 CreateConditionSparkleSprites(
-                    (*sMenu).sparkles.as_mut_ptr(),
-                    (*sMenu).curMonSpriteId,
+                    (*crate::gl!(sMenu)).sparkles.as_mut_ptr(),
+                    (*crate::gl!(sMenu)).curMonSpriteId,
                     numSparkles,
                 );
             }
-            (*sMenu).info.helperState = 0;
+            (*crate::gl!(sMenu)).info.helperState = 0;
             return FALSE;
         }
         _ => {}
@@ -1671,17 +1726,19 @@ pub(crate) unsafe fn LoadNewSelection_MonToMon() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn SpriteCB_MonPic(sprite: *mut Sprite) {
-    (*sprite).x = (*sMenu).curMonXOffset + 38;
+    (*sprite).x = (*crate::gl!(sMenu)).curMonXOffset + 38;
 }
 pub(crate) unsafe fn SpriteCB_SelectionIconPokeball(sprite: *mut Sprite) {
-    if (*sprite).data[0] == (*sMenu).info.curSelection as i16 {
+    if (*sprite).data[0] == (*crate::gl!(sMenu)).info.curSelection as i16 {
         StartSpriteAnim(sprite, CONDITION_ICON_SELECTED);
     } else {
         StartSpriteAnim(sprite, CONDITION_ICON_UNSELECTED);
     }
 }
 pub(crate) unsafe fn SpriteCB_SelectionIconCancel(sprite: *mut Sprite) {
-    if (*sMenu).info.curSelection as i32 == (*sMenu).info.numSelections as i32 - 1 {
+    if (*crate::gl!(sMenu)).info.curSelection as i32
+        == (*crate::gl!(sMenu)).info.numSelections as i32 - 1
+    {
         (*sprite)
             .oam
             .set_paletteNum(IndexOfSpritePaletteTag(TAG_CONDITION_BALL) as u16);
@@ -1692,8 +1749,8 @@ pub(crate) unsafe fn SpriteCB_SelectionIconCancel(sprite: *mut Sprite) {
     }
 }
 unsafe fn CalculateNumAdditionalSparkles(monIndex: u8) {
-    let sheen: u8 = GetMonData2(&raw mut gPlayerParty[monIndex], MON_DATA_SHEEN) as u8;
-    (*sMenu).numSparkles[(*sMenu).curLoadId] =
+    let sheen: u8 = GetMonData2(crate::gl!(&raw gPlayerParty[monIndex]), MON_DATA_SHEEN) as u8;
+    (*crate::gl!(sMenu)).numSparkles[(*crate::gl!(sMenu)).curLoadId] =
         (if sheen != 255 { (sheen / 29) as i32 } else { 9 }) as u8;
 }
 unsafe fn LoadConditionGfx() {
@@ -1711,31 +1768,37 @@ unsafe fn LoadConditionGfx() {
 unsafe fn CreateConditionSprite() {
     let yStart: i32 = 17;
     let speed: i32 = 8;
-    let sprites: *mut *mut Sprite = (*sMenu).condition.as_mut_ptr();
+    let sprites: *mut *mut Sprite = (*crate::gl!(sMenu)).condition.as_mut_ptr();
     let template: *mut SpriteTemplate = (&raw const *sSpriteTemplate_Condition).cast_mut();
     let xDiff: i16 = 64;
     let xStart: i16 = -96;
     for i in 0..2u16 {
         let spriteId: u8 = CreateSprite(template, i as i16 * xDiff + xStart, yStart as i16, 0);
         if spriteId != MAX_SPRITES {
-            gSprites[spriteId].data[sSpeed] = speed as i16;
-            gSprites[spriteId].data[sTargetX] = (i as i16 * xDiff) | 0x20;
-            gSprites[spriteId].data[2] = i as i16;
-            StartSpriteAnim(&raw mut gSprites[spriteId], i as u8);
-            *sprites.at(i) = &raw mut gSprites[spriteId];
+            {
+                let gl_i0 = sSpeed;
+                crate::gl!(gSprites[spriteId].data[gl_i0] = speed as i16)
+            };
+            {
+                let gl_i1 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i1] = (i as i16 * xDiff) | 0x20)
+            };
+            crate::gl!(gSprites[spriteId].data[2] = i as i16);
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), i as u8);
+            *sprites.at(i) = crate::gl!(&raw gSprites[spriteId]);
         }
     }
 }
 unsafe fn LoadConditionTitle() -> u8 {
-    match (*sMenu).info.helperState {
+    match (*crate::gl!(sMenu)).info.helperState {
         0 => {
             LoadConditionGfx();
-            (*sMenu).info.helperState += 1;
+            (*crate::gl!(sMenu)).info.helperState += 1;
             return TRUE;
         }
         1 => {
             CreateConditionSprite();
-            (*sMenu).info.helperState = 0;
+            (*crate::gl!(sMenu)).info.helperState = 0;
             return FALSE;
         }
         _ => {}

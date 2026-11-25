@@ -279,7 +279,7 @@ pub unsafe fn TryBufferWaldaPhrase() -> u16 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn DoWaldaNamingScreen() {
-    let buffer = (&raw mut gStringVar2).cast::<u8>();
+    let buffer = (crate::gl!(&raw gStringVar2)).cast::<u8>();
     let _ = unsafe { StringCopy(buffer, GetWaldaPhrasePtr()) };
     unsafe {
         DoNamingScreen(
@@ -304,7 +304,7 @@ unsafe fn walda_phrase_input_case(input: *mut u8) -> u16 {
 }
 
 unsafe fn cb2_handle_given_walda_phrase() {
-    let buffer = (&raw mut gStringVar2).cast::<u8>();
+    let buffer = (crate::gl!(&raw gStringVar2)).cast::<u8>();
     let mut case = unsafe { walda_phrase_input_case(buffer) };
 
     match case {
@@ -329,7 +329,7 @@ unsafe fn cb2_handle_given_walda_phrase() {
 
     let _ = unsafe { StringCopy((&raw mut gStringVar1).cast::<u8>(), GetWaldaPhrasePtr()) };
     unsafe {
-        (&raw mut (*(&raw const crate::overworld::gFieldCallback)
+        (&raw mut (*(crate::gl!(&raw @at crate::overworld::gFieldCallback;).cast_const())
             .cast::<Option<MainCallback>>()
             .cast_mut()))
             .write(Some(FieldCB_ContinueScriptHandleMusic))
@@ -341,7 +341,7 @@ unsafe fn cb2_handle_given_walda_phrase() {
 pub unsafe fn TryGetWallpaperWithWaldaPhrase() -> u16 {
     let trainer_id = unsafe {
         GetTrainerId(
-            (*(&raw const crate::load_save::gSaveBlock2Ptr)
+            (*(crate::gl!(&raw @at crate::load_save::gSaveBlock2Ptr;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut())
             .add(SAVE2_TRAINER_ID),

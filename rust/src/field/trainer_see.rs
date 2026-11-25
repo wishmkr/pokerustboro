@@ -62,7 +62,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -77,11 +77,7 @@ unsafe fn ScriptMovement_StartObjectMovementScript(a0: u8, a1: u8, a2: u8, a3: *
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -130,31 +126,34 @@ static sTrainerSeeFuncList2: Table<
     CArray<Option<unsafe fn(u8, *mut Task, *mut ObjectEvent) -> u8>, 4>,
 > = Table((&raw const crate::data::trainer_see::sTrainerSeeFuncList2).cast());
 
-#[unsafe(link_section = "common_data")]
-pub static mut gWhichTrainerToFaceAfterBattle: u16 = 0;
-#[unsafe(link_section = "common_data")]
-pub static mut gPostBattleMovementScript: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "common_data")]
-pub static mut gApproachingTrainers: CArray<ApproachingTrainer, 2> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gWhichTrainerToFaceAfterBattle: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPostBattleMovementScript: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gApproachingTrainers: crate::global::Global<CArray<ApproachingTrainer, 2>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gNoOfApproachingTrainers: u8 = 0;
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gNoOfApproachingTrainers: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gTrainerApproachedPlayer: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gApproachingTrainerId: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gApproachingTrainerId: crate::global::Global<u8> = crate::global::Global::new(0);
 
 pub unsafe fn CheckForTrainersWantingBattle() -> u8 {
-    gNoOfApproachingTrainers = 0;
-    gApproachingTrainerId = 0;
+    crate::gl!(gNoOfApproachingTrainers = 0);
+    gApproachingTrainerId.set(0);
     let mut i: u8 = 0;
     'l2: while i < OBJECT_EVENTS_COUNT {
         'l1: {
-            if gObjectEvents[i].active() == 0 {
+            if (*gObjectEvents.as_ptr())[i].active() == 0 {
                 break 'l1;
             }
-            if gObjectEvents[i].trainerType != TRAINER_TYPE_NORMAL
-                && gObjectEvents[i].trainerType != TRAINER_TYPE_BURIED
+            if crate::gl!(gObjectEvents[i].trainerType) != TRAINER_TYPE_NORMAL
+                && crate::gl!(gObjectEvents[i].trainerType) != TRAINER_TYPE_BURIED
             {
                 break 'l1;
             }
@@ -165,7 +164,7 @@ pub unsafe fn CheckForTrainersWantingBattle() -> u8 {
             if numTrainers == 0 {
                 break 'l1;
             }
-            if gNoOfApproachingTrainers > 1 {
+            if crate::gl!(gNoOfApproachingTrainers) > 1 {
                 break 'l2;
             }
             if GetMonsStateToDoubles_2() != PLAYER_HAS_TWO_USABLE_MONS as u8 {
@@ -174,27 +173,33 @@ pub unsafe fn CheckForTrainersWantingBattle() -> u8 {
         }
         i += 1;
     }
-    if gNoOfApproachingTrainers == 1 {
+    if crate::gl!(gNoOfApproachingTrainers) == 1 {
         ResetTrainerOpponentIds();
         ConfigureAndSetUpOneTrainerBattle(
-            gApproachingTrainers[gNoOfApproachingTrainers as i32 - 1].objectEventId,
-            gApproachingTrainers[gNoOfApproachingTrainers as i32 - 1].trainerScriptPtr,
+            {
+                let gl_i0 = crate::gl!(gNoOfApproachingTrainers) as i32 - 1;
+                crate::gl!(gApproachingTrainers[gl_i0].objectEventId)
+            },
+            {
+                let gl_i1 = crate::gl!(gNoOfApproachingTrainers) as i32 - 1;
+                crate::gl!(gApproachingTrainers[gl_i1].trainerScriptPtr)
+            },
         );
         gTrainerApproachedPlayer.set(TRUE);
         return TRUE;
-    } else if gNoOfApproachingTrainers == 2 {
+    } else if crate::gl!(gNoOfApproachingTrainers) == 2 {
         ResetTrainerOpponentIds();
         i = 0;
-        while i < gNoOfApproachingTrainers {
+        while i < crate::gl!(gNoOfApproachingTrainers) {
             ConfigureTwoTrainersBattle(
-                gApproachingTrainers[i].objectEventId,
-                gApproachingTrainers[i].trainerScriptPtr,
+                crate::gl!(gApproachingTrainers[i].objectEventId),
+                crate::gl!(gApproachingTrainers[i].trainerScriptPtr),
             );
             i += 1;
-            gApproachingTrainerId += 1;
+            gApproachingTrainerId.set(gApproachingTrainerId.get() + (1));
         }
         SetUpTwoTrainersBattle();
-        gApproachingTrainerId = 0;
+        gApproachingTrainerId.set(0);
         gTrainerApproachedPlayer.set(TRUE);
         return TRUE;
     } else {
@@ -227,7 +232,8 @@ unsafe fn CheckTrainer(objectEventId: u8) -> u8 {
             return 0;
         }
     }
-    let approachDistance: u8 = GetTrainerApproachDistance(&raw mut gObjectEvents[objectEventId]);
+    let approachDistance: u8 =
+        GetTrainerApproachDistance(crate::gl!(&raw gObjectEvents[objectEventId]));
     if approachDistance != 0 {
         if *scriptPtr.at(1) == TRAINER_BATTLE_DOUBLE as u8
             || *scriptPtr.at(1) == TRAINER_BATTLE_REMATCH_DOUBLE as u8
@@ -238,11 +244,23 @@ unsafe fn CheckTrainer(objectEventId: u8) -> u8 {
             }
             numTrainers = 2;
         }
-        gApproachingTrainers[gNoOfApproachingTrainers].objectEventId = objectEventId;
-        gApproachingTrainers[gNoOfApproachingTrainers].trainerScriptPtr = scriptPtr;
-        gApproachingTrainers[gNoOfApproachingTrainers].radius = approachDistance;
-        InitTrainerApproachTask(&raw mut gObjectEvents[objectEventId], approachDistance - 1);
-        gNoOfApproachingTrainers += 1;
+        ({
+            let gl_s0 = crate::gl!(gNoOfApproachingTrainers);
+            crate::gl!(gApproachingTrainers[gl_s0].objectEventId = objectEventId)
+        });
+        ({
+            let gl_s0 = crate::gl!(gNoOfApproachingTrainers);
+            crate::gl!(gApproachingTrainers[gl_s0].trainerScriptPtr = scriptPtr)
+        });
+        ({
+            let gl_s0 = crate::gl!(gNoOfApproachingTrainers);
+            crate::gl!(gApproachingTrainers[gl_s0].radius = approachDistance)
+        });
+        InitTrainerApproachTask(
+            crate::gl!(&raw gObjectEvents[objectEventId]),
+            approachDistance - 1,
+        );
+        crate::gl!(gNoOfApproachingTrainers += 1);
         return numTrainers;
     }
     0
@@ -395,21 +413,29 @@ unsafe fn CheckPathBetweenTrainerAndPlayer(
     0
 }
 unsafe fn InitTrainerApproachTask(trainerObj: *mut ObjectEvent, range: u8) {
-    gApproachingTrainers[gNoOfApproachingTrainers].taskId =
-        CreateTask(Some(Task_RunTrainerSeeFuncList), 0x50);
-    let task: *mut Task =
-        &raw mut (*gTasks.as_ptr())[gApproachingTrainers[gNoOfApproachingTrainers].taskId];
+    ({
+        let gl_s0 = crate::gl!(gNoOfApproachingTrainers);
+        crate::gl!(
+            gApproachingTrainers[gl_s0].taskId = CreateTask(Some(Task_RunTrainerSeeFuncList), 0x50)
+        )
+    });
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[{
+        let gl_s0 = crate::gl!(gNoOfApproachingTrainers);
+        crate::gl!(gApproachingTrainers[gl_s0].taskId)
+    }];
     (*task).data[tTrainerRange] = range as i16;
-    (*task).data[tTrainerObjectEventId] =
-        gApproachingTrainers[gNoOfApproachingTrainers].objectEventId as i16;
+    (*task).data[tTrainerObjectEventId] = ({
+        let gl_s0 = crate::gl!(gNoOfApproachingTrainers);
+        crate::gl!(gApproachingTrainers[gl_s0].objectEventId)
+    }) as i16;
 }
 unsafe fn StartTrainerApproach(followupFunc: Option<unsafe fn(u8)>) {
     let mut taskId: u8 = 0;
     let mut taskFunc: Option<unsafe fn(u8)> = None;
-    if gApproachingTrainerId == 0 {
-        taskId = gApproachingTrainers[0].taskId;
+    if gApproachingTrainerId.get() == 0 {
+        taskId = crate::gl!(gApproachingTrainers[0].taskId);
     } else {
-        taskId = gApproachingTrainers[1].taskId;
+        taskId = crate::gl!(gApproachingTrainers[1].taskId);
     }
     taskFunc = Some(Task_RunTrainerSeeFuncList);
     SetTaskFuncWithFollowupFunc(taskId, taskFunc, followupFunc);
@@ -418,7 +444,10 @@ unsafe fn StartTrainerApproach(followupFunc: Option<unsafe fn(u8)>) {
 }
 pub(crate) unsafe fn Task_RunTrainerSeeFuncList(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
-    let trainerObj: *mut ObjectEvent = &raw mut gObjectEvents[(*task).data[tTrainerObjectEventId]];
+    let trainerObj: *mut ObjectEvent = {
+        let gl_i2 = (*task).data[tTrainerObjectEventId];
+        crate::gl!(&raw gObjectEvents[gl_i2])
+    };
     if (*trainerObj).active() == 0 {
         SwitchTaskToFollowupFunc(taskId);
     } else {
@@ -438,9 +467,9 @@ pub(crate) unsafe fn TrainerExclamationMark(
 ) -> u8 {
     ObjectEventGetLocalIdAndMap(
         trainerObj,
-        &raw mut gFieldEffectArguments[0] as *mut c_void,
-        &raw mut gFieldEffectArguments[1] as *mut c_void,
-        &raw mut gFieldEffectArguments[2] as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut c_void,
+        crate::gl!(&raw gFieldEffectArguments[2]) as *mut c_void,
     );
     FieldEffectStart(FLDEFF_EXCLAMATION_MARK_ICON);
     let direction: u8 = GetFaceDirectionMovementAction((*trainerObj).facingDirection() as u32);
@@ -512,7 +541,8 @@ pub(crate) unsafe fn PlayerFaceApproachingTrainer(
         GetTrainerFacingDirectionMovementType((*trainerObj).facingDirection() as u8),
     );
     OverrideTemplateCoordsForObjectEvent(trainerObj);
-    let playerObj: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObj: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(playerObj) != 0
         && ObjectEventClearHeldMovementIfFinished(playerObj) == 0
     {
@@ -520,7 +550,7 @@ pub(crate) unsafe fn PlayerFaceApproachingTrainer(
     }
     CancelPlayerForcedMovement();
     ObjectEventSetHeldMovement(
-        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
         GetFaceDirectionMovementAction(
             GetOppositeDirection((*trainerObj).facingDirection() as u8) as u32
         ),
@@ -533,7 +563,8 @@ pub(crate) unsafe fn WaitPlayerFaceApproachingTrainer(
     task: *mut Task,
     trainerObj: *mut ObjectEvent,
 ) -> u8 {
-    let playerObj: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObj: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(playerObj) == 0
         || ObjectEventClearHeldMovementIfFinished(playerObj) != 0
     {
@@ -583,10 +614,16 @@ pub(crate) unsafe fn PopOutOfAshBuriedTrainer(
     trainerObj: *mut ObjectEvent,
 ) -> u8 {
     if ObjectEventCheckHeldMovementStatus(trainerObj) != 0 {
-        gFieldEffectArguments[0] = (*trainerObj).currentCoords.x as i32;
-        gFieldEffectArguments[1] = (*trainerObj).currentCoords.y as i32;
-        gFieldEffectArguments[2] = gSprites[(*trainerObj).spriteId].subpriority as i32 - 1;
-        gFieldEffectArguments[3] = 2;
+        crate::gl!(gFieldEffectArguments[0] = (*trainerObj).currentCoords.x as i32);
+        crate::gl!(gFieldEffectArguments[1] = (*trainerObj).currentCoords.y as i32);
+        crate::gl!(
+            gFieldEffectArguments[2] = ({
+                let gl_i0 = (*trainerObj).spriteId;
+                crate::gl!(gSprites[gl_i0].subpriority)
+            }) as i32
+                - 1
+        );
+        crate::gl!(gFieldEffectArguments[3] = 2);
         (*task).data[tOutOfAshSpriteId] = FieldEffectStart(FLDEFF_ASH_PUFF) as i16;
         (*task).data[tFuncId] += 1;
     }
@@ -598,10 +635,17 @@ pub(crate) unsafe fn JumpInPlaceBuriedTrainer(
     trainerObj: *mut ObjectEvent,
 ) -> u8 {
     let mut sprite: *mut Sprite = null_mut();
-    if gSprites[(*task).data[tOutOfAshSpriteId]].animCmdIndex == 2 {
+    if ({
+        let gl_i1 = (*task).data[tOutOfAshSpriteId];
+        crate::gl!(gSprites[gl_i1].animCmdIndex)
+    }) == 2
+    {
         (*trainerObj).set_fixedPriority(0);
         (*trainerObj).set_triggerGroundEffectsOnMove(TRUE as u32);
-        sprite = &raw mut gSprites[(*trainerObj).spriteId];
+        sprite = {
+            let gl_i2 = (*trainerObj).spriteId;
+            crate::gl!(&raw gSprites[gl_i2])
+        };
         (*sprite).oam.set_priority(2);
         ObjectEventClearHeldMovementIfFinished(trainerObj);
         ObjectEventSetHeldMovement(
@@ -667,14 +711,14 @@ pub(crate) unsafe fn Task_EndTrainerApproach(taskId: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn TryPrepareSecondApproachingTrainer() {
-    if gNoOfApproachingTrainers == 2 {
-        if gApproachingTrainerId == 0 {
-            gApproachingTrainerId += 1;
+    if crate::gl!(gNoOfApproachingTrainers) == 2 {
+        if gApproachingTrainerId.get() == 0 {
+            gApproachingTrainerId.set(gApproachingTrainerId.get() + (1));
             gSpecialVar_Result = TRUE as u16;
             UnfreezeObjectEvents();
-            FreezeObjectEventsExceptOne(gApproachingTrainers[1].objectEventId);
+            FreezeObjectEventsExceptOne(crate::gl!(gApproachingTrainers[1].objectEventId));
         } else {
-            gApproachingTrainerId = 0;
+            gApproachingTrainerId.set(0);
             gSpecialVar_Result = FALSE as u16;
         }
     } else {
@@ -690,7 +734,7 @@ pub unsafe fn FldEff_ExclamationMarkIcon() -> u8 {
         0x53,
     );
     if spriteId != MAX_SPRITES {
-        SetIconSpriteData(&raw mut gSprites[spriteId], 0, 0);
+        SetIconSpriteData(crate::gl!(&raw gSprites[spriteId]), 0, 0);
     }
     0
 }
@@ -704,7 +748,7 @@ pub unsafe fn FldEff_QuestionMarkIcon() -> u8 {
     );
     if spriteId != MAX_SPRITES {
         SetIconSpriteData(
-            &raw mut gSprites[spriteId],
+            crate::gl!(&raw gSprites[spriteId]),
             FLDEFF_QUESTION_MARK_ICON as u16,
             1,
         );
@@ -720,7 +764,7 @@ pub unsafe fn FldEff_HeartIcon() -> u8 {
         0x52,
     );
     if spriteId != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
         SetIconSpriteData(sprite, FLDEFF_HEART_ICON as u16, 0);
         (*sprite).oam.set_paletteNum(2);
     }
@@ -729,9 +773,9 @@ pub unsafe fn FldEff_HeartIcon() -> u8 {
 unsafe fn SetIconSpriteData(sprite: *mut Sprite, fldEffId: u16, spriteAnimNum: u8) {
     (*sprite).oam.set_priority(1);
     (*sprite).set_coordOffsetEnabled(1);
-    (*sprite).data[sLocalId] = gFieldEffectArguments[0] as i16;
-    (*sprite).data[sMapNum] = gFieldEffectArguments[1] as i16;
-    (*sprite).data[sMapGroup] = gFieldEffectArguments[2] as i16;
+    (*sprite).data[sLocalId] = crate::gl!(gFieldEffectArguments[0]) as i16;
+    (*sprite).data[sMapNum] = crate::gl!(gFieldEffectArguments[1]) as i16;
+    (*sprite).data[sMapGroup] = crate::gl!(gFieldEffectArguments[2]) as i16;
     (*sprite).data[sYVelocity] = -5;
     (*sprite).data[sFldEffId] = fldEffId as i16;
     StartSpriteAnim(sprite, spriteAnimNum);
@@ -748,7 +792,10 @@ pub(crate) unsafe fn SpriteCB_TrainerIcons(sprite: *mut Sprite) {
     {
         FieldEffectStop(sprite, (*sprite).data[sFldEffId] as u8);
     } else {
-        let objEventSprite: *mut Sprite = &raw mut gSprites[gObjectEvents[objEventId].spriteId];
+        let objEventSprite: *mut Sprite = {
+            let gl_i3 = crate::gl!(gObjectEvents[objEventId].spriteId);
+            crate::gl!(&raw gSprites[gl_i3])
+        };
         (*sprite).data[sYOffset] += (*sprite).data[sYVelocity];
         (*sprite).x = (*objEventSprite).x;
         (*sprite).y = (*objEventSprite).y - 16;
@@ -761,11 +808,11 @@ pub(crate) unsafe fn SpriteCB_TrainerIcons(sprite: *mut Sprite) {
         }
     }
 }
-pub unsafe fn GetCurrentApproachingTrainerObjectEventId() -> u8 {
-    if gApproachingTrainerId == 0 {
-        return gApproachingTrainers[0].objectEventId;
+pub fn GetCurrentApproachingTrainerObjectEventId() -> u8 {
+    if gApproachingTrainerId.get() == 0 {
+        return crate::gl!(gApproachingTrainers[0].objectEventId);
     } else {
-        return gApproachingTrainers[1].objectEventId;
+        return crate::gl!(gApproachingTrainers[1].objectEventId);
     }
     #[allow(unreachable_code)]
     {
@@ -773,13 +820,13 @@ pub unsafe fn GetCurrentApproachingTrainerObjectEventId() -> u8 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn GetChosenApproachingTrainerObjectEventId(arrayId: u8) -> u8 {
+pub fn GetChosenApproachingTrainerObjectEventId(arrayId: u8) -> u8 {
     if arrayId >= 2 {
         return 0;
     } else if arrayId == 0 {
-        return gApproachingTrainers[0].objectEventId;
+        return crate::gl!(gApproachingTrainers[0].objectEventId);
     } else {
-        return gApproachingTrainers[1].objectEventId;
+        return crate::gl!(gApproachingTrainers[1].objectEventId);
     }
     #[allow(unreachable_code)]
     {
@@ -790,28 +837,34 @@ pub unsafe fn GetChosenApproachingTrainerObjectEventId(arrayId: u8) -> u8 {
 pub unsafe fn PlayerFaceTrainerAfterBattle() {
     let mut objEvent: *mut ObjectEvent = null_mut();
     if gTrainerApproachedPlayer.get() == TRUE {
-        objEvent = &raw mut gObjectEvents
-            [gApproachingTrainers[gWhichTrainerToFaceAfterBattle].objectEventId];
-        gPostBattleMovementScript[0] = GetFaceDirectionMovementAction(GetOppositeDirection(
-            (*objEvent).facingDirection() as u8,
-        ) as u32);
-        gPostBattleMovementScript[1] = MOVEMENT_ACTION_STEP_END;
+        objEvent = &raw mut (*gObjectEvents.as_ptr())[{
+            let gl_i3 = gWhichTrainerToFaceAfterBattle.get();
+            crate::gl!(gApproachingTrainers[gl_i3].objectEventId)
+        }];
+        crate::gl!(
+            gPostBattleMovementScript[0] = GetFaceDirectionMovementAction(GetOppositeDirection(
+                (*objEvent).facingDirection() as u8,
+            ) as u32)
+        );
+        crate::gl!(gPostBattleMovementScript[1] = MOVEMENT_ACTION_STEP_END);
         ScriptMovement_StartObjectMovementScript(
             LOCALID_PLAYER,
-            (*gSaveBlock1Ptr).location.mapNum as u8,
-            (*gSaveBlock1Ptr).location.mapGroup as u8,
-            gPostBattleMovementScript.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
+            (*gPostBattleMovementScript.as_ptr()).as_mut_ptr(),
         );
     } else {
-        objEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-        gPostBattleMovementScript[0] =
-            GetFaceDirectionMovementAction((*objEvent).facingDirection() as u32);
-        gPostBattleMovementScript[1] = MOVEMENT_ACTION_STEP_END;
+        objEvent = &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+        crate::gl!(
+            gPostBattleMovementScript[0] =
+                GetFaceDirectionMovementAction((*objEvent).facingDirection() as u32)
+        );
+        crate::gl!(gPostBattleMovementScript[1] = MOVEMENT_ACTION_STEP_END);
         ScriptMovement_StartObjectMovementScript(
             LOCALID_PLAYER,
-            (*gSaveBlock1Ptr).location.mapNum as u8,
-            (*gSaveBlock1Ptr).location.mapGroup as u8,
-            gPostBattleMovementScript.as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
+            (*gPostBattleMovementScript.as_ptr()).as_mut_ptr(),
         );
     }
     SetMovingNpcId(LOCALID_PLAYER as u16);

@@ -107,7 +107,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `GetMaxWidthInMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
     unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
 }
 // Data tables (translate with cdata.py): sSecretBaseEntranceMetatiles sSecretBaseEntrancePositions sRegistryMenuActions sDeleteRegistryYesNoFuncs sSecretBaseOwnerGfxIds sRegistryWindowTemplates sRegistryListMenuTemplate
@@ -182,12 +182,13 @@ static sSecretBaseEntrancePositions: Table<CArray<u8, 96>> =
 static sSecretBaseOwnerGfxIds: Table<CArray<u8, 10>> =
     Table((&raw const crate::data::secret_base::sSecretBaseOwnerGfxIds).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurSecretBaseId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sInFriendSecretBase: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRegistryMenu: *mut SecretBaseRegistryMenu = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRegistryMenu: crate::global::Global<*mut SecretBaseRegistryMenu> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -226,7 +227,7 @@ unsafe fn ClearSecretBase(secretBase: *mut SecretBase) {
 #[unsafe(no_mangle)]
 pub unsafe fn ClearSecretBases() {
     for i in 0..(SECRET_BASES_COUNT as u16) {
-        ClearSecretBase(&raw mut (*gSaveBlock1Ptr).secretBases[i]);
+        ClearSecretBase(&raw mut (*crate::gl!(gSaveBlock1Ptr)).secretBases[i]);
     }
 }
 unsafe fn SetCurSecretBaseId() {
@@ -235,7 +236,7 @@ unsafe fn SetCurSecretBaseId() {
 pub unsafe fn TrySetCurSecretBaseIndex() {
     gSpecialVar_Result = FALSE as u16;
     for i in 0..(SECRET_BASES_COUNT as u16) {
-        if sCurSecretBaseId.get() == (*gSaveBlock1Ptr).secretBases[i].secretBaseId {
+        if sCurSecretBaseId.get() == (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].secretBaseId {
             gSpecialVar_Result = TRUE as u16;
             VarSet(VAR_CURRENT_SECRET_BASE, i);
             break;
@@ -244,7 +245,7 @@ pub unsafe fn TrySetCurSecretBaseIndex() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CheckPlayerHasSecretBase() {
-    if (*gSaveBlock1Ptr).secretBases[0].secretBaseId != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].secretBaseId != 0 {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -295,7 +296,7 @@ pub unsafe fn GetSecretBaseTypeInFrontOfPlayer() {
 }
 unsafe fn FindMetatileIdMapCoords(x: *mut i16, y: *mut i16, metatileId: u16) {
     let mut i: i16 = 0;
-    let mapLayout: *mut MapLayout = gMapHeader.mapLayout;
+    let mapLayout: *mut MapLayout = crate::gl!(gMapHeader.mapLayout);
     let mut j: i16 = 0;
     while (j as i32) < (*mapLayout).height {
         i = 0;
@@ -353,26 +354,33 @@ unsafe fn GetNameLength(secretBaseOwnerName: *mut u8) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetPlayerSecretBase() {
-    (*gSaveBlock1Ptr).secretBases[0].secretBaseId = sCurSecretBaseId.get();
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].secretBaseId = sCurSecretBaseId.get();
     for i in 0..(TRAINER_ID_LENGTH as u16) {
-        (*gSaveBlock1Ptr).secretBases[0].trainerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i];
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].trainerId[i] =
+            (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[i];
     }
     VarSet(VAR_CURRENT_SECRET_BASE, 0);
     StringCopyN(
-        (*gSaveBlock1Ptr).secretBases[0].trainerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-        GetNameLength((*gSaveBlock2Ptr).playerName.as_mut_ptr()),
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]
+            .trainerName
+            .as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+        GetNameLength((*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr()),
     );
-    (*gSaveBlock1Ptr).secretBases[0].set_gender((*gSaveBlock2Ptr).playerGender);
-    (*gSaveBlock1Ptr).secretBases[0].language = GAME_LANGUAGE;
-    VarSet(VAR_SECRET_BASE_MAP, gMapHeader.regionMapSectionId as u16);
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]
+        .set_gender((*crate::gl!(gSaveBlock2Ptr)).playerGender);
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].language = GAME_LANGUAGE;
+    VarSet(
+        VAR_SECRET_BASE_MAP,
+        crate::gl!(gMapHeader.regionMapSectionId) as u16,
+    );
 }
 pub unsafe fn SetOccupiedSecretBaseEntranceMetatiles(events: *mut MapEvents) {
     let mut bgId: u16 = 0;
     while bgId < (*events).bgEventCount as u16 {
         if (*(*events).bgEvents.at(bgId)).kind == BG_EVENT_SECRET_BASE {
             for j in 0..(SECRET_BASES_COUNT as u16) {
-                if (*gSaveBlock1Ptr).secretBases[j].secretBaseId as u32
+                if (*crate::gl!(gSaveBlock1Ptr)).secretBases[j].secretBaseId as u32
                     == (*(*events).bgEvents.at(bgId)).bgUnion.secretBaseId
                 {
                     let x: i16 = (*(*events).bgEvents.at(bgId)).x as i16 + MAP_OFFSET as i16;
@@ -408,19 +416,19 @@ pub(crate) unsafe fn Task_EnterSecretBase(taskId: u8) {
     let mut secretBaseIdx: u16 = 0;
     match task_get(taskId, 0) {
         0 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set(taskId, 0, 1);
             }
         }
         1 => {
             secretBaseIdx = VarGet(VAR_CURRENT_SECRET_BASE);
-            (*gSaveBlock1Ptr).secretBases[secretBaseIdx].numTimesEntered = (*gSaveBlock1Ptr)
-                .secretBases[secretBaseIdx]
-                .numTimesEntered
-                .saturating_add(1);
+            (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].numTimesEntered =
+                (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
+                    .numTimesEntered
+                    .saturating_add(1);
             SetSecretBaseWarpDestination();
             WarpIntoMap();
-            gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
+            crate::gl!(gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic));
             SetMainCallback2(Some(CB2_LoadMap));
             DestroyTask(taskId);
         }
@@ -433,20 +441,20 @@ pub unsafe fn EnterSecretBase() {
     FadeScreen(FADE_TO_BLACK, 0);
     SetDynamicWarp(
         0,
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
         WARP_ID_NONE,
     );
 }
 pub unsafe fn SecretBaseMapPopupEnabled() -> u8 {
-    if gMapHeader.mapType == MAP_TYPE_SECRET_BASE && VarGet(VAR_INIT_SECRET_BASE) == 0 {
+    if crate::gl!(gMapHeader.mapType) == MAP_TYPE_SECRET_BASE && VarGet(VAR_INIT_SECRET_BASE) == 0 {
         return FALSE;
     }
     TRUE
 }
 pub(crate) unsafe fn EnterNewlyCreatedSecretBase_WaitFadeIn(taskId: u8) {
     ObjectEventTurn(
-        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
         DIR_NORTH,
     );
     if IsWeatherNotFadingIn() == TRUE {
@@ -468,17 +476,17 @@ pub(crate) unsafe fn EnterNewlyCreatedSecretBase_StartFadeIn() {
     CreateTask(Some(EnterNewlyCreatedSecretBase_WaitFadeIn), 0);
 }
 pub(crate) unsafe fn Task_EnterNewlyCreatedSecretBase(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let secretBaseGroup: i8 = (sCurSecretBaseId.get() as i32 / 10) as i8 * 4;
         SetWarpDestination(
-            (*gSaveBlock1Ptr).location.mapGroup,
-            (*gSaveBlock1Ptr).location.mapNum,
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+            (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
             WARP_ID_NONE,
             sSecretBaseEntrancePositions[secretBaseGroup as i32 + 2] as i8,
             sSecretBaseEntrancePositions[secretBaseGroup as i32 + 3] as i8,
         );
         WarpIntoMap();
-        gFieldCallback = Some(EnterNewlyCreatedSecretBase_StartFadeIn);
+        crate::gl!(gFieldCallback = Some(EnterNewlyCreatedSecretBase_StartFadeIn));
         SetMainCallback2(Some(CB2_LoadMap));
         DestroyTask(taskId);
     }
@@ -490,7 +498,9 @@ pub unsafe fn EnterNewlyCreatedSecretBase() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CurMapIsSecretBase() -> u8 {
-    if (*gSaveBlock1Ptr).location.mapGroup == 25 && (*gSaveBlock1Ptr).location.mapNum as u8 <= 23 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 25
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8 <= 23
+    {
         return TRUE;
     } else {
         return FALSE;
@@ -508,10 +518,10 @@ pub unsafe fn InitSecretBaseAppearance(hidePC: u8) {
     let mut decorPos: *mut u8 = null_mut();
     if CurMapIsSecretBase() != 0 {
         secretBaseIdx = VarGet(VAR_CURRENT_SECRET_BASE);
-        decorations = (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+        decorations = (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
             .decorations
             .as_mut_ptr();
-        decorPos = (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+        decorPos = (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
             .decorationPositions
             .as_mut_ptr();
         x = 0;
@@ -558,15 +568,19 @@ pub unsafe fn InitSecretBaseDecorationSprites() {
     let mut numDecorations: u8 = 0;
     let mut objectEventId: u8 = 0;
     if CurMapIsSecretBase() == 0 {
-        decorations = (*gSaveBlock1Ptr).playerRoomDecorations.as_mut_ptr();
-        decorationPositions = (*gSaveBlock1Ptr).playerRoomDecorationPositions.as_mut_ptr();
+        decorations = (*crate::gl!(gSaveBlock1Ptr))
+            .playerRoomDecorations
+            .as_mut_ptr();
+        decorationPositions = (*crate::gl!(gSaveBlock1Ptr))
+            .playerRoomDecorationPositions
+            .as_mut_ptr();
         numDecorations = DECOR_MAX_PLAYERS_HOUSE;
     } else {
         let secretBaseIdx: u16 = VarGet(VAR_CURRENT_SECRET_BASE);
-        decorations = (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+        decorations = (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
             .decorations
             .as_mut_ptr();
-        decorationPositions = (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+        decorationPositions = (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
             .decorationPositions
             .as_mut_ptr();
         numDecorations = DECOR_MAX_SECRET_BASE;
@@ -584,15 +598,18 @@ pub unsafe fn InitSecretBaseDecorationSprites() {
             .category;
             if permission == DECORPERM_SPRITE {
                 objectEventId = 0;
-                while objectEventId < (*gMapHeader.events).objectEventCount {
-                    if (*(*gMapHeader.events).objectEvents.at(objectEventId)).flagId as i32
+                while objectEventId < (*crate::gl!(gMapHeader.events)).objectEventCount {
+                    if (*(*crate::gl!(gMapHeader.events))
+                        .objectEvents
+                        .at(objectEventId))
+                    .flagId as i32
                         == FLAG_DECORATION_1 as i32 + gSpecialVar_0x8004 as i32
                     {
                         break;
                     }
                     objectEventId += 1;
                 }
-                if objectEventId == (*gMapHeader.events).objectEventCount {
+                if objectEventId == (*crate::gl!(gMapHeader.events)).objectEventCount {
                     break 'l1;
                 }
                 gSpecialVar_0x8006 = (*decorationPositions.at(i) >> 4) as u16;
@@ -605,8 +622,10 @@ pub unsafe fn InitSecretBaseDecorationSprites() {
                     || MetatileBehavior_HoldsLargeDecoration(metatileBehavior) == TRUE
                 {
                     gSpecialVar_Result = VAR_OBJ_GFX_ID_0
-                        + ((*(*gMapHeader.events).objectEvents.at(objectEventId)).graphicsId
-                            as u16
+                        + ((*(*crate::gl!(gMapHeader.events))
+                            .objectEvents
+                            .at(objectEventId))
+                        .graphicsId as u16
                             - OBJ_EVENT_GFX_VAR_0);
                     VarSet(
                         *(&raw const crate::ffi::gSpecialVar_Result)
@@ -616,39 +635,41 @@ pub unsafe fn InitSecretBaseDecorationSprites() {
                             .cast::<CArray<Decoration, 0>>())[*decorations.at(i)]
                         .tiles,
                     );
-                    gSpecialVar_Result =
-                        (*(*gMapHeader.events).objectEvents.at(objectEventId)).localId as u16;
+                    gSpecialVar_Result = (*(*crate::gl!(gMapHeader.events))
+                        .objectEvents
+                        .at(objectEventId))
+                    .localId as u16;
                     FlagClear(FLAG_DECORATION_1 + gSpecialVar_0x8004);
                     TrySpawnObjectEvent(
                         gSpecialVar_Result as u8,
-                        (*gSaveBlock1Ptr).location.mapNum as u8,
-                        (*gSaveBlock1Ptr).location.mapGroup as u8,
+                        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                     );
                     TryMoveObjectEventToMapCoords(
                         gSpecialVar_Result as u8,
-                        (*gSaveBlock1Ptr).location.mapNum as u8,
-                        (*gSaveBlock1Ptr).location.mapGroup as u8,
+                        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                         gSpecialVar_0x8006 as i16,
                         gSpecialVar_0x8007 as i16,
                     );
                     TryOverrideObjectEventTemplateCoords(
                         gSpecialVar_Result as u8,
-                        (*gSaveBlock1Ptr).location.mapNum as u8,
-                        (*gSaveBlock1Ptr).location.mapGroup as u8,
+                        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                     );
                     if CurMapIsSecretBase() == TRUE && VarGet(VAR_CURRENT_SECRET_BASE) != 0 {
                         if category == DECORCAT_DOLL {
                             OverrideSecretBaseDecorationSpriteScript(
                                 gSpecialVar_Result as u8,
-                                (*gSaveBlock1Ptr).location.mapNum as u8,
-                                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                                 DECORCAT_DOLL,
                             );
                         } else if category == DECORCAT_CUSHION {
                             OverrideSecretBaseDecorationSpriteScript(
                                 gSpecialVar_Result as u8,
-                                (*gSaveBlock1Ptr).location.mapNum as u8,
-                                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
                                 DECORCAT_CUSHION,
                             );
                         }
@@ -662,13 +683,19 @@ pub unsafe fn InitSecretBaseDecorationSprites() {
 pub unsafe fn HideSecretBaseDecorationSprites() {
     let mut flag: u16 = 0;
     let mut objectEventId: u8 = 0;
-    while objectEventId < (*gMapHeader.events).objectEventCount {
-        flag = (*(*gMapHeader.events).objectEvents.at(objectEventId)).flagId;
+    while objectEventId < (*crate::gl!(gMapHeader.events)).objectEventCount {
+        flag = (*(*crate::gl!(gMapHeader.events))
+            .objectEvents
+            .at(objectEventId))
+        .flagId;
         if (FLAG_DECORATION_1..=FLAG_DECORATION_14).contains(&flag) {
             RemoveObjectEventByLocalIdAndMap(
-                (*(*gMapHeader.events).objectEvents.at(objectEventId)).localId,
-                (*gSaveBlock1Ptr).location.mapNum as u8,
-                (*gSaveBlock1Ptr).location.mapGroup as u8,
+                (*(*crate::gl!(gMapHeader.events))
+                    .objectEvents
+                    .at(objectEventId))
+                .localId,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapNum as u8,
+                (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup as u8,
             );
             FlagSet(flag);
         }
@@ -718,14 +745,14 @@ pub(crate) unsafe fn Task_WarpOutOfSecretBase(taskId: u8) {
             task_set(taskId, 0, 1);
         }
         1 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 task_set(taskId, 0, 2);
             }
         }
         2 => {
             SetWarpDestinationToDynamicWarp(WARP_ID_SECRET_BASE);
             WarpIntoMap();
-            gFieldCallback = Some(FieldCB_DefaultWarpExit);
+            crate::gl!(gFieldCallback = Some(FieldCB_DefaultWarpExit));
             SetMainCallback2(Some(CB2_LoadMap));
             UnlockPlayerFieldControls();
             DestroyTask(taskId);
@@ -739,7 +766,7 @@ unsafe fn WarpOutOfSecretBase() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsCurSecretBaseOwnedByAnotherPlayer() {
-    if (*gSaveBlock1Ptr).secretBases[0].secretBaseId != sCurSecretBaseId.get() {
+    if (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].secretBaseId != sCurSecretBaseId.get() {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -748,16 +775,19 @@ pub unsafe fn IsCurSecretBaseOwnedByAnotherPlayer() {
 unsafe fn GetSecretBaseName(dest: *mut u8, secretBaseIdx: u8) -> *mut u8 {
     *StringCopyN(
         dest,
-        (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
             .trainerName
             .as_mut_ptr(),
         GetNameLength(
-            (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+            (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
                 .trainerName
                 .as_mut_ptr(),
         ),
     ) = EOS;
-    ConvertInternationalString(dest, (*gSaveBlock1Ptr).secretBases[secretBaseIdx].language);
+    ConvertInternationalString(
+        dest,
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].language,
+    );
     StringAppend(
         dest,
         (*(&raw const crate::data::strings::gText_ApostropheSBase).cast::<CArray<u8, 0>>())
@@ -771,17 +801,17 @@ pub unsafe fn GetSecretBaseMapName(dest: *mut u8) -> *mut u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn CopyCurSecretBaseOwnerName_StrVar1() {
     let secretBaseIdx: u8 = VarGet(VAR_CURRENT_SECRET_BASE) as u8;
-    let name: *mut u8 = (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+    let name: *mut u8 = (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
         .trainerName
         .as_mut_ptr();
     *StringCopyN(gStringVar1.as_mut_ptr(), name, GetNameLength(name)) = EOS;
     ConvertInternationalString(
         gStringVar1.as_mut_ptr(),
-        (*gSaveBlock1Ptr).secretBases[secretBaseIdx].language,
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].language,
     );
 }
 unsafe fn IsSecretBaseRegistered(secretBaseIdx: u8) -> u8 {
-    if (*gSaveBlock1Ptr).secretBases[secretBaseIdx].registryStatus() != 0 {
+    if (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].registryStatus() != 0 {
         return TRUE;
     }
     FALSE
@@ -799,8 +829,8 @@ pub unsafe fn SetPlayerSecretBaseParty() {
     let mut moveIndex: u16 = 0;
     let mut party: *mut SecretBaseParty = null_mut();
     let mut partyId: u16 = 0;
-    party = &raw mut (*gSaveBlock1Ptr).secretBases[0].party;
-    if (*gSaveBlock1Ptr).secretBases[0].secretBaseId != 0 {
+    party = &raw mut (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].party;
+    if (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].secretBaseId != 0 {
         for i in 0..(PARTY_SIZE as u16) {
             moveIndex = 0;
             while moveIndex < MAX_MON_MOVES as u16 {
@@ -812,23 +842,26 @@ pub unsafe fn SetPlayerSecretBaseParty() {
             (*party).levels[i] = 0;
             (*party).personality[i] = 0;
             (*party).EVs[i] = 0;
-            if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32
-                && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
+            if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES)
+                != SPECIES_NONE as u32
+                && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0
             {
                 for moveIndex in 0..(MAX_MON_MOVES as u16) {
-                    (*party).moves[partyId as i32 * MAX_MON_MOVES + moveIndex as i32] =
-                        GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MOVE1 + moveIndex as i32)
-                            as u16;
+                    (*party).moves[partyId as i32 * MAX_MON_MOVES + moveIndex as i32] = GetMonData2(
+                        crate::gl!(&raw gPlayerParty[i]),
+                        MON_DATA_MOVE1 + moveIndex as i32,
+                    )
+                        as u16;
                 }
                 (*party).species[partyId] =
-                    GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as u16;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) as u16;
                 (*party).heldItems[partyId] =
-                    GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HELD_ITEM) as u16;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HELD_ITEM) as u16;
                 (*party).levels[partyId] =
-                    GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) as u8;
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_LEVEL) as u8;
                 (*party).personality[partyId] =
-                    GetMonData2(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY);
-                (*party).EVs[partyId] = GetAverageEVs(&raw mut gPlayerParty[i]);
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_PERSONALITY);
+                (*party).EVs[partyId] = GetAverageEVs(crate::gl!(&raw gPlayerParty[i]));
                 partyId += 1;
             }
         }
@@ -836,9 +869,9 @@ pub unsafe fn SetPlayerSecretBaseParty() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ClearAndLeaveSecretBase() {
-    let temp: u16 = (*gSaveBlock1Ptr).secretBases[0].numSecretBasesReceived;
-    ClearSecretBase(&raw mut (*gSaveBlock1Ptr).secretBases[0]);
-    (*gSaveBlock1Ptr).secretBases[0].numSecretBasesReceived = temp;
+    let temp: u16 = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].numSecretBasesReceived;
+    ClearSecretBase(&raw mut (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]);
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].numSecretBasesReceived = temp;
     WarpOutOfSecretBase();
 }
 #[unsafe(no_mangle)]
@@ -848,11 +881,11 @@ pub unsafe fn MoveOutOfSecretBase() {
 }
 unsafe fn ClosePlayerSecretBaseEntrance() {
     let mut metatileId: i16 = 0;
-    let events: *mut MapEvents = gMapHeader.events;
+    let events: *mut MapEvents = crate::gl!(gMapHeader.events);
     let mut i: u16 = 0;
     while i < (*events).bgEventCount as u16 {
         if (*(*events).bgEvents.at(i)).kind == BG_EVENT_SECRET_BASE
-            && (*gSaveBlock1Ptr).secretBases[0].secretBaseId as u32
+            && (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].secretBaseId as u32
                 == (*(*events).bgEvents.at(i)).bgUnion.secretBaseId
         {
             metatileId = MapGridGetMetatileIdAt(
@@ -879,9 +912,9 @@ unsafe fn ClosePlayerSecretBaseEntrance() {
 pub unsafe fn MoveOutOfSecretBaseFromOutside() {
     ClosePlayerSecretBaseEntrance();
     IncrementGameStat(GAME_STAT_MOVED_SECRET_BASE);
-    let temp: u16 = (*gSaveBlock1Ptr).secretBases[0].numSecretBasesReceived;
-    ClearSecretBase(&raw mut (*gSaveBlock1Ptr).secretBases[0]);
-    (*gSaveBlock1Ptr).secretBases[0].numSecretBasesReceived = temp;
+    let temp: u16 = (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].numSecretBasesReceived;
+    ClearSecretBase(&raw mut (*crate::gl!(gSaveBlock1Ptr)).secretBases[0]);
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].numSecretBasesReceived = temp;
 }
 unsafe fn GetNumRegisteredSecretBases() -> u8 {
     let mut count: u8 = 0;
@@ -904,8 +937,9 @@ pub unsafe fn GetCurSecretBaseRegistrationValidity() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ToggleCurSecretBaseRegistry() {
-    (*gSaveBlock1Ptr).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].set_registryStatus(
-        (*gSaveBlock1Ptr).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].registryStatus() ^ 1,
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].set_registryStatus(
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].registryStatus()
+            ^ 1,
     );
     FlagSet(FLAG_SECRET_BASE_REGISTRY_ENABLED);
 }
@@ -925,7 +959,7 @@ pub(crate) unsafe fn Task_ShowSecretBaseRegistryMenu(taskId: u8) {
         *data.at(1) = 0;
         *data.at(2) = 0;
         ClearDialogWindowAndFrame(0, 0);
-        sRegistryMenu = AllocZeroed(440) as *mut SecretBaseRegistryMenu;
+        crate::gl!(sRegistryMenu = AllocZeroed(440) as *mut SecretBaseRegistryMenu);
         *data.at(6) = AddWindow((&raw const sRegistryWindowTemplates[0]).cast_mut()) as i16;
         BuildRegistryMenuItems(taskId);
         FinalizeRegistryMenu(taskId);
@@ -946,28 +980,29 @@ unsafe fn BuildRegistryMenuItems(taskId: u8) {
     let mut count: u8 = 0;
     for i in 1..SECRET_BASES_COUNT {
         if IsSecretBaseRegistered(i) != 0 {
-            GetSecretBaseName((*sRegistryMenu).names[count].as_mut_ptr(), i);
-            (*sRegistryMenu).items[count].name = (*sRegistryMenu).names[count].as_mut_ptr();
-            (*sRegistryMenu).items[count].id = i as i32;
+            GetSecretBaseName((*crate::gl!(sRegistryMenu)).names[count].as_mut_ptr(), i);
+            (*crate::gl!(sRegistryMenu)).items[count].name =
+                (*crate::gl!(sRegistryMenu)).names[count].as_mut_ptr();
+            (*crate::gl!(sRegistryMenu)).items[count].id = i as i32;
             count += 1;
         }
     }
-    (*sRegistryMenu).items[count].name = (*(&raw const crate::data::strings::gText_Cancel)
-        .cast::<CArray<u8, 0>>())
-    .as_ptr()
-    .cast_mut();
-    (*sRegistryMenu).items[count].id = LIST_CANCEL;
+    (*crate::gl!(sRegistryMenu)).items[count].name =
+        (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+    (*crate::gl!(sRegistryMenu)).items[count].id = LIST_CANCEL;
     *data = count as i16 + 1;
     if *data < 8 {
         *data.at(3) = *data;
     } else {
         *data.at(3) = 8;
     }
-    gMultiuseListMenuTemplate = *sRegistryListMenuTemplate;
-    gMultiuseListMenuTemplate.windowId = *data.at(6) as u8;
-    gMultiuseListMenuTemplate.totalItems = *data as u16;
-    gMultiuseListMenuTemplate.items = (*sRegistryMenu).items.as_mut_ptr();
-    gMultiuseListMenuTemplate.maxShowed = *data.at(3) as u16;
+    crate::gl!(gMultiuseListMenuTemplate = *sRegistryListMenuTemplate);
+    crate::gl!(gMultiuseListMenuTemplate.windowId = *data.at(6) as u8);
+    crate::gl!(gMultiuseListMenuTemplate.totalItems = *data as u16);
+    crate::gl!(gMultiuseListMenuTemplate.items = (*crate::gl!(sRegistryMenu)).items.as_mut_ptr());
+    crate::gl!(gMultiuseListMenuTemplate.maxShowed = *data.at(3) as u16);
 }
 pub(crate) unsafe fn RegistryMenu_OnCursorMove(unused: i32, flag: u8, menu: *mut ListMenu) {
     if flag != TRUE {
@@ -978,7 +1013,7 @@ unsafe fn FinalizeRegistryMenu(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     SetStandardWindowBorderStyle(*data.at(6) as u8, FALSE);
     *data.at(5) = ListMenuInit(
-        &raw mut gMultiuseListMenuTemplate,
+        crate::gl!(&raw gMultiuseListMenuTemplate),
         *data.at(2) as u16,
         *data.at(1) as u16,
     ) as i16;
@@ -1016,7 +1051,7 @@ pub(crate) unsafe fn HandleRegistryMenuInput(taskId: u8) {
             ClearWindowTilemap(*data.at(6) as u8);
             RemoveWindow(*data.at(6) as u8);
             ScheduleBgCopyTilemapToVram(0);
-            Free(sRegistryMenu as *mut c_void);
+            Free(crate::gl!(sRegistryMenu) as *mut c_void);
             GoToSecretBasePCRegisterMenu(taskId);
         }
         _ => {
@@ -1090,7 +1125,7 @@ pub unsafe fn DeleteRegistry_Yes_Callback(taskId: u8) {
         data.at(2) as *mut u16,
         data.at(1) as *mut u16,
     );
-    (*gSaveBlock1Ptr).secretBases[*data.at(4)].set_registryStatus(UNREGISTERED);
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[*data.at(4)].set_registryStatus(UNREGISTERED);
     BuildRegistryMenuItems(taskId);
     SetCursorWithinListBounds(
         data.at(2) as *mut u16,
@@ -1147,8 +1182,8 @@ pub(crate) unsafe fn GoToSecretBasePCRegisterMenu(taskId: u8) {
     DestroyTask(taskId);
 }
 unsafe fn GetSecretBaseOwnerType(secretBaseIdx: u8) -> u8 {
-    ((*gSaveBlock1Ptr).secretBases[secretBaseIdx].trainerId[0] as i32 % 5) as u8
-        + (*gSaveBlock1Ptr).secretBases[secretBaseIdx].gender() * 5
+    ((*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].trainerId[0] as i32 % 5) as u8
+        + (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].gender() * 5
 }
 pub unsafe fn GetSecretBaseTrainerLoseText() -> *mut u8 {
     let ownerType: u8 = GetSecretBaseOwnerType(VarGet(VAR_CURRENT_SECRET_BASE) as u8);
@@ -1201,12 +1236,12 @@ pub unsafe fn GetSecretBaseTrainerLoseText() -> *mut u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn PrepSecretBaseBattleFlags() {
     TryGainNewFanFromCounter(FANCOUNTER_BATTLED_AT_BASE);
-    gTrainerBattleOpponent_A = TRAINER_SECRET_BASE;
-    gBattleTypeFlags = 0x8000008;
+    gTrainerBattleOpponent_A.set(TRAINER_SECRET_BASE);
+    gBattleTypeFlags.set(0x8000008);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetBattledOwnerFromResult() {
-    (*gSaveBlock1Ptr).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)]
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[VarGet(VAR_CURRENT_SECRET_BASE)]
         .set_battledOwnerToday(gSpecialVar_Result as u8);
 }
 #[unsafe(no_mangle)]
@@ -1214,12 +1249,13 @@ pub unsafe fn GetSecretBaseOwnerAndState() {
     let secretBaseIdx: u16 = VarGet(VAR_CURRENT_SECRET_BASE);
     if FlagGet(2338) == 0 {
         for i in 0..SECRET_BASES_COUNT {
-            (*gSaveBlock1Ptr).secretBases[i].set_battledOwnerToday(FALSE);
+            (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].set_battledOwnerToday(FALSE);
         }
         FlagSet(2338);
     }
     gSpecialVar_0x8004 = GetSecretBaseOwnerType(secretBaseIdx as u8) as u16;
-    gSpecialVar_Result = (*gSaveBlock1Ptr).secretBases[secretBaseIdx].battledOwnerToday() as u16;
+    gSpecialVar_Result =
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].battledOwnerToday() as u16;
 }
 pub unsafe fn SecretBasePerStepCallback(taskId: u8) {
     let mut x: i16 = 0;
@@ -1394,13 +1430,13 @@ unsafe fn SaveSecretBase(
 ) {
     let mut stringLength: i32 = 0;
     let mut name: *mut u8 = null_mut();
-    (*gSaveBlock1Ptr).secretBases[secretBaseIdx] = *secretBase;
-    (*gSaveBlock1Ptr).secretBases[secretBaseIdx].set_registryStatus(NEW);
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx] = *secretBase;
+    (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].set_registryStatus(NEW);
     if version == VERSION_SAPPHIRE as u32 || version == VERSION_RUBY as u32 {
-        (*gSaveBlock1Ptr).secretBases[secretBaseIdx].language = GAME_LANGUAGE;
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].language = GAME_LANGUAGE;
     }
     if version == VERSION_EMERALD as u32 && language == LANGUAGE_JAPANESE as u32 {
-        name = (*gSaveBlock1Ptr).secretBases[secretBaseIdx]
+        name = (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx]
             .trainerName
             .as_mut_ptr();
         stringLength = 0;
@@ -1411,7 +1447,7 @@ unsafe fn SaveSecretBase(
             stringLength += 1;
         }
         if stringLength > 5 {
-            (*gSaveBlock1Ptr).secretBases[secretBaseIdx].language = GAME_LANGUAGE;
+            (*crate::gl!(gSaveBlock1Ptr)).secretBases[secretBaseIdx].language = GAME_LANGUAGE;
         }
     }
 }
@@ -1452,7 +1488,7 @@ unsafe fn SecretBasesBelongToSamePlayer(
 }
 unsafe fn GetSecretBaseIndexFromId(secretBaseId: u8) -> i16 {
     for i in 0..(SECRET_BASES_COUNT as i16) {
-        if (*gSaveBlock1Ptr).secretBases[i].secretBaseId == secretBaseId {
+        if (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].secretBaseId == secretBaseId {
             return i;
         }
     }
@@ -1460,7 +1496,7 @@ unsafe fn GetSecretBaseIndexFromId(secretBaseId: u8) -> i16 {
 }
 unsafe fn FindAvailableSecretBaseIndex() -> u8 {
     for i in 1..(SECRET_BASES_COUNT as i16) {
-        if (*gSaveBlock1Ptr).secretBases[i].secretBaseId == 0 {
+        if (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].secretBaseId == 0 {
             return i as u8;
         }
     }
@@ -1468,8 +1504,8 @@ unsafe fn FindAvailableSecretBaseIndex() -> u8 {
 }
 unsafe fn FindUnregisteredSecretBaseIndex() -> u8 {
     for i in 1..(SECRET_BASES_COUNT as i16) {
-        if (*gSaveBlock1Ptr).secretBases[i].registryStatus() == UNREGISTERED
-            && (*gSaveBlock1Ptr).secretBases[i].toRegister() == FALSE
+        if (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].registryStatus() == UNREGISTERED
+            && (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].toRegister() == FALSE
         {
             return i as u8;
         }
@@ -1483,10 +1519,10 @@ unsafe fn TrySaveFriendsSecretBase(secretBase: *mut SecretBase, version: u32, la
     let mut index: i16 = GetSecretBaseIndexFromId((*secretBase).secretBaseId);
     if index != 0 {
         if index != -1 {
-            if (*gSaveBlock1Ptr).secretBases[index].toRegister() == TRUE {
+            if (*crate::gl!(gSaveBlock1Ptr)).secretBases[index].toRegister() == TRUE {
                 return 0;
             }
-            if (*gSaveBlock1Ptr).secretBases[index].registryStatus() != NEW
+            if (*crate::gl!(gSaveBlock1Ptr)).secretBases[index].registryStatus() != NEW
                 || (*secretBase).toRegister() == TRUE
             {
                 SaveSecretBase(index as u8, secretBase, version, language);
@@ -1509,7 +1545,7 @@ unsafe fn TrySaveFriendsSecretBase(secretBase: *mut SecretBase, version: u32, la
 }
 unsafe fn SortSecretBasesByRegistryStatus() {
     let mut secretBases: *mut SecretBase = null_mut();
-    secretBases = (*gSaveBlock1Ptr).secretBases.as_mut_ptr();
+    secretBases = (*crate::gl!(gSaveBlock1Ptr)).secretBases.as_mut_ptr();
     for i in 1..19u8 {
         for j in (i + 1)..SECRET_BASES_COUNT {
             if (*secretBases.at(i)).registryStatus() == UNREGISTERED
@@ -1539,19 +1575,22 @@ unsafe fn SecretBaseBelongsToPlayer(secretBase: *mut SecretBase) -> u8 {
     if (*secretBase).secretBaseId == 0 {
         return FALSE;
     }
-    if (*secretBase).secretBaseId != 0 && (*secretBase).gender() != (*gSaveBlock2Ptr).playerGender {
+    if (*secretBase).secretBaseId != 0
+        && (*secretBase).gender() != (*crate::gl!(gSaveBlock2Ptr)).playerGender
+    {
         return FALSE;
     }
     for i in 0..TRAINER_ID_LENGTH {
-        if (*secretBase).trainerId[i] != (*gSaveBlock2Ptr).playerTrainerId[i] {
+        if (*secretBase).trainerId[i] != (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[i] {
             return FALSE;
         }
     }
     let mut i: u8 = 0;
     while i < PLAYER_NAME_LENGTH as u8
-        && ((*secretBase).trainerName[i] != EOS || (*gSaveBlock2Ptr).playerName[i] != EOS)
+        && ((*secretBase).trainerName[i] != EOS
+            || (*crate::gl!(gSaveBlock2Ptr)).playerName[i] != EOS)
     {
-        if (*secretBase).trainerName[i] != (*gSaveBlock2Ptr).playerName[i] {
+        if (*secretBase).trainerName[i] != (*crate::gl!(gSaveBlock2Ptr)).playerName[i] {
             return FALSE;
         }
         i += 1;
@@ -1676,7 +1715,7 @@ unsafe fn SaveRecordMixBases(mixers: *mut SecretBaseRecordMixer) {
         (*mixers.at(2)).secretBases,
     );
     ClearDuplicateOwnedSecretBases(
-        (*gSaveBlock1Ptr).secretBases.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).secretBases.as_mut_ptr(),
         (*mixers).secretBases,
         (*mixers.at(1)).secretBases,
         (*mixers.at(2)).secretBases,
@@ -1730,80 +1769,80 @@ pub unsafe fn ReceiveSecretBasesData(secretBases: *mut c_void, recordSize: u32, 
             0 => {
                 mixers[0].secretBases =
                     (secretBases as *mut u8).at(recordSize) as *mut c_void as *mut SecretBase;
-                mixers[0].version = gLinkPlayers[1].version as u32 & 0xFF;
-                mixers[0].language = gLinkPlayers[1].language as u32;
+                mixers[0].version = crate::gl!(gLinkPlayers[1].version) as u32 & 0xFF;
+                mixers[0].language = crate::gl!(gLinkPlayers[1].language) as u32;
                 mixers[1].secretBases =
                     (secretBases as *mut u8).at(2 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[1].version = gLinkPlayers[2].version as u32 & 0xFF;
-                mixers[1].language = gLinkPlayers[2].language as u32;
+                mixers[1].version = crate::gl!(gLinkPlayers[2].version) as u32 & 0xFF;
+                mixers[1].language = crate::gl!(gLinkPlayers[2].language) as u32;
                 mixers[2].secretBases =
                     (secretBases as *mut u8).at(3 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[2].version = gLinkPlayers[3].version as u32 & 0xFF;
-                mixers[2].language = gLinkPlayers[3].language as u32;
+                mixers[2].version = crate::gl!(gLinkPlayers[3].version) as u32 & 0xFF;
+                mixers[2].language = crate::gl!(gLinkPlayers[3].language) as u32;
             }
             1 => {
                 mixers[0].secretBases =
                     (secretBases as *mut u8).at(2 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[0].version = gLinkPlayers[2].version as u32 & 0xFF;
-                mixers[0].language = gLinkPlayers[2].language as u32;
+                mixers[0].version = crate::gl!(gLinkPlayers[2].version) as u32 & 0xFF;
+                mixers[0].language = crate::gl!(gLinkPlayers[2].language) as u32;
                 mixers[1].secretBases =
                     (secretBases as *mut u8).at(3 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[1].version = gLinkPlayers[3].version as u32 & 0xFF;
-                mixers[1].language = gLinkPlayers[3].language as u32;
+                mixers[1].version = crate::gl!(gLinkPlayers[3].version) as u32 & 0xFF;
+                mixers[1].language = crate::gl!(gLinkPlayers[3].language) as u32;
                 mixers[2].secretBases =
                     (secretBases as *mut u8).at(0 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[2].version = gLinkPlayers[0].version as u32 & 0xFF;
-                mixers[2].language = gLinkPlayers[0].language as u32;
+                mixers[2].version = crate::gl!(gLinkPlayers[0].version) as u32 & 0xFF;
+                mixers[2].language = crate::gl!(gLinkPlayers[0].language) as u32;
             }
             2 => {
                 mixers[0].secretBases =
                     (secretBases as *mut u8).at(3 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[0].version = gLinkPlayers[3].version as u32 & 0xFF;
-                mixers[0].language = gLinkPlayers[3].language as u32;
+                mixers[0].version = crate::gl!(gLinkPlayers[3].version) as u32 & 0xFF;
+                mixers[0].language = crate::gl!(gLinkPlayers[3].language) as u32;
                 mixers[1].secretBases =
                     (secretBases as *mut u8).at(0 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[1].version = gLinkPlayers[0].version as u32 & 0xFF;
-                mixers[1].language = gLinkPlayers[0].language as u32;
+                mixers[1].version = crate::gl!(gLinkPlayers[0].version) as u32 & 0xFF;
+                mixers[1].language = crate::gl!(gLinkPlayers[0].language) as u32;
                 mixers[2].secretBases =
                     (secretBases as *mut u8).at(recordSize) as *mut c_void as *mut SecretBase;
-                mixers[2].version = gLinkPlayers[1].version as u32 & 0xFF;
-                mixers[2].language = gLinkPlayers[1].language as u32;
+                mixers[2].version = crate::gl!(gLinkPlayers[1].version) as u32 & 0xFF;
+                mixers[2].language = crate::gl!(gLinkPlayers[1].language) as u32;
             }
             3 => {
                 mixers[0].secretBases =
                     (secretBases as *mut u8).at(0 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[0].version = gLinkPlayers[0].version as u32 & 0xFF;
-                mixers[0].language = gLinkPlayers[0].language as u32;
+                mixers[0].version = crate::gl!(gLinkPlayers[0].version) as u32 & 0xFF;
+                mixers[0].language = crate::gl!(gLinkPlayers[0].language) as u32;
                 mixers[1].secretBases =
                     (secretBases as *mut u8).at(recordSize) as *mut c_void as *mut SecretBase;
-                mixers[1].version = gLinkPlayers[1].version as u32 & 0xFF;
-                mixers[1].language = gLinkPlayers[1].language as u32;
+                mixers[1].version = crate::gl!(gLinkPlayers[1].version) as u32 & 0xFF;
+                mixers[1].language = crate::gl!(gLinkPlayers[1].language) as u32;
                 mixers[2].secretBases =
                     (secretBases as *mut u8).at(2 * recordSize) as *mut c_void as *mut SecretBase;
-                mixers[2].version = gLinkPlayers[2].version as u32 & 0xFF;
-                mixers[2].language = gLinkPlayers[2].language as u32;
+                mixers[2].version = crate::gl!(gLinkPlayers[2].version) as u32 & 0xFF;
+                mixers[2].language = crate::gl!(gLinkPlayers[2].language) as u32;
             }
             _ => {}
         }
         SaveRecordMixBases(mixers.as_mut_ptr());
         i = 1;
         while i < SECRET_BASES_COUNT as u16 {
-            if (*gSaveBlock1Ptr).secretBases[i].toRegister() == TRUE {
-                (*gSaveBlock1Ptr).secretBases[i].set_registryStatus(REGISTERED);
-                (*gSaveBlock1Ptr).secretBases[i].set_toRegister(FALSE);
+            if (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].toRegister() == TRUE {
+                (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].set_registryStatus(REGISTERED);
+                (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].set_toRegister(FALSE);
             }
             i += 1;
         }
         SortSecretBasesByRegistryStatus();
         for i in 1..(SECRET_BASES_COUNT as u16) {
-            if (*gSaveBlock1Ptr).secretBases[i].registryStatus() == NEW {
-                (*gSaveBlock1Ptr).secretBases[i].set_registryStatus(UNREGISTERED);
+            if (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].registryStatus() == NEW {
+                (*crate::gl!(gSaveBlock1Ptr)).secretBases[i].set_registryStatus(UNREGISTERED);
             }
         }
-        if (*gSaveBlock1Ptr).secretBases[0].secretBaseId != 0
-            && (*gSaveBlock1Ptr).secretBases[0].numSecretBasesReceived != 0xFFFF
+        if (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].secretBaseId != 0
+            && (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].numSecretBasesReceived != 0xFFFF
         {
-            (*gSaveBlock1Ptr).secretBases[0].numSecretBasesReceived += 1;
+            (*crate::gl!(gSaveBlock1Ptr)).secretBases[0].numSecretBasesReceived += 1;
         }
     }
 }

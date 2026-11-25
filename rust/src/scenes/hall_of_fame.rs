@@ -99,15 +99,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `ConfettiUtil_AddNew` with this module's view of its types.
 #[inline]
-unsafe fn ConfettiUtil_AddNew(
-    a0: *mut OamData,
-    a1: u16,
-    a2: u16,
-    a3: i16,
-    a4: i16,
-    a5: u8,
-    a6: u8,
-) -> u8 {
+fn ConfettiUtil_AddNew(a0: *mut OamData, a1: u16, a2: u16, a3: i16, a4: i16, a5: u8, a6: u8) -> u8 {
     unsafe { crate::confetti_util::ConfettiUtil_AddNew(a0 as _, a1, a2, a3, a4, a5, a6) }
 }
 /// `ConvertIntToDecimalStringN` with this module's view of its types.
@@ -156,14 +148,14 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -328,12 +320,14 @@ static sSpriteSheet_Confetti: Table<CArray<CompressedSpriteSheet, 2>> =
 static sSpriteTemplate_HofConfetti: Table<SpriteTemplate> =
     Table((&raw const crate::data::hall_of_fame::sSpriteTemplate_HofConfetti).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sHofFadePalettes: crate::global::Global<u32> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHofMonPtr: *mut HallofFameTeam = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHofGfxPtr: *mut HofGfx = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHofMonPtr: crate::global::Global<*mut HallofFameTeam> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sHofGfxPtr: crate::global::Global<*mut HofGfx> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -342,19 +336,19 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `ConfettiUtil_SetCallback` with this module's view of its types.
 #[inline]
-unsafe fn ConfettiUtil_SetCallback(a0: u8, a1: Option<unsafe fn(*mut ConfettiUtil)>) -> u8 {
+fn ConfettiUtil_SetCallback(a0: u8, a1: Option<unsafe fn(*mut ConfettiUtil)>) -> u8 {
     unsafe { crate::confetti_util::ConfettiUtil_SetCallback(a0, core::mem::transmute(a1)) }
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `SetMainCallback2` with this module's view of its types.
@@ -378,35 +372,35 @@ pub(crate) unsafe fn CB2_HallOfFame() {
     UpdatePaletteFade();
 }
 unsafe fn InitHallOfFameScreen() -> u8 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankCallback(None);
             ClearVramOamPltt_LoadHofPal();
-            sHofGfxPtr = AllocZeroed(8212) as *mut HofGfx;
-            gMain.state = 1;
+            crate::gl!(sHofGfxPtr = AllocZeroed(8212) as *mut HofGfx);
+            crate::gl!(gMain.state = 1);
         }
         1 => {
             LoadHofGfx();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 16194);
             SetGpuReg(REG_OFFSET_BLDALPHA, 1808);
             SetGpuReg(REG_OFFSET_BLDY, 0);
             InitHofBgs();
-            (*sHofGfxPtr).state = 0;
-            gMain.state += 1;
+            (*crate::gl!(sHofGfxPtr)).state = 0;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             if LoadHofBgs() == 0 {
                 SetVBlankCallback(Some(VBlankCB_HallOfFame));
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         4 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetMainCallback2(Some(CB2_HallOfFame));
                 PlayBGM(MUS_HALL_OF_FAME);
                 return FALSE;
@@ -421,14 +415,14 @@ pub unsafe fn CB2_DoHallOfFameScreen() {
     if InitHallOfFameScreen() == 0 {
         let taskId: u8 = CreateTask(Some(Task_Hof_InitMonData), 0);
         task_set(taskId, tDontSaveData, FALSE as i16);
-        sHofMonPtr = AllocZeroed(120) as *mut HallofFameTeam;
+        crate::gl!(sHofMonPtr = AllocZeroed(120) as *mut HallofFameTeam);
     }
 }
 pub unsafe fn CB2_DoHallOfFameScreenDontSaveData() {
     if InitHallOfFameScreen() == 0 {
         let taskId: u8 = CreateTask(Some(Task_Hof_InitMonData), 0);
         task_set(taskId, tDontSaveData, TRUE as i16);
-        sHofMonPtr = AllocZeroed(120) as *mut HallofFameTeam;
+        crate::gl!(sHofMonPtr = AllocZeroed(120) as *mut HallofFameTeam);
     }
 }
 pub(crate) unsafe fn Task_Hof_InitMonData(taskId: u8) {
@@ -436,29 +430,32 @@ pub(crate) unsafe fn Task_Hof_InitMonData(taskId: u8) {
     let mut i: u16 = 0;
     while i < PARTY_SIZE as u16 {
         let mut nickname: CArray<u8, 11> = zeroed();
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != 0 {
-            (*sHofMonPtr).mon[i]
-                .set_species(GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16);
-            (*sHofMonPtr).mon[i].tid = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_OT_ID);
-            (*sHofMonPtr).mon[i].personality =
-                GetMonData2(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY);
-            (*sHofMonPtr).mon[i]
-                .set_lvl(GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) as u16);
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) != 0 {
+            (*crate::gl!(sHofMonPtr)).mon[i]
+                .set_species(
+                    GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES_OR_EGG) as u16,
+                );
+            (*crate::gl!(sHofMonPtr)).mon[i].tid =
+                GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_OT_ID);
+            (*crate::gl!(sHofMonPtr)).mon[i].personality =
+                GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_PERSONALITY);
+            (*crate::gl!(sHofMonPtr)).mon[i]
+                .set_lvl(GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_LEVEL) as u16);
             GetMonData3(
-                &raw mut gPlayerParty[i],
+                crate::gl!(&raw gPlayerParty[i]),
                 MON_DATA_NICKNAME,
                 nickname.as_mut_ptr(),
             );
             for j in 0..(POKEMON_NAME_LENGTH as u16) {
-                (*sHofMonPtr).mon[i].nickname[j] = nickname[j];
+                (*crate::gl!(sHofMonPtr)).mon[i].nickname[j] = nickname[j];
             }
             task_set(taskId, tMonNumber, task_get(taskId, tMonNumber) + 1);
         } else {
-            (*sHofMonPtr).mon[i].set_species(SPECIES_NONE);
-            (*sHofMonPtr).mon[i].tid = 0;
-            (*sHofMonPtr).mon[i].personality = 0;
-            (*sHofMonPtr).mon[i].set_lvl(0);
-            (*sHofMonPtr).mon[i].nickname[0] = EOS;
+            (*crate::gl!(sHofMonPtr)).mon[i].set_species(SPECIES_NONE);
+            (*crate::gl!(sHofMonPtr)).mon[i].tid = 0;
+            (*crate::gl!(sHofMonPtr)).mon[i].personality = 0;
+            (*crate::gl!(sHofMonPtr)).mon[i].set_lvl(0);
+            (*crate::gl!(sHofMonPtr)).mon[i].nickname[0] = EOS;
         }
         i += 1;
     }
@@ -476,13 +473,13 @@ pub(crate) unsafe fn Task_Hof_InitMonData(taskId: u8) {
 }
 pub(crate) unsafe fn Task_Hof_InitTeamSaveData(taskId: u8) {
     let mut lastSavedTeam: *mut HallofFameTeam =
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut HallofFameTeam;
-    if gHasHallOfFameRecords == 0 {
+    if gHasHallOfFameRecords.get() == 0 {
         memset(
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr(),
@@ -492,7 +489,7 @@ pub(crate) unsafe fn Task_Hof_InitTeamSaveData(taskId: u8) {
     } else {
         if LoadGameSave(SAVE_HALL_OF_FAME) != SAVE_STATUS_OK {
             memset(
-                (*(&raw const crate::decompress::gDecompressionBuffer)
+                (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                     .cast::<CArray<u8, 16384>>()
                     .cast_mut())
                 .as_mut_ptr(),
@@ -511,12 +508,12 @@ pub(crate) unsafe fn Task_Hof_InitTeamSaveData(taskId: u8) {
     }
     if i >= HALL_OF_FAME_MAX_TEAMS {
         let mut afterTeam: *mut HallofFameTeam =
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut HallofFameTeam;
         let mut beforeTeam: *mut HallofFameTeam =
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut HallofFameTeam;
@@ -530,7 +527,7 @@ pub(crate) unsafe fn Task_Hof_InitTeamSaveData(taskId: u8) {
         }
         lastSavedTeam = lastSavedTeam.at(-1);
     }
-    *lastSavedTeam = *sHofMonPtr;
+    *lastSavedTeam = *crate::gl!(sHofMonPtr);
     DrawDialogueFrame(0, 0);
     AddTextPrinterParameterized2(
         0,
@@ -548,18 +545,18 @@ pub(crate) unsafe fn Task_Hof_InitTeamSaveData(taskId: u8) {
     task_set_func(taskId, Some(Task_Hof_TrySaveData));
 }
 pub(crate) unsafe fn Task_Hof_TrySaveData(taskId: u8) {
-    gGameContinueCallback = Some(CB2_DoHallOfFameScreenDontSaveData);
+    crate::gl!(gGameContinueCallback = Some(CB2_DoHallOfFameScreenDontSaveData));
     if TrySavingData(SAVE_HALL_OF_FAME) == SAVE_STATUS_ERROR && gDamagedSaveSectors.get() != 0 {
         UnsetBgTilemapBuffer(1);
         UnsetBgTilemapBuffer(3);
         FreeAllWindowBuffers();
-        if !sHofGfxPtr.is_null() {
-            Free(sHofGfxPtr as *mut c_void);
-            sHofGfxPtr = null_mut();
+        if !(*sHofGfxPtr.as_ptr()).is_null() {
+            Free(crate::gl!(sHofGfxPtr) as *mut c_void);
+            crate::gl!(sHofGfxPtr = null_mut());
         }
-        if !sHofMonPtr.is_null() {
-            Free(sHofMonPtr as *mut c_void);
-            sHofMonPtr = null_mut();
+        if !(*sHofMonPtr.as_ptr()).is_null() {
+            Free(crate::gl!(sHofMonPtr) as *mut c_void);
+            crate::gl!(sHofMonPtr = null_mut());
         }
         DestroyTask(taskId);
     } else {
@@ -584,7 +581,7 @@ pub(crate) unsafe fn Task_Hof_DisplayMon(taskId: u8) {
     let mut destX: i16 = 0;
     let mut destY: i16 = 0;
     let currMonId: u16 = task_get(taskId, 1) as u16;
-    let currMon: *mut HallofFameMon = &raw mut (*sHofMonPtr).mon[currMonId];
+    let currMon: *mut HallofFameMon = &raw mut (*crate::gl!(sHofMonPtr)).mon[currMonId];
     if task_get(taskId, 2) > 3 {
         startX = sHallOfFame_MonFullTeamPositions[currMonId][0];
         startY = sHallOfFame_MonFullTeamPositions[currMonId][1];
@@ -609,19 +606,26 @@ pub(crate) unsafe fn Task_Hof_DisplayMon(taskId: u8) {
         currMonId as u8,
         TAG_NONE,
     ) as u8;
-    gSprites[spriteId].data[1] = destX;
-    gSprites[spriteId].data[2] = destY;
-    gSprites[spriteId].data[0] = 0;
-    gSprites[spriteId].data[tSpecies] = (*currMon).species() as i16;
-    gSprites[spriteId].callback = Some(SpriteCB_GetOnScreenAndAnimate);
+    crate::gl!(gSprites[spriteId].data[1] = destX);
+    crate::gl!(gSprites[spriteId].data[2] = destY);
+    crate::gl!(gSprites[spriteId].data[0] = 0);
+    {
+        let gl_v = (*currMon).species() as i16;
+        let gl_i0 = tSpecies;
+        crate::gl!(gSprites[spriteId].data[gl_i0] = gl_v)
+    };
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_GetOnScreenAndAnimate));
     task_set(taskId, currMonId as i32 + 5, spriteId as i16);
     ClearDialogWindowAndFrame(0, TRUE);
     task_set_func(taskId, Some(Task_Hof_PrintMonInfoAfterAnimating));
 }
 pub(crate) unsafe fn Task_Hof_PrintMonInfoAfterAnimating(taskId: u8) {
     let currMonId: u16 = task_get(taskId, tDisplayedMonId) as u16;
-    let currMon: *mut HallofFameMon = &raw mut (*sHofMonPtr).mon[currMonId];
-    let monSprite: *mut Sprite = &raw mut gSprites[task_get(taskId, currMonId as i32 + 5)];
+    let currMon: *mut HallofFameMon = &raw mut (*crate::gl!(sHofMonPtr)).mon[currMonId];
+    let monSprite: *mut Sprite = {
+        let gl_i1 = task_get(taskId, currMonId as i32 + 5);
+        crate::gl!(&raw gSprites[gl_i1])
+    };
     if (*monSprite).callback == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite)) {
         (*monSprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
         HallOfFame_PrintMonInfo(currMon, 0, 14);
@@ -631,14 +635,14 @@ pub(crate) unsafe fn Task_Hof_PrintMonInfoAfterAnimating(taskId: u8) {
 }
 pub(crate) unsafe fn Task_Hof_TryDisplayAnotherMon(taskId: u8) {
     let currPokeID: u16 = task_get(taskId, tDisplayedMonId) as u16;
-    let currMon: *mut HallofFameMon = &raw mut (*sHofMonPtr).mon[currPokeID];
+    let currMon: *mut HallofFameMon = &raw mut (*crate::gl!(sHofMonPtr)).mon[currPokeID];
     if task_get(taskId, tFrameCount) != 0 {
         task_set(taskId, tFrameCount, task_get(taskId, tFrameCount) - 1);
     } else {
         {
             let rhs = shl_i32(
                 0x10000,
-                gSprites[task_get(taskId, currPokeID as i32 + 5)]
+                (*gSprites.as_ptr())[task_get(taskId, currPokeID as i32 + 5)]
                     .oam
                     .paletteNum() as u32,
             ) as u32;
@@ -651,7 +655,7 @@ pub(crate) unsafe fn Task_Hof_TryDisplayAnotherMon(taskId: u8) {
                 task_get(taskId, tDisplayedMonId) + 1,
             );
             BeginNormalPaletteFade(sHofFadePalettes.get(), 0, 12, 12, 25520);
-            gSprites[task_get(taskId, currPokeID as i32 + 5)]
+            (*gSprites.as_ptr())[task_get(taskId, currPokeID as i32 + 5)]
                 .oam
                 .set_priority(1);
             task_set_func(taskId, Some(Task_Hof_DisplayMon));
@@ -664,7 +668,9 @@ pub(crate) unsafe fn Task_Hof_PaletteFadeAndPrintWelcomeText(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_OBJECTS, 0, 0, 0, 0);
     for i in 0..(PARTY_SIZE as u16) {
         if task_get(taskId, i as i32 + 5) != SPRITE_NONE as i16 {
-            gSprites[task_get(taskId, i as i32 + 5)].oam.set_priority(0);
+            (*gSprites.as_ptr())[task_get(taskId, i as i32 + 5)]
+                .oam
+                .set_priority(0);
         }
     }
     HallOfFame_PrintWelcomeText(0, 15);
@@ -681,7 +687,9 @@ pub(crate) unsafe fn Task_Hof_DoConfetti(taskId: u8) {
     } else {
         for i in 0..(PARTY_SIZE as u16) {
             if task_get(taskId, i as i32 + 5) != SPRITE_NONE as i16 {
-                gSprites[task_get(taskId, i as i32 + 5)].oam.set_priority(1);
+                (*gSprites.as_ptr())[task_get(taskId, i as i32 + 5)]
+                    .oam
+                    .set_priority(1);
             }
         }
         BeginNormalPaletteFade(sHofFadePalettes.get(), 0, 12, 12, 25520);
@@ -711,7 +719,7 @@ pub(crate) unsafe fn Task_Hof_DisplayPlayer(taskId: u8) {
         taskId,
         tPlayerSpriteID,
         CreateTrainerPicSprite(
-            PlayerGenderToFrontTrainerPicId_Debug((*gSaveBlock2Ptr).playerGender, TRUE),
+            PlayerGenderToFrontTrainerPicId_Debug((*crate::gl!(gSaveBlock2Ptr)).playerGender, TRUE),
             TRUE,
             120,
             72,
@@ -722,7 +730,7 @@ pub(crate) unsafe fn Task_Hof_DisplayPlayer(taskId: u8) {
     AddWindow((&raw const *sHof_WindowTemplate).cast_mut());
     LoadWindowGfx(
         1,
-        (*gSaveBlock2Ptr).optionsWindowFrameType() as u8,
+        (*crate::gl!(gSaveBlock2Ptr)).optionsWindowFrameType() as u8,
         0x21D,
         208,
     );
@@ -733,8 +741,15 @@ pub(crate) unsafe fn Task_Hof_DisplayPlayer(taskId: u8) {
 pub(crate) unsafe fn Task_Hof_WaitAndPrintPlayerInfo(taskId: u8) {
     if task_get(taskId, tFrameCount) != 0 {
         task_set(taskId, tFrameCount, task_get(taskId, tFrameCount) - 1);
-    } else if gSprites[task_get(taskId, tPlayerSpriteID)].x != 192 {
-        gSprites[task_get(taskId, tPlayerSpriteID)].x += 1;
+    } else if ({
+        let gl_i2 = task_get(taskId, tPlayerSpriteID);
+        crate::gl!(gSprites[gl_i2].x)
+    }) != 192
+    {
+        {
+            let gl_i3 = task_get(taskId, tPlayerSpriteID);
+            crate::gl!(gSprites[gl_i3].x += 1)
+        };
     } else {
         FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x20, 0x20);
         HallOfFame_PrintPlayerInfo(1, 2);
@@ -756,26 +771,26 @@ pub(crate) unsafe fn Task_Hof_WaitAndPrintPlayerInfo(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_Hof_ExitOnKeyPressed(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         FadeOutBGM(4);
         task_set_func(taskId, Some(Task_Hof_HandlePaletteOnExit));
     }
 }
 pub(crate) unsafe fn Task_Hof_HandlePaletteOnExit(taskId: u8) {
     CpuSet(
-        gPlttBufferFaded.as_mut_ptr() as *mut c_void,
-        gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+        (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
+        (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
         512,
     );
     BeginNormalPaletteFade(PALETTES_ALL, 8, 0, 0x10, 0);
     task_set_func(taskId, Some(Task_Hof_HandleExit));
 }
 pub(crate) unsafe fn Task_Hof_HandleExit(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         for i in 0..PARTY_SIZE {
             let spriteId: u8 = task_get(taskId, i + 5) as u8;
             if spriteId != SPRITE_NONE {
-                FreeOamMatrix(gSprites[spriteId].oam.matrixNum() as u8);
+                FreeOamMatrix((*gSprites.as_ptr())[spriteId].oam.matrixNum() as u8);
                 FreeAndDestroyMonPicSprite(spriteId as u16);
             }
         }
@@ -788,13 +803,13 @@ pub(crate) unsafe fn Task_Hof_HandleExit(taskId: u8) {
         UnsetBgTilemapBuffer(3);
         ResetBgsAndClearDma3BusyFlags(0);
         DestroyTask(taskId);
-        if !sHofGfxPtr.is_null() {
-            Free(sHofGfxPtr as *mut c_void);
-            sHofGfxPtr = null_mut();
+        if !(*sHofGfxPtr.as_ptr()).is_null() {
+            Free(crate::gl!(sHofGfxPtr) as *mut c_void);
+            crate::gl!(sHofGfxPtr = null_mut());
         }
-        if !sHofMonPtr.is_null() {
-            Free(sHofMonPtr as *mut c_void);
-            sHofMonPtr = null_mut();
+        if !(*sHofMonPtr.as_ptr()).is_null() {
+            Free(crate::gl!(sHofMonPtr) as *mut c_void);
+            crate::gl!(sHofMonPtr = null_mut());
         }
         StartCredits();
     }
@@ -804,29 +819,29 @@ unsafe fn StartCredits() {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CB2_DoHallOfFamePC() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             LoadHofGfx();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
             SetGpuReg(REG_OFFSET_BLDALPHA, 0);
             SetGpuReg(REG_OFFSET_BLDY, 0);
             InitHofBgs();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             if LoadHofBgs() == 0 {
                 let fameTeam: *mut HallofFameTeam =
-                    (*(&raw const crate::decompress::gDecompressionBuffer)
+                    (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                         .cast::<CArray<u8, 16384>>()
                         .cast_mut())
                     .as_mut_ptr() as *mut HallofFameTeam;
                 (*fameTeam).mon[0] = *sDummyFameMon;
                 ComputerScreenOpenEffect(0, 0, 0);
                 SetVBlankCallback(Some(VBlankCB_HallOfFame));
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         4 => {
@@ -835,7 +850,7 @@ pub unsafe fn CB2_DoHallOfFamePC() {
             BuildOamBuffer();
             UpdatePaletteFade();
             if IsComputerScreenOpenEffectActive() == 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         5 => {
@@ -846,14 +861,14 @@ pub unsafe fn CB2_DoHallOfFamePC() {
             for i in 0..(PARTY_SIZE as u8) {
                 task_set(taskId, i as i32 + 5, SPRITE_NONE as i16);
             }
-            sHofMonPtr = AllocZeroed(8192) as *mut HallofFameTeam;
+            crate::gl!(sHofMonPtr = AllocZeroed(8192) as *mut HallofFameTeam);
             SetMainCallback2(Some(CB2_HallOfFame));
         }
         _ => {
             SetVBlankCallback(None);
             ClearVramOamPltt_LoadHofPal();
-            sHofGfxPtr = AllocZeroed(8212) as *mut HofGfx;
-            gMain.state = 1;
+            crate::gl!(sHofGfxPtr = AllocZeroed(8212) as *mut HofGfx);
+            crate::gl!(gMain.state = 1);
         }
     }
 }
@@ -863,14 +878,14 @@ pub(crate) unsafe fn Task_HofPC_CopySaveData(taskId: u8) {
         task_set_func(taskId, Some(Task_HofPC_PrintDataIsCorrupted));
     } else {
         CpuSet(
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut c_void,
-            sHofMonPtr as *mut c_void,
+            crate::gl!(sHofMonPtr) as *mut c_void,
             SECTOR_SIZE,
         );
-        let mut savedTeams: *mut HallofFameTeam = sHofMonPtr;
+        let mut savedTeams: *mut HallofFameTeam = crate::gl!(sHofMonPtr);
         let mut i: u16 = 0;
         while i < HALL_OF_FAME_MAX_TEAMS {
             if (*savedTeams).mon[0].species() == 0 {
@@ -893,7 +908,7 @@ pub(crate) unsafe fn Task_HofPC_CopySaveData(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HofPC_DrawSpritesPrintText(taskId: u8) {
-    let mut savedTeams: *mut HallofFameTeam = sHofMonPtr;
+    let mut savedTeams: *mut HallofFameTeam = crate::gl!(sHofMonPtr);
     let mut i: u16 = 0;
     while (i as i32) < task_get(taskId, tCurrTeamNo) as i32 {
         savedTeams = savedTeams.at(1);
@@ -937,7 +952,7 @@ pub(crate) unsafe fn Task_HofPC_DrawSpritesPrintText(taskId: u8) {
                 i as u8,
                 TAG_NONE,
             );
-            gSprites[spriteId].oam.set_priority(1);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
             task_set(taskId, i as i32 + 5, spriteId as i16);
         } else {
             task_set(taskId, i as i32 + 5, SPRITE_NONE as i16);
@@ -982,7 +997,7 @@ pub(crate) unsafe fn Task_HofPC_DrawSpritesPrintText(taskId: u8) {
     task_set_func(taskId, Some(Task_HofPC_PrintMonInfo));
 }
 pub(crate) unsafe fn Task_HofPC_PrintMonInfo(taskId: u8) {
-    let mut savedTeams: *mut HallofFameTeam = sHofMonPtr;
+    let mut savedTeams: *mut HallofFameTeam = crate::gl!(sHofMonPtr);
     let mut i: u16 = 0;
     while (i as i32) < task_get(taskId, tCurrTeamNo) as i32 {
         savedTeams = savedTeams.at(1);
@@ -991,14 +1006,18 @@ pub(crate) unsafe fn Task_HofPC_PrintMonInfo(taskId: u8) {
     for i in 0..(PARTY_SIZE as u16) {
         let spriteId: u16 = task_get(taskId, i as i32 + 5) as u16;
         if spriteId != SPRITE_NONE as u16 {
-            gSprites[spriteId].oam.set_priority(1);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(1);
         }
     }
     let currMonID: u16 =
         (*gTasks.as_ptr())[taskId].data[task_get(taskId, tCurrMonId) as i32 + 5] as u16;
-    gSprites[currMonID].oam.set_priority(0);
+    (*gSprites.as_ptr())[currMonID].oam.set_priority(0);
     sHofFadePalettes.set(
-        shl_i32(0x10000, gSprites[currMonID].oam.paletteNum() as u32) as u32 ^ PALETTES_OBJECTS,
+        shl_i32(
+            0x10000,
+            (*gSprites.as_ptr())[currMonID].oam.paletteNum() as u32,
+        ) as u32
+            ^ PALETTES_OBJECTS,
     );
     BlendPalettesUnfaded(sHofFadePalettes.get(), 0xC, 25520);
     let currMon: *mut HallofFameMon = &raw mut (*savedTeams).mon[task_get(taskId, tCurrMonId)];
@@ -1010,7 +1029,7 @@ pub(crate) unsafe fn Task_HofPC_PrintMonInfo(taskId: u8) {
     task_set_func(taskId, Some(Task_HofPC_HandleInput));
 }
 pub(crate) unsafe fn Task_HofPC_HandleInput(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         if task_get(taskId, tCurrTeamNo) != 0 {
             task_set(taskId, tCurrTeamNo, task_get(taskId, tCurrTeamNo) - 1);
             for i in 0..(PARTY_SIZE as u16) {
@@ -1027,20 +1046,20 @@ pub(crate) unsafe fn Task_HofPC_HandleInput(taskId: u8) {
         } else {
             if IsCryPlayingOrClearCrySongs() != 0 {
                 StopCryAndClearCrySongs();
-                m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
+                m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 0x100);
             }
             task_set_func(taskId, Some(Task_HofPC_HandlePaletteOnExit));
         }
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         if IsCryPlayingOrClearCrySongs() != 0 {
             StopCryAndClearCrySongs();
-            m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 0x100);
+            m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 0x100);
         }
         task_set_func(taskId, Some(Task_HofPC_HandlePaletteOnExit));
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 && task_get(taskId, tCurrMonId) != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 && task_get(taskId, tCurrMonId) != 0 {
         task_set(taskId, tCurrMonId, task_get(taskId, tCurrMonId) - 1);
         task_set_func(taskId, Some(Task_HofPC_PrintMonInfo));
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
         && (task_get(taskId, tCurrMonId) as i32) < task_get(taskId, tMonNo) as i32 - 1
     {
         task_set(taskId, tCurrMonId, task_get(taskId, tCurrMonId) + 1);
@@ -1049,14 +1068,15 @@ pub(crate) unsafe fn Task_HofPC_HandleInput(taskId: u8) {
 }
 pub(crate) unsafe fn Task_HofPC_HandlePaletteOnExit(taskId: u8) {
     CpuSet(
-        gPlttBufferFaded.as_mut_ptr() as *mut c_void,
-        gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+        (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
+        (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
         512,
     );
-    let fameTeam: *mut HallofFameTeam = (*(&raw const crate::decompress::gDecompressionBuffer)
-        .cast::<CArray<u8, 16384>>()
-        .cast_mut())
-    .as_mut_ptr() as *mut HallofFameTeam;
+    let fameTeam: *mut HallofFameTeam =
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut HallofFameTeam;
     (*fameTeam).mon[0] = *sDummyFameMon;
     ComputerScreenCloseEffect(0, 0, 0);
     task_set_func(taskId, Some(Task_HofPC_HandleExit));
@@ -1079,13 +1099,13 @@ pub(crate) unsafe fn Task_HofPC_HandleExit(taskId: u8) {
         UnsetBgTilemapBuffer(3);
         ResetBgsAndClearDma3BusyFlags(0);
         DestroyTask(taskId);
-        if !sHofGfxPtr.is_null() {
-            Free(sHofGfxPtr as *mut c_void);
-            sHofGfxPtr = null_mut();
+        if !(*sHofGfxPtr.as_ptr()).is_null() {
+            Free(crate::gl!(sHofGfxPtr) as *mut c_void);
+            crate::gl!(sHofGfxPtr = null_mut());
         }
-        if !sHofMonPtr.is_null() {
-            Free(sHofMonPtr as *mut c_void);
-            sHofMonPtr = null_mut();
+        if !(*sHofMonPtr.as_ptr()).is_null() {
+            Free(crate::gl!(sHofMonPtr) as *mut c_void);
+            crate::gl!(sHofMonPtr = null_mut());
         }
         ReturnFromHallOfFamePC();
     }
@@ -1114,8 +1134,8 @@ pub(crate) unsafe fn Task_HofPC_PrintDataIsCorrupted(taskId: u8) {
     CopyWindowToVram(0, COPYWIN_FULL);
     task_set_func(taskId, Some(Task_HofPC_ExitOnButtonPress));
 }
-pub(crate) unsafe fn Task_HofPC_ExitOnButtonPress(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+pub(crate) fn Task_HofPC_ExitOnButtonPress(taskId: u8) {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         task_set_func(taskId, Some(Task_HofPC_HandlePaletteOnExit));
     }
 }
@@ -1315,7 +1335,7 @@ unsafe fn HallOfFame_PrintPlayerInfo(unused1: u8, unused2: u8) {
     );
     let mut width: u32 = GetStringRightAlignXOffset(
         FONT_NORMAL as i32,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
         0x70,
     ) as u32;
     AddTextPrinterParameterized3(
@@ -1325,10 +1345,10 @@ unsafe fn HallOfFame_PrintPlayerInfo(unused1: u8, unused2: u8) {
         1,
         sPlayerInfoTextColors.as_ptr().cast_mut(),
         TEXT_SKIP_DRAW as i8,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
-    let trainerId: u16 = (*gSaveBlock2Ptr).playerTrainerId[0] as u16
-        | ((*gSaveBlock2Ptr).playerTrainerId[1] as u16) << 8;
+    let trainerId: u16 = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u16
+        | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u16) << 8;
     AddTextPrinterParameterized3(
         1,
         FONT_NORMAL,
@@ -1367,9 +1387,9 @@ unsafe fn HallOfFame_PrintPlayerInfo(unused1: u8, unused2: u8) {
             .as_ptr()
             .cast_mut(),
     );
-    text[0] = ((*gSaveBlock2Ptr).playTimeHours as i32 / 100) as u8 + CHAR_0;
-    text[1] = ((*gSaveBlock2Ptr).playTimeHours as i32 % 100 / 10) as u8 + CHAR_0;
-    text[2] = ((*gSaveBlock2Ptr).playTimeHours as i32 % 10) as u8 + CHAR_0;
+    text[0] = ((*crate::gl!(gSaveBlock2Ptr)).playTimeHours as i32 / 100) as u8 + CHAR_0;
+    text[1] = ((*crate::gl!(gSaveBlock2Ptr)).playTimeHours as i32 % 100 / 10) as u8 + CHAR_0;
+    text[2] = ((*crate::gl!(gSaveBlock2Ptr)).playTimeHours as i32 % 10) as u8 + CHAR_0;
     if text[0] == CHAR_0 {
         text[0] = 0x00;
     }
@@ -1377,8 +1397,8 @@ unsafe fn HallOfFame_PrintPlayerInfo(unused1: u8, unused2: u8) {
         text[8] = CHAR_SPACE;
     }
     text[3] = CHAR_COLON;
-    text[4] = ((*gSaveBlock2Ptr).playTimeMinutes as i32 % 100 / 10) as u8 + CHAR_0;
-    text[5] = ((*gSaveBlock2Ptr).playTimeMinutes as i32 % 10) as u8 + CHAR_0;
+    text[4] = ((*crate::gl!(gSaveBlock2Ptr)).playTimeMinutes as i32 % 100 / 10) as u8 + CHAR_0;
+    text[5] = ((*crate::gl!(gSaveBlock2Ptr)).playTimeMinutes as i32 % 10) as u8 + CHAR_0;
     text[6] = EOS;
     width = GetStringRightAlignXOffset(FONT_NORMAL as i32, text.as_mut_ptr(), 0x70) as u32;
     AddTextPrinterParameterized3(
@@ -1486,15 +1506,21 @@ unsafe fn LoadHofGfx() {
     ResetTempTileDataBuffers();
     ResetAllPicSprites();
     FreeAllSpritePalettes();
-    gReservedSpritePaletteCount = 8;
+    gReservedSpritePaletteCount.set(8);
     LoadCompressedSpriteSheet(sSpriteSheet_Confetti.as_ptr().cast_mut());
     LoadCompressedSpritePalette(sSpritePalette_Confetti.as_ptr().cast_mut());
 }
 unsafe fn InitHofBgs() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sHof_BgTemplates.as_ptr().cast_mut(), 3);
-    SetBgTilemapBuffer(1, (*sHofGfxPtr).tilemap1.as_mut_ptr() as *mut c_void);
-    SetBgTilemapBuffer(3, (*sHofGfxPtr).tilemap2.as_mut_ptr() as *mut c_void);
+    SetBgTilemapBuffer(
+        1,
+        (*crate::gl!(sHofGfxPtr)).tilemap1.as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        3,
+        (*crate::gl!(sHofGfxPtr)).tilemap2.as_mut_ptr() as *mut c_void,
+    );
     ChangeBgX(0, 0, BG_COORD_SET);
     ChangeBgY(0, 0, BG_COORD_SET);
     ChangeBgX(1, 0, BG_COORD_SET);
@@ -1503,7 +1529,7 @@ unsafe fn InitHofBgs() {
     ChangeBgY(3, 0, BG_COORD_SET);
 }
 unsafe fn LoadHofBgs() -> u8 {
-    match (*sHofGfxPtr).state {
+    match (*crate::gl!(sHofGfxPtr)).state {
         0 => {
             DecompressAndCopyTileDataToVram(
                 1,
@@ -1535,12 +1561,12 @@ unsafe fn LoadHofBgs() -> u8 {
             ShowBg(0);
             ShowBg(1);
             ShowBg(3);
-            (*sHofGfxPtr).state = 0;
+            (*crate::gl!(sHofGfxPtr)).state = 0;
             return FALSE;
         }
         _ => {}
     }
-    (*sHofGfxPtr).state += 1;
+    (*crate::gl!(sHofGfxPtr)).state += 1;
     TRUE
 }
 pub(crate) unsafe fn SpriteCB_GetOnScreenAndAnimate(sprite: *mut Sprite) {
@@ -1590,7 +1616,7 @@ unsafe fn CreateHofConfettiSprite() -> u8 {
         posY,
         0,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteID];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteID]);
     StartSpriteAnim(sprite, (Random() % 17) as u8);
     if Random() as i32 & 3 != 0 {
         (*sprite).data[sExtraY] = 0;

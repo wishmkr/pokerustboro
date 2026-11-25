@@ -6,7 +6,6 @@ use crate::ffi::{
 };
 use crate::types::SaveBlock2;
 use core::ffi::c_int;
-use core::ptr::addr_of;
 
 const MAX_BERRY_POWDER: u32 = 99_999;
 
@@ -23,8 +22,8 @@ const VENDOR_PALETTE_OFFSET: u16 = 208;
 // The C file also carries unreferenced BG and window template tables marked
 // UNUSED. They are never linked into the ROM, so they are not reproduced here.
 
-#[unsafe(link_section = "ewram_data")]
-static mut VENDOR_WINDOW_ID: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static VENDOR_WINDOW_ID: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `ApplyNewEncryptionKeyToWord` with this module's view of its types.
 #[inline]
@@ -170,7 +169,11 @@ unsafe fn draw_player_powder_amount(
 #[unsafe(no_mangle)]
 pub unsafe fn PrintPlayerBerryPowderAmount() {
     let amount = unsafe { GetBerryPowder() };
-    let window_id = unsafe { addr_of!(VENDOR_WINDOW_ID).read_volatile() };
+    let window_id = unsafe {
+        crate::gl!(&raw VENDOR_WINDOW_ID)
+            .cast_const()
+            .read_volatile()
+    };
     unsafe { print_berry_powder_amount(window_id, amount as i32, 26, 17, 0) };
 }
 
@@ -180,7 +183,7 @@ pub unsafe fn DisplayBerryPowderVendorMenu() {
     unsafe { SetWindowTemplateFields(&raw mut template, 0, 1, 1, 7, 4, 15, 0x1c) };
 
     let window_id = unsafe { AddWindow(&raw const template) } as u8;
-    unsafe { (&raw mut VENDOR_WINDOW_ID).write_volatile(window_id) };
+    unsafe { (crate::gl!(&raw VENDOR_WINDOW_ID)).write_volatile(window_id) };
 
     unsafe { FillWindowPixelBuffer(window_id, PIXEL_FILL_0) };
     unsafe { PutWindowTilemap(window_id) };
@@ -197,7 +200,11 @@ pub unsafe fn DisplayBerryPowderVendorMenu() {
 
 #[unsafe(no_mangle)]
 pub unsafe fn RemoveBerryPowderVendorMenu() {
-    let window_id = unsafe { addr_of!(VENDOR_WINDOW_ID).read_volatile() };
+    let window_id = unsafe {
+        crate::gl!(&raw VENDOR_WINDOW_ID)
+            .cast_const()
+            .read_volatile()
+    };
     unsafe { ClearWindowTilemap(window_id) };
     unsafe { ClearStdWindowAndFrameToTransparent(window_id, 1) };
     unsafe { RemoveWindow(window_id) };

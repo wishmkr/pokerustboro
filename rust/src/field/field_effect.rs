@@ -102,7 +102,7 @@ unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
 }
 /// `CreateInvisibleSprite` with this module's view of its types.
 #[inline]
-unsafe fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
     unsafe { crate::sprite::CreateInvisibleSprite(core::mem::transmute(a0)) }
 }
 /// `CreateSprite` with this module's view of its types.
@@ -112,7 +112,7 @@ unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -146,24 +146,21 @@ unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePaletteOverrideBuffer` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePaletteOverrideBuffer(
-    a0: *mut CompressedSpritePalette,
-    a1: *mut c_void,
-) {
+fn LoadCompressedSpritePaletteOverrideBuffer(a0: *mut CompressedSpritePalette, a1: *mut c_void) {
     unsafe {
         crate::decompress::LoadCompressedSpritePaletteOverrideBuffer(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpriteSheetOverrideBuffer` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetOverrideBuffer(a0: *mut CompressedSpriteSheet, a1: *mut c_void) {
+fn LoadCompressedSpriteSheetOverrideBuffer(a0: *mut CompressedSpriteSheet, a1: *mut c_void) {
     unsafe {
         crate::decompress::LoadCompressedSpriteSheetOverrideBuffer(a0 as _, a1 as _);
     }
@@ -355,13 +352,15 @@ static sWaterfallFieldEffectFuncs: Table<
 > = Table((&raw const crate::data::field_effect::sWaterfallFieldEffectFuncs).cast());
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gFieldEffectArguments: CArray<i32, 8> = unsafe { zeroed() };
-pub(crate) static mut sActiveList: Aligned<CArray<u8, 32>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gFieldEffectArguments: crate::global::Global<CArray<i32, 8>> =
+    crate::global::Global::new(unsafe { zeroed() });
+pub(crate) static sActiveList: crate::global::Global<Aligned<CArray<u8, 32>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -474,9 +473,9 @@ pub unsafe fn FieldEffectFreeTilesIfUnused(tileStart: u16) {
     let tag: u16 = GetSpriteTileTagByTileStart(tileStart);
     if tag != TAG_NONE {
         for i in 0..MAX_SPRITES {
-            if gSprites[i].inUse() != 0
-                && gSprites[i].usingSheet() != 0
-                && tileStart == gSprites[i].sheetTileStart
+            if (*gSprites.as_ptr())[i].inUse() != 0
+                && (*gSprites.as_ptr())[i].usingSheet() != 0
+                && tileStart == crate::gl!(gSprites[i].sheetTileStart)
             {
                 return;
             }
@@ -488,31 +487,33 @@ pub unsafe fn FieldEffectFreePaletteIfUnused(paletteNum: u8) {
     let tag: u16 = GetSpritePaletteTagByPaletteNum(paletteNum);
     if tag != TAG_NONE {
         for i in 0..MAX_SPRITES {
-            if gSprites[i].inUse() != 0 && gSprites[i].oam.paletteNum() == paletteNum as u16 {
+            if (*gSprites.as_ptr())[i].inUse() != 0
+                && (*gSprites.as_ptr())[i].oam.paletteNum() == paletteNum as u16
+            {
                 return;
             }
         }
         FreeSpritePaletteByTag(tag);
     }
 }
-pub unsafe fn FieldEffectActiveListClear() {
+pub fn FieldEffectActiveListClear() {
     for i in 0..32u8 {
-        sActiveList[i] = 0xFF;
+        crate::gl!(sActiveList[i] = 0xFF);
     }
 }
-pub unsafe fn FieldEffectActiveListAdd(id: u8) {
+pub fn FieldEffectActiveListAdd(id: u8) {
     for i in 0..32u8 {
-        if sActiveList[i] == 0xFF {
-            sActiveList[i] = id;
+        if crate::gl!(sActiveList[i]) == 0xFF {
+            crate::gl!(sActiveList[i] = id);
             return;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn FieldEffectActiveListRemove(id: u8) {
+pub fn FieldEffectActiveListRemove(id: u8) {
     for i in 0..32u8 {
-        if sActiveList[i] == id {
-            sActiveList[i] = 0xFF;
+        if crate::gl!(sActiveList[i]) == id {
+            crate::gl!(sActiveList[i] = 0xFF);
             return;
         }
     }
@@ -520,7 +521,7 @@ pub unsafe fn FieldEffectActiveListRemove(id: u8) {
 #[unsafe(no_mangle)]
 pub unsafe fn FieldEffectActiveListContains(id: u8) -> u8 {
     for i in 0..32u8 {
-        if sActiveList[i] == id {
+        if crate::gl!(sActiveList[i]) == id {
             return TRUE;
         }
     }
@@ -660,8 +661,8 @@ pub unsafe fn FreeResourcesAndDestroySprite(sprite: *mut Sprite, spriteId: u8) {
     }
     FreeAndDestroyMonPicSprite(spriteId as u16);
 }
-pub unsafe fn MultiplyInvertedPaletteRGBComponents(i: u16, r: u8, g: u8, b: u8) {
-    let mut color: u16 = gPlttBufferUnfaded[i];
+pub fn MultiplyInvertedPaletteRGBComponents(i: u16, r: u8, g: u8, b: u8) {
+    let mut color: u16 = crate::gl!(gPlttBufferUnfaded[i]);
     let mut curRed: i32 = color as i32 & 31;
     let mut curGreen: i32 = (color as i32 & 992) >> 5;
     let mut curBlue: i32 = (color as i32 & 31744) >> 10;
@@ -671,10 +672,10 @@ pub unsafe fn MultiplyInvertedPaletteRGBComponents(i: u16, r: u8, g: u8, b: u8) 
     color = curRed as u16;
     color |= (curGreen as u16) << 5;
     color |= (curBlue as u16) << 10;
-    gPlttBufferFaded[i] = color;
+    crate::gl!(gPlttBufferFaded[i] = color);
 }
-pub unsafe fn MultiplyPaletteRGBComponents(i: u16, r: u8, g: u8, b: u8) {
-    let mut color: u16 = gPlttBufferUnfaded[i];
+pub fn MultiplyPaletteRGBComponents(i: u16, r: u8, g: u8, b: u8) {
+    let mut color: u16 = crate::gl!(gPlttBufferUnfaded[i]);
     let mut curRed: i32 = color as i32 & 31;
     let mut curGreen: i32 = (color as i32 & 992) >> 5;
     let mut curBlue: i32 = (color as i32 & 31744) >> 10;
@@ -684,7 +685,7 @@ pub unsafe fn MultiplyPaletteRGBComponents(i: u16, r: u8, g: u8, b: u8) {
     color = curRed as u16;
     color |= (curGreen as u16) << 5;
     color |= (curBlue as u16) << 10;
-    gPlttBufferFaded[i] = color;
+    crate::gl!(gPlttBufferFaded[i] = color);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_PokecenterHeal() -> u8 {
@@ -713,19 +714,38 @@ pub(crate) unsafe fn PokecenterHealEffect_Init(task: *mut Task) {
         CreatePokecenterMonitorSprite((*task).data[tMonitorX], (*task).data[tMonitorY]) as i16;
 }
 pub(crate) unsafe fn PokecenterHealEffect_WaitForBallPlacement(task: *mut Task) {
-    if gSprites[(*task).data[tBallSpriteId]].data[0] > 1 {
-        gSprites[(*task).data[tMonitorSpriteId]].data[0] += 1;
+    if ({
+        let gl_i0 = (*task).data[tBallSpriteId];
+        crate::gl!(gSprites[gl_i0].data[0])
+    }) > 1
+    {
+        {
+            let gl_i1 = (*task).data[tMonitorSpriteId];
+            crate::gl!(gSprites[gl_i1].data[0] += 1)
+        };
         (*task).data[0] += 1;
     }
 }
 pub(crate) unsafe fn PokecenterHealEffect_WaitForBallFlashing(task: *mut Task) {
-    if gSprites[(*task).data[tBallSpriteId]].data[0] > 4 {
+    if ({
+        let gl_i2 = (*task).data[tBallSpriteId];
+        crate::gl!(gSprites[gl_i2].data[0])
+    }) > 4
+    {
         (*task).data[0] += 1;
     }
 }
 pub(crate) unsafe fn PokecenterHealEffect_WaitForSoundAndEnd(task: *mut Task) {
-    if gSprites[(*task).data[tBallSpriteId]].data[sState] > 6 {
-        DestroySprite(&raw mut gSprites[(*task).data[tBallSpriteId]]);
+    if ({
+        let gl_i3 = (*task).data[tBallSpriteId];
+        let gl_i4 = sState;
+        crate::gl!(gSprites[gl_i3].data[gl_i4])
+    }) > 6
+    {
+        DestroySprite({
+            let gl_i5 = (*task).data[tBallSpriteId];
+            crate::gl!(&raw gSprites[gl_i5])
+        });
         FieldEffectActiveListRemove(FLDEFF_POKECENTER_HEAL);
         DestroyTask(FindTaskIdByFunc(Some(Task_PokecenterHeal)));
     }
@@ -760,26 +780,42 @@ pub(crate) unsafe fn HallOfFameRecordEffect_Init(task: *mut Task) {
     CreateHofMonitorSprite(taskId as i16, 200, 8, TRUE);
 }
 pub(crate) unsafe fn HallOfFameRecordEffect_WaitForBallPlacement(task: *mut Task) {
-    if gSprites[(*task).data[tBallSpriteId]].data[0] > 1 {
+    if ({
+        let gl_i6 = (*task).data[tBallSpriteId];
+        crate::gl!(gSprites[gl_i6].data[0])
+    }) > 1
+    {
         (*task).data[tStartHofFlash] += 1;
         (*task).data[0] += 1;
     }
 }
 pub(crate) unsafe fn HallOfFameRecordEffect_WaitForBallFlashing(task: *mut Task) {
-    if gSprites[(*task).data[tBallSpriteId]].data[0] > 4 {
+    if ({
+        let gl_i7 = (*task).data[tBallSpriteId];
+        crate::gl!(gSprites[gl_i7].data[0])
+    }) > 4
+    {
         (*task).data[0] += 1;
     }
 }
 pub(crate) unsafe fn HallOfFameRecordEffect_WaitForSoundAndEnd(task: *mut Task) {
-    if gSprites[(*task).data[tBallSpriteId]].data[sState] > 6 {
-        DestroySprite(&raw mut gSprites[(*task).data[tBallSpriteId]]);
+    if ({
+        let gl_i8 = (*task).data[tBallSpriteId];
+        let gl_i9 = sState;
+        crate::gl!(gSprites[gl_i8].data[gl_i9])
+    }) > 6
+    {
+        DestroySprite({
+            let gl_i10 = (*task).data[tBallSpriteId];
+            crate::gl!(&raw gSprites[gl_i10])
+        });
         FieldEffectActiveListRemove(FLDEFF_HALL_OF_FAME_RECORD);
         DestroyTask(FindTaskIdByFunc(Some(Task_HallOfFameRecord)));
     }
 }
 unsafe fn CreateGlowingPokeballsEffect(numMons: i16, x: i16, y: i16, playHealSe: u16) -> u8 {
     let spriteId: u8 = CreateInvisibleSprite(Some(SpriteCB_PokeballGlowEffect));
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).x2 = x;
     (*sprite).y2 = y;
     (*sprite).data[sPlayHealSe] = playHealSe as i16;
@@ -805,8 +841,8 @@ pub(crate) unsafe fn PokeballGlowEffect_PlaceBalls(sprite: *mut Sprite) {
             sPokeballCoordOffsets[(*sprite).data[sCounter]].y + (*sprite).y2,
             0,
         );
-        gSprites[spriteId].oam.set_priority(2);
-        gSprites[spriteId].data[0] = (*sprite).data[sSpriteId];
+        (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
+        crate::gl!(gSprites[spriteId].data[0] = (*sprite).data[sSpriteId]);
         (*sprite).data[sCounter] += 1;
         (*sprite).data[sNumMons] -= 1;
         PlaySE(SE_BALL);
@@ -949,7 +985,11 @@ pub(crate) unsafe fn PokeballGlowEffect_WaitForSound(sprite: *mut Sprite) {
 }
 pub(crate) fn PokeballGlowEffect_Idle(sprite: *mut Sprite) {}
 pub(crate) unsafe fn SpriteCB_PokeballGlow(sprite: *mut Sprite) {
-    if gSprites[(*sprite).data[0]].data[0] > 4 {
+    if ({
+        let gl_i11 = (*sprite).data[0];
+        crate::gl!(gSprites[gl_i11].data[0])
+    }) > 4
+    {
         FieldEffectFreeGraphicsResources(sprite);
     }
 }
@@ -960,7 +1000,7 @@ unsafe fn CreatePokecenterMonitorSprite(x: i16, y: i16) -> u8 {
         y,
         0,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(2);
     (*sprite).set_invisible(TRUE as u16);
     SetSubspriteTables(
@@ -989,7 +1029,7 @@ unsafe fn CreateHofMonitorSprite(taskId: i16, x: i16, y: i16, isSmallMonitor: u8
             0,
         );
         SetSubspriteTables(
-            &raw mut gSprites[spriteId],
+            crate::gl!(&raw gSprites[spriteId]),
             (&raw const *sSubspriteTable_HofMonitorBig).cast_mut(),
         );
     } else {
@@ -1000,8 +1040,8 @@ unsafe fn CreateHofMonitorSprite(taskId: i16, x: i16, y: i16, isSmallMonitor: u8
             0,
         );
     }
-    gSprites[spriteId].set_invisible(TRUE as u16);
-    gSprites[spriteId].data[0] = taskId;
+    (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
+    crate::gl!(gSprites[spriteId].data[0] = taskId);
 }
 pub(crate) unsafe fn SpriteCB_HallOfFameMonitor(sprite: *mut Sprite) {
     if task_get((*sprite).data[0], tStartHofFlash) != 0 {
@@ -1022,14 +1062,14 @@ pub(crate) unsafe fn SpriteCB_HallOfFameMonitor(sprite: *mut Sprite) {
 }
 pub unsafe fn ReturnToFieldFromFlyMapSelect() {
     SetMainCallback2(Some(CB2_ReturnToField));
-    gFieldCallback = Some(FieldCallback_UseFly);
+    crate::gl!(gFieldCallback = Some(FieldCallback_UseFly));
 }
 pub(crate) unsafe fn FieldCallback_UseFly() {
     FadeInFromBlack();
     CreateTask(Some(Task_UseFly), 0);
     LockPlayerFieldControls();
     FreezeObjectEvents();
-    gFieldCallback = None;
+    crate::gl!(gFieldCallback = None);
 }
 pub(crate) unsafe fn Task_UseFly(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
@@ -1037,9 +1077,9 @@ pub(crate) unsafe fn Task_UseFly(taskId: u8) {
         if IsWeatherNotFadingIn() == 0 {
             return;
         }
-        gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
-        if gFieldEffectArguments[0] > 5 {
-            gFieldEffectArguments[0] = 0;
+        crate::gl!(gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32);
+        if crate::gl!(gFieldEffectArguments[0]) > 5 {
+            crate::gl!(gFieldEffectArguments[0] = 0);
         }
         FieldEffectStart(FLDEFF_USE_FLY);
         (*task).data[0] += 1;
@@ -1048,7 +1088,7 @@ pub(crate) unsafe fn Task_UseFly(taskId: u8) {
         Overworld_ResetStateAfterFly();
         WarpIntoMap();
         SetMainCallback2(Some(CB2_LoadMap));
-        gFieldCallback = Some(FieldCallback_FlyIntoMap);
+        crate::gl!(gFieldCallback = Some(FieldCallback_FlyIntoMap));
         DestroyTask(taskId);
     }
 }
@@ -1056,21 +1096,21 @@ pub(crate) unsafe fn FieldCallback_FlyIntoMap() {
     Overworld_PlaySpecialMapMusic();
     FadeInFromBlack();
     CreateTask(Some(Task_FlyIntoMap), 0);
-    gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(TRUE as u32);
-    if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
+    (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].set_invisible(TRUE as u32);
+    if crate::gl!(gPlayerAvatar.flags) as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
         ObjectEventTurn(
-            &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
+            &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
             DIR_WEST,
         );
     }
     LockPlayerFieldControls();
     FreezeObjectEvents();
-    gFieldCallback = None;
+    crate::gl!(gFieldCallback = None);
 }
 pub(crate) unsafe fn Task_FlyIntoMap(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     if (*task).data[0] == 0 {
-        if gPaletteFade.active() != 0 {
+        if (*gPaletteFade.as_ptr()).active() != 0 {
             return;
         }
         FieldEffectStart(FLDEFF_FLY_IN);
@@ -1088,18 +1128,22 @@ pub unsafe fn FieldCB_FallWarpExit() {
     LockPlayerFieldControls();
     FreezeObjectEvents();
     CreateTask(Some(Task_FallWarpFieldEffect), 0);
-    gFieldCallback = None;
+    crate::gl!(gFieldCallback = None);
 }
 pub(crate) unsafe fn Task_FallWarpFieldEffect(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     while sFallWarpFieldEffectFuncs[(*task).data[0]].unwrap_unchecked()(task) != 0 {}
 }
 pub(crate) unsafe fn FallWarpEffect_Init(task: *mut Task) -> u8 {
-    let playerObject: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    let playerSprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let playerObject: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+    let playerSprite: *mut Sprite = {
+        let gl_i12 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i12])
+    };
     CameraObjectFreeze();
-    gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(TRUE as u32);
-    gPlayerAvatar.preventStep = TRUE;
+    (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].set_invisible(TRUE as u32);
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     ObjectEventSetHeldMovement(
         playerObject,
         GetFaceDirectionMovementAction(GetPlayerFacingDirection() as u32),
@@ -1119,22 +1163,29 @@ pub(crate) unsafe fn FallWarpEffect_WaitWeather(task: *mut Task) -> u8 {
 }
 pub(crate) unsafe fn FallWarpEffect_StartFall(task: *mut Task) -> u8 {
     let mut centerToCornerVecY: i16 = 0;
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i13 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i13])
+    };
     centerToCornerVecY = -(((*sprite).centerToCornerVecY as i16) << 1);
     (*sprite).y2 = -((*sprite).y
         + (*sprite).centerToCornerVecY as i16
-        + gSpriteCoordOffsetY
+        + gSpriteCoordOffsetY.get()
         + centerToCornerVecY);
     (*task).data[tFallOffset] = 1;
     (*task).data[tTotalFall] = 0;
-    gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(FALSE as u32);
+    (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].set_invisible(FALSE as u32);
     PlaySE(SE_FALL);
     (*task).data[0] += 1;
     FALSE
 }
 pub(crate) unsafe fn FallWarpEffect_Fall(task: *mut Task) -> u8 {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+    let sprite: *mut Sprite = {
+        let gl_i14 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i14])
+    };
     (*sprite).y2 += (*task).data[tFallOffset];
     if (*task).data[tFallOffset] < 8 {
         (*task).data[tTotalFall] += (*task).data[tFallOffset];
@@ -1177,7 +1228,7 @@ pub(crate) unsafe fn FallWarpEffect_CameraShake(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn FallWarpEffect_End(task: *mut Task) -> u8 {
-    gPlayerAvatar.preventStep = FALSE;
+    crate::gl!(gPlayerAvatar.preventStep = FALSE);
     UnlockPlayerFieldControls();
     CameraObjectReset();
     UnfreezeObjectEvents();
@@ -1204,7 +1255,8 @@ pub(crate) unsafe fn EscalatorWarpOut_Init(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn EscalatorWarpOut_WaitForPlayer(task: *mut Task) -> u8 {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(objectEvent) == 0
         || ObjectEventClearHeldMovementIfFinished(objectEvent) != 0
     {
@@ -1249,7 +1301,10 @@ pub(crate) unsafe fn EscalatorWarpOut_Down_End(task: *mut Task) -> u8 {
     FALSE
 }
 unsafe fn RideUpEscalatorOut(task: *mut Task) {
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i15 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i15])
+    };
     (*sprite).x2 = Cos(0x84, (*task).data[2]);
     (*sprite).y2 = Sin(0x94, (*task).data[2]);
     (*task).data[3] += 1;
@@ -1258,7 +1313,10 @@ unsafe fn RideUpEscalatorOut(task: *mut Task) {
     }
 }
 unsafe fn RideDownEscalatorOut(task: *mut Task) {
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i16 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i16])
+    };
     (*sprite).x2 = Cos(0x7c, (*task).data[2]);
     (*sprite).y2 = Sin(0x76, (*task).data[2]);
     (*task).data[3] += 1;
@@ -1271,10 +1329,10 @@ unsafe fn FadeOutAtEndOfEscalator() {
     WarpFadeOutScreen();
 }
 unsafe fn WarpAtEndOfEscalator() {
-    if gPaletteFade.active() == 0 && BGMusicStopped() == TRUE {
+    if (*gPaletteFade.as_ptr()).active() == 0 && BGMusicStopped() == TRUE {
         StopEscalator();
         WarpIntoMap();
-        gFieldCallback = Some(FieldCallback_EscalatorWarpIn);
+        crate::gl!(gFieldCallback = Some(FieldCallback_EscalatorWarpIn));
         SetMainCallback2(Some(CB2_LoadMap));
         DestroyTask(FindTaskIdByFunc(Some(Task_EscalatorWarpOut)));
     }
@@ -1284,7 +1342,7 @@ pub(crate) unsafe fn FieldCallback_EscalatorWarpIn() {
     WarpFadeInScreen();
     LockPlayerFieldControls();
     CreateTask(Some(Task_EscalatorWarpIn), 0);
-    gFieldCallback = None;
+    crate::gl!(gFieldCallback = None);
 }
 pub(crate) unsafe fn Task_EscalatorWarpIn(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
@@ -1294,7 +1352,8 @@ pub(crate) unsafe fn EscalatorWarpIn_Init(task: *mut Task) -> u8 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     CameraObjectFreeze();
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     ObjectEventSetHeldMovement(objectEvent, GetFaceDirectionMovementAction(DIR_EAST as u32));
     PlayerGetDestCoords(&raw mut x, &raw mut y);
     let mut behavior: u8 = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
@@ -1310,14 +1369,20 @@ pub(crate) unsafe fn EscalatorWarpIn_Init(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn EscalatorWarpIn_Down_Init(task: *mut Task) -> u8 {
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i17 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i17])
+    };
     (*sprite).x2 = Cos(0x84, (*task).data[1]);
     (*sprite).y2 = Sin(0x94, (*task).data[1]);
     (*task).data[0] += 1;
     FALSE
 }
 pub(crate) unsafe fn EscalatorWarpIn_Down_Ride(task: *mut Task) -> u8 {
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i18 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i18])
+    };
     (*sprite).x2 = Cos(0x84, (*task).data[1]);
     (*sprite).y2 = Sin(0x94, (*task).data[1]);
     (*task).data[2] += 1;
@@ -1332,14 +1397,20 @@ pub(crate) unsafe fn EscalatorWarpIn_Down_Ride(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn EscalatorWarpIn_Up_Init(task: *mut Task) -> u8 {
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i19 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i19])
+    };
     (*sprite).x2 = Cos(0x7c, (*task).data[1]);
     (*sprite).y2 = Sin(0x76, (*task).data[1]);
     (*task).data[0] += 1;
     FALSE
 }
 pub(crate) unsafe fn EscalatorWarpIn_Up_Ride(task: *mut Task) -> u8 {
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i20 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i20])
+    };
     (*sprite).x2 = Cos(0x7c, (*task).data[1]);
     (*sprite).y2 = Sin(0x76, (*task).data[1]);
     (*task).data[2] += 1;
@@ -1362,7 +1433,8 @@ pub(crate) unsafe fn EscalatorWarpIn_WaitForMovement(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn EscalatorWarpIn_End(task: *mut Task) -> u8 {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
         CameraObjectReset();
         UnlockPlayerFieldControls();
@@ -1374,14 +1446,14 @@ pub(crate) unsafe fn EscalatorWarpIn_End(task: *mut Task) -> u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UseWaterfall() -> u8 {
     let taskId: u8 = CreateTask(Some(Task_UseWaterfall), 0xff);
-    task_set(taskId, 1, gFieldEffectArguments[0] as i16);
+    task_set(taskId, 1, crate::gl!(gFieldEffectArguments[0]) as i16);
     Task_UseWaterfall(taskId);
     FALSE
 }
 pub(crate) unsafe fn Task_UseWaterfall(taskId: u8) {
     while sWaterfallFieldEffectFuncs[task_get(taskId, 0)].unwrap_unchecked()(
         &raw mut (*gTasks.as_ptr())[taskId],
-        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
     ) != 0
     {}
 }
@@ -1390,7 +1462,7 @@ pub(crate) unsafe fn WaterfallFieldEffect_Init(
     objectEvent: *mut ObjectEvent,
 ) -> u8 {
     LockPlayerFieldControls();
-    gPlayerAvatar.preventStep = TRUE;
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     (*task).data[0] += 1;
     FALSE
 }
@@ -1401,7 +1473,7 @@ pub(crate) unsafe fn WaterfallFieldEffect_ShowMon(
     LockPlayerFieldControls();
     if ObjectEventIsMovementOverridden(objectEvent) == 0 {
         ObjectEventClearHeldMovementIfFinished(objectEvent);
-        gFieldEffectArguments[0] = (*task).data[1] as i32;
+        crate::gl!(gFieldEffectArguments[0] = (*task).data[1] as i32);
         FieldEffectStart(FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
         (*task).data[0] += 1;
     }
@@ -1437,7 +1509,7 @@ pub(crate) unsafe fn WaterfallFieldEffect_ContinueRideOrEnd(
         return TRUE;
     }
     UnlockPlayerFieldControls();
-    gPlayerAvatar.preventStep = FALSE;
+    crate::gl!(gPlayerAvatar.preventStep = FALSE);
     DestroyTask(FindTaskIdByFunc(Some(Task_UseWaterfall)));
     FieldEffectActiveListRemove(FLDEFF_USE_WATERFALL);
     FALSE
@@ -1445,8 +1517,8 @@ pub(crate) unsafe fn WaterfallFieldEffect_ContinueRideOrEnd(
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UseDive() -> u8 {
     let taskId: u8 = CreateTask(Some(Task_UseDive), 0xff);
-    task_set(taskId, 15, gFieldEffectArguments[0] as i16);
-    task_set(taskId, 14, gFieldEffectArguments[1] as i16);
+    task_set(taskId, 15, crate::gl!(gFieldEffectArguments[0]) as i16);
+    task_set(taskId, 14, crate::gl!(gFieldEffectArguments[1]) as i16);
     Task_UseDive(taskId);
     FALSE
 }
@@ -1457,13 +1529,13 @@ pub unsafe fn Task_UseDive(taskId: u8) {
     {}
 }
 pub(crate) unsafe fn DiveFieldEffect_Init(task: *mut Task) -> u8 {
-    gPlayerAvatar.preventStep = TRUE;
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     (*task).data[0] += 1;
     FALSE
 }
 pub(crate) unsafe fn DiveFieldEffect_ShowMon(task: *mut Task) -> u8 {
     LockPlayerFieldControls();
-    gFieldEffectArguments[0] = (*task).data[15] as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*task).data[15] as i32);
     FieldEffectStart(FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
     (*task).data[0] += 1;
     FALSE
@@ -1474,7 +1546,8 @@ pub(crate) unsafe fn DiveFieldEffect_TryWarp(task: *mut Task) -> u8 {
     if FieldEffectActiveListContains(FLDEFF_FIELD_MOVE_SHOW_MON) == 0 {
         TryDoDiveWarp(
             &raw mut mapPosition,
-            gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior as u16,
+            (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)]
+                .currentMetatileBehavior as u16,
         );
         DestroyTask(FindTaskIdByFunc(Some(Task_UseDive)));
         FieldEffectActiveListRemove(FLDEFF_USE_DIVE);
@@ -1487,8 +1560,11 @@ pub unsafe fn StartLavaridgeGymB1FWarp(priority: u8) {
 pub(crate) unsafe fn Task_LavaridgeGymB1FWarp(taskId: u8) {
     while sLavaridgeGymB1FWarpEffectFuncs[task_get(taskId, 0)].unwrap_unchecked()(
         &raw mut (*gTasks.as_ptr())[taskId],
-        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
-        &raw mut gSprites[gPlayerAvatar.spriteId],
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
+        {
+            let gl_i21 = crate::gl!(gPlayerAvatar.spriteId);
+            crate::gl!(&raw gSprites[gl_i21])
+        },
     ) != 0
     {}
 }
@@ -1500,7 +1576,7 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpEffect_Init(
     FreezeObjectEvents();
     CameraObjectFreeze();
     SetCameraPanningCallback(None);
-    gPlayerAvatar.preventStep = TRUE;
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     (*objectEvent).set_fixedPriority(1);
     (*task).data[1] = 1;
     (*task).data[0] += 1;
@@ -1527,10 +1603,10 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpEffect_Launch(
 ) -> u8 {
     (*sprite).y2 = 0;
     (*task).data[3] = 1;
-    gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32;
-    gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32;
-    gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1;
-    gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+    crate::gl!(gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32);
+    crate::gl!(gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32);
+    crate::gl!(gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1);
+    crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
     FieldEffectStart(FLDEFF_ASH_LAUNCH);
     PlaySE(SE_M_EXPLOSION);
     (*task).data[0] += 1;
@@ -1565,7 +1641,7 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpEffect_Rise(
         if (*sprite).y2 as i32
             > -((*sprite).y as i32
                 + (*sprite).centerToCornerVecY as i32
-                + gSpriteCoordOffsetY as i32
+                + gSpriteCoordOffsetY.get() as i32
                 + centerToCornerVecY as i32)
         {
             (*sprite).y2 -= (*task).data[3];
@@ -1602,9 +1678,9 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpEffect_Warp(
     objectEvent: *mut ObjectEvent,
     sprite: *mut Sprite,
 ) -> u8 {
-    if gPaletteFade.active() == 0 && BGMusicStopped() == TRUE {
+    if (*gPaletteFade.as_ptr()).active() == 0 && BGMusicStopped() == TRUE {
         WarpIntoMap();
-        gFieldCallback = Some(FieldCB_LavaridgeGymB1FWarpExit);
+        crate::gl!(gFieldCallback = Some(FieldCB_LavaridgeGymB1FWarpExit));
         SetMainCallback2(Some(CB2_LoadMap));
         DestroyTask(FindTaskIdByFunc(Some(Task_LavaridgeGymB1FWarp)));
     }
@@ -1614,14 +1690,17 @@ pub(crate) unsafe fn FieldCB_LavaridgeGymB1FWarpExit() {
     Overworld_PlaySpecialMapMusic();
     WarpFadeInScreen();
     LockPlayerFieldControls();
-    gFieldCallback = None;
+    crate::gl!(gFieldCallback = None);
     CreateTask(Some(Task_LavaridgeGymB1FWarpExit), 0);
 }
 pub(crate) unsafe fn Task_LavaridgeGymB1FWarpExit(taskId: u8) {
     while sLavaridgeGymB1FWarpExitEffectFuncs[task_get(taskId, 0)].unwrap_unchecked()(
         &raw mut (*gTasks.as_ptr())[taskId],
-        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
-        &raw mut gSprites[gPlayerAvatar.spriteId],
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
+        {
+            let gl_i22 = crate::gl!(gPlayerAvatar.spriteId);
+            crate::gl!(&raw gSprites[gl_i22])
+        },
     ) != 0
     {}
 }
@@ -1632,7 +1711,7 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpExitEffect_Init(
 ) -> u8 {
     CameraObjectFreeze();
     FreezeObjectEvents();
-    gPlayerAvatar.preventStep = TRUE;
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     (*objectEvent).set_invisible(TRUE as u32);
     (*task).data[0] += 1;
     FALSE
@@ -1643,10 +1722,10 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpExitEffect_StartPopOut(
     sprite: *mut Sprite,
 ) -> u8 {
     if IsWeatherNotFadingIn() != 0 {
-        gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32;
-        gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32;
-        gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1;
-        gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+        crate::gl!(gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32);
+        crate::gl!(gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32);
+        crate::gl!(gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1);
+        crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
         (*task).data[1] = FieldEffectStart(FLDEFF_ASH_PUFF) as i16;
         (*task).data[0] += 1;
     }
@@ -1657,7 +1736,10 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpExitEffect_PopOut(
     objectEvent: *mut ObjectEvent,
     mut sprite: *mut Sprite,
 ) -> u8 {
-    sprite = &raw mut gSprites[(*task).data[1]];
+    sprite = {
+        let gl_i23 = (*task).data[1];
+        crate::gl!(&raw gSprites[gl_i23])
+    };
     if (*sprite).animCmdIndex > 1 {
         (*task).data[0] += 1;
         (*objectEvent).set_invisible(FALSE as u32);
@@ -1673,7 +1755,7 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpExitEffect_End(
     sprite: *mut Sprite,
 ) -> u8 {
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
-        gPlayerAvatar.preventStep = FALSE;
+        crate::gl!(gPlayerAvatar.preventStep = FALSE);
         UnlockPlayerFieldControls();
         UnfreezeObjectEvents();
         DestroyTask(FindTaskIdByFunc(Some(Task_LavaridgeGymB1FWarpExit)));
@@ -1683,22 +1765,22 @@ pub(crate) unsafe fn LavaridgeGymB1FWarpExitEffect_End(
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_AshLaunch() -> u8 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[33],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    gSprites[spriteId]
+    (*gSprites.as_ptr())[spriteId]
         .oam
-        .set_priority(gFieldEffectArguments[3] as u16);
-    gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+    (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
     spriteId
 }
 pub unsafe fn SpriteCB_AshLaunch(sprite: *mut Sprite) {
@@ -1712,8 +1794,11 @@ pub unsafe fn StartLavaridgeGym1FWarp(priority: u8) {
 pub(crate) unsafe fn Task_LavaridgeGym1FWarp(taskId: u8) {
     while sLavaridgeGym1FWarpEffectFuncs[task_get(taskId, 0)].unwrap_unchecked()(
         &raw mut (*gTasks.as_ptr())[taskId],
-        &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
-        &raw mut gSprites[gPlayerAvatar.spriteId],
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
+        {
+            let gl_i24 = crate::gl!(gPlayerAvatar.spriteId);
+            crate::gl!(&raw gSprites[gl_i24])
+        },
     ) != 0
     {}
 }
@@ -1724,7 +1809,7 @@ pub(crate) unsafe fn LavaridgeGym1FWarpEffect_Init(
 ) -> u8 {
     FreezeObjectEvents();
     CameraObjectFreeze();
-    gPlayerAvatar.preventStep = TRUE;
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     (*objectEvent).set_fixedPriority(1);
     (*task).data[0] += 1;
     FALSE
@@ -1736,10 +1821,10 @@ pub(crate) unsafe fn LavaridgeGym1FWarpEffect_AshPuff(
 ) -> u8 {
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
         if (*task).data[1] > 3 {
-            gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32;
-            gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32;
-            gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1;
-            gFieldEffectArguments[3] = (*sprite).oam.priority() as i32;
+            crate::gl!(gFieldEffectArguments[0] = (*objectEvent).currentCoords.x as i32);
+            crate::gl!(gFieldEffectArguments[1] = (*objectEvent).currentCoords.y as i32);
+            crate::gl!(gFieldEffectArguments[2] = (*sprite).subpriority as i32 - 1);
+            crate::gl!(gFieldEffectArguments[3] = (*sprite).oam.priority() as i32);
             (*task).data[1] = FieldEffectStart(FLDEFF_ASH_PUFF) as i16;
             (*task).data[0] += 1;
         } else {
@@ -1758,7 +1843,11 @@ pub(crate) unsafe fn LavaridgeGym1FWarpEffect_Disappear(
     objectEvent: *mut ObjectEvent,
     sprite: *mut Sprite,
 ) -> u8 {
-    if gSprites[(*task).data[1]].animCmdIndex == 2 {
+    if ({
+        let gl_i25 = (*task).data[1];
+        crate::gl!(gSprites[gl_i25].animCmdIndex)
+    }) == 2
+    {
         (*objectEvent).set_invisible(TRUE as u32);
         (*task).data[0] += 1;
     }
@@ -1781,9 +1870,9 @@ pub(crate) unsafe fn LavaridgeGym1FWarpEffect_Warp(
     objectEvent: *mut ObjectEvent,
     sprite: *mut Sprite,
 ) -> u8 {
-    if gPaletteFade.active() == 0 && BGMusicStopped() == TRUE {
+    if (*gPaletteFade.as_ptr()).active() == 0 && BGMusicStopped() == TRUE {
         WarpIntoMap();
-        gFieldCallback = Some(FieldCB_FallWarpExit);
+        crate::gl!(gFieldCallback = Some(FieldCB_FallWarpExit));
         SetMainCallback2(Some(CB2_LoadMap));
         DestroyTask(FindTaskIdByFunc(Some(Task_LavaridgeGym1FWarp)));
     }
@@ -1792,22 +1881,22 @@ pub(crate) unsafe fn LavaridgeGym1FWarpEffect_Warp(
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_AshPuff() -> u8 {
     SetSpritePosToOffsetMapCoords(
-        &raw mut gFieldEffectArguments[0] as *mut i16,
-        &raw mut gFieldEffectArguments[1] as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[0]) as *mut i16,
+        crate::gl!(&raw gFieldEffectArguments[1]) as *mut i16,
         8,
         8,
     );
     let spriteId: u8 = CreateSpriteAtEnd(
         (*(&raw const crate::data::event_object_movement::gFieldEffectObjectTemplatePointers)
             .cast::<CArray<*mut SpriteTemplate, 0>>())[32],
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
     );
-    gSprites[spriteId]
+    (*gSprites.as_ptr())[spriteId]
         .oam
-        .set_priority(gFieldEffectArguments[3] as u16);
-    gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
+        .set_priority(crate::gl!(gFieldEffectArguments[3]) as u16);
+    (*gSprites.as_ptr())[spriteId].set_coordOffsetEnabled(TRUE as u16);
     spriteId
 }
 pub unsafe fn SpriteCB_AshPuff(sprite: *mut Sprite) {
@@ -1841,15 +1930,19 @@ pub(crate) unsafe fn EscapeRopeWarpOutEffect_Spin(task: *mut Task) {
         TryFadeOutOldMapMusic();
         WarpFadeOutScreen();
     }
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(objectEvent) == 0
         || ObjectEventClearHeldMovementIfFinished(objectEvent) != 0
     {
-        if (*task).data[14] == 0 && gPaletteFade.active() == 0 && BGMusicStopped() == TRUE {
+        if (*task).data[14] == 0
+            && (*gPaletteFade.as_ptr()).active() == 0
+            && BGMusicStopped() == TRUE
+        {
             SetObjectEventDirection(objectEvent, (*task).data[tStartDir] as u8);
             SetWarpDestinationToEscapeWarp();
             WarpIntoMap();
-            gFieldCallback = Some(FieldCallback_EscapeRopeWarpIn);
+            crate::gl!(gFieldCallback = Some(FieldCallback_EscapeRopeWarpIn));
             SetMainCallback2(Some(CB2_LoadMap));
             DestroyTask(FindTaskIdByFunc(Some(Task_EscapeRopeWarpOut)));
         } else if (*task).data[tSpinDelay] == 0
@@ -1876,8 +1969,8 @@ pub(crate) unsafe fn FieldCallback_EscapeRopeWarpIn() {
     WarpFadeInScreen();
     LockPlayerFieldControls();
     FreezeObjectEvents();
-    gFieldCallback = None;
-    gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(TRUE as u32);
+    crate::gl!(gFieldCallback = None);
+    (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].set_invisible(TRUE as u32);
     CreateTask(Some(Task_EscapeRopeWarpIn), 0);
 }
 pub(crate) unsafe fn Task_EscapeRopeWarpIn(taskId: u8) {
@@ -1893,7 +1986,8 @@ pub(crate) unsafe fn EscapeRopeWarpInEffect_Init(task: *mut Task) {
 }
 pub(crate) unsafe fn EscapeRopeWarpInEffect_Spin(task: *mut Task) {
     let spinDirections: CArray<u8, 5> = CArray([1, 3, 4, 2, 1]);
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if (*task).data[tSpinDelay] == 0
         || ({
             (*task).data[tSpinDelay] -= 1;
@@ -1943,7 +2037,8 @@ pub(crate) unsafe fn TeleportWarpOutFieldEffect_Init(task: *mut Task) {
 }
 pub(crate) unsafe fn TeleportWarpOutFieldEffect_SpinGround(task: *mut Task) {
     let spinDirections: CArray<u8, 5> = CArray([1, 3, 4, 2, 1]);
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if (*task).data[1] == 0
         || ({
             (*task).data[1] -= 1;
@@ -1967,8 +2062,12 @@ pub(crate) unsafe fn TeleportWarpOutFieldEffect_SpinGround(task: *mut Task) {
 }
 pub(crate) unsafe fn TeleportWarpOutFieldEffect_SpinExit(task: *mut Task) {
     let spinDirections: CArray<u8, 5> = CArray([1, 3, 4, 2, 1]);
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+    let sprite: *mut Sprite = {
+        let gl_i26 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i26])
+    };
     if ({
         (*task).data[1] -= 1;
         (*task).data[1]
@@ -2014,7 +2113,7 @@ pub(crate) unsafe fn TeleportWarpOutFieldEffect_SpinExit(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn TeleportWarpOutFieldEffect_End(task: *mut Task) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         if (*task).data[5] == FALSE as i16 {
             ClearMirageTowerPulseBlendEffect();
             (*task).data[5] = TRUE as i16;
@@ -2023,7 +2122,7 @@ pub(crate) unsafe fn TeleportWarpOutFieldEffect_End(task: *mut Task) {
             SetWarpDestinationToLastHealLocation();
             WarpIntoMap();
             SetMainCallback2(Some(CB2_LoadMap));
-            gFieldCallback = Some(FieldCallback_TeleportWarpIn);
+            crate::gl!(gFieldCallback = Some(FieldCallback_TeleportWarpIn));
             DestroyTask(FindTaskIdByFunc(Some(Task_TeleportWarpOut)));
         }
     }
@@ -2033,8 +2132,8 @@ pub(crate) unsafe fn FieldCallback_TeleportWarpIn() {
     WarpFadeInScreen();
     LockPlayerFieldControls();
     FreezeObjectEvents();
-    gFieldCallback = None;
-    gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(TRUE as u32);
+    crate::gl!(gFieldCallback = None);
+    (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].set_invisible(TRUE as u32);
     CameraObjectFreeze();
     CreateTask(Some(Task_TeleportWarpIn), 0);
 }
@@ -2047,13 +2146,17 @@ pub(crate) unsafe fn TeleportWarpInFieldEffect_Init(task: *mut Task) {
     let mut sprite: *mut Sprite = null_mut();
     let mut centerToCornerVecY: i16 = 0;
     if IsWeatherNotFadingIn() != 0 {
-        sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+        sprite = {
+            let gl_i27 = crate::gl!(gPlayerAvatar.spriteId);
+            crate::gl!(&raw gSprites[gl_i27])
+        };
         centerToCornerVecY = -(((*sprite).centerToCornerVecY as i16) << 1);
         (*sprite).y2 = -((*sprite).y
             + (*sprite).centerToCornerVecY as i16
-            + gSpriteCoordOffsetY
+            + gSpriteCoordOffsetY.get()
             + centerToCornerVecY);
-        gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(FALSE as u32);
+        (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)]
+            .set_invisible(FALSE as u32);
         (*task).data[0] += 1;
         (*task).data[1] = 8;
         (*task).data[2] = 1;
@@ -2064,8 +2167,12 @@ pub(crate) unsafe fn TeleportWarpInFieldEffect_Init(task: *mut Task) {
 }
 pub(crate) unsafe fn TeleportWarpInFieldEffect_SpinEnter(task: *mut Task) {
     let spinDirections: CArray<u8, 5> = CArray([1, 3, 4, 2, 1]);
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+    let sprite: *mut Sprite = {
+        let gl_i28 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i28])
+    };
     if ({
         (*sprite).y2 += (*task).data[1];
         (*sprite).y2
@@ -2105,7 +2212,8 @@ pub(crate) unsafe fn TeleportWarpInFieldEffect_SpinEnter(task: *mut Task) {
 }
 pub(crate) unsafe fn TeleportWarpInFieldEffect_SpinGround(task: *mut Task) {
     let spinDirections: CArray<u8, 5> = CArray([1, 3, 4, 2, 1]);
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ({
         (*task).data[1] -= 1;
         (*task).data[1]
@@ -2141,21 +2249,24 @@ pub unsafe fn FldEff_FieldMoveShowMon() -> u8 {
         taskId,
         tMonSpriteId,
         InitFieldMoveMonSprite(
-            gFieldEffectArguments[0] as u32,
-            gFieldEffectArguments[1] as u32,
-            gFieldEffectArguments[2] as u32,
+            crate::gl!(gFieldEffectArguments[0]) as u32,
+            crate::gl!(gFieldEffectArguments[1]) as u32,
+            crate::gl!(gFieldEffectArguments[2]) as u32,
         ) as i16,
     );
     FALSE
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_FieldMoveShowMonInit() -> u8 {
-    let noDucking: u32 = gFieldEffectArguments[0] as u32 & 0x80000000;
-    let pokemon: *mut Pokemon = &raw mut gPlayerParty[gFieldEffectArguments[0] as u8];
-    gFieldEffectArguments[0] = GetMonData2(pokemon, MON_DATA_SPECIES) as i32;
-    gFieldEffectArguments[1] = GetMonData2(pokemon, MON_DATA_OT_ID) as i32;
-    gFieldEffectArguments[2] = GetMonData2(pokemon, MON_DATA_PERSONALITY) as i32;
-    gFieldEffectArguments[0] |= noDucking as i32;
+    let noDucking: u32 = crate::gl!(gFieldEffectArguments[0]) as u32 & 0x80000000;
+    let pokemon: *mut Pokemon = {
+        let gl_i29 = crate::gl!(gFieldEffectArguments[0]) as u8;
+        crate::gl!(&raw gPlayerParty[gl_i29])
+    };
+    crate::gl!(gFieldEffectArguments[0] = GetMonData2(pokemon, MON_DATA_SPECIES) as i32);
+    crate::gl!(gFieldEffectArguments[1] = GetMonData2(pokemon, MON_DATA_OT_ID) as i32);
+    crate::gl!(gFieldEffectArguments[2] = GetMonData2(pokemon, MON_DATA_PERSONALITY) as i32);
+    crate::gl!(gFieldEffectArguments[0] |= noDucking as i32);
     FieldEffectStart(FLDEFF_FIELD_MOVE_SHOW_MON);
     FieldEffectActiveListRemove(FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
     FALSE
@@ -2170,7 +2281,7 @@ pub(crate) unsafe fn FieldMoveShowMonOutdoorsEffect_Init(task: *mut Task) {
     (*task).data[12] = (67108938_usize as *mut u16).read_volatile() as i16;
     StoreWordInTwoHalfwords(
         &raw mut (*task).data[13] as *mut u16,
-        core::mem::transmute::<_, usize>(gMain.vblankCallback) as u32,
+        core::mem::transmute::<_, usize>(crate::gl!(gMain.vblankCallback)) as u32,
     );
     (*task).data[tWinHoriz] = -3855;
     (*task).data[tWinVert] = 20561;
@@ -2230,13 +2341,21 @@ pub(crate) unsafe fn FieldMoveShowMonOutdoorsEffect_CreateBanner(task: *mut Task
     (*task).data[tWinHoriz] = horiz << 8 | (*task).data[tWinHoriz] & 0xff;
     (*task).data[tWinVert] = vertHi << 8 | vertLo;
     if horiz == 0 && vertHi == 40 && vertLo == 120 {
-        gSprites[(*task).data[tMonSpriteId]].callback = Some(SpriteCB_FieldMoveMonSlideOnscreen);
+        {
+            let gl_i30 = (*task).data[tMonSpriteId];
+            crate::gl!(gSprites[gl_i30].callback = Some(SpriteCB_FieldMoveMonSlideOnscreen))
+        };
         (*task).data[0] += 1;
     }
 }
 pub(crate) unsafe fn FieldMoveShowMonOutdoorsEffect_WaitForMon(task: *mut Task) {
     (*task).data[5] -= 16;
-    if gSprites[(*task).data[tMonSpriteId]].data[sSlidOffscreen] != 0 {
+    if ({
+        let gl_i31 = (*task).data[tMonSpriteId];
+        let gl_i32 = sSlidOffscreen;
+        crate::gl!(gSprites[gl_i31].data[gl_i32])
+    }) != 0
+    {
         (*task).data[0] += 1;
     }
 }
@@ -2285,7 +2404,10 @@ pub(crate) unsafe fn FieldMoveShowMonOutdoorsEffect_End(task: *mut Task) {
     SetVBlankCallback(callback);
     InitTextBoxGfxAndPrinters();
     FreeResourcesAndDestroySprite(
-        &raw mut gSprites[(*task).data[tMonSpriteId]],
+        {
+            let gl_i33 = (*task).data[tMonSpriteId];
+            crate::gl!(&raw gSprites[gl_i33])
+        },
         (*task).data[tMonSpriteId] as u8,
     );
     FieldEffectActiveListRemove(FLDEFF_FIELD_MOVE_SHOW_MON);
@@ -2326,7 +2448,7 @@ pub(crate) unsafe fn FieldMoveShowMonIndoorsEffect_Init(task: *mut Task) {
     SetGpuReg(REG_OFFSET_BG0VOFS, (*task).data[2] as u16);
     StoreWordInTwoHalfwords(
         &raw mut (*task).data[13] as *mut u16,
-        core::mem::transmute::<_, usize>(gMain.vblankCallback) as u32,
+        core::mem::transmute::<_, usize>(crate::gl!(gMain.vblankCallback)) as u32,
     );
     SetVBlankCallback(Some(VBlankCB_FieldMoveShowMonIndoors));
     (*task).data[0] += 1;
@@ -2362,14 +2484,22 @@ pub(crate) unsafe fn FieldMoveShowMonIndoorsEffect_SlideBannerOn(task: *mut Task
     if SlideIndoorBannerOnscreen(task) != 0 {
         SetGpuReg(REG_OFFSET_WIN1H, DISPLAY_WIDTH);
         SetGpuReg(REG_OFFSET_WIN1V, 10360);
-        gSprites[(*task).data[tMonSpriteId]].callback = Some(SpriteCB_FieldMoveMonSlideOnscreen);
+        {
+            let gl_i34 = (*task).data[tMonSpriteId];
+            crate::gl!(gSprites[gl_i34].callback = Some(SpriteCB_FieldMoveMonSlideOnscreen))
+        };
         (*task).data[0] += 1;
     }
     AnimateIndoorShowMonBg(task);
 }
 pub(crate) unsafe fn FieldMoveShowMonIndoorsEffect_WaitForMon(task: *mut Task) {
     AnimateIndoorShowMonBg(task);
-    if gSprites[(*task).data[tMonSpriteId]].data[sSlidOffscreen] != 0 {
+    if ({
+        let gl_i35 = (*task).data[tMonSpriteId];
+        let gl_i36 = sSlidOffscreen;
+        crate::gl!(gSprites[gl_i35].data[gl_i36])
+    }) != 0
+    {
         (*task).data[0] += 1;
     }
 }
@@ -2408,7 +2538,10 @@ pub(crate) unsafe fn FieldMoveShowMonIndoorsEffect_End(task: *mut Task) {
     SetVBlankCallback(intrCallback);
     InitTextBoxGfxAndPrinters();
     FreeResourcesAndDestroySprite(
-        &raw mut gSprites[(*task).data[tMonSpriteId]],
+        {
+            let gl_i37 = (*task).data[tMonSpriteId];
+            crate::gl!(&raw gSprites[gl_i37])
+        },
         (*task).data[tMonSpriteId] as u8,
     );
     FieldEffectActiveListRemove(FLDEFF_FIELD_MOVE_SHOW_MON);
@@ -2475,7 +2608,7 @@ unsafe fn InitFieldMoveMonSprite(mut species: u32, otId: u32, personality: u32) 
     let noDucking: u16 = ((species & 0x80000000) >> 16) as u16;
     species &= 0x7fffffff;
     let monSprite: u8 = CreateMonSprite_FieldMove(species as u16, otId, personality, 320, 80, 0);
-    let sprite: *mut Sprite = &raw mut gSprites[monSprite];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[monSprite]);
     (*sprite).callback = Some(SpriteCallbackDummy);
     (*sprite).oam.set_priority(0);
     (*sprite).data[sSpecies] = species as i16;
@@ -2522,7 +2655,7 @@ pub(crate) unsafe fn SpriteCB_FieldMoveMonSlideOffscreen(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UseSurf() -> u8 {
     let taskId: u8 = CreateTask(Some(Task_SurfFieldEffect), 0xff);
-    task_set(taskId, 15, gFieldEffectArguments[0] as i16);
+    task_set(taskId, 15, crate::gl!(gFieldEffectArguments[0]) as i16);
     Overworld_ClearSavedMusic();
     Overworld_ChangeMusicTo(MUS_SURF);
     FALSE
@@ -2535,18 +2668,20 @@ pub(crate) unsafe fn Task_SurfFieldEffect(taskId: u8) {
 pub(crate) unsafe fn SurfFieldEffect_Init(task: *mut Task) {
     LockPlayerFieldControls();
     FreezeObjectEvents();
-    gPlayerAvatar.preventStep = TRUE;
+    crate::gl!(gPlayerAvatar.preventStep = TRUE);
     SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_SURFING);
     PlayerGetDestCoords(&raw mut (*task).data[tDestX], &raw mut (*task).data[tDestY]);
     MoveCoords(
-        gObjectEvents[gPlayerAvatar.objectEventId].movementDirection() as u8,
+        (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)].movementDirection()
+            as u8,
         &raw mut (*task).data[tDestX],
         &raw mut (*task).data[tDestY],
     );
     (*task).data[0] += 1;
 }
 pub(crate) unsafe fn SurfFieldEffect_FieldMovePose(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(objectEvent) == 0
         || ObjectEventClearHeldMovementIfFinished(objectEvent) != 0
     {
@@ -2556,9 +2691,10 @@ pub(crate) unsafe fn SurfFieldEffect_FieldMovePose(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn SurfFieldEffect_ShowMon(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventCheckHeldMovementStatus(objectEvent) != 0 {
-        gFieldEffectArguments[0] = (*task).data[15] as i32 | -0x80000000;
+        crate::gl!(gFieldEffectArguments[0] = (*task).data[15] as i32 | -0x80000000);
         FieldEffectStart(FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
         (*task).data[0] += 1;
     }
@@ -2566,7 +2702,7 @@ pub(crate) unsafe fn SurfFieldEffect_ShowMon(task: *mut Task) {
 pub(crate) unsafe fn SurfFieldEffect_JumpOnSurfBlob(task: *mut Task) {
     let mut objectEvent: *mut ObjectEvent = null_mut();
     if FieldEffectActiveListContains(FLDEFF_FIELD_MOVE_SHOW_MON) == 0 {
-        objectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        objectEvent = &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
         ObjectEventSetGraphicsId(
             objectEvent,
             GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_SURFING),
@@ -2576,18 +2712,19 @@ pub(crate) unsafe fn SurfFieldEffect_JumpOnSurfBlob(task: *mut Task) {
             objectEvent,
             GetJumpSpecialMovementAction((*objectEvent).movementDirection() as u32),
         );
-        gFieldEffectArguments[0] = (*task).data[tDestX] as i32;
-        gFieldEffectArguments[1] = (*task).data[tDestY] as i32;
-        gFieldEffectArguments[2] = gPlayerAvatar.objectEventId as i32;
+        crate::gl!(gFieldEffectArguments[0] = (*task).data[tDestX] as i32);
+        crate::gl!(gFieldEffectArguments[1] = (*task).data[tDestY] as i32);
+        crate::gl!(gFieldEffectArguments[2] = crate::gl!(gPlayerAvatar.objectEventId) as i32);
         (*objectEvent).fieldEffectSpriteId = FieldEffectStart(FLDEFF_SURF_BLOB) as u8;
         (*task).data[0] += 1;
     }
 }
 pub(crate) unsafe fn SurfFieldEffect_End(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
-        gPlayerAvatar.preventStep = FALSE;
-        gPlayerAvatar.flags &= 223;
+        crate::gl!(gPlayerAvatar.preventStep = FALSE);
+        crate::gl!(gPlayerAvatar.flags &= 223);
         ObjectEventSetHeldMovement(
             objectEvent,
             GetFaceDirectionMovementAction((*objectEvent).movementDirection() as u32),
@@ -2608,7 +2745,7 @@ pub unsafe fn FldEff_RayquazaSpotlight() -> u8 {
         -24,
         1,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_priority(1);
     (*sprite).oam.set_paletteNum(4);
     (*sprite).data[0] = 0;
@@ -2651,11 +2788,11 @@ pub unsafe fn FldEff_NPCFlyOut() -> u8 {
         0,
         1,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_paletteNum(0);
     (*sprite).oam.set_priority(1);
     (*sprite).callback = Some(SpriteCB_NPCFlyOut);
-    (*sprite).data[1] = gFieldEffectArguments[0] as i16;
+    (*sprite).data[1] = crate::gl!(gFieldEffectArguments[0]) as i16;
     PlaySE(SE_M_FLY);
     spriteId
 }
@@ -2665,7 +2802,10 @@ pub(crate) unsafe fn SpriteCB_NPCFlyOut(sprite: *mut Sprite) {
     (*sprite).y2 = Sin((*sprite).data[2], 0x48);
     (*sprite).data[2] = ((*sprite).data[2] + 4) & 0xff;
     if (*sprite).data[0] != 0 {
-        npcSprite = &raw mut gSprites[(*sprite).data[1]];
+        npcSprite = {
+            let gl_i38 = (*sprite).data[1];
+            crate::gl!(&raw gSprites[gl_i38])
+        };
         (*npcSprite).set_coordOffsetEnabled(FALSE as u16);
         (*npcSprite).x = (*sprite).x + (*sprite).x2;
         (*npcSprite).y = (*sprite).y + (*sprite).y2 - 8;
@@ -2679,7 +2819,7 @@ pub(crate) unsafe fn SpriteCB_NPCFlyOut(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_UseFly() -> u8 {
     let taskId: u8 = CreateTask(Some(Task_FlyOut), 254);
-    task_set(taskId, 1, gFieldEffectArguments[0] as i16);
+    task_set(taskId, 1, crate::gl!(gFieldEffectArguments[0]) as i16);
     0
 }
 pub(crate) unsafe fn Task_FlyOut(taskId: u8) {
@@ -2688,12 +2828,13 @@ pub(crate) unsafe fn Task_FlyOut(taskId: u8) {
     );
 }
 pub(crate) unsafe fn FlyOutFieldEffect_FieldMovePose(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(objectEvent) == 0
         || ObjectEventClearHeldMovementIfFinished(objectEvent) != 0
     {
-        (*task).data[tAvatarFlags] = gPlayerAvatar.flags as i16;
-        gPlayerAvatar.preventStep = TRUE;
+        (*task).data[tAvatarFlags] = crate::gl!(gPlayerAvatar.flags) as i16;
+        crate::gl!(gPlayerAvatar.preventStep = TRUE);
         SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
         SetPlayerAvatarFieldMove();
         ObjectEventSetHeldMovement(objectEvent, MOVEMENT_ACTION_START_ANIM_IN_DIRECTION);
@@ -2701,16 +2842,18 @@ pub(crate) unsafe fn FlyOutFieldEffect_FieldMovePose(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn FlyOutFieldEffect_ShowMon(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
         (*task).data[0] += 1;
-        gFieldEffectArguments[0] = (*task).data[1] as i32;
+        crate::gl!(gFieldEffectArguments[0] = (*task).data[1] as i32);
         FieldEffectStart(FLDEFF_FIELD_MOVE_SHOW_MON_INIT);
     }
 }
 pub(crate) unsafe fn FlyOutFieldEffect_BirdLeaveBall(task: *mut Task) {
     if FieldEffectActiveListContains(FLDEFF_FIELD_MOVE_SHOW_MON) == 0 {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        let objectEvent: *mut ObjectEvent =
+            &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
         if (*task).data[tAvatarFlags] as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
             SetSurfBlob_BobState((*objectEvent).fieldEffectSpriteId, BOB_JUST_MON);
             SetSurfBlob_DontSyncAnim((*objectEvent).fieldEffectSpriteId, FALSE);
@@ -2725,13 +2868,14 @@ pub(crate) unsafe fn FlyOutFieldEffect_WaitBirdLeave(task: *mut Task) {
         (*task).data[2] = 16;
         SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_ON_FOOT as u16);
         ObjectEventSetHeldMovement(
-            &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
+            &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
             MOVEMENT_ACTION_FACE_LEFT,
         );
     }
 }
 pub(crate) unsafe fn FlyOutFieldEffect_BirdSwoopDown(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ((*task).data[2] == 0
         || ({
             (*task).data[2] -= 1;
@@ -2750,19 +2894,26 @@ pub(crate) unsafe fn FlyOutFieldEffect_JumpOnBird(task: *mut Task) {
         (*task).data[2]
     }) >= 8
     {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        let objectEvent: *mut ObjectEvent =
+            &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
         ObjectEventSetGraphicsId(
             objectEvent,
             GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_SURFING),
         );
         StartSpriteAnim(
-            &raw mut gSprites[(*objectEvent).spriteId],
+            {
+                let gl_i39 = (*objectEvent).spriteId;
+                crate::gl!(&raw gSprites[gl_i39])
+            },
             ANIM_GET_ON_OFF_POKEMON_WEST,
         );
         (*objectEvent).set_inanimate(TRUE as u32);
         ObjectEventSetHeldMovement(objectEvent, MOVEMENT_ACTION_JUMP_IN_PLACE_LEFT);
         if (*task).data[tAvatarFlags] as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
-            DestroySprite(&raw mut gSprites[(*objectEvent).fieldEffectSpriteId]);
+            DestroySprite({
+                let gl_i40 = (*objectEvent).fieldEffectSpriteId;
+                crate::gl!(&raw gSprites[gl_i40])
+            });
         }
         (*task).data[0] += 1;
         (*task).data[2] = 0;
@@ -2774,7 +2925,8 @@ pub(crate) unsafe fn FlyOutFieldEffect_FlyOffWithBird(task: *mut Task) {
         (*task).data[2]
     }) >= 10
     {
-        let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        let objectEvent: *mut ObjectEvent =
+            &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
         ObjectEventClearHeldMovementIfActive(objectEvent);
         (*objectEvent).set_inanimate(FALSE as u32);
         (*objectEvent).set_hasShadow(FALSE as u32);
@@ -2790,7 +2942,7 @@ pub(crate) unsafe fn FlyOutFieldEffect_WaitFlyOff(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn FlyOutFieldEffect_End(task: *mut Task) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FieldEffectActiveListRemove(FLDEFF_USE_FLY);
         DestroyTask(FindTaskIdByFunc(Some(Task_FlyOut)));
     }
@@ -2803,17 +2955,20 @@ unsafe fn CreateFlyBirdSprite() -> u8 {
         0xb4,
         0x1,
     );
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).oam.set_paletteNum(0);
     (*sprite).oam.set_priority(1);
     (*sprite).callback = Some(SpriteCB_FlyBirdLeaveBall);
     spriteId
 }
 unsafe fn GetFlyBirdAnimCompleted(spriteId: u8) -> u8 {
-    gSprites[spriteId].data[sAnimCompleted] as u8
+    ({
+        let gl_i41 = sAnimCompleted;
+        crate::gl!(gSprites[spriteId].data[gl_i41])
+    }) as u8
 }
 unsafe fn StartFlyBirdSwoopDown(spriteId: u8) {
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).callback = Some(SpriteCB_FlyBirdSwoopDown);
     (*sprite).x = 120;
     (*sprite).y = 0;
@@ -2823,7 +2978,10 @@ unsafe fn StartFlyBirdSwoopDown(spriteId: u8) {
     (*sprite).data[sPlayerSpriteId] = MAX_SPRITES as i16;
 }
 unsafe fn SetFlyBirdPlayerSpriteId(birdSpriteId: u8, playerSpriteId: u8) {
-    gSprites[birdSpriteId].data[sPlayerSpriteId] = playerSpriteId as i16;
+    {
+        let gl_i42 = sPlayerSpriteId;
+        crate::gl!(gSprites[birdSpriteId].data[gl_i42] = playerSpriteId as i16)
+    };
 }
 pub(crate) unsafe fn SpriteCB_FlyBirdLeaveBall(sprite: *mut Sprite) {
     if (*sprite).data[sAnimCompleted] == FALSE as i16 {
@@ -2862,7 +3020,10 @@ pub(crate) unsafe fn SpriteCB_FlyBirdSwoopDown(sprite: *mut Sprite) {
     (*sprite).y2 = Sin((*sprite).data[2], 0x48);
     (*sprite).data[2] = ((*sprite).data[2] + 4) & 0xff;
     if (*sprite).data[sPlayerSpriteId] != MAX_SPRITES as i16 {
-        let sprite1: *mut Sprite = &raw mut gSprites[(*sprite).data[sPlayerSpriteId]];
+        let sprite1: *mut Sprite = {
+            let gl_i43 = (*sprite).data[sPlayerSpriteId];
+            crate::gl!(&raw gSprites[gl_i43])
+        };
         (*sprite1).set_coordOffsetEnabled(FALSE as u16);
         (*sprite1).x = (*sprite).x + (*sprite).x2;
         (*sprite1).y = (*sprite).y + (*sprite).y2 - 8;
@@ -2911,7 +3072,7 @@ pub(crate) unsafe fn SpriteCB_FlyBirdReturnToBall(sprite: *mut Sprite) {
 }
 unsafe fn StartFlyBirdReturnToBall(spriteId: u8) {
     StartFlyBirdSwoopDown(spriteId);
-    gSprites[spriteId].callback = Some(SpriteCB_FlyBirdReturnToBall);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_FlyBirdReturnToBall));
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FldEff_FlyIn() -> u8 {
@@ -2924,14 +3085,15 @@ pub(crate) unsafe fn Task_FlyIn(taskId: u8) {
     );
 }
 pub(crate) unsafe fn FlyInFieldEffect_BirdSwoopDown(task: *mut Task) {
-    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let objectEvent: *mut ObjectEvent =
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
     if ObjectEventIsMovementOverridden(objectEvent) == 0
         || ObjectEventClearHeldMovementIfFinished(objectEvent) != 0
     {
         (*task).data[0] += 1;
         (*task).data[2] = 17;
-        (*task).data[tAvatarFlags] = gPlayerAvatar.flags as i16;
-        gPlayerAvatar.preventStep = TRUE;
+        (*task).data[tAvatarFlags] = crate::gl!(gPlayerAvatar.flags) as i16;
+        crate::gl!(gPlayerAvatar.preventStep = TRUE);
         SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
         if (*task).data[tAvatarFlags] as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
             SetSurfBlob_BobState((*objectEvent).fieldEffectSpriteId, BOB_NONE);
@@ -2943,7 +3105,10 @@ pub(crate) unsafe fn FlyInFieldEffect_BirdSwoopDown(task: *mut Task) {
         CameraObjectFreeze();
         ObjectEventTurn(objectEvent, DIR_WEST);
         StartSpriteAnim(
-            &raw mut gSprites[(*objectEvent).spriteId],
+            {
+                let gl_i44 = (*objectEvent).spriteId;
+                crate::gl!(&raw gSprites[gl_i44])
+            },
             ANIM_GET_ON_OFF_POKEMON_WEST,
         );
         (*objectEvent).set_invisible(FALSE as u32);
@@ -2961,8 +3126,11 @@ pub(crate) unsafe fn FlyInFieldEffect_FlyInWithBird(task: *mut Task) {
             (*task).data[2]
         }) == 0
     {
-        objectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-        sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        objectEvent = &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+        sprite = {
+            let gl_i45 = (*objectEvent).spriteId;
+            crate::gl!(&raw gSprites[gl_i45])
+        };
         SetFlyBirdPlayerSpriteId((*task).data[tBirdSpriteId] as u8, MAX_SPRITES);
         (*sprite).x += (*sprite).x2;
         (*sprite).y += (*sprite).y2;
@@ -2976,7 +3144,10 @@ pub(crate) unsafe fn FlyInFieldEffect_JumpOffBird(task: *mut Task) {
     let sYPositions: CArray<i16, 18> = CArray([
         -2, -4, -5, -6, -7, -8, -8, -8, -7, -7, -6, -5, -3, -2, 0, 2, 4, 8,
     ]);
-    let sprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+    let sprite: *mut Sprite = {
+        let gl_i46 = crate::gl!(gPlayerAvatar.spriteId);
+        crate::gl!(&raw gSprites[gl_i46])
+    };
     (*sprite).y2 = sYPositions[(*task).data[2]];
     if ({
         (*task).data[2] += 1;
@@ -2990,8 +3161,11 @@ pub(crate) unsafe fn FlyInFieldEffect_FieldMovePose(task: *mut Task) {
     let mut objectEvent: *mut ObjectEvent = null_mut();
     let mut sprite: *mut Sprite = null_mut();
     if GetFlyBirdAnimCompleted((*task).data[tBirdSpriteId] as u8) != 0 {
-        objectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-        sprite = &raw mut gSprites[(*objectEvent).spriteId];
+        objectEvent = &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
+        sprite = {
+            let gl_i47 = (*objectEvent).spriteId;
+            crate::gl!(&raw gSprites[gl_i47])
+        };
         (*objectEvent).set_inanimate(FALSE as u32);
         MoveObjectEventToMapCoords(
             objectEvent,
@@ -3007,8 +3181,9 @@ pub(crate) unsafe fn FlyInFieldEffect_FieldMovePose(task: *mut Task) {
     }
 }
 pub(crate) unsafe fn FlyInFieldEffect_BirdReturnToBall(task: *mut Task) {
-    if ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[gPlayerAvatar.objectEventId])
-        != 0
+    if ObjectEventClearHeldMovementIfFinished(
+        &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)],
+    ) != 0
     {
         (*task).data[0] += 1;
         StartFlyBirdReturnToBall((*task).data[tBirdSpriteId] as u8);
@@ -3016,7 +3191,10 @@ pub(crate) unsafe fn FlyInFieldEffect_BirdReturnToBall(task: *mut Task) {
 }
 pub(crate) unsafe fn FlyInFieldEffect_WaitBirdReturn(task: *mut Task) {
     if GetFlyBirdAnimCompleted((*task).data[1] as u8) != 0 {
-        DestroySprite(&raw mut gSprites[(*task).data[1]]);
+        DestroySprite({
+            let gl_i48 = (*task).data[1];
+            crate::gl!(&raw gSprites[gl_i48])
+        });
         (*task).data[0] += 1;
         (*task).data[1] = 16;
     }
@@ -3029,7 +3207,7 @@ pub(crate) unsafe fn FlyInFieldEffect_End(task: *mut Task) {
         (*task).data[1]
     }) == 0
     {
-        objectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        objectEvent = &raw mut (*gObjectEvents.as_ptr())[crate::gl!(gPlayerAvatar.objectEventId)];
         state = PLAYER_AVATAR_STATE_NORMAL;
         if (*task).data[tAvatarFlags] as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
             state = PLAYER_AVATAR_STATE_SURFING;
@@ -3037,8 +3215,8 @@ pub(crate) unsafe fn FlyInFieldEffect_End(task: *mut Task) {
         }
         ObjectEventSetGraphicsId(objectEvent, GetPlayerAvatarGraphicsIdByStateId(state));
         ObjectEventTurn(objectEvent, DIR_SOUTH);
-        gPlayerAvatar.flags = (*task).data[tAvatarFlags] as u8;
-        gPlayerAvatar.preventStep = FALSE;
+        crate::gl!(gPlayerAvatar.flags = (*task).data[tAvatarFlags] as u8);
+        crate::gl!(gPlayerAvatar.preventStep = FALSE);
         FieldEffectActiveListRemove(FLDEFF_FLY_IN);
         DestroyTask(FindTaskIdByFunc(Some(Task_FlyIn)));
     }
@@ -3048,17 +3226,25 @@ pub unsafe fn FldEff_DestroyDeoxysRock() -> u8 {
     let mut taskId: u8 = 0;
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
         &raw mut objectEventId,
     ) == 0
     {
         taskId = CreateTask(Some(Task_DestroyDeoxysRock), 80);
         task_set(taskId, tObjectEventId, objectEventId as i16);
-        task_set(taskId, tLocalId, gFieldEffectArguments[0] as i16);
-        task_set(taskId, tMapNum, gFieldEffectArguments[1] as i16);
-        task_set(taskId, tMapGroup, gFieldEffectArguments[2] as i16);
+        task_set(
+            taskId,
+            tLocalId,
+            crate::gl!(gFieldEffectArguments[0]) as i16,
+        );
+        task_set(taskId, tMapNum, crate::gl!(gFieldEffectArguments[1]) as i16);
+        task_set(
+            taskId,
+            tMapGroup,
+            crate::gl!(gFieldEffectArguments[2]) as i16,
+        );
     } else {
         FieldEffectActiveListRemove(FLDEFF_DESTROY_DEOXYS_ROCK);
     }
@@ -3124,8 +3310,14 @@ pub(crate) unsafe fn DestroyDeoxysRockEffect_RockFragments(data: *mut i16, taskI
         *data.at(3)
     }) > 120
     {
-        let sprite: *mut Sprite = &raw mut gSprites[gObjectEvents[*data.at(2)].spriteId];
-        gObjectEvents[*data.at(2)].set_invisible(TRUE as u32);
+        let sprite: *mut Sprite = {
+            let gl_i49 = {
+                let gl_i0 = *data.at(2);
+                crate::gl!(gObjectEvents[gl_i0].spriteId)
+            };
+            crate::gl!(&raw gSprites[gl_i49])
+        };
+        (*gObjectEvents.as_ptr())[*data.at(2)].set_invisible(TRUE as u32);
         BlendPalettes(PALETTES_BG, 0x10, 32767);
         BeginNormalPaletteFade(PALETTES_BG, 0, 0x10, 0, 32767);
         CreateDeoxysRockFragments(sprite);
@@ -3136,7 +3328,9 @@ pub(crate) unsafe fn DestroyDeoxysRockEffect_RockFragments(data: *mut i16, taskI
     }
 }
 pub(crate) unsafe fn DestroyDeoxysRockEffect_WaitAndEnd(data: *mut i16, taskId: u8) {
-    if gPaletteFade.active() == 0 && FuncIsActiveTask(Some(Task_DeoxysRockCameraShake)) == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0
+        && FuncIsActiveTask(Some(Task_DeoxysRockCameraShake)) == 0
+    {
         InstallCameraPanAheadCallback();
         RemoveObjectEventByLocalIdAndMap(*data.at(6) as u8, *data.at(7) as u8, *data.at(8) as u8);
         FieldEffectActiveListRemove(FLDEFF_DESTROY_DEOXYS_ROCK);
@@ -3145,9 +3339,9 @@ pub(crate) unsafe fn DestroyDeoxysRockEffect_WaitAndEnd(data: *mut i16, taskId: 
 }
 unsafe fn CreateDeoxysRockFragments(sprite: *mut Sprite) {
     let xPos: i32 =
-        gTotalCameraPixelOffsetX as i16 as i32 + (*sprite).x as i32 + (*sprite).x2 as i32;
+        gTotalCameraPixelOffsetX.get() as i16 as i32 + (*sprite).x as i32 + (*sprite).x2 as i32;
     let yPos: i32 =
-        gTotalCameraPixelOffsetY as i16 as i32 + (*sprite).y as i32 + (*sprite).y2 as i32 - 4;
+        gTotalCameraPixelOffsetY.get() as i16 as i32 + (*sprite).y as i32 + (*sprite).y2 as i32 - 4;
     for i in 0..4i32 {
         let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_DeoxysRockFragment).cast_mut(),
@@ -3156,9 +3350,9 @@ unsafe fn CreateDeoxysRockFragments(sprite: *mut Sprite) {
             0,
         );
         if spriteId != MAX_SPRITES {
-            StartSpriteAnim(&raw mut gSprites[spriteId], i as u8);
-            gSprites[spriteId].data[0] = i as i16;
-            gSprites[spriteId]
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), i as u8);
+            crate::gl!(gSprites[spriteId].data[0] = i as i16);
+            (*gSprites.as_ptr())[spriteId]
                 .oam
                 .set_paletteNum((*sprite).oam.paletteNum());
         }
@@ -3192,42 +3386,55 @@ pub(crate) unsafe fn SpriteCB_DeoxysRockFragment(sprite: *mut Sprite) {
 pub unsafe fn FldEff_MoveDeoxysRock(sprite: *mut Sprite) -> u8 {
     let mut objectEventId: u8 = 0;
     if TryGetObjectEventIdByLocalIdAndMap(
-        gFieldEffectArguments[0] as u8,
-        gFieldEffectArguments[1] as u8,
-        gFieldEffectArguments[2] as u8,
+        crate::gl!(gFieldEffectArguments[0]) as u8,
+        crate::gl!(gFieldEffectArguments[1]) as u8,
+        crate::gl!(gFieldEffectArguments[2]) as u8,
         &raw mut objectEventId,
     ) == 0
     {
-        let object: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
+        let object: *mut ObjectEvent = crate::gl!(&raw gObjectEvents[objectEventId]);
         let mut xPos: i32 = (*object).currentCoords.x as i32 - MAP_OFFSET;
         let mut yPos: i32 = (*object).currentCoords.y as i32 - MAP_OFFSET;
-        xPos = (gFieldEffectArguments[3] - xPos) * 16;
-        yPos = (gFieldEffectArguments[4] - yPos) * 16;
+        xPos = (crate::gl!(gFieldEffectArguments[3]) - xPos) * 16;
+        yPos = (crate::gl!(gFieldEffectArguments[4]) - yPos) * 16;
         ShiftObjectEventCoords(
             object,
-            gFieldEffectArguments[3] as i16 + MAP_OFFSET as i16,
-            gFieldEffectArguments[4] as i16 + MAP_OFFSET as i16,
+            crate::gl!(gFieldEffectArguments[3]) as i16 + MAP_OFFSET as i16,
+            crate::gl!(gFieldEffectArguments[4]) as i16 + MAP_OFFSET as i16,
         );
         let taskId: u8 = CreateTask(Some(Task_MoveDeoxysRock), 80);
         task_set(taskId, tSpriteId, (*object).spriteId as i16);
         task_set(
             taskId,
             tTargetX,
-            gSprites[(*object).spriteId].x + xPos as i16,
+            ({
+                let gl_i50 = (*object).spriteId;
+                crate::gl!(gSprites[gl_i50].x)
+            }) + xPos as i16,
         );
         task_set(
             taskId,
             tTargetY,
-            gSprites[(*object).spriteId].y + yPos as i16,
+            ({
+                let gl_i51 = (*object).spriteId;
+                crate::gl!(gSprites[gl_i51].y)
+            }) + yPos as i16,
         );
-        task_set(taskId, tMoveSteps, gFieldEffectArguments[5] as i16);
+        task_set(
+            taskId,
+            tMoveSteps,
+            crate::gl!(gFieldEffectArguments[5]) as i16,
+        );
         task_set(taskId, tObjEventId, objectEventId as i16);
     }
     FALSE
 }
 pub(crate) unsafe fn Task_MoveDeoxysRock(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let sprite: *mut Sprite = &raw mut gSprites[*data.at(1)];
+    let sprite: *mut Sprite = {
+        let gl_i52 = *data.at(1);
+        crate::gl!(&raw gSprites[gl_i52])
+    };
     'l1: {
         let sw1: i16 = *data;
         let mut fall = false;
@@ -3261,7 +3468,10 @@ pub(crate) unsafe fn Task_MoveDeoxysRock(taskId: u8) {
                 (*sprite).x = *data.at(4) >> 4;
                 (*sprite).y = *data.at(5) >> 4;
             } else {
-                let object: *mut ObjectEvent = &raw mut gObjectEvents[*data.at(9)];
+                let object: *mut ObjectEvent = {
+                    let gl_i1 = *data.at(9);
+                    crate::gl!(&raw gObjectEvents[gl_i1])
+                };
                 (*sprite).x = *data.at(2);
                 (*sprite).y = *data.at(3);
                 ShiftStillObjectEventCoords(object);

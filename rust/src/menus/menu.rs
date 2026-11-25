@@ -66,7 +66,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `BlitBitmapRectToWindow` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapRectToWindow(
+fn BlitBitmapRectToWindow(
     a0: u8,
     a1: *mut u8,
     a2: u16,
@@ -84,14 +84,14 @@ unsafe fn BlitBitmapRectToWindow(
 }
 /// `BlitBitmapToWindow` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
     unsafe {
         crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
     }
 }
 /// `CallWindowFunction` with this module's view of its types.
 #[inline]
-unsafe fn CallWindowFunction(a0: u8, a1: Option<unsafe fn(u8, u8, u8, u8, u8, u8)>) {
+fn CallWindowFunction(a0: u8, a1: Option<unsafe fn(u8, u8, u8, u8, u8, u8)>) {
     unsafe {
         crate::window::CallWindowFunction(a0, core::mem::transmute(a1));
     }
@@ -120,7 +120,7 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadBgTilemap` with this module's view of its types.
@@ -224,34 +224,36 @@ static sTextSpeedFrameDelays: Table<CArray<u8, 3>> =
 static sYesNo_WindowTemplates: Table<WindowTemplate> =
     Table((&raw const crate::data::menu::sYesNo_WindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sStartMenuWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMapNamePopupWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenu: Menu = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMenu: crate::global::Global<Menu> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sTileNum: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPaletteNum: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sYesNoWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sHofPCTopBarWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFiller: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sScheduledBgCopiesToVram: Aligned<CArray<u8, 4>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sFiller: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sScheduledBgCopiesToVram: crate::global::Global<Aligned<CArray<u8, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sTempTileDataBufferIdx: crate::global::Global<u16> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTempTileDataBuffer: CArray<*mut c_void, 32> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTempTileDataBuffer: crate::global::Global<CArray<*mut c_void, 32>> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `AddTextPrinter` with this module's view of its types.
 #[inline]
-unsafe fn AddTextPrinter(
+fn AddTextPrinter(
     a0: *mut TextPrinterTemplate,
     a1: u8,
     a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
@@ -293,13 +295,13 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
 }
 
-pub unsafe fn InitStandardTextBoxWindows() {
+pub fn InitStandardTextBoxWindows() {
     InitWindows(sStandardTextBox_WindowTemplates.as_ptr().cast_mut());
     sStartMenuWindowId.set(WINDOW_NONE);
     sMapNamePopupWindowId.set(WINDOW_NONE);
@@ -342,7 +344,7 @@ pub unsafe fn AddTextPrinterParameterized2(
     printer.set_fgColor(fgColor);
     printer.set_bgColor(bgColor);
     printer.set_shadowColor(shadowColor);
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_useAlternateDownArrow(0);
@@ -351,7 +353,7 @@ pub unsafe fn AddTextPrinterParameterized2(
 #[unsafe(no_mangle)]
 pub unsafe fn AddTextPrinterForMessage(allowSkippingDelayWithButtonPress: u8) {
     let callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)> = None;
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
@@ -367,7 +369,7 @@ pub unsafe fn AddTextPrinterForMessage(allowSkippingDelayWithButtonPress: u8) {
     );
 }
 pub unsafe fn AddTextPrinterForMessage_2(allowSkippingDelayWithButtonPress: u8) {
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
@@ -386,7 +388,7 @@ pub unsafe fn AddTextPrinterWithCustomSpeedForMessage(
     allowSkippingDelayWithButtonPress: u8,
     speed: u8,
 ) {
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
@@ -764,7 +766,7 @@ pub unsafe fn DisplayYesNoMenuWithDefault(initialCursorPos: u8) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetPlayerTextSpeed() -> u32 {
-    if (*(&raw const crate::text::gTextFlags)
+    if (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .forceMidTextSpeed()
@@ -772,11 +774,11 @@ pub unsafe fn GetPlayerTextSpeed() -> u32 {
     {
         return OPTIONS_TEXT_SPEED_MID as u32;
     }
-    (*gSaveBlock2Ptr).optionsTextSpeed() as u32
+    (*crate::gl!(gSaveBlock2Ptr)).optionsTextSpeed() as u32
 }
 pub unsafe fn GetPlayerTextSpeedDelay() -> u8 {
-    if (*gSaveBlock2Ptr).optionsTextSpeed() > OPTIONS_TEXT_SPEED_FAST {
-        (*gSaveBlock2Ptr).set_optionsTextSpeed(OPTIONS_TEXT_SPEED_MID);
+    if (*crate::gl!(gSaveBlock2Ptr)).optionsTextSpeed() > OPTIONS_TEXT_SPEED_FAST {
+        (*crate::gl!(gSaveBlock2Ptr)).set_optionsTextSpeed(OPTIONS_TEXT_SPEED_MID);
     }
     let speed: u32 = GetPlayerTextSpeed();
     sTextSpeedFrameDelays[speed]
@@ -825,7 +827,7 @@ pub unsafe fn AddTextPrinterWithCallbackForMessage(
     canSpeedUp: u8,
     callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
 ) {
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(canSpeedUp);
@@ -1311,22 +1313,22 @@ pub(crate) unsafe fn InitMenu(
     initialCursorPos: u8,
     muteAPress: u8,
 ) -> u8 {
-    sMenu.left = left;
-    sMenu.top = top;
-    sMenu.minCursorPos = 0;
-    sMenu.maxCursorPos = numChoices as i8 - 1;
-    sMenu.windowId = windowId;
-    sMenu.fontId = fontId;
-    sMenu.optionHeight = cursorHeight;
-    sMenu.APressMuted = muteAPress;
+    crate::gl!(sMenu.left = left);
+    crate::gl!(sMenu.top = top);
+    crate::gl!(sMenu.minCursorPos = 0);
+    crate::gl!(sMenu.maxCursorPos = numChoices as i8 - 1);
+    crate::gl!(sMenu.windowId = windowId);
+    crate::gl!(sMenu.fontId = fontId);
+    crate::gl!(sMenu.optionHeight = cursorHeight);
+    crate::gl!(sMenu.APressMuted = muteAPress);
     let pos: i32 = initialCursorPos as i32;
-    if pos < 0 || pos > sMenu.maxCursorPos as i32 {
-        sMenu.cursorPos = 0;
+    if pos < 0 || pos > crate::gl!(sMenu.maxCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = 0);
     } else {
-        sMenu.cursorPos = pos as i8;
+        crate::gl!(sMenu.cursorPos = pos as i8);
     }
     Menu_MoveCursor(0);
-    sMenu.cursorPos as u8
+    crate::gl!(sMenu.cursorPos) as u8
 }
 pub unsafe fn InitMenuNormal(
     windowId: u8,
@@ -1368,71 +1370,71 @@ unsafe fn InitMenuDefaultCursorHeight(
     )
 }
 pub unsafe fn RedrawMenuCursor(oldPos: u8, newPos: u8) {
-    let width: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 0);
-    let height: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 1);
+    let width: u8 = GetMenuCursorDimensionByFont(crate::gl!(sMenu.fontId), 0);
+    let height: u8 = GetMenuCursorDimensionByFont(crate::gl!(sMenu.fontId), 1);
     FillWindowPixelRect(
-        sMenu.windowId,
+        crate::gl!(sMenu.windowId),
         17,
-        sMenu.left as u16,
-        sMenu.optionHeight as u16 * oldPos as u16 + sMenu.top as u16,
+        crate::gl!(sMenu.left) as u16,
+        crate::gl!(sMenu.optionHeight) as u16 * oldPos as u16 + crate::gl!(sMenu.top) as u16,
         width as u16,
         height as u16,
     );
     AddTextPrinterParameterized(
-        sMenu.windowId,
-        sMenu.fontId,
+        crate::gl!(sMenu.windowId),
+        crate::gl!(sMenu.fontId),
         (*(&raw const crate::data::strings::gText_SelectorArrow3).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
-        sMenu.left,
-        sMenu.optionHeight * newPos + sMenu.top,
+        crate::gl!(sMenu.left),
+        crate::gl!(sMenu.optionHeight) * newPos + crate::gl!(sMenu.top),
         0,
         None,
     );
 }
 pub unsafe fn Menu_MoveCursor(cursorDelta: i8) -> u8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
-    let newPos: i32 = sMenu.cursorPos as i32 + cursorDelta as i32;
-    if newPos < sMenu.minCursorPos as i32 {
-        sMenu.cursorPos = sMenu.maxCursorPos;
-    } else if newPos > sMenu.maxCursorPos as i32 {
-        sMenu.cursorPos = sMenu.minCursorPos;
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
+    let newPos: i32 = crate::gl!(sMenu.cursorPos) as i32 + cursorDelta as i32;
+    if newPos < crate::gl!(sMenu.minCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = crate::gl!(sMenu.maxCursorPos));
+    } else if newPos > crate::gl!(sMenu.maxCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = crate::gl!(sMenu.minCursorPos));
     } else {
-        sMenu.cursorPos += cursorDelta;
+        crate::gl!(sMenu.cursorPos += cursorDelta);
     }
-    RedrawMenuCursor(oldPos, sMenu.cursorPos as u8);
-    sMenu.cursorPos as u8
+    RedrawMenuCursor(oldPos, crate::gl!(sMenu.cursorPos) as u8);
+    crate::gl!(sMenu.cursorPos) as u8
 }
 pub unsafe fn Menu_MoveCursorNoWrapAround(cursorDelta: i8) -> u8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
-    let newPos: i32 = sMenu.cursorPos as i32 + cursorDelta as i32;
-    if newPos < sMenu.minCursorPos as i32 {
-        sMenu.cursorPos = sMenu.minCursorPos;
-    } else if newPos > sMenu.maxCursorPos as i32 {
-        sMenu.cursorPos = sMenu.maxCursorPos;
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
+    let newPos: i32 = crate::gl!(sMenu.cursorPos) as i32 + cursorDelta as i32;
+    if newPos < crate::gl!(sMenu.minCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = crate::gl!(sMenu.minCursorPos));
+    } else if newPos > crate::gl!(sMenu.maxCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = crate::gl!(sMenu.maxCursorPos));
     } else {
-        sMenu.cursorPos += cursorDelta;
+        crate::gl!(sMenu.cursorPos += cursorDelta);
     }
-    RedrawMenuCursor(oldPos, sMenu.cursorPos as u8);
-    sMenu.cursorPos as u8
+    RedrawMenuCursor(oldPos, crate::gl!(sMenu.cursorPos) as u8);
+    crate::gl!(sMenu.cursorPos) as u8
 }
 pub unsafe fn Menu_GetCursorPos() -> u8 {
-    sMenu.cursorPos as u8
+    crate::gl!(sMenu.cursorPos) as u8
 }
 #[unsafe(no_mangle)]
 pub unsafe fn Menu_ProcessInput() -> i8 {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if sMenu.APressMuted == 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        if crate::gl!(sMenu.APressMuted) == 0 {
             PlaySE(SE_SELECT);
         }
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         PlaySE(SE_SELECT);
         Menu_MoveCursor(-1);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         PlaySE(SE_SELECT);
         Menu_MoveCursor(1);
         return MENU_NOTHING_CHOSEN;
@@ -1440,20 +1442,20 @@ pub unsafe fn Menu_ProcessInput() -> i8 {
     MENU_NOTHING_CHOSEN
 }
 pub unsafe fn Menu_ProcessInputNoWrap() -> i8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if sMenu.APressMuted == 0 {
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        if crate::gl!(sMenu.APressMuted) == 0 {
             PlaySE(SE_SELECT);
         }
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         if oldPos != Menu_MoveCursorNoWrapAround(-1) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         if oldPos != Menu_MoveCursorNoWrapAround(1) {
             PlaySE(SE_SELECT);
         }
@@ -1462,18 +1464,18 @@ pub unsafe fn Menu_ProcessInputNoWrap() -> i8 {
     MENU_NOTHING_CHOSEN
 }
 pub unsafe fn ProcessMenuInput_other() -> i8 {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if sMenu.APressMuted == 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        if crate::gl!(sMenu.APressMuted) == 0 {
             PlaySE(SE_SELECT);
         }
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_UP {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_UP {
         PlaySE(SE_SELECT);
         Menu_MoveCursor(-1);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_DOWN {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_DOWN {
         PlaySE(SE_SELECT);
         Menu_MoveCursor(1);
         return MENU_NOTHING_CHOSEN;
@@ -1481,20 +1483,20 @@ pub unsafe fn ProcessMenuInput_other() -> i8 {
     MENU_NOTHING_CHOSEN
 }
 pub unsafe fn Menu_ProcessInputNoWrapAround_other() -> i8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if sMenu.APressMuted == 0 {
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+        if crate::gl!(sMenu.APressMuted) == 0 {
             PlaySE(SE_SELECT);
         }
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_UP {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_UP {
         if oldPos != Menu_MoveCursorNoWrapAround(-1) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_DOWN {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_DOWN {
         if oldPos != Menu_MoveCursorNoWrapAround(1) {
             PlaySE(SE_SELECT);
         }
@@ -1852,24 +1854,24 @@ unsafe fn InitMenuGrid(
     numChoices: u8,
     cursorPos: u8,
 ) -> u8 {
-    sMenu.left = left;
-    sMenu.top = top;
-    sMenu.minCursorPos = 0;
-    sMenu.maxCursorPos = numChoices as i8 - 1;
-    sMenu.windowId = windowId;
-    sMenu.fontId = fontId;
-    sMenu.optionWidth = optionWidth;
-    sMenu.optionHeight = optionHeight;
-    sMenu.columns = columns;
-    sMenu.rows = rows;
+    crate::gl!(sMenu.left = left);
+    crate::gl!(sMenu.top = top);
+    crate::gl!(sMenu.minCursorPos = 0);
+    crate::gl!(sMenu.maxCursorPos = numChoices as i8 - 1);
+    crate::gl!(sMenu.windowId = windowId);
+    crate::gl!(sMenu.fontId = fontId);
+    crate::gl!(sMenu.optionWidth = optionWidth);
+    crate::gl!(sMenu.optionHeight = optionHeight);
+    crate::gl!(sMenu.columns = columns);
+    crate::gl!(sMenu.rows = rows);
     let pos: i32 = cursorPos as i32;
-    if pos < 0 || pos > sMenu.maxCursorPos as i32 {
-        sMenu.cursorPos = 0;
+    if pos < 0 || pos > crate::gl!(sMenu.maxCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = 0);
     } else {
-        sMenu.cursorPos = pos as i8;
+        crate::gl!(sMenu.cursorPos = pos as i8);
     }
     ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_NONE);
-    sMenu.cursorPos as u8
+    crate::gl!(sMenu.cursorPos) as u8
 }
 unsafe fn InitMenuGridDefaultCursorHeight(
     windowId: u8,
@@ -1897,27 +1899,31 @@ unsafe fn InitMenuGridDefaultCursorHeight(
     )
 }
 unsafe fn MoveMenuGridCursor(oldCursorPos: u8, newCursorPos: u8) {
-    let cursorWidth: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 0);
-    let cursorHeight: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 1);
-    let mut xPos: u8 =
-        rem_i32(oldCursorPos as i32, sMenu.columns as i32) as u8 * sMenu.optionWidth + sMenu.left;
-    let mut yPos: u8 =
-        div_i32(oldCursorPos as i32, sMenu.columns as i32) as u8 * sMenu.optionHeight + sMenu.top;
+    let cursorWidth: u8 = GetMenuCursorDimensionByFont(crate::gl!(sMenu.fontId), 0);
+    let cursorHeight: u8 = GetMenuCursorDimensionByFont(crate::gl!(sMenu.fontId), 1);
+    let mut xPos: u8 = rem_i32(oldCursorPos as i32, crate::gl!(sMenu.columns) as i32) as u8
+        * crate::gl!(sMenu.optionWidth)
+        + crate::gl!(sMenu.left);
+    let mut yPos: u8 = div_i32(oldCursorPos as i32, crate::gl!(sMenu.columns) as i32) as u8
+        * crate::gl!(sMenu.optionHeight)
+        + crate::gl!(sMenu.top);
     FillWindowPixelRect(
-        sMenu.windowId,
+        crate::gl!(sMenu.windowId),
         17,
         xPos as u16,
         yPos as u16,
         cursorWidth as u16,
         cursorHeight as u16,
     );
-    xPos =
-        rem_i32(newCursorPos as i32, sMenu.columns as i32) as u8 * sMenu.optionWidth + sMenu.left;
-    yPos =
-        div_i32(newCursorPos as i32, sMenu.columns as i32) as u8 * sMenu.optionHeight + sMenu.top;
+    xPos = rem_i32(newCursorPos as i32, crate::gl!(sMenu.columns) as i32) as u8
+        * crate::gl!(sMenu.optionWidth)
+        + crate::gl!(sMenu.left);
+    yPos = div_i32(newCursorPos as i32, crate::gl!(sMenu.columns) as i32) as u8
+        * crate::gl!(sMenu.optionHeight)
+        + crate::gl!(sMenu.top);
     AddTextPrinterParameterized(
-        sMenu.windowId,
-        sMenu.fontId,
+        crate::gl!(sMenu.windowId),
+        crate::gl!(sMenu.fontId),
         (*(&raw const crate::data::strings::gText_SelectorArrow3).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
@@ -1928,36 +1934,63 @@ unsafe fn MoveMenuGridCursor(oldCursorPos: u8, newCursorPos: u8) {
     );
 }
 pub unsafe fn ChangeMenuGridCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
     if deltaX != 0 {
-        if (rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32) < 0 {
-            sMenu.cursorPos += sMenu.columns as i8 - 1;
-        } else if rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32
-            >= sMenu.columns as i32
+        if (rem_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaX as i32)
+            < 0
         {
-            sMenu.cursorPos =
-                div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) as i8 * sMenu.columns as i8;
+            crate::gl!(sMenu.cursorPos += crate::gl!(sMenu.columns) as i8 - 1);
+        } else if rem_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaX as i32
+            >= crate::gl!(sMenu.columns) as i32
+        {
+            crate::gl!(
+                sMenu.cursorPos = div_i32(
+                    crate::gl!(sMenu.cursorPos) as i32,
+                    crate::gl!(sMenu.columns) as i32
+                ) as i8
+                    * crate::gl!(sMenu.columns) as i8
+            );
         } else {
-            sMenu.cursorPos += deltaX;
+            crate::gl!(sMenu.cursorPos += deltaX);
         }
     }
     if deltaY != 0 {
-        if (div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32) < 0 {
-            sMenu.cursorPos += sMenu.columns as i8 * (sMenu.rows as i8 - 1);
-        } else if div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32
-            >= sMenu.rows as i32
+        if (div_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaY as i32)
+            < 0
         {
-            sMenu.cursorPos -= sMenu.columns as i8 * (sMenu.rows as i8 - 1);
+            crate::gl!(
+                sMenu.cursorPos +=
+                    crate::gl!(sMenu.columns) as i8 * (crate::gl!(sMenu.rows) as i8 - 1)
+            );
+        } else if div_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaY as i32
+            >= crate::gl!(sMenu.rows) as i32
+        {
+            crate::gl!(
+                sMenu.cursorPos -=
+                    crate::gl!(sMenu.columns) as i8 * (crate::gl!(sMenu.rows) as i8 - 1)
+            );
         } else {
-            sMenu.cursorPos += sMenu.columns as i8 * deltaY;
+            crate::gl!(sMenu.cursorPos += crate::gl!(sMenu.columns) as i8 * deltaY);
         }
     }
-    if sMenu.cursorPos > sMenu.maxCursorPos {
-        sMenu.cursorPos = oldPos as i8;
-        return sMenu.cursorPos as u8;
+    if crate::gl!(sMenu.cursorPos) > crate::gl!(sMenu.maxCursorPos) {
+        crate::gl!(sMenu.cursorPos = oldPos as i8);
+        return crate::gl!(sMenu.cursorPos) as u8;
     } else {
-        MoveMenuGridCursor(oldPos, sMenu.cursorPos as u8);
-        return sMenu.cursorPos as u8;
+        MoveMenuGridCursor(oldPos, crate::gl!(sMenu.cursorPos) as u8);
+        return crate::gl!(sMenu.cursorPos) as u8;
     }
     #[allow(unreachable_code)]
     {
@@ -1965,27 +1998,41 @@ pub unsafe fn ChangeMenuGridCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
     }
 }
 pub unsafe fn ChangeGridMenuCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
     if deltaX != 0
-        && rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32 >= 0
-        && (rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32)
-            < sMenu.columns as i32
+        && rem_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaX as i32
+            >= 0
+        && (rem_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaX as i32)
+            < crate::gl!(sMenu.columns) as i32
     {
-        sMenu.cursorPos += deltaX;
+        crate::gl!(sMenu.cursorPos += deltaX);
     }
     if deltaY != 0
-        && div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32 >= 0
-        && (div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32)
-            < sMenu.rows as i32
+        && div_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaY as i32
+            >= 0
+        && (div_i32(
+            crate::gl!(sMenu.cursorPos) as i32,
+            crate::gl!(sMenu.columns) as i32,
+        ) + deltaY as i32)
+            < crate::gl!(sMenu.rows) as i32
     {
-        sMenu.cursorPos += sMenu.columns as i8 * deltaY;
+        crate::gl!(sMenu.cursorPos += crate::gl!(sMenu.columns) as i8 * deltaY);
     }
-    if sMenu.cursorPos > sMenu.maxCursorPos {
-        sMenu.cursorPos = oldPos as i8;
-        return sMenu.cursorPos as u8;
+    if crate::gl!(sMenu.cursorPos) > crate::gl!(sMenu.maxCursorPos) {
+        crate::gl!(sMenu.cursorPos = oldPos as i8);
+        return crate::gl!(sMenu.cursorPos) as u8;
     } else {
-        MoveMenuGridCursor(oldPos, sMenu.cursorPos as u8);
-        return sMenu.cursorPos as u8;
+        MoveMenuGridCursor(oldPos, crate::gl!(sMenu.cursorPos) as u8);
+        return crate::gl!(sMenu.cursorPos) as u8;
     }
     #[allow(unreachable_code)]
     {
@@ -1993,24 +2040,28 @@ pub unsafe fn ChangeGridMenuCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
     }
 }
 unsafe fn Menu_ProcessGridInput_NoSoundLimit() -> i8 {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_UP);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_DOWN);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+        || GetLRKeysPressed() == MENU_L_PRESSED
+    {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_LEFT, MENU_CURSOR_DELTA_NONE);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+        || GetLRKeysPressed() == MENU_R_PRESSED
+    {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_RIGHT, MENU_CURSOR_DELTA_NONE);
         return MENU_NOTHING_CHOSEN;
@@ -2018,28 +2069,32 @@ unsafe fn Menu_ProcessGridInput_NoSoundLimit() -> i8 {
     MENU_NOTHING_CHOSEN
 }
 pub unsafe fn Menu_ProcessGridInput() -> i8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newKeys as i32 & DPAD_UP != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
         if oldPos != ChangeGridMenuCursorPosition(0, -1) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
         if oldPos != ChangeGridMenuCursorPosition(0, 1) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0
+        || GetLRKeysPressed() == MENU_L_PRESSED
+    {
         if oldPos != ChangeGridMenuCursorPosition(-1, 0) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0
+        || GetLRKeysPressed() == MENU_R_PRESSED
+    {
         if oldPos != ChangeGridMenuCursorPosition(1, 0) {
             PlaySE(SE_SELECT);
         }
@@ -2048,26 +2103,26 @@ pub unsafe fn Menu_ProcessGridInput() -> i8 {
     MENU_NOTHING_CHOSEN
 }
 unsafe fn Menu_ProcessGridInputRepeat_NoSoundLimit() -> i8 {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_UP {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_UP {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_UP);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_DOWN {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_DOWN {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_DOWN);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_LEFT
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_LEFT
         || GetLRKeysPressedAndHeld() == MENU_L_PRESSED
     {
         PlaySE(SE_SELECT);
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_LEFT, MENU_CURSOR_DELTA_NONE);
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_RIGHT
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_RIGHT
         || GetLRKeysPressedAndHeld() == MENU_R_PRESSED
     {
         PlaySE(SE_SELECT);
@@ -2077,30 +2132,30 @@ unsafe fn Menu_ProcessGridInputRepeat_NoSoundLimit() -> i8 {
     MENU_NOTHING_CHOSEN
 }
 unsafe fn Menu_ProcessGridInputRepeat() -> i8 {
-    let oldPos: u8 = sMenu.cursorPos as u8;
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    let oldPos: u8 = crate::gl!(sMenu.cursorPos) as u8;
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        return sMenu.cursorPos;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        return crate::gl!(sMenu.cursorPos);
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return MENU_B_PRESSED;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_UP {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_UP {
         if oldPos != ChangeGridMenuCursorPosition(0, -1) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_DOWN {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_DOWN {
         if oldPos != ChangeGridMenuCursorPosition(0, 1) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_LEFT
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_LEFT
         || GetLRKeysPressedAndHeld() == MENU_L_PRESSED
     {
         if oldPos != ChangeGridMenuCursorPosition(-1, 0) {
             PlaySE(SE_SELECT);
         }
         return MENU_NOTHING_CHOSEN;
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_RIGHT
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_RIGHT
         || GetLRKeysPressedAndHeld() == MENU_R_PRESSED
     {
         if oldPos != ChangeGridMenuCursorPosition(1, 0) {
@@ -2116,19 +2171,19 @@ pub unsafe fn InitMenuInUpperLeftCorner(
     initialCursorPos: u8,
     APressMuted: u8,
 ) -> u8 {
-    sMenu.left = 0;
-    sMenu.top = 1;
-    sMenu.minCursorPos = 0;
-    sMenu.maxCursorPos = itemCount as i8 - 1;
-    sMenu.windowId = windowId;
-    sMenu.fontId = FONT_NORMAL;
-    sMenu.optionHeight = 16;
-    sMenu.APressMuted = APressMuted;
+    crate::gl!(sMenu.left = 0);
+    crate::gl!(sMenu.top = 1);
+    crate::gl!(sMenu.minCursorPos = 0);
+    crate::gl!(sMenu.maxCursorPos = itemCount as i8 - 1);
+    crate::gl!(sMenu.windowId = windowId);
+    crate::gl!(sMenu.fontId = FONT_NORMAL);
+    crate::gl!(sMenu.optionHeight = 16);
+    crate::gl!(sMenu.APressMuted = APressMuted);
     let pos: i32 = initialCursorPos as i32;
-    if pos < 0 || pos > sMenu.maxCursorPos as i32 {
-        sMenu.cursorPos = 0;
+    if pos < 0 || pos > crate::gl!(sMenu.maxCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = 0);
     } else {
-        sMenu.cursorPos = pos as i8;
+        crate::gl!(sMenu.cursorPos = pos as i8);
     }
     Menu_MoveCursor(0)
 }
@@ -2266,56 +2321,56 @@ pub unsafe fn InitMenuActionGrid(
     rows: u8,
     initialCursorPos: u8,
 ) -> u8 {
-    sMenu.left = 0;
-    sMenu.top = 1;
-    sMenu.minCursorPos = 0;
-    sMenu.maxCursorPos = columns as i8 * rows as i8 - 1;
-    sMenu.windowId = windowId;
-    sMenu.fontId = FONT_NORMAL;
-    sMenu.optionWidth = optionWidth;
-    sMenu.optionHeight = 16;
-    sMenu.columns = columns;
-    sMenu.rows = rows;
+    crate::gl!(sMenu.left = 0);
+    crate::gl!(sMenu.top = 1);
+    crate::gl!(sMenu.minCursorPos = 0);
+    crate::gl!(sMenu.maxCursorPos = columns as i8 * rows as i8 - 1);
+    crate::gl!(sMenu.windowId = windowId);
+    crate::gl!(sMenu.fontId = FONT_NORMAL);
+    crate::gl!(sMenu.optionWidth = optionWidth);
+    crate::gl!(sMenu.optionHeight = 16);
+    crate::gl!(sMenu.columns = columns);
+    crate::gl!(sMenu.rows = rows);
     let pos: i32 = initialCursorPos as i32;
-    if pos < 0 || pos > sMenu.maxCursorPos as i32 {
-        sMenu.cursorPos = 0;
+    if pos < 0 || pos > crate::gl!(sMenu.maxCursorPos) as i32 {
+        crate::gl!(sMenu.cursorPos = 0);
     } else {
-        sMenu.cursorPos = pos as i8;
+        crate::gl!(sMenu.cursorPos = pos as i8);
     }
     ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_NONE);
-    sMenu.cursorPos as u8
+    crate::gl!(sMenu.cursorPos) as u8
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ClearScheduledBgCopiesToVram() {
-    memset(sScheduledBgCopiesToVram.as_mut_ptr(), 0, 4);
+    memset((*sScheduledBgCopiesToVram.as_ptr()).as_mut_ptr(), 0, 4);
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ScheduleBgCopyTilemapToVram(bgId: u8) {
-    sScheduledBgCopiesToVram[bgId] = TRUE;
+pub fn ScheduleBgCopyTilemapToVram(bgId: u8) {
+    crate::gl!(sScheduledBgCopiesToVram[bgId] = TRUE);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoScheduledBgTilemapCopiesToVram() {
-    if sScheduledBgCopiesToVram[0] == TRUE {
+    if crate::gl!(sScheduledBgCopiesToVram[0]) == TRUE {
         CopyBgTilemapBufferToVram(0);
-        sScheduledBgCopiesToVram[0] = 0;
+        crate::gl!(sScheduledBgCopiesToVram[0] = 0);
     }
-    if sScheduledBgCopiesToVram[1] == 1 {
+    if crate::gl!(sScheduledBgCopiesToVram[1]) == 1 {
         CopyBgTilemapBufferToVram(1);
-        sScheduledBgCopiesToVram[1] = FALSE;
+        crate::gl!(sScheduledBgCopiesToVram[1] = FALSE);
     }
-    if sScheduledBgCopiesToVram[2] == TRUE {
+    if crate::gl!(sScheduledBgCopiesToVram[2]) == TRUE {
         CopyBgTilemapBufferToVram(2);
-        sScheduledBgCopiesToVram[2] = FALSE;
+        crate::gl!(sScheduledBgCopiesToVram[2] = FALSE);
     }
-    if sScheduledBgCopiesToVram[3] == TRUE {
+    if crate::gl!(sScheduledBgCopiesToVram[3]) == TRUE {
         CopyBgTilemapBufferToVram(3);
-        sScheduledBgCopiesToVram[3] = FALSE;
+        crate::gl!(sScheduledBgCopiesToVram[3] = FALSE);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe fn ResetTempTileDataBuffers() {
+pub fn ResetTempTileDataBuffers() {
     for i in 0..32i32 {
-        sTempTileDataBuffer[i] = null_mut();
+        crate::gl!(sTempTileDataBuffer[i] = null_mut());
     }
     sTempTileDataBufferIdx.set(0);
 }
@@ -2326,8 +2381,8 @@ pub unsafe fn FreeTempTileDataBuffersIfPossible() -> u8 {
         if sTempTileDataBufferIdx.get() != 0 {
             i = 0;
             while i < sTempTileDataBufferIdx.get() as i32 {
-                Free(sTempTileDataBuffer[i]);
-                sTempTileDataBuffer[i] = null_mut();
+                Free(crate::gl!(sTempTileDataBuffer[i]));
+                crate::gl!(sTempTileDataBuffer[i] = null_mut());
                 i += 1;
             }
             sTempTileDataBufferIdx.set(0);
@@ -2357,11 +2412,15 @@ pub unsafe fn DecompressAndCopyTileDataToVram(
         }
         if !ptr.is_null() {
             copy_decompressed_tile_data_to_vram(bgId, ptr, size as u16, offset, mode);
-            sTempTileDataBuffer[{
-                let t1 = sTempTileDataBufferIdx.get();
-                sTempTileDataBufferIdx.set(sTempTileDataBufferIdx.get() + 1);
-                t1
-            }] = ptr;
+            {
+                let gl_v = ptr;
+                let gl_i0 = {
+                    let t1 = sTempTileDataBufferIdx.get();
+                    sTempTileDataBufferIdx.set(sTempTileDataBufferIdx.get() + 1);
+                    t1
+                };
+                crate::gl!(sTempTileDataBuffer[gl_i0] = gl_v)
+            };
         }
         return ptr;
     }
@@ -2590,7 +2649,7 @@ pub unsafe fn AddTextPrinterParameterized5(
 }
 pub unsafe fn PrintPlayerNameOnWindow(windowId: u8, src: *mut u8, x: u16, y: u16) {
     let mut count: i32 = 0;
-    while (*gSaveBlock2Ptr).playerName[count] != EOS {
+    while (*crate::gl!(gSaveBlock2Ptr)).playerName[count] != EOS {
         count += 1;
     }
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
@@ -2791,7 +2850,10 @@ pub unsafe fn BufferSaveMenuText(textId: u8, dest: *mut u8, color: u8) {
     }) = color + 1;
     match textId {
         SAVE_MENU_NAME => {
-            StringCopy(string, (*gSaveBlock2Ptr).playerName.as_mut_ptr());
+            StringCopy(
+                string,
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+            );
         }
         SAVE_MENU_CAUGHT => {
             if IsNationalPokedexEnabled() != 0 {
@@ -2814,7 +2876,7 @@ pub unsafe fn BufferSaveMenuText(textId: u8, dest: *mut u8, color: u8) {
         SAVE_MENU_PLAY_TIME => {
             string = ConvertIntToDecimalStringN(
                 string,
-                (*gSaveBlock2Ptr).playTimeHours as i32,
+                (*crate::gl!(gSaveBlock2Ptr)).playTimeHours as i32,
                 STR_CONV_MODE_LEFT_ALIGN,
                 3,
             );
@@ -2825,13 +2887,13 @@ pub unsafe fn BufferSaveMenuText(textId: u8, dest: *mut u8, color: u8) {
             }) = CHAR_COLON;
             ConvertIntToDecimalStringN(
                 string,
-                (*gSaveBlock2Ptr).playTimeMinutes as i32,
+                (*crate::gl!(gSaveBlock2Ptr)).playTimeMinutes as i32,
                 STR_CONV_MODE_LEADING_ZEROS,
                 2,
             );
         }
         SAVE_MENU_LOCATION => {
-            GetMapNameGeneric(string, gMapHeader.regionMapSectionId as u16);
+            GetMapNameGeneric(string, crate::gl!(gMapHeader.regionMapSectionId) as u16);
         }
         SAVE_MENU_BADGES => {
             flagCount = 0;

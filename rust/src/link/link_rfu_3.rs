@@ -135,8 +135,9 @@ static sWireless_ASCIItoRSETable: Table<CArray<u8, 256>> =
 static sWireless_RSEtoASCIITable: Table<CArray<u8, 256>> =
     Table((&raw const crate::data::link_rfu_3::sWireless_RSEtoASCIITable).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub static mut gWirelessStatusIndicatorSpriteId: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gWirelessStatusIndicatorSpriteId: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 pub(crate) static sSequenceArrayValOffset: crate::global::Global<u8> =
     crate::global::Global::new(0);
 
@@ -147,7 +148,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -479,12 +480,12 @@ unsafe fn ASCIIToPkmnStr(pkmnStr: *mut u8, asciiStr: *mut u8) {
 }
 unsafe fn GetConnectedChildStrength(maxFlags: u8) -> u8 {
     let mut flagCount: u8 = 0;
-    let mut flags: u32 = (*gRfuLinkStatus).connSlotFlag as u32;
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    let mut flags: u32 = (*crate::gl!(gRfuLinkStatus)).connSlotFlag as u32;
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         for i in 0..4u8 {
             if flags & 1 != 0 {
                 if maxFlags as i32 == flagCount as i32 + 1 {
-                    return (*gRfuLinkStatus).strength[i];
+                    return (*crate::gl!(gRfuLinkStatus)).strength[i];
                     break;
                 }
                 flagCount += 1;
@@ -494,7 +495,7 @@ unsafe fn GetConnectedChildStrength(maxFlags: u8) -> u8 {
     } else {
         for i in 0..4u8 {
             if flags & 1 != 0 {
-                return (*gRfuLinkStatus).strength[i];
+                return (*crate::gl!(gRfuLinkStatus)).strength[i];
             }
             flags >>= 1;
         }
@@ -509,14 +510,14 @@ pub unsafe fn InitHostRfuGameData(
 ) {
     let mut i: i32 = 0;
     while i < 2 {
-        (*data).compatibility.playerTrainerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i];
+        (*data).compatibility.playerTrainerId[i] = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[i];
         i += 1;
     }
     for i in 0..(RFU_CHILD_MAX as i32) {
         (*data).partnerInfo[i] = partnerInfo as u8;
         partnerInfo >>= 8;
     }
-    (*data).set_playerGender((*gSaveBlock2Ptr).playerGender);
+    (*data).set_playerGender((*crate::gl!(gSaveBlock2Ptr)).playerGender);
     (*data).set_activity(activity);
     (*data).set_startedActivity(startedActivity as u8);
     (*data).compatibility.set_language(GAME_LANGUAGE as u16);
@@ -540,19 +541,23 @@ pub unsafe fn Rfu_GetCompatiblePlayerData(
     idx: u8,
 ) -> u8 {
     let mut retVal: u8 = 0;
-    if lman.parent_child == MODE_PARENT {
+    if crate::gl!(lman.parent_child) == MODE_PARENT {
         retVal = TRUE;
-        if IsRfuSerialNumberValid((*gRfuLinkStatus).partner[idx].serialNo as u32) != 0
-            && shr_i32((*gRfuLinkStatus).getNameFlag as i32, idx as u32) & 1 != 0
+        if IsRfuSerialNumberValid((*crate::gl!(gRfuLinkStatus)).partner[idx].serialNo as u32) != 0
+            && shr_i32((*crate::gl!(gRfuLinkStatus)).getNameFlag as i32, idx as u32) & 1 != 0
         {
             memcpy(
                 gameData as *mut u8,
-                (*gRfuLinkStatus).partner[idx].gname.as_mut_ptr(),
+                (*crate::gl!(gRfuLinkStatus)).partner[idx]
+                    .gname
+                    .as_mut_ptr(),
                 RFU_GAME_NAME_LENGTH,
             );
             memcpy(
                 username,
-                (*gRfuLinkStatus).partner[idx].uname.as_mut_ptr(),
+                (*crate::gl!(gRfuLinkStatus)).partner[idx]
+                    .uname
+                    .as_mut_ptr(),
                 RFU_USER_NAME_LENGTH,
             );
         } else {
@@ -561,15 +566,19 @@ pub unsafe fn Rfu_GetCompatiblePlayerData(
         }
     } else {
         retVal = FALSE;
-        if IsRfuSerialNumberValid((*gRfuLinkStatus).partner[idx].serialNo as u32) != 0 {
+        if IsRfuSerialNumberValid((*crate::gl!(gRfuLinkStatus)).partner[idx].serialNo as u32) != 0 {
             memcpy(
                 gameData as *mut u8,
-                (*gRfuLinkStatus).partner[idx].gname.as_mut_ptr(),
+                (*crate::gl!(gRfuLinkStatus)).partner[idx]
+                    .gname
+                    .as_mut_ptr(),
                 RFU_GAME_NAME_LENGTH,
             );
             memcpy(
                 username,
-                (*gRfuLinkStatus).partner[idx].uname.as_mut_ptr(),
+                (*crate::gl!(gRfuLinkStatus)).partner[idx]
+                    .uname
+                    .as_mut_ptr(),
                 RFU_USER_NAME_LENGTH,
             );
         } else {
@@ -585,15 +594,19 @@ pub unsafe fn Rfu_GetWonderDistributorPlayerData(
     idx: u8,
 ) -> u8 {
     let mut retVal: u8 = FALSE;
-    if (*gRfuLinkStatus).partner[idx].serialNo == RFU_SERIAL_WONDER_DISTRIBUTOR {
+    if (*crate::gl!(gRfuLinkStatus)).partner[idx].serialNo == RFU_SERIAL_WONDER_DISTRIBUTOR {
         memcpy(
             gameData as *mut u8,
-            (*gRfuLinkStatus).partner[idx].gname.as_mut_ptr(),
+            (*crate::gl!(gRfuLinkStatus)).partner[idx]
+                .gname
+                .as_mut_ptr(),
             RFU_GAME_NAME_LENGTH,
         );
         memcpy(
             username,
-            (*gRfuLinkStatus).partner[idx].uname.as_mut_ptr(),
+            (*crate::gl!(gRfuLinkStatus)).partner[idx]
+                .uname
+                .as_mut_ptr(),
             RFU_USER_NAME_LENGTH,
         );
         retVal = TRUE;
@@ -606,14 +619,14 @@ pub unsafe fn Rfu_GetWonderDistributorPlayerData(
 pub unsafe fn CopyHostRfuGameDataAndUsername(gameData: *mut RfuGameData, username: *mut u8) {
     memcpy(
         gameData as *mut u8,
-        &raw mut (*(&raw const crate::link_rfu_2::gHostRfuGameData)
+        &raw mut (*(crate::gl!(&raw @at crate::link_rfu_2::gHostRfuGameData;).cast_const())
             .cast::<RfuGameData>()
             .cast_mut()) as *mut u8,
         RFU_GAME_NAME_LENGTH,
     );
     memcpy(
         username,
-        gHostRfuUsername.as_mut_ptr(),
+        (*gHostRfuUsername.as_ptr()).as_mut_ptr(),
         RFU_USER_NAME_LENGTH,
     );
 }
@@ -624,36 +637,64 @@ pub unsafe fn CreateWirelessStatusIndicatorSprite(mut x: u8, mut y: u8) {
         x = 231;
         y = 8;
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+    if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
         sprId = CreateSprite(
             (&raw const *sWirelessStatusIndicatorSpriteTemplate).cast_mut(),
             x as i16,
             y as i16,
             0,
         );
-        gSprites[sprId].data[sValidator] = STATUS_INDICATOR_ACTIVE;
-        gSprites[sprId].data[sTileStart] =
-            GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) as i16;
-        gSprites[sprId].set_invisible(TRUE as u16);
-        gWirelessStatusIndicatorSpriteId = sprId;
+        {
+            let gl_i0 = sValidator;
+            crate::gl!(gSprites[sprId].data[gl_i0] = STATUS_INDICATOR_ACTIVE)
+        };
+        {
+            let gl_v = GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) as i16;
+            let gl_i1 = sTileStart;
+            crate::gl!(gSprites[sprId].data[gl_i1] = gl_v)
+        };
+        (*gSprites.as_ptr())[sprId].set_invisible(TRUE as u16);
+        gWirelessStatusIndicatorSpriteId.set(sprId);
     } else {
-        gWirelessStatusIndicatorSpriteId = CreateSprite(
+        gWirelessStatusIndicatorSpriteId.set(CreateSprite(
             (&raw const *sWirelessStatusIndicatorSpriteTemplate).cast_mut(),
             x as i16,
             y as i16,
             0,
-        );
-        gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] = STATUS_INDICATOR_ACTIVE;
-        gSprites[gWirelessStatusIndicatorSpriteId].data[sTileStart] =
-            GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) as i16;
-        gSprites[gWirelessStatusIndicatorSpriteId].set_invisible(TRUE as u16);
+        ));
+        {
+            let gl_i2 = gWirelessStatusIndicatorSpriteId.get();
+            let gl_i3 = sValidator;
+            crate::gl!(gSprites[gl_i2].data[gl_i3] = STATUS_INDICATOR_ACTIVE)
+        };
+        {
+            let gl_v = GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) as i16;
+            let gl_i4 = gWirelessStatusIndicatorSpriteId.get();
+            let gl_i5 = sTileStart;
+            crate::gl!(gSprites[gl_i4].data[gl_i5] = gl_v)
+        };
+        (*gSprites.as_ptr())[gWirelessStatusIndicatorSpriteId.get()].set_invisible(TRUE as u16);
     }
 }
 pub unsafe fn DestroyWirelessStatusIndicatorSprite() {
-    if gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] == STATUS_INDICATOR_ACTIVE {
-        gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] = 0;
-        DestroySprite(&raw mut gSprites[gWirelessStatusIndicatorSpriteId]);
-        gMain.oamBuffer[125] = *(&raw const crate::sprite::gDummyOamData).cast::<OamData>();
+    if ({
+        let gl_i6 = gWirelessStatusIndicatorSpriteId.get();
+        let gl_i7 = sValidator;
+        crate::gl!(gSprites[gl_i6].data[gl_i7])
+    }) == STATUS_INDICATOR_ACTIVE
+    {
+        {
+            let gl_i8 = gWirelessStatusIndicatorSpriteId.get();
+            let gl_i9 = sValidator;
+            crate::gl!(gSprites[gl_i8].data[gl_i9] = 0)
+        };
+        DestroySprite({
+            let gl_i10 = gWirelessStatusIndicatorSpriteId.get();
+            crate::gl!(&raw gSprites[gl_i10])
+        });
+        crate::gl!(
+            gMain.oamBuffer[125] = *(&raw const crate::sprite::gDummyOamData).cast::<OamData>()
+        );
         CpuSet(
             (&raw const (*(&raw const crate::sprite::gDummyOamData).cast::<OamData>())).cast_mut()
                 as *mut c_void,
@@ -668,13 +709,13 @@ pub unsafe fn LoadWirelessStatusIndicatorSpriteGfx() {
         LoadCompressedSpriteSheet((&raw const *sWirelessStatusIndicatorSpriteSheet).cast_mut());
     }
     LoadSpritePalette((&raw const *sWirelessStatusIndicatorSpritePalette).cast_mut());
-    gWirelessStatusIndicatorSpriteId = SPRITE_NONE;
+    gWirelessStatusIndicatorSpriteId.set(SPRITE_NONE);
 }
 unsafe fn GetParentSignalStrength() -> u8 {
-    let mut flags: u8 = (*gRfuLinkStatus).connSlotFlag;
+    let mut flags: u8 = (*crate::gl!(gRfuLinkStatus)).connSlotFlag;
     for i in 0..RFU_CHILD_MAX {
         if flags as i32 & 1 != 0 {
-            return (*gRfuLinkStatus).strength[i];
+            return (*crate::gl!(gRfuLinkStatus)).strength[i];
         }
         flags >>= 1;
     }
@@ -689,13 +730,20 @@ unsafe fn SetWirelessStatusIndicatorAnim(sprite: *mut Sprite, animNum: i32) {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn UpdateWirelessStatusIndicatorSprite() {
-    if gWirelessStatusIndicatorSpriteId != SPRITE_NONE
-        && gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] == STATUS_INDICATOR_ACTIVE
+    if gWirelessStatusIndicatorSpriteId.get() != SPRITE_NONE
+        && ({
+            let gl_i11 = gWirelessStatusIndicatorSpriteId.get();
+            let gl_i12 = sValidator;
+            crate::gl!(gSprites[gl_i11].data[gl_i12])
+        }) == STATUS_INDICATOR_ACTIVE
     {
-        let sprite: *mut Sprite = &raw mut gSprites[gWirelessStatusIndicatorSpriteId];
+        let sprite: *mut Sprite = {
+            let gl_i13 = gWirelessStatusIndicatorSpriteId.get();
+            crate::gl!(&raw gSprites[gl_i13])
+        };
         let mut signalStrength: u8 = RFU_LINK_ICON_LEVEL4_MAX;
         let mut i: u8 = 0;
-        if (*gRfuLinkStatus).parentChild == MODE_PARENT {
+        if (*crate::gl!(gRfuLinkStatus)).parentChild == MODE_PARENT {
             i = 0;
             while (i as i32) < GetLinkPlayerCount() as i32 - 1 {
                 if signalStrength >= GetConnectedChildStrength(i + 1) {
@@ -737,11 +785,13 @@ pub unsafe fn UpdateWirelessStatusIndicatorSprite() {
         } else {
             (*sprite).data[sFrameDelay] += 1;
         }
-        gMain.oamBuffer[125] = *sWirelessStatusIndicatorOamData;
-        gMain.oamBuffer[125].set_x((*sprite).x as u32 + (*sprite).centerToCornerVecX as u32);
-        gMain.oamBuffer[125].set_y((*sprite).y as u32 + (*sprite).centerToCornerVecY as u32);
-        gMain.oamBuffer[125].set_paletteNum((*sprite).oam.paletteNum());
-        gMain.oamBuffer[125].set_tileNum(
+        crate::gl!(gMain.oamBuffer[125] = *sWirelessStatusIndicatorOamData);
+        (*gMain.as_ptr()).oamBuffer[125]
+            .set_x((*sprite).x as u32 + (*sprite).centerToCornerVecX as u32);
+        (*gMain.as_ptr()).oamBuffer[125]
+            .set_y((*sprite).y as u32 + (*sprite).centerToCornerVecY as u32);
+        (*gMain.as_ptr()).oamBuffer[125].set_paletteNum((*sprite).oam.paletteNum());
+        (*gMain.as_ptr()).oamBuffer[125].set_tileNum(
             (*sprite).data[sTileStart] as u16
                 + (*(*(*sprite).anims.at((*sprite).data[sCurrAnimNum]))
                     .at((*sprite).data[sFrameIdx]))
@@ -749,7 +799,7 @@ pub unsafe fn UpdateWirelessStatusIndicatorSprite() {
                 .imageValue() as u16,
         );
         CpuSet(
-            &raw mut gMain.oamBuffer[125] as *mut c_void,
+            crate::gl!(&raw gMain.oamBuffer[125]) as *mut c_void,
             (OAM as i32 as usize as *mut OamData).at(125) as *mut c_void,
             4,
         );
@@ -771,18 +821,18 @@ unsafe fn NameIsNotEmpty(name: *mut u8) -> u32 {
     FALSE as u32
 }
 pub unsafe fn SaveLinkTrainerNames() {
-    if gWirelessCommType != 0 {
+    if gWirelessCommType.get() != 0 {
         let mut connectedTrainerRecordIndices: CArray<i32, 5> = zeroed();
         let newRecords: *mut TrainerNameRecord = AllocZeroed(240) as *mut TrainerNameRecord;
         let mut i: i32 = 0;
         while i < GetLinkPlayerCount() as i32 {
             connectedTrainerRecordIndices[i] = -1;
             for j in 0..20i32 {
-                if gLinkPlayers[i].trainerId as u16 as u32
-                    == (*gSaveBlock1Ptr).trainerNameRecords[j].trainerId
+                if crate::gl!(gLinkPlayers[i].trainerId) as u16 as u32
+                    == (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[j].trainerId
                     && StringCompare(
-                        gLinkPlayers[i].name.as_mut_ptr(),
-                        (*gSaveBlock1Ptr).trainerNameRecords[j]
+                        (*gLinkPlayers.as_ptr())[i].name.as_mut_ptr(),
+                        (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[j]
                             .trainerName
                             .as_mut_ptr(),
                     ) == 0
@@ -796,16 +846,17 @@ pub unsafe fn SaveLinkTrainerNames() {
         i = 0;
         while i < GetLinkPlayerCount() as i32 {
             if i != GetMultiplayerId() as i32
-                && gLinkPlayers[i].language != LANGUAGE_JAPANESE as u16
+                && crate::gl!(gLinkPlayers[i].language) != LANGUAGE_JAPANESE as u16
             {
                 CopyTrainerRecord(
                     newRecords.at(nextSpace),
-                    gLinkPlayers[i].trainerId as u16 as u32,
-                    gLinkPlayers[i].name.as_mut_ptr(),
+                    crate::gl!(gLinkPlayers[i].trainerId) as u16 as u32,
+                    (*gLinkPlayers.as_ptr())[i].name.as_mut_ptr(),
                 );
                 if connectedTrainerRecordIndices[i] >= 0 {
                     memset(
-                        (*gSaveBlock1Ptr).trainerNameRecords[connectedTrainerRecordIndices[i]]
+                        (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords
+                            [connectedTrainerRecordIndices[i]]
                             .trainerName
                             .as_mut_ptr(),
                         0,
@@ -818,15 +869,15 @@ pub unsafe fn SaveLinkTrainerNames() {
         }
         for i in 0..20i32 {
             if NameIsNotEmpty(
-                (*gSaveBlock1Ptr).trainerNameRecords[i]
+                (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i]
                     .trainerName
                     .as_mut_ptr(),
             ) != 0
             {
                 CopyTrainerRecord(
                     newRecords.at(nextSpace),
-                    (*gSaveBlock1Ptr).trainerNameRecords[i].trainerId,
-                    (*gSaveBlock1Ptr).trainerNameRecords[i]
+                    (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i].trainerId,
+                    (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i]
                         .trainerName
                         .as_mut_ptr(),
                 );
@@ -840,7 +891,9 @@ pub unsafe fn SaveLinkTrainerNames() {
             }
         }
         memcpy(
-            (*gSaveBlock1Ptr).trainerNameRecords.as_mut_ptr() as *mut u8,
+            (*crate::gl!(gSaveBlock1Ptr))
+                .trainerNameRecords
+                .as_mut_ptr() as *mut u8,
             newRecords as *mut u8,
             240,
         );
@@ -850,17 +903,17 @@ pub unsafe fn SaveLinkTrainerNames() {
 pub unsafe fn PlayerHasMetTrainerBefore(id: u16, name: *mut u8) -> u32 {
     for i in 0..20i32 {
         if StringCompare(
-            (*gSaveBlock1Ptr).trainerNameRecords[i]
+            (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i]
                 .trainerName
                 .as_mut_ptr(),
             name,
         ) == 0
-            && (*gSaveBlock1Ptr).trainerNameRecords[i].trainerId == id as u32
+            && (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i].trainerId == id as u32
         {
             return TRUE as u32;
         }
         if NameIsNotEmpty(
-            (*gSaveBlock1Ptr).trainerNameRecords[i]
+            (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i]
                 .trainerName
                 .as_mut_ptr(),
         ) == 0
@@ -873,14 +926,14 @@ pub unsafe fn PlayerHasMetTrainerBefore(id: u16, name: *mut u8) -> u32 {
 #[unsafe(no_mangle)]
 pub unsafe fn WipeTrainerNameRecords() {
     for i in 0..20i32 {
-        (*gSaveBlock1Ptr).trainerNameRecords[i].trainerId = 0;
+        (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i].trainerId = 0;
         {
             {
                 let mut tmp: u16 = 0;
                 volatile_write(&raw mut tmp, 0);
                 CpuSet(
                     &raw mut tmp as *mut c_void,
-                    (*gSaveBlock1Ptr).trainerNameRecords[i]
+                    (*crate::gl!(gSaveBlock1Ptr)).trainerNameRecords[i]
                         .trainerName
                         .as_mut_ptr() as *mut c_void,
                     0x1000004,

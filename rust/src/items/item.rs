@@ -62,7 +62,7 @@ static ITEMS: Table<CArray<Item, { ITEMS_COUNT as usize }>> =
 /// The bag's pockets: pointers to their slots in the save, and how many
 /// slots each has. Set by [`set_bag_items_pointers`].
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static mut gBagPockets: CArray<BagPocket, POCKETS_COUNT> = CArray(
     [BagPocket {
         itemSlots: core::ptr::null_mut(),
@@ -90,7 +90,7 @@ unsafe fn CurrentBattlePyramidLocation() -> u8 {
 /// `GetItemListPosition` with this module's view of its types.
 #[inline]
 unsafe fn GetItemListPosition(a0: u8) -> u8 {
-    unsafe { crate::item_menu::GetItemListPosition(a0) }
+    crate::item_menu::GetItemListPosition(a0)
 }
 /// `StringCopy` with this module's view of its types.
 #[inline]
@@ -709,9 +709,9 @@ pub fn add_pyramid_bag_item(item: u16, mut count: u16) -> bool {
 pub fn remove_pyramid_bag_item(item: u16, mut count: u16) -> bool {
     // SAFETY: a plain global of the pyramid bag menu.
     let cursor = unsafe {
-        gPyramidBagMenuState
+        (*gPyramidBagMenuState.as_ptr())
             .cursorPosition
-            .wrapping_add(gPyramidBagMenuState.scrollPosition)
+            .wrapping_add(crate::gl!(gPyramidBagMenuState.scrollPosition))
     };
     let (items, quantities) = pyramid_bag();
     let i = usize::from(cursor);

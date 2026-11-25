@@ -45,13 +45,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `LoadSpecialPokePic` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpecialPokePic(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-    a4: u8,
-) {
+fn LoadSpecialPokePic(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32, a4: u8) {
     unsafe {
         crate::decompress::LoadSpecialPokePic(a0 as _, a1 as _, a2, a3, a4);
     }
@@ -108,7 +102,7 @@ const _: () = {
 
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -122,7 +116,7 @@ pub unsafe fn PokenavCallback_Init_ConditionGraph_Party() -> u32 {
     }
     ConditionGraph_Init(&raw mut (*menu).graph);
     InitPartyConditionListParameters();
-    gKeyRepeatStartDelay = 20;
+    gKeyRepeatStartDelay.set(20);
     (*menu).callback = Some(HandleConditionMenuInput);
     TRUE as u32
 }
@@ -134,7 +128,7 @@ pub unsafe fn PokenavCallback_Init_ConditionGraph_Search() -> u32 {
     }
     ConditionGraph_Init(&raw mut (*menu).graph);
     InitSearchResultsConditionList();
-    gKeyRepeatStartDelay = 20;
+    gKeyRepeatStartDelay.set(20);
     (*menu).callback = Some(HandleConditionMenuInput);
     TRUE as u32
 }
@@ -148,11 +142,11 @@ pub(crate) unsafe fn HandleConditionMenuInput(menu: *mut Pokenav_ConditionMenu) 
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     let mut ret: u32 = ConditionGraphHandleDpadInput(menu) as u32;
     if ret == CONDITION_FUNC_NONE {
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_SELECT);
             (*menu).callback = Some(GetConditionReturnCallback);
             ret = CONDITION_FUNC_RETURN;
-        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             if (*menu).inSearchMode == 0 {
                 if (*monListPtr).currIndex as i32 == (*monListPtr).listCount as i32 - 1 {
                     PlaySE(SE_SELECT);
@@ -182,7 +176,7 @@ pub(crate) unsafe fn OpenMarkingsMenu(menu: *mut Pokenav_ConditionMenu) -> u32 {
         markings = (*menu).monMarks[(*menu).loadId];
         if boxId == TOTAL_BOXES_COUNT as u32 {
             SetMonData(
-                &raw mut gPlayerParty[monId],
+                crate::gl!(&raw gPlayerParty[monId]),
                 MON_DATA_MARKINGS,
                 &raw mut markings as *mut c_void,
             );
@@ -222,12 +216,12 @@ unsafe fn ConditionGraphHandleDpadInput(menu: *mut Pokenav_ConditionMenu) -> u8 
     let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     let mut ret: u8 = CONDITION_FUNC_NONE as u8;
-    if gMain.heldKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_UP != 0 {
         if (*menu).inSearchMode == 0 || (*monListPtr).currIndex != 0 {
             PlaySE(SE_SELECT);
             ret = SwitchConditionSummaryIndex(TRUE);
         }
-    } else if gMain.heldKeys as i32 & DPAD_DOWN != 0
+    } else if crate::gl!(gMain.heldKeys) as i32 & DPAD_DOWN != 0
         && ((*menu).inSearchMode == 0
             || ((*monListPtr).currIndex as i32) < (*monListPtr).listCount as i32 - 1)
     {
@@ -494,8 +488,8 @@ unsafe fn CopyConditionMonNameGender(mut str: *mut u8, listId: u16, skipPadding:
     StringGet_Nickname(str);
     let species: u16 = GetBoxOrPartyMonData(boxId, monId, MON_DATA_SPECIES, null_mut()) as u16;
     if boxId == TOTAL_BOXES_COUNT as u16 {
-        level = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u16;
-        gender = GetMonGender(&raw mut gPlayerParty[monId]) as u16;
+        level = GetMonData2(crate::gl!(&raw gPlayerParty[monId]), MON_DATA_LEVEL) as u16;
+        gender = GetMonGender(crate::gl!(&raw gPlayerParty[monId])) as u16;
     } else {
         boxMon = GetBoxedMonPtr(boxId as u8, monId as u8);
         gender = GetBoxMonGender(boxMon) as u16;
@@ -740,7 +734,7 @@ unsafe fn InitPartyConditionListParameters() {
     let mut i: u16 = 0;
     let mut count: u16 = 0;
     while i < CalculatePlayerPartyCount() as u16 {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0 {
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0 {
             (*monListPtr).monData[count].boxId = TOTAL_BOXES_COUNT;
             (*monListPtr).monData[count].monId = i as u8;
             (*monListPtr).monData[count].data = 0;

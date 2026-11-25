@@ -15,8 +15,8 @@ const CPU_SET_32BIT: u32 = 0x0400_0000;
 /// `BG_PLTT_ID(7)`
 const MAP_PALETTE_INDEX: usize = 7 * 16;
 
-#[unsafe(link_section = "ewram_data")]
-static mut BG_NUM: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static BG_NUM: crate::global::Global<*mut u8> = crate::global::Global::new(core::ptr::null_mut());
 
 crate::incbin!(
     sPokedexAreaMap_Pal,
@@ -78,7 +78,7 @@ pub unsafe fn LoadPokedexAreaMapGfx(template: *const u32) {
     let (bg, offset, mode) = template_fields(unsafe { template.read() });
     // The C code allocates sizeof(u8 *) for what it uses as a u8.
     let bg_num = unsafe { Alloc(4) };
-    unsafe { (&raw mut BG_NUM).write(bg_num) };
+    unsafe { (crate::gl!(&raw BG_NUM)).write(bg_num) };
 
     let (metric, gfx, tilemap, size, affine) = if mode == 0 {
         (
@@ -112,7 +112,7 @@ pub unsafe fn LoadPokedexAreaMapGfx(template: *const u32) {
     unsafe { SetBgAttribute(bg, BG_ATTR_PALETTEMODE, 1) };
     let words = (sPokedexAreaMap_Pal.0.len() / 4) as u32;
     let dest = unsafe {
-        (&raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
             .cast_mut()))
             .cast::<u16>()
@@ -131,7 +131,7 @@ pub unsafe fn LoadPokedexAreaMapGfx(template: *const u32) {
 #[unsafe(no_mangle)]
 pub unsafe fn TryShowPokedexAreaMap() -> u32 {
     if unsafe { FreeTempTileDataBuffersIfPossible() } == 0 {
-        let bg = unsafe { (&raw const BG_NUM).read().read() };
+        let bg = unsafe { (crate::gl!(&raw BG_NUM).cast_const()).read().read() };
         unsafe { ShowBg(bg) };
         0
     } else {
@@ -141,16 +141,16 @@ pub unsafe fn TryShowPokedexAreaMap() -> u32 {
 
 #[unsafe(no_mangle)]
 pub unsafe fn FreePokedexAreaMapBgNum() {
-    let bg_num = unsafe { (&raw const BG_NUM).read() };
+    let bg_num = unsafe { (crate::gl!(&raw BG_NUM).cast_const()).read() };
     if !bg_num.is_null() {
         unsafe { Free(bg_num) };
-        unsafe { (&raw mut BG_NUM).write(core::ptr::null_mut()) };
+        unsafe { (crate::gl!(&raw BG_NUM)).write(core::ptr::null_mut()) };
     }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe fn PokedexAreaMapChangeBgY(move_: u32) {
-    let bg = unsafe { (&raw const BG_NUM).read().read() };
+    let bg = unsafe { (crate::gl!(&raw BG_NUM).cast_const()).read().read() };
     unsafe { ChangeBgY(bg, move_.wrapping_mul(0x100) as i32, BG_COORD_SET) };
 }
 

@@ -58,7 +58,7 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 /// `CreateSpriteAndAnimate` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAndAnimate(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAndAnimate(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAndAnimate(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -82,26 +82,26 @@ unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
 }
 /// `LZDecompressVram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressVram(a0 as _, a1 as _);
     }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePaletteUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8 {
+fn LoadCompressedSpritePaletteUsingHeap(a0: *mut CompressedSpritePalette) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpritePaletteUsingHeap(a0 as _) }
 }
 /// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
     unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
 }
 /// `RequestDma3Fill` with this module's view of its types.
@@ -144,94 +144,102 @@ static gBattleAnimPicTable: Table<CArray<CompressedSpriteSheet, 289>> =
 static sScriptCmdTable: Table<CArray<Option<unsafe fn()>, 48>> =
     Table((&raw const crate::data::battle_anim::sScriptCmdTable).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleAnimScriptPtr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleAnimScriptRetAddr: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimScriptCallback: Option<unsafe fn()> = None;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattleAnimScriptPtr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBattleAnimScriptRetAddr: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimScriptCallback: crate::global::Global<Option<unsafe fn()>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAnimFramesToWait: crate::global::Global<i8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimScriptActive: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimVisualTaskCount: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimScriptActive: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimVisualTaskCount: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gAnimSoundTaskCount: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimDisableStructPtr: *mut DisableStruct = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimMoveDmg: i32 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimMovePower: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sAnimSpriteIndexArray: Aligned<CArray<u16, 8>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimFriendship: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gWeatherMoveAnim: u16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimDisableStructPtr: crate::global::Global<*mut DisableStruct> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimMoveDmg: crate::global::Global<i32> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimMovePower: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sAnimSpriteIndexArray: crate::global::Global<Aligned<CArray<u16, 8>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimFriendship: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gWeatherMoveAnim: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gBattleAnimArgs: Aligned<CArray<i16, 8>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gBattleAnimArgs: crate::global::Global<Aligned<CArray<i16, 8>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sSoundAnimFramesToWait: crate::global::Global<u16> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMonAnimTaskIdArray: Aligned<CArray<u8, 2>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimMoveTurn: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMonAnimTaskIdArray: crate::global::Global<Aligned<CArray<u8, 2>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimMoveTurn: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAnimBackgroundFadeState: crate::global::Global<u8> =
     crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAnimMoveIndex: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gBattleAnimAttacker: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gBattleAnimTarget: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gBattleAnimAttacker: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gBattleAnimTarget: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimBattlerSpecies: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub static mut gAnimCustomPanning: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimBattlerSpecies: crate::global::Global<Aligned<CArray<u16, 4>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gAnimCustomPanning: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 
-pub unsafe fn ClearBattleAnimationVars() {
+pub fn ClearBattleAnimationVars() {
     sAnimFramesToWait.set(0);
-    gAnimScriptActive = FALSE;
-    gAnimVisualTaskCount = 0;
+    gAnimScriptActive.set(FALSE);
+    gAnimVisualTaskCount.set(0);
     gAnimSoundTaskCount.set(0);
-    gAnimDisableStructPtr = null_mut();
-    gAnimMoveDmg = 0;
-    gAnimMovePower = 0;
-    gAnimFriendship = 0;
+    crate::gl!(gAnimDisableStructPtr = null_mut());
+    gAnimMoveDmg.set(0);
+    gAnimMovePower.set(0);
+    gAnimFriendship.set(0);
     let mut i: i32 = 0;
     while i < ANIM_SPRITE_INDEX_COUNT {
-        sAnimSpriteIndexArray[i] = 0xFFFF;
+        crate::gl!(sAnimSpriteIndexArray[i] = 0xFFFF);
         i += 1;
     }
     for i in 0..ANIM_ARGS_COUNT {
-        gBattleAnimArgs[i] = 0;
+        crate::gl!(gBattleAnimArgs[i] = 0);
     }
-    sMonAnimTaskIdArray[0] = TASK_NONE;
-    sMonAnimTaskIdArray[1] = TASK_NONE;
-    gAnimMoveTurn = 0;
+    crate::gl!(sMonAnimTaskIdArray[0] = TASK_NONE);
+    crate::gl!(sMonAnimTaskIdArray[1] = TASK_NONE);
+    gAnimMoveTurn.set(0);
     sAnimBackgroundFadeState.set(0);
     sAnimMoveIndex.set(0);
-    gBattleAnimAttacker = 0;
-    gBattleAnimTarget = 0;
-    gAnimCustomPanning = 0;
+    gBattleAnimAttacker.set(0);
+    gBattleAnimTarget.set(0);
+    gAnimCustomPanning.set(0);
 }
 pub unsafe fn DoMoveAnim(r#move: u16) {
-    gBattleAnimAttacker = gBattlerAttacker;
-    gBattleAnimTarget = gBattlerTarget;
+    gBattleAnimAttacker.set(gBattlerAttacker.get());
+    gBattleAnimTarget.set(gBattlerTarget.get());
     LaunchBattleAnimation(
         (*crate::asmdata::gBattleAnims_Moves.cast::<CArray<*mut u8, 0>>())
             .as_ptr()
@@ -247,20 +255,26 @@ pub unsafe fn LaunchBattleAnimation(animsTable: *mut *mut u8, tableId: u16, isMo
         UpdateOamPriorityInAllHealthboxes(0);
         for i in 0..(MAX_BATTLERS_COUNT as i32) {
             if GetBattlerSide(i as u8) != B_SIDE_PLAYER {
-                gAnimBattlerSpecies[i] = GetMonData2(
-                    &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
-                    MON_DATA_SPECIES,
-                ) as u16;
+                crate::gl!(
+                    gAnimBattlerSpecies[i] = GetMonData2(
+                        &raw mut (*gEnemyParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[i])],
+                        MON_DATA_SPECIES,
+                    ) as u16
+                );
             } else {
-                gAnimBattlerSpecies[i] = GetMonData2(
-                    &raw mut gPlayerParty[gBattlerPartyIndexes[i]],
-                    MON_DATA_SPECIES,
-                ) as u16;
+                crate::gl!(
+                    gAnimBattlerSpecies[i] = GetMonData2(
+                        &raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[i])],
+                        MON_DATA_SPECIES,
+                    ) as u16
+                );
             }
         }
     } else {
         for i in 0..CONTESTANT_COUNT {
-            gAnimBattlerSpecies[i] = (*(*gContestResources).moveAnim).species;
+            crate::gl!(
+                gAnimBattlerSpecies[i] = (*(*crate::gl!(gContestResources)).moveAnim).species
+            );
         }
     }
     if isMoveAnim == 0 {
@@ -269,66 +283,66 @@ pub unsafe fn LaunchBattleAnimation(animsTable: *mut *mut u8, tableId: u16, isMo
         sAnimMoveIndex.set(tableId);
     }
     for i in 0..ANIM_ARGS_COUNT {
-        gBattleAnimArgs[i] = 0;
+        crate::gl!(gBattleAnimArgs[i] = 0);
     }
-    sMonAnimTaskIdArray[0] = TASK_NONE;
-    sMonAnimTaskIdArray[1] = TASK_NONE;
-    sBattleAnimScriptPtr = *animsTable.at(tableId);
-    gAnimScriptActive = TRUE;
+    crate::gl!(sMonAnimTaskIdArray[0] = TASK_NONE);
+    crate::gl!(sMonAnimTaskIdArray[1] = TASK_NONE);
+    crate::gl!(sBattleAnimScriptPtr = *animsTable.at(tableId));
+    gAnimScriptActive.set(TRUE);
     sAnimFramesToWait.set(0);
-    gAnimScriptCallback = Some(RunAnimScriptCommand);
+    crate::gl!(gAnimScriptCallback = Some(RunAnimScriptCommand));
     i = 0;
     while i < ANIM_SPRITE_INDEX_COUNT {
-        sAnimSpriteIndexArray[i] = 0xFFFF;
+        crate::gl!(sAnimSpriteIndexArray[i] = 0xFFFF);
         i += 1;
     }
     if isMoveAnim != 0 {
         i = 0;
         while (*crate::asmdata::gMovesWithQuietBGM.cast::<CArray<u16, 0>>())[i] != 0xFFFF {
             if tableId == (*crate::asmdata::gMovesWithQuietBGM.cast::<CArray<u16, 0>>())[i] {
-                m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 128);
+                m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 128);
                 break;
             }
             i += 1;
         }
     }
-    gBattle_WIN0H = 0;
-    gBattle_WIN0V = 0;
-    gBattle_WIN1H = 0;
-    gBattle_WIN1V = 0;
+    gBattle_WIN0H.set(0);
+    gBattle_WIN0V.set(0);
+    gBattle_WIN1H.set(0);
+    gBattle_WIN1V.set(0);
 }
 pub unsafe fn DestroyAnimSprite(sprite: *mut Sprite) {
     FreeSpriteOamMatrix(sprite);
     DestroySprite(sprite);
-    gAnimVisualTaskCount -= 1;
+    gAnimVisualTaskCount.set(gAnimVisualTaskCount.get() - (1));
 }
-pub unsafe fn DestroyAnimVisualTask(taskId: u8) {
+pub fn DestroyAnimVisualTask(taskId: u8) {
     DestroyTask(taskId);
-    gAnimVisualTaskCount -= 1;
+    gAnimVisualTaskCount.set(gAnimVisualTaskCount.get() - (1));
 }
 pub fn DestroyAnimSoundTask(taskId: u8) {
     DestroyTask(taskId);
     gAnimSoundTaskCount.set(gAnimSoundTaskCount.get() - 1);
 }
-unsafe fn AddSpriteIndex(index: u16) {
+fn AddSpriteIndex(index: u16) {
     for i in 0..ANIM_SPRITE_INDEX_COUNT {
-        if sAnimSpriteIndexArray[i] == 0xFFFF {
-            sAnimSpriteIndexArray[i] = index;
+        if crate::gl!(sAnimSpriteIndexArray[i]) == 0xFFFF {
+            crate::gl!(sAnimSpriteIndexArray[i] = index);
             return;
         }
     }
 }
-unsafe fn ClearSpriteIndex(index: u16) {
+fn ClearSpriteIndex(index: u16) {
     for i in 0..ANIM_SPRITE_INDEX_COUNT {
-        if sAnimSpriteIndexArray[i] == index {
-            sAnimSpriteIndexArray[i] = 0xFFFF;
+        if crate::gl!(sAnimSpriteIndexArray[i]) == index {
+            crate::gl!(sAnimSpriteIndexArray[i] = 0xFFFF);
             return;
         }
     }
 }
-pub(crate) unsafe fn WaitAnimFrameCount() {
+pub(crate) fn WaitAnimFrameCount() {
     if sAnimFramesToWait.get() <= 0 {
-        gAnimScriptCallback = Some(RunAnimScriptCommand);
+        crate::gl!(gAnimScriptCallback = Some(RunAnimScriptCommand));
         sAnimFramesToWait.set(0);
     } else {
         sAnimFramesToWait.set(sAnimFramesToWait.get() - 1);
@@ -336,51 +350,55 @@ pub(crate) unsafe fn WaitAnimFrameCount() {
 }
 pub(crate) unsafe fn RunAnimScriptCommand() {
     loop {
-        sScriptCmdTable[*sBattleAnimScriptPtr].unwrap_unchecked()();
-        if !(sAnimFramesToWait.get() == 0 && gAnimScriptActive != 0) {
+        sScriptCmdTable[*crate::gl!(sBattleAnimScriptPtr)].unwrap_unchecked()();
+        if !(sAnimFramesToWait.get() == 0 && gAnimScriptActive.get() != 0) {
             break;
         }
     }
 }
 pub(crate) unsafe fn Cmd_loadspritegfx() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let index: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let index: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
     LoadCompressedSpriteSheetUsingHeap(
         (&raw const gBattleAnimPicTable[index as i32 - 10000]).cast_mut(),
     );
     LoadCompressedSpritePaletteUsingHeap(
         (&raw const gBattleAnimPaletteTable[index as i32 - 10000]).cast_mut(),
     );
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     AddSpriteIndex(index - 10000);
     sAnimFramesToWait.set(1);
-    gAnimScriptCallback = Some(WaitAnimFrameCount);
+    crate::gl!(gAnimScriptCallback = Some(WaitAnimFrameCount));
 }
 pub(crate) unsafe fn Cmd_unloadspritegfx() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let index: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let index: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
     FreeSpriteTilesByTag(gBattleAnimPicTable[index as i32 - 10000].tag);
     FreeSpritePaletteByTag(gBattleAnimPicTable[index as i32 - 10000].tag);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     ClearSpriteIndex(index - 10000);
 }
 pub(crate) unsafe fn Cmd_createsprite() {
     let mut subpriority: i16 = 0;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let template: *mut SpriteTemplate = (*sBattleAnimScriptPtr as i32
-        + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-        + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-        + ((*sBattleAnimScriptPtr.at(3) as i32) << 24))
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let template: *mut SpriteTemplate = (*crate::gl!(sBattleAnimScriptPtr) as i32
+        + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+        + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+        + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24))
         as usize as *mut SpriteTemplate;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
-    let mut argVar: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let argsCount: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
+    let mut argVar: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let argsCount: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     for i in 0..(argsCount as i32) {
-        gBattleAnimArgs[i] =
-            *sBattleAnimScriptPtr as i16 | (*sBattleAnimScriptPtr.at(1) as i16) << 8;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+        crate::gl!(
+            gBattleAnimArgs[i] = *crate::gl!(sBattleAnimScriptPtr) as i16
+                | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i16) << 8
+        );
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     }
     if argVar as i32 & ANIMSPRITE_IS_TARGET != 0 {
         argVar ^= ANIMSPRITE_IS_TARGET as u8;
@@ -389,61 +407,65 @@ pub(crate) unsafe fn Cmd_createsprite() {
         } else {
             argVar *= 255;
         }
-        subpriority = GetBattlerSpriteSubpriority(gBattleAnimTarget) as i16 + argVar as i8 as i16;
+        subpriority =
+            GetBattlerSpriteSubpriority(gBattleAnimTarget.get()) as i16 + argVar as i8 as i16;
     } else {
         if argVar >= 64 {
             argVar -= 64;
         } else {
             argVar *= 255;
         }
-        subpriority = GetBattlerSpriteSubpriority(gBattleAnimAttacker) as i16 + argVar as i8 as i16;
+        subpriority =
+            GetBattlerSpriteSubpriority(gBattleAnimAttacker.get()) as i16 + argVar as i8 as i16;
     }
     if subpriority < 3 {
         subpriority = 3;
     }
     CreateSpriteAndAnimate(
         template,
-        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16,
-        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16,
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16,
+        GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16,
         subpriority as u8,
     );
-    gAnimVisualTaskCount += 1;
+    gAnimVisualTaskCount.set(gAnimVisualTaskCount.get() + (1));
 }
 pub(crate) unsafe fn Cmd_createvisualtask() {
     let mut taskFunc: Option<unsafe fn(u8)> = None;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     taskFunc = core::mem::transmute::<usize, Option<unsafe fn(u8)>>(
-        (*sBattleAnimScriptPtr as i32
-            + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-            + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-            + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize,
+        (*crate::gl!(sBattleAnimScriptPtr) as i32
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24)) as usize,
     );
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
-    let taskPriority: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let numArgs: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
+    let taskPriority: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let numArgs: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     for i in 0..(numArgs as i32) {
-        gBattleAnimArgs[i] =
-            *sBattleAnimScriptPtr as i16 | (*sBattleAnimScriptPtr.at(1) as i16) << 8;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+        crate::gl!(
+            gBattleAnimArgs[i] = *crate::gl!(sBattleAnimScriptPtr) as i16
+                | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i16) << 8
+        );
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     }
     let taskId: u8 = CreateTask(taskFunc, taskPriority);
     taskFunc.unwrap_unchecked()(taskId);
-    gAnimVisualTaskCount += 1;
+    gAnimVisualTaskCount.set(gAnimVisualTaskCount.get() + (1));
 }
 pub(crate) unsafe fn Cmd_delay() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    sAnimFramesToWait.set(*sBattleAnimScriptPtr as i8);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    sAnimFramesToWait.set(*crate::gl!(sBattleAnimScriptPtr) as i8);
     if sAnimFramesToWait.get() == 0 {
         sAnimFramesToWait.set(-1);
     }
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    gAnimScriptCallback = Some(WaitAnimFrameCount);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    crate::gl!(gAnimScriptCallback = Some(WaitAnimFrameCount));
 }
 pub(crate) unsafe fn Cmd_waitforvisualfinish() {
-    if gAnimVisualTaskCount == 0 {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    if gAnimVisualTaskCount.get() == 0 {
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         sAnimFramesToWait.set(0);
     } else {
         sAnimFramesToWait.set(1);
@@ -453,10 +475,10 @@ pub(crate) fn Cmd_nop() {}
 pub(crate) fn Cmd_nop2() {}
 pub(crate) unsafe fn Cmd_end() {
     let continuousAnim: u32 = FALSE as u32;
-    if gAnimVisualTaskCount != 0
+    if gAnimVisualTaskCount.get() != 0
         || gAnimSoundTaskCount.get() != 0
-        || sMonAnimTaskIdArray[0] != TASK_NONE
-        || sMonAnimTaskIdArray[1] != TASK_NONE
+        || crate::gl!(sMonAnimTaskIdArray[0]) != TASK_NONE
+        || crate::gl!(sMonAnimTaskIdArray[1]) != TASK_NONE
     {
         sSoundAnimFramesToWait.set(0);
         sAnimFramesToWait.set(1);
@@ -471,36 +493,42 @@ pub(crate) unsafe fn Cmd_end() {
             sAnimFramesToWait.set(1);
             return;
         } else {
-            m4aMPlayStop(&raw mut gMPlayInfo_SE1);
-            m4aMPlayStop(&raw mut gMPlayInfo_SE2);
+            m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE1));
+            m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE2));
         }
     }
     sSoundAnimFramesToWait.set(0);
     for i in 0..ANIM_SPRITE_INDEX_COUNT {
-        if sAnimSpriteIndexArray[i] != 0xFFFF {
-            FreeSpriteTilesByTag(gBattleAnimPicTable[sAnimSpriteIndexArray[i]].tag);
-            FreeSpritePaletteByTag(gBattleAnimPicTable[sAnimSpriteIndexArray[i]].tag);
-            sAnimSpriteIndexArray[i] = 0xFFFF;
+        if crate::gl!(sAnimSpriteIndexArray[i]) != 0xFFFF {
+            FreeSpriteTilesByTag(gBattleAnimPicTable[crate::gl!(sAnimSpriteIndexArray[i])].tag);
+            FreeSpritePaletteByTag(gBattleAnimPicTable[crate::gl!(sAnimSpriteIndexArray[i])].tag);
+            crate::gl!(sAnimSpriteIndexArray[i] = 0xFFFF);
         }
     }
     if continuousAnim == 0 {
-        m4aMPlayVolumeControl(&raw mut gMPlayInfo_BGM, TRACKS_ALL, 256);
+        m4aMPlayVolumeControl(crate::gl!(&raw gMPlayInfo_BGM), TRACKS_ALL, 256);
         if IsContest() == 0 {
             InitPrioritiesForVisibleBattlers();
             UpdateOamPriorityInAllHealthboxes(1);
         }
-        gAnimScriptActive = FALSE;
+        gAnimScriptActive.set(FALSE);
     }
 }
 pub(crate) unsafe fn Cmd_playse() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    PlaySE(*sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    PlaySE(
+        *crate::gl!(sBattleAnimScriptPtr) as u16
+            | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8,
+    );
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
 }
 pub(crate) unsafe fn Task_InitUpdateMonBg(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let battlerSpriteId: u8 = gBattlerSpriteIds[*data];
-    gSprites[battlerSpriteId].set_invisible(TRUE as u16);
+    let battlerSpriteId: u8 = {
+        let gl_i0 = *data;
+        crate::gl!(gBattlerSpriteIds[gl_i0])
+    };
+    (*gSprites.as_ptr())[battlerSpriteId].set_invisible(TRUE as u16);
     if *data.at(2) == 0 {
         DestroyAnimVisualTask(taskId);
         return;
@@ -510,35 +538,39 @@ pub(crate) unsafe fn Task_InitUpdateMonBg(taskId: u8) {
     task_set(
         updateTaskId,
         1,
-        gSprites[battlerSpriteId].x + gSprites[battlerSpriteId].x2,
+        crate::gl!(gSprites[battlerSpriteId].x) + crate::gl!(gSprites[battlerSpriteId].x2),
     );
     task_set(
         updateTaskId,
         2,
-        gSprites[battlerSpriteId].y + gSprites[battlerSpriteId].y2,
+        crate::gl!(gSprites[battlerSpriteId].y) + crate::gl!(gSprites[battlerSpriteId].y2),
     );
     if *data.at(1) == 0 {
-        task_set(updateTaskId, 3, gBattle_BG1_X as i16);
-        task_set(updateTaskId, t2_BgY, gBattle_BG1_Y as i16);
+        task_set(updateTaskId, 3, gBattle_BG1_X.get() as i16);
+        task_set(updateTaskId, t2_BgY, gBattle_BG1_Y.get() as i16);
     } else {
-        task_set(updateTaskId, 3, gBattle_BG2_X as i16);
-        task_set(updateTaskId, t2_BgY, gBattle_BG2_Y as i16);
+        task_set(updateTaskId, 3, gBattle_BG2_X.get() as i16);
+        task_set(updateTaskId, t2_BgY, gBattle_BG2_Y.get() as i16);
     }
     task_set(updateTaskId, t2_InBg2, *data.at(1));
     task_set(updateTaskId, t2_BattlerId, *data);
-    sMonAnimTaskIdArray[*data.at(3)] = updateTaskId;
+    {
+        let gl_v = updateTaskId;
+        let gl_i0 = *data.at(3);
+        crate::gl!(sMonAnimTaskIdArray[gl_i0] = gl_v)
+    };
     DestroyAnimVisualTask(taskId);
 }
 pub(crate) unsafe fn Cmd_monbg() {
     let mut toBG_2: u8 = 0;
     let mut taskId: u8 = 0;
     let mut battler: u8 = 0;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let animBattler: u8 = *sBattleAnimScriptPtr;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let animBattler: u8 = *crate::gl!(sBattleAnimScriptPtr);
     if animBattler as i32 & ANIM_TARGET as i32 != 0 {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     } else {
-        battler = gBattleAnimAttacker;
+        battler = gBattleAnimAttacker.get();
     }
     if IsBattlerSpriteVisible(battler) != 0 {
         let position: u8 = GetBattlerPosition(battler);
@@ -552,7 +584,7 @@ pub(crate) unsafe fn Cmd_monbg() {
         }
         MoveBattlerSpriteToBG(battler, toBG_2, FALSE);
         taskId = CreateTask(Some(Task_InitUpdateMonBg), 10);
-        gAnimVisualTaskCount += 1;
+        gAnimVisualTaskCount.set(gAnimVisualTaskCount.get() + (1));
         task_set(taskId, tBattlerId, battler as i16);
         task_set(taskId, tInBg2, toBG_2 as i16);
         task_set(taskId, tActive, TRUE as i16);
@@ -571,19 +603,19 @@ pub(crate) unsafe fn Cmd_monbg() {
         }
         MoveBattlerSpriteToBG(battler, toBG_2, FALSE);
         taskId = CreateTask(Some(Task_InitUpdateMonBg), 10);
-        gAnimVisualTaskCount += 1;
+        gAnimVisualTaskCount.set(gAnimVisualTaskCount.get() + (1));
         task_set(taskId, tBattlerId, battler as i16);
         task_set(taskId, tInBg2, toBG_2 as i16);
         task_set(taskId, tActive, TRUE as i16);
         task_set(taskId, tIsPartner, TRUE as i16);
     }
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     sAnimFramesToWait.set(1);
-    gAnimScriptCallback = Some(WaitAnimFrameCount);
+    crate::gl!(gAnimScriptCallback = Some(WaitAnimFrameCount));
 }
 pub unsafe fn IsBattlerSpriteVisible(battler: u8) -> u8 {
     if IsContest() != 0 {
-        if battler == gBattleAnimAttacker {
+        if battler == gBattleAnimAttacker.get() {
             return TRUE;
         } else {
             return FALSE;
@@ -595,8 +627,8 @@ pub unsafe fn IsBattlerSpriteVisible(battler: u8) -> u8 {
     if IsContest() != 0 {
         return TRUE;
     }
-    if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).invisible() == 0
-        || gSprites[gBattlerSpriteIds[battler]].invisible() == 0
+    if (*(*crate::gl!(gBattleSpritesDataPtr)).battlerData.at(battler)).invisible() == 0
+        || (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].invisible() == 0
     {
         return TRUE;
     }
@@ -640,30 +672,38 @@ pub unsafe fn MoveBattlerSpriteToBG(battler: u8, toBG_2: u8, setSpriteInvisible:
         SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 2);
         SetAnimBgAttribute(1, BG_ANIM_SCREEN_SIZE, 1);
         SetAnimBgAttribute(1, BG_ANIM_AREA_OVERFLOW_MODE, 0);
-        battlerSpriteId = gBattlerSpriteIds[battler];
-        gBattle_BG1_X = (gSprites[battlerSpriteId].x as u16 + gSprites[battlerSpriteId].x2 as u16)
-            .wrapping_neg()
-            + 0x20;
-        if IsContest() != 0 && IsSpeciesNotUnown((*(*gContestResources).moveAnim).species) != 0 {
-            gBattle_BG1_X -= 1;
+        battlerSpriteId = crate::gl!(gBattlerSpriteIds[battler]);
+        gBattle_BG1_X.set(
+            (crate::gl!(gSprites[battlerSpriteId].x) as u16
+                + crate::gl!(gSprites[battlerSpriteId].x2) as u16)
+                .wrapping_neg()
+                + 0x20,
+        );
+        if IsContest() != 0
+            && IsSpeciesNotUnown((*(*crate::gl!(gContestResources)).moveAnim).species) != 0
+        {
+            gBattle_BG1_X.set(gBattle_BG1_X.get() - (1));
         }
-        gBattle_BG1_Y = (gSprites[battlerSpriteId].y as u16 + gSprites[battlerSpriteId].y2 as u16)
-            .wrapping_neg()
-            + 0x20;
+        gBattle_BG1_Y.set(
+            (crate::gl!(gSprites[battlerSpriteId].y) as u16
+                + crate::gl!(gSprites[battlerSpriteId].y2) as u16)
+                .wrapping_neg()
+                + 0x20,
+        );
         if setSpriteInvisible != 0 {
-            gSprites[gBattlerSpriteIds[battler]].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].set_invisible(TRUE as u16);
         }
-        SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
-        SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y);
+        SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X.get());
+        SetGpuReg(REG_OFFSET_BG1VOFS, gBattle_BG1_Y.get());
         LoadPalette(
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[0x100 + battler as i32 * 16] as *mut c_void,
             animBg.paletteId as u16 * 16,
             32,
         );
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[0x100 + battler as i32 * 16] as *mut c_void,
             (BG_PLTT + animBg.paletteId as u32 * 32) as usize as *mut c_void,
@@ -716,27 +756,33 @@ pub unsafe fn MoveBattlerSpriteToBG(battler: u8, toBG_2: u8, setSpriteInvisible:
         SetAnimBgAttribute(2, BG_ANIM_PRIORITY, 2);
         SetAnimBgAttribute(2, BG_ANIM_SCREEN_SIZE, 1);
         SetAnimBgAttribute(2, BG_ANIM_AREA_OVERFLOW_MODE, 0);
-        battlerSpriteId = gBattlerSpriteIds[battler];
-        gBattle_BG2_X = (gSprites[battlerSpriteId].x as u16 + gSprites[battlerSpriteId].x2 as u16)
-            .wrapping_neg()
-            + 0x20;
-        gBattle_BG2_Y = (gSprites[battlerSpriteId].y as u16 + gSprites[battlerSpriteId].y2 as u16)
-            .wrapping_neg()
-            + 0x20;
+        battlerSpriteId = crate::gl!(gBattlerSpriteIds[battler]);
+        gBattle_BG2_X.set(
+            (crate::gl!(gSprites[battlerSpriteId].x) as u16
+                + crate::gl!(gSprites[battlerSpriteId].x2) as u16)
+                .wrapping_neg()
+                + 0x20,
+        );
+        gBattle_BG2_Y.set(
+            (crate::gl!(gSprites[battlerSpriteId].y) as u16
+                + crate::gl!(gSprites[battlerSpriteId].y2) as u16)
+                .wrapping_neg()
+                + 0x20,
+        );
         if setSpriteInvisible != 0 {
-            gSprites[gBattlerSpriteIds[battler]].set_invisible(TRUE as u16);
+            (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].set_invisible(TRUE as u16);
         }
-        SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X);
-        SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y);
+        SetGpuReg(REG_OFFSET_BG2HOFS, gBattle_BG2_X.get());
+        SetGpuReg(REG_OFFSET_BG2VOFS, gBattle_BG2_Y.get());
         LoadPalette(
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[0x100 + battler as i32 * 16] as *mut c_void,
             144,
             32,
         );
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[0x100 + battler as i32 * 16] as *mut c_void,
             0x5000120_usize as *mut c_void,
@@ -757,7 +803,7 @@ pub unsafe fn MoveBattlerSpriteToBG(battler: u8, toBG_2: u8, setSpriteInvisible:
 unsafe fn FlipBattlerBgTiles() {
     let mut animBg: BattleAnimBgData = zeroed();
     let mut ptr: *mut u16 = null_mut();
-    if IsSpeciesNotUnown((*(*gContestResources).moveAnim).species) != 0 {
+    if IsSpeciesNotUnown((*(*crate::gl!(gContestResources)).moveAnim).species) != 0 {
         GetBattleAnimBg1Data(&raw mut animBg);
         ptr = animBg.bgTilemap;
         for i in 0..8i32 {
@@ -798,12 +844,12 @@ pub unsafe fn ResetBattleAnimBg(toBG2: u8) {
     GetBattleAnimBg1Data(&raw mut animBg);
     if toBG2 == 0 || IsContest() != 0 {
         ClearBattleAnimBg(1);
-        gBattle_BG1_X = 0;
-        gBattle_BG1_Y = 0;
+        gBattle_BG1_X.set(0);
+        gBattle_BG1_Y.set(0);
     } else {
         ClearBattleAnimBg(2);
-        gBattle_BG2_X = 0;
-        gBattle_BG2_Y = 0;
+        gBattle_BG2_X.set(0);
+        gBattle_BG2_Y.set(0);
     }
 }
 pub(crate) unsafe fn Task_UpdateMonBg(taskId: u8) {
@@ -813,28 +859,30 @@ pub(crate) unsafe fn Task_UpdateMonBg(taskId: u8) {
     let spriteId: u8 = task_get(taskId, t2_SpriteId) as u8;
     let battler: u8 = task_get(taskId, t2_BattlerId) as u8;
     GetBattleAnimBg1Data(&raw mut animBg);
-    x = task_get(taskId, t2_SpriteX) - (gSprites[spriteId].x + gSprites[spriteId].x2);
-    y = task_get(taskId, t2_SpriteY) - (gSprites[spriteId].y + gSprites[spriteId].y2);
+    x = task_get(taskId, t2_SpriteX)
+        - (crate::gl!(gSprites[spriteId].x) + crate::gl!(gSprites[spriteId].x2));
+    y = task_get(taskId, t2_SpriteY)
+        - (crate::gl!(gSprites[spriteId].y) + crate::gl!(gSprites[spriteId].y2));
     if task_get(taskId, t2_InBg2) == 0 {
-        gBattle_BG1_X = x as u16 + task_get(taskId, t2_BgX) as u16;
-        gBattle_BG1_Y = y as u16 + task_get(taskId, t2_BgY) as u16;
+        gBattle_BG1_X.set(x as u16 + task_get(taskId, t2_BgX) as u16);
+        gBattle_BG1_Y.set(y as u16 + task_get(taskId, t2_BgY) as u16);
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[0x100 + battler as i32 * 16] as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[animBg.paletteId as i32 * 16] as *mut c_void,
             0x4000008,
         );
     } else {
-        gBattle_BG2_X = x as u16 + task_get(taskId, t2_BgX) as u16;
-        gBattle_BG2_Y = y as u16 + task_get(taskId, t2_BgY) as u16;
+        gBattle_BG2_X.set(x as u16 + task_get(taskId, t2_BgX) as u16);
+        gBattle_BG2_Y.set(y as u16 + task_get(taskId, t2_BgY) as u16);
         CpuSet(
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[0x100 + battler as i32 * 16] as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[144] as *mut c_void,
             0x4000008,
@@ -843,30 +891,34 @@ pub(crate) unsafe fn Task_UpdateMonBg(taskId: u8) {
 }
 pub(crate) unsafe fn Cmd_clearmonbg() {
     let mut battler: u8 = 0;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let mut animBattlerId: u8 = *sBattleAnimScriptPtr;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let mut animBattlerId: u8 = *crate::gl!(sBattleAnimScriptPtr);
     if animBattlerId == ANIM_ATTACKER {
         animBattlerId = ANIM_ATK_PARTNER;
     } else if animBattlerId == ANIM_TARGET {
         animBattlerId = ANIM_DEF_PARTNER;
     }
     if animBattlerId == ANIM_ATTACKER || animBattlerId == ANIM_ATK_PARTNER {
-        battler = gBattleAnimAttacker;
+        battler = gBattleAnimAttacker.get();
     } else {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     }
-    if sMonAnimTaskIdArray[0] != TASK_NONE {
-        gSprites[gBattlerSpriteIds[battler]].set_invisible(FALSE as u16);
+    if crate::gl!(sMonAnimTaskIdArray[0]) != TASK_NONE {
+        (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].set_invisible(FALSE as u16);
     }
-    if animBattlerId > 1 && sMonAnimTaskIdArray[1] != TASK_NONE {
-        gSprites[gBattlerSpriteIds[battler as i32 ^ 2]].set_invisible(FALSE as u16);
+    if animBattlerId > 1 && crate::gl!(sMonAnimTaskIdArray[1]) != TASK_NONE {
+        (*gSprites.as_ptr())[{
+            let gl_i1 = battler as i32 ^ 2;
+            crate::gl!(gBattlerSpriteIds[gl_i1])
+        }]
+        .set_invisible(FALSE as u16);
     } else {
         animBattlerId = 0;
     }
     let taskId: u8 = CreateTask(Some(Task_ClearMonBg), 5);
     task_set(taskId, 0, animBattlerId as i16);
     task_set(taskId, 2, battler as i16);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
 }
 pub(crate) unsafe fn Task_ClearMonBg(taskId: u8) {
     task_set(taskId, 1, task_get(taskId, 1) + 1);
@@ -881,15 +933,15 @@ pub(crate) unsafe fn Task_ClearMonBg(taskId: u8) {
         } else {
             to_BG2 = TRUE;
         }
-        if sMonAnimTaskIdArray[0] != TASK_NONE {
+        if crate::gl!(sMonAnimTaskIdArray[0]) != TASK_NONE {
             ResetBattleAnimBg(to_BG2);
-            DestroyTask(sMonAnimTaskIdArray[0]);
-            sMonAnimTaskIdArray[0] = TASK_NONE;
+            DestroyTask(crate::gl!(sMonAnimTaskIdArray[0]));
+            crate::gl!(sMonAnimTaskIdArray[0] = TASK_NONE);
         }
         if task_get(taskId, 0) > 1 {
             ResetBattleAnimBg(to_BG2 ^ 1);
-            DestroyTask(sMonAnimTaskIdArray[1]);
-            sMonAnimTaskIdArray[1] = TASK_NONE;
+            DestroyTask(crate::gl!(sMonAnimTaskIdArray[1]));
+            crate::gl!(sMonAnimTaskIdArray[1] = TASK_NONE);
         }
         DestroyTask(taskId);
     }
@@ -897,17 +949,17 @@ pub(crate) unsafe fn Task_ClearMonBg(taskId: u8) {
 pub(crate) unsafe fn Cmd_monbg_static() {
     let mut toBG_2: u8 = 0;
     let mut battler: u8 = 0;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let mut animBattlerId: u8 = *sBattleAnimScriptPtr;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let mut animBattlerId: u8 = *crate::gl!(sBattleAnimScriptPtr);
     if animBattlerId == ANIM_ATTACKER {
         animBattlerId = ANIM_ATK_PARTNER;
     } else if animBattlerId == ANIM_TARGET {
         animBattlerId = ANIM_DEF_PARTNER;
     }
     if animBattlerId == ANIM_ATTACKER || animBattlerId == ANIM_ATK_PARTNER {
-        battler = gBattleAnimAttacker;
+        battler = gBattleAnimAttacker.get();
     } else {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     }
     if IsBattlerSpriteVisible(battler) != 0 {
         let position: u8 = GetBattlerPosition(battler);
@@ -934,34 +986,38 @@ pub(crate) unsafe fn Cmd_monbg_static() {
         }
         MoveBattlerSpriteToBG(battler, toBG_2, FALSE);
     }
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
 }
 pub(crate) unsafe fn Cmd_clearmonbg_static() {
     let mut battler: u8 = 0;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let mut animBattlerId: u8 = *sBattleAnimScriptPtr;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let mut animBattlerId: u8 = *crate::gl!(sBattleAnimScriptPtr);
     if animBattlerId == ANIM_ATTACKER {
         animBattlerId = ANIM_ATK_PARTNER;
     } else if animBattlerId == ANIM_TARGET {
         animBattlerId = ANIM_DEF_PARTNER;
     }
     if animBattlerId == ANIM_ATTACKER || animBattlerId == ANIM_ATK_PARTNER {
-        battler = gBattleAnimAttacker;
+        battler = gBattleAnimAttacker.get();
     } else {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     }
     if IsBattlerSpriteVisible(battler) != 0 {
-        gSprites[gBattlerSpriteIds[battler]].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[crate::gl!(gBattlerSpriteIds[battler])].set_invisible(FALSE as u16);
     }
     if animBattlerId > 1 && IsBattlerSpriteVisible(battler ^ 2) != 0 {
-        gSprites[gBattlerSpriteIds[battler as i32 ^ 2]].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[{
+            let gl_i2 = battler as i32 ^ 2;
+            crate::gl!(gBattlerSpriteIds[gl_i2])
+        }]
+        .set_invisible(FALSE as u16);
     } else {
         animBattlerId = 0;
     }
     let taskId: u8 = CreateTask(Some(Task_ClearMonBgStatic), 5);
     task_set(taskId, 0, animBattlerId as i16);
     task_set(taskId, 2, battler as i16);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
 }
 pub(crate) unsafe fn Task_ClearMonBgStatic(taskId: u8) {
     task_set(taskId, 1, task_get(taskId, 1) + 1);
@@ -987,15 +1043,15 @@ pub(crate) unsafe fn Task_ClearMonBgStatic(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Cmd_setalpha() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     let half1: u16 = *({
-        let t2 = sBattleAnimScriptPtr;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        let t2 = crate::gl!(sBattleAnimScriptPtr);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         t2
     }) as u16;
     let half2: u16 = (*({
-        let t4 = sBattleAnimScriptPtr;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        let t4 = crate::gl!(sBattleAnimScriptPtr);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         t4
     }) as u16)
         << 8;
@@ -1003,81 +1059,90 @@ pub(crate) unsafe fn Cmd_setalpha() {
     SetGpuReg(REG_OFFSET_BLDALPHA, half1 | half2);
 }
 pub(crate) unsafe fn Cmd_setbldcnt() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     let half1: u16 = *({
-        let t2 = sBattleAnimScriptPtr;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        let t2 = crate::gl!(sBattleAnimScriptPtr);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         t2
     }) as u16;
     let half2: u16 = (*({
-        let t4 = sBattleAnimScriptPtr;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        let t4 = crate::gl!(sBattleAnimScriptPtr);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         t4
     }) as u16)
         << 8;
     SetGpuReg(REG_OFFSET_BLDCNT, half1 | half2);
 }
 pub(crate) unsafe fn Cmd_blendoff() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
 }
 pub(crate) unsafe fn Cmd_call() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    sBattleAnimScriptRetAddr = sBattleAnimScriptPtr.at(4);
-    sBattleAnimScriptPtr = (*sBattleAnimScriptPtr as i32
-        + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-        + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-        + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize
-        as *mut c_void as *mut u8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    crate::gl!(sBattleAnimScriptRetAddr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
+    crate::gl!(
+        sBattleAnimScriptPtr = (*crate::gl!(sBattleAnimScriptPtr) as i32
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24))
+            as usize as *mut c_void as *mut u8
+    );
 }
-pub(crate) unsafe fn Cmd_return() {
-    sBattleAnimScriptPtr = sBattleAnimScriptRetAddr;
+pub(crate) fn Cmd_return() {
+    crate::gl!(sBattleAnimScriptPtr = crate::gl!(sBattleAnimScriptRetAddr));
 }
 pub(crate) unsafe fn Cmd_setarg() {
-    let addr: *mut u8 = sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let argId: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let value: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    sBattleAnimScriptPtr = addr.at(4);
-    gBattleAnimArgs[argId] = value as i16;
+    let addr: *mut u8 = crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let argId: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let value: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    crate::gl!(sBattleAnimScriptPtr = addr.at(4));
+    crate::gl!(gBattleAnimArgs[argId] = value as i16);
 }
 pub(crate) unsafe fn Cmd_choosetwoturnanim() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    if gAnimMoveTurn as i32 & 1 != 0 {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    if gAnimMoveTurn.get() as i32 & 1 != 0 {
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
     }
-    sBattleAnimScriptPtr = (*sBattleAnimScriptPtr as i32
-        + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-        + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-        + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize
-        as *mut c_void as *mut u8;
+    crate::gl!(
+        sBattleAnimScriptPtr = (*crate::gl!(sBattleAnimScriptPtr) as i32
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24))
+            as usize as *mut c_void as *mut u8
+    );
 }
 pub(crate) unsafe fn Cmd_jumpifmoveturn() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let toCheck: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    if toCheck == gAnimMoveTurn {
-        sBattleAnimScriptPtr = (*sBattleAnimScriptPtr as i32
-            + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-            + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-            + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize
-            as *mut c_void as *mut u8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let toCheck: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    if toCheck == gAnimMoveTurn.get() {
+        crate::gl!(
+            sBattleAnimScriptPtr = (*crate::gl!(sBattleAnimScriptPtr) as i32
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24))
+                as usize as *mut c_void as *mut u8
+        );
     } else {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
     }
 }
 pub(crate) unsafe fn Cmd_goto() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    sBattleAnimScriptPtr = (*sBattleAnimScriptPtr as i32
-        + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-        + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-        + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize
-        as *mut c_void as *mut u8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    crate::gl!(
+        sBattleAnimScriptPtr = (*crate::gl!(sBattleAnimScriptPtr) as i32
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24))
+            as usize as *mut c_void as *mut u8
+    );
 }
 pub unsafe fn IsContest() -> u8 {
-    if gMain.inBattle() == 0 {
+    if (*gMain.as_ptr()).inBattle() == 0 {
         return TRUE;
     } else {
         return FALSE;
@@ -1088,23 +1153,23 @@ pub unsafe fn IsContest() -> u8 {
     }
 }
 pub(crate) unsafe fn Cmd_fadetobg() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let backgroundId: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let backgroundId: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     let taskId: u8 = CreateTask(Some(Task_FadeToBg), 5);
     task_set(taskId, tBackgroundId, backgroundId as i16);
     sAnimBackgroundFadeState.set(1);
 }
 pub(crate) unsafe fn Cmd_fadetobgfromset() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let bg1: u8 = *sBattleAnimScriptPtr;
-    let bg2: u8 = *sBattleAnimScriptPtr.at(1);
-    let bg3: u8 = *sBattleAnimScriptPtr.at(2);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(3);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let bg1: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    let bg2: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(1);
+    let bg3: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(3));
     let taskId: u8 = CreateTask(Some(Task_FadeToBg), 5);
     if IsContest() != 0 {
         task_set(taskId, tBackgroundId, bg3 as i16);
-    } else if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
+    } else if GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_PLAYER {
         task_set(taskId, tBackgroundId, bg2 as i16);
     } else {
         task_set(taskId, tBackgroundId, bg1 as i16);
@@ -1117,7 +1182,7 @@ pub(crate) unsafe fn Task_FadeToBg(taskId: u8) {
         task_set(taskId, tState, task_get(taskId, tState) + 1);
         return;
     }
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         return;
     }
     if task_get(taskId, tState) == 1 {
@@ -1134,7 +1199,7 @@ pub(crate) unsafe fn Task_FadeToBg(taskId: u8) {
         task_set(taskId, tState, task_get(taskId, tState) + 1);
         return;
     }
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         return;
     }
     if task_get(taskId, tState) == 3 {
@@ -1147,23 +1212,24 @@ unsafe fn LoadMoveBg(bgId: u16) {
         let tilemap: *mut u32 = gBattleAnimBackgroundTable[bgId].tilemap;
         LZDecompressWram(
             tilemap,
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut c_void,
         );
         RelocateBattleBgPal(
             GetBattleBgPaletteNum() as u16,
-            (*(&raw const crate::decompress::gDecompressionBuffer)
+            (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
                 .cast::<CArray<u8, 16384>>()
                 .cast_mut())
             .as_mut_ptr() as *mut c_void as *mut u16,
             0x100,
             FALSE,
         );
-        let dmaSrc: *mut c_void = (*(&raw const crate::decompress::gDecompressionBuffer)
-            .cast::<CArray<u8, 16384>>()
-            .cast_mut())
+        let dmaSrc: *mut c_void = (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;)
+            .cast_const())
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
         .as_mut_ptr() as *mut c_void;
         let dmaDest: *mut c_void = 0x600d000_usize as *mut c_void;
         {
@@ -1206,14 +1272,14 @@ unsafe fn LoadDefaultBg() {
     }
 }
 pub(crate) unsafe fn Cmd_restorebg() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     let taskId: u8 = CreateTask(Some(Task_FadeToBg), 5);
     task_set(taskId, tBackgroundId, -1);
     sAnimBackgroundFadeState.set(1);
 }
 pub(crate) unsafe fn Cmd_waitbgfadeout() {
     if sAnimBackgroundFadeState.get() == 2 {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         sAnimFramesToWait.set(0);
     } else {
         sAnimFramesToWait.set(1);
@@ -1221,46 +1287,46 @@ pub(crate) unsafe fn Cmd_waitbgfadeout() {
 }
 pub(crate) unsafe fn Cmd_waitbgfadein() {
     if sAnimBackgroundFadeState.get() == 0 {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         sAnimFramesToWait.set(0);
     } else {
         sAnimFramesToWait.set(1);
     }
 }
 pub(crate) unsafe fn Cmd_changebg() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    LoadMoveBg(*sBattleAnimScriptPtr as u16);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    LoadMoveBg(*crate::gl!(sBattleAnimScriptPtr) as u16);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
 }
 pub unsafe fn BattleAnimAdjustPanning(mut pan: i8) -> i8 {
     if IsContest() == 0
-        && (*(*gBattleSpritesDataPtr)
+        && (*(*crate::gl!(gBattleSpritesDataPtr))
             .healthBoxesData
-            .at(gBattleAnimAttacker))
+            .at(gBattleAnimAttacker.get()))
         .statusAnimActive()
             != 0
     {
-        if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
             pan = SOUND_PAN_TARGET;
         } else {
             pan = SOUND_PAN_ATTACKER;
         }
     } else if IsContest() != 0 {
-        if gBattleAnimAttacker != gBattleAnimTarget
-            || gBattleAnimAttacker != 2
+        if gBattleAnimAttacker.get() != gBattleAnimTarget.get()
+            || gBattleAnimAttacker.get() != 2
             || pan != SOUND_PAN_TARGET
         {
             pan *= -1;
         }
-    } else if GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER {
-        if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
+    } else if GetBattlerSide(gBattleAnimAttacker.get()) == B_SIDE_PLAYER {
+        if GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_PLAYER {
             if pan == SOUND_PAN_TARGET {
                 pan = SOUND_PAN_ATTACKER;
             } else if pan != SOUND_PAN_ATTACKER {
                 pan *= -1;
             }
         }
-    } else if GetBattlerSide(gBattleAnimTarget) == B_SIDE_OPPONENT {
+    } else if GetBattlerSide(gBattleAnimTarget.get()) == B_SIDE_OPPONENT {
         if pan == SOUND_PAN_ATTACKER {
             pan = SOUND_PAN_TARGET;
         }
@@ -1276,19 +1342,19 @@ pub unsafe fn BattleAnimAdjustPanning(mut pan: i8) -> i8 {
 }
 pub unsafe fn BattleAnimAdjustPanning2(mut pan: i8) -> i8 {
     if IsContest() == 0
-        && (*(*gBattleSpritesDataPtr)
+        && (*(*crate::gl!(gBattleSpritesDataPtr))
             .healthBoxesData
-            .at(gBattleAnimAttacker))
+            .at(gBattleAnimAttacker.get()))
         .statusAnimActive()
             != 0
     {
-        if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+        if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
             pan = SOUND_PAN_TARGET;
         } else {
             pan = SOUND_PAN_ATTACKER;
         }
     } else {
-        if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER || IsContest() != 0 {
+        if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER || IsContest() != 0 {
             pan = -pan;
         }
     }
@@ -1323,25 +1389,27 @@ pub fn CalculatePanIncrement(sourcePan: i16, targetPan: i16, incrementPan: i16) 
     ret
 }
 pub(crate) unsafe fn Cmd_playsewithpan() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let songId: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    let pan: i8 = *sBattleAnimScriptPtr.at(2) as i8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let songId: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    let pan: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2) as i8;
     PlaySE12WithPanning(songId, BattleAnimAdjustPanning(pan));
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(3);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(3));
 }
 pub(crate) unsafe fn Cmd_setpan() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let pan: i8 = *sBattleAnimScriptPtr as i8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let pan: i8 = *crate::gl!(sBattleAnimScriptPtr) as i8;
     SE12PanpotControl(BattleAnimAdjustPanning(pan));
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
 }
 pub(crate) unsafe fn Cmd_panse() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let songNum: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    let currentPanArg: i8 = *sBattleAnimScriptPtr.at(2) as i8;
-    let mut incrementPan: i8 = *sBattleAnimScriptPtr.at(3) as i8;
-    let incrementPanArg: i8 = *sBattleAnimScriptPtr.at(4) as i8;
-    let framesToWait: u8 = *sBattleAnimScriptPtr.at(5);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let songNum: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    let currentPanArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2) as i8;
+    let mut incrementPan: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(3) as i8;
+    let incrementPanArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(4) as i8;
+    let framesToWait: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(5);
     let currentPan: i8 = BattleAnimAdjustPanning(currentPanArg);
     let targetPan: i8 = BattleAnimAdjustPanning(incrementPan);
     incrementPan =
@@ -1354,7 +1422,7 @@ pub(crate) unsafe fn Cmd_panse() {
     task_set(taskId, tCurrentPan, currentPan as i16);
     PlaySE12WithPanning(songNum, currentPan);
     gAnimSoundTaskCount.set(gAnimSoundTaskCount.get() + 1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(6);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(6));
 }
 pub unsafe fn Task_PanFromInitialToTarget(taskId: u8) {
     let mut destroyTask: u32 = FALSE as u32;
@@ -1391,12 +1459,13 @@ pub unsafe fn Task_PanFromInitialToTarget(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Cmd_panse_adjustnone() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let songId: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    let currentPan: i8 = *sBattleAnimScriptPtr.at(2) as i8;
-    let targetPan: i8 = *sBattleAnimScriptPtr.at(3) as i8;
-    let incrementPan: i8 = *sBattleAnimScriptPtr.at(4) as i8;
-    let framesToWait: u8 = *sBattleAnimScriptPtr.at(5);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let songId: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    let currentPan: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2) as i8;
+    let targetPan: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(3) as i8;
+    let incrementPan: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(4) as i8;
+    let framesToWait: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(5);
     let taskId: u8 = CreateTask(Some(Task_PanFromInitialToTarget), 1);
     task_set(taskId, tInitialPan, currentPan as i16);
     task_set(taskId, tTargetPan, targetPan as i16);
@@ -1405,15 +1474,16 @@ pub(crate) unsafe fn Cmd_panse_adjustnone() {
     task_set(taskId, tCurrentPan, currentPan as i16);
     PlaySE12WithPanning(songId, currentPan);
     gAnimSoundTaskCount.set(gAnimSoundTaskCount.get() + 1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(6);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(6));
 }
 pub(crate) unsafe fn Cmd_panse_adjustall() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let songId: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    let currentPanArg: i8 = *sBattleAnimScriptPtr.at(2) as i8;
-    let targetPanArg: i8 = *sBattleAnimScriptPtr.at(3) as i8;
-    let incrementPanArg: i8 = *sBattleAnimScriptPtr.at(4) as i8;
-    let framesToWait: u8 = *sBattleAnimScriptPtr.at(5);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let songId: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    let currentPanArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2) as i8;
+    let targetPanArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(3) as i8;
+    let incrementPanArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(4) as i8;
+    let framesToWait: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(5);
     let currentPan: i8 = BattleAnimAdjustPanning2(currentPanArg);
     let targetPan: i8 = BattleAnimAdjustPanning2(targetPanArg);
     let incrementPan: i8 = BattleAnimAdjustPanning2(incrementPanArg);
@@ -1425,14 +1495,15 @@ pub(crate) unsafe fn Cmd_panse_adjustall() {
     task_set(taskId, tCurrentPan, currentPan as i16);
     PlaySE12WithPanning(songId, currentPan);
     gAnimSoundTaskCount.set(gAnimSoundTaskCount.get() + 1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(6);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(6));
 }
 pub(crate) unsafe fn Cmd_loopsewithpan() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let songId: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    let panningArg: i8 = *sBattleAnimScriptPtr.at(2) as i8;
-    let framesToWait: u8 = *sBattleAnimScriptPtr.at(3);
-    let numberOfPlays: u8 = *sBattleAnimScriptPtr.at(4);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let songId: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    let panningArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2) as i8;
+    let framesToWait: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(3);
+    let numberOfPlays: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(4);
     let panning: i8 = BattleAnimAdjustPanning(panningArg);
     let taskId: u8 = CreateTask(Some(Task_LoopAndPlaySE), 1);
     task_set(taskId, tSongId, songId as i16);
@@ -1442,7 +1513,7 @@ pub(crate) unsafe fn Cmd_loopsewithpan() {
     task_set(taskId, tFrameCounter, framesToWait as i16);
     task_func(taskId).unwrap_unchecked()(taskId);
     gAnimSoundTaskCount.set(gAnimSoundTaskCount.get() + 1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(5);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(5));
 }
 pub(crate) unsafe fn Task_LoopAndPlaySE(taskId: u8) {
     if ({
@@ -1466,17 +1537,18 @@ pub(crate) unsafe fn Task_LoopAndPlaySE(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Cmd_waitplaysewithpan() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let songId: u16 = *sBattleAnimScriptPtr as u16 | (*sBattleAnimScriptPtr.at(1) as u16) << 8;
-    let panningArg: i8 = *sBattleAnimScriptPtr.at(2) as i8;
-    let framesToWait: u8 = *sBattleAnimScriptPtr.at(3);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let songId: u16 = *crate::gl!(sBattleAnimScriptPtr) as u16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as u16) << 8;
+    let panningArg: i8 = *(*sBattleAnimScriptPtr.as_ptr()).at(2) as i8;
+    let framesToWait: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(3);
     let panning: i8 = BattleAnimAdjustPanning(panningArg);
     let taskId: u8 = CreateTask(Some(Task_WaitAndPlaySE), 1);
     task_set(taskId, tSongId, songId as i16);
     task_set(taskId, tPanning, panning as i16);
     task_set(taskId, 2, framesToWait as i16);
     gAnimSoundTaskCount.set(gAnimSoundTaskCount.get() + 1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
 }
 pub(crate) unsafe fn Task_WaitAndPlaySE(taskId: u8) {
     if ({
@@ -1495,20 +1567,22 @@ pub(crate) unsafe fn Task_WaitAndPlaySE(taskId: u8) {
 }
 pub(crate) unsafe fn Cmd_createsoundtask() {
     let mut func: Option<unsafe fn(u8)> = None;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     func = core::mem::transmute::<usize, Option<unsafe fn(u8)>>(
-        (*sBattleAnimScriptPtr as i32
-            + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-            + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-            + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize,
+        (*crate::gl!(sBattleAnimScriptPtr) as i32
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+            + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24)) as usize,
     );
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
-    let numArgs: u8 = *sBattleAnimScriptPtr;
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
+    let numArgs: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     for i in 0..(numArgs as i32) {
-        gBattleAnimArgs[i] =
-            *sBattleAnimScriptPtr as i16 | (*sBattleAnimScriptPtr.at(1) as i16) << 8;
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+        crate::gl!(
+            gBattleAnimArgs[i] = *crate::gl!(sBattleAnimScriptPtr) as i16
+                | (*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i16) << 8
+        );
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     }
     let taskId: u8 = CreateTask(func, 1);
     func.unwrap_unchecked()(taskId);
@@ -1524,53 +1598,57 @@ pub(crate) unsafe fn Cmd_waitsound() {
             sSoundAnimFramesToWait.get()
         }) > 90
         {
-            m4aMPlayStop(&raw mut gMPlayInfo_SE1);
-            m4aMPlayStop(&raw mut gMPlayInfo_SE2);
+            m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE1));
+            m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE2));
             sSoundAnimFramesToWait.set(0);
         } else {
             sAnimFramesToWait.set(1);
         }
     } else {
         sSoundAnimFramesToWait.set(0);
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
         sAnimFramesToWait.set(0);
     }
 }
 pub(crate) unsafe fn Cmd_jumpargeq() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
-    let argId: u8 = *sBattleAnimScriptPtr;
-    let valueToCheck: i16 =
-        *sBattleAnimScriptPtr.at(1) as i16 | (*sBattleAnimScriptPtr.at(1).at(1) as i16) << 8;
-    if valueToCheck == gBattleAnimArgs[argId] {
-        sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.at(3) as i32
-            + ((*sBattleAnimScriptPtr.at(3).at(1) as i32) << 8)
-            + ((*sBattleAnimScriptPtr.at(3).at(2) as i32) << 16)
-            + ((*sBattleAnimScriptPtr.at(3).at(3) as i32) << 24))
-            as usize as *mut c_void as *mut u8;
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
+    let argId: u8 = *crate::gl!(sBattleAnimScriptPtr);
+    let valueToCheck: i16 = *(*sBattleAnimScriptPtr.as_ptr()).at(1) as i16
+        | (*(*sBattleAnimScriptPtr.as_ptr()).at(1).at(1) as i16) << 8;
+    if valueToCheck == crate::gl!(gBattleAnimArgs[argId]) {
+        crate::gl!(
+            sBattleAnimScriptPtr = (*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3).at(1) as i32) << 8)
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3).at(2) as i32) << 16)
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3).at(3) as i32) << 24))
+                as usize as *mut c_void as *mut u8
+        );
     } else {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(7);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(7));
     }
 }
 pub(crate) unsafe fn Cmd_jumpifcontest() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     if IsContest() != 0 {
-        sBattleAnimScriptPtr = (*sBattleAnimScriptPtr as i32
-            + ((*sBattleAnimScriptPtr.at(1) as i32) << 8)
-            + ((*sBattleAnimScriptPtr.at(2) as i32) << 16)
-            + ((*sBattleAnimScriptPtr.at(3) as i32) << 24)) as usize
-            as *mut c_void as *mut u8;
+        crate::gl!(
+            sBattleAnimScriptPtr = (*crate::gl!(sBattleAnimScriptPtr) as i32
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(1) as i32) << 8)
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(2) as i32) << 16)
+                + ((*(*sBattleAnimScriptPtr.as_ptr()).at(3) as i32) << 24))
+                as usize as *mut c_void as *mut u8
+        );
     } else {
-        sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(4);
+        crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(4));
     }
 }
 pub(crate) unsafe fn Cmd_splitbgprio() {
     let mut battler: u8 = 0;
-    let wantedBattler: u8 = *sBattleAnimScriptPtr.at(1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    let wantedBattler: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     if wantedBattler != ANIM_ATTACKER {
-        battler = gBattleAnimTarget;
+        battler = gBattleAnimTarget.get();
     } else {
-        battler = gBattleAnimAttacker;
+        battler = gBattleAnimAttacker.get();
     }
     let battlerPosition: u8 = GetBattlerPosition(battler);
     if IsContest() == 0
@@ -1582,7 +1660,7 @@ pub(crate) unsafe fn Cmd_splitbgprio() {
     }
 }
 pub(crate) unsafe fn Cmd_splitbgprio_all() {
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
     if IsContest() == 0 {
         SetAnimBgAttribute(1, BG_ANIM_PRIORITY, 1);
         SetAnimBgAttribute(2, BG_ANIM_PRIORITY, 2);
@@ -1591,13 +1669,13 @@ pub(crate) unsafe fn Cmd_splitbgprio_all() {
 pub(crate) unsafe fn Cmd_splitbgprio_foes() {
     let mut battlerPosition: u8 = 0;
     let mut battler: u8 = 0;
-    let wantedBattler: u8 = *sBattleAnimScriptPtr.at(1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
-    if GetBattlerSide(gBattleAnimAttacker) != GetBattlerSide(gBattleAnimTarget) {
+    let wantedBattler: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
+    if GetBattlerSide(gBattleAnimAttacker.get()) != GetBattlerSide(gBattleAnimTarget.get()) {
         if wantedBattler != ANIM_ATTACKER {
-            battler = gBattleAnimTarget;
+            battler = gBattleAnimTarget.get();
         } else {
-            battler = gBattleAnimAttacker;
+            battler = gBattleAnimAttacker.get();
         }
         battlerPosition = GetBattlerPosition(battler);
         if IsContest() == 0
@@ -1610,39 +1688,39 @@ pub(crate) unsafe fn Cmd_splitbgprio_foes() {
     }
 }
 pub(crate) unsafe fn Cmd_invisible() {
-    let spriteId: u8 = GetAnimBattlerSpriteId(*sBattleAnimScriptPtr.at(1));
+    let spriteId: u8 = GetAnimBattlerSpriteId(*(*sBattleAnimScriptPtr.as_ptr()).at(1));
     if spriteId != SPRITE_NONE {
-        gSprites[spriteId].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[spriteId].set_invisible(TRUE as u16);
     }
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
 }
 pub(crate) unsafe fn Cmd_visible() {
-    let spriteId: u8 = GetAnimBattlerSpriteId(*sBattleAnimScriptPtr.at(1));
+    let spriteId: u8 = GetAnimBattlerSpriteId(*(*sBattleAnimScriptPtr.as_ptr()).at(1));
     if spriteId != SPRITE_NONE {
-        gSprites[spriteId].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[spriteId].set_invisible(FALSE as u16);
     }
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
 }
 pub(crate) unsafe fn Cmd_teamattack_moveback() {
     let mut priorityRank: u8 = 0;
     let mut spriteId: u8 = 0;
-    let wantedBattler: u8 = *sBattleAnimScriptPtr.at(1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    let wantedBattler: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     if IsContest() == 0
         && IsDoubleBattle() != 0
-        && GetBattlerSide(gBattleAnimAttacker) == GetBattlerSide(gBattleAnimTarget)
+        && GetBattlerSide(gBattleAnimAttacker.get()) == GetBattlerSide(gBattleAnimTarget.get())
     {
         if wantedBattler == ANIM_ATTACKER {
-            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker);
+            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker.get());
             spriteId = GetAnimBattlerSpriteId(ANIM_ATTACKER);
         } else {
-            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimTarget);
+            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimTarget.get());
             spriteId = GetAnimBattlerSpriteId(ANIM_TARGET);
         }
         if spriteId != SPRITE_NONE {
-            gSprites[spriteId].set_invisible(FALSE as u16);
+            (*gSprites.as_ptr())[spriteId].set_invisible(FALSE as u16);
             if priorityRank == 2 {
-                gSprites[spriteId].oam.set_priority(3);
+                (*gSprites.as_ptr())[spriteId].oam.set_priority(3);
             }
             if priorityRank == 1 {
                 ResetBattleAnimBg(FALSE);
@@ -1655,26 +1733,26 @@ pub(crate) unsafe fn Cmd_teamattack_moveback() {
 pub(crate) unsafe fn Cmd_teamattack_movefwd() {
     let mut priorityRank: u8 = 0;
     let mut spriteId: u8 = 0;
-    let wantedBattler: u8 = *sBattleAnimScriptPtr.at(1);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(2);
+    let wantedBattler: u8 = *(*sBattleAnimScriptPtr.as_ptr()).at(1);
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(2));
     if IsContest() == 0
         && IsDoubleBattle() != 0
-        && GetBattlerSide(gBattleAnimAttacker) == GetBattlerSide(gBattleAnimTarget)
+        && GetBattlerSide(gBattleAnimAttacker.get()) == GetBattlerSide(gBattleAnimTarget.get())
     {
         if wantedBattler == ANIM_ATTACKER {
-            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker);
+            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimAttacker.get());
             spriteId = GetAnimBattlerSpriteId(ANIM_ATTACKER);
         } else {
-            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimTarget);
+            priorityRank = GetBattlerSpriteBGPriorityRank(gBattleAnimTarget.get());
             spriteId = GetAnimBattlerSpriteId(ANIM_TARGET);
         }
         if spriteId != SPRITE_NONE && priorityRank == 2 {
-            gSprites[spriteId].oam.set_priority(2);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
         }
     }
 }
 pub(crate) unsafe fn Cmd_stopsound() {
-    m4aMPlayStop(&raw mut gMPlayInfo_SE1);
-    m4aMPlayStop(&raw mut gMPlayInfo_SE2);
-    sBattleAnimScriptPtr = sBattleAnimScriptPtr.at(1);
+    m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE1));
+    m4aMPlayStop(crate::gl!(&raw gMPlayInfo_SE2));
+    crate::gl!(sBattleAnimScriptPtr = (*sBattleAnimScriptPtr.as_ptr()).at(1));
 }

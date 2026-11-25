@@ -143,7 +143,7 @@ static sSpriteTemplate_LogoCircles: Table<SpriteTemplate> =
 
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -179,27 +179,63 @@ unsafe fn CreateSlidingLogoCircleSprite(
     );
     match spriteAnimNum {
         0 => {
-            gSprites[spriteId].data[sTargetX] = 120;
-            gSprites[spriteId].data[sTargetY] = 45;
+            {
+                let gl_i0 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i0] = 120)
+            };
+            {
+                let gl_i1 = sTargetY;
+                crate::gl!(gSprites[spriteId].data[gl_i1] = 45)
+            };
         }
         1 => {
-            gSprites[spriteId].data[sTargetX] = 89;
-            gSprites[spriteId].data[sTargetY] = 97;
+            {
+                let gl_i2 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i2] = 89)
+            };
+            {
+                let gl_i3 = sTargetY;
+                crate::gl!(gSprites[spriteId].data[gl_i3] = 97)
+            };
         }
         2 => {
-            gSprites[spriteId].data[sTargetX] = 151;
-            gSprites[spriteId].data[sTargetY] = 97;
+            {
+                let gl_i4 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i4] = 151)
+            };
+            {
+                let gl_i5 = sTargetY;
+                crate::gl!(gSprites[spriteId].data[gl_i5] = 97)
+            };
         }
         _ => {}
     }
-    gSprites[spriteId].data[sSpeedX] = speedX as i16;
-    gSprites[spriteId].data[sSpeedY] = speedY as i16;
-    gSprites[spriteId].data[sDelayX] = delayX as i16;
-    gSprites[spriteId].data[sDelayY] = delayY as i16;
-    gSprites[spriteId].data[sTimerX] = 0;
-    gSprites[spriteId].data[sTimerY] = 0;
-    StartSpriteAnim(&raw mut gSprites[spriteId], spriteAnimNum);
-    gSprites[spriteId].callback = Some(SpriteCB_LogoCircleSlide);
+    {
+        let gl_i6 = sSpeedX;
+        crate::gl!(gSprites[spriteId].data[gl_i6] = speedX as i16)
+    };
+    {
+        let gl_i7 = sSpeedY;
+        crate::gl!(gSprites[spriteId].data[gl_i7] = speedY as i16)
+    };
+    {
+        let gl_i8 = sDelayX;
+        crate::gl!(gSprites[spriteId].data[gl_i8] = delayX as i16)
+    };
+    {
+        let gl_i9 = sDelayY;
+        crate::gl!(gSprites[spriteId].data[gl_i9] = delayY as i16)
+    };
+    {
+        let gl_i10 = sTimerX;
+        crate::gl!(gSprites[spriteId].data[gl_i10] = 0)
+    };
+    {
+        let gl_i11 = sTimerY;
+        crate::gl!(gSprites[spriteId].data[gl_i11] = 0)
+    };
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), spriteAnimNum);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_LogoCircleSlide));
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_LogoCircleSlide(sprite: *mut Sprite) {
@@ -239,26 +275,59 @@ unsafe fn CreateSpiralingLogoCircleSprite(
     );
     match spriteAnimNum {
         0 => {
-            gSprites[spriteId].data[sTargetX] = 120;
-            gSprites[spriteId].data[sTargetY] = 45;
+            {
+                let gl_i12 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i12] = 120)
+            };
+            {
+                let gl_i13 = sTargetY;
+                crate::gl!(gSprites[spriteId].data[gl_i13] = 45)
+            };
         }
         1 => {
-            gSprites[spriteId].data[sTargetX] = 89;
-            gSprites[spriteId].data[sTargetY] = 97;
+            {
+                let gl_i14 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i14] = 89)
+            };
+            {
+                let gl_i15 = sTargetY;
+                crate::gl!(gSprites[spriteId].data[gl_i15] = 97)
+            };
         }
         2 => {
-            gSprites[spriteId].data[sTargetX] = 151;
-            gSprites[spriteId].data[sTargetY] = 97;
+            {
+                let gl_i16 = sTargetX;
+                crate::gl!(gSprites[spriteId].data[gl_i16] = 151)
+            };
+            {
+                let gl_i17 = sTargetY;
+                crate::gl!(gSprites[spriteId].data[gl_i17] = 97)
+            };
         }
         _ => {}
     }
-    gSprites[spriteId].data[sAngle] = angle;
-    gSprites[spriteId].data[sRotateSpeed] = rotateSpeed;
-    gSprites[spriteId].data[sRadius] = radiusStart;
-    gSprites[spriteId].data[sTargetRadius] = radiusEnd;
-    gSprites[spriteId].data[sRadiusDelta] = radiusDelta;
-    StartSpriteAnim(&raw mut gSprites[spriteId], spriteAnimNum);
-    gSprites[spriteId].callback = Some(SpriteCB_LogoCircleSpiral);
+    {
+        let gl_i18 = sAngle;
+        crate::gl!(gSprites[spriteId].data[gl_i18] = angle)
+    };
+    {
+        let gl_i19 = sRotateSpeed;
+        crate::gl!(gSprites[spriteId].data[gl_i19] = rotateSpeed)
+    };
+    {
+        let gl_i20 = sRadius;
+        crate::gl!(gSprites[spriteId].data[gl_i20] = radiusStart)
+    };
+    {
+        let gl_i21 = sTargetRadius;
+        crate::gl!(gSprites[spriteId].data[gl_i21] = radiusEnd)
+    };
+    {
+        let gl_i22 = sRadiusDelta;
+        crate::gl!(gSprites[spriteId].data[gl_i22] = radiusDelta)
+    };
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), spriteAnimNum);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_LogoCircleSpiral));
     spriteId
 }
 pub(crate) unsafe fn SpriteCB_LogoCircleSpiral(sprite: *mut Sprite) {
@@ -277,17 +346,32 @@ pub(crate) unsafe fn SpriteCB_LogoCircleSpiral(sprite: *mut Sprite) {
 unsafe fn DestroyLogoCirclesGfx(task: *mut Task) {
     FreeSpriteTilesByTag(PALTAG_LOGO_CIRCLES);
     FreeSpritePaletteByTag(PALTAG_LOGO_CIRCLES);
-    DestroySprite(&raw mut gSprites[(*task).data[tCircle1SpriteId]]);
-    DestroySprite(&raw mut gSprites[(*task).data[tCircle2SpriteId]]);
-    DestroySprite(&raw mut gSprites[(*task).data[tCircle3SpriteId]]);
+    DestroySprite({
+        let gl_i23 = (*task).data[tCircle1SpriteId];
+        crate::gl!(&raw gSprites[gl_i23])
+    });
+    DestroySprite({
+        let gl_i24 = (*task).data[tCircle2SpriteId];
+        crate::gl!(&raw gSprites[gl_i24])
+    });
+    DestroySprite({
+        let gl_i25 = (*task).data[tCircle3SpriteId];
+        crate::gl!(&raw gSprites[gl_i25])
+    });
 }
 unsafe fn IsLogoCirclesAnimFinished(task: *mut Task) -> u8 {
-    if gSprites[(*task).data[tCircle1SpriteId]].callback
-        == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-        && gSprites[(*task).data[tCircle2SpriteId]].callback
-            == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-        && gSprites[(*task).data[tCircle3SpriteId]].callback
-            == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+    if ({
+        let gl_i26 = (*task).data[tCircle1SpriteId];
+        crate::gl!(gSprites[gl_i26].callback)
+    }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+        && ({
+            let gl_i27 = (*task).data[tCircle2SpriteId];
+            crate::gl!(gSprites[gl_i27].callback)
+        }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+        && ({
+            let gl_i28 = (*task).data[tCircle3SpriteId];
+            crate::gl!(gSprites[gl_i28].callback)
+        }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         return TRUE;
     } else {
@@ -360,7 +444,7 @@ pub(crate) unsafe fn CirclesMeet_CreateSprites(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn CirclesMeet_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierCirclesMeet)));
     }
@@ -380,7 +464,7 @@ pub(crate) unsafe fn CirclesCross_CreateSprites(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn CirclesCross_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierCirclesCross)));
     }
@@ -403,7 +487,7 @@ pub(crate) unsafe fn CirclesAsymmetricSpiral_CreateSprites(task: *mut Task) -> u
     FALSE
 }
 pub(crate) unsafe fn CirclesAsymmetricSpiral_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierCirclesAsymmetricSpiral)));
     }
@@ -426,7 +510,7 @@ pub(crate) unsafe fn CirclesSymmetricSpiral_CreateSprites(task: *mut Task) -> u8
     FALSE
 }
 pub(crate) unsafe fn CirclesSymmetricSpiral_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierCirclesSymmetricSpiral)));
     }
@@ -454,7 +538,7 @@ pub(crate) unsafe fn CirclesMeetInSeq_CreateSprites(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn CirclesMeetInSeq_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierCirclesMeetInSeq)));
     }
@@ -482,7 +566,7 @@ pub(crate) unsafe fn CirclesCrossInSeq_CreateSprites(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn CirclesCrossInSeq_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierCirclesCrossInSeq)));
     }
@@ -510,7 +594,7 @@ pub(crate) unsafe fn CirclesAsymmetricSpiralInSeq_CreateSprites(task: *mut Task)
     FALSE
 }
 pub(crate) unsafe fn CirclesAsymmetricSpiralInSeq_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(
             Task_FrontierCirclesAsymmetricSpiralInSeq,
@@ -540,7 +624,7 @@ pub(crate) unsafe fn CirclesSymmetricSpiralInSeq_CreateSprites(task: *mut Task) 
     FALSE
 }
 pub(crate) unsafe fn CirclesSymmetricSpiralInSeq_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyLogoCirclesGfx(task);
         DestroyTask(FindTaskIdByFunc(Some(
             Task_FrontierCirclesSymmetricSpiralInSeq,

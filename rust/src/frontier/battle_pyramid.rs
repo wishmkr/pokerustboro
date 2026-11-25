@@ -184,14 +184,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `DoSoftReset` with this module's view of its types.
 #[inline]
-unsafe fn DoSoftReset() {
+fn DoSoftReset() {
     unsafe {
         crate::agb_main::DoSoftReset();
     }
@@ -206,74 +206,80 @@ pub unsafe fn CallBattlePyramidFunction() {
 }
 pub(crate) unsafe fn InitPyramidChallenge() {
     let mut isCurrent: u32 = 0;
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
-    (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum = 0;
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(FALSE);
     if lvlMode != FRONTIER_LVL_50 as u32 {
-        isCurrent = (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & STREAK_PYRAMID_OPEN;
+        isCurrent =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags & STREAK_PYRAMID_OPEN;
     } else {
-        isCurrent = (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & STREAK_PYRAMID_50;
+        isCurrent = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags & STREAK_PYRAMID_50;
     }
     if isCurrent == 0 {
-        (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] = 0;
         InitPyramidBagItems(lvlMode as u8);
     }
     InitBattlePyramidBagCursorPosition();
-    gTrainerBattleOpponent_A = 0;
-    gBattleOutcome = 0;
+    gTrainerBattleOpponent_A.set(0);
+    gBattleOutcome.set(0);
 }
 pub(crate) unsafe fn GetBattlePyramidData() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
         .cast_mut()
     {
         PYRAMID_DATA_PRIZE => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pyramidPrize;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize;
         }
         PYRAMID_DATA_WIN_STREAK => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode];
         }
         PYRAMID_DATA_WIN_STREAK_ACTIVE => {
             if lvlMode != FRONTIER_LVL_50 as u32 {
-                gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16
+                gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags
+                    as u16
                     & STREAK_PYRAMID_OPEN as u16;
             } else {
-                gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16
+                gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags
+                    as u16
                     & STREAK_PYRAMID_50 as u16;
             }
         }
         PYRAMID_DATA_WIN_STREAK_50 => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[0];
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[0];
         }
         PYRAMID_DATA_WIN_STREAK_OPEN => {
-            gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[1];
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[1];
         }
         PYRAMID_DATA_WIN_STREAK_ACTIVE_50 => {
-            gSpecialVar_Result =
-                (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16 & STREAK_PYRAMID_50 as u16;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags as u16
+                & STREAK_PYRAMID_50 as u16;
         }
         PYRAMID_DATA_WIN_STREAK_ACTIVE_OPEN => {
-            gSpecialVar_Result =
-                (*gSaveBlock2Ptr).frontier.winStreakActiveFlags as u16 & STREAK_PYRAMID_OPEN as u16;
+            gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags as u16
+                & STREAK_PYRAMID_OPEN as u16;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn SetBattlePyramidData() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     match *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
         .cast_mut()
     {
         PYRAMID_DATA_PRIZE => {
-            (*gSaveBlock2Ptr).frontier.pyramidPrize = *(&raw const crate::ffi::gSpecialVar_0x8006)
-                .cast::<u16>()
-                .cast_mut();
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize =
+                *(&raw const crate::ffi::gSpecialVar_0x8006)
+                    .cast::<u16>()
+                    .cast_mut();
         }
         PYRAMID_DATA_WIN_STREAK => {
-            (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] =
                 *(&raw const crate::ffi::gSpecialVar_0x8006)
                     .cast::<u16>()
                     .cast_mut();
@@ -281,45 +287,52 @@ pub(crate) unsafe fn SetBattlePyramidData() {
         PYRAMID_DATA_WIN_STREAK_ACTIVE => {
             if lvlMode != FRONTIER_LVL_50 as u32 {
                 if gSpecialVar_0x8006 != 0 {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |= STREAK_PYRAMID_OPEN;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags |=
+                        STREAK_PYRAMID_OPEN;
                 } else {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &= 0xffffdfff;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags &= 0xffffdfff;
                 }
             } else {
                 if gSpecialVar_0x8006 != 0 {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags |= STREAK_PYRAMID_50;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags |=
+                        STREAK_PYRAMID_50;
                 } else {
-                    (*gSaveBlock2Ptr).frontier.winStreakActiveFlags &= 0xffffefff;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.winStreakActiveFlags &= 0xffffefff;
                 }
             }
         }
         PYRAMID_DATA_TRAINER_FLAGS => {
-            (*gSaveBlock2Ptr).frontier.pyramidTrainerFlags = gSpecialVar_0x8006 as u8;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidTrainerFlags = gSpecialVar_0x8006 as u8;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn SavePyramidChallenge() {
-    (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
-    (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .frontier
+        .set_challengePaused(TRUE);
     SaveMapView();
     TrySavingData(SAVE_LINK);
 }
 pub(crate) unsafe fn SetBattlePyramidPrize() {
-    if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()] > 41 {
-        (*gSaveBlock2Ptr).frontier.pyramidPrize = sLongStreakRewardItems[Random() % 9];
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
+        > 41
+    {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize = sLongStreakRewardItems[Random() % 9];
     } else {
-        (*gSaveBlock2Ptr).frontier.pyramidPrize = sShortStreakRewardItems[Random() % 6];
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize = sShortStreakRewardItems[Random() % 6];
     }
 }
 pub(crate) unsafe fn GiveBattlePyramidPrize() {
-    if AddBagItem((*gSaveBlock2Ptr).frontier.pyramidPrize, 1) == 1 {
+    if AddBagItem((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize, 1) == 1 {
         CopyItemName(
-            (*gSaveBlock2Ptr).frontier.pyramidPrize,
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize,
             gStringVar1.as_mut_ptr(),
         );
-        (*gSaveBlock2Ptr).frontier.pyramidPrize = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidPrize = 0;
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
@@ -327,22 +340,22 @@ pub(crate) unsafe fn GiveBattlePyramidPrize() {
 }
 pub(crate) unsafe fn SeedPyramidFloor() {
     for i in 0..4i32 {
-        (*gSaveBlock2Ptr).frontier.pyramidRandoms[i] = Random();
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[i] = Random();
     }
-    (*gSaveBlock2Ptr).frontier.pyramidTrainerFlags = 0;
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidTrainerFlags = 0;
 }
 pub(crate) unsafe fn SetPickupItem() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let floor: u32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
+    let floor: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as u32;
     let mut round: u32 =
-        ((*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as i32 / 7 % 20) as u32;
+        ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] as i32 / 7 % 20) as u32;
     if round >= TOTAL_PYRAMID_ROUNDS as u32 {
         round = 19;
     }
     let id: u8 = GetPyramidFloorTemplateId();
     let itemIndex: i32 =
         gSpecialVar_LastTalked as i32 - sPyramidFloorTemplates[id].numTrainers as i32 - 1;
-    let mut rand: i32 = (*gSaveBlock2Ptr).frontier.pyramidRandoms[itemIndex / 2] as i32;
+    let mut rand: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[itemIndex / 2] as i32;
     SeedRng2(rand as u16);
     for i in 0..(itemIndex + 1) {
         rand = Random2() as i32 % 100;
@@ -362,7 +375,9 @@ pub(crate) unsafe fn SetPickupItem() {
     gSpecialVar_0x8001 = 1;
 }
 pub(crate) unsafe fn HidePyramidItem() {
-    let events: *mut ObjectEventTemplate = (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
+    let events: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
     let mut i: i32 = 0;
     loop {
         if (*events.at(i)).localId as u16 == gSpecialVar_LastTalked {
@@ -377,25 +392,36 @@ pub(crate) unsafe fn HidePyramidItem() {
     }
 }
 pub(crate) unsafe fn SetPyramidFacilityTrainers() {
-    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
-        .cast::<CArray<BattleFrontierTrainer, 0>>())
-    .as_ptr()
-    .cast_mut();
+    crate::gl!(
+        gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
+            .cast::<CArray<BattleFrontierTrainer, 0>>())
+        .as_ptr()
+        .cast_mut()
+    );
 }
 pub(crate) unsafe fn ShowPostBattleHintText() {
     let mut id: u8 = 0;
     let mut textGroup: i32 = 0;
     let mut textIndex: i32 = 0;
-    let events: *mut ObjectEventTemplate = (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
-    let trainerId: u16 = LocalIdToPyramidTrainerId(gObjectEvents[gSelectedObjectEvent].localId);
+    let events: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
+    let trainerId: u16 = LocalIdToPyramidTrainerId({
+        let gl_s0 = crate::gl!(gSelectedObjectEvent);
+        crate::gl!(gObjectEvents[gl_s0].localId)
+    });
     for i in 0..50i32 {
-        if sTrainerTextGroups[i][0] == (*gFacilityTrainers.at(trainerId)).facilityClass {
+        if sTrainerTextGroups[i][0] == (*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass
+        {
             textGroup = sTrainerTextGroups[i][1] as i32;
             break;
         }
     }
-    let mut hintType: i32 =
-        sHintTextTypes[gObjectEvents[gSelectedObjectEvent].localId as i32 - 1] as i32;
+    let mut hintType: i32 = sHintTextTypes[({
+        let gl_s0 = crate::gl!(gSelectedObjectEvent);
+        crate::gl!(gObjectEvents[gl_s0].localId)
+    }) as i32
+        - 1] as i32;
     let mut i: i32 = 0;
     while i == 0 {
         match hintType {
@@ -422,7 +448,10 @@ pub(crate) unsafe fn ShowPostBattleHintText() {
                 id = GetPyramidFloorTemplateId();
                 textIndex = sPyramidFloorTemplates[id].numTrainers as i32;
                 for i in 0..MAX_PYRAMID_TRAINERS {
-                    if gBitTable[i] & (*gSaveBlock2Ptr).frontier.pyramidTrainerFlags as u32 != 0 {
+                    if gBitTable[i]
+                        & (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidTrainerFlags as u32
+                        != 0
+                    {
                         textIndex -= 1;
                     }
                 }
@@ -452,15 +481,15 @@ pub(crate) unsafe fn ShowPostBattleHintText() {
     ShowFieldMessage(*(*sPostBattleTexts[textGroup].at(hintType)).at(textIndex));
 }
 pub(crate) unsafe fn UpdatePyramidWinStreak() {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] < 999 {
-        (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] += 1;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] < 999 {
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] += 1;
     }
-    if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode]
-        > (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode]
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode]
+        > (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[lvlMode]
     {
-        (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =
-            (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRecordStreaks[lvlMode] =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode];
     }
 }
 pub(crate) unsafe fn GetCurrentBattlePyramidLocation() {
@@ -472,16 +501,16 @@ pub(crate) unsafe fn UpdatePyramidLightRadius() {
         .cast_mut()
     {
         PYRAMID_LIGHT_SET_RADIUS => {
-            (*gSaveBlock2Ptr).frontier.pyramidLightRadius = gSpecialVar_0x8005 as u8;
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius = gSpecialVar_0x8005 as u8;
         }
         PYRAMID_LIGHT_INCR_RADIUS => match *(&raw const crate::ffi::gSpecialVar_Result)
             .cast::<u16>()
             .cast_mut()
         {
             0 => {
-                if gPaletteFade.active() == 0 {
-                    if (*gSaveBlock2Ptr).frontier.pyramidLightRadius >= 120 {
-                        (*gSaveBlock2Ptr).frontier.pyramidLightRadius = 120;
+                if (*gPaletteFade.as_ptr()).active() == 0 {
+                    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius >= 120 {
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius = 120;
                     } else {
                         PlaySE(
                             *(&raw const crate::ffi::gSpecialVar_0x8007)
@@ -495,9 +524,9 @@ pub(crate) unsafe fn UpdatePyramidLightRadius() {
             1 => {
                 if gSpecialVar_0x8005 != 0 {
                     gSpecialVar_0x8005 -= 1;
-                    (*gSaveBlock2Ptr).frontier.pyramidLightRadius += 1;
-                    if (*gSaveBlock2Ptr).frontier.pyramidLightRadius > 120 {
-                        (*gSaveBlock2Ptr).frontier.pyramidLightRadius = 120;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius += 1;
+                    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius > 120 {
+                        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius = 120;
                         gSpecialVar_Result += 1;
                     }
                     WriteBattlePyramidViewScanlineEffectBuffer();
@@ -522,11 +551,11 @@ pub(crate) unsafe fn ClearPyramidPartyHeldItems() {
                 if 4 >= 2 { 4 } else { 2 }
             })
         {
-            if (*gSaveBlock2Ptr).frontier.selectedPartyMons[j] != 0
-                && (*gSaveBlock2Ptr).frontier.selectedPartyMons[j] as i32 - 1 == i
+            if (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[j] != 0
+                && (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[j] as i32 - 1 == i
             {
                 SetMonData(
-                    &raw mut gPlayerParty[i],
+                    crate::gl!(&raw gPlayerParty[i]),
                     MON_DATA_HELD_ITEM,
                     &raw mut item as *mut c_void,
                 );
@@ -539,14 +568,14 @@ pub(crate) unsafe fn SetPyramidFloorPalette() {
     CreateTask(Some(Task_SetPyramidFloorPalette), 0);
 }
 pub(crate) unsafe fn Task_SetPyramidFloorPalette(taskId: u8) {
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         CpuSet(
             (*(&raw const crate::data::graphics::gBattlePyramidFloor_Pal)
                 .cast::<CArray<CArray<u16, 16>, 0>>())
-                [(*gSaveBlock2Ptr).frontier.curChallengeBattleNum]
+                [(*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum]
                 .as_ptr()
                 .cast_mut() as *mut c_void,
-            &raw mut gPlttBufferUnfaded[96] as *mut c_void,
+            crate::gl!(&raw gPlttBufferUnfaded[96]) as *mut c_void,
             16,
         );
         DestroyTask(taskId);
@@ -559,23 +588,27 @@ pub(crate) unsafe fn RestorePyramidPlayerParty() {
     let mut l: i32 = 0;
     let mut i: i32 = 0;
     while i < FRONTIER_PARTY_SIZE {
-        let partyIndex: i32 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1;
+        let partyIndex: i32 =
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] as i32 - 1;
         for j in 0..FRONTIER_PARTY_SIZE {
             if GetMonData3(
-                &raw mut (*gSaveBlock1Ptr).playerParty[partyIndex],
+                &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[partyIndex],
                 MON_DATA_SPECIES,
                 null_mut(),
-            ) == GetMonData3(&raw mut gPlayerParty[j], MON_DATA_SPECIES, null_mut())
-            {
+            ) == GetMonData3(
+                crate::gl!(&raw gPlayerParty[j]),
+                MON_DATA_SPECIES,
+                null_mut(),
+            ) {
                 for k in 0..MAX_MON_MOVES {
                     l = 0;
                     while l < MAX_MON_MOVES {
                         if GetMonData3(
-                            &raw mut (*gSaveBlock1Ptr).playerParty[partyIndex],
+                            &raw mut (*crate::gl!(gSaveBlock1Ptr)).playerParty[partyIndex],
                             MON_DATA_MOVE1 + l,
                             null_mut(),
                         ) == GetMonData3(
-                            &raw mut gPlayerParty[j],
+                            crate::gl!(&raw gPlayerParty[j]),
                             MON_DATA_MOVE1 + k,
                             null_mut(),
                         ) {
@@ -584,18 +617,19 @@ pub(crate) unsafe fn RestorePyramidPlayerParty() {
                         l += 1;
                     }
                     if l == MAX_MON_MOVES {
-                        SetMonMoveSlot(&raw mut gPlayerParty[j], MOVE_SKETCH, k as u8);
+                        SetMonMoveSlot(crate::gl!(&raw gPlayerParty[j]), MOVE_SKETCH, k as u8);
                     }
                 }
-                (*gSaveBlock1Ptr).playerParty[partyIndex] = gPlayerParty[j];
-                gSelectedOrderFromParty[j] = partyIndex as u8 + 1;
+                (*crate::gl!(gSaveBlock1Ptr)).playerParty[partyIndex] = crate::gl!(gPlayerParty[j]);
+                crate::gl!(gSelectedOrderFromParty[j] = partyIndex as u8 + 1);
                 break;
             }
         }
         i += 1;
     }
     for i in 0..FRONTIER_PARTY_SIZE {
-        (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] = gSelectedOrderFromParty[i] as u16;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.selectedPartyMons[i] =
+            crate::gl!(gSelectedOrderFromParty[i]) as u16;
     }
 }
 unsafe fn GetPostBattleDirectionHintTextIndex(
@@ -605,15 +639,23 @@ unsafe fn GetPostBattleDirectionHintTextIndex(
 ) -> u8 {
     let mut x: i32 = 0;
     let mut textIndex: u8 = 0;
-    let mut map: *mut u16 = gBackupMapLayout.map;
-    map = map.at(gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET);
+    let mut map: *mut u16 = crate::gl!(gBackupMapLayout.map);
+    map = map.at(crate::gl!(gBackupMapLayout.width) * MAP_OFFSET + MAP_OFFSET);
     let mut y: i32 = 0;
     while y < 32 {
         x = 0;
         while x < 32 {
             if *map.at(x) as i32 & MAPGRID_METATILE_ID_MASK == METATILE_BattlePyramid_Exit {
-                x -= gObjectEvents[gSelectedObjectEvent].initialCoords.x as i32 - MAP_OFFSET;
-                y -= gObjectEvents[gSelectedObjectEvent].initialCoords.y as i32 - MAP_OFFSET;
+                x -= ({
+                    let gl_s0 = crate::gl!(gSelectedObjectEvent);
+                    crate::gl!(gObjectEvents[gl_s0].initialCoords.x)
+                }) as i32
+                    - MAP_OFFSET;
+                y -= ({
+                    let gl_s0 = crate::gl!(gSelectedObjectEvent);
+                    crate::gl!(gObjectEvents[gl_s0].initialCoords.y)
+                }) as i32
+                    - MAP_OFFSET;
                 if x >= minDistanceForExitHint as i32
                     || x <= -(minDistanceForExitHint as i32)
                     || y >= minDistanceForExitHint as i32
@@ -671,40 +713,54 @@ unsafe fn GetPostBattleDirectionHintTextIndex(
     textIndex
 }
 pub unsafe fn LocalIdToPyramidTrainerId(localId: u8) -> u16 {
-    (*gSaveBlock2Ptr).frontier.trainerIds[localId as i32 - 1]
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[localId as i32 - 1]
 }
 pub unsafe fn GetBattlePyramidTrainerFlag(eventId: u8) -> u8 {
-    (*gSaveBlock2Ptr).frontier.pyramidTrainerFlags
+    (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidTrainerFlags
         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
-            [gObjectEvents[eventId].localId as i32 - 1] as u8
+            [crate::gl!(gObjectEvents[eventId].localId) as i32 - 1] as u8
 }
 pub unsafe fn MarkApproachingPyramidTrainersAsBattled() {
-    MarkPyramidTrainerAsBattled(gTrainerBattleOpponent_A);
-    if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
-        gSelectedObjectEvent = GetChosenApproachingTrainerObjectEventId(1);
-        MarkPyramidTrainerAsBattled(gTrainerBattleOpponent_B);
+    MarkPyramidTrainerAsBattled(gTrainerBattleOpponent_A.get());
+    if gBattleTypeFlags.get() & BATTLE_TYPE_TWO_OPPONENTS != 0 {
+        crate::gl!(gSelectedObjectEvent = GetChosenApproachingTrainerObjectEventId(1));
+        MarkPyramidTrainerAsBattled(gTrainerBattleOpponent_B.get());
     }
 }
 unsafe fn MarkPyramidTrainerAsBattled(trainerId: u16) {
     for i in 0..MAX_PYRAMID_TRAINERS {
-        if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
-            (*gSaveBlock2Ptr).frontier.pyramidTrainerFlags |= gBitTable[i] as u8;
+        if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
+            (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidTrainerFlags |= gBitTable[i] as u8;
         }
     }
-    gObjectEvents[gSelectedObjectEvent].movementType = MOVEMENT_TYPE_WANDER_AROUND;
-    (*gSaveBlock1Ptr).objectEventTemplates[gSpecialVar_LastTalked as i32 - 1].movementType =
-        MOVEMENT_TYPE_WANDER_AROUND;
-    gObjectEvents[gSelectedObjectEvent].initialCoords.x =
-        gObjectEvents[gSelectedObjectEvent].currentCoords.x;
-    gObjectEvents[gSelectedObjectEvent].initialCoords.y =
-        gObjectEvents[gSelectedObjectEvent].currentCoords.y;
+    ({
+        let gl_s0 = crate::gl!(gSelectedObjectEvent);
+        crate::gl!(gObjectEvents[gl_s0].movementType = MOVEMENT_TYPE_WANDER_AROUND)
+    });
+    (*crate::gl!(gSaveBlock1Ptr)).objectEventTemplates[gSpecialVar_LastTalked as i32 - 1]
+        .movementType = MOVEMENT_TYPE_WANDER_AROUND;
+    ({
+        let gl_s0 = crate::gl!(gSelectedObjectEvent);
+        let gl_s1 = crate::gl!(gSelectedObjectEvent);
+        crate::gl!(
+            gObjectEvents[gl_s0].initialCoords.x = crate::gl!(gObjectEvents[gl_s1].currentCoords.x)
+        )
+    });
+    ({
+        let gl_s0 = crate::gl!(gSelectedObjectEvent);
+        let gl_s1 = crate::gl!(gSelectedObjectEvent);
+        crate::gl!(
+            gObjectEvents[gl_s0].initialCoords.y = crate::gl!(gObjectEvents[gl_s1].currentCoords.y)
+        )
+    });
 }
 pub unsafe fn GenerateBattlePyramidWildMon() {
     let mut name: CArray<u8, 11> = zeroed();
     let mut i: i32 = 0;
     let mut wildMons: *mut PyramidWildMon = null_mut();
-    let mut lvl: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let mut round: u16 = ((*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvl] as i32 / 7 % 20) as u16;
+    let mut lvl: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
+    let mut round: u16 =
+        ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvl] as i32 / 7 % 20) as u16;
     if round >= TOTAL_PYRAMID_ROUNDS {
         round = 19;
     }
@@ -713,15 +769,19 @@ pub unsafe fn GenerateBattlePyramidWildMon() {
     } else {
         wildMons = sLevel50WildMonPointers[round];
     }
-    let mut id: u32 = GetMonData3(&raw mut gEnemyParty[0], MON_DATA_SPECIES, null_mut()) - 1;
+    let mut id: u32 = GetMonData3(
+        crate::gl!(&raw gEnemyParty[0]),
+        MON_DATA_SPECIES,
+        null_mut(),
+    ) - 1;
     SetMonData(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         MON_DATA_SPECIES,
         &raw mut (*wildMons.at(id)).species as *mut c_void,
     );
     GetSpeciesName(name.as_mut_ptr(), (*wildMons.at(id)).species);
     SetMonData(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         MON_DATA_NICKNAME,
         &raw mut name as *mut c_void,
     );
@@ -733,7 +793,7 @@ pub unsafe fn GenerateBattlePyramidWildMon() {
         lvl = (*wildMons.at(id)).lvl as u32 - 5 + (Random() as i32 % 11) as u32;
     }
     SetMonData(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         MON_DATA_EXP,
         (&raw const (*(&raw const crate::data::pokemon::gExperienceTables)
             .cast::<CArray<CArray<u32, 101>, 0>>())
@@ -745,7 +805,7 @@ pub unsafe fn GenerateBattlePyramidWildMon() {
     match (*wildMons.at(id)).abilityNum {
         0 | 1 => {
             SetMonData(
-                &raw mut gEnemyParty[0],
+                crate::gl!(&raw gEnemyParty[0]),
                 MON_DATA_ABILITY_NUM,
                 &raw mut (*wildMons.at(id)).abilityNum as *mut c_void,
             );
@@ -756,17 +816,20 @@ pub unsafe fn GenerateBattlePyramidWildMon() {
                 .abilities[1]
                 != 0
             {
-                i = (GetMonData3(&raw mut gEnemyParty[0], MON_DATA_PERSONALITY, null_mut()) % 2)
-                    as i32;
+                i = (GetMonData3(
+                    crate::gl!(&raw gEnemyParty[0]),
+                    MON_DATA_PERSONALITY,
+                    null_mut(),
+                ) % 2) as i32;
                 SetMonData(
-                    &raw mut gEnemyParty[0],
+                    crate::gl!(&raw gEnemyParty[0]),
                     MON_DATA_ABILITY_NUM,
                     &raw mut i as *mut c_void,
                 );
             } else {
                 i = 0;
                 SetMonData(
-                    &raw mut gEnemyParty[0],
+                    crate::gl!(&raw gEnemyParty[0]),
                     MON_DATA_ABILITY_NUM,
                     &raw mut i as *mut c_void,
                 );
@@ -776,25 +839,28 @@ pub unsafe fn GenerateBattlePyramidWildMon() {
     i = 0;
     while i < MAX_MON_MOVES {
         SetMonMoveSlot(
-            &raw mut gEnemyParty[0],
+            crate::gl!(&raw gEnemyParty[0]),
             (*wildMons.at(id)).moves[i],
             i as u8,
         );
         i += 1;
     }
-    if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[(*gSaveBlock2Ptr).frontier.lvlMode()] >= 140 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks
+        [(*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode()]
+        >= 140
+    {
         id = (Random() as i32 % 17) as u32 + 15;
         i = 0;
         while i < NUM_STATS {
             SetMonData(
-                &raw mut gEnemyParty[0],
+                crate::gl!(&raw gEnemyParty[0]),
                 MON_DATA_HP_IV + i,
                 &raw mut id as *mut c_void,
             );
             i += 1;
         }
     }
-    CalculateMonStats(&raw mut gEnemyParty[0]);
+    CalculateMonStats(crate::gl!(&raw gEnemyParty[0]));
 }
 pub unsafe fn GetPyramidRunMultiplier() -> u8 {
     let id: u8 = GetPyramidFloorTemplateId();
@@ -802,9 +868,9 @@ pub unsafe fn GetPyramidRunMultiplier() -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CurrentBattlePyramidLocation() -> u8 {
-    if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
+    if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
         return PYRAMID_LOCATION_FLOOR;
-    } else if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP {
+    } else if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP {
         return PYRAMID_LOCATION_TOP;
     } else {
         return PYRAMID_LOCATION_NONE;
@@ -814,14 +880,15 @@ pub unsafe fn CurrentBattlePyramidLocation() -> u8 {
         0
     }
 }
-pub unsafe fn InBattlePyramid_() -> u8 {
-    (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR
-        || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP) as u8
+pub fn InBattlePyramid_() -> u8 {
+    (crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR
+        || crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP)
+        as u8
 }
 pub unsafe fn PausePyramidChallenge() {
     if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE {
         RestorePyramidPlayerParty();
-        (*gSaveBlock2Ptr).frontier.challengeStatus = CHALLENGE_STATUS_PAUSED;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.challengeStatus = CHALLENGE_STATUS_PAUSED;
         VarSet(VAR_TEMP_PLAYING_PYRAMID_MUSIC, 0);
         LoadPlayerParty();
     }
@@ -832,19 +899,32 @@ pub unsafe fn SoftResetInBattlePyramid() {
     }
 }
 pub unsafe fn CopyPyramidTrainerSpeechBefore(trainerId: u16) {
-    FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechBefore.as_mut_ptr());
+    FrontierSpeechToString(
+        (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+            .speechBefore
+            .as_mut_ptr(),
+    );
 }
 pub unsafe fn CopyPyramidTrainerWinSpeech(trainerId: u16) {
-    FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechWin.as_mut_ptr());
+    FrontierSpeechToString(
+        (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+            .speechWin
+            .as_mut_ptr(),
+    );
 }
 pub unsafe fn CopyPyramidTrainerLoseSpeech(trainerId: u16) {
-    FrontierSpeechToString((*gFacilityTrainers.at(trainerId)).speechLose.as_mut_ptr());
+    FrontierSpeechToString(
+        (*(*gFacilityTrainers.as_ptr()).at(trainerId))
+            .speechLose
+            .as_mut_ptr(),
+    );
 }
 pub unsafe fn GetTrainerEncounterMusicIdInBattlePyramid(trainerId: u16) -> u8 {
     for i in 0..54i32 {
         if sTrainerClassEncounterMusic[i].trainerClass
             == (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
-                .cast::<CArray<u8, 0>>())[(*gFacilityTrainers.at(trainerId)).facilityClass]
+                .cast::<CArray<u8, 0>>())
+                [(*(*gFacilityTrainers.as_ptr()).at(trainerId)).facilityClass]
         {
             return sTrainerClassEncounterMusic[i].trainerEncounterMusic;
         }
@@ -861,16 +941,16 @@ unsafe fn BattlePyramidRetireChallenge() {
 unsafe fn GetUniqueTrainerId(objectEventId: u8) -> u16 {
     let mut i: i32 = 0;
     let mut trainerId: u16 = 0;
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
     let challengeNum: u32 =
-        ((*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as i32 / 7) as u32;
-    let floor: u32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as u32;
+        ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] as i32 / 7) as u32;
+    let floor: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as u32;
     if floor == FRONTIER_STAGES_PER_CHALLENGE as u32 {
         loop {
             trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8 + 1, floor as u8);
             i = 0;
             while i < objectEventId as i32 {
-                if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                     break;
                 }
                 i += 1;
@@ -884,7 +964,7 @@ unsafe fn GetUniqueTrainerId(objectEventId: u8) -> u16 {
             trainerId = GetRandomScaledFrontierTrainerId(challengeNum as u8, floor as u8);
             i = 0;
             while i < objectEventId as i32 {
-                if (*gSaveBlock2Ptr).frontier.trainerIds[i] == trainerId {
+                if (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] == trainerId {
                     break;
                 }
                 i += 1;
@@ -910,15 +990,19 @@ pub unsafe fn GenerateBattlePyramidFloorLayout(backupMapData: *mut u16, setPlaye
             .cast::<CArray<*mut MapLayout, 0>>())
             [*floorLayoutOffsets.at(i) as i32 + LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR as i32];
         let mut layoutMap: *mut u16 = (*mapLayout).map;
-        gBackupMapLayout.map = backupMapData;
-        gBackupMapLayout.width = (*mapLayout).width * PYRAMID_FLOOR_SQUARES_WIDE + MAP_OFFSET_W;
-        gBackupMapLayout.height = (*mapLayout).height * PYRAMID_FLOOR_SQUARES_HIGH + MAP_OFFSET_H;
-        map = gBackupMapLayout.map;
-        map = map.at(
-            gBackupMapLayout.width * (MAP_OFFSET + i / 4 * (*mapLayout).height)
-                + MAP_OFFSET
-                + i % 4 * (*mapLayout).width,
+        crate::gl!(gBackupMapLayout.map = backupMapData);
+        crate::gl!(
+            gBackupMapLayout.width = (*mapLayout).width * PYRAMID_FLOOR_SQUARES_WIDE + MAP_OFFSET_W
         );
+        crate::gl!(
+            gBackupMapLayout.height =
+                (*mapLayout).height * PYRAMID_FLOOR_SQUARES_HIGH + MAP_OFFSET_H
+        );
+        map = crate::gl!(gBackupMapLayout.map);
+        map = map.at(crate::gl!(gBackupMapLayout.width)
+            * (MAP_OFFSET + i / 4 * (*mapLayout).height)
+            + MAP_OFFSET
+            + i % 4 * (*mapLayout).width);
         y = 0;
         while y < (*mapLayout).height {
             x = 0;
@@ -928,9 +1012,9 @@ pub unsafe fn GenerateBattlePyramidFloorLayout(backupMapData: *mut u16, setPlaye
                     *map.at(x) = *layoutMap.at(x);
                 } else if i != exitSquareId as i32 {
                     if i == entranceSquareId as i32 && setPlayerPosition == FALSE {
-                        (*gSaveBlock1Ptr).pos.x =
+                        (*crate::gl!(gSaveBlock1Ptr)).pos.x =
                             (*mapLayout).width as i16 * (i % 4) as i16 + x as i16;
-                        (*gSaveBlock1Ptr).pos.y =
+                        (*crate::gl!(gSaveBlock1Ptr)).pos.y =
                             (*mapLayout).height as i16 * (i / 4) as i16 + y as i16;
                     }
                     *map.at(x) = *layoutMap.at(x) & 64512 | METATILE_BattlePyramid_Floor;
@@ -951,7 +1035,7 @@ pub unsafe fn LoadBattlePyramidObjectEventTemplates() {
     let mut entranceSquareId: u8 = 0;
     let mut exitSquareId: u8 = 0;
     for i in 0..MAX_PYRAMID_TRAINERS {
-        (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[i] = 0xFFFF;
     }
     let id: u8 = GetPyramidFloorTemplateId();
     GetPyramidEntranceAndExitSquareIds(&raw mut entranceSquareId, &raw mut exitSquareId);
@@ -961,7 +1045,9 @@ pub unsafe fn LoadBattlePyramidObjectEventTemplates() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gSaveBlock1Ptr))
+                    .objectEventTemplates
+                    .as_mut_ptr() as *mut c_void,
                 0x5000180,
             );
         }
@@ -1002,7 +1088,9 @@ pub unsafe fn LoadBattlePyramidObjectEventTemplates() {
     }
 }
 pub unsafe fn LoadBattlePyramidFloorObjectEventScripts() {
-    let events: *mut ObjectEventTemplate = (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
+    let events: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
     for i in 0..OBJECT_EVENT_TEMPLATES_COUNT {
         if (*events.at(i)).graphicsId != OBJ_EVENT_GFX_ITEM_BALL {
             (*events.at(i)).script = (*crate::asmdata::BattlePyramid_TrainerBattle
@@ -1018,11 +1106,13 @@ pub unsafe fn LoadBattlePyramidFloorObjectEventScripts() {
     }
 }
 unsafe fn GetPyramidEntranceAndExitSquareIds(entranceSquareId: *mut u8, exitSquareId: *mut u8) {
-    *entranceSquareId = ((*gSaveBlock2Ptr).frontier.pyramidRandoms[3] as i32 % 16) as u8;
-    *exitSquareId = ((*gSaveBlock2Ptr).frontier.pyramidRandoms[0] as i32 % 16) as u8;
+    *entranceSquareId =
+        ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[3] as i32 % 16) as u8;
+    *exitSquareId = ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[0] as i32 % 16) as u8;
     if *entranceSquareId == *exitSquareId {
-        *entranceSquareId = (((*gSaveBlock2Ptr).frontier.pyramidRandoms[3] as i32 + 1) % 16) as u8;
-        *exitSquareId = (((*gSaveBlock2Ptr).frontier.pyramidRandoms[0] as i32
+        *entranceSquareId =
+            (((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[3] as i32 + 1) % 16) as u8;
+        *exitSquareId = (((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[0] as i32
             + NUM_PYRAMID_FLOOR_SQUARES as i32
             - 1)
             % 16) as u8;
@@ -1035,7 +1125,7 @@ unsafe fn SetPyramidObjectPositionsUniformly(objType: u8) {
     let id: u8 = GetPyramidFloorTemplateId();
     let floorLayoutOffsets: *mut u8 = AllocZeroed(NUM_PYRAMID_FLOOR_SQUARES) as *mut u8;
     GetPyramidFloorLayoutOffsets(floorLayoutOffsets);
-    let mut squareId: i32 = (*gSaveBlock2Ptr).frontier.pyramidRandoms[2] as i32 % 16;
+    let mut squareId: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[2] as i32 % 16;
     if objType == OBJ_TRAINERS {
         numObjects = sPyramidFloorTemplates[id].numTrainers as i32;
         objectStartIndex = 0;
@@ -1047,13 +1137,15 @@ unsafe fn SetPyramidObjectPositionsUniformly(objType: u8) {
         loop {
             loop {
                 if bits & 1 != 0 {
-                    if gBitTable[squareId] & (*gSaveBlock2Ptr).frontier.pyramidRandoms[3] as u32
+                    if gBitTable[squareId]
+                        & (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[3] as u32
                         == 0
                     {
                         bits |= 2;
                     }
                 } else {
-                    if gBitTable[squareId] & (*gSaveBlock2Ptr).frontier.pyramidRandoms[3] as u32
+                    if gBitTable[squareId]
+                        & (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[3] as u32
                         != 0
                     {
                         bits |= 2;
@@ -1066,7 +1158,8 @@ unsafe fn SetPyramidObjectPositionsUniformly(objType: u8) {
                 {
                     squareId = 0;
                 }
-                if squareId == (*gSaveBlock2Ptr).frontier.pyramidRandoms[2] as i32 % 16 {
+                if squareId == (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[2] as i32 % 16
+                {
                     if bits & 1 != 0 {
                         bits |= 6;
                     } else {
@@ -1226,7 +1319,7 @@ unsafe fn TrySetPyramidObjectEventPositionInSquare(
 ) -> u8 {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
-    if (*gSaveBlock2Ptr).frontier.pyramidRandoms[0] as i32 & 1 != 0 {
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[0] as i32 & 1 != 0 {
         y = 7;
         while y > -1 {
             x = 7;
@@ -1274,7 +1367,9 @@ unsafe fn TrySetPyramidObjectEventPositionAtCoords(
     objectEventId: u8,
 ) -> u8 {
     let mut j: i32 = 0;
-    let floorEvents: *mut ObjectEventTemplate = (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
+    let floorEvents: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
     let mapHeader: *mut MapHeader =
         Overworld_GetMapHeaderByGroupAndId(25, *floorLayoutOffsets.at(squareId) as u16 + 44);
     let mut i: i32 = 0;
@@ -1312,7 +1407,7 @@ unsafe fn TrySetPyramidObjectEventPositionAtCoords(
                     i = GetUniqueTrainerId(objectEventId) as i32;
                     (*floorEvents.at(objectEventId)).graphicsId =
                         GetBattleFacilityTrainerGfxId(i as u16);
-                    (*gSaveBlock2Ptr).frontier.trainerIds[objectEventId] = i as u16;
+                    (*crate::gl!(gSaveBlock2Ptr)).frontier.trainerIds[objectEventId] = i as u16;
                 }
                 return FALSE;
             }
@@ -1322,23 +1417,23 @@ unsafe fn TrySetPyramidObjectEventPositionAtCoords(
     TRUE
 }
 unsafe fn GetPyramidFloorLayoutOffsets(layoutOffsets: *mut u8) {
-    let mut rand: i32 = (*gSaveBlock2Ptr).frontier.pyramidRandoms[0] as i32
-        | ((*gSaveBlock2Ptr).frontier.pyramidRandoms[1] as i32) << 16;
+    let mut rand: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[0] as i32
+        | ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[1] as i32) << 16;
     let id: u8 = GetPyramidFloorTemplateId();
     for i in 0..(NUM_PYRAMID_FLOOR_SQUARES as i32) {
         *layoutOffsets.at(i) =
             sPyramidFloorTemplates[id].layoutOffsets[if 0 != 0 { rand % 8 } else { rand & 7 }];
         rand >>= 3;
         if i == 7 {
-            rand = (*gSaveBlock2Ptr).frontier.pyramidRandoms[2] as i32
-                | ((*gSaveBlock2Ptr).frontier.pyramidRandoms[3] as i32) << 16;
+            rand = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[2] as i32
+                | ((*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[3] as i32) << 16;
             rand >>= 8;
         }
     }
 }
 unsafe fn GetPyramidFloorTemplateId() -> u8 {
-    let rand: i32 = (*gSaveBlock2Ptr).frontier.pyramidRandoms[3] as i32 % 100;
-    let floor: i32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
+    let rand: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidRandoms[3] as i32 % 100;
+    let floor: i32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.curChallengeBattleNum as i32;
     for i in (sFloorTemplateOffsets[floor] as i32)..34 {
         if rand < sPyramidFloorTemplateOptions[i][0] as i32 {
             return sPyramidFloorTemplateOptions[i][1];
@@ -1347,7 +1442,9 @@ unsafe fn GetPyramidFloorTemplateId() -> u8 {
     0
 }
 pub unsafe fn GetNumBattlePyramidObjectEvents() -> u8 {
-    let events: *mut ObjectEventTemplate = (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
+    let events: *mut ObjectEventTemplate = (*crate::gl!(gSaveBlock1Ptr))
+        .objectEventTemplates
+        .as_mut_ptr();
     let mut i: u8 = 0;
     while i < OBJECT_EVENTS_COUNT {
         if (*events.at(i)).localId == LOCALID_NONE {
@@ -1359,15 +1456,16 @@ pub unsafe fn GetNumBattlePyramidObjectEvents() -> u8 {
 }
 unsafe fn InitPyramidBagItems(lvlMode: u8) {
     for i in 0..(PYRAMID_BAG_ITEMS_COUNT as i32) {
-        (*gSaveBlock2Ptr).frontier.pyramidBag.itemId[lvlMode][i] = ITEM_NONE;
-        (*gSaveBlock2Ptr).frontier.pyramidBag.quantity[lvlMode][i] = ITEM_NONE as u8;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.itemId[lvlMode][i] = ITEM_NONE;
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidBag.quantity[lvlMode][i] = ITEM_NONE as u8;
     }
     AddPyramidBagItem(ITEM_HYPER_POTION, 1);
     AddPyramidBagItem(ITEM_ETHER, 1);
 }
 pub unsafe fn GetBattlePyramidPickupItemId() -> u16 {
-    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let mut round: i32 = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] as i32 / 7;
+    let lvlMode: u32 = (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() as u32;
+    let mut round: i32 =
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidWinStreaks[lvlMode] as i32 / 7;
     if round >= TOTAL_PYRAMID_ROUNDS as i32 {
         round = 19;
     }

@@ -95,27 +95,27 @@ static EXT_CTRL_CODE_LENGTHS: [u8; 25] = [
 ];
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static mut gStringVar1: crate::c::Aligned<crate::c::CArray<u8, 0x100>> =
     crate::c::Aligned(crate::c::CArray([0; 0x100]));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gStringVar2: crate::c::Aligned<crate::c::CArray<u8, 0x100>> =
-    crate::c::Aligned(crate::c::CArray([0; 0x100]));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gStringVar2: crate::global::Global<crate::c::Aligned<crate::c::CArray<u8, 0x100>>> =
+    crate::global::Global::new(crate::c::Aligned(crate::c::CArray([0; 0x100])));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gStringVar3: crate::c::Aligned<crate::c::CArray<u8, 0x100>> =
-    crate::c::Aligned(crate::c::CArray([0; 0x100]));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gStringVar3: crate::global::Global<crate::c::Aligned<crate::c::CArray<u8, 0x100>>> =
+    crate::global::Global::new(crate::c::Aligned(crate::c::CArray([0; 0x100])));
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static mut gStringVar4: crate::c::Aligned<crate::c::CArray<u8, 0x3e8>> =
     crate::c::Aligned(crate::c::CArray([0; 0x3e8]));
 
-#[unsafe(link_section = "ewram_data")]
-static mut UNKNOWN_STRING_VAR: [u8; 16] = [0; 16];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static UNKNOWN_STRING_VAR: crate::global::Global<[u8; 16]> = crate::global::Global::new([0; 16]);
 
 #[unsafe(no_mangle)]
 pub unsafe fn StringCopy_Nickname(dest: *mut u8, src: *const u8) -> *mut u8 {
@@ -450,18 +450,18 @@ pub unsafe fn StringBraille(dest: *mut u8, src: *const u8) -> *mut u8 {
 #[unsafe(no_mangle)]
 pub unsafe fn GetExpandedPlaceholder(id: u32) -> *const u8 {
     let save = unsafe {
-        *(&raw const crate::load_save::gSaveBlock2Ptr)
+        *(crate::gl!(&raw @at crate::load_save::gSaveBlock2Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut()
     };
     let gender = unsafe { save.add(SAVE2_PLAYER_GENDER).read() };
 
     match id {
-        0 => (&raw const UNKNOWN_STRING_VAR).cast::<u8>(),
+        0 => (crate::gl!(&raw UNKNOWN_STRING_VAR).cast_const()).cast::<u8>(),
         1 => unsafe { save.add(SAVE2_PLAYER_NAME) },
         2 => (&raw const gStringVar1).cast::<u8>(),
-        3 => (&raw const gStringVar2).cast::<u8>(),
-        4 => (&raw const gStringVar3).cast::<u8>(),
+        3 => (crate::gl!(&raw gStringVar2).cast_const()).cast::<u8>(),
+        4 => (crate::gl!(&raw gStringVar3).cast_const()).cast::<u8>(),
         5 => {
             if gender == MALE {
                 &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Kun)

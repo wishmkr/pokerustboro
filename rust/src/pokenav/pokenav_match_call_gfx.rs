@@ -108,7 +108,7 @@ unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
 }
 /// `DecompressPicFromTable` with this module's view of its types.
 #[inline]
-unsafe fn DecompressPicFromTable(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32) {
+fn DecompressPicFromTable(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32) {
     unsafe {
         crate::decompress::DecompressPicFromTable(a0 as _, a1 as _, a2);
     }
@@ -147,7 +147,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `RequestDma3Copy` with this module's view of its types.
 #[inline]
-unsafe fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
     unsafe { crate::dma3_manager::RequestDma3Copy(a0 as _, a1 as _, a2, a3) }
 }
 /// `SetBgTilemapBuffer` with this module's view of its types.
@@ -299,7 +299,7 @@ unsafe fn AddTextPrinterParameterized(
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -311,7 +311,7 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -969,16 +969,16 @@ pub(crate) unsafe fn Task_FlashPokeballIcons(taskId: u8) {
             0x10,
             0x10,
             *data.at(1) as i32,
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
                 .cast_mut())[80],
         );
-        if gPaletteFade.active() == 0 {
+        if (*gPaletteFade.as_ptr()).active() == 0 {
             CpuSet(
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[80] as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
                     .cast_mut())[80] as *mut c_void,
                 0x4000008,
@@ -1226,13 +1226,13 @@ unsafe fn PrintMatchCallMessage(gfx: *mut Pokenav_MatchCallGfx) {
     );
 }
 unsafe fn WaitForMatchCallMessageText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
-    if gMain.heldKeys as i32 & A_BUTTON != 0 {
-        (*(&raw const crate::text::gTextFlags)
+    if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(TRUE);
     } else {
-        (*(&raw const crate::text::gTextFlags)
+        (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
             .cast::<TextFlags>()
             .cast_mut())
         .set_canABSpeedUpPrint(FALSE);
@@ -1289,7 +1289,7 @@ unsafe fn CreateOptionsCursorSprite(gfx: *mut Pokenav_MatchCallGfx, top: i32) {
             80,
             5,
         );
-        (*gfx).optionsCursorSprite = &raw mut gSprites[spriteId];
+        (*gfx).optionsCursorSprite = crate::gl!(&raw gSprites[spriteId]);
         UpdateCursorGfxPos(gfx, top);
     }
 }
@@ -1317,7 +1317,7 @@ pub(crate) unsafe fn CreateTrainerPicSprite() -> *mut Sprite {
         104,
         6,
     );
-    &raw mut gSprites[spriteId]
+    crate::gl!(&raw gSprites[spriteId])
 }
 unsafe fn LoadCheckPageTrainerPic(gfx: *mut Pokenav_MatchCallGfx) {
     let mut cursor: u16 = 0;

@@ -87,7 +87,7 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `BlitBitmapToWindow` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
     unsafe {
         crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
     }
@@ -146,14 +146,14 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadCompressedSpriteSheet` with this module's view of its types.
@@ -173,7 +173,7 @@ unsafe fn RequestDma3Fill(a0: i32, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
 }
 /// `ScanlineEffect_SetParams` with this module's view of its types.
 #[inline]
-unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
     unsafe {
         crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
     }
@@ -480,12 +480,15 @@ static sUnusedPalette: Table<CArray<u16, 16>> =
 static sWinTemplates: Table<CArray<WindowTemplate, 5>> =
     Table((&raw const crate::data::union_room_chat::sWinTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sChat: *mut UnionRoomChat = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDisplay: *mut UnionRoomChatDisplay = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSprites: *mut UnionRoomChatSprites = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sChat: crate::global::Global<*mut UnionRoomChat> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDisplay: crate::global::Global<*mut UnionRoomChatDisplay> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSprites: crate::global::Global<*mut UnionRoomChatSprites> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -524,7 +527,7 @@ unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -538,9 +541,9 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 pub unsafe fn EnterUnionRoomChat() {
-    sChat = Alloc(444) as *mut UnionRoomChat;
-    InitUnionRoomChat(sChat);
-    gKeyRepeatStartDelay = 20;
+    crate::gl!(sChat = Alloc(444) as *mut UnionRoomChat);
+    InitUnionRoomChat(crate::gl!(sChat));
+    gKeyRepeatStartDelay.set(20);
     SetVBlankCallback(None);
     SetMainCallback2(Some(CB2_LoadInterface));
 }
@@ -562,23 +565,23 @@ unsafe fn InitUnionRoomChat(chat: *mut UnionRoomChat) {
     for i in 0..UNION_ROOM_KB_ROW_COUNT {
         StringCopy(
             (*chat).registeredTexts[i].as_mut_ptr(),
-            (*gSaveBlock1Ptr).registeredTexts[i].as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[i].as_mut_ptr(),
         );
     }
 }
 unsafe fn FreeUnionRoomChat() {
-    DestroyTask((*sChat).handleInputTask);
-    DestroyTask((*sChat).receiveMessagesTask);
-    Free(sChat as *mut c_void);
+    DestroyTask((*crate::gl!(sChat)).handleInputTask);
+    DestroyTask((*crate::gl!(sChat)).receiveMessagesTask);
+    Free(crate::gl!(sChat) as *mut c_void);
 }
 pub(crate) unsafe fn CB2_LoadInterface() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             ResetTasks();
             ResetSpriteData();
             FreeAllSpritePalettes();
             TryAllocDisplay();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             RunDisplaySubtasks();
@@ -586,15 +589,16 @@ pub(crate) unsafe fn CB2_LoadInterface() {
                 BlendPalettes(PALETTES_ALL, 16, 0);
                 BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
                 SetVBlankCallback(Some(VBlankCB_UnionRoomChatMain));
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         2 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetMainCallback2(Some(CB2_UnionRoomChatMain));
-                (*sChat).handleInputTask = CreateTask(Some(Task_HandlePlayerInput), 8);
-                (*sChat).receiveMessagesTask = CreateTask(Some(Task_ReceiveChatMessage), 7);
+                (*crate::gl!(sChat)).handleInputTask = CreateTask(Some(Task_HandlePlayerInput), 8);
+                (*crate::gl!(sChat)).receiveMessagesTask =
+                    CreateTask(Some(Task_ReceiveChatMessage), 7);
                 LoadWirelessStatusIndicatorSpriteGfx();
                 CreateWirelessStatusIndicatorSprite(232, 150);
             }
@@ -616,42 +620,42 @@ pub(crate) unsafe fn CB2_UnionRoomChatMain() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn Task_HandlePlayerInput(taskId: u8) {
-    match (*sChat).exitType {
+    match (*crate::gl!(sChat)).exitType {
         CHAT_EXIT_ONLY_LEADER => {
             SetChatFunction(CHAT_FUNC_EXIT);
-            (*sChat).exitType = CHAT_EXIT_NONE;
+            (*crate::gl!(sChat)).exitType = CHAT_EXIT_NONE;
         }
         CHAT_EXIT_DROPPED => {
             SetChatFunction(CHAT_FUNC_DROP);
-            (*sChat).exitType = CHAT_EXIT_NONE;
+            (*crate::gl!(sChat)).exitType = CHAT_EXIT_NONE;
         }
         CHAT_EXIT_DISBANDED => {
             SetChatFunction(CHAT_FUNC_DISBANDED);
-            (*sChat).exitType = CHAT_EXIT_NONE;
+            (*crate::gl!(sChat)).exitType = CHAT_EXIT_NONE;
         }
         _ => {}
     }
-    sChatMainFunctions[(*sChat).funcId].unwrap_unchecked()();
+    sChatMainFunctions[(*crate::gl!(sChat)).funcId].unwrap_unchecked()();
 }
 pub(crate) unsafe fn Chat_Join() {
     'l1: {
-        let sw1: u16 = (*sChat).funcState;
+        let sw1: u16 = (*crate::gl!(sChat)).funcState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            PrepareSendBuffer_Join((*sChat).sendMessageBuffer.as_mut_ptr());
-            (*sChat).funcState += 1;
+            PrepareSendBuffer_Join((*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr());
+            (*crate::gl!(sChat)).funcState += 1;
         }
         if fall || sw1 == 1 {
             if IsLinkTaskFinished() != 0
                 && Rfu_IsPlayerExchangeActive() == 0
                 && SendBlock(
                     0,
-                    (*sChat).sendMessageBuffer.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr() as *mut c_void,
                     40,
                 ) != 0
             {
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
             break 'l1;
         }
@@ -666,45 +670,45 @@ pub(crate) unsafe fn Chat_Join() {
 pub(crate) unsafe fn Chat_HandleInput() {
     let mut updateMsgActive: u8 = 0;
     let mut cursorBlinkActive: u8 = 0;
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
-            if gMain.newKeys as i32 & START_BUTTON != 0 {
-                if (*sChat).bufferCursorPos != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
+                if (*crate::gl!(sChat)).bufferCursorPos != 0 {
                     SetChatFunction(CHAT_FUNC_SEND);
                 }
-            } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
                 SetChatFunction(CHAT_FUNC_SWITCH);
-            } else if gMain.newAndRepeatedKeys as i32 & B_BUTTON != 0 {
-                if (*sChat).bufferCursorPos != 0 {
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & B_BUTTON != 0 {
+                if (*crate::gl!(sChat)).bufferCursorPos != 0 {
                     DeleteLastMessageCharacter();
                     StartDisplaySubtask(CHATDISPLAY_FUNC_UPDATE_MSG, 0);
-                    (*sChat).funcState = 1;
+                    (*crate::gl!(sChat)).funcState = 1;
                 } else {
                     SetChatFunction(CHAT_FUNC_ASK_QUIT);
                 }
-            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 AppendTextToMessage();
                 StartDisplaySubtask(CHATDISPLAY_FUNC_UPDATE_MSG, 0);
                 StartDisplaySubtask(CHATDISPLAY_FUNC_CURSOR_BLINK, 1);
-                (*sChat).funcState = 1;
-            } else if gMain.newKeys as i32 & R_BUTTON != 0 {
-                if (*sChat).currentPage != UNION_ROOM_KB_PAGE_REGISTER {
+                (*crate::gl!(sChat)).funcState = 1;
+            } else if crate::gl!(gMain.newKeys) as i32 & R_BUTTON != 0 {
+                if (*crate::gl!(sChat)).currentPage != UNION_ROOM_KB_PAGE_REGISTER {
                     SwitchCaseOfLastMessageCharacter();
                     StartDisplaySubtask(CHATDISPLAY_FUNC_UPDATE_MSG, 0);
-                    (*sChat).funcState = 1;
+                    (*crate::gl!(sChat)).funcState = 1;
                 } else {
                     SetChatFunction(CHAT_FUNC_REGISTER);
                 }
             } else if HandleDPadInput() != 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_MOVE_KB_CURSOR, 0);
-                (*sChat).funcState = 1;
+                (*crate::gl!(sChat)).funcState = 1;
             }
         }
         1 => {
             updateMsgActive = IsDisplaySubtaskActive(0);
             cursorBlinkActive = IsDisplaySubtaskActive(1);
             if updateMsgActive == 0 && cursorBlinkActive == 0 {
-                (*sChat).funcState = 0;
+                (*crate::gl!(sChat)).funcState = 0;
             }
         }
         _ => {}
@@ -713,21 +717,21 @@ pub(crate) unsafe fn Chat_HandleInput() {
 pub(crate) unsafe fn Chat_Switch() {
     let mut input: i16 = 0;
     let mut shouldSwitchPages: u32 = 0;
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
             StartDisplaySubtask(CHATDISPLAY_FUNC_SHOW_KB_SWAP_MENU, 0);
-            (*sChat).funcState += 1;
+            (*crate::gl!(sChat)).funcState += 1;
         }
         1 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         2 => {
             input = Menu_ProcessInput() as i16;
             match input {
                 -2 => {
-                    if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+                    if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
                         PlaySE(SE_SELECT);
                         Menu_MoveCursor(1);
                     }
@@ -735,13 +739,13 @@ pub(crate) unsafe fn Chat_Switch() {
                 }
                 -1 => {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_HIDE_KB_SWAP_MENU, 0);
-                    (*sChat).funcState = 3;
+                    (*crate::gl!(sChat)).funcState = 3;
                     return;
                 }
                 _ => {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_HIDE_KB_SWAP_MENU, 0);
                     shouldSwitchPages = TRUE as u32;
-                    if (*sChat).currentPage as i16 == input
+                    if (*crate::gl!(sChat)).currentPage as i16 == input
                         || input > UNION_ROOM_KB_PAGE_REGISTER as i16
                     {
                         shouldSwitchPages = FALSE as u32;
@@ -749,14 +753,14 @@ pub(crate) unsafe fn Chat_Switch() {
                 }
             }
             if shouldSwitchPages == 0 {
-                (*sChat).funcState = 3;
+                (*crate::gl!(sChat)).funcState = 3;
                 return;
             }
-            (*sChat).currentCol = 0;
-            (*sChat).currentRow = 0;
+            (*crate::gl!(sChat)).currentCol = 0;
+            (*crate::gl!(sChat)).currentRow = 0;
             StartDisplaySubtask(CHATDISPLAY_FUNC_SWITCH_PAGES, 1);
-            (*sChat).currentPage = input as u8;
-            (*sChat).funcState = 4;
+            (*crate::gl!(sChat)).currentPage = input as u8;
+            (*crate::gl!(sChat)).funcState = 4;
         }
         3 => {
             if IsDisplaySubtaskActive(0) == 0 {
@@ -771,14 +775,14 @@ pub(crate) unsafe fn Chat_Switch() {
 }
 pub(crate) unsafe fn Chat_AskQuitChatting() {
     let mut input: i8 = 0;
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
             StartDisplaySubtask(CHATDISPLAY_FUNC_ASK_QUIT_CHATTING, 0);
-            (*sChat).funcState = 1;
+            (*crate::gl!(sChat)).funcState = 1;
         }
         1 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState = 2;
+                (*crate::gl!(sChat)).funcState = 2;
             }
         }
         2 => {
@@ -786,16 +790,20 @@ pub(crate) unsafe fn Chat_AskQuitChatting() {
             match input {
                 MENU_B_PRESSED | 1 => {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                    (*sChat).funcState = 3;
+                    (*crate::gl!(sChat)).funcState = 3;
                 }
                 0 => {
-                    if (*sChat).multiplayerId == 0 {
-                        PrepareSendBuffer_Disband((*sChat).sendMessageBuffer.as_mut_ptr());
+                    if (*crate::gl!(sChat)).multiplayerId == 0 {
+                        PrepareSendBuffer_Disband(
+                            (*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr(),
+                        );
                         StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                        (*sChat).funcState = 9;
+                        (*crate::gl!(sChat)).funcState = 9;
                     } else {
-                        PrepareSendBuffer_Leave((*sChat).sendMessageBuffer.as_mut_ptr());
-                        (*sChat).funcState = 4;
+                        PrepareSendBuffer_Leave(
+                            (*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr(),
+                        );
+                        (*crate::gl!(sChat)).funcState = 4;
                     }
                 }
                 _ => {}
@@ -809,12 +817,12 @@ pub(crate) unsafe fn Chat_AskQuitChatting() {
         9 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_ASK_CONFIRM_LEADER_LEAVE, 0);
-                (*sChat).funcState = 10;
+                (*crate::gl!(sChat)).funcState = 10;
             }
         }
         10 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState = 8;
+                (*crate::gl!(sChat)).funcState = 8;
             }
         }
         8 => {
@@ -822,13 +830,13 @@ pub(crate) unsafe fn Chat_AskQuitChatting() {
             match input {
                 MENU_B_PRESSED | 1 => {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                    (*sChat).funcState = 3;
+                    (*crate::gl!(sChat)).funcState = 3;
                 }
                 0 => {
                     Rfu_StopPartnerSearch();
-                    PrepareSendBuffer_Disband((*sChat).sendMessageBuffer.as_mut_ptr());
-                    (*sChat).funcState = 4;
-                    (*sChat).tryQuitAgainTimer = 0;
+                    PrepareSendBuffer_Disband((*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr());
+                    (*crate::gl!(sChat)).funcState = 4;
+                    (*crate::gl!(sChat)).tryQuitAgainTimer = 0;
                 }
                 _ => {}
             }
@@ -838,53 +846,53 @@ pub(crate) unsafe fn Chat_AskQuitChatting() {
                 && Rfu_IsPlayerExchangeActive() == 0
                 && SendBlock(
                     0,
-                    (*sChat).sendMessageBuffer.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr() as *mut c_void,
                     40,
                 ) != 0
             {
-                if (*sChat).multiplayerId == 0 {
-                    (*sChat).funcState = 6;
+                if (*crate::gl!(sChat)).multiplayerId == 0 {
+                    (*crate::gl!(sChat)).funcState = 6;
                 } else {
-                    (*sChat).funcState = 5;
+                    (*crate::gl!(sChat)).funcState = 5;
                 }
             }
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 SetChatFunction(CHAT_FUNC_SAVE_AND_EXIT);
             }
         }
         5 => {
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 SetChatFunction(CHAT_FUNC_SAVE_AND_EXIT);
             } else if ({
-                (*sChat).tryQuitAgainTimer += 1;
-                (*sChat).tryQuitAgainTimer
+                (*crate::gl!(sChat)).tryQuitAgainTimer += 1;
+                (*crate::gl!(sChat)).tryQuitAgainTimer
             }) > 300
             {
-                (*sChat).tryQuitAgainTimer = 0;
-                (*sChat).funcState = 4;
+                (*crate::gl!(sChat)).tryQuitAgainTimer = 0;
+                (*crate::gl!(sChat)).funcState = 4;
             }
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Chat_Exit() {
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
             if FuncIsActiveTask(Some(Task_ReceiveChatMessage)) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         1 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_PRINT_EXITING_CHAT, 0);
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         2 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                PrepareSendBuffer_Drop((*sChat).sendMessageBuffer.as_mut_ptr());
-                (*sChat).funcState += 1;
+                PrepareSendBuffer_Drop((*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr());
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         3 => {
@@ -892,49 +900,49 @@ pub(crate) unsafe fn Chat_Exit() {
                 && Rfu_IsPlayerExchangeActive() == 0
                 && SendBlock(
                     0,
-                    (*sChat).sendMessageBuffer.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr() as *mut c_void,
                     40,
                 ) != 0
             {
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         4 => {
             if GetBlockReceivedStatus() as i32 & 1 != 0 && Rfu_IsPlayerExchangeActive() == 0 {
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         5 => {
             if IsLinkTaskFinished() != 0 && Rfu_IsPlayerExchangeActive() == 0 {
                 SetCloseLinkCallback();
-                (*sChat).exitDelayTimer = 0;
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).exitDelayTimer = 0;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         6 => {
-            if (*sChat).exitDelayTimer < 150 {
-                (*sChat).exitDelayTimer += 1;
+            if (*crate::gl!(sChat)).exitDelayTimer < 150 {
+                (*crate::gl!(sChat)).exitDelayTimer += 1;
             }
-            if gReceivedRemoteLinkPlayers == 0 {
-                (*sChat).funcState += 1;
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         7 => {
-            if (*sChat).exitDelayTimer >= 150 {
+            if (*crate::gl!(sChat)).exitDelayTimer >= 150 {
                 SetChatFunction(CHAT_FUNC_SAVE_AND_EXIT);
             } else {
-                (*sChat).exitDelayTimer += 1;
+                (*crate::gl!(sChat)).exitDelayTimer += 1;
             }
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Chat_Drop() {
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
             if FuncIsActiveTask(Some(Task_ReceiveChatMessage)) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         1 => {
@@ -943,44 +951,44 @@ pub(crate) unsafe fn Chat_Drop() {
                 && Rfu_IsPlayerExchangeActive() == 0
             {
                 SetCloseLinkCallback();
-                (*sChat).exitDelayTimer = 0;
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).exitDelayTimer = 0;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         2 => {
-            if (*sChat).exitDelayTimer < 150 {
-                (*sChat).exitDelayTimer += 1;
+            if (*crate::gl!(sChat)).exitDelayTimer < 150 {
+                (*crate::gl!(sChat)).exitDelayTimer += 1;
             }
-            if gReceivedRemoteLinkPlayers == 0 {
-                (*sChat).funcState += 1;
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         3 => {
-            if (*sChat).exitDelayTimer >= 150 {
+            if (*crate::gl!(sChat)).exitDelayTimer >= 150 {
                 SetChatFunction(CHAT_FUNC_SAVE_AND_EXIT);
             } else {
-                (*sChat).exitDelayTimer += 1;
+                (*crate::gl!(sChat)).exitDelayTimer += 1;
             }
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Chat_Disbanded() {
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
             if FuncIsActiveTask(Some(Task_ReceiveChatMessage)) == 0 {
-                if (*sChat).multiplayerId != 0 {
+                if (*crate::gl!(sChat)).multiplayerId != 0 {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
                 }
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         1 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                if (*sChat).multiplayerId != 0 {
+                if (*crate::gl!(sChat)).multiplayerId != 0 {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_PRINT_LEADER_LEFT, 0);
                 }
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         2 => {
@@ -989,23 +997,23 @@ pub(crate) unsafe fn Chat_Disbanded() {
                 && Rfu_IsPlayerExchangeActive() == 0
             {
                 SetCloseLinkCallback();
-                (*sChat).exitDelayTimer = 0;
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).exitDelayTimer = 0;
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         3 => {
-            if (*sChat).exitDelayTimer < 150 {
-                (*sChat).exitDelayTimer += 1;
+            if (*crate::gl!(sChat)).exitDelayTimer < 150 {
+                (*crate::gl!(sChat)).exitDelayTimer += 1;
             }
-            if gReceivedRemoteLinkPlayers == 0 {
-                (*sChat).funcState += 1;
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                (*crate::gl!(sChat)).funcState += 1;
             }
         }
         4 => {
-            if (*sChat).exitDelayTimer >= 150 {
+            if (*crate::gl!(sChat)).exitDelayTimer >= 150 {
                 SetChatFunction(CHAT_FUNC_SAVE_AND_EXIT);
             } else {
-                (*sChat).exitDelayTimer += 1;
+                (*crate::gl!(sChat)).exitDelayTimer += 1;
             }
         }
         _ => {}
@@ -1013,39 +1021,39 @@ pub(crate) unsafe fn Chat_Disbanded() {
 }
 pub(crate) unsafe fn Chat_SendMessage() {
     'l1: {
-        let sw1: u16 = (*sChat).funcState;
+        let sw1: u16 = (*crate::gl!(sChat)).funcState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 SetChatFunction(CHAT_FUNC_HANDLE_INPUT);
                 break 'l1;
             }
-            PrepareSendBuffer_Chat((*sChat).sendMessageBuffer.as_mut_ptr());
-            (*sChat).funcState += 1;
+            PrepareSendBuffer_Chat((*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr());
+            (*crate::gl!(sChat)).funcState += 1;
         }
         if fall || sw1 == 1 {
             if IsLinkTaskFinished() == TRUE
                 && Rfu_IsPlayerExchangeActive() == 0
                 && SendBlock(
                     0,
-                    (*sChat).sendMessageBuffer.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sChat)).sendMessageBuffer.as_mut_ptr() as *mut c_void,
                     40,
                 ) != 0
             {
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
             ResetMessageEntryBuffer();
             StartDisplaySubtask(CHATDISPLAY_FUNC_UPDATE_MSG, 0);
-            (*sChat).funcState += 1;
+            (*crate::gl!(sChat)).funcState += 1;
             break 'l1;
         }
         if sw1 == 3 {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState += 1;
+                (*crate::gl!(sChat)).funcState += 1;
             }
             break 'l1;
         }
@@ -1058,38 +1066,38 @@ pub(crate) unsafe fn Chat_SendMessage() {
     }
 }
 pub(crate) unsafe fn Chat_Register() {
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
             if ChatMessageIsNotEmpty() != 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_ASK_REGISTER_TEXT, 0);
-                (*sChat).funcState = 2;
+                (*crate::gl!(sChat)).funcState = 2;
             } else {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_PRINT_INPUT_TEXT, 0);
-                (*sChat).funcState = 5;
+                (*crate::gl!(sChat)).funcState = 5;
             }
         }
         1 => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 RegisterTextAtRow();
                 StartDisplaySubtask(CHATDISPLAY_FUNC_RETURN_TO_KB, 0);
-                (*sChat).funcState = 3;
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+                (*crate::gl!(sChat)).funcState = 3;
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_CANCEL_REGISTER, 0);
-                (*sChat).funcState = 4;
+                (*crate::gl!(sChat)).funcState = 4;
             } else if HandleDPadInput() != 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_MOVE_KB_CURSOR, 0);
-                (*sChat).funcState = 2;
+                (*crate::gl!(sChat)).funcState = 2;
             }
         }
         2 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState = 1;
+                (*crate::gl!(sChat)).funcState = 1;
             }
         }
         3 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_CANCEL_REGISTER, 0);
-                (*sChat).funcState = 4;
+                (*crate::gl!(sChat)).funcState = 4;
             }
         }
         4 => {
@@ -1099,42 +1107,42 @@ pub(crate) unsafe fn Chat_Register() {
         }
         5 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState = 6;
+                (*crate::gl!(sChat)).funcState = 6;
             }
         }
-        6 if gMain.newKeys as i32 & 3 != 0 => {
+        6 if crate::gl!(gMain.newKeys) as i32 & 3 != 0 => {
             StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-            (*sChat).funcState = 4;
+            (*crate::gl!(sChat)).funcState = 4;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Chat_SaveAndExit() {
     let mut input: i8 = 0;
-    match (*sChat).funcState {
+    match (*crate::gl!(sChat)).funcState {
         0 => {
-            if (*sChat).changedRegisteredTexts == 0 {
-                (*sChat).funcState = 12;
+            if (*crate::gl!(sChat)).changedRegisteredTexts == 0 {
+                (*crate::gl!(sChat)).funcState = 12;
             } else {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                (*sChat).funcState = 1;
+                (*crate::gl!(sChat)).funcState = 1;
             }
         }
         1 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_ASK_SAVE, 0);
-                (*sChat).funcState = 2;
+                (*crate::gl!(sChat)).funcState = 2;
             }
         }
         2 => {
             input = ProcessMenuInput();
             match input {
                 MENU_B_PRESSED | 1 => {
-                    (*sChat).funcState = 12;
+                    (*crate::gl!(sChat)).funcState = 12;
                 }
                 0 => {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                    (*sChat).funcState = 3;
+                    (*crate::gl!(sChat)).funcState = 3;
                 }
                 _ => {}
             }
@@ -1142,23 +1150,23 @@ pub(crate) unsafe fn Chat_SaveAndExit() {
         3 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_ASK_OVERWRITE_SAVE, 0);
-                (*sChat).funcState = 4;
+                (*crate::gl!(sChat)).funcState = 4;
             }
         }
         4 => {
             if IsDisplaySubtaskActive(0) == 0 {
-                (*sChat).funcState = 5;
+                (*crate::gl!(sChat)).funcState = 5;
             }
         }
         5 => {
             input = ProcessMenuInput();
             match input {
                 MENU_B_PRESSED | 1 => {
-                    (*sChat).funcState = 12;
+                    (*crate::gl!(sChat)).funcState = 12;
                 }
                 0 => {
                     StartDisplaySubtask(CHATDISPLAY_FUNC_DESTROY_YESNO, 0);
-                    (*sChat).funcState = 6;
+                    (*crate::gl!(sChat)).funcState = 6;
                 }
                 _ => {}
             }
@@ -1167,42 +1175,42 @@ pub(crate) unsafe fn Chat_SaveAndExit() {
             if IsDisplaySubtaskActive(0) == 0 {
                 StartDisplaySubtask(CHATDISPLAY_FUNC_PRINT_SAVING, 0);
                 SaveRegisteredTexts();
-                (*sChat).funcState = 7;
+                (*crate::gl!(sChat)).funcState = 7;
             }
         }
         7 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 SetContinueGameWarpStatusToDynamicWarp();
                 TrySavingData(SAVE_NORMAL);
-                (*sChat).funcState = 8;
+                (*crate::gl!(sChat)).funcState = 8;
             }
         }
         8 => {
             StartDisplaySubtask(CHATDISPLAY_FUNC_PRINT_SAVED_GAME, 0);
-            (*sChat).funcState = 9;
+            (*crate::gl!(sChat)).funcState = 9;
         }
         9 => {
             if IsDisplaySubtaskActive(0) == 0 {
                 PlaySE(SE_SAVE);
                 ClearContinueGameWarpStatus2();
-                (*sChat).funcState = 10;
+                (*crate::gl!(sChat)).funcState = 10;
             }
         }
         10 => {
-            (*sChat).afterSaveTimer = 0;
-            (*sChat).funcState = 11;
+            (*crate::gl!(sChat)).afterSaveTimer = 0;
+            (*crate::gl!(sChat)).funcState = 11;
         }
         11 => {
-            (*sChat).afterSaveTimer += 1;
-            if (*sChat).afterSaveTimer > 120 {
-                (*sChat).funcState = 12;
+            (*crate::gl!(sChat)).afterSaveTimer += 1;
+            if (*crate::gl!(sChat)).afterSaveTimer > 120 {
+                (*crate::gl!(sChat)).funcState = 12;
             }
         }
         12 => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
-            (*sChat).funcState = 13;
+            (*crate::gl!(sChat)).funcState = 13;
         }
-        13 if gPaletteFade.active() == 0 => {
+        13 if (*gPaletteFade.as_ptr()).active() == 0 => {
             FreeDisplay();
             FreeUnionRoomChat();
             SetMainCallback2(Some(CB2_ReturnToField));
@@ -1211,40 +1219,43 @@ pub(crate) unsafe fn Chat_SaveAndExit() {
     }
 }
 unsafe fn SetChatFunction(funcId: u16) {
-    (*sChat).funcId = funcId;
-    (*sChat).funcState = 0;
+    (*crate::gl!(sChat)).funcId = funcId;
+    (*crate::gl!(sChat)).funcState = 0;
 }
 unsafe fn HandleDPadInput() -> u32 {
     'l2: {
-        if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
-            if (*sChat).currentRow > 0 {
-                (*sChat).currentRow -= 1;
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
+            if (*crate::gl!(sChat)).currentRow > 0 {
+                (*crate::gl!(sChat)).currentRow -= 1;
             } else {
-                (*sChat).currentRow = sKeyboardPageMaxRow[(*sChat).currentPage];
+                (*crate::gl!(sChat)).currentRow =
+                    sKeyboardPageMaxRow[(*crate::gl!(sChat)).currentPage];
             }
             break 'l2;
         }
-        if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
-            if (*sChat).currentRow < sKeyboardPageMaxRow[(*sChat).currentPage] {
-                (*sChat).currentRow += 1;
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
+            if (*crate::gl!(sChat)).currentRow
+                < sKeyboardPageMaxRow[(*crate::gl!(sChat)).currentPage]
+            {
+                (*crate::gl!(sChat)).currentRow += 1;
             } else {
-                (*sChat).currentRow = 0;
+                (*crate::gl!(sChat)).currentRow = 0;
             }
             break 'l2;
         }
-        if (*sChat).currentPage != UNION_ROOM_KB_PAGE_REGISTER {
-            if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
-                if (*sChat).currentCol > 0 {
-                    (*sChat).currentCol -= 1;
+        if (*crate::gl!(sChat)).currentPage != UNION_ROOM_KB_PAGE_REGISTER {
+            if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
+                if (*crate::gl!(sChat)).currentCol > 0 {
+                    (*crate::gl!(sChat)).currentCol -= 1;
                 } else {
-                    (*sChat).currentCol = 4;
+                    (*crate::gl!(sChat)).currentCol = 4;
                 }
                 break 'l2;
-            } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
-                if (*sChat).currentCol < 4 {
-                    (*sChat).currentCol += 1;
+            } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
+                if (*crate::gl!(sChat)).currentCol < 4 {
+                    (*crate::gl!(sChat)).currentCol += 1;
                 } else {
-                    (*sChat).currentCol = 0;
+                    (*crate::gl!(sChat)).currentCol = 0;
                 }
                 break 'l2;
             }
@@ -1257,9 +1268,10 @@ unsafe fn AppendTextToMessage() {
     let mut charsStr: *mut u8 = null_mut();
     let mut strLength: i32 = 0;
     let mut buffer: CArray<u8, 21> = zeroed();
-    if (*sChat).currentPage != UNION_ROOM_KB_PAGE_REGISTER {
-        charsStr = sUnionRoomKeyboardText[(*sChat).currentPage][(*sChat).currentRow];
-        for i in 0..((*sChat).currentCol as i32) {
+    if (*crate::gl!(sChat)).currentPage != UNION_ROOM_KB_PAGE_REGISTER {
+        charsStr = sUnionRoomKeyboardText[(*crate::gl!(sChat)).currentPage]
+            [(*crate::gl!(sChat)).currentRow];
+        for i in 0..((*crate::gl!(sChat)).currentCol as i32) {
             if *charsStr == CHAR_EXTRA_SYMBOL {
                 charsStr = charsStr.at(1);
             }
@@ -1269,14 +1281,14 @@ unsafe fn AppendTextToMessage() {
     } else {
         let tempStr: *mut u8 = StringCopy(
             buffer.as_mut_ptr(),
-            (*sChat).registeredTexts[(*sChat).currentRow].as_mut_ptr(),
+            (*crate::gl!(sChat)).registeredTexts[(*crate::gl!(sChat)).currentRow].as_mut_ptr(),
         );
         *tempStr = 0x00;
         *tempStr.at(1) = EOS;
         charsStr = buffer.as_mut_ptr();
         strLength = StringLength_Multibyte(buffer.as_mut_ptr()) as i32;
     }
-    (*sChat).lastBufferCursorPos = (*sChat).bufferCursorPos;
+    (*crate::gl!(sChat)).lastBufferCursorPos = (*crate::gl!(sChat)).bufferCursorPos;
     if charsStr.is_null() {
         return;
     }
@@ -1285,7 +1297,7 @@ unsafe fn AppendTextToMessage() {
         strLength -= 1;
         strLength
     }) != -1
-        && (*sChat).bufferCursorPos < MAX_MESSAGE_LENGTH
+        && (*crate::gl!(sChat)).bufferCursorPos < MAX_MESSAGE_LENGTH
     {
         if *charsStr == CHAR_EXTRA_SYMBOL {
             *str = *charsStr;
@@ -1295,21 +1307,21 @@ unsafe fn AppendTextToMessage() {
         *str = *charsStr;
         charsStr = charsStr.at(1);
         str = str.at(1);
-        (*sChat).bufferCursorPos += 1;
+        (*crate::gl!(sChat)).bufferCursorPos += 1;
     }
     *str = EOS;
 }
 unsafe fn DeleteLastMessageCharacter() {
-    (*sChat).lastBufferCursorPos = (*sChat).bufferCursorPos;
-    if (*sChat).bufferCursorPos != 0 {
+    (*crate::gl!(sChat)).lastBufferCursorPos = (*crate::gl!(sChat)).bufferCursorPos;
+    if (*crate::gl!(sChat)).bufferCursorPos != 0 {
         let str: *mut u8 = GetLastCharOfMessagePtr();
         *str = EOS;
-        (*sChat).bufferCursorPos -= 1;
+        (*crate::gl!(sChat)).bufferCursorPos -= 1;
     }
 }
 unsafe fn SwitchCaseOfLastMessageCharacter() {
     let mut character: u8 = 0;
-    (*sChat).lastBufferCursorPos = (*sChat).bufferCursorPos - 1;
+    (*crate::gl!(sChat)).lastBufferCursorPos = (*crate::gl!(sChat)).bufferCursorPos - 1;
     let str: *mut u8 = GetLastCharOfMessagePtr();
     if *str != CHAR_EXTRA_SYMBOL {
         character = sCaseToggleTable[*str];
@@ -1319,7 +1331,7 @@ unsafe fn SwitchCaseOfLastMessageCharacter() {
     }
 }
 unsafe fn ChatMessageIsNotEmpty() -> u32 {
-    if (*sChat).bufferCursorPos != 0 {
+    if (*crate::gl!(sChat)).bufferCursorPos != 0 {
         return TRUE as u32;
     } else {
         return FALSE as u32;
@@ -1332,36 +1344,36 @@ unsafe fn ChatMessageIsNotEmpty() -> u32 {
 unsafe fn RegisterTextAtRow() {
     let src: *mut u8 = GetLimitedMessageStartPtr();
     StringCopy(
-        (*sChat).registeredTexts[(*sChat).currentRow].as_mut_ptr(),
+        (*crate::gl!(sChat)).registeredTexts[(*crate::gl!(sChat)).currentRow].as_mut_ptr(),
         src,
     );
-    (*sChat).changedRegisteredTexts = TRUE;
+    (*crate::gl!(sChat)).changedRegisteredTexts = TRUE;
 }
 unsafe fn ResetMessageEntryBuffer() {
-    (*sChat).messageEntryBuffer[0] = EOS;
-    (*sChat).lastBufferCursorPos = MAX_MESSAGE_LENGTH;
-    (*sChat).bufferCursorPos = 0;
+    (*crate::gl!(sChat)).messageEntryBuffer[0] = EOS;
+    (*crate::gl!(sChat)).lastBufferCursorPos = MAX_MESSAGE_LENGTH;
+    (*crate::gl!(sChat)).bufferCursorPos = 0;
 }
 unsafe fn SaveRegisteredTexts() {
     for i in 0..UNION_ROOM_KB_ROW_COUNT {
         StringCopy(
-            (*gSaveBlock1Ptr).registeredTexts[i].as_mut_ptr(),
-            (*sChat).registeredTexts[i].as_mut_ptr(),
+            (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[i].as_mut_ptr(),
+            (*crate::gl!(sChat)).registeredTexts[i].as_mut_ptr(),
         );
     }
 }
 unsafe fn GetRegisteredTextByRow(row: i32) -> *mut u8 {
-    (*sChat).registeredTexts[row].as_mut_ptr()
+    (*crate::gl!(sChat)).registeredTexts[row].as_mut_ptr()
 }
 unsafe fn GetEndOfMessagePtr() -> *mut u8 {
-    let mut str: *mut u8 = (*sChat).messageEntryBuffer.as_mut_ptr();
+    let mut str: *mut u8 = (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr();
     while *str != EOS {
         str = str.at(1);
     }
     str
 }
 unsafe fn GetLastCharOfMessagePtr() -> *mut u8 {
-    let mut currChar: *mut u8 = (*sChat).messageEntryBuffer.as_mut_ptr();
+    let mut currChar: *mut u8 = (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr();
     let mut lastChar: *mut u8 = currChar;
     while *currChar != EOS {
         lastChar = currChar;
@@ -1373,8 +1385,9 @@ unsafe fn GetLastCharOfMessagePtr() -> *mut u8 {
     lastChar
 }
 unsafe fn GetNumOverflowCharsInMessage() -> u16 {
-    let mut strLength: u32 = StringLength_Multibyte((*sChat).messageEntryBuffer.as_mut_ptr());
-    let mut str: *mut u8 = (*sChat).messageEntryBuffer.as_mut_ptr();
+    let mut strLength: u32 =
+        StringLength_Multibyte((*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr());
+    let mut str: *mut u8 = (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr();
     let mut numChars: u32 = 0;
     if strLength > 10 {
         strLength -= 10;
@@ -1393,29 +1406,47 @@ unsafe fn PrepareSendBuffer_Null(buffer: *mut u8) {
 }
 unsafe fn PrepareSendBuffer_Join(buffer: *mut u8) {
     *buffer = CHAT_MESSAGE_JOIN;
-    StringCopy(buffer.at(1), (*gSaveBlock2Ptr).playerName.as_mut_ptr());
-    *buffer.at(9) = (*sChat).multiplayerId;
+    StringCopy(
+        buffer.at(1),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
+    *buffer.at(9) = (*crate::gl!(sChat)).multiplayerId;
 }
 unsafe fn PrepareSendBuffer_Chat(buffer: *mut u8) {
     *buffer = CHAT_MESSAGE_CHAT;
-    StringCopy(buffer.at(1), (*gSaveBlock2Ptr).playerName.as_mut_ptr());
-    StringCopy(buffer.at(9), (*sChat).messageEntryBuffer.as_mut_ptr());
+    StringCopy(
+        buffer.at(1),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
+    StringCopy(
+        buffer.at(9),
+        (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr(),
+    );
 }
 unsafe fn PrepareSendBuffer_Leave(buffer: *mut u8) {
     *buffer = CHAT_MESSAGE_LEAVE;
-    StringCopy(buffer.at(1), (*gSaveBlock2Ptr).playerName.as_mut_ptr());
-    *buffer.at(9) = (*sChat).multiplayerId;
+    StringCopy(
+        buffer.at(1),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
+    *buffer.at(9) = (*crate::gl!(sChat)).multiplayerId;
     RfuSetNormalDisconnectMode();
 }
 unsafe fn PrepareSendBuffer_Drop(buffer: *mut u8) {
     *buffer = CHAT_MESSAGE_DROP;
-    StringCopy(buffer.at(1), (*gSaveBlock2Ptr).playerName.as_mut_ptr());
-    *buffer.at(9) = (*sChat).multiplayerId;
+    StringCopy(
+        buffer.at(1),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
+    *buffer.at(9) = (*crate::gl!(sChat)).multiplayerId;
 }
 unsafe fn PrepareSendBuffer_Disband(buffer: *mut u8) {
     *buffer = CHAT_MESSAGE_DISBAND;
-    StringCopy(buffer.at(1), (*gSaveBlock2Ptr).playerName.as_mut_ptr());
-    *buffer.at(9) = (*sChat).multiplayerId;
+    StringCopy(
+        buffer.at(1),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+    );
+    *buffer.at(9) = (*crate::gl!(sChat)).multiplayerId;
 }
 unsafe fn ProcessReceivedChatMessage(dest: *mut u8, mut recvMessage: *mut u8) -> u32 {
     let mut tempStr: *mut u8 = null_mut();
@@ -1427,7 +1458,7 @@ unsafe fn ProcessReceivedChatMessage(dest: *mut u8, mut recvMessage: *mut u8) ->
         let sw1: u8 = cmd;
         let mut fall = false;
         if sw1 == CHAT_MESSAGE_JOIN {
-            if (*sChat).multiplayerId != *name.at(8) {
+            if (*crate::gl!(sChat)).multiplayerId != *name.at(8) {
                 DynamicPlaceholderTextUtil_Reset();
                 DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, name);
                 DynamicPlaceholderTextUtil_ExpandPlaceholders(
@@ -1468,10 +1499,10 @@ unsafe fn ProcessReceivedChatMessage(dest: *mut u8, mut recvMessage: *mut u8) ->
         }
         if sw1 == CHAT_MESSAGE_DISBAND {
             fall = true;
-            StringCopy((*sChat).hostName.as_mut_ptr(), name);
+            StringCopy((*crate::gl!(sChat)).hostName.as_mut_ptr(), name);
         }
         if fall || sw1 == CHAT_MESSAGE_LEAVE {
-            if (*sChat).multiplayerId != *recvMessage {
+            if (*crate::gl!(sChat)).multiplayerId != *recvMessage {
                 DynamicPlaceholderTextUtil_Reset();
                 DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, name);
                 DynamicPlaceholderTextUtil_ExpandPlaceholders(
@@ -1489,32 +1520,33 @@ unsafe fn ProcessReceivedChatMessage(dest: *mut u8, mut recvMessage: *mut u8) ->
     FALSE as u32
 }
 unsafe fn GetCurrentKeyboardPage() -> u8 {
-    (*sChat).currentPage
+    (*crate::gl!(sChat)).currentPage
 }
 unsafe fn GetCurrentKeyboardColAndRow(col: *mut u8, row: *mut u8) {
-    *col = (*sChat).currentCol;
-    *row = (*sChat).currentRow;
+    *col = (*crate::gl!(sChat)).currentCol;
+    *row = (*crate::gl!(sChat)).currentRow;
 }
 unsafe fn GetMessageEntryBuffer() -> *mut u8 {
-    (*sChat).messageEntryBuffer.as_mut_ptr()
+    (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr()
 }
 unsafe fn GetLengthOfMessageEntry() -> i32 {
     let str: *mut u8 = GetMessageEntryBuffer();
     StringLength_Multibyte(str) as i32
 }
 unsafe fn GetBufferSelectionRegion(x: *mut u32, width: *mut u32) {
-    let mut diff: i32 = (*sChat).bufferCursorPos as i32 - (*sChat).lastBufferCursorPos as i32;
+    let mut diff: i32 = (*crate::gl!(sChat)).bufferCursorPos as i32
+        - (*crate::gl!(sChat)).lastBufferCursorPos as i32;
     if diff < 0 {
         diff *= -1;
-        *x = (*sChat).bufferCursorPos as u32;
+        *x = (*crate::gl!(sChat)).bufferCursorPos as u32;
     } else {
-        *x = (*sChat).lastBufferCursorPos as u32;
+        *x = (*crate::gl!(sChat)).lastBufferCursorPos as u32;
     }
     *width = diff as u32;
 }
 unsafe fn GetLimitedMessageStartPtr() -> *mut u8 {
     let numChars: u16 = GetNumOverflowCharsInMessage();
-    let mut str: *mut u8 = (*sChat).messageEntryBuffer.as_mut_ptr();
+    let mut str: *mut u8 = (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr();
     for i in 0..(numChars as i32) {
         if *str == CHAR_EXTRA_SYMBOL {
             str = str.at(1);
@@ -1525,7 +1557,7 @@ unsafe fn GetLimitedMessageStartPtr() -> *mut u8 {
 }
 unsafe fn GetLimitedMessageStartPos() -> u16 {
     let numChars: u16 = GetNumOverflowCharsInMessage();
-    let mut str: *mut u8 = (*sChat).messageEntryBuffer.as_mut_ptr();
+    let mut str: *mut u8 = (*crate::gl!(sChat)).messageEntryBuffer.as_mut_ptr();
     let mut count: u16 = 0;
     for i in 0..(numChars as u32) {
         if *str == CHAR_EXTRA_SYMBOL {
@@ -1537,13 +1569,13 @@ unsafe fn GetLimitedMessageStartPos() -> u16 {
     count
 }
 unsafe fn GetLastReceivedMessage() -> *mut u8 {
-    (*sChat).receivedMessage.as_mut_ptr()
+    (*crate::gl!(sChat)).receivedMessage.as_mut_ptr()
 }
 unsafe fn GetReceivedPlayerIndex() -> u8 {
-    (*sChat).receivedPlayerIndex
+    (*crate::gl!(sChat)).receivedPlayerIndex
 }
 unsafe fn GetTextEntryCursorPosition() -> i32 {
-    (*sChat).bufferCursorPos as i32
+    (*crate::gl!(sChat)).bufferCursorPos as i32
 }
 unsafe fn GetShouldShowCaseToggleIcon() -> i32 {
     let str: *mut u8 = GetLastCharOfMessagePtr();
@@ -1562,66 +1594,66 @@ unsafe fn GetShouldShowCaseToggleIcon() -> i32 {
     }
 }
 unsafe fn GetChatHostName() -> *mut u8 {
-    (*sChat).hostName.as_mut_ptr()
+    (*crate::gl!(sChat)).hostName.as_mut_ptr()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn InitUnionRoomChatRegisteredTexts() {
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[0].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[0].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Hello).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[1].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[1].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Pokemon2).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[2].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[2].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Trade).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[3].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[3].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Battle).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[4].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[4].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Lets).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[5].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[5].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Ok).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[6].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[6].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Sorry).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[7].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[7].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_YaySmileEmoji).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[8].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[8].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_ThankYou).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
-        (*gSaveBlock1Ptr).registeredTexts[9].as_mut_ptr(),
+        (*crate::gl!(gSaveBlock1Ptr)).registeredTexts[9].as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_ByeBye).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
@@ -1635,7 +1667,7 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 DestroyTask(taskId);
                 return;
             }
@@ -1644,9 +1676,9 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
         if fall || sw1 == 1 {
             fall = true;
             *data.at(4) = GetLinkPlayerCount() as i16;
-            if (*sChat).linkPlayerCount as i16 != *data.at(4) {
+            if (*crate::gl!(sChat)).linkPlayerCount as i16 != *data.at(4) {
                 *data = 2;
-                (*sChat).linkPlayerCount = *data.at(4) as u8;
+                (*crate::gl!(sChat)).linkPlayerCount = *data.at(4) as u8;
                 return;
             }
             *data.at(3) = GetBlockReceivedStatus() as i16;
@@ -1668,7 +1700,7 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
             }
             *data.at(2) = *data.at(1);
             ResetBlockReceivedFlag(*data.at(2) as u8);
-            buffer = gBlockRecvBuffer[*data.at(1)].as_mut_ptr() as *mut u8;
+            buffer = (*gBlockRecvBuffer.as_ptr())[*data.at(1)].as_mut_ptr() as *mut u8;
             match *buffer {
                 CHAT_MESSAGE_JOIN => {
                     *data.at(5) = 3;
@@ -1687,11 +1719,11 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
                 }
             }
             if ProcessReceivedChatMessage(
-                (*sChat).receivedMessage.as_mut_ptr(),
-                gBlockRecvBuffer[*data.at(1)].as_mut_ptr() as *mut u8,
+                (*crate::gl!(sChat)).receivedMessage.as_mut_ptr(),
+                (*gBlockRecvBuffer.as_ptr())[*data.at(1)].as_mut_ptr() as *mut u8,
             ) != 0
             {
-                (*sChat).receivedPlayerIndex = *data.at(1) as u8;
+                (*crate::gl!(sChat)).receivedPlayerIndex = *data.at(1) as u8;
                 StartDisplaySubtask(CHATDISPLAY_FUNC_SCROLL_CHAT, 2);
                 *data = 7;
             } else {
@@ -1707,10 +1739,10 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
             break 'l1;
         }
         if sw1 == 4 {
-            if (*sChat).multiplayerId == 0 && *data.at(2) != 0 {
+            if (*crate::gl!(sChat)).multiplayerId == 0 && *data.at(2) != 0 {
                 if GetLinkPlayerCount() == 2 {
                     Rfu_StopPartnerSearch();
-                    (*sChat).exitType = CHAT_EXIT_ONLY_LEADER;
+                    (*crate::gl!(sChat)).exitType = CHAT_EXIT_ONLY_LEADER;
                     DestroyTask(taskId);
                     return;
                 }
@@ -1720,21 +1752,21 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
             break 'l1;
         }
         if sw1 == 5 {
-            if (*sChat).multiplayerId != 0 {
-                (*sChat).exitType = CHAT_EXIT_DROPPED;
+            if (*crate::gl!(sChat)).multiplayerId != 0 {
+                (*crate::gl!(sChat)).exitType = CHAT_EXIT_DROPPED;
             }
             DestroyTask(taskId);
             break 'l1;
         }
         if sw1 == 6 {
-            (*sChat).exitType = CHAT_EXIT_DISBANDED;
+            (*crate::gl!(sChat)).exitType = CHAT_EXIT_DISBANDED;
             DestroyTask(taskId);
             break 'l1;
         }
         if sw1 == 2 {
             if Rfu_IsPlayerExchangeActive() == 0 {
-                if (*sChat).multiplayerId == 0 {
-                    SetUnionRoomChatPlayerData((*sChat).linkPlayerCount as u32);
+                if (*crate::gl!(sChat)).multiplayerId == 0 {
+                    SetUnionRoomChatPlayerData((*crate::gl!(sChat)).linkPlayerCount as u32);
                 }
                 *data = 1;
             }
@@ -1743,14 +1775,14 @@ pub(crate) unsafe fn Task_ReceiveChatMessage(taskId: u8) {
     }
 }
 unsafe fn TryAllocDisplay() -> u8 {
-    sDisplay = Alloc(8552) as *mut UnionRoomChatDisplay;
-    if !sDisplay.is_null() && TryAllocSprites() != 0 {
+    crate::gl!(sDisplay = Alloc(8552) as *mut UnionRoomChatDisplay);
+    if !(*sDisplay.as_ptr()).is_null() && TryAllocSprites() != 0 {
         ResetBgsAndClearDma3BusyFlags(0);
         InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
         InitWindows(sWinTemplates.as_ptr().cast_mut());
         ResetTempTileDataBuffers();
         InitScanlineEffect();
-        InitDisplay(sDisplay);
+        InitDisplay(crate::gl!(sDisplay));
         ResetDisplaySubtasks();
         StartDisplaySubtask(CHATDISPLAY_FUNC_LOAD_GFX, 0);
         return TRUE;
@@ -1767,12 +1799,12 @@ unsafe fn IsDisplaySubtask0Active() -> u32 {
 }
 unsafe fn FreeDisplay() {
     FreeSprites();
-    if !sDisplay.is_null() {
-        Free(sDisplay as *mut c_void);
-        sDisplay = null_mut();
+    if !(*sDisplay.as_ptr()).is_null() {
+        Free(crate::gl!(sDisplay) as *mut c_void);
+        crate::gl!(sDisplay = null_mut());
     }
     FreeAllWindowBuffers();
-    (*(&raw const crate::scanline_effect::gScanlineEffect)
+    (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;).cast_const())
         .cast::<ScanlineEffect>()
         .cast_mut())
     .state = 3;
@@ -1783,38 +1815,40 @@ unsafe fn InitDisplay(display: *mut UnionRoomChatDisplay) {
     (*display).currLine = 0;
 }
 unsafe fn ResetDisplaySubtasks() {
-    if sDisplay.is_null() {
+    if (*sDisplay.as_ptr()).is_null() {
         return;
     }
     for i in 0..3i32 {
-        (*sDisplay).subtasks[i].callback = Some(Display_Dummy);
-        (*sDisplay).subtasks[i].active = FALSE;
-        (*sDisplay).subtasks[i].state = 0;
+        (*crate::gl!(sDisplay)).subtasks[i].callback = Some(Display_Dummy);
+        (*crate::gl!(sDisplay)).subtasks[i].active = FALSE;
+        (*crate::gl!(sDisplay)).subtasks[i].state = 0;
     }
 }
 unsafe fn RunDisplaySubtasks() {
-    if sDisplay.is_null() {
+    if (*sDisplay.as_ptr()).is_null() {
         return;
     }
     for i in 0..3i32 {
-        (*sDisplay).subtasks[i].active = (*sDisplay).subtasks[i].callback.unwrap_unchecked()(
-            &raw mut (*sDisplay).subtasks[i].state,
+        (*crate::gl!(sDisplay)).subtasks[i].active = (*crate::gl!(sDisplay)).subtasks[i]
+            .callback
+            .unwrap_unchecked()(
+            &raw mut (*crate::gl!(sDisplay)).subtasks[i].state,
         ) as u8;
     }
 }
 unsafe fn StartDisplaySubtask(subtaskId: u16, assignId: u8) {
-    (*sDisplay).subtasks[assignId].callback = Some(Display_Dummy);
+    (*crate::gl!(sDisplay)).subtasks[assignId].callback = Some(Display_Dummy);
     for i in 0..21u32 {
         if sDisplaySubtasks[i].idx == subtaskId {
-            (*sDisplay).subtasks[assignId].callback = sDisplaySubtasks[i].callback;
-            (*sDisplay).subtasks[assignId].active = TRUE;
-            (*sDisplay).subtasks[assignId].state = 0;
+            (*crate::gl!(sDisplay)).subtasks[assignId].callback = sDisplaySubtasks[i].callback;
+            (*crate::gl!(sDisplay)).subtasks[assignId].active = TRUE;
+            (*crate::gl!(sDisplay)).subtasks[assignId].state = 0;
             break;
         }
     }
 }
 unsafe fn IsDisplaySubtaskActive(id: u8) -> u8 {
-    (*sDisplay).subtasks[id].active
+    (*crate::gl!(sDisplay)).subtasks[id].active
 }
 pub(crate) unsafe fn Display_LoadGfx(state: *mut u8) -> u32 {
     if FreeTempTileDataBuffersIfPossible() == TRUE {
@@ -1923,7 +1957,7 @@ pub(crate) unsafe fn Display_AskQuitChatting(state: *mut u8) -> u32 {
         0 => {
             AddStdMessageWindow(STDMESSAGE_QUIT_CHATTING, 0);
             AddYesNoMenuAt(23, 11, 1);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
         }
         1 => {
             return IsDma3ManagerBusyWithBgCopy() as u32;
@@ -1993,7 +2027,7 @@ pub(crate) unsafe fn Display_AskRegisterText(state: *mut u8) -> u32 {
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 AddStdMessageWindow(STDMESSAGE_REGISTER_WHERE, 16);
-                CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+                CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             } else {
                 return TRUE as u32;
             }
@@ -2029,7 +2063,7 @@ pub(crate) unsafe fn Display_CancelRegister(state: *mut u8) -> u32 {
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 HideStdMessageWindow();
-                CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+                CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             } else {
                 return TRUE as u32;
             }
@@ -2077,7 +2111,7 @@ pub(crate) unsafe fn Display_ScrollChat(state: *mut u8) -> u32 {
         let matched = sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3 || sw1 == 4;
         let mut fall = false;
         if sw1 == 0 {
-            row = (*sDisplay).currLine;
+            row = (*crate::gl!(sDisplay)).currLine;
             str = GetLastReceivedMessage();
             colorIdx = GetReceivedPlayerIndex();
             PrintChatMessage(row, str, colorIdx);
@@ -2089,12 +2123,12 @@ pub(crate) unsafe fn Display_ScrollChat(state: *mut u8) -> u32 {
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return TRUE as u32;
             }
-            if (*sDisplay).currLine < 9 {
-                (*sDisplay).currLine += 1;
+            if (*crate::gl!(sDisplay)).currLine < 9 {
+                (*crate::gl!(sDisplay)).currLine += 1;
                 *state = 4;
                 return FALSE as u32;
             } else {
-                (*sDisplay).scrollCount = 0;
+                (*crate::gl!(sDisplay)).scrollCount = 0;
                 *state += 1;
             }
         }
@@ -2102,14 +2136,14 @@ pub(crate) unsafe fn Display_ScrollChat(state: *mut u8) -> u32 {
             fall = true;
             ScrollWindow(WIN_CHAT_HISTORY, 0, 5, 17);
             CopyWindowToVram(WIN_CHAT_HISTORY, COPYWIN_GFX);
-            (*sDisplay).scrollCount += 1;
+            (*crate::gl!(sDisplay)).scrollCount += 1;
             *state += 1;
         }
         if fall || sw1 == 3 {
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return TRUE as u32;
             }
-            if (*sDisplay).scrollCount < 3 {
+            if (*crate::gl!(sDisplay)).scrollCount < 3 {
                 *state -= 1;
                 return TRUE as u32;
             }
@@ -2142,7 +2176,7 @@ pub(crate) unsafe fn Display_PrintInputText(state: *mut u8) -> u32 {
     match *state {
         0 => {
             AddStdMessageWindow(STDMESSAGE_INPUT_TEXT, 16);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2156,7 +2190,7 @@ pub(crate) unsafe fn Display_PrintExitingChat(state: *mut u8) -> u32 {
     match *state {
         0 => {
             AddStdMessageWindow(STDMESSAGE_EXITING_CHAT, 0);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2174,7 +2208,7 @@ pub(crate) unsafe fn Display_PrintLeaderLeft(state: *mut u8) -> u32 {
             str = GetChatHostName();
             DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, str);
             AddStdMessageWindow(STDMESSAGE_LEADER_LEFT, 0);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2189,7 +2223,7 @@ pub(crate) unsafe fn Display_AskSave(state: *mut u8) -> u32 {
         0 => {
             AddStdMessageWindow(STDMESSAGE_ASK_SAVE, 0);
             AddYesNoMenuAt(23, 10, 1);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2204,7 +2238,7 @@ pub(crate) unsafe fn Display_AskOverwriteSave(state: *mut u8) -> u32 {
         0 => {
             AddStdMessageWindow(STDMESSAGE_ASK_OVERWRITE, 0);
             AddYesNoMenuAt(23, 10, 1);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2218,7 +2252,7 @@ pub(crate) unsafe fn Display_PrintSavingDontTurnOff(state: *mut u8) -> u32 {
     match *state {
         0 => {
             AddStdMessageWindow(STDMESSAGE_SAVING_NO_OFF, 0);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2234,10 +2268,10 @@ pub(crate) unsafe fn Display_PrintSavedTheGame(state: *mut u8) -> u32 {
             DynamicPlaceholderTextUtil_Reset();
             DynamicPlaceholderTextUtil_SetPlaceholderPtr(
                 0,
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
             AddStdMessageWindow(STDMESSAGE_SAVED_THE_GAME, 0);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2252,7 +2286,7 @@ pub(crate) unsafe fn Display_AskConfirmLeaderLeave(state: *mut u8) -> u32 {
         0 => {
             AddStdMessageWindow(STDMESSAGE_WARN_LEADER_LEAVE, 0);
             AddYesNoMenuAt(23, 10, 1);
-            CopyWindowToVram((*sDisplay).messageWindowId as u8, COPYWIN_FULL);
+            CopyWindowToVram((*crate::gl!(sDisplay)).messageWindowId as u8, COPYWIN_FULL);
             *state += 1;
         }
         1 => {
@@ -2274,12 +2308,12 @@ unsafe fn AddYesNoMenuAt(left: u8, top: u8, initialCursorPos: u8) {
     template.height = 4;
     template.paletteNum = 14;
     template.baseBlock = 0x52;
-    (*sDisplay).yesNoMenuWindowId = AddWindow(&raw mut template);
-    if (*sDisplay).yesNoMenuWindowId != WINDOW_NONE as u16 {
-        FillWindowPixelBuffer((*sDisplay).yesNoMenuWindowId as u8, 17);
-        PutWindowTilemap((*sDisplay).yesNoMenuWindowId as u8);
+    (*crate::gl!(sDisplay)).yesNoMenuWindowId = AddWindow(&raw mut template);
+    if (*crate::gl!(sDisplay)).yesNoMenuWindowId != WINDOW_NONE as u16 {
+        FillWindowPixelBuffer((*crate::gl!(sDisplay)).yesNoMenuWindowId as u8, 17);
+        PutWindowTilemap((*crate::gl!(sDisplay)).yesNoMenuWindowId as u8);
         AddTextPrinterParameterized(
-            (*sDisplay).yesNoMenuWindowId as u8,
+            (*crate::gl!(sDisplay)).yesNoMenuWindowId as u8,
             FONT_NORMAL,
             (*(&raw const crate::data::strings::gText_Yes).cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -2290,7 +2324,7 @@ unsafe fn AddYesNoMenuAt(left: u8, top: u8, initialCursorPos: u8) {
             None,
         );
         AddTextPrinterParameterized(
-            (*sDisplay).yesNoMenuWindowId as u8,
+            (*crate::gl!(sDisplay)).yesNoMenuWindowId as u8,
             FONT_NORMAL,
             (*(&raw const crate::data::strings::gText_No).cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -2300,20 +2334,24 @@ unsafe fn AddYesNoMenuAt(left: u8, top: u8, initialCursorPos: u8) {
             TEXT_SKIP_DRAW,
             None,
         );
-        DrawTextBorderOuter((*sDisplay).yesNoMenuWindowId as u8, 1, 13);
-        InitMenuInUpperLeftCornerNormal((*sDisplay).yesNoMenuWindowId as u8, 2, initialCursorPos);
+        DrawTextBorderOuter((*crate::gl!(sDisplay)).yesNoMenuWindowId as u8, 1, 13);
+        InitMenuInUpperLeftCornerNormal(
+            (*crate::gl!(sDisplay)).yesNoMenuWindowId as u8,
+            2,
+            initialCursorPos,
+        );
     }
 }
 unsafe fn HideYesNoMenuWindow() {
-    if (*sDisplay).yesNoMenuWindowId != WINDOW_NONE as u16 {
-        ClearStdWindowAndFrameToTransparent((*sDisplay).yesNoMenuWindowId as u8, FALSE);
-        ClearWindowTilemap((*sDisplay).yesNoMenuWindowId as u8);
+    if (*crate::gl!(sDisplay)).yesNoMenuWindowId != WINDOW_NONE as u16 {
+        ClearStdWindowAndFrameToTransparent((*crate::gl!(sDisplay)).yesNoMenuWindowId as u8, FALSE);
+        ClearWindowTilemap((*crate::gl!(sDisplay)).yesNoMenuWindowId as u8);
     }
 }
 unsafe fn DestroyYesNoMenuWindow() {
-    if (*sDisplay).yesNoMenuWindowId != WINDOW_NONE as u16 {
-        RemoveWindow((*sDisplay).yesNoMenuWindowId as u8);
-        (*sDisplay).yesNoMenuWindowId = WINDOW_NONE as u16;
+    if (*crate::gl!(sDisplay)).yesNoMenuWindowId != WINDOW_NONE as u16 {
+        RemoveWindow((*crate::gl!(sDisplay)).yesNoMenuWindowId as u8);
+        (*crate::gl!(sDisplay)).yesNoMenuWindowId = WINDOW_NONE as u16;
     }
 }
 unsafe fn ProcessMenuInput() -> i8 {
@@ -2333,17 +2371,21 @@ unsafe fn AddStdMessageWindow(msgId: i32, bg0vofs: u16) {
         template.tilemapLeft -= 7;
         template.width += 7;
     }
-    (*sDisplay).messageWindowId = AddWindow(&raw mut template);
-    let windowId: i32 = (*sDisplay).messageWindowId as i32;
-    if (*sDisplay).messageWindowId == WINDOW_NONE as u16 {
+    (*crate::gl!(sDisplay)).messageWindowId = AddWindow(&raw mut template);
+    let windowId: i32 = (*crate::gl!(sDisplay)).messageWindowId as i32;
+    if (*crate::gl!(sDisplay)).messageWindowId == WINDOW_NONE as u16 {
         return;
     }
     if sDisplayStdMessages[msgId].hasPlaceholders != 0 {
         DynamicPlaceholderTextUtil_ExpandPlaceholders(
-            (*sDisplay).expandedPlaceholdersBuffer.as_mut_ptr(),
+            (*crate::gl!(sDisplay))
+                .expandedPlaceholdersBuffer
+                .as_mut_ptr(),
             sDisplayStdMessages[msgId].text,
         );
-        str = (*sDisplay).expandedPlaceholdersBuffer.as_mut_ptr();
+        str = (*crate::gl!(sDisplay))
+            .expandedPlaceholdersBuffer
+            .as_mut_ptr();
     } else {
         str = sDisplayStdMessages[msgId].text;
     }
@@ -2377,19 +2419,19 @@ unsafe fn AddStdMessageWindow(msgId: i32, bg0vofs: u16) {
             sDisplayStdMessages[msgId].lineSpacing,
         );
     }
-    (*sDisplay).messageWindowId = windowId as u16;
+    (*crate::gl!(sDisplay)).messageWindowId = windowId as u16;
 }
 unsafe fn HideStdMessageWindow() {
-    if (*sDisplay).messageWindowId != WINDOW_NONE as u16 {
-        ClearStdWindowAndFrameToTransparent((*sDisplay).messageWindowId as u8, FALSE);
-        ClearWindowTilemap((*sDisplay).messageWindowId as u8);
+    if (*crate::gl!(sDisplay)).messageWindowId != WINDOW_NONE as u16 {
+        ClearStdWindowAndFrameToTransparent((*crate::gl!(sDisplay)).messageWindowId as u8, FALSE);
+        ClearWindowTilemap((*crate::gl!(sDisplay)).messageWindowId as u8);
     }
     ChangeBgY(0, 0, BG_COORD_SET);
 }
 unsafe fn DestroyStdMessageWindow() {
-    if (*sDisplay).messageWindowId != WINDOW_NONE as u16 {
-        RemoveWindow((*sDisplay).messageWindowId as u8);
-        (*sDisplay).messageWindowId = WINDOW_NONE as u16;
+    if (*crate::gl!(sDisplay)).messageWindowId != WINDOW_NONE as u16 {
+        RemoveWindow((*crate::gl!(sDisplay)).messageWindowId as u8);
+        (*crate::gl!(sDisplay)).messageWindowId = WINDOW_NONE as u16;
     }
 }
 unsafe fn FillTextEntryWindow(x: u16, width: u16, fillValue: u8) {
@@ -2508,31 +2550,31 @@ unsafe fn PrintCurrentKeyboardPage() {
     }
 }
 unsafe fn SlideKeyboardPageOut() -> u32 {
-    if (*sDisplay).bg1hofs < KEYBOARD_HOFS_END {
-        (*sDisplay).bg1hofs += 12;
-        if (*sDisplay).bg1hofs >= KEYBOARD_HOFS_END {
-            (*sDisplay).bg1hofs = KEYBOARD_HOFS_END;
+    if (*crate::gl!(sDisplay)).bg1hofs < KEYBOARD_HOFS_END {
+        (*crate::gl!(sDisplay)).bg1hofs += 12;
+        if (*crate::gl!(sDisplay)).bg1hofs >= KEYBOARD_HOFS_END {
+            (*crate::gl!(sDisplay)).bg1hofs = KEYBOARD_HOFS_END;
         }
-        if (*sDisplay).bg1hofs < KEYBOARD_HOFS_END {
-            UpdateSlidingKeyboard((*sDisplay).bg1hofs);
+        if (*crate::gl!(sDisplay)).bg1hofs < KEYBOARD_HOFS_END {
+            UpdateSlidingKeyboard((*crate::gl!(sDisplay)).bg1hofs);
             return TRUE as u32;
         }
     }
-    FinishSlidingKeyboard((*sDisplay).bg1hofs);
+    FinishSlidingKeyboard((*crate::gl!(sDisplay)).bg1hofs);
     FALSE as u32
 }
 unsafe fn SlideKeyboardPageIn() -> u32 {
-    if (*sDisplay).bg1hofs > 0 {
-        (*sDisplay).bg1hofs -= 12;
-        if (*sDisplay).bg1hofs <= 0 {
-            (*sDisplay).bg1hofs = 0;
+    if (*crate::gl!(sDisplay)).bg1hofs > 0 {
+        (*crate::gl!(sDisplay)).bg1hofs -= 12;
+        if (*crate::gl!(sDisplay)).bg1hofs <= 0 {
+            (*crate::gl!(sDisplay)).bg1hofs = 0;
         }
-        if (*sDisplay).bg1hofs > 0 {
-            UpdateSlidingKeyboard((*sDisplay).bg1hofs);
+        if (*crate::gl!(sDisplay)).bg1hofs > 0 {
+            UpdateSlidingKeyboard((*crate::gl!(sDisplay)).bg1hofs);
             return TRUE as u32;
         }
     }
-    FinishSlidingKeyboard((*sDisplay).bg1hofs);
+    FinishSlidingKeyboard((*crate::gl!(sDisplay)).bg1hofs);
     FALSE as u32
 }
 unsafe fn ShowKeyboardSwapMenu() {
@@ -2601,10 +2643,22 @@ unsafe fn ResetGpuBgState() {
     SetGpuReg(REG_OFFSET_WINOUT, 63);
 }
 unsafe fn SetBgTilemapBuffers() {
-    SetBgTilemapBuffer(0, (*sDisplay).bg0Buffer.as_mut_ptr() as *mut c_void);
-    SetBgTilemapBuffer(1, (*sDisplay).bg1Buffer.as_mut_ptr() as *mut c_void);
-    SetBgTilemapBuffer(3, (*sDisplay).bg3Buffer.as_mut_ptr() as *mut c_void);
-    SetBgTilemapBuffer(2, (*sDisplay).bg2Buffer.as_mut_ptr() as *mut c_void);
+    SetBgTilemapBuffer(
+        0,
+        (*crate::gl!(sDisplay)).bg0Buffer.as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        1,
+        (*crate::gl!(sDisplay)).bg1Buffer.as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        3,
+        (*crate::gl!(sDisplay)).bg3Buffer.as_mut_ptr() as *mut c_void,
+    );
+    SetBgTilemapBuffer(
+        2,
+        (*crate::gl!(sDisplay)).bg2Buffer.as_mut_ptr() as *mut c_void,
+    );
 }
 unsafe fn ClearBg0() {
     RequestDma3Fill(0, 0x6000000_usize as *mut c_void, 0x20, 1);
@@ -2668,12 +2722,12 @@ unsafe fn LoadChatWindowGfx() {
     if !ptr.is_null() {
         CpuFastSet(
             ptr.at(544) as *mut c_void,
-            &raw mut (*sDisplay).textEntryTiles[0] as *mut c_void,
+            &raw mut (*crate::gl!(sDisplay)).textEntryTiles[0] as *mut c_void,
             8,
         );
         CpuFastSet(
             ptr.at(1056) as *mut c_void,
-            &raw mut (*sDisplay).textEntryTiles[32] as *mut c_void,
+            &raw mut (*crate::gl!(sDisplay)).textEntryTiles[32] as *mut c_void,
             8,
         );
     }
@@ -2719,7 +2773,7 @@ unsafe fn LoadTextEntryWindow() {
     for i in 0..(MAX_MESSAGE_LENGTH as i32) {
         BlitBitmapToWindow(
             WIN_TEXT_ENTRY,
-            (*sDisplay).textEntryTiles.as_mut_ptr(),
+            (*crate::gl!(sDisplay)).textEntryTiles.as_mut_ptr(),
             i as u16 * 8,
             0,
             8,
@@ -2748,15 +2802,16 @@ unsafe fn InitScanlineEffect() {
     params.dmaDest = 67108884_usize as *mut u16 as *mut c_void;
     params.initState = 1;
     params.unused9 = 0;
-    (*sDisplay).bg1hofs = 0;
+    (*crate::gl!(sDisplay)).bg1hofs = 0;
     {
         let mut tmp: u32 = 0;
         volatile_write(&raw mut tmp, 0);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())
             .as_mut_ptr() as *mut c_void,
             0x10003c0,
         );
@@ -2770,11 +2825,13 @@ unsafe fn UpdateSlidingKeyboard(bg1hofs: i16) {
             volatile_write(&raw mut tmp, bg1hofs as u16);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer]
                     .as_mut_ptr() as *mut c_void,
                 0x1000090,
@@ -2787,11 +2844,13 @@ unsafe fn UpdateSlidingKeyboard(bg1hofs: i16) {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer]
                     .as_mut_ptr()
                     .at(144) as *mut c_void,
@@ -2807,9 +2866,10 @@ unsafe fn FinishSlidingKeyboard(bg1hofs: i16) {
             volatile_write(&raw mut tmp, bg1hofs as u16);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0]
                     .as_mut_ptr() as *mut c_void,
                 0x1000090,
             );
@@ -2821,9 +2881,10 @@ unsafe fn FinishSlidingKeyboard(bg1hofs: i16) {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0]
                     .as_mut_ptr()
                     .at(144) as *mut c_void,
                 0x1000010,
@@ -2836,9 +2897,10 @@ unsafe fn FinishSlidingKeyboard(bg1hofs: i16) {
             volatile_write(&raw mut tmp, bg1hofs as u16);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0]
                     .as_mut_ptr()
                     .at(960) as *mut c_void,
                 0x1000090,
@@ -2851,9 +2913,10 @@ unsafe fn FinishSlidingKeyboard(bg1hofs: i16) {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0]
                     .as_mut_ptr()
                     .at(1104) as *mut c_void,
                 0x1000010,
@@ -2866,15 +2929,15 @@ unsafe fn TryAllocSprites() -> u32 {
         LoadCompressedSpriteSheet((&raw const sSpriteSheets[i]).cast_mut());
     }
     LoadSpritePalette((&raw const *sSpritePalette).cast_mut());
-    sSprites = Alloc(24) as *mut UnionRoomChatSprites;
-    if sSprites.is_null() {
+    crate::gl!(sSprites = Alloc(24) as *mut UnionRoomChatSprites);
+    if (*sSprites.as_ptr()).is_null() {
         return FALSE as u32;
     }
     TRUE as u32
 }
 unsafe fn FreeSprites() {
-    if !sSprites.is_null() {
-        Free(sSprites as *mut c_void);
+    if !(*sSprites.as_ptr()).is_null() {
+        Free(crate::gl!(sSprites) as *mut c_void);
     }
 }
 unsafe fn CreateKeyboardCursorSprite() {
@@ -2884,10 +2947,10 @@ unsafe fn CreateKeyboardCursorSprite() {
         24,
         0,
     );
-    (*sSprites).keyboardCursor = &raw mut gSprites[spriteId];
+    (*crate::gl!(sSprites)).keyboardCursor = crate::gl!(&raw gSprites[spriteId]);
 }
 unsafe fn SetKeyboardCursorInvisibility(invisible: u32) {
-    (*(*sSprites).keyboardCursor).set_invisible(invisible as u16);
+    (*(*crate::gl!(sSprites)).keyboardCursor).set_invisible(invisible as u16);
 }
 pub(crate) unsafe fn MoveKeyboardCursor() {
     let mut x: u8 = 0;
@@ -2895,13 +2958,13 @@ pub(crate) unsafe fn MoveKeyboardCursor() {
     let page: u8 = GetCurrentKeyboardPage();
     GetCurrentKeyboardColAndRow(&raw mut x, &raw mut y);
     if page != UNION_ROOM_KB_PAGE_REGISTER {
-        StartSpriteAnim((*sSprites).keyboardCursor, 0);
-        (*(*sSprites).keyboardCursor).x = x as i16 * 8 + 10;
-        (*(*sSprites).keyboardCursor).y = y as i16 * 12 + 24;
+        StartSpriteAnim((*crate::gl!(sSprites)).keyboardCursor, 0);
+        (*(*crate::gl!(sSprites)).keyboardCursor).x = x as i16 * 8 + 10;
+        (*(*crate::gl!(sSprites)).keyboardCursor).y = y as i16 * 12 + 24;
     } else {
-        StartSpriteAnim((*sSprites).keyboardCursor, 2);
-        (*(*sSprites).keyboardCursor).x = 24;
-        (*(*sSprites).keyboardCursor).y = y as i16 * 12 + 24;
+        StartSpriteAnim((*crate::gl!(sSprites)).keyboardCursor, 2);
+        (*(*crate::gl!(sSprites)).keyboardCursor).x = 24;
+        (*(*crate::gl!(sSprites)).keyboardCursor).y = y as i16 * 12 + 24;
     }
 }
 unsafe fn SetRegisteredTextPalette(registering: u32) {
@@ -2911,25 +2974,25 @@ unsafe fn SetRegisteredTextPalette(registering: u32) {
 }
 unsafe fn StartKeyboardCursorAnim() {
     if GetCurrentKeyboardPage() != UNION_ROOM_KB_PAGE_REGISTER {
-        StartSpriteAnim((*sSprites).keyboardCursor, 1);
+        StartSpriteAnim((*crate::gl!(sSprites)).keyboardCursor, 1);
     } else {
-        StartSpriteAnim((*sSprites).keyboardCursor, 3);
+        StartSpriteAnim((*crate::gl!(sSprites)).keyboardCursor, 3);
     }
-    (*sSprites).cursorBlinkTimer = 0;
+    (*crate::gl!(sSprites)).cursorBlinkTimer = 0;
 }
 unsafe fn TryKeyboardCursorReopen() -> u32 {
-    if (*sSprites).cursorBlinkTimer > 3 {
+    if (*crate::gl!(sSprites)).cursorBlinkTimer > 3 {
         return FALSE as u32;
     }
     if ({
-        (*sSprites).cursorBlinkTimer += 1;
-        (*sSprites).cursorBlinkTimer
+        (*crate::gl!(sSprites)).cursorBlinkTimer += 1;
+        (*crate::gl!(sSprites)).cursorBlinkTimer
     }) > 3
     {
         if GetCurrentKeyboardPage() != UNION_ROOM_KB_PAGE_REGISTER {
-            StartSpriteAnim((*sSprites).keyboardCursor, 0);
+            StartSpriteAnim((*crate::gl!(sSprites)).keyboardCursor, 0);
         } else {
-            StartSpriteAnim((*sSprites).keyboardCursor, 2);
+            StartSpriteAnim((*crate::gl!(sSprites)).keyboardCursor, 2);
         }
         return FALSE as u32;
     }
@@ -2942,14 +3005,14 @@ pub(crate) unsafe fn CreateTextEntrySprites() {
         152,
         2,
     );
-    (*sSprites).textEntryCursor = &raw mut gSprites[spriteId];
+    (*crate::gl!(sSprites)).textEntryCursor = crate::gl!(&raw gSprites[spriteId]);
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_TextEntryArrow).cast_mut(),
         64,
         152,
         1,
     );
-    (*sSprites).textEntryArrow = &raw mut gSprites[spriteId];
+    (*crate::gl!(sSprites)).textEntryArrow = crate::gl!(&raw gSprites[spriteId]);
 }
 pub(crate) unsafe fn SpriteCB_TextEntryCursor(sprite: *mut Sprite) {
     let pos: i32 = GetTextEntryCursorPosition();
@@ -2983,31 +3046,31 @@ unsafe fn CreateRButtonSprites() {
         152,
         3,
     );
-    (*sSprites).rButtonIcon = &raw mut gSprites[spriteId];
+    (*crate::gl!(sSprites)).rButtonIcon = crate::gl!(&raw gSprites[spriteId]);
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_RButtonLabels).cast_mut(),
         32,
         152,
         4,
     );
-    (*sSprites).rButtonLabel = &raw mut gSprites[spriteId];
-    (*(*sSprites).rButtonLabel).set_invisible(TRUE as u16);
+    (*crate::gl!(sSprites)).rButtonLabel = crate::gl!(&raw gSprites[spriteId]);
+    (*(*crate::gl!(sSprites)).rButtonLabel).set_invisible(TRUE as u16);
 }
 unsafe fn UpdateRButtonLabel() {
     if GetCurrentKeyboardPage() == UNION_ROOM_KB_PAGE_REGISTER {
         if GetLengthOfMessageEntry() != 0 {
-            (*(*sSprites).rButtonLabel).set_invisible(FALSE as u16);
-            StartSpriteAnim((*sSprites).rButtonLabel, 3);
+            (*(*crate::gl!(sSprites)).rButtonLabel).set_invisible(FALSE as u16);
+            StartSpriteAnim((*crate::gl!(sSprites)).rButtonLabel, 3);
         } else {
-            (*(*sSprites).rButtonLabel).set_invisible(TRUE as u16);
+            (*(*crate::gl!(sSprites)).rButtonLabel).set_invisible(TRUE as u16);
         }
     } else {
         let anim: i32 = GetShouldShowCaseToggleIcon();
         if anim == 3 {
-            (*(*sSprites).rButtonLabel).set_invisible(TRUE as u16);
+            (*(*crate::gl!(sSprites)).rButtonLabel).set_invisible(TRUE as u16);
         } else {
-            (*(*sSprites).rButtonLabel).set_invisible(FALSE as u16);
-            StartSpriteAnim((*sSprites).rButtonLabel, anim as u8);
+            (*(*crate::gl!(sSprites)).rButtonLabel).set_invisible(FALSE as u16);
+            StartSpriteAnim((*crate::gl!(sSprites)).rButtonLabel, anim as u8);
         }
     }
 }

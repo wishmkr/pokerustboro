@@ -131,7 +131,7 @@ pub fn game_clear() {
     unsafe {
         HealPlayerParty();
         let cleared_before = flag_get(FLAG_SYS_GAME_CLEAR);
-        *(&raw mut gHasHallOfFameRecords) = cleared_before.into();
+        *(gHasHallOfFameRecords.as_ptr()) = cleared_before.into();
         if !cleared_before {
             flag_set(FLAG_SYS_GAME_CLEAR);
         }

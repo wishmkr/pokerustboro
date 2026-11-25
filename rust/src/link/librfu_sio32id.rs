@@ -59,12 +59,13 @@ const _: () = {
 static Sio32ConnectionData: Table<CArray<u16, 4>> =
     Table((&raw const crate::data::librfu_sio32id::Sio32ConnectionData).cast());
 
-#[unsafe(link_section = "common_data")]
-pub static mut gRfuSIO32Id: RfuSIO32Id = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gRfuSIO32Id: crate::global::Global<RfuSIO32Id> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -76,11 +77,11 @@ pub unsafe fn AgbRFU_checkID(mut maxTries: u8) -> i32 {
         return -1;
     }
     let ieBak: u16 = (0x4000200_usize as *mut u16).read_volatile();
-    volatile_write(&raw mut (*gSTWIStatus).state, 10);
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 10);
     STWI_set_Callback_ID(Some(Sio32IDIntr));
     Sio32IDInit();
     let regTMCNTL: *mut u16 =
-        (0x4000100 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16;
+        (0x4000100 + (*crate::gl!(gSTWIStatus)).timerSelect as i32 * 4) as usize as *mut u16;
     maxTries *= 8;
     while ({
         maxTries -= 1;
@@ -101,7 +102,7 @@ pub unsafe fn AgbRFU_checkID(mut maxTries: u8) -> i32 {
     volatile_write(67109384_usize as *mut u16, 0);
     volatile_write(0x4000200_usize as *mut u16, ieBak);
     volatile_write(67109384_usize as *mut u16, 1);
-    volatile_write(&raw mut (*gSTWIStatus).state, 0);
+    volatile_write(&raw mut (*crate::gl!(gSTWIStatus)).state, 0);
     STWI_set_Callback_ID(None);
     id
 }
@@ -110,7 +111,8 @@ unsafe fn Sio32IDInit() {
     volatile_write(
         0x4000200_usize as *mut u16,
         (0x4000200_usize as *mut u16).read_volatile()
-            & !(shl_i32(8, (*gSTWIStatus).timerSelect as u32) as u16 | INTR_FLAG_SERIAL),
+            & !(shl_i32(8, (*crate::gl!(gSTWIStatus)).timerSelect as u32) as u16
+                | INTR_FLAG_SERIAL),
     );
     volatile_write(67109384_usize as *mut u16, 1);
     volatile_write(67109172_usize as *mut u16, 0);
@@ -125,7 +127,7 @@ unsafe fn Sio32IDInit() {
             volatile_write(&raw mut tmp, 0);
             CpuSet(
                 &raw mut tmp as *mut c_void,
-                &raw mut gRfuSIO32Id as *mut c_void,
+                crate::gl!(&raw gRfuSIO32Id) as *mut c_void,
                 0x5000003,
             );
         }
@@ -134,11 +136,11 @@ unsafe fn Sio32IDInit() {
 }
 unsafe fn Sio32IDMain() -> i32 {
     'l1: {
-        let sw1: u8 = gRfuSIO32Id.state;
+        let sw1: u8 = crate::gl!(gRfuSIO32Id.state);
         let matched = sw1 == 0 || sw1 == 1;
         let mut fall = false;
         if sw1 == 0 {
-            gRfuSIO32Id.MS_mode = AGB_CLK_MASTER;
+            crate::gl!(gRfuSIO32Id.MS_mode = AGB_CLK_MASTER);
             volatile_write(
                 67109160_usize as *mut u16,
                 (67109160_usize as *mut u16).read_volatile() | SIO_38400_BPS,
@@ -149,7 +151,7 @@ unsafe fn Sio32IDMain() -> i32 {
                 (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_SERIAL,
             );
             volatile_write(67109384_usize as *mut u16, 1);
-            gRfuSIO32Id.state = 1;
+            crate::gl!(gRfuSIO32Id.state = 1);
             volatile_write(
                 67109160_usize as *mut u16 as *mut u8,
                 (67109160_usize as *mut u16 as *mut u8).read_volatile() | SIO_ENABLE as u8,
@@ -158,9 +160,9 @@ unsafe fn Sio32IDMain() -> i32 {
         }
         if sw1 == 1 {
             fall = true;
-            if gRfuSIO32Id.lastId == 0 {
-                if gRfuSIO32Id.MS_mode == AGB_CLK_MASTER {
-                    if gRfuSIO32Id.count == 0 {
+            if crate::gl!(gRfuSIO32Id.lastId) == 0 {
+                if crate::gl!(gRfuSIO32Id.MS_mode) == AGB_CLK_MASTER {
+                    if crate::gl!(gRfuSIO32Id.count) == 0 {
                         volatile_write(67109384_usize as *mut u16, 0);
                         volatile_write(
                             67109160_usize as *mut u16,
@@ -168,7 +170,9 @@ unsafe fn Sio32IDMain() -> i32 {
                         );
                         volatile_write(67109384_usize as *mut u16, 1);
                     }
-                } else if gRfuSIO32Id.send_id != RFU_ID as u16 && gRfuSIO32Id.count == 0 {
+                } else if crate::gl!(gRfuSIO32Id.send_id) != RFU_ID as u16
+                    && crate::gl!(gRfuSIO32Id.count) == 0
+                {
                     volatile_write(67109384_usize as *mut u16, 0);
                     volatile_write(
                         0x4000200_usize as *mut u16,
@@ -191,60 +195,73 @@ unsafe fn Sio32IDMain() -> i32 {
                 }
                 break 'l1;
             } else {
-                gRfuSIO32Id.state = 2;
+                crate::gl!(gRfuSIO32Id.state = 2);
             }
         }
         if fall || !matched {
-            return gRfuSIO32Id.lastId as i32;
+            return crate::gl!(gRfuSIO32Id.lastId) as i32;
         }
     }
     0
 }
 pub(crate) unsafe fn Sio32IDIntr() {
     let mut regSIODATA32: u32 = (67109152_usize as *mut u32).read_volatile();
-    if gRfuSIO32Id.MS_mode != AGB_CLK_MASTER {
+    if crate::gl!(gRfuSIO32Id.MS_mode) != AGB_CLK_MASTER {
         volatile_write(
             67109160_usize as *mut u16,
             (67109160_usize as *mut u16).read_volatile() | SIO_ENABLE,
         );
     }
-    let rfuSIO32IdUnk0_times_16: u32 = shl_u32(regSIODATA32, 16 * gRfuSIO32Id.MS_mode as u32) >> 16;
-    regSIODATA32 = shl_u32(regSIODATA32, 16 * (1 - gRfuSIO32Id.MS_mode as u32)) >> 16;
-    if gRfuSIO32Id.lastId == 0 {
+    let rfuSIO32IdUnk0_times_16: u32 =
+        shl_u32(regSIODATA32, 16 * crate::gl!(gRfuSIO32Id.MS_mode) as u32) >> 16;
+    regSIODATA32 = shl_u32(
+        regSIODATA32,
+        16 * (1 - crate::gl!(gRfuSIO32Id.MS_mode) as u32),
+    ) >> 16;
+    if crate::gl!(gRfuSIO32Id.lastId) == 0 {
         let mut backup: u16 = rfuSIO32IdUnk0_times_16 as u16;
-        if backup == gRfuSIO32Id.recv_id {
-            if gRfuSIO32Id.count < 4 {
-                backup = !gRfuSIO32Id.send_id;
-                if gRfuSIO32Id.recv_id == backup && regSIODATA32 == !(gRfuSIO32Id.recv_id as u32) {
-                    gRfuSIO32Id.count += 1;
+        if backup == crate::gl!(gRfuSIO32Id.recv_id) {
+            if crate::gl!(gRfuSIO32Id.count) < 4 {
+                backup = !crate::gl!(gRfuSIO32Id.send_id);
+                if crate::gl!(gRfuSIO32Id.recv_id) == backup
+                    && regSIODATA32 == !(crate::gl!(gRfuSIO32Id.recv_id) as u32)
+                {
+                    crate::gl!(gRfuSIO32Id.count += 1);
                 }
             } else {
-                gRfuSIO32Id.lastId = regSIODATA32 as u16;
+                crate::gl!(gRfuSIO32Id.lastId = regSIODATA32 as u16);
             }
         } else {
-            gRfuSIO32Id.count = 0;
+            crate::gl!(gRfuSIO32Id.count = 0);
         }
     }
-    if gRfuSIO32Id.count < 4 {
-        gRfuSIO32Id.send_id = *Sio32ConnectionData
-            .as_ptr()
-            .cast_mut()
-            .at(gRfuSIO32Id.count);
+    if crate::gl!(gRfuSIO32Id.count) < 4 {
+        crate::gl!(
+            gRfuSIO32Id.send_id = *Sio32ConnectionData
+                .as_ptr()
+                .cast_mut()
+                .at(crate::gl!(gRfuSIO32Id.count))
+        );
     } else {
-        gRfuSIO32Id.send_id = RFU_ID as u16;
+        crate::gl!(gRfuSIO32Id.send_id = RFU_ID as u16);
     }
-    gRfuSIO32Id.recv_id = !(regSIODATA32 as u16);
+    crate::gl!(gRfuSIO32Id.recv_id = !(regSIODATA32 as u16));
     volatile_write(
         67109152_usize as *mut u32,
         shl_i32(
-            gRfuSIO32Id.send_id as i32,
-            16 * (1 - gRfuSIO32Id.MS_mode as u32),
+            crate::gl!(gRfuSIO32Id.send_id) as i32,
+            16 * (1 - crate::gl!(gRfuSIO32Id.MS_mode) as u32),
         ) as u32
-            + shl_i32(gRfuSIO32Id.recv_id as i32, 16 * gRfuSIO32Id.MS_mode as u32) as u32,
+            + shl_i32(
+                crate::gl!(gRfuSIO32Id.recv_id) as i32,
+                16 * crate::gl!(gRfuSIO32Id.MS_mode) as u32,
+            ) as u32,
     );
-    if gRfuSIO32Id.MS_mode == AGB_CLK_MASTER && (gRfuSIO32Id.count != 0 || regSIODATA32 == 0x494e) {
+    if crate::gl!(gRfuSIO32Id.MS_mode) == AGB_CLK_MASTER
+        && (crate::gl!(gRfuSIO32Id.count) != 0 || regSIODATA32 == 0x494e)
+    {
         for delay in 0..600u16 {}
-        if gRfuSIO32Id.lastId == 0 {
+        if crate::gl!(gRfuSIO32Id.lastId) == 0 {
             volatile_write(
                 67109160_usize as *mut u16,
                 (67109160_usize as *mut u16).read_volatile() | SIO_ENABLE,

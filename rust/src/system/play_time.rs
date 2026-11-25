@@ -17,7 +17,7 @@ enum CounterState {
     MaxedOut,
 }
 
-#[unsafe(link_section = ".bss")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".bss"))]
 static STATE: Global<CounterState> = Global::new(CounterState::Stopped);
 
 /// Advances the play time by one frame. Returns false when that goes past

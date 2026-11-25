@@ -105,7 +105,7 @@ static sShakeDirsPattern1: Table<CArray<i8, 16>> =
     Table((&raw const crate::data::battle_anim_fire::sShakeDirsPattern1).cast());
 
 pub(crate) unsafe fn AnimFireSpiralInward(sprite: *mut Sprite) {
-    (*sprite).data[0] = gBattleAnimArgs[0];
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[0]);
     (*sprite).data[1] = 0x3C;
     (*sprite).data[2] = 0x9;
     (*sprite).data[3] = 0x1E;
@@ -115,43 +115,43 @@ pub(crate) unsafe fn AnimFireSpiralInward(sprite: *mut Sprite) {
     (*sprite).callback.unwrap_unchecked()(sprite);
 }
 pub(crate) unsafe fn AnimFireSpread(sprite: *mut Sprite) {
-    SetAnimSpriteInitialXOffset(sprite, gBattleAnimArgs[0]);
-    (*sprite).y += gBattleAnimArgs[1];
-    (*sprite).data[0] = gBattleAnimArgs[4];
-    (*sprite).data[1] = gBattleAnimArgs[2];
-    (*sprite).data[2] = gBattleAnimArgs[3];
+    SetAnimSpriteInitialXOffset(sprite, crate::gl!(gBattleAnimArgs[0]));
+    (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[4]);
+    (*sprite).data[1] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[2] = crate::gl!(gBattleAnimArgs[3]);
     (*sprite).callback = Some(TranslateSpriteLinearFixedPoint);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
 pub(crate) unsafe fn AnimFirePlume(sprite: *mut Sprite) {
     SetSpriteCoordsToAnimAttackerCoords(sprite);
-    if GetBattlerSide(gBattleAnimAttacker) != 0 {
-        (*sprite).x -= gBattleAnimArgs[0];
-        (*sprite).y += gBattleAnimArgs[1];
-        (*sprite).data[2] = -gBattleAnimArgs[4];
+    if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
+        (*sprite).x -= crate::gl!(gBattleAnimArgs[0]);
+        (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+        (*sprite).data[2] = -crate::gl!(gBattleAnimArgs[4]);
     } else {
-        (*sprite).x += gBattleAnimArgs[0];
-        (*sprite).y += gBattleAnimArgs[1];
-        (*sprite).data[2] = gBattleAnimArgs[4];
+        (*sprite).x += crate::gl!(gBattleAnimArgs[0]);
+        (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+        (*sprite).data[2] = crate::gl!(gBattleAnimArgs[4]);
     }
-    (*sprite).data[1] = gBattleAnimArgs[2];
-    (*sprite).data[4] = gBattleAnimArgs[3];
-    (*sprite).data[3] = gBattleAnimArgs[5];
+    (*sprite).data[1] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[4] = crate::gl!(gBattleAnimArgs[3]);
+    (*sprite).data[3] = crate::gl!(gBattleAnimArgs[5]);
     (*sprite).callback = Some(AnimLargeFlame_Step);
 }
 pub(crate) unsafe fn AnimLargeFlame(sprite: *mut Sprite) {
-    if GetBattlerSide(gBattleAnimAttacker) != 0 {
-        (*sprite).x -= gBattleAnimArgs[0];
-        (*sprite).y += gBattleAnimArgs[1];
-        (*sprite).data[2] = gBattleAnimArgs[4];
+    if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
+        (*sprite).x -= crate::gl!(gBattleAnimArgs[0]);
+        (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+        (*sprite).data[2] = crate::gl!(gBattleAnimArgs[4]);
     } else {
-        (*sprite).x += gBattleAnimArgs[0];
-        (*sprite).y += gBattleAnimArgs[1];
-        (*sprite).data[2] = -gBattleAnimArgs[4];
+        (*sprite).x += crate::gl!(gBattleAnimArgs[0]);
+        (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+        (*sprite).data[2] = -crate::gl!(gBattleAnimArgs[4]);
     }
-    (*sprite).data[1] = gBattleAnimArgs[2];
-    (*sprite).data[4] = gBattleAnimArgs[3];
-    (*sprite).data[3] = gBattleAnimArgs[5];
+    (*sprite).data[1] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[4] = crate::gl!(gBattleAnimArgs[3]);
+    (*sprite).data[3] = crate::gl!(gBattleAnimArgs[5]);
     (*sprite).callback = Some(AnimLargeFlame_Step);
 }
 pub(crate) unsafe fn AnimLargeFlame_Step(sprite: *mut Sprite) {
@@ -169,18 +169,18 @@ pub(crate) unsafe fn AnimLargeFlame_Step(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn AnimUnusedSmallEmber(sprite: *mut Sprite) {
     SetSpriteCoordsToAnimAttackerCoords(sprite);
-    if GetBattlerSide(gBattleAnimAttacker) != 0 {
-        (*sprite).x -= gBattleAnimArgs[0];
+    if GetBattlerSide(gBattleAnimAttacker.get()) != 0 {
+        (*sprite).x -= crate::gl!(gBattleAnimArgs[0]);
     } else {
-        (*sprite).x += gBattleAnimArgs[0];
+        (*sprite).x += crate::gl!(gBattleAnimArgs[0]);
         (*sprite).subpriority = 8;
     }
-    (*sprite).y += gBattleAnimArgs[1];
-    (*sprite).data[0] = gBattleAnimArgs[2];
-    (*sprite).data[1] = gBattleAnimArgs[3];
-    (*sprite).data[2] = gBattleAnimArgs[4];
-    (*sprite).data[3] = gBattleAnimArgs[5];
-    (*sprite).data[4] = gBattleAnimArgs[6];
+    (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[1] = crate::gl!(gBattleAnimArgs[3]);
+    (*sprite).data[2] = crate::gl!(gBattleAnimArgs[4]);
+    (*sprite).data[3] = crate::gl!(gBattleAnimArgs[5]);
+    (*sprite).data[4] = crate::gl!(gBattleAnimArgs[6]);
     (*sprite).data[5] = 0;
     (*sprite).callback = Some(AnimUnusedSmallEmber_Step);
 }
@@ -219,23 +219,23 @@ pub(crate) unsafe fn AnimSunlight(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
 pub(crate) unsafe fn AnimEmberFlare(sprite: *mut Sprite) {
-    if GetBattlerSide(gBattleAnimAttacker) == GetBattlerSide(gBattleAnimTarget)
-        && (gBattleAnimAttacker == GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)
-            || gBattleAnimAttacker == GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT))
+    if GetBattlerSide(gBattleAnimAttacker.get()) == GetBattlerSide(gBattleAnimTarget.get())
+        && (gBattleAnimAttacker.get() == GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)
+            || gBattleAnimAttacker.get() == GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT))
     {
-        gBattleAnimArgs[2] = -gBattleAnimArgs[2];
+        crate::gl!(gBattleAnimArgs[2] = -crate::gl!(gBattleAnimArgs[2]));
     }
     (*sprite).callback = Some(AnimTravelDiagonally);
     (*sprite).callback.unwrap_unchecked()(sprite);
 }
 pub(crate) unsafe fn AnimBurnFlame(sprite: *mut Sprite) {
-    gBattleAnimArgs[0] = -gBattleAnimArgs[0];
-    gBattleAnimArgs[2] = -gBattleAnimArgs[2];
+    crate::gl!(gBattleAnimArgs[0] = -crate::gl!(gBattleAnimArgs[0]));
+    crate::gl!(gBattleAnimArgs[2] = -crate::gl!(gBattleAnimArgs[2]));
     (*sprite).callback = Some(AnimTravelDiagonally);
 }
 pub unsafe fn AnimFireRing(sprite: *mut Sprite) {
     InitSpritePosToAnimAttacker(sprite, TRUE);
-    (*sprite).data[7] = gBattleAnimArgs[2];
+    (*sprite).data[7] = crate::gl!(gBattleAnimArgs[2]);
     (*sprite).data[0] = 0;
     (*sprite).callback = Some(AnimFireRing_Step1);
 }
@@ -248,10 +248,11 @@ pub(crate) unsafe fn AnimFireRing_Step1(sprite: *mut Sprite) {
     {
         (*sprite).data[0] = 0x19;
         (*sprite).data[1] = (*sprite).x;
-        (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+        (*sprite).data[2] =
+            GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
         (*sprite).data[3] = (*sprite).y;
         (*sprite).data[4] =
-            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+            GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
         InitAnimLinearTranslation(sprite);
         (*sprite).callback = Some(AnimFireRing_Step2);
     }
@@ -259,8 +260,9 @@ pub(crate) unsafe fn AnimFireRing_Step1(sprite: *mut Sprite) {
 pub(crate) unsafe fn AnimFireRing_Step2(sprite: *mut Sprite) {
     if AnimTranslateLinear(sprite) != 0 {
         (*sprite).data[0] = 0;
-        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
-        (*sprite).y = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+        (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
+        (*sprite).y =
+            GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET) as i16;
         (*sprite).y2 = 0;
         (*sprite).x2 = 0;
         (*sprite).callback = Some(AnimFireRing_Step3);
@@ -287,18 +289,18 @@ unsafe fn UpdateFireRingCircleOffset(sprite: *mut Sprite) {
     (*sprite).data[7] = ((*sprite).data[7] + 20) & 0xFF;
 }
 pub(crate) unsafe fn AnimFireCross(sprite: *mut Sprite) {
-    (*sprite).x += gBattleAnimArgs[0];
-    (*sprite).y += gBattleAnimArgs[1];
-    (*sprite).data[0] = gBattleAnimArgs[2];
-    (*sprite).data[1] = gBattleAnimArgs[3];
-    (*sprite).data[2] = gBattleAnimArgs[4];
+    (*sprite).x += crate::gl!(gBattleAnimArgs[0]);
+    (*sprite).y += crate::gl!(gBattleAnimArgs[1]);
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[1] = crate::gl!(gBattleAnimArgs[3]);
+    (*sprite).data[2] = crate::gl!(gBattleAnimArgs[4]);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
     (*sprite).callback = Some(TranslateSpriteLinear);
 }
 pub(crate) unsafe fn AnimFireSpiralOutward(sprite: *mut Sprite) {
     InitSpritePosToAnimAttacker(sprite, TRUE);
-    (*sprite).data[1] = gBattleAnimArgs[2];
-    (*sprite).data[0] = gBattleAnimArgs[3];
+    (*sprite).data[1] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[0] = crate::gl!(gBattleAnimArgs[3]);
     (*sprite).set_invisible(TRUE as u16);
     (*sprite).callback = Some(WaitAnimForDuration);
     StoreSpriteCallbackInData6(sprite, Some(AnimFireSpiralOutward_Step1));
@@ -331,8 +333,11 @@ pub unsafe fn AnimTask_EruptionLaunchRocks(taskId: u8) {
     (*task).data[tTimer1] = 0;
     (*task).data[tTimer2] = 0;
     (*task).data[tTimer3] = 0;
-    (*task).data[tAttackerY] = gSprites[(*task).data[tAttackerSpriteId]].y;
-    (*task).data[tAttackerSide] = GetBattlerSide(gBattleAnimAttacker) as i16;
+    (*task).data[tAttackerY] = {
+        let gl_i0 = (*task).data[tAttackerSpriteId];
+        crate::gl!(gSprites[gl_i0].y)
+    };
+    (*task).data[tAttackerSide] = GetBattlerSide(gBattleAnimAttacker.get()) as i16;
     (*task).data[6] = 0;
     PrepareBattlerSpriteForRotScale((*task).data[tAttackerSpriteId] as u8, ST_OAM_OBJ_NORMAL);
     (*task).func = Some(AnimTask_EruptionLaunchRocks_Step);
@@ -371,9 +376,15 @@ pub(crate) unsafe fn AnimTask_EruptionLaunchRocks_Step(taskId: u8) {
                     & 1
                     != 0
                 {
-                    gSprites[(*task).data[tAttackerSpriteId]].x2 = 3;
+                    {
+                        let gl_i1 = (*task).data[tAttackerSpriteId];
+                        crate::gl!(gSprites[gl_i1].x2 = 3)
+                    };
                 } else {
-                    gSprites[(*task).data[tAttackerSpriteId]].x2 = -3;
+                    {
+                        let gl_i2 = (*task).data[tAttackerSpriteId];
+                        crate::gl!(gSprites[gl_i2].x2 = -3)
+                    };
                 }
             }
             if (*task).data[tAttackerSide] != B_SIDE_PLAYER as i16
@@ -383,11 +394,17 @@ pub(crate) unsafe fn AnimTask_EruptionLaunchRocks_Step(taskId: u8) {
                 }) > 4
             {
                 (*task).data[tTimer3] = 0;
-                gSprites[(*task).data[tAttackerSpriteId]].y += 1;
+                {
+                    let gl_i3 = (*task).data[tAttackerSpriteId];
+                    crate::gl!(gSprites[gl_i3].y += 1)
+                };
             }
             if UpdateEruptAnimTask(task) == 0 {
                 SetBattlerSpriteYOffsetFromYScale((*task).data[tAttackerSpriteId] as u8);
-                gSprites[(*task).data[tAttackerSpriteId]].x2 = 0;
+                {
+                    let gl_i4 = (*task).data[tAttackerSpriteId];
+                    crate::gl!(gSprites[gl_i4].x2 = 0)
+                };
                 (*task).data[tTimer1] = 0;
                 (*task).data[tTimer2] = 0;
                 (*task).data[tTimer3] = 0;
@@ -452,9 +469,15 @@ pub(crate) unsafe fn AnimTask_EruptionLaunchRocks_Step(taskId: u8) {
                     & 1
                     != 0
                 {
-                    gSprites[(*task).data[tAttackerSpriteId]].y2 += 3;
+                    {
+                        let gl_i5 = (*task).data[tAttackerSpriteId];
+                        crate::gl!(gSprites[gl_i5].y2 += 3)
+                    };
                 } else {
-                    gSprites[(*task).data[tAttackerSpriteId]].y2 -= 3;
+                    {
+                        let gl_i6 = (*task).data[tAttackerSpriteId];
+                        crate::gl!(gSprites[gl_i6].y2 -= 3)
+                    };
                 }
             }
             if ({
@@ -484,7 +507,10 @@ pub(crate) unsafe fn AnimTask_EruptionLaunchRocks_Step(taskId: u8) {
                     );
                 }
                 if (*task).data[tTimer2] as i32 & 1 != 0 {
-                    gSprites[(*task).data[tAttackerSpriteId]].y2 -= 3;
+                    {
+                        let gl_i7 = (*task).data[tAttackerSpriteId];
+                        crate::gl!(gSprites[gl_i7].y2 -= 3)
+                    };
                 }
                 (*task).data[tTimer1] = 0;
                 (*task).data[tTimer2] = 0;
@@ -495,10 +521,16 @@ pub(crate) unsafe fn AnimTask_EruptionLaunchRocks_Step(taskId: u8) {
         }
         if sw1 == 5 {
             if (*task).data[tAttackerSide] != B_SIDE_PLAYER as i16 {
-                gSprites[(*task).data[tAttackerSpriteId]].y -= 1;
+                {
+                    let gl_i8 = (*task).data[tAttackerSpriteId];
+                    crate::gl!(gSprites[gl_i8].y -= 1)
+                };
             }
             if UpdateEruptAnimTask(task) == 0 {
-                gSprites[(*task).data[tAttackerSpriteId]].y = (*task).data[tAttackerY];
+                {
+                    let gl_i9 = (*task).data[tAttackerSpriteId];
+                    crate::gl!(gSprites[gl_i9].y = (*task).data[tAttackerY])
+                };
                 ResetSpriteRotScale((*task).data[tAttackerSpriteId] as u8);
                 (*task).data[tTimer2] = 0;
                 (*task).data[tState] += 1;
@@ -519,8 +551,8 @@ pub(crate) unsafe fn AnimTask_EruptionLaunchRocks_Step(taskId: u8) {
 unsafe fn CreateEruptionLaunchRocks(spriteId: u8, taskId: u8, activeSpritesIdx: u8) {
     let mut sign: i8 = 0;
     let y: u16 = GetEruptionLaunchRockInitialYPos(spriteId);
-    let mut x: u16 = gSprites[spriteId].x as u16;
-    if GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER {
+    let mut x: u16 = crate::gl!(gSprites[spriteId].x) as u16;
+    if GetBattlerSide(gBattleAnimAttacker.get()) == B_SIDE_PLAYER {
         x -= 12;
         sign = 1;
     } else {
@@ -536,9 +568,9 @@ unsafe fn CreateEruptionLaunchRocks(spriteId: u8, taskId: u8, activeSpritesIdx: 
             2,
         );
         if spriteId != MAX_SPRITES {
-            gSprites[spriteId]
+            (*gSprites.as_ptr())[spriteId]
                 .oam
-                .set_tileNum(gSprites[spriteId].oam.tileNum() + (j * 4 + 0x40));
+                .set_tileNum((*gSprites.as_ptr())[spriteId].oam.tileNum() + (j * 4 + 0x40));
             if ({
                 j += 1;
                 j
@@ -547,12 +579,18 @@ unsafe fn CreateEruptionLaunchRocks(spriteId: u8, taskId: u8, activeSpritesIdx: 
                 j = 0;
             }
             InitEruptionLaunchRockCoordData(
-                &raw mut gSprites[spriteId],
+                crate::gl!(&raw gSprites[spriteId]),
                 sEruptionLaunchRockSpeeds[i][0] * sign as i16,
                 sEruptionLaunchRockSpeeds[i][1],
             );
-            gSprites[spriteId].data[sTaskId] = taskId as i16;
-            gSprites[spriteId].data[sActiveSpritesIdx] = activeSpritesIdx as i16;
+            {
+                let gl_i10 = sTaskId;
+                crate::gl!(gSprites[spriteId].data[gl_i10] = taskId as i16)
+            };
+            {
+                let gl_i11 = sActiveSpritesIdx;
+                crate::gl!(gSprites[spriteId].data[gl_i11] = activeSpritesIdx as i16)
+            };
             task_set(
                 taskId,
                 activeSpritesIdx,
@@ -573,9 +611,10 @@ pub(crate) unsafe fn AnimEruptionLaunchRock(sprite: *mut Sprite) {
     }
 }
 unsafe fn GetEruptionLaunchRockInitialYPos(spriteId: u8) -> u16 {
-    let mut y: i16 =
-        gSprites[spriteId].y + gSprites[spriteId].y2 + gSprites[spriteId].centerToCornerVecY as i16;
-    if GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER {
+    let mut y: i16 = crate::gl!(gSprites[spriteId].y)
+        + crate::gl!(gSprites[spriteId].y2)
+        + crate::gl!(gSprites[spriteId].centerToCornerVecY) as i16;
+    if GetBattlerSide(gBattleAnimAttacker.get()) == B_SIDE_PLAYER {
         y += 74;
     } else {
         y += 44;
@@ -612,16 +651,16 @@ unsafe fn UpdateEruptionLaunchRockPos(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn AnimEruptionFallingRock(sprite: *mut Sprite) {
-    (*sprite).x = gBattleAnimArgs[0];
-    (*sprite).y = gBattleAnimArgs[1];
+    (*sprite).x = crate::gl!(gBattleAnimArgs[0]);
+    (*sprite).y = crate::gl!(gBattleAnimArgs[1]);
     (*sprite).data[sState] = 0;
     (*sprite).data[sBounceTimer] = 0;
     (*sprite).data[sBounceDir] = 0;
-    (*sprite).data[sFallDelay] = gBattleAnimArgs[2];
-    (*sprite).data[sTargetY] = gBattleAnimArgs[3];
+    (*sprite).data[sFallDelay] = crate::gl!(gBattleAnimArgs[2]);
+    (*sprite).data[sTargetY] = crate::gl!(gBattleAnimArgs[3]);
     (*sprite)
         .oam
-        .set_tileNum((*sprite).oam.tileNum() + gBattleAnimArgs[4] as u16 * 16);
+        .set_tileNum((*sprite).oam.tileNum() + crate::gl!(gBattleAnimArgs[4]) as u16 * 16);
     (*sprite).callback = Some(AnimEruptionFallingRock_Step);
 }
 pub(crate) unsafe fn AnimEruptionFallingRock_Step(sprite: *mut Sprite) {
@@ -678,21 +717,21 @@ pub(crate) unsafe fn AnimWillOWispOrb(sprite: *mut Sprite) {
     match (*sprite).data[0] {
         0 => {
             InitSpritePosToAnimAttacker(sprite, FALSE);
-            StartSpriteAnim(sprite, gBattleAnimArgs[2] as u8);
-            (*sprite).data[7] = gBattleAnimArgs[2];
-            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+            StartSpriteAnim(sprite, crate::gl!(gBattleAnimArgs[2]) as u8);
+            (*sprite).data[7] = crate::gl!(gBattleAnimArgs[2]);
+            if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
                 (*sprite).data[4] = 4;
             } else {
                 (*sprite).data[4] = -4;
             }
             (*sprite)
                 .oam
-                .set_priority(GetBattlerSpriteBGPriority(gBattleAnimTarget) as u16);
+                .set_priority(GetBattlerSpriteBGPriority(gBattleAnimTarget.get()) as u16);
             (*sprite).data[0] += 1;
         }
         1 => {
             (*sprite).data[1] += 192;
-            if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+            if GetBattlerSide(gBattleAnimAttacker.get()) != B_SIDE_PLAYER {
                 (*sprite).y2 = -((*sprite).data[1] >> 8);
             } else {
                 (*sprite).y2 = (*sprite).data[1] >> 8;
@@ -723,10 +762,11 @@ pub(crate) unsafe fn AnimWillOWispOrb(sprite: *mut Sprite) {
                 (*sprite).data[0] = 256;
                 (*sprite).data[1] = (*sprite).x;
                 (*sprite).data[2] =
-                    GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+                    GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_X_2) as i16;
                 (*sprite).data[3] = (*sprite).y;
                 (*sprite).data[4] =
-                    GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+                    GetBattlerSpriteCoord(gBattleAnimTarget.get(), BATTLER_COORD_Y_PIC_OFFSET)
+                        as i16;
                 InitAnimLinearTranslationWithSpeed(sprite);
                 (*sprite).callback = Some(AnimWillOWispOrb_Step);
             }
@@ -743,7 +783,7 @@ pub(crate) unsafe fn AnimWillOWispOrb_Step(sprite: *mut Sprite) {
         (*sprite).data[5] = ((*sprite).data[5] + 4) & 0xFF;
         newData5 = (*sprite).data[5];
         if (initialData5 == 0 || initialData5 > 196) && newData5 > 0 && (*sprite).data[7] == 0 {
-            PlaySE12WithPanning(SE_M_FLAME_WHEEL, gAnimCustomPanning as i8);
+            PlaySE12WithPanning(SE_M_FLAME_WHEEL, gAnimCustomPanning.get() as i8);
         }
     } else {
         DestroyAnimSprite(sprite);
@@ -751,7 +791,7 @@ pub(crate) unsafe fn AnimWillOWispOrb_Step(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn AnimWillOWispFire(sprite: *mut Sprite) {
     if (*sprite).data[0] == 0 {
-        (*sprite).data[1] = gBattleAnimArgs[0];
+        (*sprite).data[1] = crate::gl!(gBattleAnimArgs[0]);
         (*sprite).data[0] += 1;
     }
     (*sprite).data[3] += 384;
@@ -763,11 +803,11 @@ pub(crate) unsafe fn AnimWillOWispFire(sprite: *mut Sprite) {
         if (*sprite).data[1] < 64 || (*sprite).data[1] > 195 {
             (*sprite)
                 .oam
-                .set_priority(GetBattlerSpriteBGPriority(gBattleAnimTarget) as u16);
+                .set_priority(GetBattlerSpriteBGPriority(gBattleAnimTarget.get()) as u16);
         } else {
             (*sprite)
                 .oam
-                .set_priority(GetBattlerSpriteBGPriority(gBattleAnimTarget) as u16 + 1);
+                .set_priority(GetBattlerSpriteBGPriority(gBattleAnimTarget.get()) as u16 + 1);
         }
     } else {
         if (*sprite).data[1] < 64 || (*sprite).data[1] > 195 {
@@ -790,12 +830,12 @@ pub(crate) unsafe fn AnimWillOWispFire(sprite: *mut Sprite) {
 #[unsafe(no_mangle)]
 pub unsafe fn AnimTask_MoveHeatWaveTargets(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
-    (*task).data[12] = (if GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER {
+    (*task).data[12] = (if GetBattlerSide(gBattleAnimAttacker.get()) == B_SIDE_PLAYER {
         1
     } else {
         -1
     }) as i16;
-    (*task).data[13] = IsBattlerSpriteVisible(gBattleAnimTarget ^ 2) as i16 + 1;
+    (*task).data[13] = IsBattlerSpriteVisible(gBattleAnimTarget.get() ^ 2) as i16 + 1;
     (*task).data[14] = GetAnimBattlerSpriteId(ANIM_TARGET) as i16;
     (*task).data[15] = GetAnimBattlerSpriteId(ANIM_DEF_PARTNER) as i16;
     (*task).func = Some(AnimTask_MoveHeatWaveTargets_Step);
@@ -820,8 +860,10 @@ pub(crate) unsafe fn AnimTask_MoveHeatWaveTargets_Step(taskId: u8) {
             }
             (*task).data[3] = 0;
             while (*task).data[3] < (*task).data[13] {
-                gSprites[(*task).data[(*task).data[3] as i32 + 14]].x2 =
-                    (*task).data[10] + (*task).data[11];
+                {
+                    let gl_i12 = (*task).data[(*task).data[3] as i32 + 14];
+                    crate::gl!(gSprites[gl_i12].x2 = (*task).data[10] + (*task).data[11])
+                };
                 (*task).data[3] += 1;
             }
             if ({
@@ -849,8 +891,10 @@ pub(crate) unsafe fn AnimTask_MoveHeatWaveTargets_Step(taskId: u8) {
             }
             (*task).data[3] = 0;
             while (*task).data[3] < (*task).data[13] {
-                gSprites[(*task).data[(*task).data[3] as i32 + 14]].x2 =
-                    (*task).data[10] + (*task).data[11];
+                {
+                    let gl_i13 = (*task).data[(*task).data[3] as i32 + 14];
+                    crate::gl!(gSprites[gl_i13].x2 = (*task).data[10] + (*task).data[11])
+                };
                 (*task).data[3] += 1;
             }
             if ({
@@ -879,8 +923,10 @@ pub(crate) unsafe fn AnimTask_MoveHeatWaveTargets_Step(taskId: u8) {
             }
             (*task).data[3] = 0;
             while (*task).data[3] < (*task).data[13] {
-                gSprites[(*task).data[(*task).data[3] as i32 + 14]].x2 =
-                    (*task).data[10] + (*task).data[11];
+                {
+                    let gl_i14 = (*task).data[(*task).data[3] as i32 + 14];
+                    crate::gl!(gSprites[gl_i14].x2 = (*task).data[10] + (*task).data[11])
+                };
                 (*task).data[3] += 1;
             }
             if ({
@@ -894,7 +940,10 @@ pub(crate) unsafe fn AnimTask_MoveHeatWaveTargets_Step(taskId: u8) {
         3 => {
             (*task).data[3] = 0;
             while (*task).data[3] < (*task).data[13] {
-                gSprites[(*task).data[(*task).data[3] as i32 + 14]].x2 = 0;
+                {
+                    let gl_i15 = (*task).data[(*task).data[3] as i32 + 14];
+                    crate::gl!(gSprites[gl_i15].x2 = 0)
+                };
                 (*task).data[3] += 1;
             }
             DestroyAnimVisualTask(taskId);
@@ -909,39 +958,44 @@ pub unsafe fn AnimTask_BlendBackground(taskId: u8) {
     BlendPalette(
         animBg.paletteId as u16 * 16,
         16,
-        gBattleAnimArgs[0] as u8,
-        gBattleAnimArgs[1] as u16,
+        crate::gl!(gBattleAnimArgs[0]) as u8,
+        crate::gl!(gBattleAnimArgs[1]) as u16,
     );
     DestroyAnimVisualTask(taskId);
 }
 #[unsafe(no_mangle)]
-pub unsafe fn AnimTask_ShakeTargetInPattern(taskId: u8) {
+pub fn AnimTask_ShakeTargetInPattern(taskId: u8) {
     let mut dir: i8 = 0;
     if task_get(taskId, tShakeNum) == 0 {
-        task_set(taskId, tMaxShakes, gBattleAnimArgs[0]);
-        task_set(taskId, tShakeOffset, gBattleAnimArgs[1]);
-        task_set(taskId, tVertical, gBattleAnimArgs[2]);
-        task_set(taskId, tPatternId, gBattleAnimArgs[3]);
+        task_set(taskId, tMaxShakes, crate::gl!(gBattleAnimArgs[0]));
+        task_set(taskId, tShakeOffset, crate::gl!(gBattleAnimArgs[1]));
+        task_set(taskId, tVertical, crate::gl!(gBattleAnimArgs[2]));
+        task_set(taskId, tPatternId, crate::gl!(gBattleAnimArgs[3]));
     }
     task_set(taskId, tShakeNum, task_get(taskId, tShakeNum) + 1);
-    let spriteId: u8 = gBattlerSpriteIds[gBattleAnimTarget];
+    let spriteId: u8 = {
+        let gl_i16 = gBattleAnimTarget.get();
+        crate::gl!(gBattlerSpriteIds[gl_i16])
+    };
     if task_get(taskId, tPatternId) == 0 {
         dir = sShakeDirsPattern0[task_get(taskId, tShakeNum) % 10];
     } else {
         dir = sShakeDirsPattern1[task_get(taskId, tShakeNum) % 10];
     }
     if task_get(taskId, tVertical) == TRUE as i16 {
-        gSprites[spriteId].y2 = (if (gBattleAnimArgs[1] as i32 * dir as i32) < 0 {
-            -(gBattleAnimArgs[1] as i32 * dir as i32)
-        } else {
-            gBattleAnimArgs[1] as i32 * dir as i32
-        }) as i16;
+        crate::gl!(
+            gSprites[spriteId].y2 = (if (crate::gl!(gBattleAnimArgs[1]) as i32 * dir as i32) < 0 {
+                -(crate::gl!(gBattleAnimArgs[1]) as i32 * dir as i32)
+            } else {
+                crate::gl!(gBattleAnimArgs[1]) as i32 * dir as i32
+            }) as i16
+        );
     } else {
-        gSprites[spriteId].x2 = gBattleAnimArgs[1] * dir as i16;
+        crate::gl!(gSprites[spriteId].x2 = crate::gl!(gBattleAnimArgs[1]) * dir as i16);
     }
     if task_get(taskId, tShakeNum) == task_get(taskId, tMaxShakes) {
-        gSprites[spriteId].x2 = 0;
-        gSprites[spriteId].y2 = 0;
+        crate::gl!(gSprites[spriteId].x2 = 0);
+        crate::gl!(gSprites[spriteId].y2 = 0);
         DestroyAnimVisualTask(taskId);
     }
 }

@@ -35,7 +35,7 @@ unsafe fn AdjustFriendship(a0: *mut Pokemon, a1: u8) {
 /// `GetAilmentFromStatus` with this module's view of its types.
 #[inline]
 unsafe fn GetAilmentFromStatus(a0: u32) -> u8 {
-    unsafe { crate::party_menu::GetAilmentFromStatus(a0) }
+    crate::party_menu::GetAilmentFromStatus(a0)
 }
 /// `ShowFieldMessage` with this module's view of its types.
 #[inline]

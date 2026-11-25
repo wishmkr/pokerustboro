@@ -28,7 +28,7 @@ pub struct RomHeader {
     rest: [u8; 0x28],
 }
 
-#[unsafe(link_section = ".text.rom_header")]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".text.rom_header"))]
 #[used]
 static ROM_HEADER: RomHeader = RomHeader {
     entry: 0xEA00_0000 | ((0xD0 - 8) / 4),

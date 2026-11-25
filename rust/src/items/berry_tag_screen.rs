@@ -95,26 +95,26 @@ unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -186,8 +186,9 @@ static sTextColors: Table<CArray<CArray<u8, 3>, 2>> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 5>> =
     Table((&raw const crate::data::berry_tag_screen::sWindowTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBerryTag: *mut BerryTagScreenStruct = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBerryTag: crate::global::Global<*mut BerryTagScreenStruct> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -231,8 +232,8 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 pub unsafe fn DoBerryTagScreen() {
-    sBerryTag = AllocZeroed(6156) as *mut BerryTagScreenStruct;
-    (*sBerryTag).berryId = ItemIdToBerryType(gSpecialVar_ItemId) as u16;
+    crate::gl!(sBerryTag = AllocZeroed(6156) as *mut BerryTagScreenStruct);
+    (*crate::gl!(sBerryTag)).berryId = ItemIdToBerryType(gSpecialVar_ItemId.get()) as u16;
     SetMainCallback2(Some(CB2_InitBerryTagScreen));
 }
 pub(crate) unsafe fn CB2_BerryTagScreen() {
@@ -261,79 +262,79 @@ pub(crate) unsafe fn CB2_InitBerryTagScreen() {
     }
 }
 unsafe fn InitBerryTagScreen() -> u8 {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankHBlankCallbacksToNull();
             ResetVramOamAndBgCntRegs();
             ClearScheduledBgCopiesToVram();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             ScanlineEffect_Stop();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             ResetPaletteFade();
-            gPaletteFade.set_bufferTransferDisabled(1);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(1);
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             ResetSpriteData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             FreeAllSpritePalettes();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             if MenuHelpers_IsLinkActive() == 0 {
                 ResetTasks();
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             HandleInitBackgrounds();
-            (*sBerryTag).gfxState = 0;
-            gMain.state += 1;
+            (*crate::gl!(sBerryTag)).gfxState = 0;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             if LoadBerryTagGfx() != 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         8 => {
             HandleInitWindows();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             AddBerryTagTextToBg0();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             PrintAllBerryData();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
             CreateBerrySprite();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         12 => {
             CreateFlavorCircleSprites();
             SetFlavorCirclesVisiblity();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         13 => {
             CreateTask(Some(Task_HandleInput), 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         14 => {
             BlendPalettes(PALETTES_ALL, 0x10, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         15 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-            gPaletteFade.set_bufferTransferDisabled(0);
-            gMain.state += 1;
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(0);
+            crate::gl!(gMain.state += 1);
         }
         _ => {
             SetVBlankCallback(Some(VblankCB));
@@ -348,11 +349,11 @@ pub(crate) unsafe fn HandleInitBackgrounds() {
     InitBgsFromTemplates(0, sBackgroundTemplates.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
         2,
-        (*sBerryTag).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sBerryTag)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         3,
-        (*sBerryTag).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sBerryTag)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(2);
@@ -365,7 +366,7 @@ pub(crate) unsafe fn HandleInitBackgrounds() {
     ShowBg(3);
 }
 unsafe fn LoadBerryTagGfx() -> u8 {
-    match (*sBerryTag).gfxState {
+    match (*crate::gl!(sBerryTag)).gfxState {
         0 => {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
@@ -377,7 +378,7 @@ unsafe fn LoadBerryTagGfx() -> u8 {
                 0,
                 0,
             );
-            (*sBerryTag).gfxState += 1;
+            (*crate::gl!(sBerryTag)).gfxState += 1;
         }
         1 => {
             if FreeTempTileDataBuffersIfPossible() != TRUE {
@@ -385,9 +386,9 @@ unsafe fn LoadBerryTagGfx() -> u8 {
                     (*(&raw const crate::data::graphics::gBerryTag_Gfx).cast::<CArray<u32, 0>>())
                         .as_ptr()
                         .cast_mut(),
-                    (*sBerryTag).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sBerryTag)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
                 );
-                (*sBerryTag).gfxState += 1;
+                (*crate::gl!(sBerryTag)).gfxState += 1;
             }
         }
         2 => {
@@ -395,21 +396,21 @@ unsafe fn LoadBerryTagGfx() -> u8 {
                 (*(&raw const crate::data::graphics::gBerryTag_Tilemap).cast::<CArray<u32, 0>>())
                     .as_ptr()
                     .cast_mut(),
-                (*sBerryTag).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sBerryTag)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
             );
-            (*sBerryTag).gfxState += 1;
+            (*crate::gl!(sBerryTag)).gfxState += 1;
         }
         3 => {
-            if (*gSaveBlock2Ptr).playerGender == MALE {
+            if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
                 for i in 0..1024u16 {
-                    (*sBerryTag).tilemapBuffers[1][i] = 16450;
+                    (*crate::gl!(sBerryTag)).tilemapBuffers[1][i] = 16450;
                 }
             } else {
                 for i in 0..1024u16 {
-                    (*sBerryTag).tilemapBuffers[1][i] = 20546;
+                    (*crate::gl!(sBerryTag)).tilemapBuffers[1][i] = 20546;
                 }
             }
-            (*sBerryTag).gfxState += 1;
+            (*crate::gl!(sBerryTag)).gfxState += 1;
         }
         4 => {
             LoadCompressedPalette(
@@ -419,11 +420,11 @@ unsafe fn LoadBerryTagGfx() -> u8 {
                 0,
                 192,
             );
-            (*sBerryTag).gfxState += 1;
+            (*crate::gl!(sBerryTag)).gfxState += 1;
         }
         5 => {
             LoadCompressedSpriteSheet((&raw const (*(&raw const crate::data::item_menu_icons::gBerryCheckCircleSpriteSheet).cast::<CompressedSpriteSheet>())).cast_mut());
-            (*sBerryTag).gfxState += 1;
+            (*crate::gl!(sBerryTag)).gfxState += 1;
         }
         _ => {
             LoadCompressedSpritePalette((&raw const (*(&raw const crate::data::item_menu_icons::gBerryCheckCirclePaletteTable).cast::<CompressedSpritePalette>())).cast_mut());
@@ -465,7 +466,7 @@ unsafe fn PrintTextInBerryTagScreen(
 unsafe fn AddBerryTagTextToBg0() {
     memcpy(
         GetBgTilemapBuffer(0) as *mut u8,
-        (*sBerryTag).tilemapBuffers[2].as_mut_ptr() as *mut u8,
+        (*crate::gl!(sBerryTag)).tilemapBuffers[2].as_mut_ptr() as *mut u8,
         2048,
     );
     FillWindowPixelBuffer(WIN_BERRY_TAG, 255);
@@ -496,14 +497,17 @@ unsafe fn PrintAllBerryData() {
     PrintBerryDescription2();
 }
 unsafe fn PrintBerryNumberAndName() {
-    let berry: *mut Berry = GetBerryInfo((*sBerryTag).berryId as u8);
+    let berry: *mut Berry = GetBerryInfo((*crate::gl!(sBerryTag)).berryId as u8);
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
-        (*sBerryTag).berryId as i32,
+        (*crate::gl!(sBerryTag)).berryId as i32,
         STR_CONV_MODE_LEADING_ZEROS,
         2,
     );
-    StringCopy(gStringVar2.as_mut_ptr(), (*berry).name.as_mut_ptr());
+    StringCopy(
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+        (*berry).name.as_mut_ptr(),
+    );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_NumberVar1Var2).cast::<CArray<u8, 0>>())
@@ -513,7 +517,7 @@ unsafe fn PrintBerryNumberAndName() {
     PrintTextInBerryTagScreen(WIN_BERRY_NAME, gStringVar4.as_mut_ptr(), 0, 1, 0, 0);
 }
 unsafe fn PrintBerrySize() {
-    let berry: *mut Berry = GetBerryInfo((*sBerryTag).berryId as u8);
+    let berry: *mut Berry = GetBerryInfo((*crate::gl!(sBerryTag)).berryId as u8);
     AddTextPrinterParameterized(
         WIN_SIZE_FIRM,
         FONT_NORMAL,
@@ -539,7 +543,7 @@ unsafe fn PrintBerrySize() {
             2,
         );
         ConvertIntToDecimalStringN(
-            gStringVar2.as_mut_ptr(),
+            (*gStringVar2.as_ptr()).as_mut_ptr(),
             fraction as i32,
             STR_CONV_MODE_LEFT_ALIGN,
             2,
@@ -574,7 +578,7 @@ unsafe fn PrintBerrySize() {
     }
 }
 unsafe fn PrintBerryFirmness() {
-    let berry: *mut Berry = GetBerryInfo((*sBerryTag).berryId as u8);
+    let berry: *mut Berry = GetBerryInfo((*crate::gl!(sBerryTag)).berryId as u8);
     AddTextPrinterParameterized(
         WIN_SIZE_FIRM,
         FONT_NORMAL,
@@ -611,11 +615,11 @@ unsafe fn PrintBerryFirmness() {
     }
 }
 unsafe fn PrintBerryDescription1() {
-    let berry: *mut Berry = GetBerryInfo((*sBerryTag).berryId as u8);
+    let berry: *mut Berry = GetBerryInfo((*crate::gl!(sBerryTag)).berryId as u8);
     AddTextPrinterParameterized(WIN_DESC, FONT_NORMAL, (*berry).description1, 0, 1, 0, None);
 }
 unsafe fn PrintBerryDescription2() {
-    let berry: *mut Berry = GetBerryInfo((*sBerryTag).berryId as u8);
+    let berry: *mut Berry = GetBerryInfo((*crate::gl!(sBerryTag)).berryId as u8);
     AddTextPrinterParameterized(
         WIN_DESC,
         FONT_NORMAL,
@@ -627,50 +631,65 @@ unsafe fn PrintBerryDescription2() {
     );
 }
 pub(crate) unsafe fn CreateBerrySprite() {
-    (*sBerryTag).berrySpriteId = CreateBerryTagSprite((*sBerryTag).berryId as u8 - 1, 56, 64);
+    (*crate::gl!(sBerryTag)).berrySpriteId =
+        CreateBerryTagSprite((*crate::gl!(sBerryTag)).berryId as u8 - 1, 56, 64);
 }
 unsafe fn DestroyBerrySprite() {
-    DestroySprite(&raw mut gSprites[(*sBerryTag).berrySpriteId]);
+    DestroySprite({
+        let gl_i0 = (*crate::gl!(sBerryTag)).berrySpriteId;
+        crate::gl!(&raw gSprites[gl_i0])
+    });
     FreeBerryTagSpritePalette();
 }
 unsafe fn CreateFlavorCircleSprites() {
-    (*sBerryTag).flavorCircleIds[0] = CreateBerryFlavorCircleSprite(64);
-    (*sBerryTag).flavorCircleIds[1] = CreateBerryFlavorCircleSprite(104);
-    (*sBerryTag).flavorCircleIds[2] = CreateBerryFlavorCircleSprite(144);
-    (*sBerryTag).flavorCircleIds[3] = CreateBerryFlavorCircleSprite(184);
-    (*sBerryTag).flavorCircleIds[4] = CreateBerryFlavorCircleSprite(224);
+    (*crate::gl!(sBerryTag)).flavorCircleIds[0] = CreateBerryFlavorCircleSprite(64);
+    (*crate::gl!(sBerryTag)).flavorCircleIds[1] = CreateBerryFlavorCircleSprite(104);
+    (*crate::gl!(sBerryTag)).flavorCircleIds[2] = CreateBerryFlavorCircleSprite(144);
+    (*crate::gl!(sBerryTag)).flavorCircleIds[3] = CreateBerryFlavorCircleSprite(184);
+    (*crate::gl!(sBerryTag)).flavorCircleIds[4] = CreateBerryFlavorCircleSprite(224);
 }
 unsafe fn SetFlavorCirclesVisiblity() {
-    let berry: *mut Berry = GetBerryInfo((*sBerryTag).berryId as u8);
+    let berry: *mut Berry = GetBerryInfo((*crate::gl!(sBerryTag)).berryId as u8);
     if (*berry).spicy != 0 {
-        gSprites[(*sBerryTag).flavorCircleIds[0]].set_invisible(0);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[0]].set_invisible(0);
     } else {
-        gSprites[(*sBerryTag).flavorCircleIds[0]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[0]]
+            .set_invisible(TRUE as u16);
     }
     if (*berry).dry != 0 {
-        gSprites[(*sBerryTag).flavorCircleIds[1]].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[1]]
+            .set_invisible(FALSE as u16);
     } else {
-        gSprites[(*sBerryTag).flavorCircleIds[1]].set_invisible(1);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[1]].set_invisible(1);
     }
     if (*berry).sweet != 0 {
-        gSprites[(*sBerryTag).flavorCircleIds[2]].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[2]]
+            .set_invisible(FALSE as u16);
     } else {
-        gSprites[(*sBerryTag).flavorCircleIds[2]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[2]]
+            .set_invisible(TRUE as u16);
     }
     if (*berry).bitter != 0 {
-        gSprites[(*sBerryTag).flavorCircleIds[3]].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[3]]
+            .set_invisible(FALSE as u16);
     } else {
-        gSprites[(*sBerryTag).flavorCircleIds[3]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[3]]
+            .set_invisible(TRUE as u16);
     }
     if (*berry).sour != 0 {
-        gSprites[(*sBerryTag).flavorCircleIds[4]].set_invisible(FALSE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[4]]
+            .set_invisible(FALSE as u16);
     } else {
-        gSprites[(*sBerryTag).flavorCircleIds[4]].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sBerryTag)).flavorCircleIds[4]]
+            .set_invisible(TRUE as u16);
     }
 }
 unsafe fn DestroyFlavorCircleSprites() {
     for i in 0..(FLAVOR_COUNT as u16) {
-        DestroySprite(&raw mut gSprites[(*sBerryTag).flavorCircleIds[i]]);
+        DestroySprite({
+            let gl_i1 = (*crate::gl!(sBerryTag)).flavorCircleIds[i];
+            crate::gl!(&raw gSprites[gl_i1])
+        });
     }
 }
 unsafe fn PrepareToCloseBerryTagScreen(taskId: u8) {
@@ -679,31 +698,31 @@ unsafe fn PrepareToCloseBerryTagScreen(taskId: u8) {
     task_set_func(taskId, Some(Task_CloseBerryTagScreen));
 }
 pub(crate) unsafe fn Task_CloseBerryTagScreen(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyBerrySprite();
         DestroyFlavorCircleSprites();
-        Free(sBerryTag as *mut c_void);
+        Free(crate::gl!(sBerryTag) as *mut c_void);
         FreeAllWindowBuffers();
         SetMainCallback2(Some(CB2_ReturnToBagMenuPocket));
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn Task_HandleInput(taskId: u8) {
-    if gPaletteFade.active() == 0 {
-        let arrowKeys: u16 = gMain.newAndRepeatedKeys & DPAD_ANY as u16;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        let arrowKeys: u16 = crate::gl!(gMain.newAndRepeatedKeys) & DPAD_ANY as u16;
         if arrowKeys == DPAD_UP as u16 {
             TryChangeDisplayedBerry(taskId, -1);
         } else if arrowKeys == DPAD_DOWN as u16 {
             TryChangeDisplayedBerry(taskId, 1);
-        } else if gMain.newKeys as i32 & 3 != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
             PrepareToCloseBerryTagScreen(taskId);
         }
     }
 }
 unsafe fn TryChangeDisplayedBerry(taskId: u8, toMove: i8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    let currPocketPosition: i16 =
-        gBagPosition.scrollPosition[3] as i16 + gBagPosition.cursorPosition[3] as i16;
+    let currPocketPosition: i16 = crate::gl!(gBagPosition.scrollPosition[3]) as i16
+        + crate::gl!(gBagPosition.cursorPosition[3]) as i16;
     let newPocketPosition: u32 = currPocketPosition as u32 + toMove as u32;
     if newPocketPosition < 46
         && BagGetItemIdByPocketPosition(POCKET_BERRIES, newPocketPosition as u16) != ITEM_NONE
@@ -720,8 +739,8 @@ unsafe fn TryChangeDisplayedBerry(taskId: u8, toMove: i8) {
     }
 }
 unsafe fn HandleBagCursorPositionChange(toMove: i8) {
-    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[3];
-    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[3];
+    let scrollPos: *mut u16 = crate::gl!(&raw gBagPosition.scrollPosition[3]);
+    let cursorPos: *mut u16 = crate::gl!(&raw gBagPosition.cursorPosition[3]);
     if toMove > 0 {
         if *cursorPos < 4 || BagGetItemIdByPocketPosition(4, *scrollPos + 8) == 0 {
             *cursorPos += toMove as u16;
@@ -735,7 +754,7 @@ unsafe fn HandleBagCursorPositionChange(toMove: i8) {
             *scrollPos += toMove as u16;
         }
     }
-    (*sBerryTag).berryId = ItemIdToBerryType(BagGetItemIdByPocketPosition(
+    (*crate::gl!(sBerryTag)).berryId = ItemIdToBerryType(BagGetItemIdByPocketPosition(
         POCKET_BERRIES,
         *scrollPos + *cursorPos,
     )) as u16;
@@ -821,9 +840,15 @@ pub(crate) unsafe fn Task_DisplayAnotherBerry(taskId: u8) {
     } else {
         y = *data;
     }
-    gSprites[(*sBerryTag).berrySpriteId].y2 = y;
+    {
+        let gl_i2 = (*crate::gl!(sBerryTag)).berrySpriteId;
+        crate::gl!(gSprites[gl_i2].y2 = y)
+    };
     for i in 0..(FLAVOR_COUNT as u16) {
-        gSprites[(*sBerryTag).flavorCircleIds[i]].y2 = y;
+        {
+            let gl_i3 = (*crate::gl!(sBerryTag)).flavorCircleIds[i];
+            crate::gl!(gSprites[gl_i3].y2 = y)
+        };
     }
     ChangeBgY(1, 0x1000, *data.at(1) as u8);
     ChangeBgY(2, 0x1000, *data.at(1) as u8);

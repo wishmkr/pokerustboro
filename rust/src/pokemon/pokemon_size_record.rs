@@ -107,7 +107,7 @@ unsafe fn StringAppend(a0: *mut u8, a1: *const u8) -> *mut u8 {
 
 unsafe fn party_mon(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+        (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gPlayerParty;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(index * POKEMON_SIZE)
@@ -202,7 +202,7 @@ unsafe fn compare_mon_size(species: u16, size_record: *mut u16) -> u8 {
     let new_size = unsafe { mon_size(species, size_params) };
     let old_size = unsafe { mon_size(species, size_record.read()) };
 
-    unsafe { format_mon_size_record((&raw mut gStringVar2).cast::<u8>(), new_size) };
+    unsafe { format_mon_size_record((crate::gl!(&raw gStringVar2)).cast::<u8>(), new_size) };
 
     if new_size <= old_size {
         COMPARE_SIZE_SMALLER
@@ -218,19 +218,19 @@ unsafe fn mon_size_record_info(species: u16, size_record: *mut u16) {
     let record = unsafe { size_record.read() };
     let size = unsafe { mon_size(species, record) };
 
-    unsafe { format_mon_size_record((&raw mut gStringVar3).cast::<u8>(), size) };
+    unsafe { format_mon_size_record((crate::gl!(&raw gStringVar3)).cast::<u8>(), size) };
     let _ = unsafe { StringCopy((&raw mut gStringVar1).cast::<u8>(), species_name(species)) };
 
     let name: *const u8 = if record == DEFAULT_MAX_SIZE {
         &raw const (*(&raw const crate::data::strings::gText_Marco).cast::<u8>())
     } else {
         unsafe {
-            *(&raw const crate::load_save::gSaveBlock2Ptr)
+            *(crate::gl!(&raw @at crate::load_save::gSaveBlock2Ptr;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut()
         }
     };
-    let _ = unsafe { StringCopy((&raw mut gStringVar2).cast::<u8>(), name) };
+    let _ = unsafe { StringCopy((crate::gl!(&raw gStringVar2)).cast::<u8>(), name) };
 }
 
 #[unsafe(no_mangle)]

@@ -68,7 +68,7 @@ unsafe fn DestroySpriteAndFreeResources(a0: *mut Sprite) {
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -99,15 +99,17 @@ static sSpriteSheet_SwapLine: Table<CompressedSpriteSheet> =
 static sSpriteTemplate_SwapLine: Table<SpriteTemplate> =
     Table((&raw const crate::data::menu_helpers::sSpriteTemplate_SwapLine).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sYesNo: YesNoFuncTable = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sYesNo: crate::global::Global<YesNoFuncTable> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMessageWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
-pub(crate) static mut sMessageNextTask: Option<unsafe fn(u8)> = None;
+pub(crate) static sMessageNextTask: crate::global::Global<Option<unsafe fn(u8)>> =
+    crate::global::Global::new(None);
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -182,7 +184,7 @@ pub unsafe fn DisplayMessageAndContinueTask(
     if string != gStringVar4.as_mut_ptr() {
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), string);
     }
-    (*(&raw const crate::text::gTextFlags)
+    (*(crate::gl!(&raw @at crate::text::gTextFlags;).cast_const())
         .cast::<TextFlags>()
         .cast_mut())
     .set_canABSpeedUpPrint(1);
@@ -196,7 +198,7 @@ pub unsafe fn DisplayMessageAndContinueTask(
         TEXT_COLOR_WHITE,
         TEXT_COLOR_LIGHT_GRAY,
     );
-    sMessageNextTask = core::mem::transmute::<_, Option<unsafe fn(u8)>>(taskFunc);
+    crate::gl!(sMessageNextTask = core::mem::transmute::<_, Option<unsafe fn(u8)>>(taskFunc));
     task_set_func(taskId, Some(Task_ContinueTaskAfterMessagePrints));
 }
 pub unsafe fn RunTextPrintersRetIsActive(textPrinterId: u8) -> u16 {
@@ -205,11 +207,11 @@ pub unsafe fn RunTextPrintersRetIsActive(textPrinterId: u8) -> u16 {
 }
 pub(crate) unsafe fn Task_ContinueTaskAfterMessagePrints(taskId: u8) {
     if RunTextPrintersRetIsActive(sMessageWindowId.get()) == 0 {
-        sMessageNextTask.unwrap_unchecked()(taskId);
+        (*sMessageNextTask.as_ptr()).unwrap_unchecked()(taskId);
     }
 }
 pub unsafe fn DoYesNoFuncWithChoice(taskId: u8, data: *mut YesNoFuncTable) {
-    sYesNo = *data;
+    crate::gl!(sYesNo = *data);
     task_set_func(taskId, Some(Task_CallYesOrNoCallback));
 }
 pub unsafe fn CreateYesNoMenuWithCallbacks(
@@ -223,25 +225,25 @@ pub unsafe fn CreateYesNoMenuWithCallbacks(
     yesNo: *mut YesNoFuncTable,
 ) {
     CreateYesNoMenu(template, tileStart, palette, 0);
-    sYesNo = *yesNo;
+    crate::gl!(sYesNo = *yesNo);
     task_set_func(taskId, Some(Task_CallYesOrNoCallback));
 }
 pub(crate) unsafe fn Task_CallYesOrNoCallback(taskId: u8) {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             PlaySE(SE_SELECT);
-            sYesNo.yesFunc.unwrap_unchecked()(taskId);
+            (*sYesNo.as_ptr()).yesFunc.unwrap_unchecked()(taskId);
         }
         1 | MENU_B_PRESSED => {
             PlaySE(SE_SELECT);
-            sYesNo.noFunc.unwrap_unchecked()(taskId);
+            (*sYesNo.as_ptr()).noFunc.unwrap_unchecked()(taskId);
         }
         _ => {}
     }
 }
 pub unsafe fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -> u8 {
     let valBefore: i16 = *quantity;
-    if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_UP {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_UP {
         *quantity += 1;
         if *quantity as i32 > max as i32 {
             *quantity = 1;
@@ -252,7 +254,7 @@ pub unsafe fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -
             PlaySE(SE_SELECT);
             return TRUE;
         }
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_DOWN {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_DOWN {
         *quantity -= 1;
         if *quantity <= 0 {
             *quantity = max as i16;
@@ -263,7 +265,7 @@ pub unsafe fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -
             PlaySE(SE_SELECT);
             return TRUE;
         }
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_RIGHT {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_RIGHT {
         *quantity += 10;
         if *quantity as i32 > max as i32 {
             *quantity = max as i16;
@@ -274,7 +276,7 @@ pub unsafe fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -
             PlaySE(SE_SELECT);
             return TRUE;
         }
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_LEFT {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_ANY == DPAD_LEFT {
         *quantity -= 10;
         if *quantity <= 0 {
             *quantity = 1;
@@ -289,22 +291,22 @@ pub unsafe fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -
     FALSE
 }
 pub unsafe fn GetLRKeysPressed() -> u8 {
-    if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
-        if gMain.newKeys as i32 & L_BUTTON != 0 {
+    if (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
+        if crate::gl!(gMain.newKeys) as i32 & L_BUTTON != 0 {
             return MENU_L_PRESSED;
         }
-        if gMain.newKeys as i32 & R_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & R_BUTTON != 0 {
             return MENU_R_PRESSED;
         }
     }
     0
 }
 pub unsafe fn GetLRKeysPressedAndHeld() -> u8 {
-    if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
-        if gMain.newAndRepeatedKeys as i32 & L_BUTTON != 0 {
+    if (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & L_BUTTON != 0 {
             return MENU_L_PRESSED;
         }
-        if gMain.newAndRepeatedKeys as i32 & R_BUTTON != 0 {
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & R_BUTTON != 0 {
             return MENU_R_PRESSED;
         }
     }
@@ -312,7 +314,8 @@ pub unsafe fn GetLRKeysPressedAndHeld() -> u8 {
 }
 pub unsafe fn IsHoldingItemAllowed(itemId: u16) -> u8 {
     if itemId == ITEM_ENIGMA_BERRY
-        && ((*gSaveBlock1Ptr).location.mapGroup == 25 && (*gSaveBlock1Ptr).location.mapNum == 25
+        && ((*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 25
+            && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 25
             || InUnionRoom() == TRUE as u32)
     {
         return FALSE;
@@ -337,8 +340,8 @@ pub unsafe fn IsWritingMailAllowed(itemId: u16) -> u8 {
         0
     }
 }
-pub unsafe fn MenuHelpers_IsLinkActive() -> u8 {
-    if IsOverworldLinkActive() == 1 || gReceivedRemoteLinkPlayers == 1 {
+pub fn MenuHelpers_IsLinkActive() -> u8 {
+    if IsOverworldLinkActive() == 1 || gReceivedRemoteLinkPlayers.get() == 1 {
         return TRUE;
     } else {
         return FALSE;
@@ -455,23 +458,35 @@ pub unsafe fn CreateSwapLineSprites(spriteIds: *mut u8, count: u8) {
             0,
         );
         if i != 0 {
-            StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 1);
+            StartSpriteAnim(
+                {
+                    let gl_i0 = *spriteIds.at(i);
+                    crate::gl!(&raw gSprites[gl_i0])
+                },
+                1,
+            );
         }
-        gSprites[*spriteIds.at(i)].set_invisible(TRUE as u16);
+        (*gSprites.as_ptr())[*spriteIds.at(i)].set_invisible(TRUE as u16);
     }
 }
 pub unsafe fn DestroySwapLineSprites(spriteIds: *mut u8, count: u8) {
     for i in 0..count {
         if i as i32 == count as i32 - 1 {
-            DestroySpriteAndFreeResources(&raw mut gSprites[*spriteIds.at(i)]);
+            DestroySpriteAndFreeResources({
+                let gl_i1 = *spriteIds.at(i);
+                crate::gl!(&raw gSprites[gl_i1])
+            });
         } else {
-            DestroySprite(&raw mut gSprites[*spriteIds.at(i)]);
+            DestroySprite({
+                let gl_i2 = *spriteIds.at(i);
+                crate::gl!(&raw gSprites[gl_i2])
+            });
         }
     }
 }
 pub unsafe fn SetSwapLineSpritesInvisibility(spriteIds: *mut u8, count: u8, invisible: u8) {
     for i in 0..count {
-        gSprites[*spriteIds.at(i)].set_invisible(invisible as u16);
+        (*gSprites.as_ptr())[*spriteIds.at(i)].set_invisible(invisible as u16);
     }
 }
 pub unsafe fn UpdateSwapLineSpritesPos(spriteIds: *mut u8, mut count: u8, x: i16, y: u16) {
@@ -479,10 +494,19 @@ pub unsafe fn UpdateSwapLineSpritesPos(spriteIds: *mut u8, mut count: u8, x: i16
     count &= 127;
     for i in 0..count {
         if i as i32 == count as i32 - 1 && hasMargin != 0 {
-            gSprites[*spriteIds.at(i)].x2 = x - 8;
+            {
+                let gl_i3 = *spriteIds.at(i);
+                crate::gl!(gSprites[gl_i3].x2 = x - 8)
+            };
         } else {
-            gSprites[*spriteIds.at(i)].x2 = x;
+            {
+                let gl_i4 = *spriteIds.at(i);
+                crate::gl!(gSprites[gl_i4].x2 = x)
+            };
         }
-        gSprites[*spriteIds.at(i)].y = 1 + y as i16;
+        {
+            let gl_i5 = *spriteIds.at(i);
+            crate::gl!(gSprites[gl_i5].y = 1 + y as i16)
+        };
     }
 }

@@ -116,12 +116,12 @@ unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
 }
 /// `AddWindow8Bit` with this module's view of its types.
 #[inline]
-unsafe fn AddWindow8Bit(a0: *mut WindowTemplate) -> u16 {
+fn AddWindow8Bit(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::AddWindow8Bit(a0 as _) }
 }
 /// `BlitBitmapRectToWindow4BitTo8Bit` with this module's view of its types.
 #[inline]
-unsafe fn BlitBitmapRectToWindow4BitTo8Bit(
+fn BlitBitmapRectToWindow4BitTo8Bit(
     a0: u8,
     a1: *mut u8,
     a2: u16,
@@ -147,7 +147,7 @@ unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *
 }
 /// `CopyRectToBgTilemapBufferRect` with this module's view of its types.
 #[inline]
-unsafe fn CopyRectToBgTilemapBufferRect(
+fn CopyRectToBgTilemapBufferRect(
     a0: u8,
     a1: *mut c_void,
     a2: u8,
@@ -224,7 +224,7 @@ unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
 }
 /// `GetMaxWidthInMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
     unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
 }
 /// `GetStringCenterAlignXOffset` with this module's view of its types.
@@ -239,7 +239,7 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -253,7 +253,7 @@ unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadBgTiles` with this module's view of its types.
@@ -268,13 +268,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpecialPokePic` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpecialPokePic(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-    a4: u8,
-) {
+fn LoadSpecialPokePic(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32, a4: u8) {
     unsafe {
         crate::decompress::LoadSpecialPokePic(a0 as _, a1 as _, a2, a3, a4);
     }
@@ -286,7 +280,7 @@ unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -298,7 +292,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
@@ -1317,48 +1311,55 @@ static sWindowTemplates: Table<CArray<WindowTemplate, 4>> =
 static sYesNoWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::pokemon_storage_system::sYesNoWindowTemplate).cast());
 
-pub(crate) static mut sItemIconGfxBuffer: CArray<u32, 98> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+pub(crate) static sItemIconGfxBuffer: crate::global::Global<CArray<u32, 98>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPreviousBoxOption: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sChooseBoxMenu: *mut ChooseBoxMenu = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStorage: *mut PokemonStorageSystemData = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sChooseBoxMenu: crate::global::Global<*mut ChooseBoxMenu> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sStorage: crate::global::Global<*mut PokemonStorageSystemData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sInPartyMenu: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCurrentBoxOption: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sDepositBoxId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sWhichToReshow: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sLastUsedBox: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMovingItemId: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedMovingMon: Pokemon = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sSavedMovingMon: crate::global::Global<Pokemon> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sCursorArea: crate::global::Global<i8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCursorPosition: i8 = 0;
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCursorPosition: crate::global::Global<i8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sIsMonBeingMoved: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMovingMonOrigBoxId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sMovingMonOrigBoxPos: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sAutoActionOn: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sSavedCursorPosition: crate::global::Global<u8> = crate::global::Global::new(0);
-pub(crate) static mut sMultiMove: *mut typeof___sMultiMove_0_t = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTilemapUtil: *mut TilemapUtil = null_mut();
-#[unsafe(link_section = "ewram_data")]
+pub(crate) static sMultiMove: crate::global::Global<*mut typeof___sMultiMove_0_t> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTilemapUtil: crate::global::Global<*mut TilemapUtil> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sNumTilemapUtilIds: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnkUtil: *mut UnkUtil = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sUnkUtil: crate::global::Global<*mut UnkUtil> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -1397,7 +1398,7 @@ unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -1409,7 +1410,7 @@ unsafe fn GetItemDescription(a0: u16) -> *mut u8 {
 }
 /// `GetItemIconPicOrPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetItemIconPicOrPalette(a0: u16, a1: u8) -> *mut c_void {
+fn GetItemIconPicOrPalette(a0: u16, a1: u8) -> *mut c_void {
     crate::item_icon::GetItemIconPicOrPalette(a0, a1) as *mut c_void
 }
 /// `GetItemName` with this module's view of its types.
@@ -1419,19 +1420,19 @@ unsafe fn GetItemName(a0: u16) -> *mut u8 {
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -1576,8 +1577,8 @@ pub unsafe fn GetFirstFreeBoxSpot(boxId: u8) -> i16 {
 pub unsafe fn CountPartyNonEggMons() -> u8 {
     let mut count: u16 = 0;
     for i in 0..(PARTY_SIZE as u16) {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) != SPECIES_NONE as u32
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0
         {
             count += 1;
         }
@@ -1588,9 +1589,10 @@ pub unsafe fn CountPartyAliveNonEggMonsExcept(slotToIgnore: u8) -> u8 {
     let mut count: u16 = 0;
     for i in 0..(PARTY_SIZE as u16) {
         if i != slotToIgnore as u16
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) != 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES)
+                != SPECIES_NONE as u32
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP) != 0
         {
             count += 1;
         }
@@ -1604,7 +1606,7 @@ pub unsafe fn CountPartyAliveNonEggMons_IgnoreVar0x8004Slot() -> u16 {
 pub unsafe fn CountPartyMons() -> u8 {
     let mut count: u16 = 0;
     for i in 0..(PARTY_SIZE as u16) {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32 {
+        if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) != SPECIES_NONE as u32 {
             count += 1;
         }
     }
@@ -1619,7 +1621,7 @@ pub unsafe fn StringCopyAndFillWithSpaces(dst: *mut u8, src: *mut u8, n: u16) ->
     *str = EOS;
     str
 }
-unsafe fn UnusedWriteRectCpu(
+fn UnusedWriteRectCpu(
     mut dest: *mut u16,
     dest_left: u16,
     dest_top: u16,
@@ -1730,7 +1732,7 @@ pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
             match (*task).data[tInput] {
                 -2 => {
                     (*task).data[tNextOption] = (*task).data[tSelectedOption];
-                    if gMain.newKeys as i32 & DPAD_UP != 0
+                    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0
                         && ({
                             (*task).data[tNextOption] -= 1;
                             (*task).data[tNextOption]
@@ -1738,7 +1740,7 @@ pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
                     {
                         (*task).data[tNextOption] = 4;
                     }
-                    if gMain.newKeys as i32 & DPAD_DOWN != 0
+                    if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
                         && ({
                             (*task).data[tNextOption] += 1;
                             (*task).data[tNextOption]
@@ -1812,7 +1814,7 @@ pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
             }
         }
         STATE_ERROR_MSG => {
-            if gMain.newKeys as i32 & 3 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 FillWindowPixelBuffer(0, 17);
                 AddTextPrinterParameterized2(
                     0,
@@ -1825,7 +1827,7 @@ pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
                     TEXT_COLOR_LIGHT_GRAY,
                 );
                 (*task).data[tState] = STATE_HANDLE_INPUT;
-            } else if gMain.newKeys as i32 & DPAD_UP != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
                 if ({
                     (*task).data[tSelectedOption] -= 1;
                     (*task).data[tSelectedOption]
@@ -1847,7 +1849,7 @@ pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
                     TEXT_COLOR_LIGHT_GRAY,
                 );
                 (*task).data[tState] = STATE_HANDLE_INPUT;
-            } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
                 if ({
                     (*task).data[tSelectedOption] += 1;
                     (*task).data[tSelectedOption]
@@ -1871,7 +1873,7 @@ pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
                 (*task).data[tState] = STATE_HANDLE_INPUT;
             }
         }
-        STATE_ENTER_PC if gPaletteFade.active() == 0 => {
+        STATE_ENTER_PC if (*gPaletteFade.as_ptr()).active() == 0 => {
             CleanupOverworldWindowsAndTilemaps();
             EnterPokeStorage((*task).data[tInput] as u8);
             RemoveWindow((*task).data[tWindowId] as u8);
@@ -1888,7 +1890,7 @@ pub unsafe fn ShowPokemonStorageSystemPC() {
     LockPlayerFieldControls();
 }
 pub(crate) unsafe fn FieldTask_ReturnToPcMenu() {
-    let vblankCb: Option<unsafe fn()> = gMain.vblankCallback;
+    let vblankCb: Option<unsafe fn()> = crate::gl!(gMain.vblankCallback);
     SetVBlankCallback(None);
     let taskId: u8 = CreateTask(Some(Task_PCMainMenu), 80);
     task_set(taskId, tState, 0);
@@ -1915,7 +1917,7 @@ unsafe fn CreateMainMenu(whichMenu: u8, windowIdPtr: *mut i16) {
 }
 pub(crate) unsafe fn CB2_ExitPokeStorage() {
     sPreviousBoxOption.set(GetCurrentBoxOption());
-    gFieldCallback = Some(FieldTask_ReturnToPcMenu);
+    crate::gl!(gFieldCallback = Some(FieldTask_ReturnToPcMenu));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 unsafe fn StorageSystemGetNextMonIndex(
@@ -1997,18 +1999,18 @@ unsafe fn LoadChooseBoxMenuGfx(
         LoadSpritePalette(&raw mut palette);
     }
     LoadSpriteSheets(sheets.as_mut_ptr());
-    sChooseBoxMenu = menu;
+    crate::gl!(sChooseBoxMenu = menu);
     (*menu).tileTag = tileTag;
     (*menu).paletteTag = palTag;
     (*menu).subpriority = subpriority;
     (*menu).loadedPalette = loadPal;
 }
 unsafe fn FreeChooseBoxMenu() {
-    if (*sChooseBoxMenu).loadedPalette != 0 {
-        FreeSpritePaletteByTag((*sChooseBoxMenu).paletteTag);
+    if (*crate::gl!(sChooseBoxMenu)).loadedPalette != 0 {
+        FreeSpritePaletteByTag((*crate::gl!(sChooseBoxMenu)).paletteTag);
     }
-    FreeSpriteTilesByTag((*sChooseBoxMenu).tileTag);
-    FreeSpriteTilesByTag((*sChooseBoxMenu).tileTag + 1);
+    FreeSpriteTilesByTag((*crate::gl!(sChooseBoxMenu)).tileTag);
+    FreeSpriteTilesByTag((*crate::gl!(sChooseBoxMenu)).tileTag + 1);
 }
 unsafe fn CreateChooseBoxMenuSprites(curBox: u8) {
     ChooseBoxMenu_CreateSprites(curBox);
@@ -2017,18 +2019,18 @@ unsafe fn DestroyChooseBoxMenuSprites() {
     ChooseBoxMenu_DestroySprites();
 }
 unsafe fn HandleChooseBoxMenuInput() -> u8 {
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return BOXID_CANCELED;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        return (*sChooseBoxMenu).curBox;
+        return (*crate::gl!(sChooseBoxMenu)).curBox;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
         PlaySE(SE_SELECT);
         ChooseBoxMenu_MoveLeft();
-    } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
         PlaySE(SE_SELECT);
         ChooseBoxMenu_MoveRight();
     }
@@ -2055,80 +2057,94 @@ unsafe fn ChooseBoxMenu_CreateSprites(curBox: u8) {
         lit1.callback = Some(SpriteCallbackDummy);
         lit1
     };
-    (*sChooseBoxMenu).curBox = curBox;
-    template.tileTag = (*sChooseBoxMenu).tileTag;
-    template.paletteTag = (*sChooseBoxMenu).paletteTag;
+    (*crate::gl!(sChooseBoxMenu)).curBox = curBox;
+    template.tileTag = (*crate::gl!(sChooseBoxMenu)).tileTag;
+    template.paletteTag = (*crate::gl!(sChooseBoxMenu)).paletteTag;
     let mut spriteId: u8 = CreateSprite(&raw mut template, 160, 96, 0);
-    (*sChooseBoxMenu).menuSprite = &raw mut gSprites[spriteId];
+    (*crate::gl!(sChooseBoxMenu)).menuSprite = crate::gl!(&raw gSprites[spriteId]);
     oamData.set_shape(2);
     oamData.set_size(1);
-    template.tileTag = (*sChooseBoxMenu).tileTag + 1;
+    template.tileTag = (*crate::gl!(sChooseBoxMenu)).tileTag + 1;
     template.anims = sAnims_ChooseBoxMenu.as_ptr().cast_mut();
     for i in 0..4u16 {
-        spriteId = CreateSprite(&raw mut template, 124, 80, (*sChooseBoxMenu).subpriority);
-        (*sChooseBoxMenu).menuSideSprites[i] = &raw mut gSprites[spriteId];
+        spriteId = CreateSprite(
+            &raw mut template,
+            124,
+            80,
+            (*crate::gl!(sChooseBoxMenu)).subpriority,
+        );
+        (*crate::gl!(sChooseBoxMenu)).menuSideSprites[i] = crate::gl!(&raw gSprites[spriteId]);
         let mut anim: u16 = 0;
         if i as i32 & 2 != 0 {
-            (*(*sChooseBoxMenu).menuSideSprites[i]).x = 196;
+            (*(*crate::gl!(sChooseBoxMenu)).menuSideSprites[i]).x = 196;
             anim = 2;
         }
         if i as i32 & 1 != 0 {
-            (*(*sChooseBoxMenu).menuSideSprites[i]).y = 112;
-            (*(*sChooseBoxMenu).menuSideSprites[i]).oam.set_size(0);
+            (*(*crate::gl!(sChooseBoxMenu)).menuSideSprites[i]).y = 112;
+            (*(*crate::gl!(sChooseBoxMenu)).menuSideSprites[i])
+                .oam
+                .set_size(0);
             anim += 1;
         }
-        StartSpriteAnim((*sChooseBoxMenu).menuSideSprites[i], anim as u8);
+        StartSpriteAnim((*crate::gl!(sChooseBoxMenu)).menuSideSprites[i], anim as u8);
     }
     for i in 0..2u16 {
-        (*sChooseBoxMenu).arrowSprites[i] =
-            CreateChooseBoxArrows(72 * i + 124, 88, i as u8, 0, (*sChooseBoxMenu).subpriority);
-        if !(*sChooseBoxMenu).arrowSprites[i].is_null() {
-            (*(*sChooseBoxMenu).arrowSprites[i]).data[0] = (if i == 0 { -1 } else { 1 }) as i16;
-            (*(*sChooseBoxMenu).arrowSprites[i]).callback = Some(SpriteCB_ChooseBoxArrow);
+        (*crate::gl!(sChooseBoxMenu)).arrowSprites[i] = CreateChooseBoxArrows(
+            72 * i + 124,
+            88,
+            i as u8,
+            0,
+            (*crate::gl!(sChooseBoxMenu)).subpriority,
+        );
+        if !(*crate::gl!(sChooseBoxMenu)).arrowSprites[i].is_null() {
+            (*(*crate::gl!(sChooseBoxMenu)).arrowSprites[i]).data[0] =
+                (if i == 0 { -1 } else { 1 }) as i16;
+            (*(*crate::gl!(sChooseBoxMenu)).arrowSprites[i]).callback =
+                Some(SpriteCB_ChooseBoxArrow);
         }
     }
     ChooseBoxMenu_PrintInfo();
 }
 unsafe fn ChooseBoxMenu_DestroySprites() {
-    if !(*sChooseBoxMenu).menuSprite.is_null() {
-        DestroySprite((*sChooseBoxMenu).menuSprite);
-        (*sChooseBoxMenu).menuSprite = null_mut();
+    if !(*crate::gl!(sChooseBoxMenu)).menuSprite.is_null() {
+        DestroySprite((*crate::gl!(sChooseBoxMenu)).menuSprite);
+        (*crate::gl!(sChooseBoxMenu)).menuSprite = null_mut();
     }
     for i in 0..4u16 {
-        if !(*sChooseBoxMenu).menuSideSprites[i].is_null() {
-            DestroySprite((*sChooseBoxMenu).menuSideSprites[i]);
-            (*sChooseBoxMenu).menuSideSprites[i] = null_mut();
+        if !(*crate::gl!(sChooseBoxMenu)).menuSideSprites[i].is_null() {
+            DestroySprite((*crate::gl!(sChooseBoxMenu)).menuSideSprites[i]);
+            (*crate::gl!(sChooseBoxMenu)).menuSideSprites[i] = null_mut();
         }
     }
     for i in 0..2u16 {
-        if !(*sChooseBoxMenu).arrowSprites[i].is_null() {
-            DestroySprite((*sChooseBoxMenu).arrowSprites[i]);
+        if !(*crate::gl!(sChooseBoxMenu)).arrowSprites[i].is_null() {
+            DestroySprite((*crate::gl!(sChooseBoxMenu)).arrowSprites[i]);
         }
     }
 }
 unsafe fn ChooseBoxMenu_MoveRight() {
     if ({
-        (*sChooseBoxMenu).curBox += 1;
-        (*sChooseBoxMenu).curBox
+        (*crate::gl!(sChooseBoxMenu)).curBox += 1;
+        (*crate::gl!(sChooseBoxMenu)).curBox
     }) >= TOTAL_BOXES_COUNT
     {
-        (*sChooseBoxMenu).curBox = 0;
+        (*crate::gl!(sChooseBoxMenu)).curBox = 0;
     }
     ChooseBoxMenu_PrintInfo();
 }
 unsafe fn ChooseBoxMenu_MoveLeft() {
-    (*sChooseBoxMenu).curBox = (if (*sChooseBoxMenu).curBox == 0 {
+    (*crate::gl!(sChooseBoxMenu)).curBox = (if (*crate::gl!(sChooseBoxMenu)).curBox == 0 {
         13
     } else {
-        (*sChooseBoxMenu).curBox as i32 - 1
+        (*crate::gl!(sChooseBoxMenu)).curBox as i32 - 1
     }) as u8;
     ChooseBoxMenu_PrintInfo();
 }
 unsafe fn ChooseBoxMenu_PrintInfo() {
     let mut numBoxMonsText: CArray<u8, 16> = zeroed();
     let mut template: WindowTemplate = zeroed();
-    let boxName: *mut u8 = GetBoxNamePtr((*sChooseBoxMenu).curBox);
-    let numInBox: u8 = CountMonsInBox((*sChooseBoxMenu).curBox);
+    let boxName: *mut u8 = GetBoxNamePtr((*crate::gl!(sChooseBoxMenu)).curBox);
+    let numInBox: u8 = CountMonsInBox((*crate::gl!(sChooseBoxMenu)).curBox);
     memset(&raw mut template as *mut u8, 0, 8);
     template.width = 8;
     template.height = 4;
@@ -2168,7 +2184,7 @@ unsafe fn ChooseBoxMenu_PrintInfo() {
     CpuSet(
         winTileData as usize as *mut c_void,
         ((OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(256) as *mut c_void as *mut u8)
-            .at(GetSpriteTileStartByTag((*sChooseBoxMenu).tileTag) as i32 * 32)
+            .at(GetSpriteTileStartByTag((*crate::gl!(sChooseBoxMenu)).tileTag) as i32 * 32)
             as *mut c_void,
         0x4000100,
     );
@@ -2197,7 +2213,7 @@ pub(crate) unsafe fn VBlankCB_PokeStorage() {
     ProcessSpriteCopyRequests();
     UnkUtil_Run();
     TransferPlttBuffer();
-    SetGpuReg(REG_OFFSET_BG2HOFS, (*sStorage).bg2_X);
+    SetGpuReg(REG_OFFSET_BG2HOFS, (*crate::gl!(sStorage)).bg2_X);
 }
 pub(crate) unsafe fn CB2_PokeStorage() {
     RunTasks();
@@ -2210,29 +2226,29 @@ pub(crate) unsafe fn CB2_PokeStorage() {
 unsafe fn EnterPokeStorage(boxOption: u8) {
     ResetTasks();
     sCurrentBoxOption.set(boxOption);
-    sStorage = Alloc(25284) as *mut PokemonStorageSystemData;
-    if sStorage.is_null() {
+    crate::gl!(sStorage = Alloc(25284) as *mut PokemonStorageSystemData);
+    if (*sStorage.as_ptr()).is_null() {
         SetMainCallback2(Some(CB2_ExitPokeStorage));
     } else {
-        (*sStorage).boxOption = boxOption;
-        (*sStorage).isReopening = FALSE;
+        (*crate::gl!(sStorage)).boxOption = boxOption;
+        (*crate::gl!(sStorage)).isReopening = FALSE;
         sMovingItemId.set(ITEM_NONE);
-        (*sStorage).state = 0;
-        (*sStorage).taskId = CreateTask(Some(Task_InitPokeStorage), 3);
+        (*crate::gl!(sStorage)).state = 0;
+        (*crate::gl!(sStorage)).taskId = CreateTask(Some(Task_InitPokeStorage), 3);
         sLastUsedBox.set(StorageGetCurrentBox());
         SetMainCallback2(Some(CB2_PokeStorage));
     }
 }
 pub(crate) unsafe fn CB2_ReturnToPokeStorage() {
     ResetTasks();
-    sStorage = Alloc(25284) as *mut PokemonStorageSystemData;
-    if sStorage.is_null() {
+    crate::gl!(sStorage = Alloc(25284) as *mut PokemonStorageSystemData);
+    if (*sStorage.as_ptr()).is_null() {
         SetMainCallback2(Some(CB2_ExitPokeStorage));
     } else {
-        (*sStorage).boxOption = sCurrentBoxOption.get();
-        (*sStorage).isReopening = TRUE;
-        (*sStorage).state = 0;
-        (*sStorage).taskId = CreateTask(Some(Task_InitPokeStorage), 3);
+        (*crate::gl!(sStorage)).boxOption = sCurrentBoxOption.get();
+        (*crate::gl!(sStorage)).isReopening = TRUE;
+        (*crate::gl!(sStorage)).state = 0;
+        (*crate::gl!(sStorage)).taskId = CreateTask(Some(Task_InitPokeStorage), 3);
         SetMainCallback2(Some(CB2_PokeStorage));
     }
 }
@@ -2252,13 +2268,13 @@ unsafe fn ResetForPokeStorage() {
     FreeSpriteTileRanges();
     FreeAllSpritePalettes();
     ClearDma3Requests();
-    gReservedSpriteTileCount = 0x280;
+    gReservedSpriteTileCount.set(0x280);
     UnkUtil_Init(
-        &raw mut (*sStorage).unkUtil,
-        (*sStorage).unkUtilData.as_mut_ptr(),
+        &raw mut (*crate::gl!(sStorage)).unkUtil,
+        (*crate::gl!(sStorage)).unkUtilData.as_mut_ptr(),
         8,
     );
-    gKeyRepeatStartDelay = 20;
+    gKeyRepeatStartDelay.set(20);
     ClearScheduledBgCopiesToVram();
     TilemapUtil_Init(TILEMAPID_COUNT);
     TilemapUtil_SetMap(
@@ -2269,31 +2285,31 @@ unsafe fn ResetForPokeStorage() {
         4,
     );
     TilemapUtil_SetPos(TILEMAPID_PKMN_DATA, 1, 0);
-    (*sStorage).closeBoxFlashing = FALSE;
+    (*crate::gl!(sStorage)).closeBoxFlashing = FALSE;
 }
 unsafe fn InitStartingPosData() {
     ClearSavedCursorPos();
-    sInPartyMenu.set(((*sStorage).boxOption == OPTION_DEPOSIT) as u8);
+    sInPartyMenu.set(((*crate::gl!(sStorage)).boxOption == OPTION_DEPOSIT) as u8);
     sDepositBoxId.set(0);
 }
 unsafe fn SetMonIconTransparency() {
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_ALL);
         SetGpuReg(REG_OFFSET_BLDALPHA, 2823);
     }
     SetGpuReg(REG_OFFSET_DISPCNT, 8000);
 }
 unsafe fn SetPokeStorageTask(newFunc: Option<unsafe fn(u8)>) {
-    task_set_func((*sStorage).taskId, newFunc);
-    (*sStorage).state = 0;
+    task_set_func((*crate::gl!(sStorage)).taskId, newFunc);
+    (*crate::gl!(sStorage)).state = 0;
 }
 pub(crate) unsafe fn Task_InitPokeStorage(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             SetVBlankCallback(None);
             SetGpuReg(0x0, 0);
             ResetForPokeStorage();
-            if (*sStorage).isReopening != 0 {
+            if (*crate::gl!(sStorage)).isReopening != 0 {
                 match sWhichToReshow.get() {
                     1 => {
                         LoadSavedMovingMon();
@@ -2334,13 +2350,13 @@ pub(crate) unsafe fn Task_InitPokeStorage(taskId: u8) {
         }
         3 => {
             ResetAllBgCoords();
-            if (*sStorage).isReopening == 0 {
+            if (*crate::gl!(sStorage)).isReopening == 0 {
                 InitStartingPosData();
             }
         }
         4 => {
             InitMonIconFields();
-            if (*sStorage).isReopening == 0 {
+            if (*crate::gl!(sStorage)).isReopening == 0 {
                 InitCursor();
             } else {
                 InitCursorOnReopen();
@@ -2368,10 +2384,10 @@ pub(crate) unsafe fn Task_InitPokeStorage(taskId: u8) {
             if IsInitBoxActive() != 0 {
                 return;
             }
-            if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-                (*sStorage).markMenu.baseTileTag = GFXTAG_MARKING_MENU;
-                (*sStorage).markMenu.basePaletteTag = PALTAG_MARKING_MENU;
-                InitMonMarkingsMenu(&raw mut (*sStorage).markMenu);
+            if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
+                (*crate::gl!(sStorage)).markMenu.baseTileTag = GFXTAG_MARKING_MENU;
+                (*crate::gl!(sStorage)).markMenu.basePaletteTag = PALTAG_MARKING_MENU;
+                InitMonMarkingsMenu(&raw mut (*crate::gl!(sStorage)).markMenu);
                 BufferMonMarkingsMenuTiles();
             } else {
                 CreateItemIconSprites();
@@ -2380,7 +2396,7 @@ pub(crate) unsafe fn Task_InitPokeStorage(taskId: u8) {
         }
         10 => {
             SetMonIconTransparency();
-            if (*sStorage).isReopening == 0 {
+            if (*crate::gl!(sStorage)).isReopening == 0 {
                 BlendPalettes(PALETTES_ALL, 16, 0);
                 SetPokeStorageTask(Some(Task_ShowPokeStorage));
             } else {
@@ -2394,14 +2410,14 @@ pub(crate) unsafe fn Task_InitPokeStorage(taskId: u8) {
             return;
         }
     }
-    (*sStorage).state += 1;
+    (*crate::gl!(sStorage)).state += 1;
 }
 pub(crate) unsafe fn Task_ShowPokeStorage(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PlaySE(SE_PC_LOGIN);
             ComputerScreenOpenEffect(20, 0, 1);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if IsComputerScreenOpenEffectActive() == 0 => {
             SetPokeStorageTask(Some(Task_PokeStorageMain));
@@ -2410,25 +2426,25 @@ pub(crate) unsafe fn Task_ShowPokeStorage(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ReshowPokeStorage(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 0x10, 0, 0);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             if UpdatePaletteFade() == 0 {
-                if sWhichToReshow.get() == 2 && gSpecialVar_ItemId != ITEM_NONE {
+                if sWhichToReshow.get() == 2 && gSpecialVar_ItemId.get() != ITEM_NONE {
                     PrintMessage(MSG_ITEM_IS_HELD);
-                    (*sStorage).state += 1;
+                    (*crate::gl!(sStorage)).state += 1;
                 } else {
                     SetPokeStorageTask(Some(Task_PokeStorageMain));
                 }
             }
         }
         2 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 && gMain.newKeys as i32 & 3 != 0 {
+            if IsDma3ManagerBusyWithBgCopy() == 0 && crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -2438,31 +2454,33 @@ pub(crate) unsafe fn Task_ReshowPokeStorage(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         MSTATE_HANDLE_INPUT => match HandleInput() {
             INPUT_MOVE_CURSOR => {
                 PlaySE(SE_SELECT);
-                (*sStorage).state = MSTATE_MOVE_CURSOR;
+                (*crate::gl!(sStorage)).state = MSTATE_MOVE_CURSOR;
             }
             INPUT_SHOW_PARTY => {
-                if (*sStorage).boxOption != OPTION_MOVE_MONS
-                    && (*sStorage).boxOption != OPTION_MOVE_ITEMS
+                if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_MONS
+                    && (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS
                 {
                     PrintMessage(MSG_WHICH_ONE_WILL_TAKE);
-                    (*sStorage).state = MSTATE_WAIT_MSG;
+                    (*crate::gl!(sStorage)).state = MSTATE_WAIT_MSG;
                 } else {
                     ClearSavedCursorPos();
                     SetPokeStorageTask(Some(Task_ShowPartyPokemon));
                 }
             }
             INPUT_HIDE_PARTY => {
-                if (*sStorage).boxOption == OPTION_MOVE_MONS {
-                    if IsMonBeingMoved() != 0 && ItemIsMail((*sStorage).displayMonItemId) != 0 {
-                        (*sStorage).state = MSTATE_ERROR_HAS_MAIL;
+                if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_MONS {
+                    if IsMonBeingMoved() != 0
+                        && ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) != 0
+                    {
+                        (*crate::gl!(sStorage)).state = MSTATE_ERROR_HAS_MAIL;
                     } else {
                         SetPokeStorageTask(Some(Task_HidePartyPokemon));
                     }
-                } else if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+                } else if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
                     SetPokeStorageTask(Some(Task_HidePartyPokemon));
                 }
             }
@@ -2481,47 +2499,47 @@ pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
             }
             INPUT_SCROLL_RIGHT => {
                 PlaySE(SE_SELECT);
-                (*sStorage).newCurrBoxId = StorageGetCurrentBox() as i16 + 1;
-                if (*sStorage).newCurrBoxId >= TOTAL_BOXES_COUNT as i16 {
-                    (*sStorage).newCurrBoxId = 0;
+                (*crate::gl!(sStorage)).newCurrBoxId = StorageGetCurrentBox() as i16 + 1;
+                if (*crate::gl!(sStorage)).newCurrBoxId >= TOTAL_BOXES_COUNT as i16 {
+                    (*crate::gl!(sStorage)).newCurrBoxId = 0;
                 }
-                if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-                    SetUpScrollToBox((*sStorage).newCurrBoxId as u8);
-                    (*sStorage).state = MSTATE_SCROLL_BOX;
+                if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
+                    SetUpScrollToBox((*crate::gl!(sStorage)).newCurrBoxId as u8);
+                    (*crate::gl!(sStorage)).state = MSTATE_SCROLL_BOX;
                 } else {
                     TryHideItemAtCursor();
-                    (*sStorage).state = MSTATE_SCROLL_BOX_ITEM;
+                    (*crate::gl!(sStorage)).state = MSTATE_SCROLL_BOX_ITEM;
                 }
             }
             INPUT_SCROLL_LEFT => {
                 PlaySE(SE_SELECT);
-                (*sStorage).newCurrBoxId = StorageGetCurrentBox() as i16 - 1;
-                if (*sStorage).newCurrBoxId < 0 {
-                    (*sStorage).newCurrBoxId = 13;
+                (*crate::gl!(sStorage)).newCurrBoxId = StorageGetCurrentBox() as i16 - 1;
+                if (*crate::gl!(sStorage)).newCurrBoxId < 0 {
+                    (*crate::gl!(sStorage)).newCurrBoxId = 13;
                 }
-                if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-                    SetUpScrollToBox((*sStorage).newCurrBoxId as u8);
-                    (*sStorage).state = MSTATE_SCROLL_BOX;
+                if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
+                    SetUpScrollToBox((*crate::gl!(sStorage)).newCurrBoxId as u8);
+                    (*crate::gl!(sStorage)).state = MSTATE_SCROLL_BOX;
                 } else {
                     TryHideItemAtCursor();
-                    (*sStorage).state = MSTATE_SCROLL_BOX_ITEM;
+                    (*crate::gl!(sStorage)).state = MSTATE_SCROLL_BOX_ITEM;
                 }
             }
             INPUT_DEPOSIT => {
                 if IsRemovingLastPartyMon() == 0 {
-                    if ItemIsMail((*sStorage).displayMonItemId) != 0 {
-                        (*sStorage).state = MSTATE_ERROR_HAS_MAIL;
+                    if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) != 0 {
+                        (*crate::gl!(sStorage)).state = MSTATE_ERROR_HAS_MAIL;
                     } else {
                         PlaySE(SE_SELECT);
                         SetPokeStorageTask(Some(Task_DepositMenu));
                     }
                 } else {
-                    (*sStorage).state = MSTATE_ERROR_LAST_PARTY_MON;
+                    (*crate::gl!(sStorage)).state = MSTATE_ERROR_LAST_PARTY_MON;
                 }
             }
             INPUT_MOVE_MON => {
                 if IsRemovingLastPartyMon() != 0 {
-                    (*sStorage).state = MSTATE_ERROR_LAST_PARTY_MON;
+                    (*crate::gl!(sStorage)).state = MSTATE_ERROR_LAST_PARTY_MON;
                 } else {
                     PlaySE(SE_SELECT);
                     SetPokeStorageTask(Some(Task_MoveMon));
@@ -2529,7 +2547,7 @@ pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
             }
             INPUT_SHIFT_MON => {
                 if CanShiftMon() == 0 {
-                    (*sStorage).state = MSTATE_ERROR_LAST_PARTY_MON;
+                    (*crate::gl!(sStorage)).state = MSTATE_ERROR_LAST_PARTY_MON;
                 } else {
                     PlaySE(SE_SELECT);
                     SetPokeStorageTask(Some(Task_ShiftMon));
@@ -2558,30 +2576,30 @@ pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
             INPUT_MULTIMOVE_START => {
                 PlaySE(SE_SELECT);
                 MultiMove_SetFunction(MULTIMOVE_START);
-                (*sStorage).state = MSTATE_MULTIMOVE_RUN;
+                (*crate::gl!(sStorage)).state = MSTATE_MULTIMOVE_RUN;
             }
             INPUT_MULTIMOVE_SINGLE => {
                 MultiMove_SetFunction(MULTIMOVE_CANCEL);
-                (*sStorage).state = MSTATE_MULTIMOVE_RUN_CANCEL;
+                (*crate::gl!(sStorage)).state = MSTATE_MULTIMOVE_RUN_CANCEL;
             }
             INPUT_MULTIMOVE_CHANGE_SELECTION => {
                 PlaySE(SE_SELECT);
                 MultiMove_SetFunction(MULTIMOVE_CHANGE_SELECTION);
-                (*sStorage).state = MSTATE_MULTIMOVE_RUN_MOVED;
+                (*crate::gl!(sStorage)).state = MSTATE_MULTIMOVE_RUN_MOVED;
             }
             INPUT_MULTIMOVE_GRAB_SELECTION => {
                 MultiMove_SetFunction(MULTIMOVE_GRAB_SELECTION);
-                (*sStorage).state = MSTATE_MULTIMOVE_RUN;
+                (*crate::gl!(sStorage)).state = MSTATE_MULTIMOVE_RUN;
             }
             INPUT_MULTIMOVE_MOVE_MONS => {
                 PlaySE(SE_SELECT);
                 MultiMove_SetFunction(MULTIMOVE_MOVE_MONS);
-                (*sStorage).state = MSTATE_MULTIMOVE_RUN_MOVED;
+                (*crate::gl!(sStorage)).state = MSTATE_MULTIMOVE_RUN_MOVED;
             }
             INPUT_MULTIMOVE_PLACE_MONS => {
                 PlaySE(SE_SELECT);
                 MultiMove_SetFunction(MULTIMOVE_PLACE_MONS);
-                (*sStorage).state = MSTATE_MULTIMOVE_RUN;
+                (*crate::gl!(sStorage)).state = MSTATE_MULTIMOVE_RUN;
             }
             INPUT_MULTIMOVE_UNABLE => {
                 PlaySE(SE_FAILURE);
@@ -2595,52 +2613,52 @@ pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
                 } else {
                     StopFlashingCloseBoxButton();
                 }
-                if (*sStorage).setMosaic != 0 {
+                if (*crate::gl!(sStorage)).setMosaic != 0 {
                     StartDisplayMonMosaicEffect();
                 }
-                (*sStorage).state = MSTATE_HANDLE_INPUT;
+                (*crate::gl!(sStorage)).state = MSTATE_HANDLE_INPUT;
             }
         }
         MSTATE_SCROLL_BOX => {
             if ScrollToBox() == 0 {
-                SetCurrentBox((*sStorage).newCurrBoxId as u8);
+                SetCurrentBox((*crate::gl!(sStorage)).newCurrBoxId as u8);
                 if sInPartyMenu.get() == 0 && IsMonBeingMoved() == 0 {
                     RefreshDisplayMon();
                     StartDisplayMonMosaicEffect();
                 }
-                if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+                if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
                     TryShowItemAtCursor();
-                    (*sStorage).state = MSTATE_WAIT_ITEM_ANIM;
+                    (*crate::gl!(sStorage)).state = MSTATE_WAIT_ITEM_ANIM;
                 } else {
-                    (*sStorage).state = MSTATE_HANDLE_INPUT;
+                    (*crate::gl!(sStorage)).state = MSTATE_HANDLE_INPUT;
                 }
             }
         }
         MSTATE_WAIT_MSG => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
-                (*sStorage).state = MSTATE_HANDLE_INPUT;
+                (*crate::gl!(sStorage)).state = MSTATE_HANDLE_INPUT;
             }
         }
         MSTATE_ERROR_LAST_PARTY_MON => {
             PlaySE(SE_FAILURE);
             PrintMessage(MSG_LAST_POKE);
-            (*sStorage).state = MSTATE_WAIT_ERROR_MSG;
+            (*crate::gl!(sStorage)).state = MSTATE_WAIT_ERROR_MSG;
         }
         MSTATE_ERROR_HAS_MAIL => {
             PlaySE(SE_FAILURE);
             PrintMessage(MSG_PLEASE_REMOVE_MAIL);
-            (*sStorage).state = MSTATE_WAIT_ERROR_MSG;
+            (*crate::gl!(sStorage)).state = MSTATE_WAIT_ERROR_MSG;
         }
         MSTATE_WAIT_ERROR_MSG => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
         MSTATE_MULTIMOVE_RUN => {
             if MultiMove_RunFunction() == 0 {
-                (*sStorage).state = MSTATE_HANDLE_INPUT;
+                (*crate::gl!(sStorage)).state = MSTATE_HANDLE_INPUT;
             }
         }
         MSTATE_MULTIMOVE_RUN_CANCEL => {
@@ -2650,29 +2668,29 @@ pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
         }
         MSTATE_MULTIMOVE_RUN_MOVED => {
             if MultiMove_RunFunction() == 0 {
-                if (*sStorage).setMosaic != 0 {
+                if (*crate::gl!(sStorage)).setMosaic != 0 {
                     StartDisplayMonMosaicEffect();
                 }
-                (*sStorage).state = MSTATE_HANDLE_INPUT;
+                (*crate::gl!(sStorage)).state = MSTATE_HANDLE_INPUT;
             }
         }
         MSTATE_SCROLL_BOX_ITEM => {
             if IsItemIconAnimActive() == 0 {
-                SetUpScrollToBox((*sStorage).newCurrBoxId as u8);
-                (*sStorage).state = MSTATE_SCROLL_BOX;
+                SetUpScrollToBox((*crate::gl!(sStorage)).newCurrBoxId as u8);
+                (*crate::gl!(sStorage)).state = MSTATE_SCROLL_BOX;
             }
         }
         MSTATE_WAIT_ITEM_ANIM if IsItemIconAnimActive() == 0 => {
-            (*sStorage).state = MSTATE_HANDLE_INPUT;
+            (*crate::gl!(sStorage)).state = MSTATE_HANDLE_INPUT;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_ShowPartyPokemon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             SetUpDoShowPartyMenu();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if DoShowPartyMenu() == 0 => {
             SetPokeStorageTask(Some(Task_PokeStorageMain));
@@ -2681,20 +2699,20 @@ pub(crate) unsafe fn Task_ShowPartyPokemon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HidePartyPokemon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PlaySE(SE_SELECT);
             SetUpHidePartyMenu();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             if HidePartyMenu() == 0 {
                 SetCursorBoxPosition(GetSavedCursorPos());
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         2 if UpdateCursorPos() == 0 => {
-            if (*sStorage).setMosaic != 0 {
+            if (*crate::gl!(sStorage)).setMosaic != 0 {
                 StartDisplayMonMosaicEffect();
             }
             SetPokeStorageTask(Some(Task_PokeStorageMain));
@@ -2703,24 +2721,26 @@ pub(crate) unsafe fn Task_HidePartyPokemon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             if IsDisplayMosaicActive() == 0 {
                 PlaySE(SE_SELECT);
-                if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+                if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
                     PrintMessage(MSG_IS_SELECTED);
-                } else if IsMovingItem() != 0 || (*sStorage).displayMonItemId != ITEM_NONE {
+                } else if IsMovingItem() != 0
+                    || (*crate::gl!(sStorage)).displayMonItemId != ITEM_NONE
+                {
                     PrintMessage(MSG_IS_SELECTED2);
                 } else {
                     PrintMessage(MSG_GIVE_TO_MON);
                 }
                 AddMenu();
-                (*sStorage).state = 1;
+                (*crate::gl!(sStorage)).state = 1;
             }
         }
         1 => {
             if IsMenuLoading() == 0 {
-                (*sStorage).state = 2;
+                (*crate::gl!(sStorage)).state = 2;
             }
         }
         2 => match HandleMenuInput() {
@@ -2730,7 +2750,7 @@ pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
             }
             3 => {
                 if IsRemovingLastPartyMon() != 0 {
-                    (*sStorage).state = 3;
+                    (*crate::gl!(sStorage)).state = 3;
                 } else {
                     PlaySE(SE_SELECT);
                     ClearBottomWindow();
@@ -2744,7 +2764,7 @@ pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
             }
             4 => {
                 if CanShiftMon() == 0 {
-                    (*sStorage).state = 3;
+                    (*crate::gl!(sStorage)).state = 3;
                 } else {
                     PlaySE(SE_SELECT);
                     ClearBottomWindow();
@@ -2758,9 +2778,9 @@ pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
             }
             1 => {
                 if IsRemovingLastPartyMon() != 0 {
-                    (*sStorage).state = 3;
-                } else if ItemIsMail((*sStorage).displayMonItemId) != 0 {
-                    (*sStorage).state = 4;
+                    (*crate::gl!(sStorage)).state = 3;
+                } else if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) != 0 {
+                    (*crate::gl!(sStorage)).state = 4;
                 } else {
                     PlaySE(SE_SELECT);
                     ClearBottomWindow();
@@ -2769,11 +2789,11 @@ pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
             }
             MENU_RELEASE => {
                 if IsRemovingLastPartyMon() != 0 {
-                    (*sStorage).state = 3;
-                } else if (*sStorage).displayMonIsEgg != 0 {
-                    (*sStorage).state = 5;
-                } else if ItemIsMail((*sStorage).displayMonItemId) != 0 {
-                    (*sStorage).state = 4;
+                    (*crate::gl!(sStorage)).state = 3;
+                } else if (*crate::gl!(sStorage)).displayMonIsEgg != 0 {
+                    (*crate::gl!(sStorage)).state = 5;
+                } else if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) != 0 {
+                    (*crate::gl!(sStorage)).state = 4;
                 } else {
                     PlaySE(SE_SELECT);
                     SetPokeStorageTask(Some(Task_ReleaseMon));
@@ -2814,19 +2834,19 @@ pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
         3 => {
             PlaySE(SE_FAILURE);
             PrintMessage(MSG_LAST_POKE);
-            (*sStorage).state = 6;
+            (*crate::gl!(sStorage)).state = 6;
         }
         5 => {
             PlaySE(SE_FAILURE);
             PrintMessage(MSG_CANT_RELEASE_EGG);
-            (*sStorage).state = 6;
+            (*crate::gl!(sStorage)).state = 6;
         }
         4 => {
             PlaySE(SE_FAILURE);
             PrintMessage(MSG_PLEASE_REMOVE_MAIL);
-            (*sStorage).state = 6;
+            (*crate::gl!(sStorage)).state = 6;
         }
-        6 if gMain.newKeys as i32 & 243 != 0 => {
+        6 if crate::gl!(gMain.newKeys) as i32 & 243 != 0 => {
             ClearBottomWindow();
             SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
@@ -2834,10 +2854,10 @@ pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_MoveMon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             InitMonPlaceChange(CHANGE_GRAB);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if DoMonPlaceChange() == 0 => {
             if sInPartyMenu.get() != 0 {
@@ -2850,10 +2870,10 @@ pub(crate) unsafe fn Task_MoveMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_PlaceMon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             InitMonPlaceChange(CHANGE_PLACE);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if DoMonPlaceChange() == 0 => {
             if sInPartyMenu.get() != 0 {
@@ -2866,10 +2886,10 @@ pub(crate) unsafe fn Task_PlaceMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ShiftMon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             InitMonPlaceChange(CHANGE_SHIFT);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if DoMonPlaceChange() == 0 => {
             StartDisplayMonMosaicEffect();
@@ -2879,19 +2899,19 @@ pub(crate) unsafe fn Task_ShiftMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_WithdrawMon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             if CalculatePlayerPartyCount() == PARTY_SIZE as u8 {
                 PrintMessage(MSG_PARTY_FULL);
-                (*sStorage).state = 1;
+                (*crate::gl!(sStorage)).state = 1;
             } else {
                 SaveCursorPos();
                 InitMonPlaceChange(CHANGE_GRAB);
-                (*sStorage).state = 2;
+                (*crate::gl!(sStorage)).state = 2;
             }
         }
         1 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
@@ -2900,19 +2920,19 @@ pub(crate) unsafe fn Task_WithdrawMon(taskId: u8) {
             if DoMonPlaceChange() == 0 {
                 SetMovingMonPriority(1);
                 SetUpDoShowPartyMenu();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 => {
             if DoShowPartyMenu() == 0 {
                 InitMonPlaceChange(CHANGE_PLACE);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         4 => {
             if DoMonPlaceChange() == 0 {
                 UpdatePartySlotColors();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         5 => {
@@ -2923,18 +2943,18 @@ pub(crate) unsafe fn Task_WithdrawMon(taskId: u8) {
 }
 pub(crate) unsafe fn Task_DepositMenu(taskId: u8) {
     let mut boxId: u8 = 0;
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PrintMessage(MSG_DEPOSIT_IN_WHICH_BOX);
             LoadChooseBoxMenuGfx(
-                &raw mut (*sStorage).chooseBoxMenu,
+                &raw mut (*crate::gl!(sStorage)).chooseBoxMenu,
                 GFXTAG_CHOOSE_BOX_MENU,
                 PALTAG_MISC_1,
                 3,
                 FALSE as u32,
             );
             CreateChooseBoxMenuSprites(sDepositBoxId.get());
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             boxId = HandleChooseBoxMenuInput();
@@ -2952,10 +2972,10 @@ pub(crate) unsafe fn Task_DepositMenu(taskId: u8) {
                         ClearBottomWindow();
                         DestroyChooseBoxMenuSprites();
                         FreeChooseBoxMenu();
-                        (*sStorage).state = 2;
+                        (*crate::gl!(sStorage)).state = 2;
                     } else {
                         PrintMessage(MSG_BOX_IS_FULL);
-                        (*sStorage).state = 4;
+                        (*crate::gl!(sStorage)).state = 4;
                     }
                 }
             }
@@ -2963,7 +2983,7 @@ pub(crate) unsafe fn Task_DepositMenu(taskId: u8) {
         2 => {
             CompactPartySlots();
             CompactPartySprites();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         3 => {
             if GetNumPartySpritesCompacting() == 0 {
@@ -2973,22 +2993,22 @@ pub(crate) unsafe fn Task_DepositMenu(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
-        4 if gMain.newKeys as i32 & 243 != 0 => {
+        4 if crate::gl!(gMain.newKeys) as i32 & 243 != 0 => {
             PrintMessage(MSG_DEPOSIT_IN_WHICH_BOX);
-            (*sStorage).state = 1;
+            (*crate::gl!(sStorage)).state = 1;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
     'l1: {
-        let sw1: u8 = (*sStorage).state;
+        let sw1: u8 = (*crate::gl!(sStorage)).state;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             PrintMessage(MSG_RELEASE_POKE);
             ShowYesNoWindow(1);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         if fall || sw1 == 1 {
             match Menu_ProcessInputNoWrapClearOnChoose() {
@@ -3000,7 +3020,7 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
                     ClearBottomWindow();
                     InitCanReleaseMonVars();
                     InitReleaseMon();
-                    (*sStorage).state += 1;
+                    (*crate::gl!(sStorage)).state += 1;
                 }
                 _ => {}
             }
@@ -3012,10 +3032,10 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
                 loop {
                     let canRelease: i8 = RunCanReleaseMon();
                     if canRelease == TRUE as i8 {
-                        (*sStorage).state += 1;
+                        (*crate::gl!(sStorage)).state += 1;
                         break;
                     } else if canRelease == 0 {
-                        (*sStorage).state = 8;
+                        (*crate::gl!(sStorage)).state = 8;
                         break;
                     }
                 }
@@ -3026,25 +3046,25 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
             ReleaseMon();
             RefreshDisplayMonData();
             PrintMessage(MSG_WAS_RELEASED);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
             break 'l1;
         }
         if sw1 == 4 {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 PrintMessage(MSG_BYE_BYE);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             break 'l1;
         }
         if sw1 == 5 {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 if sInPartyMenu.get() != 0 {
                     CompactPartySlots();
                     CompactPartySprites();
-                    (*sStorage).state += 1;
+                    (*crate::gl!(sStorage)).state += 1;
                 } else {
-                    (*sStorage).state = 7;
+                    (*crate::gl!(sStorage)).state = 7;
                 }
             }
             break 'l1;
@@ -3054,7 +3074,7 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
                 RefreshDisplayMon();
                 StartDisplayMonMosaicEffect();
                 UpdatePartySlotColors();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             break 'l1;
         }
@@ -3064,21 +3084,21 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
         }
         if sw1 == 8 {
             PrintMessage(MSG_WAS_RELEASED);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
             break 'l1;
         }
         if sw1 == 9 {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 PrintMessage(MSG_SURPRISE);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             break 'l1;
         }
         if sw1 == 10 {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 ReshowReleaseMon();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             break 'l1;
         }
@@ -3086,19 +3106,19 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
             if ResetReleaseMonSpritePtr() == 0 {
                 TrySetCursorFistAnim();
                 PrintMessage(MSG_CAME_BACK);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             break 'l1;
         }
         if sw1 == 12 {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 PrintMessage(MSG_WORRIED);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             break 'l1;
         }
         if sw1 == 13 {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
@@ -3107,17 +3127,17 @@ pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ShowMarkMenu(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PrintMessage(MSG_MARK_POKE);
-            (*sStorage).markMenu.markings = (*sStorage).displayMonMarkings;
-            OpenMonMarkingsMenu((*sStorage).displayMonMarkings, 0xb0, 0x10);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).markMenu.markings = (*crate::gl!(sStorage)).displayMonMarkings;
+            OpenMonMarkingsMenu((*crate::gl!(sStorage)).displayMonMarkings, 0xb0, 0x10);
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if HandleMonMarkingsMenuInput() == 0 => {
             FreeMonMarkingsMenu();
             ClearBottomWindow();
-            SetMonMarkings((*sStorage).markMenu.markings);
+            SetMonMarkings((*crate::gl!(sStorage)).markMenu.markings);
             RefreshDisplayMonData();
             SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
@@ -3125,11 +3145,11 @@ pub(crate) unsafe fn Task_ShowMarkMenu(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TakeItemForMoving(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
-            if ItemIsMail((*sStorage).displayMonItemId) == 0 {
+            if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) == 0 {
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             } else {
                 SetPokeStorageTask(Some(Task_PrintCantStoreMail));
             }
@@ -3144,7 +3164,7 @@ pub(crate) unsafe fn Task_TakeItemForMoving(taskId: u8) {
                 }) as u8,
                 GetCursorPosition(),
             );
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         2 => {
             if IsItemIconAnimActive() == 0 {
@@ -3152,7 +3172,7 @@ pub(crate) unsafe fn Task_TakeItemForMoving(taskId: u8) {
                 ClearBottomWindow();
                 RefreshDisplayMon();
                 PrintDisplayMonInfo();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -3162,10 +3182,10 @@ pub(crate) unsafe fn Task_TakeItemForMoving(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_GiveMovingItemToMon(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             ClearBottomWindow();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             StartCursorAnim(CURSOR_ANIM_OPEN);
@@ -3177,7 +3197,7 @@ pub(crate) unsafe fn Task_GiveMovingItemToMon(taskId: u8) {
                 }) as u8,
                 GetCursorPosition(),
             );
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         2 => {
             if IsItemIconAnimActive() == 0 {
@@ -3185,13 +3205,13 @@ pub(crate) unsafe fn Task_GiveMovingItemToMon(taskId: u8) {
                 RefreshDisplayMon();
                 PrintDisplayMonInfo();
                 PrintMessage(MSG_ITEM_IS_HELD);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         4 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -3201,12 +3221,12 @@ pub(crate) unsafe fn Task_GiveMovingItemToMon(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ItemToBag(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
-            if AddBagItem((*sStorage).displayMonItemId, 1) == 0 {
+            if AddBagItem((*crate::gl!(sStorage)).displayMonItemId, 1) == 0 {
                 PlaySE(SE_FAILURE);
                 PrintMessage(MSG_BAG_FULL);
-                (*sStorage).state = 3;
+                (*crate::gl!(sStorage)).state = 3;
             } else {
                 PlaySE(SE_SELECT);
                 MoveItemFromMonToBag(
@@ -3217,21 +3237,21 @@ pub(crate) unsafe fn Task_ItemToBag(taskId: u8) {
                     }) as u8,
                     GetCursorPosition(),
                 );
-                (*sStorage).state = 1;
+                (*crate::gl!(sStorage)).state = 1;
             }
         }
         1 => {
             if IsItemIconAnimActive() == 0 {
                 PrintMessage(MSG_PLACED_IN_BAG);
-                (*sStorage).state = 2;
+                (*crate::gl!(sStorage)).state = 2;
             }
         }
         2 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 RefreshDisplayMon();
                 PrintDisplayMonInfo();
-                (*sStorage).state = 4;
+                (*crate::gl!(sStorage)).state = 4;
             }
         }
         4 => {
@@ -3239,7 +3259,7 @@ pub(crate) unsafe fn Task_ItemToBag(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
-        3 if gMain.newKeys as i32 & 243 != 0 => {
+        3 if crate::gl!(gMain.newKeys) as i32 & 243 != 0 => {
             ClearBottomWindow();
             SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
@@ -3247,11 +3267,11 @@ pub(crate) unsafe fn Task_ItemToBag(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_SwitchSelectedItem(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
-            if ItemIsMail((*sStorage).displayMonItemId) == 0 {
+            if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) == 0 {
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             } else {
                 SetPokeStorageTask(Some(Task_PrintCantStoreMail));
             }
@@ -3266,7 +3286,7 @@ pub(crate) unsafe fn Task_SwitchSelectedItem(taskId: u8) {
                 }) as u8,
                 GetCursorPosition(),
             );
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         2 => {
             if IsItemIconAnimActive() == 0 {
@@ -3274,13 +3294,13 @@ pub(crate) unsafe fn Task_SwitchSelectedItem(taskId: u8) {
                 RefreshDisplayMon();
                 PrintDisplayMonInfo();
                 PrintMessage(MSG_CHANGED_TO_ITEM);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         4 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -3290,38 +3310,38 @@ pub(crate) unsafe fn Task_SwitchSelectedItem(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ShowItemInfo(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             ClearBottomWindow();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 PlaySE(SE_WIN_OPEN);
                 PrintItemDescription();
                 InitItemInfoWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         2 => {
             if UpdateItemInfoWindowSlideIn() == 0 {
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         4 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 PlaySE(SE_WIN_OPEN);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         5 => {
             if UpdateItemInfoWindowSlideOut() == 0 {
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         6 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -3331,12 +3351,12 @@ pub(crate) unsafe fn Task_ShowItemInfo(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_CloseBoxWhileHoldingItem(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PlaySE(SE_SELECT);
             PrintMessage(MSG_PUT_IN_BAG);
             ShowYesNoWindow(0);
-            (*sStorage).state = 1;
+            (*crate::gl!(sStorage)).state = 1;
         }
         1 => match Menu_ProcessInputNoWrapClearOnChoose() {
             MENU_B_PRESSED | 1 => {
@@ -3344,25 +3364,25 @@ pub(crate) unsafe fn Task_CloseBoxWhileHoldingItem(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
             0 => {
-                if AddBagItem((*sStorage).movingItemId, 1) == 1 {
+                if AddBagItem((*crate::gl!(sStorage)).movingItemId, 1) == 1 {
                     ClearBottomWindow();
-                    (*sStorage).state = 3;
+                    (*crate::gl!(sStorage)).state = 3;
                 } else {
                     PrintMessage(MSG_BAG_FULL);
-                    (*sStorage).state = 2;
+                    (*crate::gl!(sStorage)).state = 2;
                 }
             }
             _ => {}
         },
         2 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
-                (*sStorage).state = 5;
+                (*crate::gl!(sStorage)).state = 5;
             }
         }
         3 => {
             MoveItemFromCursorToBag();
-            (*sStorage).state = 4;
+            (*crate::gl!(sStorage)).state = 4;
         }
         4 => {
             if IsItemIconAnimActive() == 0 {
@@ -3377,11 +3397,11 @@ pub(crate) unsafe fn Task_CloseBoxWhileHoldingItem(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleMovingMonFromParty(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             CompactPartySlots();
             CompactPartySprites();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if GetNumPartySpritesCompacting() == 0 => {
             UpdatePartySlotColors();
@@ -3391,20 +3411,20 @@ pub(crate) unsafe fn Task_HandleMovingMonFromParty(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_PrintCantStoreMail(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PrintMessage(MSG_CANT_STORE_MAIL);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         2 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -3415,12 +3435,12 @@ pub(crate) unsafe fn Task_PrintCantStoreMail(taskId: u8) {
 }
 pub(crate) unsafe fn Task_HandleBoxOptions(taskId: u8) {
     'l1: {
-        let sw1: u8 = (*sStorage).state;
+        let sw1: u8 = (*crate::gl!(sStorage)).state;
         let mut fall = false;
         if sw1 == 0 {
             PrintMessage(MSG_WHAT_YOU_DO);
             AddMenu();
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
             break 'l1;
         }
         if sw1 == 1 {
@@ -3428,7 +3448,7 @@ pub(crate) unsafe fn Task_HandleBoxOptions(taskId: u8) {
             if IsMenuLoading() != 0 {
                 return;
             }
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         if fall || sw1 == 2 {
             match HandleMenuInput() {
@@ -3458,20 +3478,20 @@ pub(crate) unsafe fn Task_HandleBoxOptions(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_HandleWallpapers(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             AddWallpaperSetsMenu();
             PrintMessage(MSG_PICK_A_THEME);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
             if IsMenuLoading() == 0 {
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         2 => {
-            (*sStorage).wallpaperSetId = HandleMenuInput();
-            match (*sStorage).wallpaperSetId {
+            (*crate::gl!(sStorage)).wallpaperSetId = HandleMenuInput();
+            match (*crate::gl!(sStorage)).wallpaperSetId {
                 -1 => {
                     AnimateBoxScrollArrows(TRUE);
                     ClearBottomWindow();
@@ -3480,40 +3500,40 @@ pub(crate) unsafe fn Task_HandleWallpapers(taskId: u8) {
                 MENU_SCENERY_1 | MENU_SCENERY_2 | MENU_SCENERY_3 | MENU_ETCETERA => {
                     PlaySE(SE_SELECT);
                     RemoveMenu();
-                    (*sStorage).wallpaperSetId -= MENU_SCENERY_1;
-                    (*sStorage).state += 1;
+                    (*crate::gl!(sStorage)).wallpaperSetId -= MENU_SCENERY_1;
+                    (*crate::gl!(sStorage)).state += 1;
                 }
                 MENU_FRIENDS => {
                     PlaySE(SE_SELECT);
-                    (*sStorage).wallpaperId = WALLPAPER_FRIENDS;
+                    (*crate::gl!(sStorage)).wallpaperId = WALLPAPER_FRIENDS;
                     RemoveMenu();
                     ClearBottomWindow();
-                    (*sStorage).state = 6;
+                    (*crate::gl!(sStorage)).state = 6;
                 }
                 _ => {}
             }
         }
         3 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                AddWallpapersMenu((*sStorage).wallpaperSetId as u8);
+                AddWallpapersMenu((*crate::gl!(sStorage)).wallpaperSetId as u8);
                 PrintMessage(MSG_PICK_A_WALLPAPER);
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
         }
         4 => {
-            (*sStorage).wallpaperId = HandleMenuInput();
-            match (*sStorage).wallpaperId {
+            (*crate::gl!(sStorage)).wallpaperId = HandleMenuInput();
+            match (*crate::gl!(sStorage)).wallpaperId {
                 -2 => {}
                 -1 => {
                     ClearBottomWindow();
-                    (*sStorage).state = 0;
+                    (*crate::gl!(sStorage)).state = 0;
                 }
                 _ => {
                     PlaySE(SE_SELECT);
                     ClearBottomWindow();
-                    (*sStorage).wallpaperId -= MENU_FOREST;
-                    SetWallpaperForCurrentBox((*sStorage).wallpaperId as u8);
-                    (*sStorage).state += 1;
+                    (*crate::gl!(sStorage)).wallpaperId -= MENU_FOREST;
+                    SetWallpaperForCurrentBox((*crate::gl!(sStorage)).wallpaperId as u8);
+                    (*crate::gl!(sStorage)).state += 1;
                 }
             }
         }
@@ -3524,118 +3544,118 @@ pub(crate) unsafe fn Task_HandleWallpapers(taskId: u8) {
             }
         }
         6 if IsDma3ManagerBusyWithBgCopy() == 0 => {
-            SetWallpaperForCurrentBox((*sStorage).wallpaperId as u8);
-            (*sStorage).state = 5;
+            SetWallpaperForCurrentBox((*crate::gl!(sStorage)).wallpaperId as u8);
+            (*crate::gl!(sStorage)).state = 5;
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_JumpBox(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             PrintMessage(MSG_JUMP_TO_WHICH_BOX);
             LoadChooseBoxMenuGfx(
-                &raw mut (*sStorage).chooseBoxMenu,
+                &raw mut (*crate::gl!(sStorage)).chooseBoxMenu,
                 GFXTAG_CHOOSE_BOX_MENU,
                 PALTAG_MISC_1,
                 3,
                 FALSE as u32,
             );
             CreateChooseBoxMenuSprites(StorageGetCurrentBox());
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 => {
-            (*sStorage).newCurrBoxId = HandleChooseBoxMenuInput() as i16;
-            match (*sStorage).newCurrBoxId {
+            (*crate::gl!(sStorage)).newCurrBoxId = HandleChooseBoxMenuInput() as i16;
+            match (*crate::gl!(sStorage)).newCurrBoxId {
                 200 => {}
                 _ => {
                     ClearBottomWindow();
                     DestroyChooseBoxMenuSprites();
                     FreeChooseBoxMenu();
-                    if (*sStorage).newCurrBoxId == BOXID_CANCELED as i16
-                        || (*sStorage).newCurrBoxId == StorageGetCurrentBox() as i16
+                    if (*crate::gl!(sStorage)).newCurrBoxId == BOXID_CANCELED as i16
+                        || (*crate::gl!(sStorage)).newCurrBoxId == StorageGetCurrentBox() as i16
                     {
                         AnimateBoxScrollArrows(TRUE);
                         SetPokeStorageTask(Some(Task_PokeStorageMain));
                     } else {
-                        (*sStorage).state += 1;
+                        (*crate::gl!(sStorage)).state += 1;
                     }
                 }
             }
         }
         2 => {
-            SetUpScrollToBox((*sStorage).newCurrBoxId as u8);
-            (*sStorage).state += 1;
+            SetUpScrollToBox((*crate::gl!(sStorage)).newCurrBoxId as u8);
+            (*crate::gl!(sStorage)).state += 1;
         }
         3 if ScrollToBox() == 0 => {
-            SetCurrentBox((*sStorage).newCurrBoxId as u8);
+            SetCurrentBox((*crate::gl!(sStorage)).newCurrBoxId as u8);
             SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_NameBox(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             SaveMovingMon();
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if UpdatePaletteFade() == 0 => {
             sWhichToReshow.set(1);
-            (*sStorage).screenChangeType = SCREEN_CHANGE_NAME_BOX;
+            (*crate::gl!(sStorage)).screenChangeType = SCREEN_CHANGE_NAME_BOX;
             SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_ShowMonSummary(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             InitSummaryScreenData();
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if UpdatePaletteFade() == 0 => {
             sWhichToReshow.set(0);
-            (*sStorage).screenChangeType = SCREEN_CHANGE_SUMMARY_SCREEN;
+            (*crate::gl!(sStorage)).screenChangeType = SCREEN_CHANGE_SUMMARY_SCREEN;
             SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_GiveItemFromBag(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         1 if UpdatePaletteFade() == 0 => {
             sWhichToReshow.set(2);
-            (*sStorage).screenChangeType = SCREEN_CHANGE_ITEM_FROM_BAG;
+            (*crate::gl!(sStorage)).screenChangeType = SCREEN_CHANGE_ITEM_FROM_BAG;
             SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_OnCloseBoxPressed(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             if IsMonBeingMoved() != 0 {
                 PlaySE(SE_FAILURE);
                 PrintMessage(MSG_HOLDING_POKE);
-                (*sStorage).state = 1;
+                (*crate::gl!(sStorage)).state = 1;
             } else if IsMovingItem() != 0 {
                 SetPokeStorageTask(Some(Task_CloseBoxWhileHoldingItem));
             } else {
                 PlaySE(SE_SELECT);
                 PrintMessage(MSG_EXIT_BOX);
                 ShowYesNoWindow(0);
-                (*sStorage).state = 2;
+                (*crate::gl!(sStorage)).state = 2;
             }
         }
         1 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
@@ -3648,41 +3668,41 @@ pub(crate) unsafe fn Task_OnCloseBoxPressed(taskId: u8) {
             0 => {
                 PlaySE(SE_PC_OFF);
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             _ => {}
         },
         3 => {
             ComputerScreenCloseEffect(20, 0, 1);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         4 if IsComputerScreenCloseEffectActive() == 0 => {
             UpdateBoxToSendMons();
-            gPlayerPartyCount = CalculatePlayerPartyCount();
-            (*sStorage).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
+            gPlayerPartyCount.set(CalculatePlayerPartyCount());
+            (*crate::gl!(sStorage)).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
             SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_OnBPressed(taskId: u8) {
-    match (*sStorage).state {
+    match (*crate::gl!(sStorage)).state {
         0 => {
             if IsMonBeingMoved() != 0 {
                 PlaySE(SE_FAILURE);
                 PrintMessage(MSG_HOLDING_POKE);
-                (*sStorage).state = 1;
+                (*crate::gl!(sStorage)).state = 1;
             } else if IsMovingItem() != 0 {
                 SetPokeStorageTask(Some(Task_CloseBoxWhileHoldingItem));
             } else {
                 PlaySE(SE_SELECT);
                 PrintMessage(MSG_CONTINUE_BOX);
                 ShowYesNoWindow(0);
-                (*sStorage).state = 2;
+                (*crate::gl!(sStorage)).state = 2;
             }
         }
         1 => {
-            if gMain.newKeys as i32 & 243 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 243 != 0 {
                 ClearBottomWindow();
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
@@ -3695,18 +3715,18 @@ pub(crate) unsafe fn Task_OnBPressed(taskId: u8) {
             1 | MENU_B_PRESSED => {
                 PlaySE(SE_PC_OFF);
                 ClearBottomWindow();
-                (*sStorage).state += 1;
+                (*crate::gl!(sStorage)).state += 1;
             }
             _ => {}
         },
         3 => {
             ComputerScreenCloseEffect(20, 0, 0);
-            (*sStorage).state += 1;
+            (*crate::gl!(sStorage)).state += 1;
         }
         4 if IsComputerScreenCloseEffectActive() == 0 => {
             UpdateBoxToSendMons();
-            gPlayerPartyCount = CalculatePlayerPartyCount();
-            (*sStorage).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
+            gPlayerPartyCount.set(CalculatePlayerPartyCount());
+            (*crate::gl!(sStorage)).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
             SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
@@ -3717,20 +3737,20 @@ pub(crate) unsafe fn Task_ChangeScreen(taskId: u8) {
     let mut mode: u8 = 0;
     let mut monIndex: u8 = 0;
     let mut maxMonIndex: u8 = 0;
-    let screenChangeType: u8 = (*sStorage).screenChangeType;
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS && IsMovingItem() == TRUE {
+    let screenChangeType: u8 = (*crate::gl!(sStorage)).screenChangeType;
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS && IsMovingItem() == TRUE {
         sMovingItemId.set(GetMovingItemId());
     } else {
         sMovingItemId.set(ITEM_NONE);
     }
     match screenChangeType {
         SCREEN_CHANGE_SUMMARY_SCREEN => {
-            boxMons = (*sStorage).summaryMon.r#box;
-            monIndex = (*sStorage).summaryStartPos;
-            maxMonIndex = (*sStorage).summaryMaxPos;
-            mode = (*sStorage).summaryScreenMode;
+            boxMons = (*crate::gl!(sStorage)).summaryMon.r#box;
+            monIndex = (*crate::gl!(sStorage)).summaryStartPos;
+            maxMonIndex = (*crate::gl!(sStorage)).summaryMaxPos;
+            mode = (*crate::gl!(sStorage)).summaryScreenMode;
             FreePokeStorageData();
-            if mode == SUMMARY_MODE_NORMAL && boxMons == &raw mut sSavedMovingMon.r#box {
+            if mode == SUMMARY_MODE_NORMAL && boxMons == crate::gl!(&raw sSavedMovingMon.r#box) {
                 ShowPokemonSummaryScreenHandleDeoxys(
                     mode,
                     boxMons,
@@ -3771,12 +3791,12 @@ pub(crate) unsafe fn Task_ChangeScreen(taskId: u8) {
     DestroyTask(taskId);
 }
 unsafe fn GiveChosenBagItem() {
-    let mut itemId: u16 = gSpecialVar_ItemId;
+    let mut itemId: u16 = gSpecialVar_ItemId.get();
     if itemId != ITEM_NONE {
         let pos: u8 = GetCursorPosition();
         if sInPartyMenu.get() != 0 {
             SetMonData(
-                &raw mut gPlayerParty[pos],
+                crate::gl!(&raw gPlayerParty[pos]),
                 MON_DATA_HELD_ITEM,
                 &raw mut itemId as *mut c_void,
             );
@@ -3789,8 +3809,8 @@ unsafe fn GiveChosenBagItem() {
 unsafe fn FreePokeStorageData() {
     TilemapUtil_Free();
     MultiMove_Free();
-    Free(sStorage as *mut c_void);
-    sStorage = null_mut();
+    Free(crate::gl!(sStorage) as *mut c_void);
+    crate::gl!(sStorage = null_mut());
     FreeAllWindowBuffers();
 }
 unsafe fn SetScrollingBackground() {
@@ -3824,11 +3844,15 @@ unsafe fn LoadPokeStorageMenuGfx() {
     );
     LZ77UnCompWram(
         sDisplayMenu_Tilemap.as_ptr().cast_mut(),
-        (*sStorage).displayMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage))
+            .displayMenuTilemapBuffer
+            .as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         1,
-        (*sStorage).displayMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage))
+            .displayMenuTilemapBuffer
+            .as_mut_ptr() as *mut c_void,
     );
     ShowBg(1);
     ScheduleBgCopyTilemapToVram(1);
@@ -3852,7 +3876,7 @@ unsafe fn InitPalettesAndSprites() {
     LoadPalette(sInterface_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
     LoadPalette(sPkmnDataGray_Pal.as_ptr().cast_mut() as *mut c_void, 32, 32);
     LoadPalette(sTextWindows_Pal.as_ptr().cast_mut() as *mut c_void, 240, 32);
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         LoadPalette(sScrollingBg_Pal.as_ptr().cast_mut() as *mut c_void, 48, 32);
     } else {
         LoadPalette(
@@ -3868,13 +3892,15 @@ unsafe fn InitPalettesAndSprites() {
     RefreshDisplayMonData();
 }
 pub(crate) unsafe fn CreateMarkingComboSprite() {
-    (*sStorage).markingComboSprite =
+    (*crate::gl!(sStorage)).markingComboSprite =
         CreateMonMarkingComboSprite(GFXTAG_MARKING_COMBO, PALTAG_MARKING_COMBO, null_mut());
-    (*(*sStorage).markingComboSprite).oam.set_priority(1);
-    (*(*sStorage).markingComboSprite).subpriority = 1;
-    (*(*sStorage).markingComboSprite).x = 40;
-    (*(*sStorage).markingComboSprite).y = 150;
-    (*sStorage).markingComboTilesPtr = (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
+    (*(*crate::gl!(sStorage)).markingComboSprite)
+        .oam
+        .set_priority(1);
+    (*(*crate::gl!(sStorage)).markingComboSprite).subpriority = 1;
+    (*(*crate::gl!(sStorage)).markingComboSprite).x = 40;
+    (*(*crate::gl!(sStorage)).markingComboSprite).y = 150;
+    (*crate::gl!(sStorage)).markingComboTilesPtr = (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
         .at(32 * GetSpriteTileStartByTag(GFXTAG_MARKING_COMBO) as i32)
         as *mut c_void as *mut u16;
 }
@@ -3888,13 +3914,13 @@ unsafe fn CreateWaveformSprites() {
             9,
             2,
         );
-        (*sStorage).waveformSprites[i] = &raw mut gSprites[spriteId];
+        (*crate::gl!(sStorage)).waveformSprites[i] = crate::gl!(&raw gSprites[spriteId]);
     }
 }
 unsafe fn RefreshDisplayMonData() {
     LoadDisplayMonGfx(
-        (*sStorage).displayMonSpecies,
-        (*sStorage).displayMonPersonality,
+        (*crate::gl!(sStorage)).displayMonSpecies,
+        (*crate::gl!(sStorage)).displayMonPersonality,
     );
     PrintDisplayMonInfo();
     UpdateWaveformAnimation();
@@ -3902,20 +3928,22 @@ unsafe fn RefreshDisplayMonData() {
 }
 unsafe fn StartDisplayMonMosaicEffect() {
     RefreshDisplayMonData();
-    if !(*sStorage).displayMonSprite.is_null() {
-        (*(*sStorage).displayMonSprite).oam.set_mosaic(TRUE as u32);
-        (*(*sStorage).displayMonSprite).data[0] = 10;
-        (*(*sStorage).displayMonSprite).data[1] = 1;
-        (*(*sStorage).displayMonSprite).callback = Some(SpriteCB_DisplayMonMosaic);
+    if !(*crate::gl!(sStorage)).displayMonSprite.is_null() {
+        (*(*crate::gl!(sStorage)).displayMonSprite)
+            .oam
+            .set_mosaic(TRUE as u32);
+        (*(*crate::gl!(sStorage)).displayMonSprite).data[0] = 10;
+        (*(*crate::gl!(sStorage)).displayMonSprite).data[1] = 1;
+        (*(*crate::gl!(sStorage)).displayMonSprite).callback = Some(SpriteCB_DisplayMonMosaic);
         SetGpuReg(
             REG_OFFSET_MOSAIC,
-            ((*(*sStorage).displayMonSprite).data[0] as u16) << 12
-                | ((*(*sStorage).displayMonSprite).data[0] as u16) << 8,
+            ((*(*crate::gl!(sStorage)).displayMonSprite).data[0] as u16) << 12
+                | ((*(*crate::gl!(sStorage)).displayMonSprite).data[0] as u16) << 8,
         );
     }
 }
 unsafe fn IsDisplayMosaicActive() -> u8 {
-    (*(*sStorage).displayMonSprite).oam.mosaic() as u8
+    (*(*crate::gl!(sStorage)).displayMonSprite).oam.mosaic() as u8
 }
 pub(crate) unsafe fn SpriteCB_DisplayMonMosaic(sprite: *mut Sprite) {
     (*sprite).data[0] -= (*sprite).data[1];
@@ -3936,20 +3964,20 @@ unsafe fn CreateDisplayMonSprite() {
     let mut palSlot: u8 = 0;
     let mut spriteId: u8 = 0;
     let mut sheet: SpriteSheet = zeroed();
-    sheet.data = (*sStorage).tileBuffer.as_mut_ptr() as *mut c_void;
+    sheet.data = (*crate::gl!(sStorage)).tileBuffer.as_mut_ptr() as *mut c_void;
     sheet.size = MON_PIC_SIZE;
     sheet.tag = GFXTAG_DISPLAY_MON;
     let mut palette: SpritePalette = zeroed();
-    palette.data = (*sStorage).displayMonPalBuffer.as_mut_ptr();
+    palette.data = (*crate::gl!(sStorage)).displayMonPalBuffer.as_mut_ptr();
     palette.tag = PALTAG_DISPLAY_MON;
     let mut template: SpriteTemplate = *sSpriteTemplate_DisplayMon;
     for i in 0..MON_PIC_SIZE {
-        (*sStorage).tileBuffer[i] = 0;
+        (*crate::gl!(sStorage)).tileBuffer[i] = 0;
     }
     for i in 0..16u16 {
-        (*sStorage).displayMonPalBuffer[i] = 0;
+        (*crate::gl!(sStorage)).displayMonPalBuffer[i] = 0;
     }
-    (*sStorage).displayMonSprite = null_mut();
+    (*crate::gl!(sStorage)).displayMonSprite = null_mut();
     'l4: {
         tileStart = LoadSpriteSheet(&raw mut sheet);
         if tileStart == 0 {
@@ -3963,19 +3991,19 @@ unsafe fn CreateDisplayMonSprite() {
         if spriteId == MAX_SPRITES {
             break 'l4;
         }
-        (*sStorage).displayMonSprite = &raw mut gSprites[spriteId];
-        (*sStorage).displayMonPalOffset = 0x100 + palSlot as u16 * 16;
-        (*sStorage).displayMonTilePtr = (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
-            .at(tileStart as i32 * 32) as *mut c_void
-            as *mut u16;
+        (*crate::gl!(sStorage)).displayMonSprite = crate::gl!(&raw gSprites[spriteId]);
+        (*crate::gl!(sStorage)).displayMonPalOffset = 0x100 + palSlot as u16 * 16;
+        (*crate::gl!(sStorage)).displayMonTilePtr = (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
+            .at(tileStart as i32 * 32)
+            as *mut c_void as *mut u16;
     }
-    if (*sStorage).displayMonSprite.is_null() {
+    if (*crate::gl!(sStorage)).displayMonSprite.is_null() {
         FreeSpriteTilesByTag(GFXTAG_DISPLAY_MON);
         FreeSpritePaletteByTag(PALTAG_DISPLAY_MON);
     }
 }
 unsafe fn LoadDisplayMonGfx(species: u16, pid: u32) {
-    if (*sStorage).displayMonSprite.is_null() {
+    if (*crate::gl!(sStorage)).displayMonSprite.is_null() {
         return;
     }
     if species != SPECIES_NONE {
@@ -3986,37 +4014,37 @@ unsafe fn LoadDisplayMonGfx(species: u16, pid: u32) {
             >>(
             ))[species])
                 .cast_mut(),
-            (*sStorage).tileBuffer.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).tileBuffer.as_mut_ptr() as *mut c_void,
             species as i32,
             pid,
             TRUE,
         );
         LZ77UnCompWram(
-            (*sStorage).displayMonPalette,
-            (*sStorage).displayMonPalBuffer.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).displayMonPalette,
+            (*crate::gl!(sStorage)).displayMonPalBuffer.as_mut_ptr() as *mut c_void,
         );
         CpuSet(
-            (*sStorage).tileBuffer.as_mut_ptr() as *mut c_void,
-            (*sStorage).displayMonTilePtr as *mut c_void,
+            (*crate::gl!(sStorage)).tileBuffer.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).displayMonTilePtr as *mut c_void,
             0x4000200,
         );
         LoadPalette(
-            (*sStorage).displayMonPalBuffer.as_mut_ptr() as *mut c_void,
-            (*sStorage).displayMonPalOffset,
+            (*crate::gl!(sStorage)).displayMonPalBuffer.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).displayMonPalOffset,
             32,
         );
-        (*(*sStorage).displayMonSprite).set_invisible(FALSE as u16);
+        (*(*crate::gl!(sStorage)).displayMonSprite).set_invisible(FALSE as u16);
     } else {
-        (*(*sStorage).displayMonSprite).set_invisible(TRUE as u16);
+        (*(*crate::gl!(sStorage)).displayMonSprite).set_invisible(TRUE as u16);
     }
 }
 unsafe fn PrintDisplayMonInfo() {
     FillWindowPixelBuffer(WIN_DISPLAY_INFO, 17);
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_NORMAL,
-            (*sStorage).displayMonNameText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonNameText.as_mut_ptr(),
             6,
             0,
             TEXT_SKIP_DRAW,
@@ -4025,7 +4053,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_SHORT,
-            (*sStorage).displayMonSpeciesName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonSpeciesName.as_mut_ptr(),
             6,
             15,
             TEXT_SKIP_DRAW,
@@ -4034,7 +4062,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_SHORT,
-            (*sStorage).displayMonGenderLvlText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonGenderLvlText.as_mut_ptr(),
             10,
             29,
             TEXT_SKIP_DRAW,
@@ -4043,7 +4071,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_SMALL,
-            (*sStorage).displayMonItemName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
             6,
             43,
             TEXT_SKIP_DRAW,
@@ -4053,7 +4081,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_SMALL,
-            (*sStorage).displayMonItemName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
             6,
             0,
             TEXT_SKIP_DRAW,
@@ -4062,7 +4090,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_NORMAL,
-            (*sStorage).displayMonNameText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonNameText.as_mut_ptr(),
             6,
             13,
             TEXT_SKIP_DRAW,
@@ -4071,7 +4099,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_SHORT,
-            (*sStorage).displayMonSpeciesName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonSpeciesName.as_mut_ptr(),
             6,
             28,
             TEXT_SKIP_DRAW,
@@ -4080,7 +4108,7 @@ unsafe fn PrintDisplayMonInfo() {
         AddTextPrinterParameterized(
             WIN_DISPLAY_INFO,
             FONT_SHORT,
-            (*sStorage).displayMonGenderLvlText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonGenderLvlText.as_mut_ptr(),
             10,
             42,
             TEXT_SKIP_DRAW,
@@ -4088,26 +4116,26 @@ unsafe fn PrintDisplayMonInfo() {
         );
     }
     CopyWindowToVram(WIN_DISPLAY_INFO, COPYWIN_GFX);
-    if (*sStorage).displayMonSpecies != SPECIES_NONE {
+    if (*crate::gl!(sStorage)).displayMonSpecies != SPECIES_NONE {
         UpdateMonMarkingTiles(
-            (*sStorage).displayMonMarkings,
-            (*sStorage).markingComboTilesPtr as *mut c_void,
+            (*crate::gl!(sStorage)).displayMonMarkings,
+            (*crate::gl!(sStorage)).markingComboTilesPtr as *mut c_void,
         );
-        (*(*sStorage).markingComboSprite).set_invisible(FALSE as u16);
+        (*(*crate::gl!(sStorage)).markingComboSprite).set_invisible(FALSE as u16);
     } else {
-        (*(*sStorage).markingComboSprite).set_invisible(TRUE as u16);
+        (*(*crate::gl!(sStorage)).markingComboSprite).set_invisible(TRUE as u16);
     }
 }
 unsafe fn UpdateWaveformAnimation() {
-    if (*sStorage).displayMonSpecies != SPECIES_NONE {
+    if (*crate::gl!(sStorage)).displayMonSpecies != SPECIES_NONE {
         TilemapUtil_SetRect(TILEMAPID_PKMN_DATA, 0, 0, 8, 2);
         for i in 0..2u16 {
-            StartSpriteAnimIfDifferent((*sStorage).waveformSprites[i], i as u8 * 2 + 1);
+            StartSpriteAnimIfDifferent((*crate::gl!(sStorage)).waveformSprites[i], i as u8 * 2 + 1);
         }
     } else {
         TilemapUtil_SetRect(TILEMAPID_PKMN_DATA, 0, 2, 8, 2);
         for i in 0..2u16 {
-            StartSpriteAnim((*sStorage).waveformSprites[i], i as u8 * 2);
+            StartSpriteAnim((*crate::gl!(sStorage)).waveformSprites[i], i as u8 * 2);
         }
     }
     TilemapUtil_Update(TILEMAPID_PKMN_DATA);
@@ -4119,7 +4147,7 @@ unsafe fn InitSupplementalTilemaps() {
             .cast::<CArray<u32, 0>>())
         .as_ptr()
         .cast_mut(),
-        (*sStorage).partyMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).partyMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
     );
     LoadPalette(
         (*(&raw const crate::data::graphics::gStorageSystemPartyMenu_Pal).cast::<CArray<u16, 0>>())
@@ -4131,7 +4159,7 @@ unsafe fn InitSupplementalTilemaps() {
     TilemapUtil_SetMap(
         TILEMAPID_PARTY_MENU,
         1,
-        (*sStorage).partyMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).partyMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
         12,
         22,
     );
@@ -4157,27 +4185,27 @@ unsafe fn InitSupplementalTilemaps() {
         TilemapUtil_Update(TILEMAPID_CLOSE_BUTTON);
     }
     ScheduleBgCopyTilemapToVram(1);
-    (*sStorage).closeBoxFlashing = FALSE;
+    (*crate::gl!(sStorage)).closeBoxFlashing = FALSE;
 }
 unsafe fn SetUpShowPartyMenu() {
-    (*sStorage).partyMenuUnused1 = 20;
-    (*sStorage).partyMenuY = 2;
-    (*sStorage).partyMenuMoveTimer = 0;
+    (*crate::gl!(sStorage)).partyMenuUnused1 = 20;
+    (*crate::gl!(sStorage)).partyMenuY = 2;
+    (*crate::gl!(sStorage)).partyMenuMoveTimer = 0;
     CreatePartyMonsSprites(FALSE);
 }
 pub(crate) unsafe fn ShowPartyMenu() -> u8 {
-    if (*sStorage).partyMenuMoveTimer == 20 {
+    if (*crate::gl!(sStorage)).partyMenuMoveTimer == 20 {
         return FALSE;
     }
-    (*sStorage).partyMenuUnused1 -= 1;
-    (*sStorage).partyMenuY += 1;
+    (*crate::gl!(sStorage)).partyMenuUnused1 -= 1;
+    (*crate::gl!(sStorage)).partyMenuY += 1;
     TilemapUtil_Move(TILEMAPID_PARTY_MENU, 3, 1);
     TilemapUtil_Update(TILEMAPID_PARTY_MENU);
     ScheduleBgCopyTilemapToVram(1);
     MovePartySprites(8);
     if ({
-        (*sStorage).partyMenuMoveTimer += 1;
-        (*sStorage).partyMenuMoveTimer
+        (*crate::gl!(sStorage)).partyMenuMoveTimer += 1;
+        (*crate::gl!(sStorage)).partyMenuMoveTimer
     }) == 20
     {
         sInPartyMenu.set(TRUE);
@@ -4191,24 +4219,31 @@ pub(crate) unsafe fn ShowPartyMenu() -> u8 {
     }
 }
 unsafe fn SetUpHidePartyMenu() {
-    (*sStorage).partyMenuUnused1 = 0;
-    (*sStorage).partyMenuY = 22;
-    (*sStorage).partyMenuMoveTimer = 0;
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    (*crate::gl!(sStorage)).partyMenuUnused1 = 0;
+    (*crate::gl!(sStorage)).partyMenuY = 22;
+    (*crate::gl!(sStorage)).partyMenuMoveTimer = 0;
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         MoveHeldItemWithPartyMenu();
     }
 }
 unsafe fn HidePartyMenu() -> u8 {
-    if (*sStorage).partyMenuMoveTimer != 20 {
-        (*sStorage).partyMenuUnused1 += 1;
-        (*sStorage).partyMenuY -= 1;
+    if (*crate::gl!(sStorage)).partyMenuMoveTimer != 20 {
+        (*crate::gl!(sStorage)).partyMenuUnused1 += 1;
+        (*crate::gl!(sStorage)).partyMenuY -= 1;
         TilemapUtil_Move(TILEMAPID_PARTY_MENU, 3, -1);
         TilemapUtil_Update(TILEMAPID_PARTY_MENU);
-        FillBgTilemapBufferRect_Palette0(1, 0x100, 10, (*sStorage).partyMenuY as u8, 12, 1);
+        FillBgTilemapBufferRect_Palette0(
+            1,
+            0x100,
+            10,
+            (*crate::gl!(sStorage)).partyMenuY as u8,
+            12,
+            1,
+        );
         MovePartySprites(-8);
         if ({
-            (*sStorage).partyMenuMoveTimer += 1;
-            (*sStorage).partyMenuMoveTimer
+            (*crate::gl!(sStorage)).partyMenuMoveTimer += 1;
+            (*crate::gl!(sStorage)).partyMenuMoveTimer
         }) != 20
         {
             ScheduleBgCopyTilemapToVram(1);
@@ -4235,31 +4270,32 @@ unsafe fn UpdateCloseBoxButtonTilemap(normal: u8) {
     ScheduleBgCopyTilemapToVram(1);
 }
 unsafe fn StartFlashingCloseBoxButton() {
-    (*sStorage).closeBoxFlashing = TRUE;
-    (*sStorage).closeBoxFlashTimer = 30;
-    (*sStorage).closeBoxFlashState = TRUE;
+    (*crate::gl!(sStorage)).closeBoxFlashing = TRUE;
+    (*crate::gl!(sStorage)).closeBoxFlashTimer = 30;
+    (*crate::gl!(sStorage)).closeBoxFlashState = TRUE;
 }
 unsafe fn StopFlashingCloseBoxButton() {
-    if (*sStorage).closeBoxFlashing != 0 {
-        (*sStorage).closeBoxFlashing = FALSE;
+    if (*crate::gl!(sStorage)).closeBoxFlashing != 0 {
+        (*crate::gl!(sStorage)).closeBoxFlashing = FALSE;
         UpdateCloseBoxButtonTilemap(TRUE);
     }
 }
 unsafe fn UpdateCloseBoxButtonFlash() {
-    if (*sStorage).closeBoxFlashing != 0
+    if (*crate::gl!(sStorage)).closeBoxFlashing != 0
         && ({
-            (*sStorage).closeBoxFlashTimer += 1;
-            (*sStorage).closeBoxFlashTimer
+            (*crate::gl!(sStorage)).closeBoxFlashTimer += 1;
+            (*crate::gl!(sStorage)).closeBoxFlashTimer
         }) > 30
     {
-        (*sStorage).closeBoxFlashTimer = 0;
-        (*sStorage).closeBoxFlashState = ((*sStorage).closeBoxFlashState == FALSE) as u8;
-        UpdateCloseBoxButtonTilemap((*sStorage).closeBoxFlashState);
+        (*crate::gl!(sStorage)).closeBoxFlashTimer = 0;
+        (*crate::gl!(sStorage)).closeBoxFlashState =
+            ((*crate::gl!(sStorage)).closeBoxFlashState == FALSE) as u8;
+        UpdateCloseBoxButtonTilemap((*crate::gl!(sStorage)).closeBoxFlashState);
     }
 }
 unsafe fn SetPartySlotTilemaps() {
     for i in 1..(PARTY_SIZE as u8) {
-        let species: i32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as i32;
+        let species: i32 = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) as i32;
         SetPartySlotTilemap(i, (species != SPECIES_NONE as i32) as u8);
     }
 }
@@ -4275,7 +4311,7 @@ unsafe fn SetPartySlotTilemap(partyId: u8, hasMon: u8) {
     index += 7;
     for i in 0..3u16 {
         for j in 0..4u16 {
-            (*sStorage).partyMenuTilemapBuffer[index as i32 + j as i32] = *data.at(j);
+            (*crate::gl!(sStorage)).partyMenuTilemapBuffer[index as i32 + j as i32] = *data.at(j);
         }
         data = data.at(4);
         index += 12;
@@ -4288,24 +4324,24 @@ unsafe fn UpdatePartySlotColors() {
     ScheduleBgCopyTilemapToVram(1);
 }
 unsafe fn SetUpDoShowPartyMenu() {
-    (*sStorage).showPartyMenuState = 0;
+    (*crate::gl!(sStorage)).showPartyMenuState = 0;
     PlaySE(SE_WIN_OPEN);
     SetUpShowPartyMenu();
 }
 unsafe fn DoShowPartyMenu() -> u8 {
-    match (*sStorage).showPartyMenuState {
+    match (*crate::gl!(sStorage)).showPartyMenuState {
         0 => {
             if ShowPartyMenu() == 0 {
                 SetCursorInParty();
-                (*sStorage).showPartyMenuState += 1;
+                (*crate::gl!(sStorage)).showPartyMenuState += 1;
             }
         }
         1 => {
             if UpdateCursorPos() == 0 {
-                if (*sStorage).setMosaic != 0 {
+                if (*crate::gl!(sStorage)).setMosaic != 0 {
                     StartDisplayMonMosaicEffect();
                 }
-                (*sStorage).showPartyMenuState += 1;
+                (*crate::gl!(sStorage)).showPartyMenuState += 1;
             }
         }
         2 => {
@@ -4335,41 +4371,47 @@ pub(crate) unsafe fn PrintMessage(id: u8) {
         MSG_VAR_MON_NAME_1 | MSG_VAR_MON_NAME_2 | MSG_VAR_MON_NAME_3 => {
             DynamicPlaceholderTextUtil_SetPlaceholderPtr(
                 0,
-                (*sStorage).displayMonName.as_mut_ptr(),
+                (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
             );
         }
         MSG_VAR_RELEASE_MON_1 | MSG_VAR_RELEASE_MON_2 | MSG_VAR_RELEASE_MON_3 => {
             DynamicPlaceholderTextUtil_SetPlaceholderPtr(
                 0,
-                (*sStorage).releaseMonName.as_mut_ptr(),
+                (*crate::gl!(sStorage)).releaseMonName.as_mut_ptr(),
             );
         }
         MSG_VAR_ITEM_NAME => {
             if IsMovingItem() != 0 {
-                txtPtr = StringCopy((*sStorage).itemName.as_mut_ptr(), GetMovingItemName());
+                txtPtr = StringCopy(
+                    (*crate::gl!(sStorage)).itemName.as_mut_ptr(),
+                    GetMovingItemName(),
+                );
             } else {
                 txtPtr = StringCopy(
-                    (*sStorage).itemName.as_mut_ptr(),
-                    (*sStorage).displayMonItemName.as_mut_ptr(),
+                    (*crate::gl!(sStorage)).itemName.as_mut_ptr(),
+                    (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
                 );
             }
             while *txtPtr.at(-1) == CHAR_SPACE {
                 txtPtr = txtPtr.at(-1);
             }
             *txtPtr = EOS;
-            DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*sStorage).itemName.as_mut_ptr());
+            DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+                0,
+                (*crate::gl!(sStorage)).itemName.as_mut_ptr(),
+            );
         }
         _ => {}
     }
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
-        (*sStorage).messageText.as_mut_ptr(),
+        (*crate::gl!(sStorage)).messageText.as_mut_ptr(),
         sMessages[id].text,
     );
     FillWindowPixelBuffer(WIN_MESSAGE, 17);
     AddTextPrinterParameterized(
         WIN_MESSAGE,
         FONT_NORMAL,
-        (*sStorage).messageText.as_mut_ptr(),
+        (*crate::gl!(sStorage)).messageText.as_mut_ptr(),
         0,
         1,
         TEXT_SKIP_DRAW,
@@ -4450,34 +4492,41 @@ unsafe fn InitMonIconFields() {
     LoadMonIconPalettes();
     let mut i: u16 = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
-        (*sStorage).numIconsPerSpecies[i] = 0;
+        (*crate::gl!(sStorage)).numIconsPerSpecies[i] = 0;
         i += 1;
     }
     i = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
-        (*sStorage).iconSpeciesList[i] = SPECIES_NONE;
+        (*crate::gl!(sStorage)).iconSpeciesList[i] = SPECIES_NONE;
         i += 1;
     }
     i = 0;
     while i < PARTY_SIZE as u16 {
-        (*sStorage).partySprites[i] = null_mut();
+        (*crate::gl!(sStorage)).partySprites[i] = null_mut();
         i += 1;
     }
     for i in 0..(IN_BOX_COUNT as u16) {
-        (*sStorage).boxMonsSprites[i] = null_mut();
+        (*crate::gl!(sStorage)).boxMonsSprites[i] = null_mut();
     }
-    (*sStorage).movingMonSprite = null_mut();
-    (*sStorage).unkUnused1 = 0;
+    (*crate::gl!(sStorage)).movingMonSprite = null_mut();
+    (*crate::gl!(sStorage)).unkUnused1 = 0;
 }
 fn GetMonIconPriorityByCursorPos() -> u8 {
     (if IsCursorInBox() != 0 { 2 } else { 1 }) as u8
 }
 unsafe fn CreateMovingMonIcon() {
-    let personality: u32 = GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_PERSONALITY);
-    let species: u16 = GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_SPECIES_OR_EGG) as u16;
+    let personality: u32 = GetMonData2(
+        &raw mut (*crate::gl!(sStorage)).movingMon,
+        MON_DATA_PERSONALITY,
+    );
+    let species: u16 = GetMonData2(
+        &raw mut (*crate::gl!(sStorage)).movingMon,
+        MON_DATA_SPECIES_OR_EGG,
+    ) as u16;
     let priority: u8 = GetMonIconPriorityByCursorPos();
-    (*sStorage).movingMonSprite = CreateMonIconSprite(species, personality, 0, 0, priority, 7);
-    (*(*sStorage).movingMonSprite).callback = Some(SpriteCB_HeldMon);
+    (*crate::gl!(sStorage)).movingMonSprite =
+        CreateMonIconSprite(species, personality, 0, 0, priority, 7);
+    (*(*crate::gl!(sStorage)).movingMonSprite).callback = Some(SpriteCB_HeldMon);
 }
 unsafe fn InitBoxMonSprites(boxId: u8) {
     let mut species: u16 = 0;
@@ -4489,7 +4538,7 @@ unsafe fn InitBoxMonSprites(boxId: u8) {
             species = GetBoxMonDataAt(boxId, boxPosition, MON_DATA_SPECIES_OR_EGG) as u16;
             if species != SPECIES_NONE {
                 personality = GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY);
-                (*sStorage).boxMonsSprites[count] = CreateMonIconSprite(
+                (*crate::gl!(sStorage)).boxMonsSprites[count] = CreateMonIconSprite(
                     species,
                     personality,
                     8 * (3 * j as i16) + 100,
@@ -4498,16 +4547,16 @@ unsafe fn InitBoxMonSprites(boxId: u8) {
                     19 - j as u8,
                 );
             } else {
-                (*sStorage).boxMonsSprites[count] = null_mut();
+                (*crate::gl!(sStorage)).boxMonsSprites[count] = null_mut();
             }
             boxPosition += 1;
             count += 1;
         }
     }
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         for boxPosition in 0..(IN_BOX_COUNT as u8) {
             if GetBoxMonDataAt(boxId, boxPosition, MON_DATA_HELD_ITEM) == ITEM_NONE as u32 {
-                (*(*sStorage).boxMonsSprites[boxPosition])
+                (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition])
                     .oam
                     .set_objMode(ST_OAM_OBJ_BLEND);
             }
@@ -4520,7 +4569,7 @@ unsafe fn CreateBoxMonIconAtPos(boxPosition: u8) {
         let x: i16 = 8 * (3 * (boxPosition as i32 % 6) as i16) + 100;
         let y: i16 = 8 * (3 * (boxPosition as i32 / 6) as i16) + 44;
         let personality: u32 = GetCurrentBoxMonData(boxPosition, MON_DATA_PERSONALITY);
-        (*sStorage).boxMonsSprites[boxPosition] = CreateMonIconSprite(
+        (*crate::gl!(sStorage)).boxMonsSprites[boxPosition] = CreateMonIconSprite(
             species,
             personality,
             x,
@@ -4528,8 +4577,8 @@ unsafe fn CreateBoxMonIconAtPos(boxPosition: u8) {
             2,
             19 - (boxPosition as i32 % 6) as u8,
         );
-        if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-            (*(*sStorage).boxMonsSprites[boxPosition])
+        if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
+            (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition])
                 .oam
                 .set_objMode(ST_OAM_OBJ_BLEND);
         }
@@ -4537,10 +4586,11 @@ unsafe fn CreateBoxMonIconAtPos(boxPosition: u8) {
 }
 unsafe fn StartBoxMonIconsScrollOut(speed: i16) {
     for i in 0..(IN_BOX_COUNT as u16) {
-        if !(*sStorage).boxMonsSprites[i].is_null() {
-            (*(*sStorage).boxMonsSprites[i]).data[2] = speed;
-            (*(*sStorage).boxMonsSprites[i]).data[sDelay] = 1;
-            (*(*sStorage).boxMonsSprites[i]).callback = Some(SpriteCB_BoxMonIconScrollOut);
+        if !(*crate::gl!(sStorage)).boxMonsSprites[i].is_null() {
+            (*(*crate::gl!(sStorage)).boxMonsSprites[i]).data[2] = speed;
+            (*(*crate::gl!(sStorage)).boxMonsSprites[i]).data[sDelay] = 1;
+            (*(*crate::gl!(sStorage)).boxMonsSprites[i]).callback =
+                Some(SpriteCB_BoxMonIconScrollOut);
         }
     }
 }
@@ -4549,7 +4599,7 @@ pub(crate) unsafe fn SpriteCB_BoxMonIconScrollIn(sprite: *mut Sprite) {
         (*sprite).data[sDistance] -= 1;
         (*sprite).x += (*sprite).data[2];
     } else {
-        (*sStorage).iconScrollNumIncoming -= 1;
+        (*crate::gl!(sStorage)).iconScrollNumIncoming -= 1;
         (*sprite).x = (*sprite).data[sScrollInDestX];
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
@@ -4568,9 +4618,9 @@ pub(crate) unsafe fn SpriteCB_BoxMonIconScrollOut(sprite: *mut Sprite) {
 unsafe fn DestroyBoxMonIconsInColumn(column: u8) {
     let mut boxPosition: u8 = column;
     for row in 0..(IN_BOX_ROWS as u16) {
-        if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-            DestroyBoxMonIcon((*sStorage).boxMonsSprites[boxPosition]);
-            (*sStorage).boxMonsSprites[boxPosition] = null_mut();
+        if !(*crate::gl!(sStorage)).boxMonsSprites[boxPosition].is_null() {
+            DestroyBoxMonIcon((*crate::gl!(sStorage)).boxMonsSprites[boxPosition]);
+            (*crate::gl!(sStorage)).boxMonsSprites[boxPosition] = null_mut();
         }
         boxPosition += IN_BOX_COLUMNS;
     }
@@ -4582,22 +4632,24 @@ unsafe fn CreateBoxMonIconsInColumn(column: u8, distance: u16, speed: i16) -> u8
     let subpriority: u8 = 19 - column;
     let mut iconsCreated: u8 = 0;
     let mut boxPosition: u8 = column;
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         for i in 0..IN_BOX_ROWS {
-            if (*sStorage).boxSpecies[boxPosition] != SPECIES_NONE {
-                (*sStorage).boxMonsSprites[boxPosition] = CreateMonIconSprite(
-                    (*sStorage).boxSpecies[boxPosition],
-                    (*sStorage).boxPersonalities[boxPosition],
+            if (*crate::gl!(sStorage)).boxSpecies[boxPosition] != SPECIES_NONE {
+                (*crate::gl!(sStorage)).boxMonsSprites[boxPosition] = CreateMonIconSprite(
+                    (*crate::gl!(sStorage)).boxSpecies[boxPosition],
+                    (*crate::gl!(sStorage)).boxPersonalities[boxPosition],
                     x as i16,
                     y as i16,
                     2,
                     subpriority,
                 );
-                if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sDistance] = distance as i16;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[2] = speed;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sScrollInDestX] = xDest;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).callback =
+                if !(*crate::gl!(sStorage)).boxMonsSprites[boxPosition].is_null() {
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).data[sDistance] =
+                        distance as i16;
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).data[2] = speed;
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).data[sScrollInDestX] =
+                        xDest;
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).callback =
                         Some(SpriteCB_BoxMonIconScrollIn);
                     iconsCreated += 1;
                 }
@@ -4607,25 +4659,30 @@ unsafe fn CreateBoxMonIconsInColumn(column: u8, distance: u16, speed: i16) -> u8
         }
     } else {
         for i in 0..IN_BOX_ROWS {
-            if (*sStorage).boxSpecies[boxPosition] != SPECIES_NONE {
-                (*sStorage).boxMonsSprites[boxPosition] = CreateMonIconSprite(
-                    (*sStorage).boxSpecies[boxPosition],
-                    (*sStorage).boxPersonalities[boxPosition],
+            if (*crate::gl!(sStorage)).boxSpecies[boxPosition] != SPECIES_NONE {
+                (*crate::gl!(sStorage)).boxMonsSprites[boxPosition] = CreateMonIconSprite(
+                    (*crate::gl!(sStorage)).boxSpecies[boxPosition],
+                    (*crate::gl!(sStorage)).boxPersonalities[boxPosition],
                     x as i16,
                     y as i16,
                     2,
                     subpriority,
                 );
-                if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sDistance] = distance as i16;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[2] = speed;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sScrollInDestX] = xDest;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).callback =
+                if !(*crate::gl!(sStorage)).boxMonsSprites[boxPosition].is_null() {
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).data[sDistance] =
+                        distance as i16;
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).data[2] = speed;
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).data[sScrollInDestX] =
+                        xDest;
+                    (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition]).callback =
                         Some(SpriteCB_BoxMonIconScrollIn);
-                    if GetBoxMonDataAt((*sStorage).incomingBoxId, boxPosition, MON_DATA_HELD_ITEM)
-                        == ITEM_NONE as u32
+                    if GetBoxMonDataAt(
+                        (*crate::gl!(sStorage)).incomingBoxId,
+                        boxPosition,
+                        MON_DATA_HELD_ITEM,
+                    ) == ITEM_NONE as u32
                     {
-                        (*(*sStorage).boxMonsSprites[boxPosition])
+                        (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition])
                             .oam
                             .set_objMode(ST_OAM_OBJ_BLEND);
                     }
@@ -4639,53 +4696,60 @@ unsafe fn CreateBoxMonIconsInColumn(column: u8, distance: u16, speed: i16) -> u8
     iconsCreated
 }
 unsafe fn InitBoxMonIconScroll(boxId: u8, direction: i8) {
-    (*sStorage).iconScrollState = 0;
-    (*sStorage).iconScrollToBoxId = boxId;
-    (*sStorage).iconScrollDirection = direction;
-    (*sStorage).iconScrollDistance = 32;
-    (*sStorage).iconScrollSpeed = -(6 * direction as i16);
-    (*sStorage).iconScrollNumIncoming = 0;
+    (*crate::gl!(sStorage)).iconScrollState = 0;
+    (*crate::gl!(sStorage)).iconScrollToBoxId = boxId;
+    (*crate::gl!(sStorage)).iconScrollDirection = direction;
+    (*crate::gl!(sStorage)).iconScrollDistance = 32;
+    (*crate::gl!(sStorage)).iconScrollSpeed = -(6 * direction as i16);
+    (*crate::gl!(sStorage)).iconScrollNumIncoming = 0;
     GetIncomingBoxMonData(boxId);
     if direction > 0 {
-        (*sStorage).iconScrollCurColumn = 0;
+        (*crate::gl!(sStorage)).iconScrollCurColumn = 0;
     } else {
-        (*sStorage).iconScrollCurColumn = 5;
+        (*crate::gl!(sStorage)).iconScrollCurColumn = 5;
     }
-    (*sStorage).iconScrollPos = 24 * (*sStorage).iconScrollCurColumn as i16 + 100;
-    StartBoxMonIconsScrollOut((*sStorage).iconScrollSpeed);
+    (*crate::gl!(sStorage)).iconScrollPos =
+        24 * (*crate::gl!(sStorage)).iconScrollCurColumn as i16 + 100;
+    StartBoxMonIconsScrollOut((*crate::gl!(sStorage)).iconScrollSpeed);
 }
 unsafe fn UpdateBoxMonIconScroll() -> u8 {
-    if (*sStorage).iconScrollDistance != 0 {
-        (*sStorage).iconScrollDistance -= 1;
+    if (*crate::gl!(sStorage)).iconScrollDistance != 0 {
+        (*crate::gl!(sStorage)).iconScrollDistance -= 1;
     }
-    match (*sStorage).iconScrollState {
+    match (*crate::gl!(sStorage)).iconScrollState {
         0 => {
-            (*sStorage).iconScrollPos += (*sStorage).iconScrollSpeed;
-            if (*sStorage).iconScrollPos <= 64 || (*sStorage).iconScrollPos >= 252 {
-                DestroyBoxMonIconsInColumn((*sStorage).iconScrollCurColumn);
-                (*sStorage).iconScrollPos += (*sStorage).iconScrollDirection as i16 * 24;
-                (*sStorage).iconScrollState += 1;
+            (*crate::gl!(sStorage)).iconScrollPos += (*crate::gl!(sStorage)).iconScrollSpeed;
+            if (*crate::gl!(sStorage)).iconScrollPos <= 64
+                || (*crate::gl!(sStorage)).iconScrollPos >= 252
+            {
+                DestroyBoxMonIconsInColumn((*crate::gl!(sStorage)).iconScrollCurColumn);
+                (*crate::gl!(sStorage)).iconScrollPos +=
+                    (*crate::gl!(sStorage)).iconScrollDirection as i16 * 24;
+                (*crate::gl!(sStorage)).iconScrollState += 1;
             }
         }
         1 => {
-            (*sStorage).iconScrollPos += (*sStorage).iconScrollSpeed;
-            (*sStorage).iconScrollNumIncoming += CreateBoxMonIconsInColumn(
-                (*sStorage).iconScrollCurColumn,
-                (*sStorage).iconScrollDistance,
-                (*sStorage).iconScrollSpeed,
+            (*crate::gl!(sStorage)).iconScrollPos += (*crate::gl!(sStorage)).iconScrollSpeed;
+            (*crate::gl!(sStorage)).iconScrollNumIncoming += CreateBoxMonIconsInColumn(
+                (*crate::gl!(sStorage)).iconScrollCurColumn,
+                (*crate::gl!(sStorage)).iconScrollDistance,
+                (*crate::gl!(sStorage)).iconScrollSpeed,
             ) as u16;
-            if (*sStorage).iconScrollDirection > 0 && (*sStorage).iconScrollCurColumn == 5
-                || (*sStorage).iconScrollDirection < 0 && (*sStorage).iconScrollCurColumn == 0
+            if (*crate::gl!(sStorage)).iconScrollDirection > 0
+                && (*crate::gl!(sStorage)).iconScrollCurColumn == 5
+                || (*crate::gl!(sStorage)).iconScrollDirection < 0
+                    && (*crate::gl!(sStorage)).iconScrollCurColumn == 0
             {
-                (*sStorage).iconScrollState += 1;
+                (*crate::gl!(sStorage)).iconScrollState += 1;
             } else {
-                (*sStorage).iconScrollCurColumn += (*sStorage).iconScrollDirection as u8;
-                (*sStorage).iconScrollState = 0;
+                (*crate::gl!(sStorage)).iconScrollCurColumn +=
+                    (*crate::gl!(sStorage)).iconScrollDirection as u8;
+                (*crate::gl!(sStorage)).iconScrollState = 0;
             }
         }
         2 => {
-            if (*sStorage).iconScrollNumIncoming == 0 {
-                (*sStorage).iconScrollDistance += 1;
+            if (*crate::gl!(sStorage)).iconScrollNumIncoming == 0 {
+                (*crate::gl!(sStorage)).iconScrollDistance += 1;
                 return FALSE;
             }
         }
@@ -4699,41 +4763,43 @@ unsafe fn GetIncomingBoxMonData(boxId: u8) {
     let mut boxPosition: i32 = 0;
     for i in 0..IN_BOX_ROWS {
         for j in 0..(IN_BOX_COLUMNS as i32) {
-            (*sStorage).boxSpecies[boxPosition] =
+            (*crate::gl!(sStorage)).boxSpecies[boxPosition] =
                 GetBoxMonDataAt(boxId, boxPosition as u8, MON_DATA_SPECIES_OR_EGG) as u16;
-            if (*sStorage).boxSpecies[boxPosition] != SPECIES_NONE {
-                (*sStorage).boxPersonalities[boxPosition] =
+            if (*crate::gl!(sStorage)).boxSpecies[boxPosition] != SPECIES_NONE {
+                (*crate::gl!(sStorage)).boxPersonalities[boxPosition] =
                     GetBoxMonDataAt(boxId, boxPosition as u8, MON_DATA_PERSONALITY);
             }
             boxPosition += 1;
         }
     }
-    (*sStorage).incomingBoxId = boxId;
+    (*crate::gl!(sStorage)).incomingBoxId = boxId;
 }
 unsafe fn DestroyBoxMonIconAtPosition(boxPosition: u8) {
-    if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-        DestroyBoxMonIcon((*sStorage).boxMonsSprites[boxPosition]);
-        (*sStorage).boxMonsSprites[boxPosition] = null_mut();
+    if !(*crate::gl!(sStorage)).boxMonsSprites[boxPosition].is_null() {
+        DestroyBoxMonIcon((*crate::gl!(sStorage)).boxMonsSprites[boxPosition]);
+        (*crate::gl!(sStorage)).boxMonsSprites[boxPosition] = null_mut();
     }
 }
 unsafe fn SetBoxMonIconObjMode(boxPosition: u8, objMode: u8) {
-    if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-        (*(*sStorage).boxMonsSprites[boxPosition])
+    if !(*crate::gl!(sStorage)).boxMonsSprites[boxPosition].is_null() {
+        (*(*crate::gl!(sStorage)).boxMonsSprites[boxPosition])
             .oam
             .set_objMode(objMode as u32);
     }
 }
 unsafe fn CreatePartyMonsSprites(visible: u8) {
-    let mut species: u16 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SPECIES_OR_EGG) as u16;
-    let mut personality: u32 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_PERSONALITY);
-    (*sStorage).partySprites[0] = CreateMonIconSprite(species, personality, 104, 64, 1, 12);
+    let mut species: u16 =
+        GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_SPECIES_OR_EGG) as u16;
+    let mut personality: u32 = GetMonData2(crate::gl!(&raw gPlayerParty[0]), MON_DATA_PERSONALITY);
+    (*crate::gl!(sStorage)).partySprites[0] =
+        CreateMonIconSprite(species, personality, 104, 64, 1, 12);
     let mut count: u16 = 1;
     let mut i: u16 = 1;
     while i < PARTY_SIZE as u16 {
-        species = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16;
+        species = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES_OR_EGG) as u16;
         if species != SPECIES_NONE {
-            personality = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY);
-            (*sStorage).partySprites[i] = CreateMonIconSprite(
+            personality = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_PERSONALITY);
+            (*crate::gl!(sStorage)).partySprites[i] = CreateMonIconSprite(
                 species,
                 personality,
                 152,
@@ -4743,22 +4809,23 @@ unsafe fn CreatePartyMonsSprites(visible: u8) {
             );
             count += 1;
         } else {
-            (*sStorage).partySprites[i] = null_mut();
+            (*crate::gl!(sStorage)).partySprites[i] = null_mut();
         }
         i += 1;
     }
     if visible == 0 {
         for i in 0..count {
-            (*(*sStorage).partySprites[i]).y -= DISPLAY_HEIGHT as i16;
-            (*(*sStorage).partySprites[i]).set_invisible(TRUE as u16);
+            (*(*crate::gl!(sStorage)).partySprites[i]).y -= DISPLAY_HEIGHT as i16;
+            (*(*crate::gl!(sStorage)).partySprites[i]).set_invisible(TRUE as u16);
         }
     }
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         for i in 0..(PARTY_SIZE as u16) {
-            if !(*sStorage).partySprites[i].is_null()
-                && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HELD_ITEM) == ITEM_NONE as u32
+            if !(*crate::gl!(sStorage)).partySprites[i].is_null()
+                && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HELD_ITEM)
+                    == ITEM_NONE as u32
             {
-                (*(*sStorage).partySprites[i])
+                (*(*crate::gl!(sStorage)).partySprites[i])
                     .oam
                     .set_objMode(ST_OAM_OBJ_BLEND);
             }
@@ -4766,21 +4833,21 @@ unsafe fn CreatePartyMonsSprites(visible: u8) {
     }
 }
 unsafe fn CompactPartySprites() {
-    (*sStorage).numPartyToCompact = 0;
+    (*crate::gl!(sStorage)).numPartyToCompact = 0;
     let mut targetSlot: u16 = 0;
     for i in 0..(PARTY_SIZE as u16) {
-        if !(*sStorage).partySprites[i].is_null() {
+        if !(*crate::gl!(sStorage)).partySprites[i].is_null() {
             if i != targetSlot {
-                MovePartySpriteToNextSlot((*sStorage).partySprites[i], targetSlot);
-                (*sStorage).partySprites[i] = null_mut();
-                (*sStorage).numPartyToCompact += 1;
+                MovePartySpriteToNextSlot((*crate::gl!(sStorage)).partySprites[i], targetSlot);
+                (*crate::gl!(sStorage)).partySprites[i] = null_mut();
+                (*crate::gl!(sStorage)).numPartyToCompact += 1;
             }
             targetSlot += 1;
         }
     }
 }
 unsafe fn GetNumPartySpritesCompacting() -> u8 {
-    (*sStorage).numPartyToCompact
+    (*crate::gl!(sStorage)).numPartyToCompact
 }
 unsafe fn MovePartySpriteToNextSlot(sprite: *mut Sprite, partyId: u16) {
     let mut x: i16 = 0;
@@ -4822,198 +4889,221 @@ pub(crate) unsafe fn SpriteCB_MovePartyMonToNextSlot(sprite: *mut Sprite) {
             (*sprite).y = 8 * (3 * ((*sprite).data[sPartyId] - 1)) + 16;
         }
         (*sprite).callback = Some(SpriteCallbackDummy);
-        (*sStorage).partySprites[(*sprite).data[sPartyId]] = sprite;
-        (*sStorage).numPartyToCompact -= 1;
+        (*crate::gl!(sStorage)).partySprites[(*sprite).data[sPartyId]] = sprite;
+        (*crate::gl!(sStorage)).numPartyToCompact -= 1;
     }
 }
 unsafe fn DestroyMovingMonIcon() {
-    if !(*sStorage).movingMonSprite.is_null() {
-        DestroyBoxMonIcon((*sStorage).movingMonSprite);
-        (*sStorage).movingMonSprite = null_mut();
+    if !(*crate::gl!(sStorage)).movingMonSprite.is_null() {
+        DestroyBoxMonIcon((*crate::gl!(sStorage)).movingMonSprite);
+        (*crate::gl!(sStorage)).movingMonSprite = null_mut();
     }
 }
 unsafe fn MovePartySprites(yDelta: i16) {
     let mut posY: u16 = 0;
     for i in 0..(PARTY_SIZE as u16) {
-        if !(*sStorage).partySprites[i].is_null() {
-            (*(*sStorage).partySprites[i]).y += yDelta;
-            posY = (*(*sStorage).partySprites[i]).y as u16
-                + (*(*sStorage).partySprites[i]).y2 as u16
-                + (*(*sStorage).partySprites[i]).centerToCornerVecY as u16;
+        if !(*crate::gl!(sStorage)).partySprites[i].is_null() {
+            (*(*crate::gl!(sStorage)).partySprites[i]).y += yDelta;
+            posY = (*(*crate::gl!(sStorage)).partySprites[i]).y as u16
+                + (*(*crate::gl!(sStorage)).partySprites[i]).y2 as u16
+                + (*(*crate::gl!(sStorage)).partySprites[i]).centerToCornerVecY as u16;
             posY += 16;
             if posY > 192 {
-                (*(*sStorage).partySprites[i]).set_invisible(TRUE as u16);
+                (*(*crate::gl!(sStorage)).partySprites[i]).set_invisible(TRUE as u16);
             } else {
-                (*(*sStorage).partySprites[i]).set_invisible(FALSE as u16);
+                (*(*crate::gl!(sStorage)).partySprites[i]).set_invisible(FALSE as u16);
             }
         }
     }
 }
 unsafe fn DestroyPartyMonIcon(partyId: u8) {
-    if !(*sStorage).partySprites[partyId].is_null() {
-        DestroyBoxMonIcon((*sStorage).partySprites[partyId]);
-        (*sStorage).partySprites[partyId] = null_mut();
+    if !(*crate::gl!(sStorage)).partySprites[partyId].is_null() {
+        DestroyBoxMonIcon((*crate::gl!(sStorage)).partySprites[partyId]);
+        (*crate::gl!(sStorage)).partySprites[partyId] = null_mut();
     }
 }
 unsafe fn DestroyAllPartyMonIcons() {
     for i in 0..(PARTY_SIZE as u16) {
-        if !(*sStorage).partySprites[i].is_null() {
-            DestroyBoxMonIcon((*sStorage).partySprites[i]);
-            (*sStorage).partySprites[i] = null_mut();
+        if !(*crate::gl!(sStorage)).partySprites[i].is_null() {
+            DestroyBoxMonIcon((*crate::gl!(sStorage)).partySprites[i]);
+            (*crate::gl!(sStorage)).partySprites[i] = null_mut();
         }
     }
 }
 unsafe fn SetPartyMonIconObjMode(partyId: u8, objMode: u8) {
-    if !(*sStorage).partySprites[partyId].is_null() {
-        (*(*sStorage).partySprites[partyId])
+    if !(*crate::gl!(sStorage)).partySprites[partyId].is_null() {
+        (*(*crate::gl!(sStorage)).partySprites[partyId])
             .oam
             .set_objMode(objMode as u32);
     }
 }
 unsafe fn SetMovingMonSprite(mode: u8, id: u8) {
     if mode == MODE_PARTY {
-        (*sStorage).movingMonSprite = (*sStorage).partySprites[id];
-        (*sStorage).partySprites[id] = null_mut();
+        (*crate::gl!(sStorage)).movingMonSprite = (*crate::gl!(sStorage)).partySprites[id];
+        (*crate::gl!(sStorage)).partySprites[id] = null_mut();
     } else if mode == MODE_BOX {
-        (*sStorage).movingMonSprite = (*sStorage).boxMonsSprites[id];
-        (*sStorage).boxMonsSprites[id] = null_mut();
+        (*crate::gl!(sStorage)).movingMonSprite = (*crate::gl!(sStorage)).boxMonsSprites[id];
+        (*crate::gl!(sStorage)).boxMonsSprites[id] = null_mut();
     } else {
         return;
     }
-    (*(*sStorage).movingMonSprite).callback = Some(SpriteCB_HeldMon);
-    (*(*sStorage).movingMonSprite)
+    (*(*crate::gl!(sStorage)).movingMonSprite).callback = Some(SpriteCB_HeldMon);
+    (*(*crate::gl!(sStorage)).movingMonSprite)
         .oam
         .set_priority(GetMonIconPriorityByCursorPos() as u16);
-    (*(*sStorage).movingMonSprite).subpriority = 7;
+    (*(*crate::gl!(sStorage)).movingMonSprite).subpriority = 7;
 }
 unsafe fn SetPlacedMonSprite(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
-        (*sStorage).partySprites[position] = (*sStorage).movingMonSprite;
-        (*(*sStorage).partySprites[position]).oam.set_priority(1);
-        (*(*sStorage).partySprites[position]).subpriority = 12;
+        (*crate::gl!(sStorage)).partySprites[position] = (*crate::gl!(sStorage)).movingMonSprite;
+        (*(*crate::gl!(sStorage)).partySprites[position])
+            .oam
+            .set_priority(1);
+        (*(*crate::gl!(sStorage)).partySprites[position]).subpriority = 12;
     } else {
-        (*sStorage).boxMonsSprites[position] = (*sStorage).movingMonSprite;
-        (*(*sStorage).boxMonsSprites[position]).oam.set_priority(2);
-        (*(*sStorage).boxMonsSprites[position]).subpriority = 19 - (position as i32 % 6) as u8;
+        (*crate::gl!(sStorage)).boxMonsSprites[position] = (*crate::gl!(sStorage)).movingMonSprite;
+        (*(*crate::gl!(sStorage)).boxMonsSprites[position])
+            .oam
+            .set_priority(2);
+        (*(*crate::gl!(sStorage)).boxMonsSprites[position]).subpriority =
+            19 - (position as i32 % 6) as u8;
     }
-    (*(*sStorage).movingMonSprite).callback = Some(SpriteCallbackDummy);
-    (*sStorage).movingMonSprite = null_mut();
+    (*(*crate::gl!(sStorage)).movingMonSprite).callback = Some(SpriteCallbackDummy);
+    (*crate::gl!(sStorage)).movingMonSprite = null_mut();
 }
 unsafe fn SaveMonSpriteAtPos(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
-        (*sStorage).shiftMonSpritePtr = &raw mut (*sStorage).partySprites[position];
+        (*crate::gl!(sStorage)).shiftMonSpritePtr =
+            &raw mut (*crate::gl!(sStorage)).partySprites[position];
     } else {
-        (*sStorage).shiftMonSpritePtr = &raw mut (*sStorage).boxMonsSprites[position];
+        (*crate::gl!(sStorage)).shiftMonSpritePtr =
+            &raw mut (*crate::gl!(sStorage)).boxMonsSprites[position];
     }
-    (*(*sStorage).movingMonSprite).callback = Some(SpriteCallbackDummy);
-    (*sStorage).shiftTimer = 0;
+    (*(*crate::gl!(sStorage)).movingMonSprite).callback = Some(SpriteCallbackDummy);
+    (*crate::gl!(sStorage)).shiftTimer = 0;
 }
 unsafe fn MoveShiftingMons() -> u8 {
-    if (*sStorage).shiftTimer == 16 {
+    if (*crate::gl!(sStorage)).shiftTimer == 16 {
         return FALSE;
     }
-    (*sStorage).shiftTimer += 1;
-    if (*sStorage).shiftTimer as i32 & 1 != 0 {
-        (*(*(*sStorage).shiftMonSpritePtr)).y -= 1;
-        (*(*sStorage).movingMonSprite).y += 1;
+    (*crate::gl!(sStorage)).shiftTimer += 1;
+    if (*crate::gl!(sStorage)).shiftTimer as i32 & 1 != 0 {
+        (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr)).y -= 1;
+        (*(*crate::gl!(sStorage)).movingMonSprite).y += 1;
     }
-    (*(*(*sStorage).shiftMonSpritePtr)).x2 = (*(&raw const crate::trig::gSineTable)
-        .cast::<CArray<i16, 0>>())[(*sStorage).shiftTimer as i32 * 8]
+    (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr)).x2 = (*(&raw const crate::trig::gSineTable)
+        .cast::<CArray<i16, 0>>())[(*crate::gl!(sStorage)).shiftTimer as i32 * 8]
         / 16;
-    (*(*sStorage).movingMonSprite).x2 = -((*(&raw const crate::trig::gSineTable)
-        .cast::<CArray<i16, 0>>())[(*sStorage).shiftTimer as i32 * 8]
+    (*(*crate::gl!(sStorage)).movingMonSprite).x2 = -((*(&raw const crate::trig::gSineTable)
+        .cast::<CArray<i16, 0>>())[(*crate::gl!(sStorage)).shiftTimer as i32 * 8]
         / 16);
-    if (*sStorage).shiftTimer == 8 {
-        (*(*sStorage).movingMonSprite)
-            .oam
-            .set_priority((*(*(*sStorage).shiftMonSpritePtr)).oam.priority());
-        (*(*sStorage).movingMonSprite).subpriority =
-            (*(*(*sStorage).shiftMonSpritePtr)).subpriority;
-        (*(*(*sStorage).shiftMonSpritePtr))
+    if (*crate::gl!(sStorage)).shiftTimer == 8 {
+        (*(*crate::gl!(sStorage)).movingMonSprite).oam.set_priority(
+            (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr))
+                .oam
+                .priority(),
+        );
+        (*(*crate::gl!(sStorage)).movingMonSprite).subpriority =
+            (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr)).subpriority;
+        (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr))
             .oam
             .set_priority(GetMonIconPriorityByCursorPos() as u16);
-        (*(*(*sStorage).shiftMonSpritePtr)).subpriority = 7;
+        (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr)).subpriority = 7;
     }
-    if (*sStorage).shiftTimer == 16 {
-        let sprite: *mut Sprite = (*sStorage).movingMonSprite;
-        (*sStorage).movingMonSprite = *(*sStorage).shiftMonSpritePtr;
-        *(*sStorage).shiftMonSpritePtr = sprite;
-        (*(*sStorage).movingMonSprite).callback = Some(SpriteCB_HeldMon);
-        (*(*(*sStorage).shiftMonSpritePtr)).callback = Some(SpriteCallbackDummy);
+    if (*crate::gl!(sStorage)).shiftTimer == 16 {
+        let sprite: *mut Sprite = (*crate::gl!(sStorage)).movingMonSprite;
+        (*crate::gl!(sStorage)).movingMonSprite = *(*crate::gl!(sStorage)).shiftMonSpritePtr;
+        *(*crate::gl!(sStorage)).shiftMonSpritePtr = sprite;
+        (*(*crate::gl!(sStorage)).movingMonSprite).callback = Some(SpriteCB_HeldMon);
+        (*(*(*crate::gl!(sStorage)).shiftMonSpritePtr)).callback = Some(SpriteCallbackDummy);
     }
     TRUE
 }
 unsafe fn SetReleaseMon(mode: u8, position: u8) {
     match mode {
         MODE_PARTY => {
-            (*sStorage).releaseMonSpritePtr = &raw mut (*sStorage).partySprites[position];
+            (*crate::gl!(sStorage)).releaseMonSpritePtr =
+                &raw mut (*crate::gl!(sStorage)).partySprites[position];
         }
         MODE_BOX => {
-            (*sStorage).releaseMonSpritePtr = &raw mut (*sStorage).boxMonsSprites[position];
+            (*crate::gl!(sStorage)).releaseMonSpritePtr =
+                &raw mut (*crate::gl!(sStorage)).boxMonsSprites[position];
         }
         MODE_MOVE => {
-            (*sStorage).releaseMonSpritePtr = &raw mut (*sStorage).movingMonSprite;
+            (*crate::gl!(sStorage)).releaseMonSpritePtr =
+                &raw mut (*crate::gl!(sStorage)).movingMonSprite;
         }
         _ => {
             return;
         }
     }
-    if !(*(*sStorage).releaseMonSpritePtr).is_null() {
-        InitSpriteAffineAnim(*(*sStorage).releaseMonSpritePtr);
-        (*(*(*sStorage).releaseMonSpritePtr))
+    if !(*(*crate::gl!(sStorage)).releaseMonSpritePtr).is_null() {
+        InitSpriteAffineAnim(*(*crate::gl!(sStorage)).releaseMonSpritePtr);
+        (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr))
             .oam
             .set_affineMode(ST_OAM_AFFINE_NORMAL);
-        (*(*(*sStorage).releaseMonSpritePtr)).affineAnims =
+        (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr)).affineAnims =
             sAffineAnims_ReleaseMon.as_ptr().cast_mut();
-        StartSpriteAffineAnim(*(*sStorage).releaseMonSpritePtr, RELEASE_ANIM_RELEASE);
+        StartSpriteAffineAnim(
+            *(*crate::gl!(sStorage)).releaseMonSpritePtr,
+            RELEASE_ANIM_RELEASE,
+        );
     }
 }
 unsafe fn TryHideReleaseMonSprite() -> u8 {
-    if (*(*sStorage).releaseMonSpritePtr).is_null()
-        || (*(*(*sStorage).releaseMonSpritePtr)).invisible() != 0
+    if (*(*crate::gl!(sStorage)).releaseMonSpritePtr).is_null()
+        || (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr)).invisible() != 0
     {
         return FALSE;
     }
-    if (*(*(*sStorage).releaseMonSpritePtr)).affineAnimEnded() != 0 {
-        (*(*(*sStorage).releaseMonSpritePtr)).set_invisible(TRUE as u16);
+    if (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr)).affineAnimEnded() != 0 {
+        (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr)).set_invisible(TRUE as u16);
     }
     TRUE
 }
 unsafe fn DestroyReleaseMonIcon() {
-    if !(*(*sStorage).releaseMonSpritePtr).is_null() {
-        FreeOamMatrix((*(*(*sStorage).releaseMonSpritePtr)).oam.matrixNum() as u8);
-        DestroyBoxMonIcon(*(*sStorage).releaseMonSpritePtr);
-        *(*sStorage).releaseMonSpritePtr = null_mut();
+    if !(*(*crate::gl!(sStorage)).releaseMonSpritePtr).is_null() {
+        FreeOamMatrix(
+            (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr))
+                .oam
+                .matrixNum() as u8,
+        );
+        DestroyBoxMonIcon(*(*crate::gl!(sStorage)).releaseMonSpritePtr);
+        *(*crate::gl!(sStorage)).releaseMonSpritePtr = null_mut();
     }
 }
 unsafe fn ReshowReleaseMon() {
-    if !(*(*sStorage).releaseMonSpritePtr).is_null() {
-        (*(*(*sStorage).releaseMonSpritePtr)).set_invisible(FALSE as u16);
-        StartSpriteAffineAnim(*(*sStorage).releaseMonSpritePtr, RELEASE_ANIM_CAME_BACK);
+    if !(*(*crate::gl!(sStorage)).releaseMonSpritePtr).is_null() {
+        (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr)).set_invisible(FALSE as u16);
+        StartSpriteAffineAnim(
+            *(*crate::gl!(sStorage)).releaseMonSpritePtr,
+            RELEASE_ANIM_CAME_BACK,
+        );
     }
 }
 unsafe fn ResetReleaseMonSpritePtr() -> u8 {
-    if (*sStorage).releaseMonSpritePtr.is_null() {
+    if (*crate::gl!(sStorage)).releaseMonSpritePtr.is_null() {
         return FALSE;
     }
-    if (*(*(*sStorage).releaseMonSpritePtr)).affineAnimEnded() != 0 {
-        (*sStorage).releaseMonSpritePtr = null_mut();
+    if (*(*(*crate::gl!(sStorage)).releaseMonSpritePtr)).affineAnimEnded() != 0 {
+        (*crate::gl!(sStorage)).releaseMonSpritePtr = null_mut();
     }
     TRUE
 }
 unsafe fn SetMovingMonPriority(priority: u8) {
-    (*(*sStorage).movingMonSprite)
+    (*(*crate::gl!(sStorage)).movingMonSprite)
         .oam
         .set_priority(priority as u16);
 }
 pub(crate) unsafe fn SpriteCB_HeldMon(sprite: *mut Sprite) {
-    (*sprite).x = (*(*sStorage).cursorSprite).x;
-    (*sprite).y = (*(*sStorage).cursorSprite).y + (*(*sStorage).cursorSprite).y2 + 4;
+    (*sprite).x = (*(*crate::gl!(sStorage)).cursorSprite).x;
+    (*sprite).y =
+        (*(*crate::gl!(sStorage)).cursorSprite).y + (*(*crate::gl!(sStorage)).cursorSprite).y2 + 4;
 }
 unsafe fn TryLoadMonIconTiles(species: u16) -> u16 {
     let mut i: u16 = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
-        if (*sStorage).iconSpeciesList[i] == species {
+        if (*crate::gl!(sStorage)).iconSpeciesList[i] == species {
             break;
         }
         i += 1;
@@ -5021,7 +5111,7 @@ unsafe fn TryLoadMonIconTiles(species: u16) -> u16 {
     if i as i32 == (if 37 >= 40 { 37 } else { 40 }) {
         i = 0;
         while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
-            if (*sStorage).iconSpeciesList[i] == 0 {
+            if (*crate::gl!(sStorage)).iconSpeciesList[i] == 0 {
                 break;
             }
             i += 1;
@@ -5030,8 +5120,8 @@ unsafe fn TryLoadMonIconTiles(species: u16) -> u16 {
             return 0xFFFF;
         }
     }
-    (*sStorage).iconSpeciesList[i] = species;
-    (*sStorage).numIconsPerSpecies[i] += 1;
+    (*crate::gl!(sStorage)).iconSpeciesList[i] = species;
+    (*crate::gl!(sStorage)).numIconsPerSpecies[i] += 1;
     let offset: u16 = 16 * i;
     CpuSet(
         GetMonIconTiles(species, TRUE as u32) as *mut c_void,
@@ -5043,13 +5133,13 @@ unsafe fn TryLoadMonIconTiles(species: u16) -> u16 {
 unsafe fn RemoveSpeciesFromIconList(species: u16) {
     let mut i: u16 = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
-        if (*sStorage).iconSpeciesList[i] == species {
+        if (*crate::gl!(sStorage)).iconSpeciesList[i] == species {
             if ({
-                (*sStorage).numIconsPerSpecies[i] -= 1;
-                (*sStorage).numIconsPerSpecies[i]
+                (*crate::gl!(sStorage)).numIconsPerSpecies[i] -= 1;
+                (*crate::gl!(sStorage)).numIconsPerSpecies[i]
             }) == 0
             {
-                (*sStorage).iconSpeciesList[i] = SPECIES_NONE;
+                (*crate::gl!(sStorage)).iconSpeciesList[i] = SPECIES_NONE;
             }
             break;
         }
@@ -5078,10 +5168,12 @@ pub(crate) unsafe fn CreateMonIconSprite(
         RemoveSpeciesFromIconList(species);
         return null_mut();
     }
-    gSprites[spriteId].oam.set_tileNum(tileNum);
-    gSprites[spriteId].oam.set_priority(oamPriority as u16);
-    gSprites[spriteId].data[0] = species as i16;
-    &raw mut gSprites[spriteId]
+    (*gSprites.as_ptr())[spriteId].oam.set_tileNum(tileNum);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_priority(oamPriority as u16);
+    crate::gl!(gSprites[spriteId].data[0] = species as i16);
+    crate::gl!(&raw gSprites[spriteId])
 }
 unsafe fn DestroyBoxMonIcon(sprite: *mut Sprite) {
     RemoveSpeciesFromIconList((*sprite).data[0] as u16);
@@ -5098,11 +5190,13 @@ pub(crate) unsafe fn Task_InitBox(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     match (*task).data[tState] {
         0 => {
-            (*sStorage).wallpaperOffset = 0;
-            (*sStorage).bg2_X = 0;
+            (*crate::gl!(sStorage)).wallpaperOffset = 0;
+            (*crate::gl!(sStorage)).bg2_X = 0;
             (*task).data[tDmaIdx] = RequestDma3Fill(
                 0,
-                (*sStorage).wallpaperBgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sStorage))
+                    .wallpaperBgTilemapBuffer
+                    .as_mut_ptr() as *mut c_void,
                 4096,
                 1,
             );
@@ -5113,7 +5207,9 @@ pub(crate) unsafe fn Task_InitBox(taskId: u8) {
             }
             SetBgTilemapBuffer(
                 2,
-                (*sStorage).wallpaperBgTilemapBuffer.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sStorage))
+                    .wallpaperBgTilemapBuffer
+                    .as_mut_ptr() as *mut c_void,
             );
             ShowBg(2);
         }
@@ -5141,46 +5237,55 @@ pub(crate) unsafe fn Task_InitBox(taskId: u8) {
 }
 unsafe fn SetUpScrollToBox(boxId: u8) {
     let direction: i8 = DetermineBoxScrollDirection(boxId);
-    (*sStorage).scrollSpeed = (if direction > 0 { 6 } else { -6 }) as i16;
-    (*sStorage).scrollUnused1 = (if direction > 0 { 1 } else { 2 }) as u8;
-    (*sStorage).scrollTimer = 32;
-    (*sStorage).scrollToBoxIdUnused = boxId;
-    (*sStorage).scrollUnused2 = (if direction <= 0 { 5 } else { 0 }) as u16;
-    (*sStorage).scrollDirectionUnused = direction as i16;
-    (*sStorage).scrollUnused3 = (if direction > 0 { 264 } else { 56 }) as u16;
-    (*sStorage).scrollUnused4 = (if direction <= 0 { 5 } else { 0 }) as u16;
-    (*sStorage).scrollUnused5 = 0;
-    (*sStorage).scrollUnused6 = 2;
-    (*sStorage).scrollToBoxId = boxId;
-    (*sStorage).scrollDirection = direction;
-    (*sStorage).scrollState = 0;
+    (*crate::gl!(sStorage)).scrollSpeed = (if direction > 0 { 6 } else { -6 }) as i16;
+    (*crate::gl!(sStorage)).scrollUnused1 = (if direction > 0 { 1 } else { 2 }) as u8;
+    (*crate::gl!(sStorage)).scrollTimer = 32;
+    (*crate::gl!(sStorage)).scrollToBoxIdUnused = boxId;
+    (*crate::gl!(sStorage)).scrollUnused2 = (if direction <= 0 { 5 } else { 0 }) as u16;
+    (*crate::gl!(sStorage)).scrollDirectionUnused = direction as i16;
+    (*crate::gl!(sStorage)).scrollUnused3 = (if direction > 0 { 264 } else { 56 }) as u16;
+    (*crate::gl!(sStorage)).scrollUnused4 = (if direction <= 0 { 5 } else { 0 }) as u16;
+    (*crate::gl!(sStorage)).scrollUnused5 = 0;
+    (*crate::gl!(sStorage)).scrollUnused6 = 2;
+    (*crate::gl!(sStorage)).scrollToBoxId = boxId;
+    (*crate::gl!(sStorage)).scrollDirection = direction;
+    (*crate::gl!(sStorage)).scrollState = 0;
 }
 unsafe fn ScrollToBox() -> u8 {
     let mut iconsScrolling: u8 = 0;
     'l1: {
-        let sw1: u8 = (*sStorage).scrollState;
+        let sw1: u8 = (*crate::gl!(sStorage)).scrollState;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            LoadWallpaperGfx((*sStorage).scrollToBoxId, (*sStorage).scrollDirection);
-            (*sStorage).scrollState += 1;
+            LoadWallpaperGfx(
+                (*crate::gl!(sStorage)).scrollToBoxId,
+                (*crate::gl!(sStorage)).scrollDirection,
+            );
+            (*crate::gl!(sStorage)).scrollState += 1;
         }
         if fall || sw1 == 1 {
             if WaitForWallpaperGfxLoad() == 0 {
                 return TRUE;
             }
-            InitBoxMonIconScroll((*sStorage).scrollToBoxId, (*sStorage).scrollDirection);
-            CreateIncomingBoxTitle((*sStorage).scrollToBoxId, (*sStorage).scrollDirection);
-            StartBoxScrollArrowsSlide((*sStorage).scrollDirection);
+            InitBoxMonIconScroll(
+                (*crate::gl!(sStorage)).scrollToBoxId,
+                (*crate::gl!(sStorage)).scrollDirection,
+            );
+            CreateIncomingBoxTitle(
+                (*crate::gl!(sStorage)).scrollToBoxId,
+                (*crate::gl!(sStorage)).scrollDirection,
+            );
+            StartBoxScrollArrowsSlide((*crate::gl!(sStorage)).scrollDirection);
             break 'l1;
         }
         if sw1 == 2 {
             iconsScrolling = UpdateBoxMonIconScroll();
-            if (*sStorage).scrollTimer != 0 {
-                (*sStorage).bg2_X += (*sStorage).scrollSpeed as u16;
+            if (*crate::gl!(sStorage)).scrollTimer != 0 {
+                (*crate::gl!(sStorage)).bg2_X += (*crate::gl!(sStorage)).scrollSpeed as u16;
                 if ({
-                    (*sStorage).scrollTimer -= 1;
-                    (*sStorage).scrollTimer
+                    (*crate::gl!(sStorage)).scrollTimer -= 1;
+                    (*crate::gl!(sStorage)).scrollTimer
                 }) != 0
                 {
                     return TRUE;
@@ -5191,7 +5296,7 @@ unsafe fn ScrollToBox() -> u8 {
             return iconsScrolling;
         }
     }
-    (*sStorage).scrollState += 1;
+    (*crate::gl!(sStorage)).scrollState += 1;
     TRUE
 }
 unsafe fn DetermineBoxScrollDirection(boxId: u8) -> i8 {
@@ -5209,31 +5314,31 @@ unsafe fn DetermineBoxScrollDirection(boxId: u8) -> i8 {
 unsafe fn SetWallpaperForCurrentBox(wallpaperId: u8) {
     let boxId: u8 = StorageGetCurrentBox();
     SetBoxWallpaper(boxId, wallpaperId);
-    (*sStorage).wallpaperChangeState = 0;
+    (*crate::gl!(sStorage)).wallpaperChangeState = 0;
 }
 unsafe fn DoWallpaperGfxChange() -> u8 {
-    match (*sStorage).wallpaperChangeState {
+    match (*crate::gl!(sStorage)).wallpaperChangeState {
         0 => {
-            BeginNormalPaletteFade((*sStorage).wallpaperPalBits, 1, 0, 16, 65535);
-            (*sStorage).wallpaperChangeState += 1;
+            BeginNormalPaletteFade((*crate::gl!(sStorage)).wallpaperPalBits, 1, 0, 16, 65535);
+            (*crate::gl!(sStorage)).wallpaperChangeState += 1;
         }
         1 => {
             if UpdatePaletteFade() == 0 {
                 let curBox: u8 = StorageGetCurrentBox();
                 LoadWallpaperGfx(curBox, 0);
-                (*sStorage).wallpaperChangeState += 1;
+                (*crate::gl!(sStorage)).wallpaperChangeState += 1;
             }
         }
         2 => {
             if WaitForWallpaperGfxLoad() == TRUE as u32 {
                 CycleBoxTitleColor();
-                BeginNormalPaletteFade((*sStorage).wallpaperPalBits, 1, 16, 0, 65535);
-                (*sStorage).wallpaperChangeState += 1;
+                BeginNormalPaletteFade((*crate::gl!(sStorage)).wallpaperPalBits, 1, 16, 0, 65535);
+                (*crate::gl!(sStorage)).wallpaperChangeState += 1;
             }
         }
         3 => {
             if UpdatePaletteFade() == 0 {
-                (*sStorage).wallpaperChangeState += 1;
+                (*crate::gl!(sStorage)).wallpaperChangeState += 1;
             }
         }
         4 => {
@@ -5248,92 +5353,97 @@ unsafe fn LoadWallpaperGfx(boxId: u8, direction: i8) {
     let mut iconGfx: *mut c_void = null_mut();
     let mut tilesSize: u32 = 0;
     let mut iconSize: u32 = 0;
-    (*sStorage).wallpaperLoadState = 0;
-    (*sStorage).wallpaperLoadBoxId = boxId;
-    (*sStorage).wallpaperLoadDir = direction;
-    if (*sStorage).wallpaperLoadDir != 0 {
-        (*sStorage).wallpaperOffset = ((*sStorage).wallpaperOffset == 0) as u8;
-        TrimOldWallpaper((*sStorage).wallpaperBgTilemapBuffer.as_mut_ptr() as *mut c_void);
+    (*crate::gl!(sStorage)).wallpaperLoadState = 0;
+    (*crate::gl!(sStorage)).wallpaperLoadBoxId = boxId;
+    (*crate::gl!(sStorage)).wallpaperLoadDir = direction;
+    if (*crate::gl!(sStorage)).wallpaperLoadDir != 0 {
+        (*crate::gl!(sStorage)).wallpaperOffset =
+            ((*crate::gl!(sStorage)).wallpaperOffset == 0) as u8;
+        TrimOldWallpaper(
+            (*crate::gl!(sStorage))
+                .wallpaperBgTilemapBuffer
+                .as_mut_ptr() as *mut c_void,
+        );
     }
-    let wallpaperId: u8 = GetBoxWallpaper((*sStorage).wallpaperLoadBoxId);
+    let wallpaperId: u8 = GetBoxWallpaper((*crate::gl!(sStorage)).wallpaperLoadBoxId);
     if wallpaperId != WALLPAPER_FRIENDS as u8 {
         wallpaper = (&raw const sWallpapers[wallpaperId]).cast_mut();
         LZ77UnCompWram(
             (*wallpaper).tilemap,
-            (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
         );
         DrawWallpaper(
-            (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
-            (*sStorage).wallpaperLoadDir,
-            (*sStorage).wallpaperOffset,
+            (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperLoadDir,
+            (*crate::gl!(sStorage)).wallpaperOffset,
         );
-        if (*sStorage).wallpaperLoadDir != 0 {
+        if (*crate::gl!(sStorage)).wallpaperLoadDir != 0 {
             LoadPalette(
                 (*wallpaper).palettes as *mut c_void,
-                64 + ((*sStorage).wallpaperOffset as u16 * 2 * 16),
+                64 + ((*crate::gl!(sStorage)).wallpaperOffset as u16 * 2 * 16),
                 64,
             );
         } else {
             CpuSet(
                 (*wallpaper).palettes as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
-                    .cast_mut())[64 + ((*sStorage).wallpaperOffset as i32 * 2 * 16)]
+                    .cast_mut())[64 + ((*crate::gl!(sStorage)).wallpaperOffset as i32 * 2 * 16)]
                     as *mut c_void,
                 32,
             );
         }
-        (*sStorage).wallpaperTiles =
+        (*crate::gl!(sStorage)).wallpaperTiles =
             malloc_and_decompress((*wallpaper).tiles as *mut c_void, &raw mut tilesSize) as *mut u8;
         LoadBgTiles(
             2,
-            (*sStorage).wallpaperTiles as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperTiles as *mut c_void,
             tilesSize as u16,
-            ((*sStorage).wallpaperOffset as u16) << 8,
+            ((*crate::gl!(sStorage)).wallpaperOffset as u16) << 8,
         );
     } else {
         wallpaper = (&raw const sWaldaWallpapers[GetWaldaWallpaperPatternId()]).cast_mut();
         LZ77UnCompWram(
             (*wallpaper).tilemap,
-            (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
         );
         DrawWallpaper(
-            (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
-            (*sStorage).wallpaperLoadDir,
-            (*sStorage).wallpaperOffset,
+            (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperLoadDir,
+            (*crate::gl!(sStorage)).wallpaperOffset,
         );
         CpuSet(
             (*wallpaper).palettes as *mut c_void,
-            (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
             32,
         );
         CpuSet(
             GetWaldaWallpaperColorsPtr() as *mut c_void,
-            &raw mut (*sStorage).wallpaperTilemap[1] as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).wallpaperTilemap[1] as *mut c_void,
             2,
         );
         CpuSet(
             GetWaldaWallpaperColorsPtr() as *mut c_void,
-            &raw mut (*sStorage).wallpaperTilemap[17] as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).wallpaperTilemap[17] as *mut c_void,
             2,
         );
-        if (*sStorage).wallpaperLoadDir != 0 {
+        if (*crate::gl!(sStorage)).wallpaperLoadDir != 0 {
             LoadPalette(
-                (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
-                64 + ((*sStorage).wallpaperOffset as u16 * 2 * 16),
+                (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+                64 + ((*crate::gl!(sStorage)).wallpaperOffset as u16 * 2 * 16),
                 64,
             );
         } else {
             CpuSet(
-                (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
-                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                (*crate::gl!(sStorage)).wallpaperTilemap.as_mut_ptr() as *mut c_void,
+                &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                     .cast::<CArray<u16, 512>>()
-                    .cast_mut())[64 + ((*sStorage).wallpaperOffset as i32 * 2 * 16)]
+                    .cast_mut())[64 + ((*crate::gl!(sStorage)).wallpaperOffset as i32 * 2 * 16)]
                     as *mut c_void,
                 32,
             );
         }
-        (*sStorage).wallpaperTiles =
+        (*crate::gl!(sStorage)).wallpaperTiles =
             malloc_and_decompress((*wallpaper).tiles as *mut c_void, &raw mut tilesSize) as *mut u8;
         iconGfx = malloc_and_decompress(
             sWaldaWallpaperIcons[GetWaldaWallpaperIconId()] as *mut c_void,
@@ -5341,15 +5451,15 @@ unsafe fn LoadWallpaperGfx(boxId: u8, direction: i8) {
         );
         CpuSet(
             iconGfx,
-            (*sStorage).wallpaperTiles.at(2048) as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperTiles.at(2048) as *mut c_void,
             0x04000000 | (iconSize / 4) & 0x1FFFFF,
         );
         Free(iconGfx);
         LoadBgTiles(
             2,
-            (*sStorage).wallpaperTiles as *mut c_void,
+            (*crate::gl!(sStorage)).wallpaperTiles as *mut c_void,
             tilesSize as u16,
-            ((*sStorage).wallpaperOffset as u16) << 8,
+            ((*crate::gl!(sStorage)).wallpaperOffset as u16) << 8,
         );
     }
     CopyBgTilemapBufferToVram(2);
@@ -5358,16 +5468,17 @@ unsafe fn WaitForWallpaperGfxLoad() -> u32 {
     if IsDma3ManagerBusyWithBgCopy() != 0 {
         return FALSE as u32;
     }
-    if !(*sStorage).wallpaperTiles.is_null() {
-        Free((*sStorage).wallpaperTiles as *mut c_void);
-        (*sStorage).wallpaperTiles = null_mut();
+    if !(*crate::gl!(sStorage)).wallpaperTiles.is_null() {
+        Free((*crate::gl!(sStorage)).wallpaperTiles as *mut c_void);
+        (*crate::gl!(sStorage)).wallpaperTiles = null_mut();
     }
     TRUE as u32
 }
 unsafe fn DrawWallpaper(tilemap: *mut c_void, direction: i8, offset: u8) {
     let tileOffset: i16 = offset as i16 * 256;
     let paletteNum: i16 = offset as i16 * 2 + 3;
-    let mut x: i16 = (((*sStorage).bg2_X as i32 / 8) as i16 + 10 + direction as i16 * 24) & 0x3F;
+    let mut x: i16 =
+        (((*crate::gl!(sStorage)).bg2_X as i32 / 8) as i16 + 10 + direction as i16 * 24) & 0x3F;
     CopyRectToBgTilemapBufferRect(
         2, tilemap, 0, 0, 20, 18, x as u8, 2, 20, 18, 17, tileOffset, paletteNum,
     );
@@ -5383,7 +5494,7 @@ unsafe fn DrawWallpaper(tilemap: *mut c_void, direction: i8, offset: u8) {
 }
 unsafe fn TrimOldWallpaper(tilemap: *mut c_void) {
     let mut dest: *mut u16 = tilemap as *mut u16;
-    let mut r3: i16 = (((*sStorage).bg2_X as i32 / 8) as i16 + 30) & 0x3F;
+    let mut r3: i16 = (((*crate::gl!(sStorage)).bg2_X as i32 / 8) as i16 + 30) & 0x3F;
     if r3 <= 31 {
         dest = dest.at(r3 as i32 + 0x260);
     } else {
@@ -5406,32 +5517,32 @@ unsafe fn TrimOldWallpaper(tilemap: *mut c_void) {
 }
 unsafe fn InitBoxTitle(boxId: u8) {
     let mut spriteSheet: SpriteSheet = zeroed();
-    spriteSheet.data = (*sStorage).boxTitleTiles.as_mut_ptr() as *mut c_void;
+    spriteSheet.data = (*crate::gl!(sStorage)).boxTitleTiles.as_mut_ptr() as *mut c_void;
     spriteSheet.size = 0x200;
     spriteSheet.tag = GFXTAG_BOX_TITLE;
     let mut palettes: CArray<SpritePalette, 2> = zeroed();
-    palettes[0].data = (*sStorage).boxTitlePal.as_mut_ptr();
+    palettes[0].data = (*crate::gl!(sStorage)).boxTitlePal.as_mut_ptr();
     palettes[0].tag = PALTAG_BOX_TITLE;
     let wallpaperId: u16 = GetBoxWallpaper(boxId) as u16;
-    (*sStorage).boxTitlePal[14] = sBoxTitleColors[wallpaperId][0];
-    (*sStorage).boxTitlePal[15] = sBoxTitleColors[wallpaperId][1];
+    (*crate::gl!(sStorage)).boxTitlePal[14] = sBoxTitleColors[wallpaperId][0];
+    (*crate::gl!(sStorage)).boxTitlePal[15] = sBoxTitleColors[wallpaperId][1];
     LoadSpritePalettes(palettes.as_mut_ptr());
-    (*sStorage).wallpaperPalBits = 0x3f0;
+    (*crate::gl!(sStorage)).wallpaperPalBits = 0x3f0;
     let mut tagIndex: u8 = IndexOfSpritePaletteTag(PALTAG_BOX_TITLE);
-    (*sStorage).boxTitlePalOffset = 0x100 + tagIndex as u16 * 16 + 14;
-    (*sStorage).wallpaperPalBits |= shl_i32(0x10000, tagIndex as u32) as u32;
+    (*crate::gl!(sStorage)).boxTitlePalOffset = 0x100 + tagIndex as u16 * 16 + 14;
+    (*crate::gl!(sStorage)).wallpaperPalBits |= shl_i32(0x10000, tagIndex as u32) as u32;
     tagIndex = IndexOfSpritePaletteTag(PALTAG_BOX_TITLE);
-    (*sStorage).boxTitleAltPalOffset = 0x100 + tagIndex as u16 * 16 + 14;
-    (*sStorage).wallpaperPalBits |= shl_i32(0x10000, tagIndex as u32) as u32;
+    (*crate::gl!(sStorage)).boxTitleAltPalOffset = 0x100 + tagIndex as u16 * 16 + 14;
+    (*crate::gl!(sStorage)).wallpaperPalBits |= shl_i32(0x10000, tagIndex as u32) as u32;
     StringCopyPadded(
-        (*sStorage).boxTitleText.as_mut_ptr(),
+        (*crate::gl!(sStorage)).boxTitleText.as_mut_ptr(),
         GetBoxNamePtr(boxId),
         0,
         BOX_NAME_LENGTH as u16,
     );
     DrawTextWindowAndBufferTiles(
-        (*sStorage).boxTitleText.as_mut_ptr(),
-        (*sStorage).boxTitleTiles.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).boxTitleText.as_mut_ptr(),
+        (*crate::gl!(sStorage)).boxTitleTiles.as_mut_ptr() as *mut c_void,
         0,
         0,
         2,
@@ -5445,37 +5556,37 @@ unsafe fn InitBoxTitle(boxId: u8) {
             28,
             24,
         );
-        (*sStorage).curBoxTitleSprites[i] = &raw mut gSprites[spriteId];
-        StartSpriteAnim((*sStorage).curBoxTitleSprites[i], i as u8);
+        (*crate::gl!(sStorage)).curBoxTitleSprites[i] = crate::gl!(&raw gSprites[spriteId]);
+        StartSpriteAnim((*crate::gl!(sStorage)).curBoxTitleSprites[i], i as u8);
     }
-    (*sStorage).boxTitleCycleId = 0;
+    (*crate::gl!(sStorage)).boxTitleCycleId = 0;
 }
 unsafe fn CreateIncomingBoxTitle(boxId: u8, direction: i8) {
     let mut palOffset: u16 = 0;
     let mut spriteSheet: SpriteSheet = zeroed();
-    spriteSheet.data = (*sStorage).boxTitleTiles.as_mut_ptr() as *mut c_void;
+    spriteSheet.data = (*crate::gl!(sStorage)).boxTitleTiles.as_mut_ptr() as *mut c_void;
     spriteSheet.size = 0x200;
     spriteSheet.tag = GFXTAG_BOX_TITLE;
     let mut template: SpriteTemplate = *sSpriteTemplate_BoxTitle;
-    (*sStorage).boxTitleCycleId = ((*sStorage).boxTitleCycleId == 0) as u8;
-    if (*sStorage).boxTitleCycleId == 0 {
+    (*crate::gl!(sStorage)).boxTitleCycleId = ((*crate::gl!(sStorage)).boxTitleCycleId == 0) as u8;
+    if (*crate::gl!(sStorage)).boxTitleCycleId == 0 {
         spriteSheet.tag = GFXTAG_BOX_TITLE;
-        palOffset = (*sStorage).boxTitlePalOffset;
+        palOffset = (*crate::gl!(sStorage)).boxTitlePalOffset;
     } else {
         spriteSheet.tag = GFXTAG_BOX_TITLE_ALT;
-        palOffset = (*sStorage).boxTitlePalOffset;
+        palOffset = (*crate::gl!(sStorage)).boxTitlePalOffset;
         template.tileTag = GFXTAG_BOX_TITLE_ALT;
         template.paletteTag = PALTAG_BOX_TITLE;
     }
     StringCopyPadded(
-        (*sStorage).boxTitleText.as_mut_ptr(),
+        (*crate::gl!(sStorage)).boxTitleText.as_mut_ptr(),
         GetBoxNamePtr(boxId),
         0,
         BOX_NAME_LENGTH as u16,
     );
     DrawTextWindowAndBufferTiles(
-        (*sStorage).boxTitleText.as_mut_ptr(),
-        (*sStorage).boxTitleTiles.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).boxTitleText.as_mut_ptr(),
+        (*crate::gl!(sStorage)).boxTitleTiles.as_mut_ptr() as *mut c_void,
         0,
         0,
         2,
@@ -5491,25 +5602,26 @@ unsafe fn CreateIncomingBoxTitle(boxId: u8, direction: i8) {
     adjustedX += direction as i16 * 192;
     for i in 0..2u16 {
         let spriteId: u8 = CreateSprite(&raw mut template, i as i16 * 32 + adjustedX, 28, 24);
-        (*sStorage).nextBoxTitleSprites[i] = &raw mut gSprites[spriteId];
-        (*(*sStorage).nextBoxTitleSprites[i]).data[0] = -(direction as i16) * 6;
-        (*(*sStorage).nextBoxTitleSprites[i]).data[1] = i as i16 * 32 + x;
-        (*(*sStorage).nextBoxTitleSprites[i]).data[sIncomingDelay] = 0;
-        (*(*sStorage).nextBoxTitleSprites[i]).callback = Some(SpriteCB_IncomingBoxTitle);
-        StartSpriteAnim((*sStorage).nextBoxTitleSprites[i], i as u8);
-        (*(*sStorage).curBoxTitleSprites[i]).data[0] = -(direction as i16) * 6;
-        (*(*sStorage).curBoxTitleSprites[i]).data[1] = 1;
-        (*(*sStorage).curBoxTitleSprites[i]).callback = Some(SpriteCB_OutgoingBoxTitle);
+        (*crate::gl!(sStorage)).nextBoxTitleSprites[i] = crate::gl!(&raw gSprites[spriteId]);
+        (*(*crate::gl!(sStorage)).nextBoxTitleSprites[i]).data[0] = -(direction as i16) * 6;
+        (*(*crate::gl!(sStorage)).nextBoxTitleSprites[i]).data[1] = i as i16 * 32 + x;
+        (*(*crate::gl!(sStorage)).nextBoxTitleSprites[i]).data[sIncomingDelay] = 0;
+        (*(*crate::gl!(sStorage)).nextBoxTitleSprites[i]).callback =
+            Some(SpriteCB_IncomingBoxTitle);
+        StartSpriteAnim((*crate::gl!(sStorage)).nextBoxTitleSprites[i], i as u8);
+        (*(*crate::gl!(sStorage)).curBoxTitleSprites[i]).data[0] = -(direction as i16) * 6;
+        (*(*crate::gl!(sStorage)).curBoxTitleSprites[i]).data[1] = 1;
+        (*(*crate::gl!(sStorage)).curBoxTitleSprites[i]).callback = Some(SpriteCB_OutgoingBoxTitle);
     }
 }
 unsafe fn CycleBoxTitleSprites() {
-    if (*sStorage).boxTitleCycleId == 0 {
+    if (*crate::gl!(sStorage)).boxTitleCycleId == 0 {
         FreeSpriteTilesByTag(GFXTAG_BOX_TITLE_ALT);
     } else {
         FreeSpriteTilesByTag(GFXTAG_BOX_TITLE);
     }
-    (*sStorage).curBoxTitleSprites[0] = (*sStorage).nextBoxTitleSprites[0];
-    (*sStorage).curBoxTitleSprites[1] = (*sStorage).nextBoxTitleSprites[1];
+    (*crate::gl!(sStorage)).curBoxTitleSprites[0] = (*crate::gl!(sStorage)).nextBoxTitleSprites[0];
+    (*crate::gl!(sStorage)).curBoxTitleSprites[1] = (*crate::gl!(sStorage)).nextBoxTitleSprites[1];
 }
 pub(crate) unsafe fn SpriteCB_IncomingBoxTitle(sprite: *mut Sprite) {
     if (*sprite).data[sIncomingDelay] != 0 {
@@ -5536,20 +5648,21 @@ pub(crate) unsafe fn SpriteCB_OutgoingBoxTitle(sprite: *mut Sprite) {
 unsafe fn CycleBoxTitleColor() {
     let boxId: u8 = StorageGetCurrentBox();
     let wallpaperId: u8 = GetBoxWallpaper(boxId);
-    if (*sStorage).boxTitleCycleId == 0 {
+    if (*crate::gl!(sStorage)).boxTitleCycleId == 0 {
         CpuSet(
             sBoxTitleColors[wallpaperId].as_ptr().cast_mut() as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
-                .cast_mut())[(*sStorage).boxTitlePalOffset] as *mut c_void,
+                .cast_mut())[(*crate::gl!(sStorage)).boxTitlePalOffset] as *mut c_void,
             2,
         );
     } else {
         CpuSet(
             sBoxTitleColors[wallpaperId].as_ptr().cast_mut() as *mut c_void,
-            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            &raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<CArray<u16, 512>>()
-                .cast_mut())[(*sStorage).boxTitleAltPalOffset] as *mut c_void,
+                .cast_mut())[(*crate::gl!(sStorage)).boxTitleAltPalOffset]
+                as *mut c_void,
             2,
         );
     }
@@ -5567,10 +5680,10 @@ unsafe fn CreateBoxScrollArrows() {
             22,
         );
         if spriteId != MAX_SPRITES {
-            let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+            let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
             StartSpriteAnim(sprite, i as u8);
             (*sprite).data[3] = (if i == 0 { -1 } else { 1 }) as i16;
-            (*sStorage).arrowSprites[i] = sprite;
+            (*crate::gl!(sStorage)).arrowSprites[i] = sprite;
         }
     }
     if IsCursorOnBoxTitle() != 0 {
@@ -5579,42 +5692,42 @@ unsafe fn CreateBoxScrollArrows() {
 }
 unsafe fn StartBoxScrollArrowsSlide(direction: i8) {
     for i in 0..2u16 {
-        (*(*sStorage).arrowSprites[i]).x2 = 0;
-        (*(*sStorage).arrowSprites[i]).data[sState] = 2;
+        (*(*crate::gl!(sStorage)).arrowSprites[i]).x2 = 0;
+        (*(*crate::gl!(sStorage)).arrowSprites[i]).data[sState] = 2;
     }
     if direction < 0 {
-        (*(*sStorage).arrowSprites[0]).data[sTimer] = 29;
-        (*(*sStorage).arrowSprites[1]).data[sTimer] = 5;
-        (*(*sStorage).arrowSprites[0]).data[2] = 72;
-        (*(*sStorage).arrowSprites[1]).data[2] = 72;
+        (*(*crate::gl!(sStorage)).arrowSprites[0]).data[sTimer] = 29;
+        (*(*crate::gl!(sStorage)).arrowSprites[1]).data[sTimer] = 5;
+        (*(*crate::gl!(sStorage)).arrowSprites[0]).data[2] = 72;
+        (*(*crate::gl!(sStorage)).arrowSprites[1]).data[2] = 72;
     } else {
-        (*(*sStorage).arrowSprites[0]).data[sTimer] = 5;
-        (*(*sStorage).arrowSprites[1]).data[sTimer] = 29;
-        (*(*sStorage).arrowSprites[0]).data[2] = 248;
-        (*(*sStorage).arrowSprites[1]).data[2] = 248;
+        (*(*crate::gl!(sStorage)).arrowSprites[0]).data[sTimer] = 5;
+        (*(*crate::gl!(sStorage)).arrowSprites[1]).data[sTimer] = 29;
+        (*(*crate::gl!(sStorage)).arrowSprites[0]).data[2] = 248;
+        (*(*crate::gl!(sStorage)).arrowSprites[1]).data[2] = 248;
     }
-    (*(*sStorage).arrowSprites[0]).data[7] = 0;
-    (*(*sStorage).arrowSprites[1]).data[7] = 1;
+    (*(*crate::gl!(sStorage)).arrowSprites[0]).data[7] = 0;
+    (*(*crate::gl!(sStorage)).arrowSprites[1]).data[7] = 1;
 }
 unsafe fn StopBoxScrollArrowsSlide() {
     for i in 0..2u16 {
-        (*(*sStorage).arrowSprites[i]).x = 136 * i as i16 + 92;
-        (*(*sStorage).arrowSprites[i]).x2 = 0;
-        (*(*sStorage).arrowSprites[i]).set_invisible(FALSE as u16);
+        (*(*crate::gl!(sStorage)).arrowSprites[i]).x = 136 * i as i16 + 92;
+        (*(*crate::gl!(sStorage)).arrowSprites[i]).x2 = 0;
+        (*(*crate::gl!(sStorage)).arrowSprites[i]).set_invisible(FALSE as u16);
     }
     AnimateBoxScrollArrows(TRUE);
 }
 unsafe fn AnimateBoxScrollArrows(animate: u8) {
     if animate != 0 {
         for i in 0..2u16 {
-            (*(*sStorage).arrowSprites[i]).data[sState] = 1;
-            (*(*sStorage).arrowSprites[i]).data[sTimer] = 0;
-            (*(*sStorage).arrowSprites[i]).data[2] = 0;
-            (*(*sStorage).arrowSprites[i]).data[4] = 0;
+            (*(*crate::gl!(sStorage)).arrowSprites[i]).data[sState] = 1;
+            (*(*crate::gl!(sStorage)).arrowSprites[i]).data[sTimer] = 0;
+            (*(*crate::gl!(sStorage)).arrowSprites[i]).data[2] = 0;
+            (*(*crate::gl!(sStorage)).arrowSprites[i]).data[4] = 0;
         }
     } else {
         for i in 0..2u16 {
-            (*(*sStorage).arrowSprites[i]).data[sState] = 0;
+            (*(*crate::gl!(sStorage)).arrowSprites[i]).data[sState] = 0;
         }
     }
 }
@@ -5645,7 +5758,7 @@ pub(crate) unsafe fn SpriteCB_Arrow(sprite: *mut Sprite) {
             (*sprite).data[sState] = 3;
         }
         3 => {
-            (*sprite).x -= (*sStorage).scrollSpeed;
+            (*sprite).x -= (*crate::gl!(sStorage)).scrollSpeed;
             if (*sprite).x <= 72 || (*sprite).x >= 248 {
                 (*sprite).set_invisible(TRUE as u16);
             }
@@ -5660,7 +5773,7 @@ pub(crate) unsafe fn SpriteCB_Arrow(sprite: *mut Sprite) {
             }
         }
         4 => {
-            (*sprite).x -= (*sStorage).scrollSpeed;
+            (*sprite).x -= (*crate::gl!(sStorage)).scrollSpeed;
         }
         _ => {}
     }
@@ -5682,35 +5795,37 @@ unsafe fn CreateChooseBoxArrows(
         return null_mut();
     }
     animId = (animId as i32 % 2) as u8;
-    StartSpriteAnim(&raw mut gSprites[spriteId], animId);
-    gSprites[spriteId].oam.set_priority(priority as u16);
-    gSprites[spriteId].callback = Some(SpriteCallbackDummy);
-    &raw mut gSprites[spriteId]
+    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), animId);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_priority(priority as u16);
+    crate::gl!(gSprites[spriteId].callback = Some(SpriteCallbackDummy));
+    crate::gl!(&raw gSprites[spriteId])
 }
 unsafe fn InitCursor() {
-    if (*sStorage).boxOption != OPTION_DEPOSIT {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_DEPOSIT {
         sCursorArea.set(CURSOR_AREA_IN_BOX as i8);
     } else {
         sCursorArea.set(CURSOR_AREA_IN_PARTY);
     }
-    sCursorPosition = 0;
+    sCursorPosition.set(0);
     sIsMonBeingMoved.set(FALSE);
     sMovingMonOrigBoxId.set(0);
     sMovingMonOrigBoxPos.set(0);
     sAutoActionOn.set(FALSE);
     ClearSavedCursorPos();
     CreateCursorSprites();
-    (*sStorage).cursorPrevHorizPos = 1;
-    (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
+    (*crate::gl!(sStorage)).cursorPrevHorizPos = 1;
+    (*crate::gl!(sStorage)).inBoxMovingMode = MOVE_MODE_NORMAL;
     TryRefreshDisplayMon();
 }
 unsafe fn InitCursorOnReopen() {
     CreateCursorSprites();
     ReshowDisplayMon();
-    (*sStorage).cursorPrevHorizPos = 1;
-    (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
+    (*crate::gl!(sStorage)).cursorPrevHorizPos = 1;
+    (*crate::gl!(sStorage)).inBoxMovingMode = MOVE_MODE_NORMAL;
     if sIsMonBeingMoved.get() != 0 {
-        (*sStorage).movingMon = sSavedMovingMon;
+        (*crate::gl!(sStorage)).movingMon = crate::gl!(sSavedMovingMon);
         CreateMovingMonIcon();
     }
 }
@@ -5750,10 +5865,16 @@ unsafe fn GetCursorCoordsByPos(cursorArea: u8, cursorPosition: u8, x: *mut u16, 
 unsafe fn GetSpeciesAtCursorPosition() -> u16 {
     match sCursorArea.get() {
         CURSOR_AREA_IN_PARTY => {
-            return GetMonData2(&raw mut gPlayerParty[sCursorPosition], MON_DATA_SPECIES) as u16;
+            return GetMonData2(
+                {
+                    let gl_i0 = sCursorPosition.get();
+                    crate::gl!(&raw gPlayerParty[gl_i0])
+                },
+                MON_DATA_SPECIES,
+            ) as u16;
         }
         0 => {
-            return GetCurrentBoxMonData(sCursorPosition as u8, MON_DATA_SPECIES) as u16;
+            return GetCurrentBoxMonData(sCursorPosition.get() as u8, MON_DATA_SPECIES) as u16;
         }
         _ => {
             return SPECIES_NONE;
@@ -5766,49 +5887,52 @@ unsafe fn GetSpeciesAtCursorPosition() -> u16 {
 }
 unsafe fn UpdateCursorPos() -> u8 {
     let mut tmp: i16 = 0;
-    if (*sStorage).cursorMoveSteps == 0 {
-        if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).cursorMoveSteps == 0 {
+        if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
             return FALSE;
         } else {
             return IsItemIconAnimActive();
         }
     } else if ({
-        (*sStorage).cursorMoveSteps -= 1;
-        (*sStorage).cursorMoveSteps
+        (*crate::gl!(sStorage)).cursorMoveSteps -= 1;
+        (*crate::gl!(sStorage)).cursorMoveSteps
     }) != 0
     {
-        (*sStorage).cursorNewX += (*sStorage).cursorSpeedX as i32;
-        (*sStorage).cursorNewY += (*sStorage).cursorSpeedY as i32;
-        (*(*sStorage).cursorSprite).x = ((*sStorage).cursorNewX >> 8) as i16;
-        (*(*sStorage).cursorSprite).y = ((*sStorage).cursorNewY >> 8) as i16;
-        if (*(*sStorage).cursorSprite).x > 256 {
-            tmp = (*(*sStorage).cursorSprite).x - 256;
-            (*(*sStorage).cursorSprite).x = tmp + 64;
+        (*crate::gl!(sStorage)).cursorNewX += (*crate::gl!(sStorage)).cursorSpeedX as i32;
+        (*crate::gl!(sStorage)).cursorNewY += (*crate::gl!(sStorage)).cursorSpeedY as i32;
+        (*(*crate::gl!(sStorage)).cursorSprite).x =
+            ((*crate::gl!(sStorage)).cursorNewX >> 8) as i16;
+        (*(*crate::gl!(sStorage)).cursorSprite).y =
+            ((*crate::gl!(sStorage)).cursorNewY >> 8) as i16;
+        if (*(*crate::gl!(sStorage)).cursorSprite).x > 256 {
+            tmp = (*(*crate::gl!(sStorage)).cursorSprite).x - 256;
+            (*(*crate::gl!(sStorage)).cursorSprite).x = tmp + 64;
         }
-        if (*(*sStorage).cursorSprite).x < 64 {
-            tmp = 64 - (*(*sStorage).cursorSprite).x;
-            (*(*sStorage).cursorSprite).x = 256 - tmp;
+        if (*(*crate::gl!(sStorage)).cursorSprite).x < 64 {
+            tmp = 64 - (*(*crate::gl!(sStorage)).cursorSprite).x;
+            (*(*crate::gl!(sStorage)).cursorSprite).x = 256 - tmp;
         }
-        if (*(*sStorage).cursorSprite).y > 176 {
-            tmp = (*(*sStorage).cursorSprite).y - 176;
-            (*(*sStorage).cursorSprite).y = tmp - 16;
+        if (*(*crate::gl!(sStorage)).cursorSprite).y > 176 {
+            tmp = (*(*crate::gl!(sStorage)).cursorSprite).y - 176;
+            (*(*crate::gl!(sStorage)).cursorSprite).y = tmp - 16;
         }
-        if (*(*sStorage).cursorSprite).y < -16 {
-            tmp = -16 - (*(*sStorage).cursorSprite).y;
-            (*(*sStorage).cursorSprite).y = 176 - tmp;
+        if (*(*crate::gl!(sStorage)).cursorSprite).y < -16 {
+            tmp = -16 - (*(*crate::gl!(sStorage)).cursorSprite).y;
+            (*(*crate::gl!(sStorage)).cursorSprite).y = 176 - tmp;
         }
-        if (*sStorage).cursorFlipTimer != 0
+        if (*crate::gl!(sStorage)).cursorFlipTimer != 0
             && ({
-                (*sStorage).cursorFlipTimer -= 1;
-                (*sStorage).cursorFlipTimer
+                (*crate::gl!(sStorage)).cursorFlipTimer -= 1;
+                (*crate::gl!(sStorage)).cursorFlipTimer
             }) == 0
         {
-            (*(*sStorage).cursorSprite)
-                .set_vFlip(((*(*sStorage).cursorSprite).vFlip() == FALSE as u16) as u16);
+            (*(*crate::gl!(sStorage)).cursorSprite).set_vFlip(
+                ((*(*crate::gl!(sStorage)).cursorSprite).vFlip() == FALSE as u16) as u16,
+            );
         }
     } else {
-        (*(*sStorage).cursorSprite).x = (*sStorage).cursorTargetX;
-        (*(*sStorage).cursorSprite).y = (*sStorage).cursorTargetY;
+        (*(*crate::gl!(sStorage)).cursorSprite).x = (*crate::gl!(sStorage)).cursorTargetX;
+        (*(*crate::gl!(sStorage)).cursorSprite).y = (*crate::gl!(sStorage)).cursorTargetY;
         DoCursorNewPosUpdate();
     }
     TRUE
@@ -5817,72 +5941,83 @@ unsafe fn InitNewCursorPos(newCursorArea: u8, newCursorPosition: u8) {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     GetCursorCoordsByPos(newCursorArea, newCursorPosition, &raw mut x, &raw mut y);
-    (*sStorage).newCursorArea = newCursorArea;
-    (*sStorage).newCursorPosition = newCursorPosition;
-    (*sStorage).cursorTargetX = x as i16;
-    (*sStorage).cursorTargetY = y as i16;
+    (*crate::gl!(sStorage)).newCursorArea = newCursorArea;
+    (*crate::gl!(sStorage)).newCursorPosition = newCursorPosition;
+    (*crate::gl!(sStorage)).cursorTargetX = x as i16;
+    (*crate::gl!(sStorage)).cursorTargetY = y as i16;
 }
 unsafe fn InitCursorMove() {
     let mut yDistance: i32 = 0;
     let mut xDistance: i32 = 0;
-    if (*sStorage).cursorVerticalWrap != 0 || (*sStorage).cursorHorizontalWrap != 0 {
-        (*sStorage).cursorMoveSteps = 12;
+    if (*crate::gl!(sStorage)).cursorVerticalWrap != 0
+        || (*crate::gl!(sStorage)).cursorHorizontalWrap != 0
+    {
+        (*crate::gl!(sStorage)).cursorMoveSteps = 12;
     } else {
-        (*sStorage).cursorMoveSteps = 6;
+        (*crate::gl!(sStorage)).cursorMoveSteps = 6;
     }
-    if (*sStorage).cursorFlipTimer != 0 {
-        (*sStorage).cursorFlipTimer = ((*sStorage).cursorMoveSteps >> 1) as u8;
+    if (*crate::gl!(sStorage)).cursorFlipTimer != 0 {
+        (*crate::gl!(sStorage)).cursorFlipTimer =
+            ((*crate::gl!(sStorage)).cursorMoveSteps >> 1) as u8;
     }
-    match (*sStorage).cursorVerticalWrap {
+    match (*crate::gl!(sStorage)).cursorVerticalWrap {
         -1 => {
-            yDistance =
-                (*sStorage).cursorTargetY as i32 - 192 - (*(*sStorage).cursorSprite).y as i32;
+            yDistance = (*crate::gl!(sStorage)).cursorTargetY as i32
+                - 192
+                - (*(*crate::gl!(sStorage)).cursorSprite).y as i32;
         }
         1 => {
-            yDistance =
-                (*sStorage).cursorTargetY as i32 + 192 - (*(*sStorage).cursorSprite).y as i32;
+            yDistance = (*crate::gl!(sStorage)).cursorTargetY as i32 + 192
+                - (*(*crate::gl!(sStorage)).cursorSprite).y as i32;
         }
         _ => {
-            yDistance = (*sStorage).cursorTargetY as i32 - (*(*sStorage).cursorSprite).y as i32;
+            yDistance = (*crate::gl!(sStorage)).cursorTargetY as i32
+                - (*(*crate::gl!(sStorage)).cursorSprite).y as i32;
         }
     }
-    match (*sStorage).cursorHorizontalWrap {
+    match (*crate::gl!(sStorage)).cursorHorizontalWrap {
         -1 => {
-            xDistance =
-                (*sStorage).cursorTargetX as i32 - 192 - (*(*sStorage).cursorSprite).x as i32;
+            xDistance = (*crate::gl!(sStorage)).cursorTargetX as i32
+                - 192
+                - (*(*crate::gl!(sStorage)).cursorSprite).x as i32;
         }
         1 => {
-            xDistance =
-                (*sStorage).cursorTargetX as i32 + 192 - (*(*sStorage).cursorSprite).x as i32;
+            xDistance = (*crate::gl!(sStorage)).cursorTargetX as i32 + 192
+                - (*(*crate::gl!(sStorage)).cursorSprite).x as i32;
         }
         _ => {
-            xDistance = (*sStorage).cursorTargetX as i32 - (*(*sStorage).cursorSprite).x as i32;
+            xDistance = (*crate::gl!(sStorage)).cursorTargetX as i32
+                - (*(*crate::gl!(sStorage)).cursorSprite).x as i32;
         }
     }
     yDistance <<= 8;
     xDistance <<= 8;
-    (*sStorage).cursorSpeedX = div_i32(xDistance, (*sStorage).cursorMoveSteps as i32) as u32;
-    (*sStorage).cursorSpeedY = div_i32(yDistance, (*sStorage).cursorMoveSteps as i32) as u32;
-    (*sStorage).cursorNewX = ((*(*sStorage).cursorSprite).x as i32) << 8;
-    (*sStorage).cursorNewY = ((*(*sStorage).cursorSprite).y as i32) << 8;
+    (*crate::gl!(sStorage)).cursorSpeedX =
+        div_i32(xDistance, (*crate::gl!(sStorage)).cursorMoveSteps as i32) as u32;
+    (*crate::gl!(sStorage)).cursorSpeedY =
+        div_i32(yDistance, (*crate::gl!(sStorage)).cursorMoveSteps as i32) as u32;
+    (*crate::gl!(sStorage)).cursorNewX = ((*(*crate::gl!(sStorage)).cursorSprite).x as i32) << 8;
+    (*crate::gl!(sStorage)).cursorNewY = ((*(*crate::gl!(sStorage)).cursorSprite).y as i32) << 8;
 }
 unsafe fn SetCursorPosition(newCursorArea: u8, newCursorPosition: u8) {
     InitNewCursorPos(newCursorArea, newCursorPosition);
     InitCursorMove();
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-        if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL && sIsMonBeingMoved.get() == 0 {
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_STILL);
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
+        if (*crate::gl!(sStorage)).inBoxMovingMode == MOVE_MODE_NORMAL
+            && sIsMonBeingMoved.get() == 0
+        {
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_STILL);
         }
     } else {
         if IsMovingItem() == 0 {
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_STILL);
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_STILL);
         }
     }
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
-            TryHideItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition as u8);
+            TryHideItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8);
         } else if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
-            TryHideItemIconAtPos(CURSOR_AREA_IN_PARTY as u8, sCursorPosition as u8);
+            TryHideItemIconAtPos(CURSOR_AREA_IN_PARTY as u8, sCursorPosition.get() as u8);
         }
         if newCursorArea == CURSOR_AREA_IN_BOX {
             TryLoadItemIconAtPos(newCursorArea, newCursorPosition);
@@ -5891,21 +6026,23 @@ unsafe fn SetCursorPosition(newCursorArea: u8, newCursorPosition: u8) {
         }
     }
     if newCursorArea == CURSOR_AREA_IN_PARTY as u8 && sCursorArea.get() != CURSOR_AREA_IN_PARTY {
-        (*sStorage).cursorPrevHorizPos = 1;
-        (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
+        (*crate::gl!(sStorage)).cursorPrevHorizPos = 1;
+        (*(*crate::gl!(sStorage)).cursorShadowSprite).set_invisible(TRUE as u16);
     }
     match newCursorArea {
         1 | CURSOR_AREA_BOX_TITLE | 3 => {
-            (*(*sStorage).cursorSprite).oam.set_priority(1);
-            (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
-            (*(*sStorage).cursorShadowSprite).oam.set_priority(1);
+            (*(*crate::gl!(sStorage)).cursorSprite).oam.set_priority(1);
+            (*(*crate::gl!(sStorage)).cursorShadowSprite).set_invisible(TRUE as u16);
+            (*(*crate::gl!(sStorage)).cursorShadowSprite)
+                .oam
+                .set_priority(1);
         }
         CURSOR_AREA_IN_BOX => {
-            if (*sStorage).inBoxMovingMode != MOVE_MODE_NORMAL {
-                (*(*sStorage).cursorSprite).oam.set_priority(0);
-                (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
+            if (*crate::gl!(sStorage)).inBoxMovingMode != MOVE_MODE_NORMAL {
+                (*(*crate::gl!(sStorage)).cursorSprite).oam.set_priority(0);
+                (*(*crate::gl!(sStorage)).cursorShadowSprite).set_invisible(TRUE as u16);
             } else {
-                (*(*sStorage).cursorSprite).oam.set_priority(2);
+                (*(*crate::gl!(sStorage)).cursorSprite).oam.set_priority(2);
                 if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 && sIsMonBeingMoved.get() != 0 {
                     SetMovingMonPriority(2);
                 }
@@ -5915,15 +6052,17 @@ unsafe fn SetCursorPosition(newCursorArea: u8, newCursorPosition: u8) {
     }
 }
 unsafe fn DoCursorNewPosUpdate() {
-    sCursorArea.set((*sStorage).newCursorArea as i8);
-    sCursorPosition = (*sStorage).newCursorPosition as i8;
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-        if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL && sIsMonBeingMoved.get() == 0 {
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
+    sCursorArea.set((*crate::gl!(sStorage)).newCursorArea as i8);
+    sCursorPosition.set((*crate::gl!(sStorage)).newCursorPosition as i8);
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
+        if (*crate::gl!(sStorage)).inBoxMovingMode == MOVE_MODE_NORMAL
+            && sIsMonBeingMoved.get() == 0
+        {
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_BOUNCE);
         }
     } else {
         if IsMovingItem() == 0 {
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_BOUNCE);
         }
     }
     TryRefreshDisplayMon();
@@ -5935,14 +6074,16 @@ unsafe fn DoCursorNewPosUpdate() {
             AnimateBoxScrollArrows(TRUE);
         }
         CURSOR_AREA_IN_PARTY => {
-            (*(*sStorage).cursorShadowSprite).subpriority = 13;
+            (*(*crate::gl!(sStorage)).cursorShadowSprite).subpriority = 13;
             SetMovingMonPriority(1);
         }
-        0 if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL => {
-            (*(*sStorage).cursorSprite).oam.set_priority(1);
-            (*(*sStorage).cursorShadowSprite).oam.set_priority(2);
-            (*(*sStorage).cursorShadowSprite).subpriority = 21;
-            (*(*sStorage).cursorShadowSprite).set_invisible(FALSE as u16);
+        0 if (*crate::gl!(sStorage)).inBoxMovingMode == MOVE_MODE_NORMAL => {
+            (*(*crate::gl!(sStorage)).cursorSprite).oam.set_priority(1);
+            (*(*crate::gl!(sStorage)).cursorShadowSprite)
+                .oam
+                .set_priority(2);
+            (*(*crate::gl!(sStorage)).cursorShadowSprite).subpriority = 21;
+            (*(*crate::gl!(sStorage)).cursorShadowSprite).set_invisible(FALSE as u16);
             SetMovingMonPriority(2);
         }
         _ => {}
@@ -5958,8 +6099,8 @@ unsafe fn SetCursorInParty() {
             partyCount = 5;
         }
     }
-    if (*(*sStorage).cursorSprite).vFlip() != 0 {
-        (*sStorage).cursorFlipTimer = 1;
+    if (*(*crate::gl!(sStorage)).cursorSprite).vFlip() != 0 {
+        (*crate::gl!(sStorage)).cursorFlipTimer = 1;
     }
     SetCursorPosition(CURSOR_AREA_IN_PARTY as u8, partyCount);
 }
@@ -5969,46 +6110,48 @@ unsafe fn SetCursorBoxPosition(cursorBoxPosition: u8) {
 fn ClearSavedCursorPos() {
     sSavedCursorPosition.set(0);
 }
-unsafe fn SaveCursorPos() {
-    sSavedCursorPosition.set(sCursorPosition as u8);
+fn SaveCursorPos() {
+    sSavedCursorPosition.set(sCursorPosition.get() as u8);
 }
 fn GetSavedCursorPos() -> u8 {
     sSavedCursorPosition.get()
 }
 unsafe fn InitMonPlaceChange(r#type: u8) {
-    (*sStorage).monPlaceChangeFunc = placeChangeFuncs_10[r#type];
-    (*sStorage).monPlaceChangeState = 0;
+    (*crate::gl!(sStorage)).monPlaceChangeFunc = placeChangeFuncs_10[r#type];
+    (*crate::gl!(sStorage)).monPlaceChangeState = 0;
 }
 unsafe fn InitMultiMonPlaceChange(up: u8) {
     if up == 0 {
-        (*sStorage).monPlaceChangeFunc = Some(MultiMonPlaceChange_Down);
+        (*crate::gl!(sStorage)).monPlaceChangeFunc = Some(MultiMonPlaceChange_Down);
     } else {
-        (*sStorage).monPlaceChangeFunc = Some(MultiMonPlaceChange_Up);
+        (*crate::gl!(sStorage)).monPlaceChangeFunc = Some(MultiMonPlaceChange_Up);
     }
-    (*sStorage).monPlaceChangeState = 0;
+    (*crate::gl!(sStorage)).monPlaceChangeState = 0;
 }
 unsafe fn DoMonPlaceChange() -> u8 {
-    (*sStorage).monPlaceChangeFunc.unwrap_unchecked()()
+    (*crate::gl!(sStorage))
+        .monPlaceChangeFunc
+        .unwrap_unchecked()()
 }
 pub(crate) unsafe fn MonPlaceChange_Grab() -> u8 {
-    match (*sStorage).monPlaceChangeState {
+    match (*crate::gl!(sStorage)).monPlaceChangeState {
         0 => {
             if sIsMonBeingMoved.get() != 0 {
                 return FALSE;
             }
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_OPEN);
-            (*sStorage).monPlaceChangeState += 1;
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_OPEN);
+            (*crate::gl!(sStorage)).monPlaceChangeState += 1;
         }
         1 => {
             if MonPlaceChange_CursorDown() == 0 {
-                StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_FIST);
+                StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_FIST);
                 MoveMon();
-                (*sStorage).monPlaceChangeState += 1;
+                (*crate::gl!(sStorage)).monPlaceChangeState += 1;
             }
         }
         2 => {
             if MonPlaceChange_CursorUp() == 0 {
-                (*sStorage).monPlaceChangeState += 1;
+                (*crate::gl!(sStorage)).monPlaceChangeState += 1;
             }
         }
         3 => {
@@ -6019,18 +6162,18 @@ pub(crate) unsafe fn MonPlaceChange_Grab() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn MonPlaceChange_Place() -> u8 {
-    match (*sStorage).monPlaceChangeState {
+    match (*crate::gl!(sStorage)).monPlaceChangeState {
         0 => {
             if MonPlaceChange_CursorDown() == 0 {
-                StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_OPEN);
+                StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_OPEN);
                 PlaceMon();
-                (*sStorage).monPlaceChangeState += 1;
+                (*crate::gl!(sStorage)).monPlaceChangeState += 1;
             }
         }
         1 => {
             if MonPlaceChange_CursorUp() == 0 {
-                StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
-                (*sStorage).monPlaceChangeState += 1;
+                StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_BOUNCE);
+                (*crate::gl!(sStorage)).monPlaceChangeState += 1;
             }
         }
         2 => {
@@ -6041,28 +6184,34 @@ pub(crate) unsafe fn MonPlaceChange_Place() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn MonPlaceChange_Shift() -> u8 {
-    match (*sStorage).monPlaceChangeState {
+    match (*crate::gl!(sStorage)).monPlaceChangeState {
         0 => {
             match sCursorArea.get() {
                 CURSOR_AREA_IN_PARTY => {
-                    (*sStorage).shiftBoxId = TOTAL_BOXES_COUNT;
+                    (*crate::gl!(sStorage)).shiftBoxId = TOTAL_BOXES_COUNT;
                 }
                 0 => {
-                    (*sStorage).shiftBoxId = StorageGetCurrentBox();
+                    (*crate::gl!(sStorage)).shiftBoxId = StorageGetCurrentBox();
                 }
                 _ => {
                     return FALSE;
                 }
             }
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_OPEN);
-            SaveMonSpriteAtPos((*sStorage).shiftBoxId, sCursorPosition as u8);
-            (*sStorage).monPlaceChangeState += 1;
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_OPEN);
+            SaveMonSpriteAtPos(
+                (*crate::gl!(sStorage)).shiftBoxId,
+                sCursorPosition.get() as u8,
+            );
+            (*crate::gl!(sStorage)).monPlaceChangeState += 1;
         }
         1 => {
             if MoveShiftingMons() == 0 {
-                StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_FIST);
-                SetShiftedMonData((*sStorage).shiftBoxId, sCursorPosition as u8);
-                (*sStorage).monPlaceChangeState += 1;
+                StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_FIST);
+                SetShiftedMonData(
+                    (*crate::gl!(sStorage)).shiftBoxId,
+                    sCursorPosition.get() as u8,
+                );
+                (*crate::gl!(sStorage)).monPlaceChangeState += 1;
             }
         }
         2 => {
@@ -6079,26 +6228,26 @@ pub(crate) unsafe fn MultiMonPlaceChange_Up() -> u8 {
     MonPlaceChange_CursorUp()
 }
 unsafe fn MonPlaceChange_CursorDown() -> u8 {
-    match (*(*sStorage).cursorSprite).y2 {
+    match (*(*crate::gl!(sStorage)).cursorSprite).y2 {
         0 => {
-            (*(*sStorage).cursorSprite).y2 += 1;
+            (*(*crate::gl!(sStorage)).cursorSprite).y2 += 1;
         }
         8 => {
             return FALSE;
         }
         _ => {
-            (*(*sStorage).cursorSprite).y2 += 1;
+            (*(*crate::gl!(sStorage)).cursorSprite).y2 += 1;
         }
     }
     TRUE
 }
 unsafe fn MonPlaceChange_CursorUp() -> u8 {
-    match (*(*sStorage).cursorSprite).y2 {
+    match (*(*crate::gl!(sStorage)).cursorSprite).y2 {
         0 => {
             return FALSE;
         }
         _ => {
-            (*(*sStorage).cursorSprite).y2 -= 1;
+            (*(*crate::gl!(sStorage)).cursorSprite).y2 -= 1;
         }
     }
     TRUE
@@ -6106,13 +6255,13 @@ unsafe fn MonPlaceChange_CursorUp() -> u8 {
 unsafe fn MoveMon() {
     match sCursorArea.get() {
         CURSOR_AREA_IN_PARTY => {
-            SetMovingMonData(TOTAL_BOXES_COUNT, sCursorPosition as u8);
-            SetMovingMonSprite(MODE_PARTY, sCursorPosition as u8);
+            SetMovingMonData(TOTAL_BOXES_COUNT, sCursorPosition.get() as u8);
+            SetMovingMonSprite(MODE_PARTY, sCursorPosition.get() as u8);
         }
         0 => {
-            if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL {
-                SetMovingMonData(StorageGetCurrentBox(), sCursorPosition as u8);
-                SetMovingMonSprite(MODE_BOX, sCursorPosition as u8);
+            if (*crate::gl!(sStorage)).inBoxMovingMode == MOVE_MODE_NORMAL {
+                SetMovingMonData(StorageGetCurrentBox(), sCursorPosition.get() as u8);
+                SetMovingMonSprite(MODE_BOX, sCursorPosition.get() as u8);
             }
         }
         _ => {
@@ -6125,13 +6274,13 @@ unsafe fn PlaceMon() {
     let mut boxId: u8 = 0;
     match sCursorArea.get() {
         CURSOR_AREA_IN_PARTY => {
-            SetPlacedMonData(TOTAL_BOXES_COUNT, sCursorPosition as u8);
-            SetPlacedMonSprite(TOTAL_BOXES_COUNT, sCursorPosition as u8);
+            SetPlacedMonData(TOTAL_BOXES_COUNT, sCursorPosition.get() as u8);
+            SetPlacedMonSprite(TOTAL_BOXES_COUNT, sCursorPosition.get() as u8);
         }
         0 => {
             boxId = StorageGetCurrentBox();
-            SetPlacedMonData(boxId, sCursorPosition as u8);
-            SetPlacedMonSprite(boxId, sCursorPosition as u8);
+            SetPlacedMonData(boxId, sCursorPosition.get() as u8);
+            SetPlacedMonSprite(boxId, sCursorPosition.get() as u8);
         }
         _ => {
             return;
@@ -6144,9 +6293,12 @@ unsafe fn RefreshDisplayMon() {
 }
 unsafe fn SetMovingMonData(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
-        (*sStorage).movingMon = gPlayerParty[sCursorPosition];
+        (*crate::gl!(sStorage)).movingMon = {
+            let gl_i1 = sCursorPosition.get();
+            crate::gl!(gPlayerParty[gl_i1])
+        };
     } else {
-        BoxMonAtToMon(boxId, position, &raw mut (*sStorage).movingMon);
+        BoxMonAtToMon(boxId, position, &raw mut (*crate::gl!(sStorage)).movingMon);
     }
     PurgeMonOrBoxMon(boxId, position);
     sMovingMonOrigBoxId.set(boxId);
@@ -6154,28 +6306,35 @@ unsafe fn SetMovingMonData(boxId: u8, position: u8) {
 }
 unsafe fn SetPlacedMonData(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
-        gPlayerParty[position] = (*sStorage).movingMon;
+        crate::gl!(gPlayerParty[position] = (*crate::gl!(sStorage)).movingMon);
     } else {
-        BoxMonRestorePP(&raw mut (*sStorage).movingMon.r#box);
-        SetBoxMonAt(boxId, position, &raw mut (*sStorage).movingMon.r#box);
+        BoxMonRestorePP(&raw mut (*crate::gl!(sStorage)).movingMon.r#box);
+        SetBoxMonAt(
+            boxId,
+            position,
+            &raw mut (*crate::gl!(sStorage)).movingMon.r#box,
+        );
     }
 }
 unsafe fn PurgeMonOrBoxMon(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
-        ZeroMonData(&raw mut gPlayerParty[position]);
+        ZeroMonData(crate::gl!(&raw gPlayerParty[position]));
     } else {
         ZeroBoxMonAt(boxId, position);
     }
 }
 unsafe fn SetShiftedMonData(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
-        (*sStorage).tempMon = gPlayerParty[position];
+        (*crate::gl!(sStorage)).tempMon = crate::gl!(gPlayerParty[position]);
     } else {
-        BoxMonAtToMon(boxId, position, &raw mut (*sStorage).tempMon);
+        BoxMonAtToMon(boxId, position, &raw mut (*crate::gl!(sStorage)).tempMon);
     }
     SetPlacedMonData(boxId, position);
-    (*sStorage).movingMon = (*sStorage).tempMon;
-    SetDisplayMonData(&raw mut (*sStorage).movingMon as *mut c_void, MODE_PARTY);
+    (*crate::gl!(sStorage)).movingMon = (*crate::gl!(sStorage)).tempMon;
+    SetDisplayMonData(
+        &raw mut (*crate::gl!(sStorage)).movingMon as *mut c_void,
+        MODE_PARTY,
+    );
     sMovingMonOrigBoxId.set(boxId);
     sMovingMonOrigBoxPos.set(position);
 }
@@ -6189,18 +6348,18 @@ unsafe fn TryStorePartyMonInBox(boxId: u8) -> u8 {
         DestroyMovingMonIcon();
         sIsMonBeingMoved.set(FALSE);
     } else {
-        SetMovingMonData(TOTAL_BOXES_COUNT, sCursorPosition as u8);
+        SetMovingMonData(TOTAL_BOXES_COUNT, sCursorPosition.get() as u8);
         SetPlacedMonData(boxId, boxPosition as u8);
-        DestroyPartyMonIcon(sCursorPosition as u8);
+        DestroyPartyMonIcon(sCursorPosition.get() as u8);
     }
     if boxId == StorageGetCurrentBox() {
         CreateBoxMonIconAtPos(boxPosition as u8);
     }
-    StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_STILL);
+    StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_STILL);
     TRUE
 }
 unsafe fn ResetSelectionAfterDeposit() {
-    StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
+    StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_BOUNCE);
     TryRefreshDisplayMon();
 }
 unsafe fn InitReleaseMon() {
@@ -6212,15 +6371,15 @@ unsafe fn InitReleaseMon() {
     } else {
         mode = MODE_BOX;
     }
-    SetReleaseMon(mode, sCursorPosition as u8);
+    SetReleaseMon(mode, sCursorPosition.get() as u8);
     StringCopy(
-        (*sStorage).releaseMonName.as_mut_ptr(),
-        (*sStorage).displayMonName.as_mut_ptr(),
+        (*crate::gl!(sStorage)).releaseMonName.as_mut_ptr(),
+        (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
     );
 }
 unsafe fn TryHideReleaseMon() -> u8 {
     if TryHideReleaseMonSprite() == 0 {
-        StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
+        StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_BOUNCE);
         return FALSE;
     } else {
         return TRUE;
@@ -6241,20 +6400,22 @@ unsafe fn ReleaseMon() {
         } else {
             boxId = StorageGetCurrentBox();
         }
-        PurgeMonOrBoxMon(boxId, sCursorPosition as u8);
+        PurgeMonOrBoxMon(boxId, sCursorPosition.get() as u8);
     }
     TryRefreshDisplayMon();
 }
 unsafe fn TrySetCursorFistAnim() {
     if sIsMonBeingMoved.get() != 0 {
-        StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_FIST);
+        StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_FIST);
     }
 }
 unsafe fn GetRestrictedReleaseMoves(mut moves: *mut u16) {
     for i in 0..6i32 {
         if sRestrictedReleaseMoves[i].mapGroup == MAP_GROUPS_COUNT
-            || sRestrictedReleaseMoves[i].mapGroup == (*gSaveBlock1Ptr).location.mapGroup
-                && sRestrictedReleaseMoves[i].mapNum == (*gSaveBlock1Ptr).location.mapNum
+            || sRestrictedReleaseMoves[i].mapGroup
+                == (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup
+                && sRestrictedReleaseMoves[i].mapNum
+                    == (*crate::gl!(gSaveBlock1Ptr)).location.mapNum
         {
             *moves = sRestrictedReleaseMoves[i].r#move;
             moves = moves.at(1);
@@ -6264,47 +6425,54 @@ unsafe fn GetRestrictedReleaseMoves(mut moves: *mut u16) {
 }
 unsafe fn InitCanReleaseMonVars() {
     if AtLeastThreeUsableMons() == 0 {
-        (*sStorage).releaseStatusResolved = TRUE;
-        (*sStorage).canReleaseMon = FALSE as i8;
+        (*crate::gl!(sStorage)).releaseStatusResolved = TRUE;
+        (*crate::gl!(sStorage)).canReleaseMon = FALSE as i8;
         return;
     }
     if sIsMonBeingMoved.get() != 0 {
-        (*sStorage).tempMon = (*sStorage).movingMon;
-        (*sStorage).releaseBoxId = -1;
-        (*sStorage).releaseBoxPos = -1;
+        (*crate::gl!(sStorage)).tempMon = (*crate::gl!(sStorage)).movingMon;
+        (*crate::gl!(sStorage)).releaseBoxId = -1;
+        (*crate::gl!(sStorage)).releaseBoxPos = -1;
     } else {
         if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
-            (*sStorage).tempMon = gPlayerParty[sCursorPosition];
-            (*sStorage).releaseBoxId = TOTAL_BOXES_COUNT as i8;
+            (*crate::gl!(sStorage)).tempMon = {
+                let gl_i2 = sCursorPosition.get();
+                crate::gl!(gPlayerParty[gl_i2])
+            };
+            (*crate::gl!(sStorage)).releaseBoxId = TOTAL_BOXES_COUNT as i8;
         } else {
             BoxMonAtToMon(
                 StorageGetCurrentBox(),
-                sCursorPosition as u8,
-                &raw mut (*sStorage).tempMon,
+                sCursorPosition.get() as u8,
+                &raw mut (*crate::gl!(sStorage)).tempMon,
             );
-            (*sStorage).releaseBoxId = StorageGetCurrentBox() as i8;
+            (*crate::gl!(sStorage)).releaseBoxId = StorageGetCurrentBox() as i8;
         }
-        (*sStorage).releaseBoxPos = sCursorPosition;
+        (*crate::gl!(sStorage)).releaseBoxPos = sCursorPosition.get();
     }
-    GetRestrictedReleaseMoves((*sStorage).restrictedMoveList.as_mut_ptr());
-    (*sStorage).restrictedReleaseMonMoves = GetMonData3(
-        &raw mut (*sStorage).tempMon,
+    GetRestrictedReleaseMoves((*crate::gl!(sStorage)).restrictedMoveList.as_mut_ptr());
+    (*crate::gl!(sStorage)).restrictedReleaseMonMoves = GetMonData3(
+        &raw mut (*crate::gl!(sStorage)).tempMon,
         MON_DATA_KNOWN_MOVES,
-        (*sStorage).restrictedMoveList.as_mut_ptr() as *mut u8,
+        (*crate::gl!(sStorage)).restrictedMoveList.as_mut_ptr() as *mut u8,
     ) as u16;
-    if (*sStorage).restrictedReleaseMonMoves != 0 {
-        (*sStorage).releaseStatusResolved = FALSE;
+    if (*crate::gl!(sStorage)).restrictedReleaseMonMoves != 0 {
+        (*crate::gl!(sStorage)).releaseStatusResolved = FALSE;
     } else {
-        (*sStorage).releaseStatusResolved = TRUE;
-        (*sStorage).canReleaseMon = TRUE as i8;
+        (*crate::gl!(sStorage)).releaseStatusResolved = TRUE;
+        (*crate::gl!(sStorage)).canReleaseMon = TRUE as i8;
     }
-    (*sStorage).releaseCheckState = 0;
+    (*crate::gl!(sStorage)).releaseCheckState = 0;
 }
 unsafe fn AtLeastThreeUsableMons() -> u32 {
     let mut count: i32 = (sIsMonBeingMoved.get() != FALSE) as i32;
     let mut j: i32 = 0;
     while j < PARTY_SIZE {
-        if GetMonData2(&raw mut gPlayerParty[j], MON_DATA_SANITY_HAS_SPECIES) != 0 {
+        if GetMonData2(
+            crate::gl!(&raw gPlayerParty[j]),
+            MON_DATA_SANITY_HAS_SPECIES,
+        ) != 0
+        {
             count += 1;
         }
         j += 1;
@@ -6328,64 +6496,67 @@ unsafe fn AtLeastThreeUsableMons() -> u32 {
 }
 unsafe fn RunCanReleaseMon() -> i8 {
     let mut knownMoves: u16 = 0;
-    if (*sStorage).releaseStatusResolved != 0 {
-        return (*sStorage).canReleaseMon;
+    if (*crate::gl!(sStorage)).releaseStatusResolved != 0 {
+        return (*crate::gl!(sStorage)).canReleaseMon;
     }
-    match (*sStorage).releaseCheckState {
+    match (*crate::gl!(sStorage)).releaseCheckState {
         0 => {
             for i in 0..(PARTY_SIZE as u16) {
-                if (*sStorage).releaseBoxId != TOTAL_BOXES_COUNT as i8
-                    || (*sStorage).releaseBoxPos as i32 != i as i32
+                if (*crate::gl!(sStorage)).releaseBoxId != TOTAL_BOXES_COUNT as i8
+                    || (*crate::gl!(sStorage)).releaseBoxPos as i32 != i as i32
                 {
                     knownMoves = GetMonData3(
-                        &raw mut gPlayerParty[i],
+                        crate::gl!(&raw gPlayerParty[i]),
                         MON_DATA_KNOWN_MOVES,
-                        (*sStorage).restrictedMoveList.as_mut_ptr() as *mut u8,
+                        (*crate::gl!(sStorage)).restrictedMoveList.as_mut_ptr() as *mut u8,
                     ) as u16;
-                    (*sStorage).restrictedReleaseMonMoves &= !knownMoves;
+                    (*crate::gl!(sStorage)).restrictedReleaseMonMoves &= !knownMoves;
                 }
             }
-            if (*sStorage).restrictedReleaseMonMoves == 0 {
-                (*sStorage).releaseStatusResolved = TRUE;
-                (*sStorage).canReleaseMon = TRUE as i8;
+            if (*crate::gl!(sStorage)).restrictedReleaseMonMoves == 0 {
+                (*crate::gl!(sStorage)).releaseStatusResolved = TRUE;
+                (*crate::gl!(sStorage)).canReleaseMon = TRUE as i8;
             } else {
-                (*sStorage).releaseCheckBoxId = 0;
-                (*sStorage).releaseCheckBoxPos = 0;
-                (*sStorage).releaseCheckState += 1;
+                (*crate::gl!(sStorage)).releaseCheckBoxId = 0;
+                (*crate::gl!(sStorage)).releaseCheckBoxPos = 0;
+                (*crate::gl!(sStorage)).releaseCheckState += 1;
             }
         }
         1 => {
             for i in 0..(IN_BOX_COUNT as u16) {
                 knownMoves = GetAndCopyBoxMonDataAt(
-                    (*sStorage).releaseCheckBoxId as u8,
-                    (*sStorage).releaseCheckBoxPos as u8,
+                    (*crate::gl!(sStorage)).releaseCheckBoxId as u8,
+                    (*crate::gl!(sStorage)).releaseCheckBoxPos as u8,
                     MON_DATA_KNOWN_MOVES,
-                    (*sStorage).restrictedMoveList.as_mut_ptr() as *mut u8 as *mut c_void,
+                    (*crate::gl!(sStorage)).restrictedMoveList.as_mut_ptr() as *mut u8
+                        as *mut c_void,
                 ) as u16;
                 if knownMoves != 0
-                    && !((*sStorage).releaseBoxId == (*sStorage).releaseCheckBoxId
-                        && (*sStorage).releaseBoxPos == (*sStorage).releaseCheckBoxPos)
+                    && !((*crate::gl!(sStorage)).releaseBoxId
+                        == (*crate::gl!(sStorage)).releaseCheckBoxId
+                        && (*crate::gl!(sStorage)).releaseBoxPos
+                            == (*crate::gl!(sStorage)).releaseCheckBoxPos)
                 {
-                    (*sStorage).restrictedReleaseMonMoves &= !knownMoves;
-                    if (*sStorage).restrictedReleaseMonMoves == 0 {
-                        (*sStorage).releaseStatusResolved = TRUE;
-                        (*sStorage).canReleaseMon = TRUE as i8;
+                    (*crate::gl!(sStorage)).restrictedReleaseMonMoves &= !knownMoves;
+                    if (*crate::gl!(sStorage)).restrictedReleaseMonMoves == 0 {
+                        (*crate::gl!(sStorage)).releaseStatusResolved = TRUE;
+                        (*crate::gl!(sStorage)).canReleaseMon = TRUE as i8;
                         break;
                     }
                 }
                 if ({
-                    (*sStorage).releaseCheckBoxPos += 1;
-                    (*sStorage).releaseCheckBoxPos
+                    (*crate::gl!(sStorage)).releaseCheckBoxPos += 1;
+                    (*crate::gl!(sStorage)).releaseCheckBoxPos
                 }) >= IN_BOX_COUNT as i8
                 {
-                    (*sStorage).releaseCheckBoxPos = 0;
+                    (*crate::gl!(sStorage)).releaseCheckBoxPos = 0;
                     if ({
-                        (*sStorage).releaseCheckBoxId += 1;
-                        (*sStorage).releaseCheckBoxId
+                        (*crate::gl!(sStorage)).releaseCheckBoxId += 1;
+                        (*crate::gl!(sStorage)).releaseCheckBoxId
                     }) >= TOTAL_BOXES_COUNT as i8
                     {
-                        (*sStorage).releaseStatusResolved = TRUE;
-                        (*sStorage).canReleaseMon = FALSE as i8;
+                        (*crate::gl!(sStorage)).releaseStatusResolved = TRUE;
+                        (*crate::gl!(sStorage)).canReleaseMon = FALSE as i8;
                     }
                 }
             }
@@ -6396,42 +6567,42 @@ unsafe fn RunCanReleaseMon() -> i8 {
 }
 unsafe fn SaveMovingMon() {
     if sIsMonBeingMoved.get() != 0 {
-        sSavedMovingMon = (*sStorage).movingMon;
+        crate::gl!(sSavedMovingMon = (*crate::gl!(sStorage)).movingMon);
     }
 }
 unsafe fn LoadSavedMovingMon() {
     if sIsMonBeingMoved.get() != 0 {
         if sMovingMonOrigBoxId.get() == TOTAL_BOXES_COUNT {
-            (*sStorage).movingMon = sSavedMovingMon;
+            (*crate::gl!(sStorage)).movingMon = crate::gl!(sSavedMovingMon);
         } else {
-            (*sStorage).movingMon.r#box = sSavedMovingMon.r#box;
+            (*crate::gl!(sStorage)).movingMon.r#box = crate::gl!(sSavedMovingMon.r#box);
         }
     }
 }
 unsafe fn InitSummaryScreenData() {
     if sIsMonBeingMoved.get() != 0 {
         SaveMovingMon();
-        (*sStorage).summaryMon.mon = &raw mut sSavedMovingMon;
-        (*sStorage).summaryStartPos = 0;
-        (*sStorage).summaryMaxPos = 0;
-        (*sStorage).summaryScreenMode = SUMMARY_MODE_NORMAL;
+        (*crate::gl!(sStorage)).summaryMon.mon = crate::gl!(&raw sSavedMovingMon);
+        (*crate::gl!(sStorage)).summaryStartPos = 0;
+        (*crate::gl!(sStorage)).summaryMaxPos = 0;
+        (*crate::gl!(sStorage)).summaryScreenMode = SUMMARY_MODE_NORMAL;
     } else if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
-        (*sStorage).summaryMon.mon = gPlayerParty.as_mut_ptr();
-        (*sStorage).summaryStartPos = sCursorPosition as u8;
-        (*sStorage).summaryMaxPos = CountPartyMons() - 1;
-        (*sStorage).summaryScreenMode = SUMMARY_MODE_NORMAL;
+        (*crate::gl!(sStorage)).summaryMon.mon = (*gPlayerParty.as_ptr()).as_mut_ptr();
+        (*crate::gl!(sStorage)).summaryStartPos = sCursorPosition.get() as u8;
+        (*crate::gl!(sStorage)).summaryMaxPos = CountPartyMons() - 1;
+        (*crate::gl!(sStorage)).summaryScreenMode = SUMMARY_MODE_NORMAL;
     } else {
-        (*sStorage).summaryMon.r#box = GetBoxedMonPtr(StorageGetCurrentBox(), 0);
-        (*sStorage).summaryStartPos = sCursorPosition as u8;
-        (*sStorage).summaryMaxPos = 29;
-        (*sStorage).summaryScreenMode = SUMMARY_MODE_BOX;
+        (*crate::gl!(sStorage)).summaryMon.r#box = GetBoxedMonPtr(StorageGetCurrentBox(), 0);
+        (*crate::gl!(sStorage)).summaryStartPos = sCursorPosition.get() as u8;
+        (*crate::gl!(sStorage)).summaryMaxPos = 29;
+        (*crate::gl!(sStorage)).summaryScreenMode = SUMMARY_MODE_BOX;
     }
 }
 unsafe fn SetSelectionAfterSummaryScreen() {
     if sIsMonBeingMoved.get() != 0 {
         LoadSavedMovingMon();
     } else {
-        sCursorPosition = gLastViewedMonIndex as i8;
+        sCursorPosition.set(gLastViewedMonIndex.get() as i8);
     }
 }
 #[unsafe(no_mangle)]
@@ -6439,10 +6610,10 @@ pub unsafe fn CompactPartySlots() -> i16 {
     let mut retVal: i16 = -1;
     let mut last: u16 = 0;
     for i in 0..(PARTY_SIZE as u16) {
-        let species: u16 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as u16;
+        let species: u16 = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES) as u16;
         if species != SPECIES_NONE {
             if i != last {
-                gPlayerParty[last] = gPlayerParty[i];
+                crate::gl!(gPlayerParty[last] = crate::gl!(gPlayerParty[i]));
             }
             last += 1;
         } else if retVal == -1 {
@@ -6450,30 +6621,33 @@ pub unsafe fn CompactPartySlots() -> i16 {
         }
     }
     while last < PARTY_SIZE as u16 {
-        ZeroMonData(&raw mut gPlayerParty[last]);
+        ZeroMonData(crate::gl!(&raw gPlayerParty[last]));
         last += 1;
     }
     retVal
 }
 unsafe fn SetMonMarkings(mut markings: u8) {
-    (*sStorage).displayMonMarkings = markings;
+    (*crate::gl!(sStorage)).displayMonMarkings = markings;
     if sIsMonBeingMoved.get() != 0 {
         SetMonData(
-            &raw mut (*sStorage).movingMon,
+            &raw mut (*crate::gl!(sStorage)).movingMon,
             MON_DATA_MARKINGS,
             &raw mut markings as *mut c_void,
         );
     } else {
         if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
             SetMonData(
-                &raw mut gPlayerParty[sCursorPosition],
+                {
+                    let gl_i3 = sCursorPosition.get();
+                    crate::gl!(&raw gPlayerParty[gl_i3])
+                },
                 MON_DATA_MARKINGS,
                 &raw mut markings as *mut c_void,
             );
         }
         if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
             SetCurrentBoxMonData(
-                sCursorPosition as u8,
+                sCursorPosition.get() as u8,
                 MON_DATA_MARKINGS,
                 &raw mut markings as *mut c_void,
             );
@@ -6483,7 +6657,7 @@ unsafe fn SetMonMarkings(mut markings: u8) {
 unsafe fn IsRemovingLastPartyMon() -> u8 {
     if sCursorArea.get() == CURSOR_AREA_IN_PARTY
         && sIsMonBeingMoved.get() == 0
-        && CountPartyAliveNonEggMonsExcept(sCursorPosition as u8) == 0
+        && CountPartyAliveNonEggMonsExcept(sCursorPosition.get() as u8) == 0
     {
         return TRUE;
     } else {
@@ -6497,9 +6671,9 @@ unsafe fn IsRemovingLastPartyMon() -> u8 {
 unsafe fn CanShiftMon() -> u8 {
     if sIsMonBeingMoved.get() != 0 {
         if sCursorArea.get() == CURSOR_AREA_IN_PARTY
-            && CountPartyAliveNonEggMonsExcept(sCursorPosition as u8) == 0
-            && ((*sStorage).displayMonIsEgg != 0
-                || GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_HP) == 0)
+            && CountPartyAliveNonEggMonsExcept(sCursorPosition.get() as u8) == 0
+            && ((*crate::gl!(sStorage)).displayMonIsEgg != 0
+                || GetMonData2(&raw mut (*crate::gl!(sStorage)).movingMon, MON_DATA_HP) == 0)
         {
             return FALSE;
         }
@@ -6507,29 +6681,32 @@ unsafe fn CanShiftMon() -> u8 {
     }
     FALSE
 }
-unsafe fn IsMonBeingMoved() -> u8 {
+fn IsMonBeingMoved() -> u8 {
     sIsMonBeingMoved.get()
 }
 fn IsCursorOnBoxTitle() -> u8 {
     (sCursorArea.get() == CURSOR_AREA_BOX_TITLE as i8) as u8
 }
-unsafe fn IsCursorOnCloseBox() -> u8 {
-    (sCursorArea.get() == CURSOR_AREA_BUTTONS && sCursorPosition == 1) as u8
+fn IsCursorOnCloseBox() -> u8 {
+    (sCursorArea.get() == CURSOR_AREA_BUTTONS && sCursorPosition.get() == 1) as u8
 }
 fn IsCursorInBox() -> u8 {
     (sCursorArea.get() == CURSOR_AREA_IN_BOX as i8) as u8
 }
 unsafe fn TryRefreshDisplayMon() {
-    (*sStorage).setMosaic = (sIsMonBeingMoved.get() == FALSE) as u8;
+    (*crate::gl!(sStorage)).setMosaic = (sIsMonBeingMoved.get() == FALSE) as u8;
     if sIsMonBeingMoved.get() == 0 {
         'l1: {
             let sw1: i8 = sCursorArea.get();
             let mut fall = false;
             if sw1 == CURSOR_AREA_IN_PARTY {
                 fall = true;
-                if sCursorPosition < PARTY_SIZE as i8 {
+                if sCursorPosition.get() < PARTY_SIZE as i8 {
                     SetDisplayMonData(
-                        &raw mut gPlayerParty[sCursorPosition] as *mut c_void,
+                        ({
+                            let gl_i4 = sCursorPosition.get();
+                            crate::gl!(&raw gPlayerParty[gl_i4])
+                        }) as *mut c_void,
                         MODE_PARTY,
                     );
                     break 'l1;
@@ -6541,7 +6718,8 @@ unsafe fn TryRefreshDisplayMon() {
             }
             if sw1 == 0 {
                 SetDisplayMonData(
-                    GetBoxedMonPtr(StorageGetCurrentBox(), sCursorPosition as u8) as *mut c_void,
+                    GetBoxedMonPtr(StorageGetCurrentBox(), sCursorPosition.get() as u8)
+                        as *mut c_void,
                     MODE_BOX,
                 );
                 break 'l1;
@@ -6551,100 +6729,117 @@ unsafe fn TryRefreshDisplayMon() {
 }
 unsafe fn ReshowDisplayMon() {
     if sIsMonBeingMoved.get() != 0 {
-        SetDisplayMonData(&raw mut sSavedMovingMon as *mut c_void, MODE_PARTY);
+        SetDisplayMonData(crate::gl!(&raw sSavedMovingMon) as *mut c_void, MODE_PARTY);
     } else {
         TryRefreshDisplayMon();
     }
 }
 unsafe fn SetDisplayMonData(pokemon: *mut c_void, mode: u8) {
     let mut txtPtr: *mut u8 = null_mut();
-    (*sStorage).displayMonItemId = ITEM_NONE;
+    (*crate::gl!(sStorage)).displayMonItemId = ITEM_NONE;
     let mut gender: u16 = MON_MALE as u16;
     let mut sanityIsBadEgg: u8 = FALSE;
     if mode == MODE_PARTY {
         let mon: *mut Pokemon = pokemon as *mut Pokemon;
-        (*sStorage).displayMonSpecies = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
-        if (*sStorage).displayMonSpecies != SPECIES_NONE {
+        (*crate::gl!(sStorage)).displayMonSpecies =
+            GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
+        if (*crate::gl!(sStorage)).displayMonSpecies != SPECIES_NONE {
             sanityIsBadEgg = GetMonData2(mon, MON_DATA_SANITY_IS_BAD_EGG) as u8;
             if sanityIsBadEgg != 0 {
-                (*sStorage).displayMonIsEgg = TRUE;
+                (*crate::gl!(sStorage)).displayMonIsEgg = TRUE;
             } else {
-                (*sStorage).displayMonIsEgg = GetMonData2(mon, MON_DATA_IS_EGG) as u8;
+                (*crate::gl!(sStorage)).displayMonIsEgg = GetMonData2(mon, MON_DATA_IS_EGG) as u8;
             }
             GetMonData3(
                 mon,
                 MON_DATA_NICKNAME,
-                (*sStorage).displayMonName.as_mut_ptr(),
+                (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
             );
-            StringGet_Nickname((*sStorage).displayMonName.as_mut_ptr());
-            (*sStorage).displayMonLevel = GetMonData2(mon, MON_DATA_LEVEL) as u8;
-            (*sStorage).displayMonMarkings = GetMonData2(mon, MON_DATA_MARKINGS) as u8;
-            (*sStorage).displayMonPersonality = GetMonData2(mon, MON_DATA_PERSONALITY);
-            (*sStorage).displayMonPalette = GetMonFrontSpritePal(mon);
+            StringGet_Nickname((*crate::gl!(sStorage)).displayMonName.as_mut_ptr());
+            (*crate::gl!(sStorage)).displayMonLevel = GetMonData2(mon, MON_DATA_LEVEL) as u8;
+            (*crate::gl!(sStorage)).displayMonMarkings = GetMonData2(mon, MON_DATA_MARKINGS) as u8;
+            (*crate::gl!(sStorage)).displayMonPersonality = GetMonData2(mon, MON_DATA_PERSONALITY);
+            (*crate::gl!(sStorage)).displayMonPalette = GetMonFrontSpritePal(mon);
             gender = GetMonGender(mon) as u16;
-            (*sStorage).displayMonItemId = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
+            (*crate::gl!(sStorage)).displayMonItemId = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
         }
     } else if mode == MODE_BOX {
         let boxMon: *mut BoxPokemon = pokemon as *mut BoxPokemon;
-        (*sStorage).displayMonSpecies =
+        (*crate::gl!(sStorage)).displayMonSpecies =
             GetBoxMonData2(pokemon as *mut BoxPokemon, MON_DATA_SPECIES_OR_EGG) as u16;
-        if (*sStorage).displayMonSpecies != SPECIES_NONE {
+        if (*crate::gl!(sStorage)).displayMonSpecies != SPECIES_NONE {
             let otId: u32 = GetBoxMonData2(boxMon, MON_DATA_OT_ID);
             sanityIsBadEgg = GetBoxMonData2(boxMon, MON_DATA_SANITY_IS_BAD_EGG) as u8;
             if sanityIsBadEgg != 0 {
-                (*sStorage).displayMonIsEgg = TRUE;
+                (*crate::gl!(sStorage)).displayMonIsEgg = TRUE;
             } else {
-                (*sStorage).displayMonIsEgg = GetBoxMonData2(boxMon, MON_DATA_IS_EGG) as u8;
+                (*crate::gl!(sStorage)).displayMonIsEgg =
+                    GetBoxMonData2(boxMon, MON_DATA_IS_EGG) as u8;
             }
             GetBoxMonData3(
                 boxMon,
                 MON_DATA_NICKNAME,
-                (*sStorage).displayMonName.as_mut_ptr(),
+                (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
             );
-            StringGet_Nickname((*sStorage).displayMonName.as_mut_ptr());
-            (*sStorage).displayMonLevel = GetLevelFromBoxMonExp(boxMon);
-            (*sStorage).displayMonMarkings = GetBoxMonData2(boxMon, MON_DATA_MARKINGS) as u8;
-            (*sStorage).displayMonPersonality = GetBoxMonData2(boxMon, MON_DATA_PERSONALITY);
-            (*sStorage).displayMonPalette = GetMonSpritePalFromSpeciesAndPersonality(
-                (*sStorage).displayMonSpecies,
+            StringGet_Nickname((*crate::gl!(sStorage)).displayMonName.as_mut_ptr());
+            (*crate::gl!(sStorage)).displayMonLevel = GetLevelFromBoxMonExp(boxMon);
+            (*crate::gl!(sStorage)).displayMonMarkings =
+                GetBoxMonData2(boxMon, MON_DATA_MARKINGS) as u8;
+            (*crate::gl!(sStorage)).displayMonPersonality =
+                GetBoxMonData2(boxMon, MON_DATA_PERSONALITY);
+            (*crate::gl!(sStorage)).displayMonPalette = GetMonSpritePalFromSpeciesAndPersonality(
+                (*crate::gl!(sStorage)).displayMonSpecies,
                 otId,
-                (*sStorage).displayMonPersonality,
+                (*crate::gl!(sStorage)).displayMonPersonality,
             );
             gender = GetGenderFromSpeciesAndPersonality(
-                (*sStorage).displayMonSpecies,
-                (*sStorage).displayMonPersonality,
+                (*crate::gl!(sStorage)).displayMonSpecies,
+                (*crate::gl!(sStorage)).displayMonPersonality,
             ) as u16;
-            (*sStorage).displayMonItemId = GetBoxMonData2(boxMon, MON_DATA_HELD_ITEM) as u16;
+            (*crate::gl!(sStorage)).displayMonItemId =
+                GetBoxMonData2(boxMon, MON_DATA_HELD_ITEM) as u16;
         }
     } else {
-        (*sStorage).displayMonSpecies = SPECIES_NONE;
-        (*sStorage).displayMonItemId = ITEM_NONE;
+        (*crate::gl!(sStorage)).displayMonSpecies = SPECIES_NONE;
+        (*crate::gl!(sStorage)).displayMonItemId = ITEM_NONE;
     }
-    if (*sStorage).displayMonSpecies == SPECIES_NONE {
-        StringFill((*sStorage).displayMonName.as_mut_ptr(), CHAR_SPACE, 5);
-        StringFill((*sStorage).displayMonNameText.as_mut_ptr(), CHAR_SPACE, 8);
+    if (*crate::gl!(sStorage)).displayMonSpecies == SPECIES_NONE {
         StringFill(
-            (*sStorage).displayMonSpeciesName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
+            CHAR_SPACE,
+            5,
+        );
+        StringFill(
+            (*crate::gl!(sStorage)).displayMonNameText.as_mut_ptr(),
             CHAR_SPACE,
             8,
         );
         StringFill(
-            (*sStorage).displayMonGenderLvlText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonSpeciesName.as_mut_ptr(),
             CHAR_SPACE,
             8,
         );
-        StringFill((*sStorage).displayMonItemName.as_mut_ptr(), CHAR_SPACE, 8);
-    } else if (*sStorage).displayMonIsEgg != 0 {
+        StringFill(
+            (*crate::gl!(sStorage)).displayMonGenderLvlText.as_mut_ptr(),
+            CHAR_SPACE,
+            8,
+        );
+        StringFill(
+            (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
+            CHAR_SPACE,
+            8,
+        );
+    } else if (*crate::gl!(sStorage)).displayMonIsEgg != 0 {
         if sanityIsBadEgg != 0 {
             StringCopyPadded(
-                (*sStorage).displayMonNameText.as_mut_ptr(),
-                (*sStorage).displayMonName.as_mut_ptr(),
+                (*crate::gl!(sStorage)).displayMonNameText.as_mut_ptr(),
+                (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
                 CHAR_SPACE,
                 5,
             );
         } else {
             StringCopyPadded(
-                (*sStorage).displayMonNameText.as_mut_ptr(),
+                (*crate::gl!(sStorage)).displayMonNameText.as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_EggNickname).cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
@@ -6653,29 +6848,33 @@ unsafe fn SetDisplayMonData(pokemon: *mut c_void, mode: u8) {
             );
         }
         StringFill(
-            (*sStorage).displayMonSpeciesName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonSpeciesName.as_mut_ptr(),
             CHAR_SPACE,
             8,
         );
         StringFill(
-            (*sStorage).displayMonGenderLvlText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonGenderLvlText.as_mut_ptr(),
             CHAR_SPACE,
             8,
         );
-        StringFill((*sStorage).displayMonItemName.as_mut_ptr(), CHAR_SPACE, 8);
+        StringFill(
+            (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
+            CHAR_SPACE,
+            8,
+        );
     } else {
-        if (*sStorage).displayMonSpecies == SPECIES_NIDORAN_F
-            || (*sStorage).displayMonSpecies == SPECIES_NIDORAN_M
+        if (*crate::gl!(sStorage)).displayMonSpecies == SPECIES_NIDORAN_F
+            || (*crate::gl!(sStorage)).displayMonSpecies == SPECIES_NIDORAN_M
         {
             gender = MON_GENDERLESS as u16;
         }
         StringCopyPadded(
-            (*sStorage).displayMonNameText.as_mut_ptr(),
-            (*sStorage).displayMonName.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonNameText.as_mut_ptr(),
+            (*crate::gl!(sStorage)).displayMonName.as_mut_ptr(),
             CHAR_SPACE,
             5,
         );
-        txtPtr = (*sStorage).displayMonSpeciesName.as_mut_ptr();
+        txtPtr = (*crate::gl!(sStorage)).displayMonSpeciesName.as_mut_ptr();
         *({
             let t1 = txtPtr;
             txtPtr = txtPtr.at(1);
@@ -6684,13 +6883,13 @@ unsafe fn SetDisplayMonData(pokemon: *mut c_void, mode: u8) {
         StringCopyPadded(
             txtPtr,
             (*(&raw const crate::data::data_tables::gSpeciesNames)
-                .cast::<CArray<CArray<u8, 11>, 0>>())[(*sStorage).displayMonSpecies]
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*crate::gl!(sStorage)).displayMonSpecies]
                 .as_ptr()
                 .cast_mut(),
             CHAR_SPACE,
             5,
         );
-        txtPtr = (*sStorage).displayMonGenderLvlText.as_mut_ptr();
+        txtPtr = (*crate::gl!(sStorage)).displayMonGenderLvlText.as_mut_ptr();
         *({
             let t2 = txtPtr;
             txtPtr = txtPtr.at(1);
@@ -6811,26 +7010,30 @@ unsafe fn SetDisplayMonData(pokemon: *mut c_void, mode: u8) {
         }) = CHAR_LV_2;
         txtPtr = ConvertIntToDecimalStringN(
             txtPtr,
-            (*sStorage).displayMonLevel as i32,
+            (*crate::gl!(sStorage)).displayMonLevel as i32,
             STR_CONV_MODE_LEFT_ALIGN,
             3,
         );
         *txtPtr = 0x00;
         *txtPtr.at(1) = EOS;
-        if (*sStorage).displayMonItemId != ITEM_NONE {
+        if (*crate::gl!(sStorage)).displayMonItemId != ITEM_NONE {
             StringCopyPadded(
-                (*sStorage).displayMonItemName.as_mut_ptr(),
-                GetItemName((*sStorage).displayMonItemId),
+                (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
+                GetItemName((*crate::gl!(sStorage)).displayMonItemId),
                 CHAR_SPACE,
                 8,
             );
         } else {
-            StringFill((*sStorage).displayMonItemName.as_mut_ptr(), CHAR_SPACE, 8);
+            StringFill(
+                (*crate::gl!(sStorage)).displayMonItemName.as_mut_ptr(),
+                CHAR_SPACE,
+                8,
+            );
         }
     }
 }
 pub(crate) unsafe fn HandleInput_InBox() -> u8 {
-    match (*sStorage).inBoxMovingMode {
+    match (*crate::gl!(sStorage)).inBoxMovingMode {
         MOVE_MODE_MULTIPLE_SELECTING => {
             return InBoxInput_SelectingMultiple();
         }
@@ -6852,59 +7055,61 @@ unsafe fn InBoxInput_Normal() -> u8 {
     let mut cursorPosition: i8 = 0;
     'l2: {
         cursorArea = sCursorArea.get();
-        cursorPosition = sCursorPosition;
-        (*sStorage).cursorVerticalWrap = 0;
-        (*sStorage).cursorHorizontalWrap = 0;
-        (*sStorage).cursorFlipTimer = 0;
-        if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        cursorPosition = sCursorPosition.get();
+        (*crate::gl!(sStorage)).cursorVerticalWrap = 0;
+        (*crate::gl!(sStorage)).cursorHorizontalWrap = 0;
+        (*crate::gl!(sStorage)).cursorFlipTimer = 0;
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
             retVal = INPUT_MOVE_CURSOR;
-            if sCursorPosition >= IN_BOX_COLUMNS as i8 {
+            if sCursorPosition.get() >= IN_BOX_COLUMNS as i8 {
                 cursorPosition -= IN_BOX_COLUMNS as i8;
             } else {
                 cursorArea = CURSOR_AREA_BOX_TITLE as i8;
                 cursorPosition = 0;
             }
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
             retVal = INPUT_MOVE_CURSOR;
             cursorPosition += IN_BOX_COLUMNS as i8;
             if cursorPosition >= IN_BOX_COUNT as i8 {
                 cursorArea = CURSOR_AREA_BUTTONS;
                 cursorPosition -= IN_BOX_COUNT as i8;
                 cursorPosition /= 3;
-                (*sStorage).cursorVerticalWrap = 1;
-                (*sStorage).cursorFlipTimer = 1;
+                (*crate::gl!(sStorage)).cursorVerticalWrap = 1;
+                (*crate::gl!(sStorage)).cursorFlipTimer = 1;
             }
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
             retVal = INPUT_MOVE_CURSOR;
-            if sCursorPosition % 6 != 0 {
+            if sCursorPosition.get() % 6 != 0 {
                 cursorPosition -= 1;
             } else {
-                (*sStorage).cursorHorizontalWrap = -1;
+                (*crate::gl!(sStorage)).cursorHorizontalWrap = -1;
                 cursorPosition += 5;
             }
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
             retVal = INPUT_MOVE_CURSOR;
-            if (sCursorPosition as i32 + 1) % 6 != 0 {
+            if (sCursorPosition.get() as i32 + 1) % 6 != 0 {
                 cursorPosition += 1;
             } else {
-                (*sStorage).cursorHorizontalWrap = 1;
+                (*crate::gl!(sStorage)).cursorHorizontalWrap = 1;
                 cursorPosition -= 5;
             }
             break 'l2;
-        } else if gMain.newKeys as i32 & START_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & START_BUTTON != 0 {
             retVal = INPUT_MOVE_CURSOR;
             cursorArea = CURSOR_AREA_BOX_TITLE as i8;
             cursorPosition = 0;
             break 'l2;
         }
-        if gMain.newKeys as i32 & A_BUTTON != 0 && SetSelectionMenuTexts() != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 && SetSelectionMenuTexts() != 0 {
             if sAutoActionOn.get() == 0 {
                 return INPUT_IN_MENU;
             }
-            if (*sStorage).boxOption != OPTION_MOVE_MONS || sIsMonBeingMoved.get() == TRUE {
+            if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_MONS
+                || sIsMonBeingMoved.get() == TRUE
+            {
                 match GetMenuItemTextId(0) {
                     MENU_STORE => {
                         return INPUT_DEPOSIT;
@@ -6933,22 +7138,22 @@ unsafe fn InBoxInput_Normal() -> u8 {
                     _ => {}
                 }
             } else {
-                (*sStorage).inBoxMovingMode = MOVE_MODE_MULTIPLE_SELECTING;
+                (*crate::gl!(sStorage)).inBoxMovingMode = MOVE_MODE_MULTIPLE_SELECTING;
                 return INPUT_MULTIMOVE_START;
             }
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             return INPUT_PRESSED_B;
         }
-        if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
-            if gMain.heldKeys as i32 & L_BUTTON != 0 {
+        if (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
+            if crate::gl!(gMain.heldKeys) as i32 & L_BUTTON != 0 {
                 return INPUT_SCROLL_LEFT;
             }
-            if gMain.heldKeys as i32 & R_BUTTON != 0 {
+            if crate::gl!(gMain.heldKeys) as i32 & R_BUTTON != 0 {
                 return INPUT_SCROLL_RIGHT;
             }
         }
-        if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             ToggleCursorAutoAction();
             return INPUT_NONE;
         }
@@ -6960,31 +7165,37 @@ unsafe fn InBoxInput_Normal() -> u8 {
     retVal
 }
 unsafe fn InBoxInput_SelectingMultiple() -> u8 {
-    if gMain.heldKeys as i32 & A_BUTTON != 0 {
-        if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
-            if sCursorPosition / 6 != 0 {
-                SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 - IN_BOX_COLUMNS);
+    if crate::gl!(gMain.heldKeys) as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
+            if sCursorPosition.get() / 6 != 0 {
+                SetCursorPosition(
+                    CURSOR_AREA_IN_BOX,
+                    sCursorPosition.get() as u8 - IN_BOX_COLUMNS,
+                );
                 return INPUT_MULTIMOVE_CHANGE_SELECTION;
             } else {
                 return INPUT_MULTIMOVE_UNABLE;
             }
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
-            if (sCursorPosition as i32 + IN_BOX_COLUMNS as i32) < IN_BOX_COUNT {
-                SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 + IN_BOX_COLUMNS);
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
+            if (sCursorPosition.get() as i32 + IN_BOX_COLUMNS as i32) < IN_BOX_COUNT {
+                SetCursorPosition(
+                    CURSOR_AREA_IN_BOX,
+                    sCursorPosition.get() as u8 + IN_BOX_COLUMNS,
+                );
                 return INPUT_MULTIMOVE_CHANGE_SELECTION;
             } else {
                 return INPUT_MULTIMOVE_UNABLE;
             }
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
-            if sCursorPosition % 6 != 0 {
-                SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 - 1);
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
+            if sCursorPosition.get() % 6 != 0 {
+                SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8 - 1);
                 return INPUT_MULTIMOVE_CHANGE_SELECTION;
             } else {
                 return INPUT_MULTIMOVE_UNABLE;
             }
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
-            if (sCursorPosition as i32 + 1) % 6 != 0 {
-                SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 + 1);
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
+            if (sCursorPosition.get() as i32 + 1) % 6 != 0 {
+                SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8 + 1);
                 return INPUT_MULTIMOVE_CHANGE_SELECTION;
             } else {
                 return INPUT_MULTIMOVE_UNABLE;
@@ -6993,13 +7204,13 @@ unsafe fn InBoxInput_SelectingMultiple() -> u8 {
             return INPUT_NONE;
         }
     } else {
-        if MultiMove_GetOrigin() as i32 == sCursorPosition as i32 {
-            (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
-            (*(*sStorage).cursorShadowSprite).set_invisible(FALSE as u16);
+        if MultiMove_GetOrigin() as i32 == sCursorPosition.get() as i32 {
+            (*crate::gl!(sStorage)).inBoxMovingMode = MOVE_MODE_NORMAL;
+            (*(*crate::gl!(sStorage)).cursorShadowSprite).set_invisible(FALSE as u16);
             return INPUT_MULTIMOVE_SINGLE;
         } else {
-            sIsMonBeingMoved.set(((*sStorage).displayMonSpecies != SPECIES_NONE) as u8);
-            (*sStorage).inBoxMovingMode = MOVE_MODE_MULTIPLE_MOVING;
+            sIsMonBeingMoved.set(((*crate::gl!(sStorage)).displayMonSpecies != SPECIES_NONE) as u8);
+            (*crate::gl!(sStorage)).inBoxMovingMode = MOVE_MODE_MULTIPLE_MOVING;
             sMovingMonOrigBoxId.set(StorageGetCurrentBox());
             return INPUT_MULTIMOVE_GRAB_SELECTION;
         }
@@ -7010,50 +7221,56 @@ unsafe fn InBoxInput_SelectingMultiple() -> u8 {
     }
 }
 unsafe fn InBoxInput_MovingMultiple() -> u8 {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         if MultiMove_TryMoveGroup(0) != 0 {
-            SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 - IN_BOX_COLUMNS);
+            SetCursorPosition(
+                CURSOR_AREA_IN_BOX,
+                sCursorPosition.get() as u8 - IN_BOX_COLUMNS,
+            );
             return INPUT_MULTIMOVE_MOVE_MONS;
         } else {
             return INPUT_MULTIMOVE_UNABLE;
         }
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         if MultiMove_TryMoveGroup(1) != 0 {
-            SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 + IN_BOX_COLUMNS);
+            SetCursorPosition(
+                CURSOR_AREA_IN_BOX,
+                sCursorPosition.get() as u8 + IN_BOX_COLUMNS,
+            );
             return INPUT_MULTIMOVE_MOVE_MONS;
         } else {
             return INPUT_MULTIMOVE_UNABLE;
         }
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
         if MultiMove_TryMoveGroup(2) != 0 {
-            SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 - 1);
+            SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8 - 1);
             return INPUT_MULTIMOVE_MOVE_MONS;
         } else {
             return INPUT_SCROLL_LEFT;
         }
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
         if MultiMove_TryMoveGroup(3) != 0 {
-            SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 + 1);
+            SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8 + 1);
             return INPUT_MULTIMOVE_MOVE_MONS;
         } else {
             return INPUT_SCROLL_RIGHT;
         }
-    } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         if MultiMove_CanPlaceSelection() != 0 {
             sIsMonBeingMoved.set(FALSE);
-            (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
+            (*crate::gl!(sStorage)).inBoxMovingMode = MOVE_MODE_NORMAL;
             return INPUT_MULTIMOVE_PLACE_MONS;
         } else {
             return INPUT_MULTIMOVE_UNABLE;
         }
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         return INPUT_MULTIMOVE_UNABLE;
     } else {
-        if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
-            if gMain.heldKeys as i32 & L_BUTTON != 0 {
+        if (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
+            if crate::gl!(gMain.heldKeys) as i32 & L_BUTTON != 0 {
                 return INPUT_SCROLL_LEFT;
             }
-            if gMain.heldKeys as i32 & R_BUTTON != 0 {
+            if crate::gl!(gMain.heldKeys) as i32 & R_BUTTON != 0 {
                 return INPUT_SCROLL_RIGHT;
             }
         }
@@ -7071,13 +7288,13 @@ pub(crate) unsafe fn HandleInput_InParty() -> u8 {
     let mut cursorPosition: i8 = 0;
     'l2: {
         cursorArea = sCursorArea.get();
-        cursorPosition = sCursorPosition;
-        (*sStorage).cursorHorizontalWrap = 0;
-        (*sStorage).cursorVerticalWrap = 0;
-        (*sStorage).cursorFlipTimer = 0;
+        cursorPosition = sCursorPosition.get();
+        (*crate::gl!(sStorage)).cursorHorizontalWrap = 0;
+        (*crate::gl!(sStorage)).cursorVerticalWrap = 0;
+        (*crate::gl!(sStorage)).cursorFlipTimer = 0;
         gotoBox = FALSE;
         retVal = INPUT_NONE;
-        if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
             if ({
                 cursorPosition -= 1;
                 cursorPosition
@@ -7085,11 +7302,11 @@ pub(crate) unsafe fn HandleInput_InParty() -> u8 {
             {
                 cursorPosition = PARTY_SIZE as i8;
             }
-            if cursorPosition != sCursorPosition {
+            if cursorPosition != sCursorPosition.get() {
                 retVal = INPUT_MOVE_CURSOR;
             }
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
             if ({
                 cursorPosition += 1;
                 cursorPosition
@@ -7097,19 +7314,21 @@ pub(crate) unsafe fn HandleInput_InParty() -> u8 {
             {
                 cursorPosition = 0;
             }
-            if cursorPosition != sCursorPosition {
+            if cursorPosition != sCursorPosition.get() {
                 retVal = INPUT_MOVE_CURSOR;
             }
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 && sCursorPosition != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0
+            && sCursorPosition.get() != 0
+        {
             retVal = INPUT_MOVE_CURSOR;
-            (*sStorage).cursorPrevHorizPos = sCursorPosition as u8;
+            (*crate::gl!(sStorage)).cursorPrevHorizPos = sCursorPosition.get() as u8;
             cursorPosition = 0;
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
-            if sCursorPosition == 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
+            if sCursorPosition.get() == 0 {
                 retVal = INPUT_MOVE_CURSOR;
-                cursorPosition = (*sStorage).cursorPrevHorizPos as i8;
+                cursorPosition = (*crate::gl!(sStorage)).cursorPrevHorizPos as i8;
             } else {
                 retVal = INPUT_HIDE_PARTY;
                 cursorArea = CURSOR_AREA_IN_BOX as i8;
@@ -7117,9 +7336,9 @@ pub(crate) unsafe fn HandleInput_InParty() -> u8 {
             }
             break 'l2;
         }
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
-            if sCursorPosition == PARTY_SIZE as i8 {
-                if (*sStorage).boxOption == OPTION_DEPOSIT {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+            if sCursorPosition.get() == PARTY_SIZE as i8 {
+                if (*crate::gl!(sStorage)).boxOption == OPTION_DEPOSIT {
                     return INPUT_CLOSE_BOX;
                 }
                 gotoBox = TRUE;
@@ -7156,8 +7375,8 @@ pub(crate) unsafe fn HandleInput_InParty() -> u8 {
                 }
             }
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
-            if (*sStorage).boxOption == OPTION_DEPOSIT {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
+            if (*crate::gl!(sStorage)).boxOption == OPTION_DEPOSIT {
                 return INPUT_PRESSED_B;
             }
             gotoBox = TRUE;
@@ -7166,7 +7385,7 @@ pub(crate) unsafe fn HandleInput_InParty() -> u8 {
             retVal = INPUT_HIDE_PARTY;
             cursorArea = CURSOR_AREA_IN_BOX as i8;
             cursorPosition = 0;
-        } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             ToggleCursorAutoAction();
             return INPUT_NONE;
         }
@@ -7181,44 +7400,44 @@ pub(crate) unsafe fn HandleInput_OnBox() -> u8 {
     let mut cursorArea: i8 = 0;
     let mut cursorPosition: i8 = 0;
     'l2: {
-        (*sStorage).cursorHorizontalWrap = 0;
-        (*sStorage).cursorVerticalWrap = 0;
-        (*sStorage).cursorFlipTimer = 0;
-        if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        (*crate::gl!(sStorage)).cursorHorizontalWrap = 0;
+        (*crate::gl!(sStorage)).cursorVerticalWrap = 0;
+        (*crate::gl!(sStorage)).cursorFlipTimer = 0;
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
             retVal = INPUT_MOVE_CURSOR;
             cursorArea = CURSOR_AREA_BUTTONS;
             cursorPosition = 0;
-            (*sStorage).cursorFlipTimer = 1;
+            (*crate::gl!(sStorage)).cursorFlipTimer = 1;
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
             retVal = INPUT_MOVE_CURSOR;
             cursorArea = CURSOR_AREA_IN_BOX as i8;
             cursorPosition = 2;
             break 'l2;
         }
-        if gMain.heldKeys as i32 & DPAD_LEFT != 0 {
+        if crate::gl!(gMain.heldKeys) as i32 & DPAD_LEFT != 0 {
             return INPUT_SCROLL_LEFT;
         }
-        if gMain.heldKeys as i32 & DPAD_RIGHT != 0 {
+        if crate::gl!(gMain.heldKeys) as i32 & DPAD_RIGHT != 0 {
             return INPUT_SCROLL_RIGHT;
         }
-        if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
-            if gMain.heldKeys as i32 & L_BUTTON != 0 {
+        if (*crate::gl!(gSaveBlock2Ptr)).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
+            if crate::gl!(gMain.heldKeys) as i32 & L_BUTTON != 0 {
                 return INPUT_SCROLL_LEFT;
             }
-            if gMain.heldKeys as i32 & R_BUTTON != 0 {
+            if crate::gl!(gMain.heldKeys) as i32 & R_BUTTON != 0 {
                 return INPUT_SCROLL_RIGHT;
             }
         }
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             AnimateBoxScrollArrows(FALSE);
             AddBoxOptionsMenu();
             return INPUT_BOX_OPTIONS;
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             return INPUT_PRESSED_B;
         }
-        if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             ToggleCursorAutoAction();
             return INPUT_NONE;
         }
@@ -7238,30 +7457,30 @@ pub(crate) unsafe fn HandleInput_OnButtons() -> u8 {
     let mut cursorPosition: i8 = 0;
     'l2: {
         cursorArea = sCursorArea.get();
-        cursorPosition = sCursorPosition;
-        (*sStorage).cursorHorizontalWrap = 0;
-        (*sStorage).cursorVerticalWrap = 0;
-        (*sStorage).cursorFlipTimer = 0;
-        if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+        cursorPosition = sCursorPosition.get();
+        (*crate::gl!(sStorage)).cursorHorizontalWrap = 0;
+        (*crate::gl!(sStorage)).cursorVerticalWrap = 0;
+        (*crate::gl!(sStorage)).cursorFlipTimer = 0;
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
             retVal = INPUT_MOVE_CURSOR;
             cursorArea = CURSOR_AREA_IN_BOX as i8;
-            (*sStorage).cursorVerticalWrap = -1;
-            if sCursorPosition == 0 {
+            (*crate::gl!(sStorage)).cursorVerticalWrap = -1;
+            if sCursorPosition.get() == 0 {
                 cursorPosition = 24;
             } else {
                 cursorPosition = 29;
             }
-            (*sStorage).cursorFlipTimer = 1;
+            (*crate::gl!(sStorage)).cursorFlipTimer = 1;
             break 'l2;
         }
-        if gMain.newAndRepeatedKeys as i32 & 136 != 0 {
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & 136 != 0 {
             retVal = INPUT_MOVE_CURSOR;
             cursorArea = CURSOR_AREA_BOX_TITLE as i8;
             cursorPosition = 0;
-            (*sStorage).cursorFlipTimer = 1;
+            (*crate::gl!(sStorage)).cursorFlipTimer = 1;
             break 'l2;
         }
-        if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+        if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
             retVal = INPUT_MOVE_CURSOR;
             if ({
                 cursorPosition -= 1;
@@ -7271,7 +7490,7 @@ pub(crate) unsafe fn HandleInput_OnButtons() -> u8 {
                 cursorPosition = 1;
             }
             break 'l2;
-        } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+        } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
             retVal = INPUT_MOVE_CURSOR;
             if ({
                 cursorPosition += 1;
@@ -7282,17 +7501,17 @@ pub(crate) unsafe fn HandleInput_OnButtons() -> u8 {
             }
             break 'l2;
         }
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             return (if cursorPosition == 0 {
                 INPUT_SHOW_PARTY as i32
             } else {
                 INPUT_CLOSE_BOX as i32
             }) as u8;
         }
-        if gMain.newKeys as i32 & B_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             return INPUT_PRESSED_B;
         }
-        if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & SELECT_BUTTON != 0 {
             ToggleCursorAutoAction();
             return INPUT_NONE;
         }
@@ -7322,7 +7541,7 @@ unsafe fn AddBoxOptionsMenu() {
 }
 unsafe fn SetSelectionMenuTexts() -> u8 {
     InitMenu();
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return SetMenuTexts_Mon();
     } else {
         return SetMenuTexts_Item();
@@ -7334,7 +7553,7 @@ unsafe fn SetSelectionMenuTexts() -> u8 {
 }
 unsafe fn SetMenuTexts_Mon() -> u8 {
     let species: u16 = GetSpeciesAtCursorPosition();
-    match (*sStorage).boxOption {
+    match (*crate::gl!(sStorage)).boxOption {
         OPTION_DEPOSIT => {
             if species != SPECIES_NONE {
                 SetMenuText(MENU_STORE as u8);
@@ -7369,7 +7588,7 @@ unsafe fn SetMenuTexts_Mon() -> u8 {
         }
     }
     SetMenuText(MENU_SUMMARY as u8);
-    if (*sStorage).boxOption == OPTION_MOVE_MONS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_MONS {
         if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
             SetMenuText(MENU_WITHDRAW as u8);
         } else {
@@ -7382,30 +7601,30 @@ unsafe fn SetMenuTexts_Mon() -> u8 {
     TRUE
 }
 unsafe fn SetMenuTexts_Item() -> u8 {
-    if (*sStorage).displayMonSpecies == SPECIES_EGG as u16 {
+    if (*crate::gl!(sStorage)).displayMonSpecies == SPECIES_EGG as u16 {
         return FALSE;
     }
     if IsMovingItem() == 0 {
-        if (*sStorage).displayMonItemId == ITEM_NONE {
-            if (*sStorage).displayMonSpecies == SPECIES_NONE {
+        if (*crate::gl!(sStorage)).displayMonItemId == ITEM_NONE {
+            if (*crate::gl!(sStorage)).displayMonSpecies == SPECIES_NONE {
                 return FALSE;
             }
             SetMenuText(MENU_GIVE_2 as u8);
         } else {
-            if ItemIsMail((*sStorage).displayMonItemId) == 0 {
+            if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) == 0 {
                 SetMenuText(MENU_TAKE as u8);
                 SetMenuText(MENU_BAG as u8);
             }
             SetMenuText(MENU_INFO as u8);
         }
     } else {
-        if (*sStorage).displayMonItemId == ITEM_NONE {
-            if (*sStorage).displayMonSpecies == SPECIES_NONE {
+        if (*crate::gl!(sStorage)).displayMonItemId == ITEM_NONE {
+            if (*crate::gl!(sStorage)).displayMonSpecies == SPECIES_NONE {
                 return FALSE;
             }
             SetMenuText(MENU_GIVE as u8);
         } else {
-            if ItemIsMail((*sStorage).displayMonItemId) == TRUE {
+            if ItemIsMail((*crate::gl!(sStorage)).displayMonItemId) == TRUE {
                 return FALSE;
             }
             SetMenuText(MENU_SWITCH as u8);
@@ -7415,8 +7634,8 @@ unsafe fn SetMenuTexts_Item() -> u8 {
     TRUE
 }
 pub(crate) unsafe fn SpriteCB_CursorShadow(sprite: *mut Sprite) {
-    (*sprite).x = (*(*sStorage).cursorSprite).x;
-    (*sprite).y = (*(*sStorage).cursorSprite).y + 20;
+    (*sprite).x = (*(*crate::gl!(sStorage)).cursorSprite).x;
+    (*sprite).y = (*(*crate::gl!(sStorage)).cursorSprite).y + 20;
 }
 unsafe fn CreateCursorSprites() {
     let mut x: u16 = 0;
@@ -7435,11 +7654,11 @@ unsafe fn CreateCursorSprites() {
     spritePalettes[0].tag = PALTAG_MISC_1;
     LoadSpriteSheets(spriteSheets.as_mut_ptr());
     LoadSpritePalettes(spritePalettes.as_mut_ptr());
-    (*sStorage).cursorPalNums[0] = IndexOfSpritePaletteTag(PALTAG_MISC_2);
-    (*sStorage).cursorPalNums[1] = IndexOfSpritePaletteTag(PALTAG_MISC_1);
+    (*crate::gl!(sStorage)).cursorPalNums[0] = IndexOfSpritePaletteTag(PALTAG_MISC_2);
+    (*crate::gl!(sStorage)).cursorPalNums[1] = IndexOfSpritePaletteTag(PALTAG_MISC_1);
     GetCursorCoordsByPos(
         sCursorArea.get() as u8,
-        sCursorPosition as u8,
+        sCursorPosition.get() as u8,
         &raw mut x,
         &raw mut y,
     );
@@ -7450,16 +7669,16 @@ unsafe fn CreateCursorSprites() {
         6,
     );
     if spriteId != MAX_SPRITES {
-        (*sStorage).cursorSprite = &raw mut gSprites[spriteId];
-        (*(*sStorage).cursorSprite)
+        (*crate::gl!(sStorage)).cursorSprite = crate::gl!(&raw gSprites[spriteId]);
+        (*(*crate::gl!(sStorage)).cursorSprite)
             .oam
-            .set_paletteNum((*sStorage).cursorPalNums[sAutoActionOn.get()] as u16);
-        (*(*sStorage).cursorSprite).oam.set_priority(1);
+            .set_paletteNum((*crate::gl!(sStorage)).cursorPalNums[sAutoActionOn.get()] as u16);
+        (*(*crate::gl!(sStorage)).cursorSprite).oam.set_priority(1);
         if sIsMonBeingMoved.get() != 0 {
-            StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_FIST);
+            StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, CURSOR_ANIM_FIST);
         }
     } else {
-        (*sStorage).cursorSprite = null_mut();
+        (*crate::gl!(sStorage)).cursorSprite = null_mut();
     }
     if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
         subpriority = 13;
@@ -7475,78 +7694,79 @@ unsafe fn CreateCursorSprites() {
         subpriority,
     );
     if spriteId != MAX_SPRITES {
-        (*sStorage).cursorShadowSprite = &raw mut gSprites[spriteId];
-        (*(*sStorage).cursorShadowSprite)
+        (*crate::gl!(sStorage)).cursorShadowSprite = crate::gl!(&raw gSprites[spriteId]);
+        (*(*crate::gl!(sStorage)).cursorShadowSprite)
             .oam
             .set_priority(priority as u16);
         if sCursorArea.get() != 0 {
-            (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
+            (*(*crate::gl!(sStorage)).cursorShadowSprite).set_invisible(TRUE as u16);
         }
     } else {
-        (*sStorage).cursorShadowSprite = null_mut();
+        (*crate::gl!(sStorage)).cursorShadowSprite = null_mut();
     }
 }
 unsafe fn ToggleCursorAutoAction() {
     sAutoActionOn.set((sAutoActionOn.get() == 0) as u8);
-    (*(*sStorage).cursorSprite)
+    (*(*crate::gl!(sStorage)).cursorSprite)
         .oam
-        .set_paletteNum((*sStorage).cursorPalNums[sAutoActionOn.get()] as u16);
+        .set_paletteNum((*crate::gl!(sStorage)).cursorPalNums[sAutoActionOn.get()] as u16);
 }
 unsafe fn GetCursorPosition() -> u8 {
-    sCursorPosition as u8
+    sCursorPosition.get() as u8
 }
 unsafe fn GetCursorBoxColumnAndRow(column: *mut u8, row: *mut u8) {
     if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
-        *column = (sCursorPosition % 6) as u8;
-        *row = (sCursorPosition / 6) as u8;
+        *column = (sCursorPosition.get() % 6) as u8;
+        *row = (sCursorPosition.get() / 6) as u8;
     } else {
         *column = 0;
         *row = 0;
     }
 }
 unsafe fn StartCursorAnim(animNum: u8) {
-    StartSpriteAnim((*sStorage).cursorSprite, animNum);
+    StartSpriteAnim((*crate::gl!(sStorage)).cursorSprite, animNum);
 }
 fn GetMovingMonOriginalBoxId() -> u8 {
     sMovingMonOrigBoxId.get()
 }
 unsafe fn SetCursorPriorityTo1() {
-    (*(*sStorage).cursorSprite).oam.set_priority(1);
+    (*(*crate::gl!(sStorage)).cursorSprite).oam.set_priority(1);
 }
 unsafe fn TryHideItemAtCursor() {
     if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
-        TryHideItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition as u8);
+        TryHideItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8);
     }
 }
 unsafe fn TryShowItemAtCursor() {
     if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
-        TryLoadItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition as u8);
+        TryLoadItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition.get() as u8);
     }
 }
 pub(crate) unsafe fn InitMenu() {
-    (*sStorage).menuItemsCount = 0;
-    (*sStorage).menuWidth = 0;
-    (*sStorage).menuWindow.bg = 0;
-    (*sStorage).menuWindow.paletteNum = 15;
-    (*sStorage).menuWindow.baseBlock = 92;
+    (*crate::gl!(sStorage)).menuItemsCount = 0;
+    (*crate::gl!(sStorage)).menuWidth = 0;
+    (*crate::gl!(sStorage)).menuWindow.bg = 0;
+    (*crate::gl!(sStorage)).menuWindow.paletteNum = 15;
+    (*crate::gl!(sStorage)).menuWindow.baseBlock = 92;
 }
 unsafe fn SetMenuText(textId: u8) {
-    if (*sStorage).menuItemsCount < 7 {
-        let menu: *mut StorageMenu = &raw mut (*sStorage).menuItems[(*sStorage).menuItemsCount];
+    if (*crate::gl!(sStorage)).menuItemsCount < 7 {
+        let menu: *mut StorageMenu =
+            &raw mut (*crate::gl!(sStorage)).menuItems[(*crate::gl!(sStorage)).menuItemsCount];
         (*menu).text = sMenuTexts[textId];
         (*menu).textId = textId as i32;
         let len: u8 = StringLength((*menu).text) as u8;
-        if len > (*sStorage).menuWidth {
-            (*sStorage).menuWidth = len;
+        if len > (*crate::gl!(sStorage)).menuWidth {
+            (*crate::gl!(sStorage)).menuWidth = len;
         }
-        (*sStorage).menuItemsCount += 1;
+        (*crate::gl!(sStorage)).menuItemsCount += 1;
     }
 }
 unsafe fn GetMenuItemTextId(menuIdx: u8) -> i8 {
-    if menuIdx >= (*sStorage).menuItemsCount {
+    if menuIdx >= (*crate::gl!(sStorage)).menuItemsCount {
         return -1;
     } else {
-        return (*sStorage).menuItems[menuIdx].textId as i8;
+        return (*crate::gl!(sStorage)).menuItems[menuIdx].textId as i8;
     }
     #[allow(unreachable_code)]
     {
@@ -7554,25 +7774,25 @@ unsafe fn GetMenuItemTextId(menuIdx: u8) -> i8 {
     }
 }
 unsafe fn AddMenu() {
-    (*sStorage).menuWindow.width = (*sStorage).menuWidth + 2;
-    (*sStorage).menuWindow.height = 2 * (*sStorage).menuItemsCount;
-    (*sStorage).menuWindow.tilemapLeft = 29 - (*sStorage).menuWindow.width;
-    (*sStorage).menuWindow.tilemapTop = 15 - (*sStorage).menuWindow.height;
-    (*sStorage).menuWindowId = AddWindow(&raw mut (*sStorage).menuWindow);
-    ClearWindowTilemap((*sStorage).menuWindowId as u8);
-    DrawStdFrameWithCustomTileAndPalette((*sStorage).menuWindowId as u8, FALSE, 11, 14);
+    (*crate::gl!(sStorage)).menuWindow.width = (*crate::gl!(sStorage)).menuWidth + 2;
+    (*crate::gl!(sStorage)).menuWindow.height = 2 * (*crate::gl!(sStorage)).menuItemsCount;
+    (*crate::gl!(sStorage)).menuWindow.tilemapLeft = 29 - (*crate::gl!(sStorage)).menuWindow.width;
+    (*crate::gl!(sStorage)).menuWindow.tilemapTop = 15 - (*crate::gl!(sStorage)).menuWindow.height;
+    (*crate::gl!(sStorage)).menuWindowId = AddWindow(&raw mut (*crate::gl!(sStorage)).menuWindow);
+    ClearWindowTilemap((*crate::gl!(sStorage)).menuWindowId as u8);
+    DrawStdFrameWithCustomTileAndPalette((*crate::gl!(sStorage)).menuWindowId as u8, FALSE, 11, 14);
     PrintMenuTable(
-        (*sStorage).menuWindowId as u8,
-        (*sStorage).menuItemsCount,
-        (*sStorage).menuItems.as_mut_ptr() as *mut c_void as *mut MenuAction,
+        (*crate::gl!(sStorage)).menuWindowId as u8,
+        (*crate::gl!(sStorage)).menuItemsCount,
+        (*crate::gl!(sStorage)).menuItems.as_mut_ptr() as *mut c_void as *mut MenuAction,
     );
     InitMenuInUpperLeftCornerNormal(
-        (*sStorage).menuWindowId as u8,
-        (*sStorage).menuItemsCount,
+        (*crate::gl!(sStorage)).menuWindowId as u8,
+        (*crate::gl!(sStorage)).menuItemsCount,
         0,
     );
     ScheduleBgCopyTilemapToVram(0);
-    (*sStorage).menuUnusedField = 0;
+    (*crate::gl!(sStorage)).menuUnusedField = 0;
 }
 fn IsMenuLoading() -> u8 {
     FALSE
@@ -7580,17 +7800,17 @@ fn IsMenuLoading() -> u8 {
 unsafe fn HandleMenuInput() -> i16 {
     let mut input: i32 = MENU_NOTHING_CHOSEN as i32;
     'l2: {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             input = Menu_GetCursorPos() as i32;
             break 'l2;
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_SELECT);
             input = MENU_B_PRESSED as i32;
         }
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
             PlaySE(SE_SELECT);
             Menu_MoveCursor(-1);
-        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0 {
             PlaySE(SE_SELECT);
             Menu_MoveCursor(1);
         }
@@ -7599,37 +7819,37 @@ unsafe fn HandleMenuInput() -> i16 {
         RemoveMenu();
     }
     if input >= 0 {
-        input = (*sStorage).menuItems[input].textId;
+        input = (*crate::gl!(sStorage)).menuItems[input].textId;
     }
     input as i16
 }
 unsafe fn RemoveMenu() {
-    ClearStdWindowAndFrameToTransparent((*sStorage).menuWindowId as u8, TRUE);
-    RemoveWindow((*sStorage).menuWindowId as u8);
+    ClearStdWindowAndFrameToTransparent((*crate::gl!(sStorage)).menuWindowId as u8, TRUE);
+    RemoveWindow((*crate::gl!(sStorage)).menuWindowId as u8);
 }
 unsafe fn MultiMove_Init() -> u8 {
-    sMultiMove = Alloc(2420) as *mut typeof___sMultiMove_0_t;
-    if !sMultiMove.is_null() {
-        (*sStorage).multiMoveWindowId =
+    crate::gl!(sMultiMove = Alloc(2420) as *mut typeof___sMultiMove_0_t);
+    if !(*sMultiMove.as_ptr()).is_null() {
+        (*crate::gl!(sStorage)).multiMoveWindowId =
             AddWindow8Bit((&raw const *sWindowTemplate_MultiMove).cast_mut());
-        if (*sStorage).multiMoveWindowId != WINDOW_NONE as u16 {
-            FillWindowPixelBuffer((*sStorage).multiMoveWindowId as u8, 0);
+        if (*crate::gl!(sStorage)).multiMoveWindowId != WINDOW_NONE as u16 {
+            FillWindowPixelBuffer((*crate::gl!(sStorage)).multiMoveWindowId as u8, 0);
             return TRUE;
         }
     }
     FALSE
 }
 unsafe fn MultiMove_Free() {
-    if !sMultiMove.is_null() {
-        Free(sMultiMove as *mut c_void);
+    if !(*sMultiMove.as_ptr()).is_null() {
+        Free(crate::gl!(sMultiMove) as *mut c_void);
     }
 }
 unsafe fn MultiMove_SetFunction(id: u8) {
-    (*sMultiMove).funcId = id;
-    (*sMultiMove).state = 0;
+    (*crate::gl!(sMultiMove)).funcId = id;
+    (*crate::gl!(sMultiMove)).state = 0;
 }
 unsafe fn MultiMove_RunFunction() -> u8 {
-    match (*sMultiMove).funcId {
+    match (*crate::gl!(sMultiMove)).funcId {
         MULTIMOVE_START => {
             return MultiMove_Start();
         }
@@ -7653,31 +7873,37 @@ unsafe fn MultiMove_RunFunction() -> u8 {
     FALSE
 }
 unsafe fn MultiMove_Start() -> u8 {
-    match (*sMultiMove).state {
+    match (*crate::gl!(sMultiMove)).state {
         0 => {
             HideBg(0);
             TryLoadAllMonIconPalettesAtOffset(128);
-            (*sMultiMove).state += 1;
+            (*crate::gl!(sMultiMove)).state += 1;
         }
         1 => {
             GetCursorBoxColumnAndRow(
-                &raw mut (*sMultiMove).fromColumn,
-                &raw mut (*sMultiMove).fromRow,
+                &raw mut (*crate::gl!(sMultiMove)).fromColumn,
+                &raw mut (*crate::gl!(sMultiMove)).fromRow,
             );
-            (*sMultiMove).toColumn = (*sMultiMove).fromColumn;
-            (*sMultiMove).toRow = (*sMultiMove).fromRow;
+            (*crate::gl!(sMultiMove)).toColumn = (*crate::gl!(sMultiMove)).fromColumn;
+            (*crate::gl!(sMultiMove)).toRow = (*crate::gl!(sMultiMove)).fromRow;
             ChangeBgX(0, -1024, BG_COORD_SET);
             ChangeBgY(0, -1024, BG_COORD_SET);
             FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x20, 0x20);
-            FillWindowPixelBuffer8Bit((*sStorage).multiMoveWindowId as u8, 0);
-            MultiMove_SetIconToBg((*sMultiMove).fromColumn, (*sMultiMove).fromRow);
+            FillWindowPixelBuffer8Bit((*crate::gl!(sStorage)).multiMoveWindowId as u8, 0);
+            MultiMove_SetIconToBg(
+                (*crate::gl!(sMultiMove)).fromColumn,
+                (*crate::gl!(sMultiMove)).fromRow,
+            );
             SetBgAttribute(0, BG_ATTR_PALETTEMODE, 1);
-            PutWindowTilemap((*sStorage).multiMoveWindowId as u8);
-            CopyWindowToVram8Bit((*sStorage).multiMoveWindowId as u8, COPYWIN_FULL);
+            PutWindowTilemap((*crate::gl!(sStorage)).multiMoveWindowId as u8);
+            CopyWindowToVram8Bit(
+                (*crate::gl!(sStorage)).multiMoveWindowId as u8,
+                COPYWIN_FULL,
+            );
             BlendPalettes(0x3F00, 8, 32767);
             StartCursorAnim(CURSOR_ANIM_OPEN);
             SetGpuRegBits(REG_OFFSET_BG0CNT, BGCNT_256COLOR);
-            (*sMultiMove).state += 1;
+            (*crate::gl!(sMultiMove)).state += 1;
         }
         2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
             ShowBg(0);
@@ -7688,15 +7914,15 @@ unsafe fn MultiMove_Start() -> u8 {
     TRUE
 }
 unsafe fn MultiMove_Cancel() -> u8 {
-    match (*sMultiMove).state {
+    match (*crate::gl!(sMultiMove)).state {
         0 => {
             HideBg(0);
-            (*sMultiMove).state += 1;
+            (*crate::gl!(sMultiMove)).state += 1;
         }
         1 => {
             MultiMove_ResetBg();
             StartCursorAnim(CURSOR_ANIM_BOUNCE);
-            (*sMultiMove).state += 1;
+            (*crate::gl!(sMultiMove)).state += 1;
         }
         2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
             SetCursorPriorityTo1();
@@ -7709,18 +7935,18 @@ unsafe fn MultiMove_Cancel() -> u8 {
     TRUE
 }
 unsafe fn MultiMove_ChangeSelection() -> u8 {
-    match (*sMultiMove).state {
+    match (*crate::gl!(sMultiMove)).state {
         0 => {
             if UpdateCursorPos() == 0 {
                 GetCursorBoxColumnAndRow(
-                    &raw mut (*sMultiMove).cursorColumn,
-                    &raw mut (*sMultiMove).cursorRow,
+                    &raw mut (*crate::gl!(sMultiMove)).cursorColumn,
+                    &raw mut (*crate::gl!(sMultiMove)).cursorRow,
                 );
                 MultiMove_UpdateSelectedIcons();
-                (*sMultiMove).toColumn = (*sMultiMove).cursorColumn;
-                (*sMultiMove).toRow = (*sMultiMove).cursorRow;
-                CopyWindowToVram8Bit((*sStorage).multiMoveWindowId as u8, COPYWIN_GFX);
-                (*sMultiMove).state += 1;
+                (*crate::gl!(sMultiMove)).toColumn = (*crate::gl!(sMultiMove)).cursorColumn;
+                (*crate::gl!(sMultiMove)).toRow = (*crate::gl!(sMultiMove)).cursorRow;
+                CopyWindowToVram8Bit((*crate::gl!(sStorage)).multiMoveWindowId as u8, COPYWIN_GFX);
+                (*crate::gl!(sMultiMove)).state += 1;
             }
         }
         1 => {
@@ -7733,19 +7959,19 @@ unsafe fn MultiMove_ChangeSelection() -> u8 {
 unsafe fn MultiMove_GrabSelection() -> u8 {
     let mut movingBg: u8 = 0;
     let mut movingMon: u8 = 0;
-    match (*sMultiMove).state {
+    match (*crate::gl!(sMultiMove)).state {
         0 => {
             MultiMove_GetMonsFromSelection();
             MultiMove_RemoveMonsFromBox();
             InitMultiMonPlaceChange(FALSE);
-            (*sMultiMove).state += 1;
+            (*crate::gl!(sMultiMove)).state += 1;
         }
         1 => {
             if DoMonPlaceChange() == 0 {
                 StartCursorAnim(CURSOR_ANIM_FIST);
                 MultiMove_InitMove(0, 256, 8);
                 InitMultiMonPlaceChange(TRUE);
-                (*sMultiMove).state += 1;
+                (*crate::gl!(sMultiMove)).state += 1;
             }
         }
         2 => {
@@ -7773,12 +7999,12 @@ unsafe fn MultiMove_MoveMons() -> u8 {
     }
 }
 unsafe fn MultiMove_PlaceMons() -> u8 {
-    match (*sMultiMove).state {
+    match (*crate::gl!(sMultiMove)).state {
         0 => {
             MultiMove_SetPlacedMonData();
             MultiMove_InitMove(0, 65280, 8);
             InitMultiMonPlaceChange(FALSE);
-            (*sMultiMove).state += 1;
+            (*crate::gl!(sMultiMove)).state += 1;
         }
         1 => {
             if DoMonPlaceChange() == 0 && MultiMove_UpdateMove() == 0 {
@@ -7786,14 +8012,14 @@ unsafe fn MultiMove_PlaceMons() -> u8 {
                 StartCursorAnim(CURSOR_ANIM_OPEN);
                 InitMultiMonPlaceChange(TRUE);
                 HideBg(0);
-                (*sMultiMove).state += 1;
+                (*crate::gl!(sMultiMove)).state += 1;
             }
         }
         2 => {
             if DoMonPlaceChange() == 0 {
                 StartCursorAnim(CURSOR_ANIM_BOUNCE);
                 MultiMove_ResetBg();
-                (*sMultiMove).state += 1;
+                (*crate::gl!(sMultiMove)).state += 1;
             }
         }
         3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
@@ -7809,33 +8035,36 @@ unsafe fn MultiMove_PlaceMons() -> u8 {
 unsafe fn MultiMove_TryMoveGroup(dir: u8) -> u8 {
     match dir {
         0 => {
-            if (*sMultiMove).minRow == 0 {
+            if (*crate::gl!(sMultiMove)).minRow == 0 {
                 return FALSE;
             }
-            (*sMultiMove).minRow -= 1;
+            (*crate::gl!(sMultiMove)).minRow -= 1;
             MultiMove_InitMove(0, 1024, 6);
         }
         1 => {
-            if (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32 >= IN_BOX_ROWS {
+            if (*crate::gl!(sMultiMove)).minRow as i32 + (*crate::gl!(sMultiMove)).rowsTotal as i32
+                >= IN_BOX_ROWS
+            {
                 return FALSE;
             }
-            (*sMultiMove).minRow += 1;
+            (*crate::gl!(sMultiMove)).minRow += 1;
             MultiMove_InitMove(0, 64512, 6);
         }
         2 => {
-            if (*sMultiMove).minColumn == 0 {
+            if (*crate::gl!(sMultiMove)).minColumn == 0 {
                 return FALSE;
             }
-            (*sMultiMove).minColumn -= 1;
+            (*crate::gl!(sMultiMove)).minColumn -= 1;
             MultiMove_InitMove(1024, 0, 6);
         }
         3 => {
-            if (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32
+            if (*crate::gl!(sMultiMove)).minColumn as i32
+                + (*crate::gl!(sMultiMove)).columnsTotal as i32
                 >= IN_BOX_COLUMNS as i32
             {
                 return FALSE;
             }
-            (*sMultiMove).minColumn += 1;
+            (*crate::gl!(sMultiMove)).minColumn += 1;
             MultiMove_InitMove(64512, 0, 6);
         }
         _ => {}
@@ -7843,63 +8072,75 @@ unsafe fn MultiMove_TryMoveGroup(dir: u8) -> u8 {
     TRUE
 }
 unsafe fn MultiMove_UpdateSelectedIcons() {
-    let columnChange: i16 =
-        (if ((*sMultiMove).fromColumn as i32 - (*sMultiMove).cursorColumn as i32) < 0 {
-            -((*sMultiMove).fromColumn as i32 - (*sMultiMove).cursorColumn as i32)
-        } else {
-            (*sMultiMove).fromColumn as i32 - (*sMultiMove).cursorColumn as i32
-        }) as i16
-            - (if ((*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32) < 0 {
-                -((*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32)
-            } else {
-                (*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32
-            }) as i16;
-    let rowChange: i16 = (if ((*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32) < 0 {
-        -((*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32)
+    let columnChange: i16 = (if ((*crate::gl!(sMultiMove)).fromColumn as i32
+        - (*crate::gl!(sMultiMove)).cursorColumn as i32)
+        < 0
+    {
+        -((*crate::gl!(sMultiMove)).fromColumn as i32
+            - (*crate::gl!(sMultiMove)).cursorColumn as i32)
     } else {
-        (*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32
+        (*crate::gl!(sMultiMove)).fromColumn as i32 - (*crate::gl!(sMultiMove)).cursorColumn as i32
     }) as i16
-        - (if ((*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32) < 0 {
-            -((*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32)
+        - (if ((*crate::gl!(sMultiMove)).fromColumn as i32
+            - (*crate::gl!(sMultiMove)).toColumn as i32)
+            < 0
+        {
+            -((*crate::gl!(sMultiMove)).fromColumn as i32
+                - (*crate::gl!(sMultiMove)).toColumn as i32)
         } else {
-            (*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32
+            (*crate::gl!(sMultiMove)).fromColumn as i32 - (*crate::gl!(sMultiMove)).toColumn as i32
+        }) as i16;
+    let rowChange: i16 = (if ((*crate::gl!(sMultiMove)).fromRow as i32
+        - (*crate::gl!(sMultiMove)).cursorRow as i32)
+        < 0
+    {
+        -((*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).cursorRow as i32)
+    } else {
+        (*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).cursorRow as i32
+    }) as i16
+        - (if ((*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).toRow as i32)
+            < 0
+        {
+            -((*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).toRow as i32)
+        } else {
+            (*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).toRow as i32
         }) as i16;
     if columnChange > 0 {
         MultiMove_SelectColumn(
-            (*sMultiMove).cursorColumn,
-            (*sMultiMove).fromRow,
-            (*sMultiMove).toRow,
+            (*crate::gl!(sMultiMove)).cursorColumn,
+            (*crate::gl!(sMultiMove)).fromRow,
+            (*crate::gl!(sMultiMove)).toRow,
         );
     }
     if columnChange < 0 {
         MultiMove_DeselectColumn(
-            (*sMultiMove).toColumn,
-            (*sMultiMove).fromRow,
-            (*sMultiMove).toRow,
+            (*crate::gl!(sMultiMove)).toColumn,
+            (*crate::gl!(sMultiMove)).fromRow,
+            (*crate::gl!(sMultiMove)).toRow,
         );
         MultiMove_SelectColumn(
-            (*sMultiMove).cursorColumn,
-            (*sMultiMove).fromRow,
-            (*sMultiMove).toRow,
+            (*crate::gl!(sMultiMove)).cursorColumn,
+            (*crate::gl!(sMultiMove)).fromRow,
+            (*crate::gl!(sMultiMove)).toRow,
         );
     }
     if rowChange > 0 {
         MultiMove_SelectRow(
-            (*sMultiMove).cursorRow,
-            (*sMultiMove).fromColumn,
-            (*sMultiMove).toColumn,
+            (*crate::gl!(sMultiMove)).cursorRow,
+            (*crate::gl!(sMultiMove)).fromColumn,
+            (*crate::gl!(sMultiMove)).toColumn,
         );
     }
     if rowChange < 0 {
         MultiMove_DeselectRow(
-            (*sMultiMove).toRow,
-            (*sMultiMove).fromColumn,
-            (*sMultiMove).toColumn,
+            (*crate::gl!(sMultiMove)).toRow,
+            (*crate::gl!(sMultiMove)).fromColumn,
+            (*crate::gl!(sMultiMove)).toColumn,
         );
         MultiMove_SelectRow(
-            (*sMultiMove).cursorRow,
-            (*sMultiMove).fromColumn,
-            (*sMultiMove).toColumn,
+            (*crate::gl!(sMultiMove)).cursorRow,
+            (*crate::gl!(sMultiMove)).fromColumn,
+            (*crate::gl!(sMultiMove)).toColumn,
         );
     }
 }
@@ -7973,7 +8214,7 @@ unsafe fn MultiMove_SetIconToBg(x: u8, y: u8) {
         let iconGfx: *mut u8 = GetMonIconPtr(species, personality, 1);
         let index: u8 = GetValidMonIconPalIndex(species) + 8;
         BlitBitmapRectToWindow4BitTo8Bit(
-            (*sStorage).multiMoveWindowId as u8,
+            (*crate::gl!(sStorage)).multiMoveWindowId as u8,
             iconGfx,
             0,
             0,
@@ -7992,7 +8233,7 @@ unsafe fn MultiMove_ClearIconFromBg(x: u8, y: u8) {
     let species: u16 = GetCurrentBoxMonData(position, MON_DATA_SPECIES_OR_EGG) as u16;
     if species != SPECIES_NONE {
         FillWindowPixelRect8Bit(
-            (*sStorage).multiMoveWindowId as u8,
+            (*crate::gl!(sStorage)).multiMoveWindowId as u8,
             0,
             24 * x as u16,
             24 * y as u16,
@@ -8002,52 +8243,60 @@ unsafe fn MultiMove_ClearIconFromBg(x: u8, y: u8) {
     }
 }
 unsafe fn MultiMove_InitMove(x: u16, y: u16, moveSteps: u16) {
-    (*sMultiMove).bgX = x;
-    (*sMultiMove).bgY = y;
-    (*sMultiMove).bgMoveSteps = moveSteps;
+    (*crate::gl!(sMultiMove)).bgX = x;
+    (*crate::gl!(sMultiMove)).bgY = y;
+    (*crate::gl!(sMultiMove)).bgMoveSteps = moveSteps;
 }
 unsafe fn MultiMove_UpdateMove() -> u8 {
-    if (*sMultiMove).bgMoveSteps != 0 {
-        ChangeBgX(0, (*sMultiMove).bgX as i32, BG_COORD_ADD);
-        ChangeBgY(0, (*sMultiMove).bgY as i32, BG_COORD_ADD);
-        (*sMultiMove).bgMoveSteps -= 1;
+    if (*crate::gl!(sMultiMove)).bgMoveSteps != 0 {
+        ChangeBgX(0, (*crate::gl!(sMultiMove)).bgX as i32, BG_COORD_ADD);
+        ChangeBgY(0, (*crate::gl!(sMultiMove)).bgY as i32, BG_COORD_ADD);
+        (*crate::gl!(sMultiMove)).bgMoveSteps -= 1;
     }
-    (*sMultiMove).bgMoveSteps as u8
+    (*crate::gl!(sMultiMove)).bgMoveSteps as u8
 }
 unsafe fn MultiMove_GetMonsFromSelection() {
-    (*sMultiMove).minColumn = if (*sMultiMove).fromColumn < (*sMultiMove).toColumn {
-        (*sMultiMove).fromColumn
-    } else {
-        (*sMultiMove).toColumn
-    };
-    (*sMultiMove).minRow = if (*sMultiMove).fromRow < (*sMultiMove).toRow {
-        (*sMultiMove).fromRow
-    } else {
-        (*sMultiMove).toRow
-    };
-    (*sMultiMove).columnsTotal =
-        (if ((*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32) < 0 {
-            -((*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32)
+    (*crate::gl!(sMultiMove)).minColumn =
+        if (*crate::gl!(sMultiMove)).fromColumn < (*crate::gl!(sMultiMove)).toColumn {
+            (*crate::gl!(sMultiMove)).fromColumn
         } else {
-            (*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32
-        }) as u8
-            + 1;
-    (*sMultiMove).rowsTotal = (if ((*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32) < 0 {
-        -((*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32)
+            (*crate::gl!(sMultiMove)).toColumn
+        };
+    (*crate::gl!(sMultiMove)).minRow =
+        if (*crate::gl!(sMultiMove)).fromRow < (*crate::gl!(sMultiMove)).toRow {
+            (*crate::gl!(sMultiMove)).fromRow
+        } else {
+            (*crate::gl!(sMultiMove)).toRow
+        };
+    (*crate::gl!(sMultiMove)).columnsTotal = (if ((*crate::gl!(sMultiMove)).fromColumn as i32
+        - (*crate::gl!(sMultiMove)).toColumn as i32)
+        < 0
+    {
+        -((*crate::gl!(sMultiMove)).fromColumn as i32 - (*crate::gl!(sMultiMove)).toColumn as i32)
     } else {
-        (*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32
+        (*crate::gl!(sMultiMove)).fromColumn as i32 - (*crate::gl!(sMultiMove)).toColumn as i32
     }) as u8
         + 1;
+    (*crate::gl!(sMultiMove)).rowsTotal =
+        (if ((*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).toRow as i32) < 0
+        {
+            -((*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).toRow as i32)
+        } else {
+            (*crate::gl!(sMultiMove)).fromRow as i32 - (*crate::gl!(sMultiMove)).toRow as i32
+        }) as u8
+            + 1;
     let boxId: u8 = StorageGetCurrentBox();
     let mut monArrayId: u8 = 0;
-    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
-    for i in ((*sMultiMove).minRow as i32)..rowCount {
-        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        for j in ((*sMultiMove).minColumn as i32)..columnCount {
+    let columnCount: i32 =
+        (*crate::gl!(sMultiMove)).minColumn as i32 + (*crate::gl!(sMultiMove)).columnsTotal as i32;
+    let rowCount: i32 =
+        (*crate::gl!(sMultiMove)).minRow as i32 + (*crate::gl!(sMultiMove)).rowsTotal as i32;
+    for i in ((*crate::gl!(sMultiMove)).minRow as i32)..rowCount {
+        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*crate::gl!(sMultiMove)).minColumn;
+        for j in ((*crate::gl!(sMultiMove)).minColumn as i32)..columnCount {
             let boxMon: *mut BoxPokemon = GetBoxedMonPtr(boxId, boxPosition);
             if !boxMon.is_null() {
-                (*sMultiMove).boxMons[monArrayId] = *boxMon;
+                (*crate::gl!(sMultiMove)).boxMons[monArrayId] = *boxMon;
             }
             monArrayId += 1;
             boxPosition += 1;
@@ -8055,12 +8304,14 @@ unsafe fn MultiMove_GetMonsFromSelection() {
     }
 }
 unsafe fn MultiMove_RemoveMonsFromBox() {
-    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    let columnCount: i32 =
+        (*crate::gl!(sMultiMove)).minColumn as i32 + (*crate::gl!(sMultiMove)).columnsTotal as i32;
+    let rowCount: i32 =
+        (*crate::gl!(sMultiMove)).minRow as i32 + (*crate::gl!(sMultiMove)).rowsTotal as i32;
     let boxId: u8 = StorageGetCurrentBox();
-    for i in ((*sMultiMove).minRow as i32)..rowCount {
-        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        for j in ((*sMultiMove).minColumn as i32)..columnCount {
+    for i in ((*crate::gl!(sMultiMove)).minRow as i32)..rowCount {
+        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*crate::gl!(sMultiMove)).minColumn;
+        for j in ((*crate::gl!(sMultiMove)).minColumn as i32)..columnCount {
             DestroyBoxMonIconAtPosition(boxPosition);
             ZeroBoxMonAt(boxId, boxPosition);
             boxPosition += 1;
@@ -8068,14 +8319,16 @@ unsafe fn MultiMove_RemoveMonsFromBox() {
     }
 }
 unsafe fn MultiMove_CreatePlacedMonIcons() {
-    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    let columnCount: i32 =
+        (*crate::gl!(sMultiMove)).minColumn as i32 + (*crate::gl!(sMultiMove)).columnsTotal as i32;
+    let rowCount: i32 =
+        (*crate::gl!(sMultiMove)).minRow as i32 + (*crate::gl!(sMultiMove)).rowsTotal as i32;
     let mut monArrayId: u8 = 0;
-    for i in ((*sMultiMove).minRow as i32)..rowCount {
-        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        for j in ((*sMultiMove).minColumn as i32)..columnCount {
+    for i in ((*crate::gl!(sMultiMove)).minRow as i32)..rowCount {
+        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*crate::gl!(sMultiMove)).minColumn;
+        for j in ((*crate::gl!(sMultiMove)).minColumn as i32)..columnCount {
             if GetBoxMonData2(
-                &raw mut (*sMultiMove).boxMons[monArrayId],
+                &raw mut (*crate::gl!(sMultiMove)).boxMons[monArrayId],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
             {
@@ -8087,22 +8340,24 @@ unsafe fn MultiMove_CreatePlacedMonIcons() {
     }
 }
 unsafe fn MultiMove_SetPlacedMonData() {
-    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    let columnCount: i32 =
+        (*crate::gl!(sMultiMove)).minColumn as i32 + (*crate::gl!(sMultiMove)).columnsTotal as i32;
+    let rowCount: i32 =
+        (*crate::gl!(sMultiMove)).minRow as i32 + (*crate::gl!(sMultiMove)).rowsTotal as i32;
     let boxId: u8 = StorageGetCurrentBox();
     let mut monArrayId: u8 = 0;
-    for i in ((*sMultiMove).minRow as i32)..rowCount {
-        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        for j in ((*sMultiMove).minColumn as i32)..columnCount {
+    for i in ((*crate::gl!(sMultiMove)).minRow as i32)..rowCount {
+        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*crate::gl!(sMultiMove)).minColumn;
+        for j in ((*crate::gl!(sMultiMove)).minColumn as i32)..columnCount {
             if GetBoxMonData2(
-                &raw mut (*sMultiMove).boxMons[monArrayId],
+                &raw mut (*crate::gl!(sMultiMove)).boxMons[monArrayId],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
             {
                 SetBoxMonAt(
                     boxId,
                     boxPosition,
-                    &raw mut (*sMultiMove).boxMons[monArrayId],
+                    &raw mut (*crate::gl!(sMultiMove)).boxMons[monArrayId],
                 );
             }
             boxPosition += 1;
@@ -8119,17 +8374,19 @@ unsafe fn MultiMove_ResetBg() {
     CopyBgTilemapBufferToVram(0);
 }
 unsafe fn MultiMove_GetOrigin() -> u8 {
-    IN_BOX_COLUMNS * (*sMultiMove).fromRow + (*sMultiMove).fromColumn
+    IN_BOX_COLUMNS * (*crate::gl!(sMultiMove)).fromRow + (*crate::gl!(sMultiMove)).fromColumn
 }
 unsafe fn MultiMove_CanPlaceSelection() -> u8 {
-    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    let columnCount: i32 =
+        (*crate::gl!(sMultiMove)).minColumn as i32 + (*crate::gl!(sMultiMove)).columnsTotal as i32;
+    let rowCount: i32 =
+        (*crate::gl!(sMultiMove)).minRow as i32 + (*crate::gl!(sMultiMove)).rowsTotal as i32;
     let mut monArrayId: u8 = 0;
-    for i in ((*sMultiMove).minRow as i32)..rowCount {
-        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        for j in ((*sMultiMove).minColumn as i32)..columnCount {
+    for i in ((*crate::gl!(sMultiMove)).minRow as i32)..rowCount {
+        let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*crate::gl!(sMultiMove)).minColumn;
+        for j in ((*crate::gl!(sMultiMove)).minColumn as i32)..columnCount {
             if GetBoxMonData2(
-                &raw mut (*sMultiMove).boxMons[monArrayId],
+                &raw mut (*crate::gl!(sMultiMove)).boxMons[monArrayId],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 && GetCurrentBoxMonData(boxPosition, MON_DATA_SANITY_HAS_SPECIES) != 0
@@ -8146,32 +8403,34 @@ unsafe fn CreateItemIconSprites() {
     let mut spriteId: u8 = 0;
     let mut spriteSheet: CompressedSpriteSheet = zeroed();
     let mut spriteTemplate: SpriteTemplate = zeroed();
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-        spriteSheet.data = sItemIconGfxBuffer.as_mut_ptr();
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
+        spriteSheet.data = (*sItemIconGfxBuffer.as_ptr()).as_mut_ptr();
         spriteSheet.size = 0x200;
         spriteTemplate = *sSpriteTemplate_ItemIcon;
         for i in 0..(MAX_ITEM_ICONS as i32) {
             spriteSheet.tag = GFXTAG_ITEM_ICON_0 + i as u16;
             LoadCompressedSpriteSheet(&raw mut spriteSheet);
-            (*sStorage).itemIcons[i].tiles = (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
+            (*crate::gl!(sStorage)).itemIcons[i].tiles = (OBJ_VRAM0 as usize as *mut c_void
+                as *mut u8)
                 .at(GetSpriteTileStartByTag(spriteSheet.tag) as i32 * 32)
                 as *mut c_void as *mut u8;
-            (*sStorage).itemIcons[i].palIndex =
+            (*crate::gl!(sStorage)).itemIcons[i].palIndex =
                 AllocSpritePalette(PALTAG_ITEM_ICON_0 + i as u16) as u16;
-            (*sStorage).itemIcons[i].palIndex = 0x100 + (*sStorage).itemIcons[i].palIndex * 16;
+            (*crate::gl!(sStorage)).itemIcons[i].palIndex =
+                0x100 + (*crate::gl!(sStorage)).itemIcons[i].palIndex * 16;
             spriteTemplate.tileTag = GFXTAG_ITEM_ICON_0 + i as u16;
             spriteTemplate.paletteTag = PALTAG_ITEM_ICON_0 + i as u16;
             spriteId = CreateSprite(&raw mut spriteTemplate, 0, 0, 11);
-            (*sStorage).itemIcons[i].sprite = &raw mut gSprites[spriteId];
-            (*(*sStorage).itemIcons[i].sprite).set_invisible(TRUE as u16);
-            (*sStorage).itemIcons[i].active = FALSE;
+            (*crate::gl!(sStorage)).itemIcons[i].sprite = crate::gl!(&raw gSprites[spriteId]);
+            (*(*crate::gl!(sStorage)).itemIcons[i].sprite).set_invisible(TRUE as u16);
+            (*crate::gl!(sStorage)).itemIcons[i].active = FALSE;
         }
     }
-    (*sStorage).movingItemId = ITEM_NONE;
+    (*crate::gl!(sStorage)).movingItemId = ITEM_NONE;
 }
 unsafe fn TryLoadItemIconAtPos(cursorArea: u8, cursorPos: u8) {
     let mut heldItem: u16 = 0;
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     if IsItemIconAtPosition(cursorArea, cursorPos) != 0 {
@@ -8187,13 +8446,14 @@ unsafe fn TryLoadItemIconAtPos(cursorArea: u8, cursorPos: u8) {
         1 => {
             if cursorPos >= PARTY_SIZE as u8
                 || GetMonData2(
-                    &raw mut gPlayerParty[cursorPos],
+                    crate::gl!(&raw gPlayerParty[cursorPos]),
                     MON_DATA_SANITY_HAS_SPECIES,
                 ) == 0
             {
                 return;
             }
-            heldItem = GetMonData2(&raw mut gPlayerParty[cursorPos], MON_DATA_HELD_ITEM) as u16;
+            heldItem =
+                GetMonData2(crate::gl!(&raw gPlayerParty[cursorPos]), MON_DATA_HELD_ITEM) as u16;
         }
         _ => {
             return;
@@ -8210,7 +8470,7 @@ unsafe fn TryLoadItemIconAtPos(cursorArea: u8, cursorPos: u8) {
     }
 }
 unsafe fn TryHideItemIconAtPos(cursorArea: u8, cursorPos: u8) {
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     let id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
@@ -8218,7 +8478,7 @@ unsafe fn TryHideItemIconAtPos(cursorArea: u8, cursorPos: u8) {
     SetItemIconCallback(id, ITEM_CB_WAIT_ANIM, cursorArea, cursorPos);
 }
 unsafe fn TakeItemFromMon(cursorArea: u8, cursorPos: u8) {
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     let id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
@@ -8235,13 +8495,13 @@ unsafe fn TakeItemFromMon(cursorArea: u8, cursorPos: u8) {
         SetBoxMonIconObjMode(cursorPos, ST_OAM_OBJ_BLEND as u8);
     } else {
         SetMonData(
-            &raw mut gPlayerParty[cursorPos],
+            crate::gl!(&raw gPlayerParty[cursorPos]),
             MON_DATA_HELD_ITEM,
             &raw mut itemId as *mut c_void,
         );
         SetPartyMonIconObjMode(cursorPos, ST_OAM_OBJ_BLEND as u8);
     }
-    (*sStorage).movingItemId = (*sStorage).displayMonItemId;
+    (*crate::gl!(sStorage)).movingItemId = (*crate::gl!(sStorage)).displayMonItemId;
 }
 unsafe fn InitItemIconInCursor(itemId: u16) {
     let tiles: *mut u32 = GetItemIconPic(itemId);
@@ -8252,11 +8512,11 @@ unsafe fn InitItemIconInCursor(itemId: u16) {
     SetItemIconCallback(id, ITEM_CB_TO_HAND, CURSOR_AREA_IN_BOX, 0);
     SetItemIconPosition(id, CURSOR_AREA_BOX_TITLE, 0);
     SetItemIconActive(id, TRUE);
-    (*sStorage).movingItemId = itemId;
+    (*crate::gl!(sStorage)).movingItemId = itemId;
 }
 unsafe fn SwapItemsWithMon(cursorArea: u8, cursorPos: u8) {
     let mut itemId: u16 = 0;
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     let mut id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
@@ -8267,24 +8527,24 @@ unsafe fn SwapItemsWithMon(cursorArea: u8, cursorPos: u8) {
         SetCurrentBoxMonData(
             cursorPos,
             MON_DATA_HELD_ITEM,
-            &raw mut (*sStorage).movingItemId as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).movingItemId as *mut c_void,
         );
-        (*sStorage).movingItemId = itemId;
+        (*crate::gl!(sStorage)).movingItemId = itemId;
     } else {
-        itemId = GetMonData2(&raw mut gPlayerParty[cursorPos], MON_DATA_HELD_ITEM) as u16;
+        itemId = GetMonData2(crate::gl!(&raw gPlayerParty[cursorPos]), MON_DATA_HELD_ITEM) as u16;
         SetMonData(
-            &raw mut gPlayerParty[cursorPos],
+            crate::gl!(&raw gPlayerParty[cursorPos]),
             MON_DATA_HELD_ITEM,
-            &raw mut (*sStorage).movingItemId as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).movingItemId as *mut c_void,
         );
-        (*sStorage).movingItemId = itemId;
+        (*crate::gl!(sStorage)).movingItemId = itemId;
     }
     id = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
     SetItemIconAffineAnim(id, ITEM_ANIM_PUT_DOWN);
     SetItemIconCallback(id, ITEM_CB_SWAP_TO_MON, cursorArea, cursorPos);
 }
 pub(crate) unsafe fn GiveItemToMon(cursorArea: u8, cursorPos: u8) {
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     let id: u8 = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
@@ -8294,20 +8554,20 @@ pub(crate) unsafe fn GiveItemToMon(cursorArea: u8, cursorPos: u8) {
         SetCurrentBoxMonData(
             cursorPos,
             MON_DATA_HELD_ITEM,
-            &raw mut (*sStorage).movingItemId as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).movingItemId as *mut c_void,
         );
         SetBoxMonIconObjMode(cursorPos, ST_OAM_OBJ_NORMAL);
     } else {
         SetMonData(
-            &raw mut gPlayerParty[cursorPos],
+            crate::gl!(&raw gPlayerParty[cursorPos]),
             MON_DATA_HELD_ITEM,
-            &raw mut (*sStorage).movingItemId as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).movingItemId as *mut c_void,
         );
         SetPartyMonIconObjMode(cursorPos, ST_OAM_OBJ_NORMAL);
     }
 }
 unsafe fn MoveItemFromMonToBag(cursorArea: u8, cursorPos: u8) {
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     let mut itemId: u16 = ITEM_NONE;
@@ -8323,7 +8583,7 @@ unsafe fn MoveItemFromMonToBag(cursorArea: u8, cursorPos: u8) {
         SetBoxMonIconObjMode(cursorPos, ST_OAM_OBJ_BLEND as u8);
     } else {
         SetMonData(
-            &raw mut gPlayerParty[cursorPos],
+            crate::gl!(&raw gPlayerParty[cursorPos]),
             MON_DATA_HELD_ITEM,
             &raw mut itemId as *mut c_void,
         );
@@ -8331,19 +8591,19 @@ unsafe fn MoveItemFromMonToBag(cursorArea: u8, cursorPos: u8) {
     }
 }
 unsafe fn MoveItemFromCursorToBag() {
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         let id: u8 = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
         SetItemIconAffineAnim(id, ITEM_ANIM_PUT_AWAY);
         SetItemIconCallback(id, ITEM_CB_WAIT_ANIM, CURSOR_AREA_BOX_TITLE, 0);
     }
 }
 unsafe fn MoveHeldItemWithPartyMenu() {
-    if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
     for i in 0..(MAX_ITEM_ICONS as i32) {
-        if (*sStorage).itemIcons[i].active != 0
-            && (*sStorage).itemIcons[i].area == CURSOR_AREA_IN_PARTY as u8
+        if (*crate::gl!(sStorage)).itemIcons[i].active != 0
+            && (*crate::gl!(sStorage)).itemIcons[i].area == CURSOR_AREA_IN_PARTY as u8
         {
             SetItemIconCallback(i as u8, ITEM_CB_HIDE_PARTY, CURSOR_AREA_BOX_TITLE, 0);
         }
@@ -8351,15 +8611,15 @@ unsafe fn MoveHeldItemWithPartyMenu() {
 }
 unsafe fn IsItemIconAnimActive() -> u8 {
     for i in 0..(MAX_ITEM_ICONS as i32) {
-        if (*sStorage).itemIcons[i].active != 0 {
-            if (*(*sStorage).itemIcons[i].sprite).affineAnimEnded() == 0
-                && (*(*sStorage).itemIcons[i].sprite).affineAnimBeginning() != 0
+        if (*crate::gl!(sStorage)).itemIcons[i].active != 0 {
+            if (*(*crate::gl!(sStorage)).itemIcons[i].sprite).affineAnimEnded() == 0
+                && (*(*crate::gl!(sStorage)).itemIcons[i].sprite).affineAnimBeginning() != 0
             {
                 return TRUE;
             }
-            if (*(*sStorage).itemIcons[i].sprite).callback
+            if (*(*crate::gl!(sStorage)).itemIcons[i].sprite).callback
                 != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
-                && (*(*sStorage).itemIcons[i].sprite).callback
+                && (*(*crate::gl!(sStorage)).itemIcons[i].sprite).callback
                     != Some(SpriteCB_ItemIcon_SetPosToCursor as unsafe fn(*mut Sprite))
             {
                 return TRUE;
@@ -8369,10 +8629,10 @@ unsafe fn IsItemIconAnimActive() -> u8 {
     FALSE
 }
 unsafe fn IsMovingItem() -> u8 {
-    if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
+    if (*crate::gl!(sStorage)).boxOption == OPTION_MOVE_ITEMS {
         for i in 0..(MAX_ITEM_ICONS as i32) {
-            if (*sStorage).itemIcons[i].active != 0
-                && (*sStorage).itemIcons[i].area == CURSOR_AREA_BOX_TITLE
+            if (*crate::gl!(sStorage)).itemIcons[i].active != 0
+                && (*crate::gl!(sStorage)).itemIcons[i].area == CURSOR_AREA_BOX_TITLE
             {
                 return TRUE;
             }
@@ -8381,15 +8641,15 @@ unsafe fn IsMovingItem() -> u8 {
     FALSE
 }
 unsafe fn GetMovingItemName() -> *mut u8 {
-    GetItemName((*sStorage).movingItemId)
+    GetItemName((*crate::gl!(sStorage)).movingItemId)
 }
 unsafe fn GetMovingItemId() -> u16 {
-    (*sStorage).movingItemId
+    (*crate::gl!(sStorage)).movingItemId
 }
 unsafe fn GetNewItemIconIdx() -> u8 {
     for i in 0..MAX_ITEM_ICONS {
-        if (*sStorage).itemIcons[i].active == 0 {
-            (*sStorage).itemIcons[i].active = TRUE;
+        if (*crate::gl!(sStorage)).itemIcons[i].active == 0 {
+            (*crate::gl!(sStorage)).itemIcons[i].active = TRUE;
             return i;
         }
     }
@@ -8397,9 +8657,9 @@ unsafe fn GetNewItemIconIdx() -> u8 {
 }
 unsafe fn IsItemIconAtPosition(cursorArea: u8, cursorPos: u8) -> u32 {
     for i in 0..(MAX_ITEM_ICONS as i32) {
-        if (*sStorage).itemIcons[i].active != 0
-            && (*sStorage).itemIcons[i].area == cursorArea
-            && (*sStorage).itemIcons[i].pos == cursorPos
+        if (*crate::gl!(sStorage)).itemIcons[i].active != 0
+            && (*crate::gl!(sStorage)).itemIcons[i].area == cursorArea
+            && (*crate::gl!(sStorage)).itemIcons[i].pos == cursorPos
         {
             return TRUE as u32;
         }
@@ -8408,9 +8668,9 @@ unsafe fn IsItemIconAtPosition(cursorArea: u8, cursorPos: u8) -> u32 {
 }
 unsafe fn GetItemIconIdxByPosition(cursorArea: u8, cursorPos: u8) -> u8 {
     for i in 0..MAX_ITEM_ICONS {
-        if (*sStorage).itemIcons[i].active != 0
-            && (*sStorage).itemIcons[i].area == cursorArea
-            && (*sStorage).itemIcons[i].pos == cursorPos
+        if (*crate::gl!(sStorage)).itemIcons[i].active != 0
+            && (*crate::gl!(sStorage)).itemIcons[i].area == cursorArea
+            && (*crate::gl!(sStorage)).itemIcons[i].pos == cursorPos
         {
             return i;
         }
@@ -8419,7 +8679,9 @@ unsafe fn GetItemIconIdxByPosition(cursorArea: u8, cursorPos: u8) -> u8 {
 }
 unsafe fn GetItemIconIdxBySprite(sprite: *mut Sprite) -> u8 {
     for i in 0..MAX_ITEM_ICONS {
-        if (*sStorage).itemIcons[i].active != 0 && (*sStorage).itemIcons[i].sprite == sprite {
+        if (*crate::gl!(sStorage)).itemIcons[i].active != 0
+            && (*crate::gl!(sStorage)).itemIcons[i].sprite == sprite
+        {
             return i;
         }
     }
@@ -8435,24 +8697,29 @@ unsafe fn SetItemIconPosition(id: u8, cursorArea: u8, cursorPos: u8) {
         CURSOR_AREA_IN_BOX => {
             x = (cursorPos as i32 % 6) as u8;
             y = (cursorPos as i32 / 6) as u8;
-            (*(*sStorage).itemIcons[id].sprite).x = 24 * x as i16 + 112;
-            (*(*sStorage).itemIcons[id].sprite).y = 24 * y as i16 + 56;
-            (*(*sStorage).itemIcons[id].sprite).oam.set_priority(2);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).x = 24 * x as i16 + 112;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).y = 24 * y as i16 + 56;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite)
+                .oam
+                .set_priority(2);
         }
         1 => {
             if cursorPos == 0 {
-                (*(*sStorage).itemIcons[id].sprite).x = 116;
-                (*(*sStorage).itemIcons[id].sprite).y = 76;
+                (*(*crate::gl!(sStorage)).itemIcons[id].sprite).x = 116;
+                (*(*crate::gl!(sStorage)).itemIcons[id].sprite).y = 76;
             } else {
-                (*(*sStorage).itemIcons[id].sprite).x = 164;
-                (*(*sStorage).itemIcons[id].sprite).y = 24 * (cursorPos as i16 - 1) + 28;
+                (*(*crate::gl!(sStorage)).itemIcons[id].sprite).x = 164;
+                (*(*crate::gl!(sStorage)).itemIcons[id].sprite).y =
+                    24 * (cursorPos as i16 - 1) + 28;
             }
-            (*(*sStorage).itemIcons[id].sprite).oam.set_priority(1);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite)
+                .oam
+                .set_priority(1);
         }
         _ => {}
     }
-    (*sStorage).itemIcons[id].area = cursorArea;
-    (*sStorage).itemIcons[id].pos = cursorPos;
+    (*crate::gl!(sStorage)).itemIcons[id].area = cursorArea;
+    (*crate::gl!(sStorage)).itemIcons[id].pos = cursorPos;
 }
 unsafe fn LoadItemIconGfx(id: u8, itemTiles: *mut u32, itemPal: *mut u32) {
     if id >= MAX_ITEM_ICONS {
@@ -8463,33 +8730,33 @@ unsafe fn LoadItemIconGfx(id: u8, itemTiles: *mut u32, itemPal: *mut u32) {
         volatile_write(&raw mut tmp, 0);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            (*sStorage).itemIconBuffer.as_mut_ptr() as *mut c_void,
+            (*crate::gl!(sStorage)).itemIconBuffer.as_mut_ptr() as *mut c_void,
             0x1000080,
         );
     }
     LZ77UnCompWram(
         itemTiles,
-        (*sStorage).tileBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).tileBuffer.as_mut_ptr() as *mut c_void,
     );
     for i in 0..3i32 {
         CpuFastSet(
-            &raw mut (*sStorage).tileBuffer[i * 0x60] as *mut c_void,
-            &raw mut (*sStorage).itemIconBuffer[i * 0x80] as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).tileBuffer[i * 0x60] as *mut c_void,
+            &raw mut (*crate::gl!(sStorage)).itemIconBuffer[i * 0x80] as *mut c_void,
             24,
         );
     }
     CpuFastSet(
-        (*sStorage).itemIconBuffer.as_mut_ptr() as *mut c_void,
-        (*sStorage).itemIcons[id].tiles as *mut c_void,
+        (*crate::gl!(sStorage)).itemIconBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).itemIcons[id].tiles as *mut c_void,
         128,
     );
     LZ77UnCompWram(
         itemPal,
-        (*sStorage).itemIconBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).itemIconBuffer.as_mut_ptr() as *mut c_void,
     );
     LoadPalette(
-        (*sStorage).itemIconBuffer.as_mut_ptr() as *mut c_void,
-        (*sStorage).itemIcons[id].palIndex,
+        (*crate::gl!(sStorage)).itemIconBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sStorage)).itemIcons[id].palIndex,
         32,
     );
 }
@@ -8497,7 +8764,7 @@ unsafe fn SetItemIconAffineAnim(id: u8, animNum: u8) {
     if id >= MAX_ITEM_ICONS {
         return;
     }
-    StartSpriteAffineAnim((*sStorage).itemIcons[id].sprite, animNum);
+    StartSpriteAffineAnim((*crate::gl!(sStorage)).itemIcons[id].sprite, animNum);
 }
 unsafe fn SetItemIconCallback(id: u8, callbackId: u8, cursorArea: u8, cursorPos: u8) {
     if id >= MAX_ITEM_ICONS {
@@ -8505,33 +8772,39 @@ unsafe fn SetItemIconCallback(id: u8, callbackId: u8, cursorArea: u8, cursorPos:
     }
     match callbackId {
         ITEM_CB_WAIT_ANIM => {
-            (*(*sStorage).itemIcons[id].sprite).data[0] = id as i16;
-            (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_WaitAnim);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[0] = id as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).callback =
+                Some(SpriteCB_ItemIcon_WaitAnim);
         }
         ITEM_CB_TO_HAND => {
-            (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
-            (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_ToHand);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[0] = 0;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).callback =
+                Some(SpriteCB_ItemIcon_ToHand);
         }
         ITEM_CB_TO_MON => {
-            (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
-            (*(*sStorage).itemIcons[id].sprite).data[6] = cursorArea as i16;
-            (*(*sStorage).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
-            (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_ToMon);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[0] = 0;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[6] = cursorArea as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).callback =
+                Some(SpriteCB_ItemIcon_ToMon);
         }
         ITEM_CB_SWAP_TO_HAND => {
-            (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
-            (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_SwapToHand);
-            (*(*sStorage).itemIcons[id].sprite).data[6] = cursorArea as i16;
-            (*(*sStorage).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[0] = 0;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).callback =
+                Some(SpriteCB_ItemIcon_SwapToHand);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[6] = cursorArea as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
         }
         ITEM_CB_SWAP_TO_MON => {
-            (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
-            (*(*sStorage).itemIcons[id].sprite).data[6] = cursorArea as i16;
-            (*(*sStorage).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
-            (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_SwapToMon);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[0] = 0;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[6] = cursorArea as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).callback =
+                Some(SpriteCB_ItemIcon_SwapToMon);
         }
         ITEM_CB_HIDE_PARTY => {
-            (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_HideParty);
+            (*(*crate::gl!(sStorage)).itemIcons[id].sprite).callback =
+                Some(SpriteCB_ItemIcon_HideParty);
         }
         _ => {}
     }
@@ -8540,27 +8813,27 @@ unsafe fn SetItemIconActive(id: u8, active: u8) {
     if id >= MAX_ITEM_ICONS {
         return;
     }
-    (*sStorage).itemIcons[id].active = active;
-    (*(*sStorage).itemIcons[id].sprite).set_invisible((active == FALSE) as u16);
+    (*crate::gl!(sStorage)).itemIcons[id].active = active;
+    (*(*crate::gl!(sStorage)).itemIcons[id].sprite).set_invisible((active == FALSE) as u16);
 }
-unsafe fn GetItemIconPic(itemId: u16) -> *mut u32 {
+fn GetItemIconPic(itemId: u16) -> *mut u32 {
     GetItemIconPicOrPalette(itemId, 0) as *mut u32
 }
-unsafe fn GetItemIconPalette(itemId: u16) -> *mut u32 {
+fn GetItemIconPalette(itemId: u16) -> *mut u32 {
     GetItemIconPicOrPalette(itemId, 1) as *mut u32
 }
 pub(crate) unsafe fn PrintItemDescription() {
     let mut description: *mut u8 = null_mut();
     if IsMovingItem() != 0 {
-        description = GetItemDescription((*sStorage).movingItemId);
+        description = GetItemDescription((*crate::gl!(sStorage)).movingItemId);
     } else {
-        description = GetItemDescription((*sStorage).displayMonItemId);
+        description = GetItemDescription((*crate::gl!(sStorage)).displayMonItemId);
     }
     FillWindowPixelBuffer(WIN_ITEM_DESC, 17);
     AddTextPrinterParameterized5(WIN_ITEM_DESC, FONT_NORMAL, description, 4, 0, 0, None, 0, 1);
 }
 unsafe fn InitItemInfoWindow() {
-    (*sStorage).itemInfoWindowOffset = 21;
+    (*crate::gl!(sStorage)).itemInfoWindowOffset = 21;
     LoadBgTiles(
         0,
         sItemInfoFrame_Gfx.as_ptr().cast_mut() as *mut c_void,
@@ -8570,17 +8843,17 @@ unsafe fn InitItemInfoWindow() {
     DrawItemInfoWindow(0);
 }
 unsafe fn UpdateItemInfoWindowSlideIn() -> u8 {
-    if (*sStorage).itemInfoWindowOffset == 0 {
+    if (*crate::gl!(sStorage)).itemInfoWindowOffset == 0 {
         return FALSE;
     }
-    (*sStorage).itemInfoWindowOffset -= 1;
-    let pos: i32 = 21 - (*sStorage).itemInfoWindowOffset as i32;
+    (*crate::gl!(sStorage)).itemInfoWindowOffset -= 1;
+    let pos: i32 = 21 - (*crate::gl!(sStorage)).itemInfoWindowOffset as i32;
     for i in 0..pos {
         WriteSequenceToBgTilemapBuffer(
             0,
             GetBgAttribute(0, BG_ATTR_BASETILE)
                 + 0x14
-                + (*sStorage).itemInfoWindowOffset
+                + (*crate::gl!(sStorage)).itemInfoWindowOffset
                 + i as u16,
             i as u8,
             13,
@@ -8591,23 +8864,23 @@ unsafe fn UpdateItemInfoWindowSlideIn() -> u8 {
         );
     }
     DrawItemInfoWindow(pos as u32);
-    ((*sStorage).itemInfoWindowOffset != 0) as u8
+    ((*crate::gl!(sStorage)).itemInfoWindowOffset != 0) as u8
 }
 unsafe fn UpdateItemInfoWindowSlideOut() -> u8 {
-    if (*sStorage).itemInfoWindowOffset == 22 {
+    if (*crate::gl!(sStorage)).itemInfoWindowOffset == 22 {
         return FALSE;
     }
-    if (*sStorage).itemInfoWindowOffset == 0 {
+    if (*crate::gl!(sStorage)).itemInfoWindowOffset == 0 {
         FillBgTilemapBufferRect(0, 0, 21, 12, 1, 9, 17);
     }
-    (*sStorage).itemInfoWindowOffset += 1;
-    let pos: i32 = 21 - (*sStorage).itemInfoWindowOffset as i32;
+    (*crate::gl!(sStorage)).itemInfoWindowOffset += 1;
+    let pos: i32 = 21 - (*crate::gl!(sStorage)).itemInfoWindowOffset as i32;
     for i in 0..pos {
         WriteSequenceToBgTilemapBuffer(
             0,
             GetBgAttribute(0, BG_ATTR_BASETILE)
                 + 0x14
-                + (*sStorage).itemInfoWindowOffset
+                + (*crate::gl!(sStorage)).itemInfoWindowOffset
                 + i as u16,
             i as u8,
             13,
@@ -8670,11 +8943,12 @@ pub(crate) unsafe fn SpriteCB_ItemIcon_ToHand(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_ItemIcon_SetPosToCursor(sprite: *mut Sprite) {
-    (*sprite).x = (*(*sStorage).cursorSprite).x + 4;
-    (*sprite).y = (*(*sStorage).cursorSprite).y + (*(*sStorage).cursorSprite).y2 + 8;
+    (*sprite).x = (*(*crate::gl!(sStorage)).cursorSprite).x + 4;
+    (*sprite).y =
+        (*(*crate::gl!(sStorage)).cursorSprite).y + (*(*crate::gl!(sStorage)).cursorSprite).y2 + 8;
     (*sprite)
         .oam
-        .set_priority((*(*sStorage).cursorSprite).oam.priority());
+        .set_priority((*(*crate::gl!(sStorage)).cursorSprite).oam.priority());
 }
 pub(crate) unsafe fn SpriteCB_ItemIcon_ToMon(sprite: *mut Sprite) {
     'l1: {
@@ -8796,14 +9070,14 @@ pub(crate) unsafe fn SpriteCB_ItemIcon_HideParty(sprite: *mut Sprite) {
 fn BackupPokemonStorage() {}
 fn RestorePokemonStorage() {}
 pub unsafe fn StorageGetCurrentBox() -> u8 {
-    (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+    (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
         .cast::<*mut PokemonStorage>()
         .cast_mut()))
     .currentBox
 }
 unsafe fn SetCurrentBox(boxId: u8) {
     if boxId < TOTAL_BOXES_COUNT {
-        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .currentBox = boxId;
@@ -8812,9 +9086,10 @@ unsafe fn SetCurrentBox(boxId: u8) {
 pub unsafe fn GetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32) -> u32 {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         return GetBoxMonData2(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             request,
         );
@@ -8829,9 +9104,10 @@ pub unsafe fn GetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32) -> u32 {
 pub unsafe fn SetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32, value: *mut c_void) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         SetBoxMonData(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             request,
             value,
@@ -8840,7 +9116,7 @@ pub unsafe fn SetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32, value: *
 }
 pub unsafe fn GetCurrentBoxMonData(boxPosition: u8, request: i32) -> u32 {
     GetBoxMonDataAt(
-        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .currentBox,
@@ -8850,7 +9126,7 @@ pub unsafe fn GetCurrentBoxMonData(boxPosition: u8, request: i32) -> u32 {
 }
 pub unsafe fn SetCurrentBoxMonData(boxPosition: u8, request: i32, value: *mut c_void) {
     SetBoxMonDataAt(
-        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .currentBox,
@@ -8862,9 +9138,10 @@ pub unsafe fn SetCurrentBoxMonData(boxPosition: u8, request: i32, value: *mut c_
 pub unsafe fn GetBoxMonNickAt(boxId: u8, boxPosition: u8, dst: *mut u8) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         GetBoxMonData3(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             MON_DATA_NICKNAME,
             dst,
@@ -8878,17 +9155,19 @@ pub unsafe fn GetBoxMonLevelAt(boxId: u8, boxPosition: u8) -> u32 {
     if boxId < TOTAL_BOXES_COUNT
         && boxPosition < IN_BOX_COUNT as u8
         && GetBoxMonData2(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             MON_DATA_SANITY_HAS_SPECIES,
         ) != 0
     {
         lvl = GetLevelFromBoxMonExp(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
         ) as u32;
     }
@@ -8898,9 +9177,10 @@ pub unsafe fn GetBoxMonLevelAt(boxId: u8, boxPosition: u8) -> u32 {
 pub unsafe fn SetBoxMonNickAt(boxId: u8, boxPosition: u8, nick: *mut u8) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         SetBoxMonData(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             MON_DATA_NICKNAME,
             nick as *mut c_void,
@@ -8915,9 +9195,10 @@ pub unsafe fn GetAndCopyBoxMonDataAt(
 ) -> u32 {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         return GetBoxMonData3(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             request,
             dst as *mut u8,
@@ -8932,7 +9213,7 @@ pub unsafe fn GetAndCopyBoxMonDataAt(
 }
 pub unsafe fn SetBoxMonAt(boxId: u8, boxPosition: u8, src: *mut BoxPokemon) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .boxes[boxId][boxPosition] = *src;
@@ -8940,7 +9221,7 @@ pub unsafe fn SetBoxMonAt(boxId: u8, boxPosition: u8, src: *mut BoxPokemon) {
 }
 pub unsafe fn CopyBoxMonAt(boxId: u8, boxPosition: u8, dst: *mut BoxPokemon) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        *dst = (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        *dst = (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .boxes[boxId][boxPosition];
@@ -8959,9 +9240,10 @@ pub unsafe fn CreateBoxMonAt(
 ) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         CreateBoxMon(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             species,
             level,
@@ -8976,9 +9258,10 @@ pub unsafe fn CreateBoxMonAt(
 pub unsafe fn ZeroBoxMonAt(boxId: u8, boxPosition: u8) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         ZeroBoxMonData(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
         );
     }
@@ -8986,9 +9269,10 @@ pub unsafe fn ZeroBoxMonAt(boxId: u8, boxPosition: u8) {
 pub unsafe fn BoxMonAtToMon(boxId: u8, boxPosition: u8, dst: *mut Pokemon) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         BoxMonToMon(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             dst,
         );
@@ -8996,9 +9280,10 @@ pub unsafe fn BoxMonAtToMon(boxId: u8, boxPosition: u8, dst: *mut Pokemon) {
 }
 pub unsafe fn GetBoxedMonPtr(boxId: u8, boxPosition: u8) -> *mut BoxPokemon {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        return &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-            .cast::<*mut PokemonStorage>()
-            .cast_mut()))
+        return &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+            .cast_const())
+        .cast::<*mut PokemonStorage>()
+        .cast_mut()))
         .boxes[boxId][boxPosition];
     } else {
         return null_mut();
@@ -9010,7 +9295,7 @@ pub unsafe fn GetBoxedMonPtr(boxId: u8, boxPosition: u8) -> *mut BoxPokemon {
 }
 pub unsafe fn GetBoxNamePtr(boxId: u8) -> *mut u8 {
     if boxId < TOTAL_BOXES_COUNT {
-        return (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        return (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .boxNames[boxId]
@@ -9025,7 +9310,7 @@ pub unsafe fn GetBoxNamePtr(boxId: u8) -> *mut u8 {
 }
 unsafe fn GetBoxWallpaper(boxId: u8) -> u8 {
     if boxId < TOTAL_BOXES_COUNT {
-        return (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        return (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .boxWallpapers[boxId];
@@ -9039,7 +9324,7 @@ unsafe fn GetBoxWallpaper(boxId: u8) -> u8 {
 }
 unsafe fn SetBoxWallpaper(boxId: u8, wallpaperId: u8) {
     if boxId < TOTAL_BOXES_COUNT && wallpaperId < WALLPAPER_COUNT {
-        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;).cast_const())
             .cast::<*mut PokemonStorage>()
             .cast_mut()))
         .boxWallpapers[boxId] = wallpaperId;
@@ -9081,9 +9366,10 @@ pub unsafe fn CheckFreePokemonStorageSpace() -> u8 {
     for i in 0..(TOTAL_BOXES_COUNT as i32) {
         for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                    .cast::<*mut PokemonStorage>()
-                    .cast_mut()))
+                &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                    .cast_const())
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
                 .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) == 0
@@ -9098,23 +9384,26 @@ pub unsafe fn CheckBoxMonSanityAt(boxId: u32, boxPosition: u32) -> u32 {
     if boxId < TOTAL_BOXES_COUNT as u32
         && boxPosition < IN_BOX_COUNT as u32
         && GetBoxMonData2(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             MON_DATA_SANITY_HAS_SPECIES,
         ) != 0
         && GetBoxMonData2(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             MON_DATA_SANITY_IS_EGG,
         ) == 0
         && GetBoxMonData2(
-            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                .cast::<*mut PokemonStorage>()
-                .cast_mut()))
+            &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                .cast_const())
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
             .boxes[boxId][boxPosition],
             MON_DATA_SANITY_IS_BAD_EGG,
         ) == 0
@@ -9133,16 +9422,18 @@ pub unsafe fn CountStorageNonEggMons() -> u32 {
     for i in 0..(TOTAL_BOXES_COUNT as i32) {
         for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                    .cast::<*mut PokemonStorage>()
-                    .cast_mut()))
+                &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                    .cast_const())
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
                 .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 && GetBoxMonData2(
-                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                        .cast::<*mut PokemonStorage>()
-                        .cast_mut()))
+                    &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                        .cast_const())
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
                     .boxes[i][j],
                     MON_DATA_SANITY_IS_EGG,
                 ) == 0
@@ -9158,16 +9449,18 @@ pub unsafe fn CountAllStorageMons() -> u32 {
     for i in 0..(TOTAL_BOXES_COUNT as i32) {
         for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                    .cast::<*mut PokemonStorage>()
-                    .cast_mut()))
+                &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                    .cast_const())
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
                 .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 || GetBoxMonData2(
-                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                        .cast::<*mut PokemonStorage>()
-                        .cast_mut()))
+                    &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                        .cast_const())
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
                     .boxes[i][j],
                     MON_DATA_SANITY_IS_EGG,
                 ) != 0
@@ -9185,23 +9478,26 @@ pub unsafe fn AnyStorageMonWithMove(r#move: u16) -> u32 {
     for i in 0..(TOTAL_BOXES_COUNT as i32) {
         for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                    .cast::<*mut PokemonStorage>()
-                    .cast_mut()))
+                &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                    .cast_const())
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
                 .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 && GetBoxMonData2(
-                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                        .cast::<*mut PokemonStorage>()
-                        .cast_mut()))
+                    &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                        .cast_const())
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
                     .boxes[i][j],
                     MON_DATA_SANITY_IS_EGG,
                 ) == 0
                 && GetBoxMonData3(
-                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
-                        .cast::<*mut PokemonStorage>()
-                        .cast_mut()))
+                    &raw mut (*(*(crate::gl!(&raw @at crate::load_save::gPokemonStoragePtr;)
+                        .cast_const())
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
                     .boxes[i][j],
                     MON_DATA_KNOWN_MOVES,
                     moves.as_mut_ptr() as *mut u8,
@@ -9214,62 +9510,68 @@ pub unsafe fn AnyStorageMonWithMove(r#move: u16) -> u32 {
     FALSE as u32
 }
 pub unsafe fn ResetWaldaWallpaper() {
-    (*gSaveBlock1Ptr).waldaPhrase.iconId = 0;
-    (*gSaveBlock1Ptr).waldaPhrase.patternId = 0;
-    (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked = FALSE;
-    (*gSaveBlock1Ptr).waldaPhrase.colors[0] = 31541;
-    (*gSaveBlock1Ptr).waldaPhrase.colors[1] = 24966;
-    (*gSaveBlock1Ptr).waldaPhrase.text[0] = EOS;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.iconId = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.patternId = 0;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.patternUnlocked = FALSE;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.colors[0] = 31541;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.colors[1] = 24966;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.text[0] = EOS;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetWaldaWallpaperLockedOrUnlocked(unlocked: u32) {
-    (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked = unlocked as u8;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.patternUnlocked = unlocked as u8;
 }
 pub unsafe fn IsWaldaWallpaperUnlocked() -> u32 {
-    (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked as u32
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.patternUnlocked as u32
 }
 pub unsafe fn GetWaldaWallpaperPatternId() -> u32 {
-    (*gSaveBlock1Ptr).waldaPhrase.patternId as u32
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.patternId as u32
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetWaldaWallpaperPatternId(id: u8) {
     if id < 16 {
-        (*gSaveBlock1Ptr).waldaPhrase.patternId = id;
+        (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.patternId = id;
     }
 }
 pub unsafe fn GetWaldaWallpaperIconId() -> u32 {
-    (*gSaveBlock1Ptr).waldaPhrase.iconId as u32
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.iconId as u32
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetWaldaWallpaperIconId(id: u8) {
     if id < 30 {
-        (*gSaveBlock1Ptr).waldaPhrase.iconId = id;
+        (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.iconId = id;
     }
 }
 pub unsafe fn GetWaldaWallpaperColorsPtr() -> *mut u16 {
-    (*gSaveBlock1Ptr).waldaPhrase.colors.as_mut_ptr()
+    (*crate::gl!(gSaveBlock1Ptr))
+        .waldaPhrase
+        .colors
+        .as_mut_ptr()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetWaldaWallpaperColors(color1: u16, color2: u16) {
-    (*gSaveBlock1Ptr).waldaPhrase.colors[0] = color1;
-    (*gSaveBlock1Ptr).waldaPhrase.colors[1] = color2;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.colors[0] = color1;
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.colors[1] = color2;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetWaldaPhrasePtr() -> *mut u8 {
-    (*gSaveBlock1Ptr).waldaPhrase.text.as_mut_ptr()
+    (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.text.as_mut_ptr()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetWaldaPhrase(src: *mut u8) {
-    StringCopy((*gSaveBlock1Ptr).waldaPhrase.text.as_mut_ptr(), src);
+    StringCopy(
+        (*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.text.as_mut_ptr(),
+        src,
+    );
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsWaldaPhraseEmpty() -> u32 {
-    ((*gSaveBlock1Ptr).waldaPhrase.text[0] == EOS) as u32
+    ((*crate::gl!(gSaveBlock1Ptr)).waldaPhrase.text[0] == EOS) as u32
 }
 unsafe fn TilemapUtil_Init(count: u8) {
-    sTilemapUtil = Alloc(48 * count as u32) as *mut TilemapUtil;
+    crate::gl!(sTilemapUtil = Alloc(48 * count as u32) as *mut TilemapUtil);
     sNumTilemapUtilIds.set(
-        (if sTilemapUtil.is_null() {
+        (if (*sTilemapUtil.as_ptr()).is_null() {
             0
         } else {
             count as i32
@@ -9277,18 +9579,18 @@ unsafe fn TilemapUtil_Init(count: u8) {
     );
     let mut i: u16 = 0;
     while i < sNumTilemapUtilIds.get() {
-        (*sTilemapUtil.at(i)).savedTilemap = null_mut();
-        (*sTilemapUtil.at(i)).active = FALSE;
+        (*(*sTilemapUtil.as_ptr()).at(i)).savedTilemap = null_mut();
+        (*(*sTilemapUtil.as_ptr()).at(i)).active = FALSE;
         i += 1;
     }
 }
 unsafe fn TilemapUtil_Free() {
-    Free(sTilemapUtil as *mut c_void);
+    Free(crate::gl!(sTilemapUtil) as *mut c_void);
 }
 unsafe fn TilemapUtil_UpdateAll() {
     let mut i: i32 = 0;
     while i < sNumTilemapUtilIds.get() as i32 {
-        if (*sTilemapUtil.at(i)).active == TRUE {
+        if (*(*sTilemapUtil.as_ptr()).at(i)).active == TRUE {
             TilemapUtil_Update(i as u8);
         }
         i += 1;
@@ -9298,54 +9600,55 @@ unsafe fn TilemapUtil_SetMap(id: u8, bg: u8, tilemap: *mut c_void, width: u16, h
     if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
-    (*sTilemapUtil.at(id)).savedTilemap = null_mut();
-    (*sTilemapUtil.at(id)).tilemap = tilemap;
-    (*sTilemapUtil.at(id)).bg = bg;
-    (*sTilemapUtil.at(id)).width = width;
-    (*sTilemapUtil.at(id)).height = height;
+    (*(*sTilemapUtil.as_ptr()).at(id)).savedTilemap = null_mut();
+    (*(*sTilemapUtil.as_ptr()).at(id)).tilemap = tilemap;
+    (*(*sTilemapUtil.as_ptr()).at(id)).bg = bg;
+    (*(*sTilemapUtil.as_ptr()).at(id)).width = width;
+    (*(*sTilemapUtil.as_ptr()).at(id)).height = height;
     let bgScreenSize: u16 = GetBgAttribute(bg, BG_ATTR_SCREENSIZE);
     let bgType: u16 = GetBgAttribute(bg, BG_ATTR_TYPE);
-    (*sTilemapUtil.at(id)).altWidth = sTilemapDimensions[bgType][bgScreenSize].width;
-    (*sTilemapUtil.at(id)).altHeight = sTilemapDimensions[bgType][bgScreenSize].height;
+    (*(*sTilemapUtil.as_ptr()).at(id)).altWidth = sTilemapDimensions[bgType][bgScreenSize].width;
+    (*(*sTilemapUtil.as_ptr()).at(id)).altHeight = sTilemapDimensions[bgType][bgScreenSize].height;
     if bgType != BG_TYPE_NORMAL {
-        (*sTilemapUtil.at(id)).tileSize = 1;
+        (*(*sTilemapUtil.as_ptr()).at(id)).tileSize = 1;
     } else {
-        (*sTilemapUtil.at(id)).tileSize = 2;
+        (*(*sTilemapUtil.as_ptr()).at(id)).tileSize = 2;
     }
-    (*sTilemapUtil.at(id)).rowSize = (*sTilemapUtil.at(id)).tileSize as u16 * width;
-    (*sTilemapUtil.at(id)).cur.width = width;
-    (*sTilemapUtil.at(id)).cur.height = height;
-    (*sTilemapUtil.at(id)).cur.x = 0;
-    (*sTilemapUtil.at(id)).cur.y = 0;
-    (*sTilemapUtil.at(id)).cur.destX = 0;
-    (*sTilemapUtil.at(id)).cur.destY = 0;
-    (*sTilemapUtil.at(id)).prev = (*sTilemapUtil.at(id)).cur;
-    (*sTilemapUtil.at(id)).active = TRUE;
+    (*(*sTilemapUtil.as_ptr()).at(id)).rowSize =
+        (*(*sTilemapUtil.as_ptr()).at(id)).tileSize as u16 * width;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.width = width;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.height = height;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.x = 0;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.y = 0;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.destX = 0;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.destY = 0;
+    (*(*sTilemapUtil.as_ptr()).at(id)).prev = (*(*sTilemapUtil.as_ptr()).at(id)).cur;
+    (*(*sTilemapUtil.as_ptr()).at(id)).active = TRUE;
 }
 unsafe fn TilemapUtil_SetSavedMap(id: u8, tilemap: *mut c_void) {
     if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
-    (*sTilemapUtil.at(id)).savedTilemap = tilemap;
-    (*sTilemapUtil.at(id)).active = TRUE;
+    (*(*sTilemapUtil.as_ptr()).at(id)).savedTilemap = tilemap;
+    (*(*sTilemapUtil.as_ptr()).at(id)).active = TRUE;
 }
 unsafe fn TilemapUtil_SetPos(id: u8, x: u16, y: u16) {
     if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
-    (*sTilemapUtil.at(id)).cur.destX = x as i16;
-    (*sTilemapUtil.at(id)).cur.destY = y as i16;
-    (*sTilemapUtil.at(id)).active = TRUE;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.destX = x as i16;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.destY = y as i16;
+    (*(*sTilemapUtil.as_ptr()).at(id)).active = TRUE;
 }
 unsafe fn TilemapUtil_SetRect(id: u8, x: u16, y: u16, width: u16, height: u16) {
     if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
-    (*sTilemapUtil.at(id)).cur.x = x as i16;
-    (*sTilemapUtil.at(id)).cur.y = y as i16;
-    (*sTilemapUtil.at(id)).cur.width = width;
-    (*sTilemapUtil.at(id)).cur.height = height;
-    (*sTilemapUtil.at(id)).active = TRUE;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.x = x as i16;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.y = y as i16;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.width = width;
+    (*(*sTilemapUtil.as_ptr()).at(id)).cur.height = height;
+    (*(*sTilemapUtil.as_ptr()).at(id)).active = TRUE;
 }
 unsafe fn TilemapUtil_Move(id: u8, mode: u8, val: i8) {
     if id as u16 >= sNumTilemapUtilIds.get() {
@@ -9353,57 +9656,58 @@ unsafe fn TilemapUtil_Move(id: u8, mode: u8, val: i8) {
     }
     match mode {
         0 => {
-            (*sTilemapUtil.at(id)).cur.destX += val as i16;
-            (*sTilemapUtil.at(id)).cur.width -= val as u16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.destX += val as i16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.width -= val as u16;
         }
         1 => {
-            (*sTilemapUtil.at(id)).cur.x += val as i16;
-            (*sTilemapUtil.at(id)).cur.width += val as u16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.x += val as i16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.width += val as u16;
         }
         2 => {
-            (*sTilemapUtil.at(id)).cur.destY += val as i16;
-            (*sTilemapUtil.at(id)).cur.height -= val as u16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.destY += val as i16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.height -= val as u16;
         }
         3 => {
-            (*sTilemapUtil.at(id)).cur.y -= val as i16;
-            (*sTilemapUtil.at(id)).cur.height += val as u16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.y -= val as i16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.height += val as u16;
         }
         4 => {
-            (*sTilemapUtil.at(id)).cur.destX += val as i16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.destX += val as i16;
         }
         5 => {
-            (*sTilemapUtil.at(id)).cur.destY += val as i16;
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.destY += val as i16;
         }
         _ => {}
     }
-    (*sTilemapUtil.at(id)).active = TRUE;
+    (*(*sTilemapUtil.as_ptr()).at(id)).active = TRUE;
 }
 unsafe fn TilemapUtil_Update(id: u8) {
     if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
-    if !(*sTilemapUtil.at(id)).savedTilemap.is_null() {
+    if !(*(*sTilemapUtil.as_ptr()).at(id)).savedTilemap.is_null() {
         TilemapUtil_DrawPrev(id);
     }
     TilemapUtil_Draw(id);
-    (*sTilemapUtil.at(id)).prev = (*sTilemapUtil.at(id)).cur;
+    (*(*sTilemapUtil.as_ptr()).at(id)).prev = (*(*sTilemapUtil.as_ptr()).at(id)).cur;
 }
 unsafe fn TilemapUtil_DrawPrev(id: u8) {
-    let adder: u32 =
-        (*sTilemapUtil.at(id)).tileSize as u32 * (*sTilemapUtil.at(id)).altWidth as u32;
-    let mut tiles: *mut c_void = (((*sTilemapUtil.at(id)).savedTilemap as *mut u8)
-        .at(adder * (*sTilemapUtil.at(id)).prev.destY as u32)
+    let adder: u32 = (*(*sTilemapUtil.as_ptr()).at(id)).tileSize as u32
+        * (*(*sTilemapUtil.as_ptr()).at(id)).altWidth as u32;
+    let mut tiles: *mut c_void = (((*(*sTilemapUtil.as_ptr()).at(id)).savedTilemap as *mut u8)
+        .at(adder * (*(*sTilemapUtil.as_ptr()).at(id)).prev.destY as u32)
         as *mut c_void as *mut u8)
-        .at((*sTilemapUtil.at(id)).tileSize as i32 * (*sTilemapUtil.at(id)).prev.destX as i32)
+        .at((*(*sTilemapUtil.as_ptr()).at(id)).tileSize as i32
+            * (*(*sTilemapUtil.as_ptr()).at(id)).prev.destX as i32)
         as *mut c_void;
     let mut i: i32 = 0;
-    while i < (*sTilemapUtil.at(id)).prev.height as i32 {
+    while i < (*(*sTilemapUtil.as_ptr()).at(id)).prev.height as i32 {
         CopyToBgTilemapBufferRect(
-            (*sTilemapUtil.at(id)).bg,
+            (*(*sTilemapUtil.as_ptr()).at(id)).bg,
             tiles,
-            (*sTilemapUtil.at(id)).prev.destX as u8,
-            (*sTilemapUtil.at(id)).prev.destY as u8 + i as u8,
-            (*sTilemapUtil.at(id)).prev.width as u8,
+            (*(*sTilemapUtil.as_ptr()).at(id)).prev.destX as u8,
+            (*(*sTilemapUtil.as_ptr()).at(id)).prev.destY as u8 + i as u8,
+            (*(*sTilemapUtil.as_ptr()).at(id)).prev.width as u8,
             1,
         );
         tiles = (tiles as *mut u8).at(adder) as *mut c_void;
@@ -9411,20 +9715,22 @@ unsafe fn TilemapUtil_DrawPrev(id: u8) {
     }
 }
 unsafe fn TilemapUtil_Draw(id: u8) {
-    let adder: u32 = (*sTilemapUtil.at(id)).tileSize as u32 * (*sTilemapUtil.at(id)).width as u32;
-    let mut tiles: *mut c_void = (((*sTilemapUtil.at(id)).tilemap as *mut u8)
-        .at(adder * (*sTilemapUtil.at(id)).cur.y as u32)
+    let adder: u32 = (*(*sTilemapUtil.as_ptr()).at(id)).tileSize as u32
+        * (*(*sTilemapUtil.as_ptr()).at(id)).width as u32;
+    let mut tiles: *mut c_void = (((*(*sTilemapUtil.as_ptr()).at(id)).tilemap as *mut u8)
+        .at(adder * (*(*sTilemapUtil.as_ptr()).at(id)).cur.y as u32)
         as *mut c_void as *mut u8)
-        .at((*sTilemapUtil.at(id)).tileSize as i32 * (*sTilemapUtil.at(id)).cur.x as i32)
+        .at((*(*sTilemapUtil.as_ptr()).at(id)).tileSize as i32
+            * (*(*sTilemapUtil.as_ptr()).at(id)).cur.x as i32)
         as *mut c_void;
     let mut i: i32 = 0;
-    while i < (*sTilemapUtil.at(id)).cur.height as i32 {
+    while i < (*(*sTilemapUtil.as_ptr()).at(id)).cur.height as i32 {
         CopyToBgTilemapBufferRect(
-            (*sTilemapUtil.at(id)).bg,
+            (*(*sTilemapUtil.as_ptr()).at(id)).bg,
             tiles,
-            (*sTilemapUtil.at(id)).cur.destX as u8,
-            (*sTilemapUtil.at(id)).cur.destY as u8 + i as u8,
-            (*sTilemapUtil.at(id)).cur.width as u8,
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.destX as u8,
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.destY as u8 + i as u8,
+            (*(*sTilemapUtil.as_ptr()).at(id)).cur.width as u8,
             1,
         );
         tiles = (tiles as *mut u8).at(adder) as *mut c_void;
@@ -9432,21 +9738,21 @@ unsafe fn TilemapUtil_Draw(id: u8) {
     }
 }
 unsafe fn UnkUtil_Init(util: *mut UnkUtil, data: *mut UnkUtilData, max: u32) {
-    sUnkUtil = util;
+    crate::gl!(sUnkUtil = util);
     (*util).data = data;
     (*util).max = max as u8;
     (*util).numActive = 0;
 }
 unsafe fn UnkUtil_Run() {
     let mut i: u16 = 0;
-    if (*sUnkUtil).numActive != 0 {
+    if (*crate::gl!(sUnkUtil)).numActive != 0 {
         i = 0;
-        while i < (*sUnkUtil).numActive as u16 {
-            let data: *mut UnkUtilData = (*sUnkUtil).data.at(i);
+        while i < (*crate::gl!(sUnkUtil)).numActive as u16 {
+            let data: *mut UnkUtilData = (*crate::gl!(sUnkUtil)).data.at(i);
             (*data).func.unwrap_unchecked()(data);
             i += 1;
         }
-        (*sUnkUtil).numActive = 0;
+        (*crate::gl!(sUnkUtil)).numActive = 0;
     }
 }
 unsafe fn UnkUtil_CpuAdd(
@@ -9461,12 +9767,12 @@ unsafe fn UnkUtil_CpuAdd(
     unkArg: u16,
 ) -> u8 {
     let mut data: *mut UnkUtilData = null_mut();
-    if (*sUnkUtil).numActive >= (*sUnkUtil).max {
+    if (*crate::gl!(sUnkUtil)).numActive >= (*crate::gl!(sUnkUtil)).max {
         return FALSE;
     }
-    data = (*sUnkUtil).data.at({
-        let t1 = (*sUnkUtil).numActive;
-        (*sUnkUtil).numActive += 1;
+    data = (*crate::gl!(sUnkUtil)).data.at({
+        let t1 = (*crate::gl!(sUnkUtil)).numActive;
+        (*crate::gl!(sUnkUtil)).numActive += 1;
         t1
     });
     (*data).size = width * 2;
@@ -9492,12 +9798,12 @@ pub(crate) unsafe fn UnkUtil_CpuRun(data: *mut UnkUtilData) {
 }
 unsafe fn UnkUtil_DmaAdd(dest: *mut c_void, dLeft: u16, dTop: u16, width: u16, height: u16) -> u8 {
     let mut data: *mut UnkUtilData = null_mut();
-    if (*sUnkUtil).numActive >= (*sUnkUtil).max {
+    if (*crate::gl!(sUnkUtil)).numActive >= (*crate::gl!(sUnkUtil)).max {
         return FALSE;
     }
-    data = (*sUnkUtil).data.at({
-        let t1 = (*sUnkUtil).numActive;
-        (*sUnkUtil).numActive += 1;
+    data = (*crate::gl!(sUnkUtil)).data.at({
+        let t1 = (*crate::gl!(sUnkUtil)).numActive;
+        (*crate::gl!(sUnkUtil)).numActive += 1;
         t1
     });
     (*data).size = width * 2;

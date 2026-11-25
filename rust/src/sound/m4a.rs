@@ -41,35 +41,47 @@ unsafe fn MPlayJumpTableCopy(a0: *mut Option<unsafe fn()>) {
 }
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gSoundInfo: SoundInfo = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gSoundInfo: crate::global::Global<SoundInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gPokemonCrySongs: CArray<PokemonCrySong, 2> = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gPokemonCryMusicPlayers: CArray<MusicPlayerInfo, 2> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPokemonCrySongs: crate::global::Global<CArray<PokemonCrySong, 2>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPokemonCryMusicPlayers: crate::global::Global<CArray<MusicPlayerInfo, 2>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_BGM: MusicPlayerInfo = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gMPlayJumpTable: CArray<Option<unsafe fn()>, 36> = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gCgbChans: CArray<CgbChannel, 4> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMPlayInfo_BGM: crate::global::Global<MusicPlayerInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMPlayJumpTable: crate::global::Global<CArray<Option<unsafe fn()>, 36>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gCgbChans: crate::global::Global<CArray<CgbChannel, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_SE1: MusicPlayerInfo = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMPlayInfo_SE1: crate::global::Global<MusicPlayerInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_SE2: MusicPlayerInfo = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gPokemonCryTracks: CArray<MusicPlayerTrack, 4> = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gPokemonCrySong: PokemonCrySong = unsafe { zeroed() };
-#[unsafe(link_section = "common_data")]
-pub static mut gMPlayMemAccArea: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMPlayInfo_SE2: crate::global::Global<MusicPlayerInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPokemonCryTracks: crate::global::Global<CArray<MusicPlayerTrack, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gPokemonCrySong: crate::global::Global<PokemonCrySong> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMPlayMemAccArea: crate::global::Global<Aligned<CArray<u8, 16>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gMPlayInfo_SE3: MusicPlayerInfo = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gMPlayInfo_SE3: crate::global::Global<MusicPlayerInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// The music players the sound code runs (the linker script's
 /// `gNumMusicPlayers`).
@@ -79,7 +91,7 @@ const MAX_LINES: u8 = 0;
 
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -173,8 +185,8 @@ pub unsafe fn MPlayFadeOut(mplayInfo: *mut MusicPlayerInfo, speed: u16) {
 pub unsafe fn m4aSoundInit() {
     // The mixer (m4a_mixer.rs) is linked into IWRAM and copied there by
     // Init: no SoundMainRAM_Buffer to copy it into.
-    SoundInit(&raw mut gSoundInfo);
-    MPlayExtender(gCgbChans.as_mut_ptr());
+    SoundInit(crate::gl!(&raw gSoundInfo));
+    MPlayExtender((*gCgbChans.as_ptr()).as_mut_ptr());
     m4aSoundMode(0x94c500);
     let mut i: i32 = 0;
     while i < NUM_MUSIC_PLAYERS {
@@ -187,19 +199,22 @@ pub unsafe fn m4aSoundInit() {
         );
         (*mplayInfo).unk_B =
             (*crate::asmdata::gMPlayTable.cast::<CArray<MusicPlayer, 0>>())[i].unk_A as u8;
-        (*mplayInfo).memAccArea = gMPlayMemAccArea.as_mut_ptr();
+        (*mplayInfo).memAccArea = (*gMPlayMemAccArea.as_ptr()).as_mut_ptr();
         i += 1;
     }
     memcpy(
-        &raw mut gPokemonCrySong as *mut u8,
+        crate::gl!(&raw gPokemonCrySong) as *mut u8,
         (&raw const (*(&raw const crate::data::m4a_tables::gPokemonCrySongTemplate)
             .cast::<PokemonCrySong>()))
             .cast_mut() as *mut u8,
         52,
     );
     for i in 0..2i32 {
-        let mplayInfo: *mut MusicPlayerInfo = &raw mut gPokemonCryMusicPlayers[i];
-        let track: *mut MusicPlayerTrack = &raw mut gPokemonCryTracks[i * 2];
+        let mplayInfo: *mut MusicPlayerInfo = crate::gl!(&raw gPokemonCryMusicPlayers[i]);
+        let track: *mut MusicPlayerTrack = {
+            let gl_i0 = i * 2;
+            crate::gl!(&raw gPokemonCryTracks[gl_i0])
+        };
         MPlayOpen(mplayInfo, track, 2);
         (*track).chan = null_mut();
     }
@@ -294,7 +309,7 @@ pub unsafe fn m4aMPlayAllStop() {
         i += 1;
     }
     for i in 0..MAX_POKEMON_CRIES {
-        m4aMPlayStop(&raw mut gPokemonCryMusicPlayers[i]);
+        m4aMPlayStop(crate::gl!(&raw gPokemonCryMusicPlayers[i]));
     }
 }
 #[unsafe(no_mangle)]
@@ -308,7 +323,7 @@ pub unsafe fn m4aMPlayAllContinue() {
         i += 1;
     }
     for i in 0..MAX_POKEMON_CRIES {
-        MPlayContinue(&raw mut gPokemonCryMusicPlayers[i]);
+        MPlayContinue(crate::gl!(&raw gPokemonCryMusicPlayers[i]));
     }
 }
 pub unsafe fn m4aMPlayFadeOut(mplayInfo: *mut MusicPlayerInfo, speed: u16) {
@@ -368,40 +383,59 @@ pub unsafe fn MPlayExtender(cgbChans: *mut CgbChannel) {
         return;
     }
     (*soundInfo).ident += 1;
-    gMPlayJumpTable[8] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(ply_memacc));
-    gMPlayJumpTable[17] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(ply_lfos));
-    gMPlayJumpTable[19] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(ply_mod));
-    gMPlayJumpTable[28] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(ply_xcmd));
-    gMPlayJumpTable[29] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(ply_endtie));
-    gMPlayJumpTable[30] =
-        core::mem::transmute::<Option<unsafe fn(u32)>, Option<unsafe fn()>>(Some(SampleFreqSet));
-    gMPlayJumpTable[31] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(TrackStop));
-    gMPlayJumpTable[32] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo)>,
-        Option<unsafe fn()>,
-    >(Some(FadeOutBody));
-    gMPlayJumpTable[33] = core::mem::transmute::<
-        Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
-        Option<unsafe fn()>,
-    >(Some(TrkVolPitSet));
+    crate::gl!(
+        gMPlayJumpTable[8] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(ply_memacc))
+    );
+    crate::gl!(
+        gMPlayJumpTable[17] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(ply_lfos))
+    );
+    crate::gl!(
+        gMPlayJumpTable[19] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(ply_mod))
+    );
+    crate::gl!(
+        gMPlayJumpTable[28] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(ply_xcmd))
+    );
+    crate::gl!(
+        gMPlayJumpTable[29] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(ply_endtie))
+    );
+    crate::gl!(
+        gMPlayJumpTable[30] = core::mem::transmute::<Option<unsafe fn(u32)>, Option<unsafe fn()>>(
+            Some(SampleFreqSet)
+        )
+    );
+    crate::gl!(
+        gMPlayJumpTable[31] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(TrackStop))
+    );
+    crate::gl!(
+        gMPlayJumpTable[32] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo)>,
+            Option<unsafe fn()>,
+        >(Some(FadeOutBody))
+    );
+    crate::gl!(
+        gMPlayJumpTable[33] = core::mem::transmute::<
+            Option<unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>,
+            Option<unsafe fn()>,
+        >(Some(TrkVolPitSet))
+    );
     (*soundInfo).cgbChans = cgbChans;
     (*soundInfo).CgbSound = Some(CgbSound);
     (*soundInfo).CgbOscOff = Some(CgbOscOff);
@@ -438,11 +472,11 @@ fn MusicPlayerJumpTableCopy() {
 }
 
 pub unsafe fn ClearChain(x: *mut c_void) {
-    let func: Option<unsafe fn()> = gMPlayJumpTable[34];
+    let func: Option<unsafe fn()> = crate::gl!(gMPlayJumpTable[34]);
     core::mem::transmute::<_, unsafe fn(*mut c_void)>(func.unwrap_unchecked())(x);
 }
 pub unsafe fn Clear64byte(x: *mut c_void) {
-    let func: Option<unsafe fn()> = gMPlayJumpTable[35];
+    let func: Option<unsafe fn()> = crate::gl!(gMPlayJumpTable[35]);
     core::mem::transmute::<_, unsafe fn(*mut c_void)>(func.unwrap_unchecked())(x);
 }
 pub unsafe fn SoundInit(soundInfo: *mut SoundInfo) {
@@ -500,8 +534,8 @@ pub unsafe fn SoundInit(soundInfo: *mut SoundInfo) {
         Option<unsafe fn(u8, u8, u8) -> u32>,
     >(Some(DummyFunc));
     (*soundInfo).ExtVolPit = Some(DummyFunc);
-    MPlayJumpTableCopy(gMPlayJumpTable.as_mut_ptr());
-    (*soundInfo).MPlayJumpTable = gMPlayJumpTable.as_mut_ptr();
+    MPlayJumpTableCopy((*gMPlayJumpTable.as_ptr()).as_mut_ptr());
+    (*soundInfo).MPlayJumpTable = (*gMPlayJumpTable.as_ptr()).as_mut_ptr();
     SampleFreqSet(SOUND_MODE_FREQ_13379);
     (*soundInfo).ident = ID_NUMBER;
 }
@@ -1564,7 +1598,7 @@ pub unsafe fn ply_memacc(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlaye
             }
         }
         core::mem::transmute::<_, unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>(
-            gMPlayJumpTable[1].unwrap_unchecked(),
+            (*gMPlayJumpTable.as_ptr())[1].unwrap_unchecked(),
         )(mplayInfo, track);
         return;
     }
@@ -1579,7 +1613,7 @@ pub unsafe fn ply_xcmd(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerT
 }
 pub unsafe fn ply_xxx(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
     core::mem::transmute::<_, unsafe fn(*mut MusicPlayerInfo, *mut MusicPlayerTrack)>(
-        gMPlayJumpTable[0].unwrap_unchecked(),
+        (*gMPlayJumpTable.as_ptr())[0].unwrap_unchecked(),
     )(mplayInfo, track);
 }
 pub unsafe fn ply_xwave(mplayInfo: *mut MusicPlayerInfo, track: *mut MusicPlayerTrack) {
@@ -1706,49 +1740,57 @@ pub unsafe fn SetPokemonCryTone(tone: *mut ToneData) -> *mut MusicPlayerInfo {
     let mut i: i32 = 0;
     'start_song: {
         for i in 0..MAX_POKEMON_CRIES {
-            let track: *mut MusicPlayerTrack = &raw mut gPokemonCryTracks[i * 2];
+            let track: *mut MusicPlayerTrack = {
+                let gl_i1 = i * 2;
+                crate::gl!(&raw gPokemonCryTracks[gl_i1])
+            };
             if (*track).flags == 0 && ((*track).chan.is_null() || (*(*track).chan).track != track) {
                 break 'start_song;
             }
-            if maxClock < gPokemonCryMusicPlayers[i].clock {
-                maxClock = gPokemonCryMusicPlayers[i].clock;
+            if maxClock < crate::gl!(gPokemonCryMusicPlayers[i].clock) {
+                maxClock = crate::gl!(gPokemonCryMusicPlayers[i].clock);
                 maxClockIndex = i;
             }
         }
         i = maxClockIndex;
     }
-    let mplayInfo: *mut MusicPlayerInfo = &raw mut gPokemonCryMusicPlayers[i];
+    let mplayInfo: *mut MusicPlayerInfo = crate::gl!(&raw gPokemonCryMusicPlayers[i]);
     (*mplayInfo).ident += 1;
-    gPokemonCrySongs[i] = gPokemonCrySong;
-    gPokemonCrySongs[i].tone = tone;
-    gPokemonCrySongs[i].part[0] = &raw mut gPokemonCrySongs[i].part0;
-    gPokemonCrySongs[i].part[1] = &raw mut gPokemonCrySongs[i].part1;
-    gPokemonCrySongs[i].gotoTarget = &raw mut gPokemonCrySongs[i].cont as usize as u32;
+    crate::gl!(gPokemonCrySongs[i] = crate::gl!(gPokemonCrySong));
+    crate::gl!(gPokemonCrySongs[i].tone = tone);
+    crate::gl!(gPokemonCrySongs[i].part[0] = crate::gl!(&raw gPokemonCrySongs[i].part0));
+    crate::gl!(gPokemonCrySongs[i].part[1] = crate::gl!(&raw gPokemonCrySongs[i].part1));
+    crate::gl!(
+        gPokemonCrySongs[i].gotoTarget = crate::gl!(&raw gPokemonCrySongs[i].cont) as usize as u32
+    );
     (*mplayInfo).ident = ID_NUMBER;
-    MPlayStart(mplayInfo, &raw mut gPokemonCrySongs[i] as *mut SongHeader);
+    MPlayStart(
+        mplayInfo,
+        crate::gl!(&raw gPokemonCrySongs[i]) as *mut SongHeader,
+    );
     mplayInfo
 }
-pub unsafe fn SetPokemonCryVolume(val: u8) {
-    gPokemonCrySong.volumeValue = val & 0x7F;
+pub fn SetPokemonCryVolume(val: u8) {
+    crate::gl!(gPokemonCrySong.volumeValue = val & 0x7F);
 }
-pub unsafe fn SetPokemonCryPanpot(val: i8) {
-    gPokemonCrySong.panValue = (val as u8 + C_V) & 0x7F;
+pub fn SetPokemonCryPanpot(val: i8) {
+    crate::gl!(gPokemonCrySong.panValue = (val as u8 + C_V) & 0x7F);
 }
-pub unsafe fn SetPokemonCryPitch(val: i16) {
+pub fn SetPokemonCryPitch(val: i16) {
     let b: i16 = val + 0x80;
-    let a: u8 = gPokemonCrySong.tuneValue2 - gPokemonCrySong.tuneValue;
-    gPokemonCrySong.tieKeyValue = (b >> 8) as u8 & 0x7F;
-    gPokemonCrySong.tuneValue = (b >> 1) as u8 & 0x7F;
-    gPokemonCrySong.tuneValue2 = (a + ((b >> 1) as u8 & 0x7F)) & 0x7F;
+    let a: u8 = crate::gl!(gPokemonCrySong.tuneValue2) - crate::gl!(gPokemonCrySong.tuneValue);
+    crate::gl!(gPokemonCrySong.tieKeyValue = (b >> 8) as u8 & 0x7F);
+    crate::gl!(gPokemonCrySong.tuneValue = (b >> 1) as u8 & 0x7F);
+    crate::gl!(gPokemonCrySong.tuneValue2 = (a + ((b >> 1) as u8 & 0x7F)) & 0x7F);
 }
-pub unsafe fn SetPokemonCryLength(val: u16) {
-    gPokemonCrySong.length = val;
+pub fn SetPokemonCryLength(val: u16) {
+    crate::gl!(gPokemonCrySong.length = val);
 }
-pub unsafe fn SetPokemonCryRelease(val: u8) {
-    gPokemonCrySong.releaseValue = val;
+pub fn SetPokemonCryRelease(val: u8) {
+    crate::gl!(gPokemonCrySong.releaseValue = val);
 }
-pub unsafe fn SetPokemonCryProgress(val: u32) {
-    gPokemonCrySong.unkCmd0DParam = val;
+pub fn SetPokemonCryProgress(val: u32) {
+    crate::gl!(gPokemonCrySong.unkCmd0DParam = val);
 }
 pub unsafe fn IsPokemonCryPlaying(mplayInfo: *mut MusicPlayerInfo) -> u32 {
     let track: *mut MusicPlayerTrack = (*mplayInfo).tracks;
@@ -1762,12 +1804,14 @@ pub unsafe fn IsPokemonCryPlaying(mplayInfo: *mut MusicPlayerInfo) -> u32 {
         0
     }
 }
-pub unsafe fn SetPokemonCryChorus(val: i8) {
+pub fn SetPokemonCryChorus(val: i8) {
     if val != 0 {
-        gPokemonCrySong.trackCount = 2;
-        gPokemonCrySong.tuneValue2 = (val as u8 + gPokemonCrySong.tuneValue) & 0x7F;
+        crate::gl!(gPokemonCrySong.trackCount = 2);
+        crate::gl!(
+            gPokemonCrySong.tuneValue2 = (val as u8 + crate::gl!(gPokemonCrySong.tuneValue)) & 0x7F
+        );
     } else {
-        gPokemonCrySong.trackCount = 1;
+        crate::gl!(gPokemonCrySong.trackCount = 1);
     }
 }
 #[unsafe(no_mangle)]
@@ -1781,6 +1825,6 @@ pub unsafe fn SetPokemonCryStereo(val: u32) {
         (*soundInfo).mode |= 1;
     }
 }
-pub unsafe fn SetPokemonCryPriority(val: u8) {
-    gPokemonCrySong.priority = val;
+pub fn SetPokemonCryPriority(val: u8) {
+    crate::gl!(gPokemonCrySong.priority = val);
 }

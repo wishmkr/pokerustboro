@@ -44,8 +44,8 @@ const DISPCNT_MODE0_OBJ1D_BG0: u16 = 0x140;
 const PALETTES_ALL: u32 = 0xffff_ffff;
 const RGB_BLACK: u16 = 0;
 
-#[unsafe(link_section = "ewram_data")]
-static mut UNUSED: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static UNUSED: crate::global::Global<u8> = crate::global::Global::new(0);
 
 static BG_TEMPLATES: [BgTemplate; 1] = [BgTemplate::new(0, 2, 31, 0, 0, 0, 0)];
 
@@ -121,9 +121,7 @@ unsafe fn Menu_LoadStdPalAt(a0: u16) {
 /// `Task_DestroySelf` with this module's view of its types.
 #[inline]
 unsafe fn Task_DestroySelf(a0: u8) {
-    unsafe {
-        crate::link::Task_DestroySelf(a0);
-    }
+    crate::link::Task_DestroySelf(a0);
 }
 /// `StopMapMusic` with this module's view of its types.
 #[inline]
@@ -178,14 +176,12 @@ unsafe fn GetLinkPlayerCount_2() -> u8 {
 /// `CheckShouldAdvanceLinkState` with this module's view of its types.
 #[inline]
 unsafe fn CheckShouldAdvanceLinkState() {
-    unsafe {
-        crate::link::CheckShouldAdvanceLinkState();
-    }
+    crate::link::CheckShouldAdvanceLinkState();
 }
 /// `IsLinkConnectionEstablished` with this module's view of its types.
 #[inline]
 unsafe fn IsLinkConnectionEstablished() -> u8 {
-    unsafe { crate::link::IsLinkConnectionEstablished() }
+    crate::link::IsLinkConnectionEstablished()
 }
 /// `GetLinkPlayerDataExchangeStatusTimed` with this module's view of its types.
 #[inline]
@@ -207,9 +203,7 @@ unsafe fn GetBlockReceivedStatus() -> u8 {
 /// `ResetBlockReceivedFlags` with this module's view of its types.
 #[inline]
 unsafe fn ResetBlockReceivedFlags() {
-    unsafe {
-        crate::link::ResetBlockReceivedFlags();
-    }
+    crate::link::ResetBlockReceivedFlags();
 }
 /// `IsLinkMaster` with this module's view of its types.
 #[inline]
@@ -229,7 +223,8 @@ unsafe fn vblank_cb() {
 }
 
 unsafe fn language_matches() -> bool {
-    let players = &raw const (*(&raw const crate::link::gLinkPlayers).cast::<u8>());
+    let players =
+        &raw const (*(crate::gl!(&raw @at crate::link::gLinkPlayers;).cast_const()).cast::<u8>());
     let first = unsafe { players.add(LINK_PLAYER_LANGUAGE).cast::<u16>().read() };
     let second = unsafe {
         players
@@ -362,7 +357,7 @@ unsafe fn cb2_mystery_event_menu() {
         2 => {
             if unsafe { IsTextPrinterActive(WIN_MSG) } == 0 {
                 next = 3;
-                unsafe { (&raw mut gLinkType).write(LINKTYPE_MYSTERY_EVENT) };
+                unsafe { (gLinkType.as_ptr()).write(LINKTYPE_MYSTERY_EVENT) };
                 unsafe { OpenLink() };
             }
         }
@@ -414,7 +409,7 @@ unsafe fn cb2_mystery_event_menu() {
         }
         6 => {
             if unsafe { IsLinkConnectionEstablished() } != 0 {
-                if unsafe { (&raw const gReceivedRemoteLinkPlayers).read() } != 0 {
+                if unsafe { (gReceivedRemoteLinkPlayers.as_ptr().cast_const()).read() } != 0 {
                     if unsafe { GetLinkPlayerDataExchangeStatusTimed(2, 2) }
                         == EXCHANGE_DIFF_SELECTIONS
                     {
@@ -451,8 +446,9 @@ unsafe fn cb2_mystery_event_menu() {
             next = 11;
         }
         11 => {
-            if unsafe { (&raw const gReceivedRemoteLinkPlayers).read() } == 0 {
-                let buffer = (&raw mut crate::decompress::gDecompressionBuffer).cast::<u8>();
+            if unsafe { (gReceivedRemoteLinkPlayers.as_ptr().cast_const()).read() } == 0 {
+                let buffer =
+                    (crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;)).cast::<u8>();
                 let status = unsafe { RunMysteryEventScript(buffer) } as u16;
                 unsafe { buffer.write_bytes(0, 0x7d4) };
                 if !unsafe {
@@ -470,7 +466,7 @@ unsafe fn cb2_mystery_event_menu() {
         13 => {
             if unsafe { IsTextPrinterActive(WIN_MSG) } == 0 {
                 next = 14;
-                unsafe { (&raw mut UNUSED).write(0) };
+                unsafe { (crate::gl!(&raw UNUSED)).write(0) };
             }
         }
         14 => {

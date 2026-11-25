@@ -180,7 +180,7 @@ unsafe fn DestroySprite(a0: *mut Sprite) {
 }
 /// `DoBgAffineSet` with this module's view of its types.
 #[inline]
-unsafe fn DoBgAffineSet(
+fn DoBgAffineSet(
     a0: *mut BgAffineDstData,
     a1: u32,
     a2: u32,
@@ -225,24 +225,19 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `GiveMailToMon` with this module's view of its types.
 #[inline]
-unsafe fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
+fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
     unsafe { crate::mail_data::GiveMailToMon(a0 as _, a1 as _) }
 }
 /// `HandleLoadSpecialPokePic_2` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_2(
-    a0: *mut CompressedSpriteSheet,
-    a1: *mut c_void,
-    a2: i32,
-    a3: u32,
-) {
+fn HandleLoadSpecialPokePic_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32, a3: u32) {
     unsafe {
         crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
     }
 }
 /// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
 #[inline]
-unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     a0: *mut CompressedSpriteSheet,
     a1: *mut c_void,
     a2: i32,
@@ -254,19 +249,19 @@ unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
@@ -283,7 +278,7 @@ unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
 }
 /// `LoadCompressedSpritePalette` with this module's view of its types.
 #[inline]
-unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
     unsafe {
         crate::decompress::LoadCompressedSpritePalette(a0 as _);
     }
@@ -826,17 +821,23 @@ static sWirelessSignal_Gfx: Table<CArray<u32, 420>> =
 static sWirelessSignal_Tilemap: Table<CArray<u32, 445>> =
     Table((&raw const crate::data::trade::sWirelessSignal_Tilemap).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenuTextTileBuffer: *mut u8 = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMenuTextTileBuffers: CArray<*mut u8, 14> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub static mut gTradeMail: CArray<Mail, 6> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMenuTextTileBuffer: crate::global::Global<*mut u8> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMenuTextTileBuffers: crate::global::Global<CArray<*mut u8, 14>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gTradeMail: crate::global::Global<CArray<Mail, 6>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gSelectedTradeMonPositions: Aligned<CArray<u8, 2>> = Aligned(unsafe { zeroed() });
-pub(crate) static mut sTradeMenu: *mut typeof___sTradeMenu_0_t = null_mut();
-pub(crate) static mut sTradeAnim: *mut typeof___sTradeAnim_0_t = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gSelectedTradeMonPositions: crate::global::Global<Aligned<CArray<u8, 2>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+pub(crate) static sTradeMenu: crate::global::Global<*mut typeof___sTradeMenu_0_t> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sTradeAnim: crate::global::Global<*mut typeof___sTradeAnim_0_t> =
+    crate::global::Global::new(null_mut());
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -878,7 +879,7 @@ unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -892,8 +893,8 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 unsafe fn SendLinkData(linkData: *mut c_void, size: u32) -> u8 {
-    if gPlayerCurrActivity == ACTIVITY_29 {
-        rfu_NI_setSendData(lman.acceptSlot_flag, 84, linkData, size);
+    if gPlayerCurrActivity.get() == ACTIVITY_29 {
+        rfu_NI_setSendData(crate::gl!(lman.acceptSlot_flag), 84, linkData, size);
         return TRUE;
     } else {
         return SendBlock(0, linkData, size as u16);
@@ -907,10 +908,11 @@ unsafe fn RequestLinkData(r#type: u8) {
     SendBlockRequest(r#type);
 }
 unsafe fn IsLinkTradeTaskFinished() -> u32 {
-    if gPlayerCurrActivity == ACTIVITY_29 {
-        if (*gRfuSlotStatusNI[Rfu_GetIndexOfNewestChild(lman.acceptSlot_flag)])
-            .send
-            .state
+    if gPlayerCurrActivity.get() == ACTIVITY_29 {
+        if (*(*gRfuSlotStatusNI.as_ptr())
+            [Rfu_GetIndexOfNewestChild(crate::gl!(lman.acceptSlot_flag))])
+        .send
+        .state
             == 0
         {
             return TRUE as u32;
@@ -930,20 +932,20 @@ unsafe fn _GetBlockReceivedStatus() -> u32 {
 }
 unsafe fn TradeResetReceivedFlags() {
     if IsWirelessTrade() != 0 {
-        rfu_clearSlot(12, lman.acceptSlot_flag);
+        rfu_clearSlot(12, crate::gl!(lman.acceptSlot_flag));
     } else {
         ResetBlockReceivedFlags();
     }
 }
 unsafe fn TradeResetReceivedFlag(who: u32) {
     if IsWirelessTrade() != 0 {
-        rfu_clearSlot(12, lman.acceptSlot_flag);
+        rfu_clearSlot(12, crate::gl!(lman.acceptSlot_flag));
     } else {
         ResetBlockReceivedFlag(who as u8);
     }
 }
-unsafe fn IsWirelessTrade() -> u32 {
-    if gWirelessCommType != 0 && gPlayerCurrActivity == ACTIVITY_29 {
+fn IsWirelessTrade() -> u32 {
+    if gWirelessCommType.get() != 0 && gPlayerCurrActivity.get() == ACTIVITY_29 {
         return TRUE as u32;
     } else {
         return FALSE as u32;
@@ -964,7 +966,7 @@ unsafe fn InitTradeMenu() {
     FreeAllSpritePalettes();
     ResetTasks();
     ResetPaletteFade();
-    gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
+    (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
     SetVBlankCallback(Some(VBlankCB_TradeMenu));
     LoadPalette(
         (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<CArray<u16, 0>>())
@@ -982,7 +984,10 @@ unsafe fn InitTradeMenu() {
     );
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
-    SetBgTilemapBuffer(1, (*sTradeMenu).tilemapBuffer.as_mut_ptr() as *mut c_void);
+    SetBgTilemapBuffer(
+        1,
+        (*crate::gl!(sTradeMenu)).tilemapBuffer.as_mut_ptr() as *mut c_void,
+    );
     if InitWindows(sWindowTemplates.as_ptr().cast_mut()) != 0 {
         DeactivateAllTextPrinters();
         for i in 0..18u32 {
@@ -993,20 +998,20 @@ unsafe fn InitTradeMenu() {
         LoadUserWindowBorderGfx_(0, 20, 192);
         LoadUserWindowBorderGfx(2, 1, 224);
         LoadMonIconPalettes();
-        (*sTradeMenu).bufferPartyState = 0;
-        (*sTradeMenu).callbackId = CB_MAIN_MENU;
-        (*sTradeMenu).neverRead_70 = 0;
-        (*sTradeMenu).drawSelectedMonState[0] = 0;
-        (*sTradeMenu).drawSelectedMonState[1] = 0;
-        (*sTradeMenu).playerConfirmStatus = STATUS_NONE;
-        (*sTradeMenu).partnerConfirmStatus = STATUS_NONE;
-        (*sTradeMenu).timer = 0;
+        (*crate::gl!(sTradeMenu)).bufferPartyState = 0;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_MAIN_MENU;
+        (*crate::gl!(sTradeMenu)).neverRead_70 = 0;
+        (*crate::gl!(sTradeMenu)).drawSelectedMonState[0] = 0;
+        (*crate::gl!(sTradeMenu)).drawSelectedMonState[1] = 0;
+        (*crate::gl!(sTradeMenu)).playerConfirmStatus = STATUS_NONE;
+        (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_NONE;
+        (*crate::gl!(sTradeMenu)).timer = 0;
     }
 }
 pub unsafe fn CB2_StartCreateTradeMenu() {
     SetMainCallback2(Some(CB2_CreateTradeMenu));
-    gMain.callback1 = None;
-    gEnemyPartyCount = 0;
+    crate::gl!(gMain.callback1 = None);
+    gEnemyPartyCount.set(0);
 }
 pub(crate) unsafe fn CB2_CreateTradeMenu() {
     let mut i: i32 = 0;
@@ -1014,47 +1019,56 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
     let mut id: u8 = 0;
     let mut xPos: u32 = 0;
     'l1: {
-        let sw1: u8 = gMain.state;
+        let sw1: u8 = crate::gl!(gMain.state);
         let mut fall = false;
         if sw1 == 0 {
-            sTradeMenu = AllocZeroed(4336) as *mut typeof___sTradeMenu_0_t;
+            crate::gl!(sTradeMenu = AllocZeroed(4336) as *mut typeof___sTradeMenu_0_t);
             InitTradeMenu();
-            sMenuTextTileBuffer = AllocZeroed(3584) as *mut u8;
+            crate::gl!(sMenuTextTileBuffer = AllocZeroed(3584) as *mut u8);
             for i in 0..(NUM_MENU_TEXT_SPRITES as i32) {
-                sMenuTextTileBuffers[i] = sMenuTextTileBuffer.at(i * 256);
+                crate::gl!(sMenuTextTileBuffers[i] = (*sMenuTextTileBuffer.as_ptr()).at(i * 256));
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 1 {
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             for i in 0..PARTY_SIZE {
-                CreateMon(&raw mut gEnemyParty[i], 0, 0, USE_RANDOM_IVS, 0, 0, 0, 0);
+                CreateMon(
+                    crate::gl!(&raw gEnemyParty[i]),
+                    0,
+                    0,
+                    USE_RANDOM_IVS,
+                    0,
+                    0,
+                    0,
+                    0,
+                );
             }
             PrintTradeMessage(MSG_STANDBY);
             ShowBg(0);
-            if gReceivedRemoteLinkPlayers == 0 {
-                gLinkType = LINKTYPE_TRADE_CONNECTING;
-                (*sTradeMenu).timer = 0;
-                if gWirelessCommType != 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                gLinkType.set(LINKTYPE_TRADE_CONNECTING);
+                (*crate::gl!(sTradeMenu)).timer = 0;
+                if gWirelessCommType.get() != 0 {
                     SetWirelessCommType1();
                     OpenLink();
                     CreateTask_RfuIdle();
                 } else {
                     OpenLink();
-                    gMain.state += 1;
+                    crate::gl!(gMain.state += 1);
                     CreateTask(Some(Task_WaitForLinkPlayerConnection), 1);
                 }
             } else {
-                gMain.state = 4;
+                crate::gl!(gMain.state = 4);
             }
             break 'l1;
         }
         if sw1 == 2 {
-            (*sTradeMenu).timer += 1;
-            if (*sTradeMenu).timer > 11 {
-                (*sTradeMenu).timer = 0;
-                gMain.state += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
+            if (*crate::gl!(sTradeMenu)).timer > 11 {
+                (*crate::gl!(sTradeMenu)).timer = 0;
+                crate::gl!(gMain.state += 1);
             }
             break 'l1;
         }
@@ -1062,26 +1076,28 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
             if GetLinkPlayerCount_2() >= GetSavedPlayerCount() {
                 if IsLinkMaster() != 0 {
                     if ({
-                        (*sTradeMenu).timer += 1;
-                        (*sTradeMenu).timer
+                        (*crate::gl!(sTradeMenu)).timer += 1;
+                        (*crate::gl!(sTradeMenu)).timer
                     }) > 30
                     {
                         CheckShouldAdvanceLinkState();
-                        gMain.state += 1;
+                        crate::gl!(gMain.state += 1);
                     }
                 } else {
-                    gMain.state += 1;
+                    crate::gl!(gMain.state += 1);
                 }
             }
             break 'l1;
         }
         if sw1 == 4 {
-            if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
+            if gReceivedRemoteLinkPlayers.get() == TRUE
+                && IsLinkPlayerDataExchangeComplete() == TRUE
+            {
                 DestroyTask_RfuIdle();
                 CalculatePlayerPartyCount();
-                gMain.state += 1;
-                (*sTradeMenu).timer = 0;
-                if gWirelessCommType != 0 {
+                crate::gl!(gMain.state += 1);
+                (*crate::gl!(sTradeMenu)).timer = 0;
+                if gWirelessCommType.get() != 0 {
                     Rfu_SetLinkRecovery(TRUE as u32);
                     SetLinkStandbyCallback();
                 }
@@ -1089,21 +1105,21 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 5 {
-            if gWirelessCommType != 0 {
+            if gWirelessCommType.get() != 0 {
                 if IsLinkRfuTaskFinished() != 0 {
-                    gMain.state += 1;
+                    crate::gl!(gMain.state += 1);
                     LoadWirelessStatusIndicatorSpriteGfx();
                     CreateWirelessStatusIndicatorSprite(0, 0);
                 }
             } else {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
             break 'l1;
         }
         if sw1 == 6 {
             if BufferTradeParties() != 0 {
                 SaveTradeGiftRibbons();
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
             break 'l1;
         }
@@ -1111,12 +1127,12 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
             CalculateEnemyPartyCount();
             SetGpuReg(0x0, 0);
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
-            (*sTradeMenu).partyCounts[0] = gPlayerPartyCount;
-            (*sTradeMenu).partyCounts[1] = gEnemyPartyCount;
+            (*crate::gl!(sTradeMenu)).partyCounts[0] = gPlayerPartyCount.get();
+            (*crate::gl!(sTradeMenu)).partyCounts[1] = gEnemyPartyCount.get();
             i = 0;
-            while i < (*sTradeMenu).partyCounts[0] as i32 {
-                let mon: *mut Pokemon = &raw mut gPlayerParty[i];
-                (*sTradeMenu).partySpriteIds[0][i] = CreateMonIcon(
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[0] as i32 {
+                let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
+                (*crate::gl!(sTradeMenu)).partySpriteIds[0][i] = CreateMonIcon(
                     GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16,
                     Some(SpriteCB_MonIcon),
                     sTradeMonSpriteCoords[i][0] as i16 * 8 + 14,
@@ -1128,9 +1144,9 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
                 i += 1;
             }
             i = 0;
-            while i < (*sTradeMenu).partyCounts[1] as i32 {
-                let mon: *mut Pokemon = &raw mut gEnemyParty[i];
-                (*sTradeMenu).partySpriteIds[1][i] = CreateMonIcon(
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[1] as i32 {
+                let mon: *mut Pokemon = crate::gl!(&raw gEnemyParty[i]);
+                (*crate::gl!(sTradeMenu)).partySpriteIds[1][i] = CreateMonIcon(
                     GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16,
                     Some(SpriteCB_MonIcon),
                     sTradeMonSpriteCoords[i + PARTY_SIZE][0] as i16 * 8 + 14,
@@ -1141,66 +1157,66 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
                 );
                 i += 1;
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 8 {
             LoadHeldItemIcons();
             DrawHeldItemIconsForTrade(
-                &raw mut (*sTradeMenu).partyCounts[0],
-                (*sTradeMenu).partySpriteIds[0].as_mut_ptr(),
+                &raw mut (*crate::gl!(sTradeMenu)).partyCounts[0],
+                (*crate::gl!(sTradeMenu)).partySpriteIds[0].as_mut_ptr(),
                 0,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 9 {
             DrawHeldItemIconsForTrade(
-                &raw mut (*sTradeMenu).partyCounts[0],
-                (*sTradeMenu).partySpriteIds[0].as_mut_ptr(),
+                &raw mut (*crate::gl!(sTradeMenu)).partyCounts[0],
+                (*crate::gl!(sTradeMenu)).partySpriteIds[0].as_mut_ptr(),
                 TRADE_PARTNER,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 10 {
             DrawTextWindowAndBufferTiles(
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-                sMenuTextTileBuffers[0] as *mut c_void,
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+                crate::gl!(sMenuTextTileBuffers[0]) as *mut c_void,
                 0,
                 0,
                 3,
             );
             id = GetMultiplayerId();
             DrawTextWindowAndBufferTiles(
-                gLinkPlayers[id as i32 ^ 1].name.as_mut_ptr(),
-                sMenuTextTileBuffers[3] as *mut c_void,
+                (*gLinkPlayers.as_ptr())[id as i32 ^ 1].name.as_mut_ptr(),
+                crate::gl!(sMenuTextTileBuffers[3]) as *mut c_void,
                 0,
                 0,
                 3,
             );
             DrawTextWindowAndBufferTiles(
                 sActionTexts[0],
-                sMenuTextTileBuffers[6] as *mut c_void,
+                crate::gl!(sMenuTextTileBuffers[6]) as *mut c_void,
                 0,
                 0,
                 2,
             );
-            DrawBottomRowText(sActionTexts[1], sMenuTextTileBuffers[8], 24);
-            gMain.state += 1;
-            (*sTradeMenu).timer = 0;
+            DrawBottomRowText(sActionTexts[1], crate::gl!(sMenuTextTileBuffers[8]), 24);
+            crate::gl!(gMain.state += 1);
+            (*crate::gl!(sTradeMenu)).timer = 0;
             break 'l1;
         }
         if sw1 == 11 {
             if LoadUISpriteGfx() != 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
             break 'l1;
         }
         if sw1 == 12 {
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
                 120,
             ) as u32;
             for i in 0..3i32 {
@@ -1210,7 +1226,7 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
             }
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
-                gLinkPlayers[GetMultiplayerId() as i32 ^ 1]
+                (*gLinkPlayers.as_ptr())[GetMultiplayerId() as i32 ^ 1]
                     .name
                     .as_mut_ptr(),
                 120,
@@ -1220,7 +1236,7 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
                 temp.tileTag += i as u16 + GFXTAG_PARTNER_NAME_L;
                 CreateSprite(&raw mut temp, xPos as i16 + i as i16 * 32 + 136, 10, 1);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 13 {
@@ -1235,24 +1251,24 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
                 temp.tileTag += i as u16 + GFXTAG_CHOOSE_PKMN_L;
                 CreateSprite(&raw mut temp, i as i16 * 32 + 24, 150, 1);
             }
-            (*sTradeMenu).cursorSpriteId = CreateSprite(
+            (*crate::gl!(sTradeMenu)).cursorSpriteId = CreateSprite(
                 (&raw const *sSpriteTemplate_Cursor).cast_mut(),
                 sTradeMonSpriteCoords[0][0] as i16 * 8 + 32,
                 sTradeMonSpriteCoords[0][1] as i16 * 8,
                 2,
             );
-            (*sTradeMenu).cursorPosition = 0;
-            gMain.state += 1;
+            (*crate::gl!(sTradeMenu)).cursorPosition = 0;
+            crate::gl!(gMain.state += 1);
             rbox_fill_rectangle(0);
             break 'l1;
         }
         if sw1 == 14 {
             ComputePartyTradeableFlags(TRADE_PLAYER);
             PrintPartyNicknames(TRADE_PLAYER);
-            (*sTradeMenu).bg2hofs = 0;
-            (*sTradeMenu).bg3hofs = 0;
+            (*crate::gl!(sTradeMenu)).bg2hofs = 0;
+            (*crate::gl!(sTradeMenu)).bg3hofs = 0;
             SetActiveMenuOptions();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             PlayBGM(MUS_SCHOOL);
             break 'l1;
         }
@@ -1260,43 +1276,43 @@ pub(crate) unsafe fn CB2_CreateTradeMenu() {
             fall = true;
             ComputePartyTradeableFlags(TRADE_PARTNER);
             PrintPartyNicknames(TRADE_PARTNER);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         if fall || sw1 == 16 {
             LoadTradeBgGfx(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 17 {
             LoadTradeBgGfx(1);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 18 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 19 {
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
             LoadTradeBgGfx(2);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 20 {
             ComputePartyHPBarLevels(TRADE_PLAYER);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 21 {
             ComputePartyHPBarLevels(TRADE_PARTNER);
             SetTradePartyHPBarSprites();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             break 'l1;
         }
         if sw1 == 22 {
-            if gPaletteFade.active() == 0 {
-                gMain.callback1 = Some(CB1_UpdateLink);
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                crate::gl!(gMain.callback1 = Some(CB1_UpdateLink));
                 SetMainCallback2(Some(CB2_TradeMenu));
             }
             break 'l1;
@@ -1313,46 +1329,46 @@ pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
     let mut temp: SpriteTemplate = zeroed();
     let mut id: u8 = 0;
     let mut xPos: u32 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             InitTradeMenu();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
-            gMain.state += 1;
-            (*sTradeMenu).timer = 0;
+            crate::gl!(gMain.state += 1);
+            (*crate::gl!(sTradeMenu)).timer = 0;
         }
         2 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
             CalculatePlayerPartyCount();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
-            if gWirelessCommType != 0 {
+            if gWirelessCommType.get() != 0 {
                 LoadWirelessStatusIndicatorSpriteGfx();
                 CreateWirelessStatusIndicatorSprite(0, 0);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             CalculateEnemyPartyCount();
-            (*sTradeMenu).partyCounts[0] = gPlayerPartyCount;
-            (*sTradeMenu).partyCounts[1] = gEnemyPartyCount;
+            (*crate::gl!(sTradeMenu)).partyCounts[0] = gPlayerPartyCount.get();
+            (*crate::gl!(sTradeMenu)).partyCounts[1] = gEnemyPartyCount.get();
             ClearWindowTilemap(0);
             PrintPartyNicknames(TRADE_PLAYER);
             PrintPartyNicknames(TRADE_PARTNER);
             i = 0;
-            while i < (*sTradeMenu).partyCounts[0] as i32 {
-                let mon: *mut Pokemon = &raw mut gPlayerParty[i];
-                (*sTradeMenu).partySpriteIds[0][i] = CreateMonIcon(
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[0] as i32 {
+                let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
+                (*crate::gl!(sTradeMenu)).partySpriteIds[0][i] = CreateMonIcon(
                     GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16,
                     Some(SpriteCB_MonIcon),
                     sTradeMonSpriteCoords[i][0] as i16 * 8 + 14,
@@ -1364,9 +1380,9 @@ pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
                 i += 1;
             }
             i = 0;
-            while i < (*sTradeMenu).partyCounts[1] as i32 {
-                let mon: *mut Pokemon = &raw mut gEnemyParty[i];
-                (*sTradeMenu).partySpriteIds[1][i] = CreateMonIcon(
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[1] as i32 {
+                let mon: *mut Pokemon = crate::gl!(&raw gEnemyParty[i]);
+                (*crate::gl!(sTradeMenu)).partySpriteIds[1][i] = CreateMonIcon(
                     GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16,
                     Some(SpriteCB_MonIcon),
                     sTradeMonSpriteCoords[i + PARTY_SIZE][0] as i16 * 8 + 14,
@@ -1377,61 +1393,61 @@ pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
                 );
                 i += 1;
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             LoadHeldItemIcons();
             DrawHeldItemIconsForTrade(
-                &raw mut (*sTradeMenu).partyCounts[0],
-                (*sTradeMenu).partySpriteIds[0].as_mut_ptr(),
+                &raw mut (*crate::gl!(sTradeMenu)).partyCounts[0],
+                (*crate::gl!(sTradeMenu)).partySpriteIds[0].as_mut_ptr(),
                 0,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             DrawHeldItemIconsForTrade(
-                &raw mut (*sTradeMenu).partyCounts[0],
-                (*sTradeMenu).partySpriteIds[0].as_mut_ptr(),
+                &raw mut (*crate::gl!(sTradeMenu)).partyCounts[0],
+                (*crate::gl!(sTradeMenu)).partySpriteIds[0].as_mut_ptr(),
                 TRADE_PARTNER,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             DrawTextWindowAndBufferTiles(
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
-                sMenuTextTileBuffers[0] as *mut c_void,
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
+                crate::gl!(sMenuTextTileBuffers[0]) as *mut c_void,
                 0,
                 0,
                 3,
             );
             id = GetMultiplayerId();
             DrawTextWindowAndBufferTiles(
-                gLinkPlayers[id as i32 ^ 1].name.as_mut_ptr(),
-                sMenuTextTileBuffers[3] as *mut c_void,
+                (*gLinkPlayers.as_ptr())[id as i32 ^ 1].name.as_mut_ptr(),
+                crate::gl!(sMenuTextTileBuffers[3]) as *mut c_void,
                 0,
                 0,
                 3,
             );
             DrawTextWindowAndBufferTiles(
                 sActionTexts[0],
-                sMenuTextTileBuffers[6] as *mut c_void,
+                crate::gl!(sMenuTextTileBuffers[6]) as *mut c_void,
                 0,
                 0,
                 2,
             );
-            DrawBottomRowText(sActionTexts[1], sMenuTextTileBuffers[8], 24);
-            gMain.state += 1;
-            (*sTradeMenu).timer = 0;
+            DrawBottomRowText(sActionTexts[1], crate::gl!(sMenuTextTileBuffers[8]), 24);
+            crate::gl!(gMain.state += 1);
+            (*crate::gl!(sTradeMenu)).timer = 0;
         }
         11 => {
             if LoadUISpriteGfx() != 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         12 => {
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
                 120,
             ) as u32;
             for i in 0..3i32 {
@@ -1441,7 +1457,7 @@ pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
             }
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
-                gLinkPlayers[GetMultiplayerId() as i32 ^ 1]
+                (*gLinkPlayers.as_ptr())[GetMultiplayerId() as i32 ^ 1]
                     .name
                     .as_mut_ptr(),
                 120,
@@ -1451,7 +1467,7 @@ pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
                 temp.tileTag += i as u16 + GFXTAG_PARTNER_NAME_L;
                 CreateSprite(&raw mut temp, xPos as i16 + i as i16 * 32 + 136, 10, 1);
             }
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         13 => {
             temp = *sSpriteTemplate_MenuText;
@@ -1465,49 +1481,50 @@ pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
                 temp.tileTag += i as u16 + GFXTAG_CHOOSE_PKMN_L;
                 CreateSprite(&raw mut temp, i as i16 * 32 + 24, 150, 1);
             }
-            if (*sTradeMenu).cursorPosition < PARTY_SIZE as u8 {
-                (*sTradeMenu).cursorPosition = gLastViewedMonIndex;
+            if (*crate::gl!(sTradeMenu)).cursorPosition < PARTY_SIZE as u8 {
+                (*crate::gl!(sTradeMenu)).cursorPosition = gLastViewedMonIndex.get();
             } else {
-                (*sTradeMenu).cursorPosition = gLastViewedMonIndex + PARTY_SIZE as u8;
+                (*crate::gl!(sTradeMenu)).cursorPosition =
+                    gLastViewedMonIndex.get() + PARTY_SIZE as u8;
             }
-            (*sTradeMenu).cursorSpriteId = CreateSprite(
+            (*crate::gl!(sTradeMenu)).cursorSpriteId = CreateSprite(
                 (&raw const *sSpriteTemplate_Cursor).cast_mut(),
-                sTradeMonSpriteCoords[(*sTradeMenu).cursorPosition][0] as i16 * 8 + 32,
-                sTradeMonSpriteCoords[(*sTradeMenu).cursorPosition][1] as i16 * 8,
+                sTradeMonSpriteCoords[(*crate::gl!(sTradeMenu)).cursorPosition][0] as i16 * 8 + 32,
+                sTradeMonSpriteCoords[(*crate::gl!(sTradeMenu)).cursorPosition][1] as i16 * 8,
                 2,
             );
-            gMain.state = 16;
+            crate::gl!(gMain.state = 16);
         }
         16 => {
             LoadTradeBgGfx(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         17 => {
             LoadTradeBgGfx(1);
-            (*sTradeMenu).bg2hofs = 0;
-            (*sTradeMenu).bg3hofs = 0;
+            (*crate::gl!(sTradeMenu)).bg2hofs = 0;
+            (*crate::gl!(sTradeMenu)).bg3hofs = 0;
             SetActiveMenuOptions();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         18 => {
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             BlendPalettes(PALETTES_ALL, 16, 0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         19 => {
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
             LoadTradeBgGfx(2);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         20 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         21 => {
             SetTradePartyHPBarSprites();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
-        22 if gPaletteFade.active() == 0 => {
+        22 if (*gPaletteFade.as_ptr()).active() == 0 => {
             SetMainCallback2(Some(CB2_TradeMenu));
         }
         _ => {}
@@ -1524,43 +1541,43 @@ pub(crate) unsafe fn VBlankCB_TradeMenu() {
 }
 unsafe fn CB_FadeToStartTrade() {
     if ({
-        (*sTradeMenu).timer += 1;
-        (*sTradeMenu).timer
+        (*crate::gl!(sTradeMenu)).timer += 1;
+        (*crate::gl!(sTradeMenu)).timer
     }) > 15
     {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-        (*sTradeMenu).callbackId = CB_WAIT_TO_START_TRADE;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_WAIT_TO_START_TRADE;
     }
 }
 unsafe fn CB_WaitToStartTrade() {
-    if gPaletteFade.active() == 0 {
-        gSelectedTradeMonPositions[0] = (*sTradeMenu).cursorPosition;
-        gSelectedTradeMonPositions[1] = (*sTradeMenu).partnerCursorPosition;
-        if gWirelessCommType != 0 {
-            (*sTradeMenu).callbackId = CB_WAIT_TO_START_RFU_TRADE;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        crate::gl!(gSelectedTradeMonPositions[0] = (*crate::gl!(sTradeMenu)).cursorPosition);
+        crate::gl!(gSelectedTradeMonPositions[1] = (*crate::gl!(sTradeMenu)).partnerCursorPosition);
+        if gWirelessCommType.get() != 0 {
+            (*crate::gl!(sTradeMenu)).callbackId = CB_WAIT_TO_START_RFU_TRADE;
         } else {
             SetCloseLinkCallbackAndType(32);
-            (*sTradeMenu).callbackId = CB_START_LINK_TRADE;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_START_LINK_TRADE;
         }
     }
 }
 unsafe fn CB_StartLinkTrade() {
-    gMain.savedCallback = Some(CB2_StartCreateTradeMenu);
-    if gWirelessCommType != 0 {
+    crate::gl!(gMain.savedCallback = Some(CB2_StartCreateTradeMenu));
+    if gWirelessCommType.get() != 0 {
         if IsLinkRfuTaskFinished() != 0 {
-            Free(sMenuTextTileBuffer as *mut c_void);
+            Free(crate::gl!(sMenuTextTileBuffer) as *mut c_void);
             FreeAllWindowBuffers();
-            Free(sTradeMenu as *mut c_void);
-            gMain.callback1 = None;
+            Free(crate::gl!(sTradeMenu) as *mut c_void);
+            crate::gl!(gMain.callback1 = None);
             DestroyWirelessStatusIndicatorSprite();
             SetMainCallback2(Some(CB2_LinkTrade));
         }
     } else {
-        if gReceivedRemoteLinkPlayers == 0 {
-            Free(sMenuTextTileBuffer as *mut c_void);
+        if gReceivedRemoteLinkPlayers.get() == 0 {
+            Free(crate::gl!(sMenuTextTileBuffer) as *mut c_void);
             FreeAllWindowBuffers();
-            Free(sTradeMenu as *mut c_void);
-            gMain.callback1 = None;
+            Free(crate::gl!(sTradeMenu) as *mut c_void);
+            crate::gl!(gMain.callback1 = None);
             SetMainCallback2(Some(CB2_LinkTrade));
         }
     }
@@ -1573,16 +1590,16 @@ pub(crate) unsafe fn CB2_TradeMenu() {
     SetGpuReg(
         REG_OFFSET_BG2HOFS,
         ({
-            let t1 = (*sTradeMenu).bg2hofs;
-            (*sTradeMenu).bg2hofs += 1;
+            let t1 = (*crate::gl!(sTradeMenu)).bg2hofs;
+            (*crate::gl!(sTradeMenu)).bg2hofs += 1;
             t1
         }) as u16,
     );
     SetGpuReg(
         REG_OFFSET_BG3HOFS,
         ({
-            let t2 = (*sTradeMenu).bg3hofs;
-            (*sTradeMenu).bg3hofs -= 1;
+            let t2 = (*crate::gl!(sTradeMenu)).bg3hofs;
+            (*crate::gl!(sTradeMenu)).bg3hofs -= 1;
             t2
         }) as u16,
     );
@@ -1653,20 +1670,21 @@ unsafe fn LoadTradeBgGfx(state: u8) {
 }
 unsafe fn SetActiveMenuOptions() {
     for i in 0..PARTY_SIZE {
-        if i < (*sTradeMenu).partyCounts[0] as i32 {
-            gSprites[(*sTradeMenu).partySpriteIds[0][i]].set_invisible(0);
-            (*sTradeMenu).optionsActive[i] = TRUE;
+        if i < (*crate::gl!(sTradeMenu)).partyCounts[0] as i32 {
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).partySpriteIds[0][i]].set_invisible(0);
+            (*crate::gl!(sTradeMenu)).optionsActive[i] = TRUE;
         } else {
-            (*sTradeMenu).optionsActive[i] = FALSE;
+            (*crate::gl!(sTradeMenu)).optionsActive[i] = FALSE;
         }
-        if i < (*sTradeMenu).partyCounts[1] as i32 {
-            gSprites[(*sTradeMenu).partySpriteIds[1][i]].set_invisible(FALSE as u16);
-            (*sTradeMenu).optionsActive[i + PARTY_SIZE] = TRUE;
+        if i < (*crate::gl!(sTradeMenu)).partyCounts[1] as i32 {
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).partySpriteIds[1][i]]
+                .set_invisible(FALSE as u16);
+            (*crate::gl!(sTradeMenu)).optionsActive[i + PARTY_SIZE] = TRUE;
         } else {
-            (*sTradeMenu).optionsActive[i + PARTY_SIZE] = FALSE;
+            (*crate::gl!(sTradeMenu)).optionsActive[i + PARTY_SIZE] = FALSE;
         }
     }
-    (*sTradeMenu).optionsActive[12] = TRUE;
+    (*crate::gl!(sTradeMenu)).optionsActive[12] = TRUE;
 }
 unsafe fn Trade_Memcpy(dest: *mut c_void, src: *mut c_void, size: u32) {
     let mut _dest: *mut u8 = dest as *mut u8;
@@ -1678,23 +1696,23 @@ unsafe fn Trade_Memcpy(dest: *mut c_void, src: *mut c_void, size: u32) {
 unsafe fn BufferTradeParties() -> u8 {
     let id: u8 = GetMultiplayerId();
     let mut mon: *mut Pokemon = null_mut();
-    match (*sTradeMenu).bufferPartyState {
+    match (*crate::gl!(sTradeMenu)).bufferPartyState {
         0 => {
             Trade_Memcpy(
-                gBlockSendBuffer.as_mut_ptr() as *mut c_void,
-                &raw mut gPlayerParty[0] as *mut c_void,
+                (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+                crate::gl!(&raw gPlayerParty[0]) as *mut c_void,
                 200,
             );
-            (*sTradeMenu).bufferPartyState += 1;
-            (*sTradeMenu).timer = 0;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).timer = 0;
         }
         1 => {
             if IsLinkTradeTaskFinished() != 0 {
                 if _GetBlockReceivedStatus() == 0 {
-                    (*sTradeMenu).bufferPartyState += 1;
+                    (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
                 } else {
                     TradeResetReceivedFlags();
-                    (*sTradeMenu).bufferPartyState += 1;
+                    (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
                 }
             }
         }
@@ -1702,121 +1720,121 @@ unsafe fn BufferTradeParties() -> u8 {
             if id == 0 {
                 RequestLinkData(BLOCK_REQ_SIZE_200);
             }
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         4 => {
             if _GetBlockReceivedStatus() == 3 {
                 Trade_Memcpy(
-                    &raw mut gEnemyParty[0] as *mut c_void,
-                    gBlockRecvBuffer[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
+                    crate::gl!(&raw gEnemyParty[0]) as *mut c_void,
+                    (*gBlockRecvBuffer.as_ptr())[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
                     200,
                 );
                 TradeResetReceivedFlags();
-                (*sTradeMenu).bufferPartyState += 1;
+                (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
             }
         }
         5 => {
             Trade_Memcpy(
-                gBlockSendBuffer.as_mut_ptr() as *mut c_void,
-                &raw mut gPlayerParty[2] as *mut c_void,
+                (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+                crate::gl!(&raw gPlayerParty[2]) as *mut c_void,
                 200,
             );
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         7 => {
             if id == 0 {
                 RequestLinkData(BLOCK_REQ_SIZE_200);
             }
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         8 => {
             if _GetBlockReceivedStatus() == 3 {
                 Trade_Memcpy(
-                    &raw mut gEnemyParty[2] as *mut c_void,
-                    gBlockRecvBuffer[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
+                    crate::gl!(&raw gEnemyParty[2]) as *mut c_void,
+                    (*gBlockRecvBuffer.as_ptr())[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
                     200,
                 );
                 TradeResetReceivedFlags();
-                (*sTradeMenu).bufferPartyState += 1;
+                (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
             }
         }
         9 => {
             Trade_Memcpy(
-                gBlockSendBuffer.as_mut_ptr() as *mut c_void,
-                &raw mut gPlayerParty[4] as *mut c_void,
+                (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+                crate::gl!(&raw gPlayerParty[4]) as *mut c_void,
                 200,
             );
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         11 => {
             if id == 0 {
                 RequestLinkData(BLOCK_REQ_SIZE_200);
             }
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         12 => {
             if _GetBlockReceivedStatus() == 3 {
                 Trade_Memcpy(
-                    &raw mut gEnemyParty[4] as *mut c_void,
-                    gBlockRecvBuffer[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
+                    crate::gl!(&raw gEnemyParty[4]) as *mut c_void,
+                    (*gBlockRecvBuffer.as_ptr())[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
                     200,
                 );
                 TradeResetReceivedFlags();
-                (*sTradeMenu).bufferPartyState += 1;
+                (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
             }
         }
         13 => {
             Trade_Memcpy(
-                gBlockSendBuffer.as_mut_ptr() as *mut c_void,
-                (*gSaveBlock1Ptr).mail.as_mut_ptr() as *mut c_void,
+                (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gSaveBlock1Ptr)).mail.as_mut_ptr() as *mut c_void,
                 220,
             );
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         15 => {
             if id == 0 {
                 RequestLinkData(BLOCK_REQ_SIZE_220);
             }
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         16 => {
             if _GetBlockReceivedStatus() == 3 {
                 Trade_Memcpy(
-                    gTradeMail.as_mut_ptr() as *mut c_void,
-                    gBlockRecvBuffer[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
+                    (*gTradeMail.as_ptr()).as_mut_ptr() as *mut c_void,
+                    (*gBlockRecvBuffer.as_ptr())[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
                     216,
                 );
                 TradeResetReceivedFlags();
-                (*sTradeMenu).bufferPartyState += 1;
+                (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
             }
         }
         17 => {
             Trade_Memcpy(
-                gBlockSendBuffer.as_mut_ptr() as *mut c_void,
-                (*gSaveBlock1Ptr).giftRibbons.as_mut_ptr() as *mut c_void,
+                (*gBlockSendBuffer.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*crate::gl!(gSaveBlock1Ptr)).giftRibbons.as_mut_ptr() as *mut c_void,
                 11,
             );
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         19 => {
             if id == 0 {
                 RequestLinkData(BLOCK_REQ_SIZE_40);
             }
-            (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
         }
         20 => {
             if _GetBlockReceivedStatus() == 3 {
                 Trade_Memcpy(
-                    (*sTradeMenu).giftRibbons.as_mut_ptr() as *mut c_void,
-                    gBlockRecvBuffer[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sTradeMenu)).giftRibbons.as_mut_ptr() as *mut c_void,
+                    (*gBlockRecvBuffer.as_ptr())[id as i32 ^ 1].as_mut_ptr() as *mut c_void,
                     11,
                 );
                 TradeResetReceivedFlags();
-                (*sTradeMenu).bufferPartyState += 1;
+                (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
             }
         }
         21 => {
-            mon = gEnemyParty.as_mut_ptr();
+            mon = (*gEnemyParty.as_ptr()).as_mut_ptr();
             for i in 0..PARTY_SIZE {
                 let mut name: CArray<u8, 11> = zeroed();
                 let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
@@ -1848,10 +1866,10 @@ unsafe fn BufferTradeParties() -> u8 {
             return TRUE;
         }
         2 | 6 | 10 | 14 | 18 => {
-            (*sTradeMenu).timer += 1;
-            if (*sTradeMenu).timer > 10 {
-                (*sTradeMenu).timer = 0;
-                (*sTradeMenu).bufferPartyState += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
+            if (*crate::gl!(sTradeMenu)).timer > 10 {
+                (*crate::gl!(sTradeMenu)).timer = 0;
+                (*crate::gl!(sTradeMenu)).bufferPartyState += 1;
             }
         }
         _ => {}
@@ -1861,45 +1879,45 @@ unsafe fn BufferTradeParties() -> u8 {
 unsafe fn PrintIsThisTradeOkay() {
     DrawBottomRowText(
         sText_IsThisTradeOkay.as_ptr().cast_mut(),
-        (OBJ_VRAM0 + (*sTradeMenu).bottomTextTileStart as i32 * 32) as usize as *mut c_void
-            as *mut u8,
+        (OBJ_VRAM0 + (*crate::gl!(sTradeMenu)).bottomTextTileStart as i32 * 32) as usize
+            as *mut c_void as *mut u8,
         24,
     );
 }
 unsafe fn Leader_ReadLinkBuffer(mpId: u8, status: u8) {
     if status as i32 & 1 != 0 {
-        match gBlockRecvBuffer[0][0] {
+        match crate::gl!(gBlockRecvBuffer[0][0]) {
             LINKCMD_REQUEST_CANCEL => {
-                (*sTradeMenu).playerSelectStatus = STATUS_CANCEL;
+                (*crate::gl!(sTradeMenu)).playerSelectStatus = STATUS_CANCEL;
             }
             LINKCMD_READY_TO_TRADE => {
-                (*sTradeMenu).playerSelectStatus = STATUS_READY;
+                (*crate::gl!(sTradeMenu)).playerSelectStatus = STATUS_READY;
             }
             LINKCMD_INIT_BLOCK => {
-                (*sTradeMenu).playerConfirmStatus = STATUS_READY;
+                (*crate::gl!(sTradeMenu)).playerConfirmStatus = STATUS_READY;
             }
             LINKCMD_READY_CANCEL_TRADE => {
-                (*sTradeMenu).playerConfirmStatus = STATUS_CANCEL;
+                (*crate::gl!(sTradeMenu)).playerConfirmStatus = STATUS_CANCEL;
             }
             _ => {}
         }
         TradeResetReceivedFlag(0);
     }
     if status as i32 & 2 != 0 {
-        match gBlockRecvBuffer[1][0] {
+        match crate::gl!(gBlockRecvBuffer[1][0]) {
             LINKCMD_REQUEST_CANCEL => {
-                (*sTradeMenu).partnerSelectStatus = STATUS_CANCEL;
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus = STATUS_CANCEL;
             }
             LINKCMD_READY_TO_TRADE => {
-                (*sTradeMenu).partnerCursorPosition =
-                    gBlockRecvBuffer[1][1] as u8 + PARTY_SIZE as u8;
-                (*sTradeMenu).partnerSelectStatus = STATUS_READY;
+                (*crate::gl!(sTradeMenu)).partnerCursorPosition =
+                    crate::gl!(gBlockRecvBuffer[1][1]) as u8 + PARTY_SIZE as u8;
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus = STATUS_READY;
             }
             LINKCMD_INIT_BLOCK => {
-                (*sTradeMenu).partnerConfirmStatus = STATUS_READY;
+                (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_READY;
             }
             LINKCMD_READY_CANCEL_TRADE => {
-                (*sTradeMenu).partnerConfirmStatus = STATUS_CANCEL;
+                (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_CANCEL;
             }
             _ => {}
         }
@@ -1908,31 +1926,31 @@ unsafe fn Leader_ReadLinkBuffer(mpId: u8, status: u8) {
 }
 unsafe fn Follower_ReadLinkBuffer(mpId: u8, status: u8) {
     if status as i32 & 1 != 0 {
-        match gBlockRecvBuffer[0][0] {
+        match crate::gl!(gBlockRecvBuffer[0][0]) {
             LINKCMD_BOTH_CANCEL_TRADE => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
                 PrintTradeMessage(MSG_WAITING_FOR_FRIEND);
-                (*sTradeMenu).callbackId = CB_INIT_EXIT_CANCELED_TRADE;
+                (*crate::gl!(sTradeMenu)).callbackId = CB_INIT_EXIT_CANCELED_TRADE;
             }
             LINKCMD_PARTNER_CANCEL_TRADE => {
                 PrintTradeMessage(MSG_FRIEND_WANTS_TO_TRADE);
-                (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
+                (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
             }
             LINKCMD_SET_MONS_TO_TRADE => {
-                (*sTradeMenu).partnerCursorPosition =
-                    gBlockRecvBuffer[0][1] as u8 + PARTY_SIZE as u8;
+                (*crate::gl!(sTradeMenu)).partnerCursorPosition =
+                    crate::gl!(gBlockRecvBuffer[0][1]) as u8 + PARTY_SIZE as u8;
                 rbox_fill_rectangle(0);
-                SetSelectedMon((*sTradeMenu).cursorPosition);
-                SetSelectedMon((*sTradeMenu).partnerCursorPosition);
-                (*sTradeMenu).callbackId = CB_PRINT_IS_THIS_OKAY;
+                SetSelectedMon((*crate::gl!(sTradeMenu)).cursorPosition);
+                SetSelectedMon((*crate::gl!(sTradeMenu)).partnerCursorPosition);
+                (*crate::gl!(sTradeMenu)).callbackId = CB_PRINT_IS_THIS_OKAY;
             }
             LINKCMD_START_TRADE => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-                (*sTradeMenu).callbackId = CB_WAIT_TO_START_TRADE;
+                (*crate::gl!(sTradeMenu)).callbackId = CB_WAIT_TO_START_TRADE;
             }
             LINKCMD_PLAYER_CANCEL_TRADE => {
                 PrintTradeMessage(MSG_CANCELED);
-                (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
+                (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
             }
             _ => {}
         }
@@ -1943,89 +1961,89 @@ unsafe fn Follower_ReadLinkBuffer(mpId: u8, status: u8) {
     }
 }
 unsafe fn Leader_HandleCommunication() {
-    if (*sTradeMenu).playerSelectStatus != STATUS_NONE
-        && (*sTradeMenu).partnerSelectStatus != STATUS_NONE
+    if (*crate::gl!(sTradeMenu)).playerSelectStatus != STATUS_NONE
+        && (*crate::gl!(sTradeMenu)).partnerSelectStatus != STATUS_NONE
     {
-        if (*sTradeMenu).playerSelectStatus == STATUS_READY
-            && (*sTradeMenu).partnerSelectStatus == STATUS_READY
+        if (*crate::gl!(sTradeMenu)).playerSelectStatus == STATUS_READY
+            && (*crate::gl!(sTradeMenu)).partnerSelectStatus == STATUS_READY
         {
-            (*sTradeMenu).callbackId = CB_SET_SELECTED_MONS;
-            (*sTradeMenu).linkData[0] = LINKCMD_SET_MONS_TO_TRADE;
-            (*sTradeMenu).linkData[1] = (*sTradeMenu).cursorPosition as u16;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_SET_SELECTED_MONS;
+            (*crate::gl!(sTradeMenu)).linkData[0] = LINKCMD_SET_MONS_TO_TRADE;
+            (*crate::gl!(sTradeMenu)).linkData[1] = (*crate::gl!(sTradeMenu)).cursorPosition as u16;
             QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
-            (*sTradeMenu).playerSelectStatus = {
-                (*sTradeMenu).partnerSelectStatus = STATUS_NONE;
-                (*sTradeMenu).partnerSelectStatus
+            (*crate::gl!(sTradeMenu)).playerSelectStatus = {
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus = STATUS_NONE;
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus
             };
-        } else if (*sTradeMenu).playerSelectStatus == STATUS_READY
-            && (*sTradeMenu).partnerSelectStatus == STATUS_CANCEL
+        } else if (*crate::gl!(sTradeMenu)).playerSelectStatus == STATUS_READY
+            && (*crate::gl!(sTradeMenu)).partnerSelectStatus == STATUS_CANCEL
         {
             PrintTradeMessage(MSG_CANCELED);
-            (*sTradeMenu).linkData[0] = LINKCMD_PARTNER_CANCEL_TRADE;
-            (*sTradeMenu).linkData[1] = 0;
+            (*crate::gl!(sTradeMenu)).linkData[0] = LINKCMD_PARTNER_CANCEL_TRADE;
+            (*crate::gl!(sTradeMenu)).linkData[1] = 0;
             QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
-            (*sTradeMenu).playerConfirmStatus = {
-                (*sTradeMenu).partnerConfirmStatus = STATUS_NONE;
-                (*sTradeMenu).partnerConfirmStatus
+            (*crate::gl!(sTradeMenu)).playerConfirmStatus = {
+                (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_NONE;
+                (*crate::gl!(sTradeMenu)).partnerConfirmStatus
             };
-            (*sTradeMenu).playerSelectStatus = {
-                (*sTradeMenu).partnerSelectStatus = STATUS_NONE;
-                (*sTradeMenu).partnerSelectStatus
+            (*crate::gl!(sTradeMenu)).playerSelectStatus = {
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus = STATUS_NONE;
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus
             };
-            (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
-        } else if (*sTradeMenu).playerSelectStatus == STATUS_CANCEL
-            && (*sTradeMenu).partnerSelectStatus == STATUS_READY
+            (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
+        } else if (*crate::gl!(sTradeMenu)).playerSelectStatus == STATUS_CANCEL
+            && (*crate::gl!(sTradeMenu)).partnerSelectStatus == STATUS_READY
         {
             PrintTradeMessage(MSG_FRIEND_WANTS_TO_TRADE);
-            (*sTradeMenu).linkData[0] = LINKCMD_PLAYER_CANCEL_TRADE;
-            (*sTradeMenu).linkData[1] = 0;
+            (*crate::gl!(sTradeMenu)).linkData[0] = LINKCMD_PLAYER_CANCEL_TRADE;
+            (*crate::gl!(sTradeMenu)).linkData[1] = 0;
             QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
-            (*sTradeMenu).playerConfirmStatus = {
-                (*sTradeMenu).partnerConfirmStatus = STATUS_NONE;
-                (*sTradeMenu).partnerConfirmStatus
+            (*crate::gl!(sTradeMenu)).playerConfirmStatus = {
+                (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_NONE;
+                (*crate::gl!(sTradeMenu)).partnerConfirmStatus
             };
-            (*sTradeMenu).playerSelectStatus = {
-                (*sTradeMenu).partnerSelectStatus = STATUS_NONE;
-                (*sTradeMenu).partnerSelectStatus
+            (*crate::gl!(sTradeMenu)).playerSelectStatus = {
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus = STATUS_NONE;
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus
             };
-            (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
-        } else if (*sTradeMenu).playerSelectStatus == STATUS_CANCEL
-            && (*sTradeMenu).partnerSelectStatus == STATUS_CANCEL
+            (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
+        } else if (*crate::gl!(sTradeMenu)).playerSelectStatus == STATUS_CANCEL
+            && (*crate::gl!(sTradeMenu)).partnerSelectStatus == STATUS_CANCEL
         {
-            (*sTradeMenu).linkData[0] = LINKCMD_BOTH_CANCEL_TRADE;
-            (*sTradeMenu).linkData[1] = 0;
+            (*crate::gl!(sTradeMenu)).linkData[0] = LINKCMD_BOTH_CANCEL_TRADE;
+            (*crate::gl!(sTradeMenu)).linkData[1] = 0;
             QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeMenu).playerSelectStatus = {
-                (*sTradeMenu).partnerSelectStatus = STATUS_NONE;
-                (*sTradeMenu).partnerSelectStatus
+            (*crate::gl!(sTradeMenu)).playerSelectStatus = {
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus = STATUS_NONE;
+                (*crate::gl!(sTradeMenu)).partnerSelectStatus
             };
-            (*sTradeMenu).callbackId = CB_INIT_EXIT_CANCELED_TRADE;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_INIT_EXIT_CANCELED_TRADE;
         }
     }
-    if (*sTradeMenu).playerConfirmStatus != STATUS_NONE
-        && (*sTradeMenu).partnerConfirmStatus != STATUS_NONE
+    if (*crate::gl!(sTradeMenu)).playerConfirmStatus != STATUS_NONE
+        && (*crate::gl!(sTradeMenu)).partnerConfirmStatus != STATUS_NONE
     {
-        if (*sTradeMenu).playerConfirmStatus == STATUS_READY
-            && (*sTradeMenu).partnerConfirmStatus == STATUS_READY
+        if (*crate::gl!(sTradeMenu)).playerConfirmStatus == STATUS_READY
+            && (*crate::gl!(sTradeMenu)).partnerConfirmStatus == STATUS_READY
         {
-            (*sTradeMenu).linkData[0] = LINKCMD_START_TRADE;
-            (*sTradeMenu).linkData[1] = 0;
+            (*crate::gl!(sTradeMenu)).linkData[0] = LINKCMD_START_TRADE;
+            (*crate::gl!(sTradeMenu)).linkData[1] = 0;
             QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
-            (*sTradeMenu).playerConfirmStatus = STATUS_NONE;
-            (*sTradeMenu).partnerConfirmStatus = STATUS_NONE;
-            (*sTradeMenu).callbackId = CB_FADE_TO_START_TRADE;
+            (*crate::gl!(sTradeMenu)).playerConfirmStatus = STATUS_NONE;
+            (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_NONE;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_FADE_TO_START_TRADE;
         }
-        if (*sTradeMenu).playerConfirmStatus == STATUS_CANCEL
-            || (*sTradeMenu).partnerConfirmStatus == STATUS_CANCEL
+        if (*crate::gl!(sTradeMenu)).playerConfirmStatus == STATUS_CANCEL
+            || (*crate::gl!(sTradeMenu)).partnerConfirmStatus == STATUS_CANCEL
         {
             PrintTradeMessage(MSG_CANCELED);
-            (*sTradeMenu).linkData[0] = LINKCMD_PLAYER_CANCEL_TRADE;
-            (*sTradeMenu).linkData[1] = 0;
+            (*crate::gl!(sTradeMenu)).linkData[0] = LINKCMD_PLAYER_CANCEL_TRADE;
+            (*crate::gl!(sTradeMenu)).linkData[1] = 0;
             QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
-            (*sTradeMenu).playerConfirmStatus = STATUS_NONE;
-            (*sTradeMenu).partnerConfirmStatus = STATUS_NONE;
-            (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
+            (*crate::gl!(sTradeMenu)).playerConfirmStatus = STATUS_NONE;
+            (*crate::gl!(sTradeMenu)).partnerConfirmStatus = STATUS_NONE;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
         }
     }
 }
@@ -2035,7 +2053,11 @@ unsafe fn _SetLinkData(linkData: *mut u16, linkCmd: u16, cursorPosition: u16) {
     QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
 }
 unsafe fn SetLinkData(linkCmd: u16, cursorPosition: u16) {
-    _SetLinkData((*sTradeMenu).linkData.as_mut_ptr(), linkCmd, cursorPosition);
+    _SetLinkData(
+        (*crate::gl!(sTradeMenu)).linkData.as_mut_ptr(),
+        linkCmd,
+        cursorPosition,
+    );
 }
 pub(crate) unsafe fn CB1_UpdateLink() {
     let mpId: u8 = GetMultiplayerId();
@@ -2058,7 +2080,10 @@ pub(crate) unsafe fn CB1_UpdateLink() {
 unsafe fn GetNewCursorPosition(oldPosition: u8, direction: u8) -> u8 {
     let mut newPosition: u8 = 0;
     for i in 0..PARTY_SIZE {
-        if (*sTradeMenu).optionsActive[sCursorMoveDestinations[oldPosition][direction][i]] == TRUE {
+        if (*crate::gl!(sTradeMenu)).optionsActive
+            [sCursorMoveDestinations[oldPosition][direction][i]]
+            == TRUE
+        {
             newPosition = sCursorMoveDestinations[oldPosition][direction][i];
             break;
         }
@@ -2069,19 +2094,36 @@ unsafe fn TradeMenuMoveCursor(cursorPosition: *mut u8, direction: u8) {
     let newPosition: u8 = GetNewCursorPosition(*cursorPosition, direction);
     if newPosition == 12 {
         StartSpriteAnim(
-            &raw mut gSprites[(*sTradeMenu).cursorSpriteId],
+            {
+                let gl_i0 = (*crate::gl!(sTradeMenu)).cursorSpriteId;
+                crate::gl!(&raw gSprites[gl_i0])
+            },
             CURSOR_ANIM_ON_CANCEL,
         );
-        gSprites[(*sTradeMenu).cursorSpriteId].x = 224;
-        gSprites[(*sTradeMenu).cursorSpriteId].y = DISPLAY_HEIGHT as i16;
+        {
+            let gl_i1 = (*crate::gl!(sTradeMenu)).cursorSpriteId;
+            crate::gl!(gSprites[gl_i1].x = 224)
+        };
+        {
+            let gl_i2 = (*crate::gl!(sTradeMenu)).cursorSpriteId;
+            crate::gl!(gSprites[gl_i2].y = DISPLAY_HEIGHT as i16)
+        };
     } else {
         StartSpriteAnim(
-            &raw mut gSprites[(*sTradeMenu).cursorSpriteId],
+            {
+                let gl_i3 = (*crate::gl!(sTradeMenu)).cursorSpriteId;
+                crate::gl!(&raw gSprites[gl_i3])
+            },
             CURSOR_ANIM_NORMAL,
         );
-        gSprites[(*sTradeMenu).cursorSpriteId].x =
-            sTradeMonSpriteCoords[newPosition][0] as i16 * 8 + 32;
-        gSprites[(*sTradeMenu).cursorSpriteId].y = sTradeMonSpriteCoords[newPosition][1] as i16 * 8;
+        {
+            let gl_i4 = (*crate::gl!(sTradeMenu)).cursorSpriteId;
+            crate::gl!(gSprites[gl_i4].x = sTradeMonSpriteCoords[newPosition][0] as i16 * 8 + 32)
+        };
+        {
+            let gl_i5 = (*crate::gl!(sTradeMenu)).cursorSpriteId;
+            crate::gl!(gSprites[gl_i5].y = sTradeMonSpriteCoords[newPosition][1] as i16 * 8)
+        };
     }
     if *cursorPosition != newPosition {
         PlaySE(SE_SELECT);
@@ -2090,43 +2132,46 @@ unsafe fn TradeMenuMoveCursor(cursorPosition: *mut u8, direction: u8) {
 }
 unsafe fn SetReadyToTrade() {
     PrintTradeMessage(MSG_STANDBY);
-    (*sTradeMenu).callbackId = CB_IDLE;
+    (*crate::gl!(sTradeMenu)).callbackId = CB_IDLE;
     if GetMultiplayerId() == 1 {
-        SetLinkData(LINKCMD_READY_TO_TRADE, (*sTradeMenu).cursorPosition as u16);
+        SetLinkData(
+            LINKCMD_READY_TO_TRADE,
+            (*crate::gl!(sTradeMenu)).cursorPosition as u16,
+        );
     } else {
-        (*sTradeMenu).playerSelectStatus = STATUS_READY;
+        (*crate::gl!(sTradeMenu)).playerSelectStatus = STATUS_READY;
     }
 }
 unsafe fn CB_ProcessMenuInput() {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
-        TradeMenuMoveCursor(&raw mut (*sTradeMenu).cursorPosition, 0);
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
-        TradeMenuMoveCursor(&raw mut (*sTradeMenu).cursorPosition, 1);
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
-        TradeMenuMoveCursor(&raw mut (*sTradeMenu).cursorPosition, 2);
-    } else if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
-        TradeMenuMoveCursor(&raw mut (*sTradeMenu).cursorPosition, 3);
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
+        TradeMenuMoveCursor(&raw mut (*crate::gl!(sTradeMenu)).cursorPosition, 0);
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
+        TradeMenuMoveCursor(&raw mut (*crate::gl!(sTradeMenu)).cursorPosition, 1);
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
+        TradeMenuMoveCursor(&raw mut (*crate::gl!(sTradeMenu)).cursorPosition, 2);
+    } else if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
+        TradeMenuMoveCursor(&raw mut (*crate::gl!(sTradeMenu)).cursorPosition, 3);
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
-        if (*sTradeMenu).cursorPosition < PARTY_SIZE as u8 {
+        if (*crate::gl!(sTradeMenu)).cursorPosition < PARTY_SIZE as u8 {
             DrawTextBorderOuter(1, 1, 14);
             FillWindowPixelBuffer(1, 17);
             PrintMenuTable(1, 2, sSelectTradeMonActions.as_ptr().cast_mut());
             InitMenuInUpperLeftCornerNormal(1, 2, 0);
             PutWindowTilemap(1);
             CopyWindowToVram(1, COPYWIN_FULL);
-            (*sTradeMenu).callbackId = CB_SELECTED_MON;
-        } else if (*sTradeMenu).cursorPosition < 12 {
+            (*crate::gl!(sTradeMenu)).callbackId = CB_SELECTED_MON;
+        } else if (*crate::gl!(sTradeMenu)).cursorPosition < 12 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeMenu).callbackId = CB_SHOW_MON_SUMMARY;
-        } else if (*sTradeMenu).cursorPosition == 12 {
+            (*crate::gl!(sTradeMenu)).callbackId = CB_SHOW_MON_SUMMARY;
+        } else if (*crate::gl!(sTradeMenu)).cursorPosition == 12 {
             CreateYesNoMenu((&raw const *sTradeYesNoWindowTemplate).cast_mut(), 1, 14, 0);
-            (*sTradeMenu).callbackId = CB_CANCEL_TRADE_PROMPT;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_CANCEL_TRADE_PROMPT;
             DrawBottomRowText(
                 sActionTexts[4],
-                (OBJ_VRAM0 + (*sTradeMenu).bottomTextTileStart as i32 * 32) as usize as *mut c_void
-                    as *mut u8,
+                (OBJ_VRAM0 + (*crate::gl!(sTradeMenu)).bottomTextTileStart as i32 * 32) as usize
+                    as *mut c_void as *mut u8,
                 24,
             );
         }
@@ -2134,12 +2179,12 @@ unsafe fn CB_ProcessMenuInput() {
 }
 unsafe fn RedrawChooseAPokemonWindow() {
     PrintTradePartnerPartyNicknames();
-    (*sTradeMenu).callbackId = CB_MAIN_MENU;
-    gSprites[(*sTradeMenu).cursorSpriteId].set_invisible(FALSE as u16);
+    (*crate::gl!(sTradeMenu)).callbackId = CB_MAIN_MENU;
+    (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).cursorSpriteId].set_invisible(FALSE as u16);
     DrawBottomRowText(
         sActionTexts[1],
-        (OBJ_VRAM0 + (*sTradeMenu).bottomTextTileStart as i32 * 32) as usize as *mut c_void
-            as *mut u8,
+        (OBJ_VRAM0 + (*crate::gl!(sTradeMenu)).bottomTextTileStart as i32 * 32) as usize
+            as *mut c_void as *mut u8,
         24,
     );
 }
@@ -2152,29 +2197,30 @@ unsafe fn CB_ProcessSelectedMonInput() {
         MENU_NOTHING_CHOSEN => {}
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeMenu).callbackId = CB_SHOW_MON_SUMMARY;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_SHOW_MON_SUMMARY;
         }
         1 => {
             match CanTradeSelectedMon(
-                gPlayerParty.as_mut_ptr(),
-                gPlayerPartyCount as i32,
-                (*sTradeMenu).cursorPosition as i32,
+                (*gPlayerParty.as_ptr()).as_mut_ptr(),
+                gPlayerPartyCount.get() as i32,
+                (*crate::gl!(sTradeMenu)).cursorPosition as i32,
             ) {
                 CAN_TRADE_MON => {
                     SetReadyToTrade();
-                    gSprites[(*sTradeMenu).cursorSpriteId].set_invisible(TRUE as u16);
+                    (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).cursorSpriteId]
+                        .set_invisible(TRUE as u16);
                 }
                 1 => {
                     QueueAction(QUEUE_DELAY_MSG, QUEUE_ONLY_MON2);
-                    (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
+                    (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
                 }
                 2 | CANT_TRADE_INVALID_MON => {
                     QueueAction(QUEUE_DELAY_MSG, QUEUE_MON_CANT_BE_TRADED);
-                    (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
+                    (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
                 }
                 3 | CANT_TRADE_PARTNER_EGG_YET => {
                     QueueAction(QUEUE_DELAY_MSG, QUEUE_EGG_CANT_BE_TRADED);
-                    (*sTradeMenu).callbackId = CB_HANDLE_TRADE_CANCELED;
+                    (*crate::gl!(sTradeMenu)).callbackId = CB_HANDLE_TRADE_CANCELED;
                 }
                 _ => {}
             }
@@ -2183,27 +2229,29 @@ unsafe fn CB_ProcessSelectedMonInput() {
     }
 }
 unsafe fn CB_ChooseMonAfterButtonPress() {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         PlaySE(SE_SELECT);
         RedrawChooseAPokemonWindow();
     }
 }
 unsafe fn CB_ShowTradeMonSummaryScreen() {
-    if gPaletteFade.active() == 0 {
-        if (*sTradeMenu).cursorPosition < PARTY_SIZE as u8 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if (*crate::gl!(sTradeMenu)).cursorPosition < PARTY_SIZE as u8 {
             ShowPokemonSummaryScreen(
                 SUMMARY_MODE_LOCK_MOVES,
-                gPlayerParty.as_mut_ptr() as *mut c_void,
-                (*sTradeMenu).cursorPosition,
-                (*sTradeMenu).partyCounts[0] - 1,
+                (*gPlayerParty.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sTradeMenu)).cursorPosition,
+                (*crate::gl!(sTradeMenu)).partyCounts[0] - 1,
                 Some(CB2_ReturnToTradeMenu),
             );
         } else {
             ShowPokemonSummaryScreen(
                 SUMMARY_MODE_LOCK_MOVES,
-                gEnemyParty.as_mut_ptr() as *mut c_void,
-                (*sTradeMenu).cursorPosition - PARTY_SIZE as u8,
-                (*sTradeMenu).partyCounts[1] - 1,
+                (*gEnemyParty.as_ptr()).as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sTradeMenu)).cursorPosition - PARTY_SIZE as u8,
+                (*crate::gl!(sTradeMenu)).partyCounts[1] - 1,
                 Some(CB2_ReturnToTradeMenu),
             );
         }
@@ -2223,18 +2271,21 @@ unsafe fn CheckValidityOfTradeMons(
         }
     }
     partnerMonIdx = (partnerMonIdx as i32 % 6) as u8;
-    let partnerSpecies: u16 =
-        GetMonData2(&raw mut gEnemyParty[partnerMonIdx], MON_DATA_SPECIES) as u16;
+    let partnerSpecies: u16 = GetMonData2(
+        crate::gl!(&raw gEnemyParty[partnerMonIdx]),
+        MON_DATA_SPECIES,
+    ) as u16;
     if (partnerSpecies == SPECIES_DEOXYS as u16 || partnerSpecies == SPECIES_MEW as u16)
         && GetMonData2(
-            &raw mut gEnemyParty[partnerMonIdx],
+            crate::gl!(&raw gEnemyParty[partnerMonIdx]),
             MON_DATA_MODERN_FATEFUL_ENCOUNTER,
         ) == 0
     {
         return PARTNER_MON_INVALID;
     }
     if IsNationalPokedexEnabled() == 0
-        && ((*sTradeMenu).isEgg[1][partnerMonIdx] != 0 || IsSpeciesInHoennDex(partnerSpecies) == 0)
+        && ((*crate::gl!(sTradeMenu)).isEgg[1][partnerMonIdx] != 0
+            || IsSpeciesInHoennDex(partnerSpecies) == 0)
     {
         return PARTNER_MON_INVALID;
     }
@@ -2245,14 +2296,14 @@ unsafe fn CheckValidityOfTradeMons(
 }
 unsafe fn CheckMonsBeforeTrade() -> u32 {
     let mut aliveMons: CArray<u8, 12> = zeroed();
-    for i in 0..((*sTradeMenu).partyCounts[0] as i32) {
-        aliveMons[i] = (*sTradeMenu).isLiveMon[0][i];
+    for i in 0..((*crate::gl!(sTradeMenu)).partyCounts[0] as i32) {
+        aliveMons[i] = (*crate::gl!(sTradeMenu)).isLiveMon[0][i];
     }
     match CheckValidityOfTradeMons(
         aliveMons.as_mut_ptr(),
-        (*sTradeMenu).partyCounts[0],
-        (*sTradeMenu).cursorPosition,
-        (*sTradeMenu).partnerCursorPosition,
+        (*crate::gl!(sTradeMenu)).partyCounts[0],
+        (*crate::gl!(sTradeMenu)).cursorPosition,
+        (*crate::gl!(sTradeMenu)).partnerCursorPosition,
     ) {
         PLAYER_MON_INVALID => {
             QueueAction(QUEUE_DELAY_MSG, QUEUE_ONLY_MON2);
@@ -2274,9 +2325,9 @@ unsafe fn CB_ProcessConfirmTradeInput() {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             if CheckMonsBeforeTrade() == 0 {
-                (*sTradeMenu).callbackId = CB_IDLE;
+                (*crate::gl!(sTradeMenu)).callbackId = CB_IDLE;
             } else {
-                (*sTradeMenu).callbackId = CB_PARTNER_MON_INVALID;
+                (*crate::gl!(sTradeMenu)).callbackId = CB_PARTNER_MON_INVALID;
             }
             PutWindowTilemap(17);
         }
@@ -2285,7 +2336,7 @@ unsafe fn CB_ProcessConfirmTradeInput() {
             if IsLinkTradeTaskFinished() != 0 {
                 SetLinkData(LINKCMD_READY_CANCEL_TRADE, 0);
             }
-            (*sTradeMenu).callbackId = CB_IDLE;
+            (*crate::gl!(sTradeMenu)).callbackId = CB_IDLE;
             PutWindowTilemap(17);
         }
         _ => {}
@@ -2293,7 +2344,7 @@ unsafe fn CB_ProcessConfirmTradeInput() {
 }
 unsafe fn RestoreNicknamesCoveredByYesNo() {
     let mut i: i32 = 0;
-    while i < (*sTradeMenu).partyCounts[1] as i32 - 4 {
+    while i < (*crate::gl!(sTradeMenu)).partyCounts[1] as i32 - 4 {
         PutWindowTilemap(i as u8 + 12);
         CopyWindowToVram(i as u8 + 12, COPYWIN_MAP);
         i += 1;
@@ -2304,8 +2355,9 @@ unsafe fn CB_ProcessCancelTradeInput() {
         0 => {
             PrintTradeMessage(MSG_WAITING_FOR_FRIEND);
             SetLinkData(LINKCMD_REQUEST_CANCEL, 0);
-            gSprites[(*sTradeMenu).cursorSpriteId].set_invisible(TRUE as u16);
-            (*sTradeMenu).callbackId = CB_IDLE;
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).cursorSpriteId]
+                .set_invisible(TRUE as u16);
+            (*crate::gl!(sTradeMenu)).callbackId = CB_IDLE;
             RestoreNicknamesCoveredByYesNo();
         }
         1 | MENU_B_PRESSED => {
@@ -2318,29 +2370,29 @@ unsafe fn CB_ProcessCancelTradeInput() {
 unsafe fn CB_SetSelectedMons() {
     if GetMultiplayerId() == 0 {
         rbox_fill_rectangle(0);
-        SetSelectedMon((*sTradeMenu).cursorPosition);
-        SetSelectedMon((*sTradeMenu).partnerCursorPosition);
+        SetSelectedMon((*crate::gl!(sTradeMenu)).cursorPosition);
+        SetSelectedMon((*crate::gl!(sTradeMenu)).partnerCursorPosition);
     }
-    (*sTradeMenu).callbackId = CB_PRINT_IS_THIS_OKAY;
+    (*crate::gl!(sTradeMenu)).callbackId = CB_PRINT_IS_THIS_OKAY;
 }
 unsafe fn CB_PrintIsThisTradeOkay() {
-    if (*sTradeMenu).drawSelectedMonState[0] == DRAW_SELECTED_FINISH
-        && (*sTradeMenu).drawSelectedMonState[1] == DRAW_SELECTED_FINISH
+    if (*crate::gl!(sTradeMenu)).drawSelectedMonState[0] == DRAW_SELECTED_FINISH
+        && (*crate::gl!(sTradeMenu)).drawSelectedMonState[1] == DRAW_SELECTED_FINISH
     {
         PrintIsThisTradeOkay();
-        (*sTradeMenu).callbackId = CB_INIT_CONFIRM_TRADE_PROMPT;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_INIT_CONFIRM_TRADE_PROMPT;
     }
 }
 unsafe fn CB_InitConfirmTradePrompt() {
-    (*sTradeMenu).timer += 1;
-    if (*sTradeMenu).timer > 120 {
+    (*crate::gl!(sTradeMenu)).timer += 1;
+    if (*crate::gl!(sTradeMenu)).timer > 120 {
         CreateYesNoMenu((&raw const *sTradeYesNoWindowTemplate).cast_mut(), 1, 14, 0);
-        (*sTradeMenu).timer = 0;
-        (*sTradeMenu).callbackId = CB_CONFIRM_TRADE_PROMPT;
+        (*crate::gl!(sTradeMenu)).timer = 0;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_CONFIRM_TRADE_PROMPT;
     }
 }
 unsafe fn CB_HandleTradeCanceled() {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         rbox_fill_rectangle(0);
         rbox_fill_rectangle(1);
@@ -2350,33 +2402,33 @@ unsafe fn CB_HandleTradeCanceled() {
         }
         RedrawPartyWindow(TRADE_PLAYER);
         RedrawPartyWindow(TRADE_PARTNER);
-        (*sTradeMenu).callbackId = CB_MAIN_MENU;
-        gSprites[(*sTradeMenu).cursorSpriteId].set_invisible(FALSE as u16);
+        (*crate::gl!(sTradeMenu)).callbackId = CB_MAIN_MENU;
+        (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).cursorSpriteId].set_invisible(FALSE as u16);
     }
 }
 unsafe fn CB_InitExitCanceledTrade() {
-    if gPaletteFade.active() == 0 {
-        if gWirelessCommType != 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        if gWirelessCommType.get() != 0 {
             SetLinkStandbyCallback();
         } else {
             SetCloseLinkCallbackAndType(12);
         }
-        (*sTradeMenu).callbackId = CB_EXIT_CANCELED_TRADE;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_EXIT_CANCELED_TRADE;
     }
 }
 unsafe fn CB_ExitCanceledTrade() {
-    if gWirelessCommType != 0 {
+    if gWirelessCommType.get() != 0 {
         if IsLinkTradeTaskFinished() != 0 && GetNumQueuedActions() == 0 {
-            Free(sMenuTextTileBuffer as *mut c_void);
-            Free(sTradeMenu as *mut c_void);
+            Free(crate::gl!(sMenuTextTileBuffer) as *mut c_void);
+            Free(crate::gl!(sTradeMenu) as *mut c_void);
             FreeAllWindowBuffers();
             DestroyWirelessStatusIndicatorSprite();
             SetMainCallback2(Some(CB2_ReturnToFieldFromMultiplayer));
         }
     } else {
-        if gReceivedRemoteLinkPlayers == 0 {
-            Free(sMenuTextTileBuffer as *mut c_void);
-            Free(sTradeMenu as *mut c_void);
+        if gReceivedRemoteLinkPlayers.get() == 0 {
+            Free(crate::gl!(sMenuTextTileBuffer) as *mut c_void);
+            Free(crate::gl!(sTradeMenu) as *mut c_void);
             FreeAllWindowBuffers();
             SetMainCallback2(Some(CB2_ReturnToFieldFromMultiplayer));
         }
@@ -2385,17 +2437,17 @@ unsafe fn CB_ExitCanceledTrade() {
 unsafe fn CB_WaitToStartRfuTrade() {
     if Rfu_SetLinkRecovery(0) == 0 && GetNumQueuedActions() == 0 {
         SetLinkStandbyCallback();
-        (*sTradeMenu).callbackId = CB_START_LINK_TRADE;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_START_LINK_TRADE;
     }
 }
 unsafe fn CB_PartnersMonWasInvalid() {
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         SetLinkData(LINKCMD_READY_CANCEL_TRADE, 0);
-        (*sTradeMenu).callbackId = CB_IDLE;
+        (*crate::gl!(sTradeMenu)).callbackId = CB_IDLE;
     }
 }
 unsafe fn RunTradeMenuCallback() {
-    match (*sTradeMenu).callbackId {
+    match (*crate::gl!(sTradeMenu)).callbackId {
         CB_MAIN_MENU => {
             CB_ProcessMenuInput();
         }
@@ -2452,52 +2504,73 @@ unsafe fn RunTradeMenuCallback() {
 }
 unsafe fn SetSelectedMon(cursorPosition: u8) {
     let whichParty: u8 = (cursorPosition as i32 / 6) as u8;
-    if (*sTradeMenu).drawSelectedMonState[whichParty] == 0 {
-        (*sTradeMenu).drawSelectedMonState[whichParty] = 1;
-        (*sTradeMenu).selectedMonIdx[whichParty] = cursorPosition;
+    if (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] == 0 {
+        (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] = 1;
+        (*crate::gl!(sTradeMenu)).selectedMonIdx[whichParty] = cursorPosition;
     }
 }
 unsafe fn DrawSelectedMonScreen(whichParty: u8) {
     let mut nickname: CArray<u8, 20> = zeroed();
     let mut movesString: CArray<u8, 56> = zeroed();
     let mut i: u8 = 0;
-    let selectedMonIdx: u8 = (*sTradeMenu).selectedMonIdx[whichParty];
+    let selectedMonIdx: u8 = (*crate::gl!(sTradeMenu)).selectedMonIdx[whichParty];
     let mut selectedMonParty: u8 = TRADE_PARTNER;
-    if (*sTradeMenu).selectedMonIdx[whichParty] < PARTY_SIZE as u8 {
+    if (*crate::gl!(sTradeMenu)).selectedMonIdx[whichParty] < PARTY_SIZE as u8 {
         selectedMonParty = TRADE_PLAYER;
     }
     let partyIdx: u8 = (selectedMonIdx as i32 % 6) as u8;
     let mut nameStringWidth: i8 = 0;
-    match (*sTradeMenu).drawSelectedMonState[whichParty] {
+    match (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] {
         1 => {
             i = 0;
-            while i < (*sTradeMenu).partyCounts[whichParty] {
-                gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][i]]
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[whichParty] {
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][i]]
                     .set_invisible(TRUE as u16);
                 i += 1;
             }
             for i in 0..(PARTY_SIZE as u8) {
                 ClearWindowTilemap(i + (whichParty * PARTY_SIZE as u8 + 2));
             }
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]]
+            (*gSprites.as_ptr())
+                [(*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx]]
                 .set_invisible(FALSE as u16);
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].data[0] = 20;
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].data[2] =
-                ((sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][0] as i32
-                    + sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE + 1][0] as i32)
-                    / 2) as i16
-                    * 8
-                    + 14;
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].data[4] =
-                sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][1] as i16 * 8 - 12;
+            {
+                let gl_i6 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(gSprites[gl_i6].data[0] = 20)
+            };
+            {
+                let gl_i7 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(
+                    gSprites[gl_i7].data[2] =
+                        ((sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][0] as i32
+                            + sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE + 1][0]
+                                as i32)
+                            / 2) as i16
+                            * 8
+                            + 14
+                )
+            };
+            {
+                let gl_i8 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(
+                    gSprites[gl_i8].data[4] =
+                        sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][1] as i16 * 8
+                            - 12
+                )
+            };
             StoreSpriteCallbackInData6(
-                &raw mut gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]],
+                {
+                    let gl_i9 =
+                        (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                    crate::gl!(&raw gSprites[gl_i9])
+                },
                 Some(SpriteCB_MonIcon),
             );
-            (*sTradeMenu).drawSelectedMonState[whichParty] += 1;
-            Trade_MoveSelectedMonToTarget(
-                &raw mut gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]],
-            );
+            (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] += 1;
+            Trade_MoveSelectedMonToTarget({
+                let gl_i10 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(&raw gSprites[gl_i10])
+            });
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
                 sTradePartyBoxTilemap.as_ptr().cast_mut() as *mut c_void,
@@ -2514,10 +2587,12 @@ unsafe fn DrawSelectedMonScreen(whichParty: u8) {
             }
         }
         2 => {
-            if gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].callback
-                == Some(SpriteCB_MonIcon as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i11 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(gSprites[gl_i11].callback)
+            }) == Some(SpriteCB_MonIcon as unsafe fn(*mut Sprite))
             {
-                (*sTradeMenu).drawSelectedMonState[whichParty] = 3;
+                (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] = 3;
             }
         }
         3 => {
@@ -2531,16 +2606,34 @@ unsafe fn DrawSelectedMonScreen(whichParty: u8) {
                 0,
             );
             CopyBgTilemapBufferToVram(1);
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].x =
-                ((sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][0] as i32
-                    + sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE + 1][0] as i32)
-                    / 2) as i16
-                    * 8
-                    + 14;
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].y =
-                sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][1] as i16 * 8 - 12;
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].x2 = 0;
-            gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].y2 = 0;
+            {
+                let gl_i12 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(
+                    gSprites[gl_i12].x =
+                        ((sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][0] as i32
+                            + sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE + 1][0]
+                                as i32)
+                            / 2) as i16
+                            * 8
+                            + 14
+                )
+            };
+            {
+                let gl_i13 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(
+                    gSprites[gl_i13].y =
+                        sTradeMonSpriteCoords[selectedMonParty as i32 * PARTY_SIZE][1] as i16 * 8
+                            - 12
+                )
+            };
+            {
+                let gl_i14 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(gSprites[gl_i14].x2 = 0)
+            };
+            {
+                let gl_i15 = (*crate::gl!(sTradeMenu)).partySpriteIds[selectedMonParty][partyIdx];
+                crate::gl!(gSprites[gl_i15].y2 = 0)
+            };
             nameStringWidth =
                 GetMonNicknameWidth(nickname.as_mut_ptr(), selectedMonParty, partyIdx) as i8;
             AddTextPrinterParameterized3(
@@ -2568,7 +2661,7 @@ unsafe fn DrawSelectedMonScreen(whichParty: u8) {
             CopyWindowToVram(whichParty * 2 + 14, COPYWIN_FULL);
             PutWindowTilemap(whichParty * 2 + 15);
             CopyWindowToVram(whichParty * 2 + 15, COPYWIN_FULL);
-            (*sTradeMenu).drawSelectedMonState[whichParty] += 1;
+            (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] += 1;
         }
         4 => {
             PrintLevelAndGender(
@@ -2579,7 +2672,7 @@ unsafe fn DrawSelectedMonScreen(whichParty: u8) {
                 sSelectedMonLevelGenderCoords[whichParty][0],
                 sSelectedMonLevelGenderCoords[whichParty][1],
             );
-            (*sTradeMenu).drawSelectedMonState[whichParty] += 1;
+            (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] += 1;
         }
         _ => {}
     }
@@ -2588,13 +2681,13 @@ unsafe fn GetMonNicknameWidth(str: *mut u8, whichParty: u8, partyIdx: u8) -> u8 
     let mut nickname: CArray<u8, 11> = zeroed();
     if whichParty == TRADE_PLAYER {
         GetMonData3(
-            &raw mut gPlayerParty[partyIdx],
+            crate::gl!(&raw gPlayerParty[partyIdx]),
             MON_DATA_NICKNAME,
             nickname.as_mut_ptr(),
         );
     } else {
         GetMonData3(
-            &raw mut gEnemyParty[partyIdx],
+            crate::gl!(&raw gEnemyParty[partyIdx]),
             MON_DATA_NICKNAME,
             nickname.as_mut_ptr(),
         );
@@ -2609,18 +2702,18 @@ unsafe fn GetMonNicknameWidth(str: *mut u8, whichParty: u8, partyIdx: u8) -> u8 
 unsafe fn BufferMovesString(str: *mut u8, whichParty: u8, partyIdx: u8) {
     let mut moves: CArray<u16, 4> = zeroed();
     let mut i: u16 = 0;
-    if (*sTradeMenu).isEgg[whichParty][partyIdx] == 0 {
+    if (*crate::gl!(sTradeMenu)).isEgg[whichParty][partyIdx] == 0 {
         i = 0;
         while i < MAX_MON_MOVES as u16 {
             if whichParty == TRADE_PLAYER {
                 moves[i] = GetMonData3(
-                    &raw mut gPlayerParty[partyIdx],
+                    crate::gl!(&raw gPlayerParty[partyIdx]),
                     i as i32 + MON_DATA_MOVE1,
                     null_mut(),
                 ) as u16;
             } else {
                 moves[i] = GetMonData3(
-                    &raw mut gEnemyParty[partyIdx],
+                    crate::gl!(&raw gEnemyParty[partyIdx]),
                     i as i32 + MON_DATA_MOVE1,
                     null_mut(),
                 ) as u16;
@@ -2664,12 +2757,12 @@ unsafe fn PrintPartyNicknames(whichParty: u8) {
     let mut nickname: CArray<u8, 20> = zeroed();
     let mut str: CArray<u8, 32> = zeroed();
     let party: *mut Pokemon = if whichParty == TRADE_PLAYER {
-        gPlayerParty.as_mut_ptr()
+        (*gPlayerParty.as_ptr()).as_mut_ptr()
     } else {
-        gEnemyParty.as_mut_ptr()
+        (*gEnemyParty.as_ptr()).as_mut_ptr()
     };
     let mut i: u8 = 0;
-    while i < (*sTradeMenu).partyCounts[whichParty] {
+    while i < (*crate::gl!(sTradeMenu)).partyCounts[whichParty] {
         GetMonData3(party.at(i), MON_DATA_NICKNAME, nickname.as_mut_ptr());
         StringCopy_Nickname(str.as_mut_ptr(), nickname.as_mut_ptr());
         PrintPartyMonNickname(whichParty, i, str.as_mut_ptr());
@@ -2694,37 +2787,45 @@ unsafe fn PrintLevelAndGender(whichParty: u8, monIdx: u8, x: u8, y: u8, width: u
     );
     CopyBgTilemapBufferToVram(1);
     if whichParty == TRADE_PLAYER {
-        level = GetMonData3(&raw mut gPlayerParty[monIdx], MON_DATA_LEVEL, null_mut()) as u8;
+        level = GetMonData3(
+            crate::gl!(&raw gPlayerParty[monIdx]),
+            MON_DATA_LEVEL,
+            null_mut(),
+        ) as u8;
     } else {
-        level = GetMonData3(&raw mut gEnemyParty[monIdx], MON_DATA_LEVEL, null_mut()) as u8;
+        level = GetMonData3(
+            crate::gl!(&raw gEnemyParty[monIdx]),
+            MON_DATA_LEVEL,
+            null_mut(),
+        ) as u8;
     }
-    if (*sTradeMenu).isEgg[whichParty][monIdx] == 0 {
+    if (*crate::gl!(sTradeMenu)).isEgg[whichParty][monIdx] == 0 {
         if level as i32 / 10 != 0 {
-            (*sTradeMenu).tilemapBuffer[x as i32 + y as i32 * 32] =
+            (*crate::gl!(sTradeMenu)).tilemapBuffer[x as i32 + y as i32 * 32] =
                 (level as i32 / 10) as u16 + 0x60;
         }
-        (*sTradeMenu).tilemapBuffer[x as i32 + y as i32 * 32 + 1] =
+        (*crate::gl!(sTradeMenu)).tilemapBuffer[x as i32 + y as i32 * 32 + 1] =
             (level as i32 % 10) as u16 + 0x70;
     } else {
-        (*sTradeMenu).tilemapBuffer[x as i32 + y as i32 * 32 - 32] =
-            (*sTradeMenu).tilemapBuffer[x as i32 + y as i32 * 32 - 33];
-        (*sTradeMenu).tilemapBuffer[x as i32 + y as i32 * 32 - 31] =
-            (*sTradeMenu).tilemapBuffer[x as i32 + y as i32 * 32 - 36] | 0x400;
+        (*crate::gl!(sTradeMenu)).tilemapBuffer[x as i32 + y as i32 * 32 - 32] =
+            (*crate::gl!(sTradeMenu)).tilemapBuffer[x as i32 + y as i32 * 32 - 33];
+        (*crate::gl!(sTradeMenu)).tilemapBuffer[x as i32 + y as i32 * 32 - 31] =
+            (*crate::gl!(sTradeMenu)).tilemapBuffer[x as i32 + y as i32 * 32 - 36] | 0x400;
     }
-    if (*sTradeMenu).isEgg[whichParty][monIdx] != 0 {
+    if (*crate::gl!(sTradeMenu)).isEgg[whichParty][monIdx] != 0 {
         symbolTile = 0x480;
     } else {
         if whichParty == TRADE_PLAYER {
-            gender = GetMonGender(&raw mut gPlayerParty[monIdx]);
+            gender = GetMonGender(crate::gl!(&raw gPlayerParty[monIdx]));
             GetMonData3(
-                &raw mut gPlayerParty[monIdx],
+                crate::gl!(&raw gPlayerParty[monIdx]),
                 MON_DATA_NICKNAME,
                 nickname.as_mut_ptr(),
             );
         } else {
-            gender = GetMonGender(&raw mut gEnemyParty[monIdx]);
+            gender = GetMonGender(crate::gl!(&raw gEnemyParty[monIdx]));
             GetMonData3(
-                &raw mut gEnemyParty[monIdx],
+                crate::gl!(&raw gEnemyParty[monIdx]),
                 MON_DATA_NICKNAME,
                 nickname.as_mut_ptr(),
             );
@@ -2749,11 +2850,11 @@ unsafe fn PrintLevelAndGender(whichParty: u8, monIdx: u8, x: u8, y: u8, width: u
             }
         }
     }
-    (*sTradeMenu).tilemapBuffer[(y as i32 - 1) * 32 + x as i32 + 1] = symbolTile as u16;
+    (*crate::gl!(sTradeMenu)).tilemapBuffer[(y as i32 - 1) * 32 + x as i32 + 1] = symbolTile as u16;
 }
 unsafe fn PrintPartyLevelsAndGenders(whichParty: u8) {
     let mut i: i32 = 0;
-    while i < (*sTradeMenu).partyCounts[whichParty] as i32 {
+    while i < (*crate::gl!(sTradeMenu)).partyCounts[whichParty] as i32 {
         let j: i32 = i + PARTY_SIZE * whichParty as i32;
         PrintLevelAndGender(
             whichParty,
@@ -2768,14 +2869,31 @@ unsafe fn PrintPartyLevelsAndGenders(whichParty: u8) {
 }
 unsafe fn ShowTradePartyMonIcons(whichParty: u8) {
     let mut i: i32 = 0;
-    while i < (*sTradeMenu).partyCounts[whichParty] as i32 {
-        gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].set_invisible(FALSE as u16);
-        gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].x =
-            sTradeMonSpriteCoords[whichParty as i32 * PARTY_SIZE + i][0] as i16 * 8 + 14;
-        gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].y =
-            sTradeMonSpriteCoords[whichParty as i32 * PARTY_SIZE + i][1] as i16 * 8 - 12;
-        gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].x2 = 0;
-        gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].y2 = 0;
+    while i < (*crate::gl!(sTradeMenu)).partyCounts[whichParty] as i32 {
+        (*gSprites.as_ptr())[(*crate::gl!(sTradeMenu)).partySpriteIds[whichParty][i]]
+            .set_invisible(FALSE as u16);
+        {
+            let gl_i16 = (*crate::gl!(sTradeMenu)).partySpriteIds[whichParty][i];
+            crate::gl!(
+                gSprites[gl_i16].x =
+                    sTradeMonSpriteCoords[whichParty as i32 * PARTY_SIZE + i][0] as i16 * 8 + 14
+            )
+        };
+        {
+            let gl_i17 = (*crate::gl!(sTradeMenu)).partySpriteIds[whichParty][i];
+            crate::gl!(
+                gSprites[gl_i17].y =
+                    sTradeMonSpriteCoords[whichParty as i32 * PARTY_SIZE + i][1] as i16 * 8 - 12
+            )
+        };
+        {
+            let gl_i18 = (*crate::gl!(sTradeMenu)).partySpriteIds[whichParty][i];
+            crate::gl!(gSprites[gl_i18].x2 = 0)
+        };
+        {
+            let gl_i19 = (*crate::gl!(sTradeMenu)).partySpriteIds[whichParty][i];
+            crate::gl!(gSprites[gl_i19].y2 = 0)
+        };
         i += 1;
     }
 }
@@ -2799,11 +2917,11 @@ unsafe fn RedrawPartyWindow(whichParty: u8) {
     ShowTradePartyMonIcons(whichParty);
     DrawBottomRowText(
         sActionTexts[1],
-        (OBJ_VRAM0 + (*sTradeMenu).bottomTextTileStart as i32 * 32) as usize as *mut c_void
-            as *mut u8,
+        (OBJ_VRAM0 + (*crate::gl!(sTradeMenu)).bottomTextTileStart as i32 * 32) as usize
+            as *mut c_void as *mut u8,
         24,
     );
-    (*sTradeMenu).drawSelectedMonState[whichParty] = 0;
+    (*crate::gl!(sTradeMenu)).drawSelectedMonState[whichParty] = 0;
 }
 pub(crate) unsafe fn Task_DrawSelectionSummary(taskId: u8) {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
@@ -2815,10 +2933,10 @@ pub(crate) unsafe fn Task_DrawSelectionTrade(taskId: u8) {
 }
 unsafe fn QueueAction(delay: u16, actionId: u8) {
     for i in 0..4i32 {
-        if (*sTradeMenu).queuedActions[i].active == 0 {
-            (*sTradeMenu).queuedActions[i].delay = delay;
-            (*sTradeMenu).queuedActions[i].actionId = actionId;
-            (*sTradeMenu).queuedActions[i].active = TRUE;
+        if (*crate::gl!(sTradeMenu)).queuedActions[i].active == 0 {
+            (*crate::gl!(sTradeMenu)).queuedActions[i].delay = delay;
+            (*crate::gl!(sTradeMenu)).queuedActions[i].actionId = actionId;
+            (*crate::gl!(sTradeMenu)).queuedActions[i].active = TRUE;
             break;
         }
     }
@@ -2826,19 +2944,22 @@ unsafe fn QueueAction(delay: u16, actionId: u8) {
 unsafe fn GetNumQueuedActions() -> u32 {
     let mut numActions: u32 = 0;
     for i in 0..4i32 {
-        numActions += (*sTradeMenu).queuedActions[i].active as u32;
+        numActions += (*crate::gl!(sTradeMenu)).queuedActions[i].active as u32;
     }
     numActions
 }
 unsafe fn DoQueuedActions() {
     for i in 0..4i32 {
-        if (*sTradeMenu).queuedActions[i].active != 0 {
-            if (*sTradeMenu).queuedActions[i].delay != 0 {
-                (*sTradeMenu).queuedActions[i].delay -= 1;
+        if (*crate::gl!(sTradeMenu)).queuedActions[i].active != 0 {
+            if (*crate::gl!(sTradeMenu)).queuedActions[i].delay != 0 {
+                (*crate::gl!(sTradeMenu)).queuedActions[i].delay -= 1;
             } else {
-                match (*sTradeMenu).queuedActions[i].actionId {
+                match (*crate::gl!(sTradeMenu)).queuedActions[i].actionId {
                     QUEUE_SEND_DATA => {
-                        SendLinkData((*sTradeMenu).linkData.as_mut_ptr() as *mut c_void, 20);
+                        SendLinkData(
+                            (*crate::gl!(sTradeMenu)).linkData.as_mut_ptr() as *mut c_void,
+                            20,
+                        );
                     }
                     QUEUE_STANDBY => {
                         PrintTradeMessage(MSG_STANDBY);
@@ -2860,7 +2981,7 @@ unsafe fn DoQueuedActions() {
                     }
                     _ => {}
                 }
-                (*sTradeMenu).queuedActions[i].active = FALSE;
+                (*crate::gl!(sTradeMenu)).queuedActions[i].active = FALSE;
             }
         }
     }
@@ -2882,12 +3003,13 @@ unsafe fn PrintTradeMessage(messageId: u8) {
 }
 unsafe fn LoadUISpriteGfx() -> u8 {
     let mut sheet: SpriteSheet = zeroed();
-    if (*sTradeMenu).timer < NUM_MENU_TEXT_SPRITES {
-        sheet.data = sMenuTextTileBuffers[(*sTradeMenu).timer] as *mut c_void;
+    if (*crate::gl!(sTradeMenu)).timer < NUM_MENU_TEXT_SPRITES {
+        sheet.data =
+            (*sMenuTextTileBuffers.as_ptr())[(*crate::gl!(sTradeMenu)).timer] as *mut c_void;
         sheet.size = 0x100;
-        sheet.tag = GFXTAG_MENU_TEXT + (*sTradeMenu).timer as u16;
+        sheet.tag = GFXTAG_MENU_TEXT + (*crate::gl!(sTradeMenu)).timer as u16;
     }
-    match (*sTradeMenu).timer {
+    match (*crate::gl!(sTradeMenu)).timer {
         0
         | GFXTAG_PLAYER_NAME_M
         | GFXTAG_PLAYER_NAME_R
@@ -2897,11 +3019,11 @@ unsafe fn LoadUISpriteGfx() -> u8 {
         | 6
         | 7 => {
             LoadSpriteSheet(&raw mut sheet);
-            (*sTradeMenu).timer += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
         }
         8 => {
-            (*sTradeMenu).bottomTextTileStart = LoadSpriteSheet(&raw mut sheet);
-            (*sTradeMenu).timer += 1;
+            (*crate::gl!(sTradeMenu)).bottomTextTileStart = LoadSpriteSheet(&raw mut sheet);
+            (*crate::gl!(sTradeMenu)).timer += 1;
         }
         GFXTAG_CHOOSE_PKMN_M
         | GFXTAG_CHOOSE_PKMN_R
@@ -2909,22 +3031,22 @@ unsafe fn LoadUISpriteGfx() -> u8 {
         | GFXTAG_CHOOSE_PKMN_EMPTY_2
         | GFXTAG_CHOOSE_PKMN_EMPTY_3 => {
             LoadSpriteSheet(&raw mut sheet);
-            (*sTradeMenu).timer += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
         }
         NUM_MENU_TEXT_SPRITES => {
             LoadSpritePalette((&raw const *sSpritePalette_MenuText).cast_mut());
-            (*sTradeMenu).timer += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
         }
         15 => {
             LoadSpritePalette((&raw const *sCursor_SpritePalette).cast_mut());
-            (*sTradeMenu).timer += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
         }
         16 => {
             LoadSpriteSheet((&raw const *sCursor_SpriteSheet).cast_mut());
-            (*sTradeMenu).timer += 1;
+            (*crate::gl!(sTradeMenu)).timer += 1;
         }
         17 => {
-            (*sTradeMenu).timer = 0;
+            (*crate::gl!(sTradeMenu)).timer = 0;
             return TRUE;
         }
         _ => {}
@@ -2939,32 +3061,32 @@ unsafe fn ComputePartyTradeableFlags(whichParty: u8) {
     match whichParty {
         TRADE_PLAYER => {
             i = 0;
-            while i < (*sTradeMenu).partyCounts[whichParty] as i32 {
-                if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == TRUE as u32 {
-                    (*sTradeMenu).isLiveMon[whichParty][i] = FALSE;
-                    (*sTradeMenu).isEgg[whichParty][i] = TRUE;
-                } else if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) == 0 {
-                    (*sTradeMenu).isLiveMon[whichParty][i] = FALSE;
-                    (*sTradeMenu).isEgg[whichParty][i] = FALSE;
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[whichParty] as i32 {
+                if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_IS_EGG) == TRUE as u32 {
+                    (*crate::gl!(sTradeMenu)).isLiveMon[whichParty][i] = FALSE;
+                    (*crate::gl!(sTradeMenu)).isEgg[whichParty][i] = TRUE;
+                } else if GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP) == 0 {
+                    (*crate::gl!(sTradeMenu)).isLiveMon[whichParty][i] = FALSE;
+                    (*crate::gl!(sTradeMenu)).isEgg[whichParty][i] = FALSE;
                 } else {
-                    (*sTradeMenu).isLiveMon[whichParty][i] = TRUE;
-                    (*sTradeMenu).isEgg[whichParty][i] = FALSE;
+                    (*crate::gl!(sTradeMenu)).isLiveMon[whichParty][i] = TRUE;
+                    (*crate::gl!(sTradeMenu)).isEgg[whichParty][i] = FALSE;
                 }
                 i += 1;
             }
         }
         TRADE_PARTNER => {
             i = 0;
-            while i < (*sTradeMenu).partyCounts[whichParty] as i32 {
-                if GetMonData2(&raw mut gEnemyParty[i], MON_DATA_IS_EGG) == TRUE as u32 {
-                    (*sTradeMenu).isLiveMon[whichParty][i] = FALSE;
-                    (*sTradeMenu).isEgg[whichParty][i] = TRUE;
-                } else if GetMonData2(&raw mut gEnemyParty[i], MON_DATA_HP) == 0 {
-                    (*sTradeMenu).isLiveMon[whichParty][i] = FALSE;
-                    (*sTradeMenu).isEgg[whichParty][i] = FALSE;
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[whichParty] as i32 {
+                if GetMonData2(crate::gl!(&raw gEnemyParty[i]), MON_DATA_IS_EGG) == TRUE as u32 {
+                    (*crate::gl!(sTradeMenu)).isLiveMon[whichParty][i] = FALSE;
+                    (*crate::gl!(sTradeMenu)).isEgg[whichParty][i] = TRUE;
+                } else if GetMonData2(crate::gl!(&raw gEnemyParty[i]), MON_DATA_HP) == 0 {
+                    (*crate::gl!(sTradeMenu)).isLiveMon[whichParty][i] = FALSE;
+                    (*crate::gl!(sTradeMenu)).isEgg[whichParty][i] = FALSE;
                 } else {
-                    (*sTradeMenu).isLiveMon[whichParty][i] = TRUE;
-                    (*sTradeMenu).isEgg[whichParty][i] = FALSE;
+                    (*crate::gl!(sTradeMenu)).isLiveMon[whichParty][i] = TRUE;
+                    (*crate::gl!(sTradeMenu)).isEgg[whichParty][i] = FALSE;
                 }
                 i += 1;
             }
@@ -2979,19 +3101,21 @@ unsafe fn ComputePartyHPBarLevels(whichParty: u8) {
     match whichParty {
         TRADE_PLAYER => {
             i = 0;
-            while i < (*sTradeMenu).partyCounts[0] as u16 {
-                curHp = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
-                maxHp = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_MAX_HP) as u16;
-                (*sTradeMenu).hpBarLevels[0][i] = GetHPBarLevel(curHp as i16, maxHp as i16);
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[0] as u16 {
+                curHp = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP) as u16;
+                maxHp = GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_MAX_HP) as u16;
+                (*crate::gl!(sTradeMenu)).hpBarLevels[0][i] =
+                    GetHPBarLevel(curHp as i16, maxHp as i16);
                 i += 1;
             }
         }
         TRADE_PARTNER => {
             i = 0;
-            while i < (*sTradeMenu).partyCounts[1] as u16 {
-                curHp = GetMonData2(&raw mut gEnemyParty[i], MON_DATA_HP) as u16;
-                maxHp = GetMonData2(&raw mut gEnemyParty[i], MON_DATA_MAX_HP) as u16;
-                (*sTradeMenu).hpBarLevels[1][i] = GetHPBarLevel(curHp as i16, maxHp as i16);
+            while i < (*crate::gl!(sTradeMenu)).partyCounts[1] as u16 {
+                curHp = GetMonData2(crate::gl!(&raw gEnemyParty[i]), MON_DATA_HP) as u16;
+                maxHp = GetMonData2(crate::gl!(&raw gEnemyParty[i]), MON_DATA_MAX_HP) as u16;
+                (*crate::gl!(sTradeMenu)).hpBarLevels[1][i] =
+                    GetHPBarLevel(curHp as i16, maxHp as i16);
                 i += 1;
             }
         }
@@ -3002,10 +3126,13 @@ unsafe fn SetTradePartyHPBarSprites() {
     let mut j: i32 = 0;
     for i in 0..2i32 {
         j = 0;
-        while j < (*sTradeMenu).partyCounts[i] as i32 {
+        while j < (*crate::gl!(sTradeMenu)).partyCounts[i] as i32 {
             SetPartyHPBarSprite(
-                &raw mut gSprites[(*sTradeMenu).partySpriteIds[i][j]],
-                4 - (*sTradeMenu).hpBarLevels[i][j],
+                {
+                    let gl_i20 = (*crate::gl!(sTradeMenu)).partySpriteIds[i][j];
+                    crate::gl!(&raw gSprites[gl_i20])
+                },
+                4 - (*crate::gl!(sTradeMenu)).hpBarLevels[i][j],
             );
             j += 1;
         }
@@ -3013,11 +3140,11 @@ unsafe fn SetTradePartyHPBarSprites() {
 }
 unsafe fn SaveTradeGiftRibbons() {
     for i in 0..11i32 {
-        if (*gSaveBlock1Ptr).giftRibbons[i] == 0
-            && (*sTradeMenu).giftRibbons[i] != 0
-            && (*sTradeMenu).giftRibbons[i] < MAX_GIFT_RIBBON
+        if (*crate::gl!(gSaveBlock1Ptr)).giftRibbons[i] == 0
+            && (*crate::gl!(sTradeMenu)).giftRibbons[i] != 0
+            && (*crate::gl!(sTradeMenu)).giftRibbons[i] < MAX_GIFT_RIBBON
         {
-            (*gSaveBlock1Ptr).giftRibbons[i] = (*sTradeMenu).giftRibbons[i];
+            (*crate::gl!(gSaveBlock1Ptr)).giftRibbons[i] = (*crate::gl!(sTradeMenu)).giftRibbons[i];
         }
     }
 }
@@ -3036,7 +3163,10 @@ unsafe fn CanTradeSelectedMon(playerParty: *mut Pokemon, partyCount: i32, monIdx
             return CANT_TRADE_NATIONAL as u32;
         }
     }
-    let partner: *mut LinkPlayer = &raw mut gLinkPlayers[GetMultiplayerId() as i32 ^ 1];
+    let partner: *mut LinkPlayer = {
+        let gl_i21 = GetMultiplayerId() as i32 ^ 1;
+        crate::gl!(&raw gLinkPlayers[gl_i21])
+    };
     if (*partner).version as i32 & 0xFF != VERSION_RUBY
         && (*partner).version as i32 & 0xFF != VERSION_SAPPHIRE
         && (*partner).progressFlagsCopy as i32 & 0xF == 0
@@ -3079,9 +3209,12 @@ unsafe fn CanTradeSelectedMon(playerParty: *mut Pokemon, partyCount: i32, monIdx
 pub unsafe fn GetGameProgressForLinkTrade() -> i32 {
     let mut versionId: i32 = 0;
     let mut version: u16 = 0;
-    if gReceivedRemoteLinkPlayers != 0 {
+    if gReceivedRemoteLinkPlayers.get() != 0 {
         versionId = 0;
-        version = gLinkPlayers[GetMultiplayerId() as i32 ^ 1].version & 0xFF;
+        version = ({
+            let gl_i22 = GetMultiplayerId() as i32 ^ 1;
+            crate::gl!(gLinkPlayers[gl_i22].version)
+        }) & 0xFF;
         if version == VERSION_RUBY as u16
             || version == VERSION_SAPPHIRE as u16
             || version == VERSION_EMERALD as u16
@@ -3091,9 +3224,19 @@ pub unsafe fn GetGameProgressForLinkTrade() -> i32 {
             versionId = 2;
         }
         if versionId > 0 {
-            if gLinkPlayers[GetMultiplayerId()].progressFlagsCopy as i32 & 0xF0 != 0 {
+            if ({
+                let gl_i23 = GetMultiplayerId();
+                crate::gl!(gLinkPlayers[gl_i23].progressFlagsCopy)
+            }) as i32
+                & 0xF0
+                != 0
+            {
                 if versionId == 2 {
-                    if gLinkPlayers[GetMultiplayerId() as i32 ^ 1].progressFlagsCopy as i32 & 0xF0
+                    if ({
+                        let gl_i24 = GetMultiplayerId() as i32 ^ 1;
+                        crate::gl!(gLinkPlayers[gl_i24].progressFlagsCopy)
+                    }) as i32
+                        & 0xF0
                         != 0
                     {
                         return TRADE_BOTH_PLAYERS_READY;
@@ -3176,7 +3319,7 @@ pub unsafe fn GetUnionRoomTradeMessageId(
     }
     UR_TRADE_MSG_NONE as i32
 }
-pub unsafe fn CanRegisterMonForTradingBoard(
+pub fn CanRegisterMonForTradingBoard(
     player: RfuGameCompatibilityData,
     species2: u16,
     species: u16,
@@ -3201,7 +3344,7 @@ pub unsafe fn CanSpinTradeMon(mon: *mut Pokemon, monIdx: u16) -> i32 {
     let mut version: i32 = 0;
     let mut speciesArray: CArray<i32, 6> = zeroed();
     let mut i: i32 = 0;
-    while i < gPlayerPartyCount as i32 {
+    while i < gPlayerPartyCount.get() as i32 {
         speciesArray[i] = GetMonData2(mon.at(i), MON_DATA_SPECIES_OR_EGG) as i32;
         if speciesArray[i] == SPECIES_EGG as i32 {
             speciesArray[i] = SPECIES_NONE as i32;
@@ -3212,7 +3355,7 @@ pub unsafe fn CanSpinTradeMon(mon: *mut Pokemon, monIdx: u16) -> i32 {
     let mut canTradeAnyMon: i32 = TRUE as i32;
     i = 0;
     while i < GetLinkPlayerCount() as i32 {
-        version = gLinkPlayers[i].version as i32 & 0xFF;
+        version = crate::gl!(gLinkPlayers[i].version) as i32 & 0xFF;
         if version == VERSION_FIRE_RED || version == VERSION_LEAF_GREEN {
             versions = 0;
         } else {
@@ -3222,7 +3365,7 @@ pub unsafe fn CanSpinTradeMon(mon: *mut Pokemon, monIdx: u16) -> i32 {
     }
     i = 0;
     while i < GetLinkPlayerCount() as i32 {
-        let player: *mut LinkPlayer = &raw mut gLinkPlayers[i];
+        let player: *mut LinkPlayer = crate::gl!(&raw gLinkPlayers[i]);
         if (*player).progressFlags as i32 & 0xF == 0 {
             canTradeAnyMon = FALSE as i32;
         }
@@ -3240,7 +3383,7 @@ pub unsafe fn CanSpinTradeMon(mon: *mut Pokemon, monIdx: u16) -> i32 {
         }
     }
     let mut numMonsLeft: i32 = 0;
-    for i in 0..(gPlayerPartyCount as i32) {
+    for i in 0..(gPlayerPartyCount.get() as i32) {
         if monIdx as i32 != i {
             numMonsLeft += speciesArray[i];
         }
@@ -3320,13 +3463,13 @@ unsafe fn SetTradeBGAffine() {
     let mut affine: BgAffineDstData = zeroed();
     DoBgAffineSet(
         &raw mut affine,
-        (*sTradeAnim).texX as u32 * 0x100,
-        (*sTradeAnim).texY as u32 * 0x100,
-        (*sTradeAnim).scrX as i16,
-        (*sTradeAnim).scrY as i16,
-        (*sTradeAnim).sXY as i16,
-        (*sTradeAnim).sXY as i16,
-        (*sTradeAnim).alpha,
+        (*crate::gl!(sTradeAnim)).texX as u32 * 0x100,
+        (*crate::gl!(sTradeAnim)).texY as u32 * 0x100,
+        (*crate::gl!(sTradeAnim)).scrX as i16,
+        (*crate::gl!(sTradeAnim)).scrY as i16,
+        (*crate::gl!(sTradeAnim)).sXY as i16,
+        (*crate::gl!(sTradeAnim)).sXY as i16,
+        (*crate::gl!(sTradeAnim)).alpha,
     );
     SetGpuReg(REG_OFFSET_BG2PA, affine.pa as u16);
     SetGpuReg(REG_OFFSET_BG2PB, affine.pb as u16);
@@ -3338,12 +3481,12 @@ unsafe fn SetTradeBGAffine() {
     SetGpuReg(REG_OFFSET_BG2Y_H, (affine.dy >> 16) as u16);
 }
 unsafe fn SetTradeGpuRegs() {
-    SetGpuReg(REG_OFFSET_BG1VOFS, (*sTradeAnim).bg1vofs as u16);
-    SetGpuReg(REG_OFFSET_BG1HOFS, (*sTradeAnim).bg1hofs as u16);
+    SetGpuReg(REG_OFFSET_BG1VOFS, (*crate::gl!(sTradeAnim)).bg1vofs as u16);
+    SetGpuReg(REG_OFFSET_BG1HOFS, (*crate::gl!(sTradeAnim)).bg1hofs as u16);
     let dispcnt: u16 = GetGpuReg(REG_OFFSET_DISPCNT);
     if dispcnt as i32 & 7 == DISPCNT_MODE_0 {
-        SetGpuReg(REG_OFFSET_BG2VOFS, (*sTradeAnim).bg2vofs as u16);
-        SetGpuReg(REG_OFFSET_BG2HOFS, (*sTradeAnim).bg2hofs as u16);
+        SetGpuReg(REG_OFFSET_BG2VOFS, (*crate::gl!(sTradeAnim)).bg2vofs as u16);
+        SetGpuReg(REG_OFFSET_BG2HOFS, (*crate::gl!(sTradeAnim)).bg2hofs as u16);
     } else {
         SetTradeBGAffine();
     }
@@ -3355,27 +3498,27 @@ pub(crate) unsafe fn VBlankCB_TradeAnim() {
     TransferPlttBuffer();
 }
 unsafe fn ClearLinkTimeoutTimer() {
-    (*sTradeAnim).linkTimeoutTimer = 0;
-    (*sTradeAnim).linkTimeoutZero1 = 0;
-    (*sTradeAnim).linkTimeoutZero2 = 0;
+    (*crate::gl!(sTradeAnim)).linkTimeoutTimer = 0;
+    (*crate::gl!(sTradeAnim)).linkTimeoutZero1 = 0;
+    (*crate::gl!(sTradeAnim)).linkTimeoutZero2 = 0;
 }
 unsafe fn CheckForLinkTimeout() {
-    if (*sTradeAnim).linkTimeoutZero1 == (*sTradeAnim).linkTimeoutZero2 {
-        (*sTradeAnim).linkTimeoutTimer += 1;
+    if (*crate::gl!(sTradeAnim)).linkTimeoutZero1 == (*crate::gl!(sTradeAnim)).linkTimeoutZero2 {
+        (*crate::gl!(sTradeAnim)).linkTimeoutTimer += 1;
     } else {
-        (*sTradeAnim).linkTimeoutTimer = 0;
+        (*crate::gl!(sTradeAnim)).linkTimeoutTimer = 0;
     }
-    if (*sTradeAnim).linkTimeoutTimer > 300 {
+    if (*crate::gl!(sTradeAnim)).linkTimeoutTimer > 300 {
         CloseLink();
         SetMainCallback2(Some(CB2_LinkError));
-        (*sTradeAnim).linkTimeoutTimer = 0;
-        (*sTradeAnim).linkTimeoutZero2 = 0;
-        (*sTradeAnim).linkTimeoutZero1 = 0;
+        (*crate::gl!(sTradeAnim)).linkTimeoutTimer = 0;
+        (*crate::gl!(sTradeAnim)).linkTimeoutZero2 = 0;
+        (*crate::gl!(sTradeAnim)).linkTimeoutZero1 = 0;
     }
-    (*sTradeAnim).linkTimeoutZero2 = (*sTradeAnim).linkTimeoutZero1;
+    (*crate::gl!(sTradeAnim)).linkTimeoutZero2 = (*crate::gl!(sTradeAnim)).linkTimeoutZero1;
 }
 unsafe fn TradeGetMultiplayerId() -> u32 {
-    if gReceivedRemoteLinkPlayers != 0 {
+    if gReceivedRemoteLinkPlayers.get() != 0 {
         return GetMultiplayerId() as u32;
     }
     0
@@ -3386,11 +3529,17 @@ unsafe fn LoadTradeMonPic(whichParty: u8, state: u8) {
     let mut species: u16 = 0;
     let mut personality: u32 = 0;
     if whichParty == TRADE_PLAYER {
-        mon = &raw mut gPlayerParty[gSelectedTradeMonPositions[0]];
+        mon = {
+            let gl_i25 = crate::gl!(gSelectedTradeMonPositions[0]);
+            crate::gl!(&raw gPlayerParty[gl_i25])
+        };
         pos = B_POSITION_OPPONENT_LEFT as i32;
     }
     if whichParty == TRADE_PARTNER {
-        mon = &raw mut gEnemyParty[gSelectedTradeMonPositions[1] as i32 % 6];
+        mon = {
+            let gl_i26 = crate::gl!(gSelectedTradeMonPositions[1]) as i32 % 6;
+            crate::gl!(&raw gEnemyParty[gl_i26])
+        };
         pos = B_POSITION_OPPONENT_RIGHT as i32;
     }
     match state {
@@ -3402,7 +3551,7 @@ unsafe fn LoadTradeMonPic(whichParty: u8, state: u8) {
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                         .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[1],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[1],
                     species as i32,
                     personality,
                 );
@@ -3411,34 +3560,38 @@ unsafe fn LoadTradeMonPic(whichParty: u8, state: u8) {
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
                         .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr
                         [whichParty as i32 * 2 + B_POSITION_OPPONENT_LEFT as i32],
                     species as i32,
                     personality,
                 );
             }
             LoadCompressedSpritePalette(GetMonSpritePalStruct(mon));
-            (*sTradeAnim).monSpecies[whichParty] = species;
-            (*sTradeAnim).monPersonalities[whichParty] = personality;
+            (*crate::gl!(sTradeAnim)).monSpecies[whichParty] = species;
+            (*crate::gl!(sTradeAnim)).monPersonalities[whichParty] = personality;
         }
         1 => {
             SetMultiuseSpriteTemplateToPokemon((*GetMonSpritePalStruct(mon)).tag, pos as u8);
-            (*sTradeAnim).monSpriteIds[whichParty] =
-                CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 60, 6);
-            gSprites[(*sTradeAnim).monSpriteIds[whichParty]].set_invisible(TRUE as u16);
-            gSprites[(*sTradeAnim).monSpriteIds[whichParty]].callback = Some(SpriteCallbackDummy);
+            (*crate::gl!(sTradeAnim)).monSpriteIds[whichParty] =
+                CreateSprite(crate::gl!(&raw gMultiuseSpriteTemplate), 120, 60, 6);
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[whichParty]]
+                .set_invisible(TRUE as u16);
+            {
+                let gl_i27 = (*crate::gl!(sTradeAnim)).monSpriteIds[whichParty];
+                crate::gl!(gSprites[gl_i27].callback = Some(SpriteCallbackDummy))
+            };
         }
         _ => {}
     }
 }
 pub unsafe fn CB2_LinkTrade() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                gLinkType = LINKTYPE_TRADE_DISCONNECTED;
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                gLinkType.set(LINKTYPE_TRADE_DISCONNECTED);
                 CloseLink();
             }
-            sTradeAnim = AllocZeroed(256) as *mut typeof___sTradeAnim_0_t;
+            crate::gl!(sTradeAnim = AllocZeroed(256) as *mut typeof___sTradeAnim_0_t);
             AllocateMonSpritesGfx();
             ResetTasks();
             ResetSpriteData();
@@ -3446,101 +3599,103 @@ pub unsafe fn CB2_LinkTrade() {
             SetVBlankCallback(Some(VBlankCB_TradeAnim));
             TradeAnimInit_LoadGfx();
             ClearLinkTimeoutTimer();
-            gMain.state += 1;
-            (*sTradeAnim).neverRead_8C = 0;
-            (*sTradeAnim).state = 0;
-            (*sTradeAnim).isLinkTrade = TRUE;
-            (*sTradeAnim).texX = 64;
-            (*sTradeAnim).texY = 64;
-            (*sTradeAnim).neverRead_D8 = 0;
-            (*sTradeAnim).neverRead_DA = 0;
-            (*sTradeAnim).scrX = 120;
-            (*sTradeAnim).scrY = 80;
-            (*sTradeAnim).sXY = 256;
-            (*sTradeAnim).alpha = 0;
+            crate::gl!(gMain.state += 1);
+            (*crate::gl!(sTradeAnim)).neverRead_8C = 0;
+            (*crate::gl!(sTradeAnim)).state = 0;
+            (*crate::gl!(sTradeAnim)).isLinkTrade = TRUE;
+            (*crate::gl!(sTradeAnim)).texX = 64;
+            (*crate::gl!(sTradeAnim)).texY = 64;
+            (*crate::gl!(sTradeAnim)).neverRead_D8 = 0;
+            (*crate::gl!(sTradeAnim)).neverRead_DA = 0;
+            (*crate::gl!(sTradeAnim)).scrX = 120;
+            (*crate::gl!(sTradeAnim)).scrY = 80;
+            (*crate::gl!(sTradeAnim)).sXY = 256;
+            (*crate::gl!(sTradeAnim)).alpha = 0;
         }
         1 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                (*sTradeAnim).isCableTrade = TRUE;
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                (*crate::gl!(sTradeAnim)).isCableTrade = TRUE;
                 OpenLink();
-                gMain.state += 1;
-                (*sTradeAnim).timer = 0;
+                crate::gl!(gMain.state += 1);
+                (*crate::gl!(sTradeAnim)).timer = 0;
             } else {
-                gMain.state = 4;
+                crate::gl!(gMain.state = 4);
             }
         }
         2 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 60
             {
-                (*sTradeAnim).timer = 0;
-                gMain.state += 1;
+                (*crate::gl!(sTradeAnim)).timer = 0;
+                crate::gl!(gMain.state += 1);
             }
         }
         3 => {
             if IsLinkMaster() != 0 {
                 if GetLinkPlayerCount_2() >= GetSavedPlayerCount() {
                     if ({
-                        (*sTradeAnim).timer += 1;
-                        (*sTradeAnim).timer
+                        (*crate::gl!(sTradeAnim)).timer += 1;
+                        (*crate::gl!(sTradeAnim)).timer
                     }) > 30
                     {
                         CheckShouldAdvanceLinkState();
-                        gMain.state += 1;
+                        crate::gl!(gMain.state += 1);
                     }
                 } else {
                     CheckForLinkTimeout();
                 }
             } else {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         4 => {
             CheckForLinkTimeout();
-            if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
-                gMain.state += 1;
+            if gReceivedRemoteLinkPlayers.get() == TRUE
+                && IsLinkPlayerDataExchangeComplete() == TRUE
+            {
+                crate::gl!(gMain.state += 1);
             }
         }
         5 => {
-            (*sTradeAnim).playerFinishStatus = 0;
-            (*sTradeAnim).partnerFinishStatus = 0;
-            (*sTradeAnim).scheduleLinkTransfer = 0;
+            (*crate::gl!(sTradeAnim)).playerFinishStatus = 0;
+            (*crate::gl!(sTradeAnim)).partnerFinishStatus = 0;
+            (*crate::gl!(sTradeAnim)).scheduleLinkTransfer = 0;
             LoadTradeMonPic(0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             LoadTradeMonPic(TRADE_PLAYER, 1);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             LoadTradeMonPic(TRADE_PARTNER, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             LoadTradeMonPic(1, 1);
             LinkTradeDrawWindow();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             LoadTradeSequenceSpriteSheetsAndPalettes();
             LoadSpriteSheet((&raw const *sPokeBallSpriteSheet).cast_mut());
             LoadSpritePalette((&raw const *sPokeBallSpritePalette).cast_mut());
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             ShowBg(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
             InitTradeSequenceBgGpuRegs();
             BufferTradeSceneStrings();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
-        12 if gPaletteFade.active() == 0 => {
-            if gWirelessCommType != 0 {
+        12 if (*gPaletteFade.as_ptr()).active() == 0 => {
+            if gWirelessCommType.get() != 0 {
                 LoadWirelessStatusIndicatorSpriteGfx();
                 CreateWirelessStatusIndicatorSprite(0, 0);
             }
@@ -3586,14 +3741,14 @@ unsafe fn TradeAnimInit_LoadGfx() {
         (*(&raw const crate::data::graphics::gBattleTextboxTilemap).cast::<CArray<u32, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
     );
     CopyToBgTilemapBuffer(
         0,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -3621,14 +3776,14 @@ unsafe fn TradeAnimInit_LoadGfx() {
         (*(&raw const crate::data::graphics::gBattleTextboxTilemap).cast::<CArray<u32, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
     );
     CopyToBgTilemapBuffer(
         0,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr() as *mut c_void,
@@ -3645,79 +3800,84 @@ unsafe fn TradeAnimInit_LoadGfx() {
 }
 pub(crate) unsafe fn CB2_InitInGameTrade() {
     let mut otName: CArray<u8, 11> = zeroed();
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
-            gSelectedTradeMonPositions[0] = gSpecialVar_0x8005 as u8;
-            gSelectedTradeMonPositions[1] = PARTY_SIZE as u8;
+            crate::gl!(gSelectedTradeMonPositions[0] = gSpecialVar_0x8005 as u8);
+            crate::gl!(gSelectedTradeMonPositions[1] = PARTY_SIZE as u8);
             StringCopy(
-                gLinkPlayers[0].name.as_mut_ptr(),
-                (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+                (*gLinkPlayers.as_ptr())[0].name.as_mut_ptr(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
             );
             GetMonData3(
-                &raw mut gEnemyParty[0],
+                crate::gl!(&raw gEnemyParty[0]),
                 MON_DATA_OT_NAME,
                 otName.as_mut_ptr(),
             );
-            StringCopy(gLinkPlayers[1].name.as_mut_ptr(), otName.as_mut_ptr());
-            gLinkPlayers[0].language = GAME_LANGUAGE as u16;
-            gLinkPlayers[1].language =
-                GetMonData2(&raw mut gEnemyParty[0], MON_DATA_LANGUAGE) as u16;
-            sTradeAnim = AllocZeroed(256) as *mut typeof___sTradeAnim_0_t;
+            StringCopy(
+                (*gLinkPlayers.as_ptr())[1].name.as_mut_ptr(),
+                otName.as_mut_ptr(),
+            );
+            crate::gl!(gLinkPlayers[0].language = GAME_LANGUAGE as u16);
+            crate::gl!(
+                gLinkPlayers[1].language =
+                    GetMonData2(crate::gl!(&raw gEnemyParty[0]), MON_DATA_LANGUAGE) as u16
+            );
+            crate::gl!(sTradeAnim = AllocZeroed(256) as *mut typeof___sTradeAnim_0_t);
             AllocateMonSpritesGfx();
             ResetTasks();
             ResetSpriteData();
             FreeAllSpritePalettes();
             SetVBlankCallback(Some(VBlankCB_TradeAnim));
             TradeAnimInit_LoadGfx();
-            (*sTradeAnim).isLinkTrade = FALSE;
-            (*sTradeAnim).neverRead_8C = 0;
-            (*sTradeAnim).state = 0;
-            (*sTradeAnim).texX = 64;
-            (*sTradeAnim).texY = 64;
-            (*sTradeAnim).neverRead_D8 = 0;
-            (*sTradeAnim).neverRead_DA = 0;
-            (*sTradeAnim).scrX = 120;
-            (*sTradeAnim).scrY = 80;
-            (*sTradeAnim).sXY = 256;
-            (*sTradeAnim).alpha = 0;
-            (*sTradeAnim).timer = 0;
-            gMain.state = 5;
+            (*crate::gl!(sTradeAnim)).isLinkTrade = FALSE;
+            (*crate::gl!(sTradeAnim)).neverRead_8C = 0;
+            (*crate::gl!(sTradeAnim)).state = 0;
+            (*crate::gl!(sTradeAnim)).texX = 64;
+            (*crate::gl!(sTradeAnim)).texY = 64;
+            (*crate::gl!(sTradeAnim)).neverRead_D8 = 0;
+            (*crate::gl!(sTradeAnim)).neverRead_DA = 0;
+            (*crate::gl!(sTradeAnim)).scrX = 120;
+            (*crate::gl!(sTradeAnim)).scrY = 80;
+            (*crate::gl!(sTradeAnim)).sXY = 256;
+            (*crate::gl!(sTradeAnim)).alpha = 0;
+            (*crate::gl!(sTradeAnim)).timer = 0;
+            crate::gl!(gMain.state = 5);
         }
         5 => {
             LoadTradeMonPic(0, 0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             LoadTradeMonPic(TRADE_PLAYER, 1);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             LoadTradeMonPic(TRADE_PARTNER, 0);
             ShowBg(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             LoadTradeMonPic(1, 1);
             FillWindowPixelBuffer(0, 255);
             PutWindowTilemap(0);
             CopyWindowToVram(0, COPYWIN_FULL);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             LoadTradeSequenceSpriteSheetsAndPalettes();
             LoadSpriteSheet((&raw const *sPokeBallSpriteSheet).cast_mut());
             LoadSpritePalette((&raw const *sPokeBallSpritePalette).cast_mut());
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             ShowBg(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         11 => {
             SetTradeSequenceBgGpuRegs(5);
             SetTradeSequenceBgGpuRegs(0);
             BufferTradeSceneStrings();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         12 => {
             SetMainCallback2(Some(CB2_InGameTrade));
@@ -3731,7 +3891,7 @@ pub(crate) unsafe fn CB2_InitInGameTrade() {
     UpdatePaletteFade();
 }
 unsafe fn UpdatePokedexForReceivedMon(partyIdx: u8) {
-    let mon: *mut Pokemon = &raw mut gPlayerParty[partyIdx];
+    let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[partyIdx]);
     if GetMonData2(mon, MON_DATA_IS_EGG) == 0 {
         let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
         let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
@@ -3744,16 +3904,16 @@ unsafe fn TryEnableNationalDexFromLinkPartner() {
     let mpId: u8 = GetMultiplayerId();
 }
 unsafe fn TradeMons(playerPartyIdx: u8, partnerPartyIdx: u8) {
-    let playerMon: *mut Pokemon = &raw mut gPlayerParty[playerPartyIdx];
+    let playerMon: *mut Pokemon = crate::gl!(&raw gPlayerParty[playerPartyIdx]);
     let playerMail: u16 = GetMonData2(playerMon, MON_DATA_MAIL) as u16;
-    let partnerMon: *mut Pokemon = &raw mut gEnemyParty[partnerPartyIdx];
+    let partnerMon: *mut Pokemon = crate::gl!(&raw gEnemyParty[partnerPartyIdx]);
     let partnerMail: u16 = GetMonData2(partnerMon, MON_DATA_MAIL) as u16;
     if playerMail != MAIL_NONE as u16 {
-        ClearMail(&raw mut (*gSaveBlock1Ptr).mail[playerMail]);
+        ClearMail(&raw mut (*crate::gl!(gSaveBlock1Ptr)).mail[playerMail]);
     }
-    (*sTradeAnim).tempMon = *playerMon;
+    (*crate::gl!(sTradeAnim)).tempMon = *playerMon;
     *playerMon = *partnerMon;
-    *partnerMon = (*sTradeAnim).tempMon;
+    *partnerMon = (*crate::gl!(sTradeAnim)).tempMon;
     let mut friendship: u8 = 70;
     if GetMonData2(playerMon, MON_DATA_IS_EGG) == 0 {
         SetMonData(
@@ -3763,30 +3923,30 @@ unsafe fn TradeMons(playerPartyIdx: u8, partnerPartyIdx: u8) {
         );
     }
     if partnerMail != MAIL_NONE as u16 {
-        GiveMailToMon(playerMon, &raw mut gTradeMail[partnerMail]);
+        GiveMailToMon(playerMon, crate::gl!(&raw gTradeMail[partnerMail]));
     }
     UpdatePokedexForReceivedMon(playerPartyIdx);
-    if gReceivedRemoteLinkPlayers != 0 {
+    if gReceivedRemoteLinkPlayers.get() != 0 {
         TryEnableNationalDexFromLinkPartner();
     }
 }
 unsafe fn HandleLinkDataSend() {
     'l1: {
-        let sw1: u8 = (*sTradeAnim).scheduleLinkTransfer;
+        let sw1: u8 = (*crate::gl!(sTradeAnim)).scheduleLinkTransfer;
         let mut fall = false;
         if sw1 == 1 {
             fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
-                    (*sTradeAnim).linkData.as_mut_ptr() as *mut c_void,
+                    (*crate::gl!(sTradeAnim)).linkData.as_mut_ptr() as *mut c_void,
                     20,
                 );
-                (*sTradeAnim).scheduleLinkTransfer += 1;
+                (*crate::gl!(sTradeAnim)).scheduleLinkTransfer += 1;
             }
         }
         if fall || sw1 == 2 {
-            (*sTradeAnim).scheduleLinkTransfer = 0;
+            (*crate::gl!(sTradeAnim)).scheduleLinkTransfer = 0;
             break 'l1;
         }
     }
@@ -3802,8 +3962,8 @@ pub(crate) unsafe fn CB2_InGameTrade() {
 unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
     match state {
         0 => {
-            (*sTradeAnim).bg2vofs = 0;
-            (*sTradeAnim).bg2hofs = 180;
+            (*crate::gl!(sTradeAnim)).bg2vofs = 0;
+            (*crate::gl!(sTradeAnim)).bg2hofs = 180;
             SetGpuReg(0x0, 5440);
             SetGpuReg(REG_OFFSET_BG2CNT, 20998);
             LoadPalette(
@@ -3870,12 +4030,12 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
             }
         }
         1 => {
-            (*sTradeAnim).bg1hofs = 0;
-            (*sTradeAnim).bg1vofs = 348;
+            (*crate::gl!(sTradeAnim)).bg1hofs = 0;
+            (*crate::gl!(sTradeAnim)).bg1vofs = 348;
             SetGpuReg(REG_OFFSET_BG1VOFS, 348);
             SetGpuReg(REG_OFFSET_BG1CNT, 34050);
             SetGpuReg(REG_OFFSET_BG2CNT, 37382);
-            if (*sTradeAnim).isCableTrade != 0 {
+            if (*crate::gl!(sTradeAnim)).isCableTrade != 0 {
                 {
                     let mut _src: *mut c_void = sGbaMapCable.as_ptr().cast_mut() as *mut c_void;
                     let mut _dest: *mut c_void = 0x6002800_usize as *mut c_void;
@@ -3951,9 +4111,9 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
             SetGpuReg(0x0, 4672);
         }
         2 => {
-            (*sTradeAnim).bg1vofs = 0;
-            (*sTradeAnim).bg1hofs = 0;
-            if (*sTradeAnim).isCableTrade == 0 {
+            (*crate::gl!(sTradeAnim)).bg1vofs = 0;
+            (*crate::gl!(sTradeAnim)).bg1hofs = 0;
+            if (*crate::gl!(sTradeAnim)).isCableTrade == 0 {
                 SetGpuReg(REG_OFFSET_DISPCNT, 4673);
                 LZ77UnCompVram(
                     sWirelessCloseup_Map.as_ptr().cast_mut(),
@@ -3996,17 +4156,17 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
                 sWirelessSignal_Tilemap.as_ptr().cast_mut(),
                 0x6009000_usize as *mut c_void,
             );
-            (*sTradeAnim).bg2vofs = 80;
+            (*crate::gl!(sTradeAnim)).bg2vofs = 80;
             SetGpuReg(0x0, 5696);
         }
         4 => {
             SetGpuReg(REG_OFFSET_DISPCNT, 5185);
             SetGpuReg(REG_OFFSET_BG2CNT, 4743);
-            (*sTradeAnim).texX = 64;
-            (*sTradeAnim).texY = 92;
-            (*sTradeAnim).sXY = 32;
-            (*sTradeAnim).gbaScale = 1024;
-            (*sTradeAnim).alpha = 0;
+            (*crate::gl!(sTradeAnim)).texX = 64;
+            (*crate::gl!(sTradeAnim)).texY = 92;
+            (*crate::gl!(sTradeAnim)).sXY = 32;
+            (*crate::gl!(sTradeAnim)).gbaScale = 1024;
+            (*crate::gl!(sTradeAnim)).alpha = 0;
             {
                 let mut _src: *mut c_void = sGbaAffine_Gfx.as_ptr().cast_mut() as *mut c_void;
                 let mut _dest: *mut c_void = 0x6004000_usize as *mut c_void;
@@ -4042,7 +4202,7 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
                     _size -= 0x1000;
                 }
             }
-            if (*sTradeAnim).isCableTrade != 0 {
+            if (*crate::gl!(sTradeAnim)).isCableTrade != 0 {
                 {
                     let mut _src: *mut c_void =
                         sGbaAffineMapCable.as_ptr().cast_mut() as *mut c_void;
@@ -4081,19 +4241,19 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
             }
         }
         5 => {
-            (*sTradeAnim).bg1vofs = 0;
-            (*sTradeAnim).bg1hofs = 0;
+            (*crate::gl!(sTradeAnim)).bg1vofs = 0;
+            (*crate::gl!(sTradeAnim)).bg1hofs = 0;
         }
         6 => {
             SetGpuReg(REG_OFFSET_DISPCNT, 5185);
             SetGpuReg(REG_OFFSET_BG2CNT, 4743);
-            (*sTradeAnim).texX = 64;
-            (*sTradeAnim).texY = 92;
-            (*sTradeAnim).sXY = 256;
-            (*sTradeAnim).gbaScale = 128;
-            (*sTradeAnim).scrX = 120;
-            (*sTradeAnim).scrY = 80;
-            (*sTradeAnim).alpha = 0;
+            (*crate::gl!(sTradeAnim)).texX = 64;
+            (*crate::gl!(sTradeAnim)).texY = 92;
+            (*crate::gl!(sTradeAnim)).sXY = 256;
+            (*crate::gl!(sTradeAnim)).gbaScale = 128;
+            (*crate::gl!(sTradeAnim)).scrX = 120;
+            (*crate::gl!(sTradeAnim)).scrY = 80;
+            (*crate::gl!(sTradeAnim)).alpha = 0;
             {
                 let mut _src: *mut c_void = sGbaAffine_Gfx.as_ptr().cast_mut() as *mut c_void;
                 let mut _dest: *mut c_void = 0x6004000_usize as *mut c_void;
@@ -4129,7 +4289,7 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
                     _size -= 0x1000;
                 }
             }
-            if (*sTradeAnim).isCableTrade != 0 {
+            if (*crate::gl!(sTradeAnim)).isCableTrade != 0 {
                 {
                     let mut _src: *mut c_void =
                         sGbaAffineMapCable.as_ptr().cast_mut() as *mut c_void;
@@ -4168,8 +4328,8 @@ unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
             }
         }
         7 => {
-            (*sTradeAnim).bg2vofs = 0;
-            (*sTradeAnim).bg2hofs = 0;
+            (*crate::gl!(sTradeAnim)).bg2vofs = 0;
+            (*crate::gl!(sTradeAnim)).bg2hofs = 0;
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
             SetGpuReg(REG_OFFSET_BG2CNT, 20998);
             LoadPalette(
@@ -4250,24 +4410,30 @@ unsafe fn BufferTradeSceneStrings() {
     let mut mpId: u8 = 0;
     let mut name: CArray<u8, 20> = zeroed();
     let mut ingameTrade: *mut InGameTrade = null_mut();
-    if (*sTradeAnim).isLinkTrade != 0 {
+    if (*crate::gl!(sTradeAnim)).isLinkTrade != 0 {
         mpId = GetMultiplayerId();
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gLinkPlayers[mpId as i32 ^ 1].name.as_mut_ptr(),
+            (*gLinkPlayers.as_ptr())[mpId as i32 ^ 1].name.as_mut_ptr(),
         );
         GetMonData3(
-            &raw mut gEnemyParty[gSelectedTradeMonPositions[1] as i32 % 6],
+            {
+                let gl_i28 = crate::gl!(gSelectedTradeMonPositions[1]) as i32 % 6;
+                crate::gl!(&raw gEnemyParty[gl_i28])
+            },
             MON_DATA_NICKNAME,
             name.as_mut_ptr(),
         );
-        StringCopy_Nickname(gStringVar3.as_mut_ptr(), name.as_mut_ptr());
+        StringCopy_Nickname((*gStringVar3.as_ptr()).as_mut_ptr(), name.as_mut_ptr());
         GetMonData3(
-            &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+            {
+                let gl_i29 = crate::gl!(gSelectedTradeMonPositions[0]);
+                crate::gl!(&raw gPlayerParty[gl_i29])
+            },
             MON_DATA_NICKNAME,
             name.as_mut_ptr(),
         );
-        StringCopy_Nickname(gStringVar2.as_mut_ptr(), name.as_mut_ptr());
+        StringCopy_Nickname((*gStringVar2.as_ptr()).as_mut_ptr(), name.as_mut_ptr());
     } else {
         ingameTrade = (&raw const sIngameTrades[*(&raw const crate::ffi::gSpecialVar_0x8004)
             .cast::<u16>()
@@ -4275,21 +4441,24 @@ unsafe fn BufferTradeSceneStrings() {
             .cast_mut();
         StringCopy(gStringVar1.as_mut_ptr(), (*ingameTrade).otName.as_mut_ptr());
         StringCopy_Nickname(
-            gStringVar3.as_mut_ptr(),
+            (*gStringVar3.as_ptr()).as_mut_ptr(),
             (*ingameTrade).nickname.as_mut_ptr(),
         );
         GetMonData3(
-            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
-                .cast::<u16>()
-                .cast_mut()],
+            {
+                let gl_i30 = *(&raw const crate::ffi::gSpecialVar_0x8005)
+                    .cast::<u16>()
+                    .cast_mut();
+                crate::gl!(&raw gPlayerParty[gl_i30])
+            },
             MON_DATA_NICKNAME,
             name.as_mut_ptr(),
         );
-        StringCopy_Nickname(gStringVar2.as_mut_ptr(), name.as_mut_ptr());
+        StringCopy_Nickname((*gStringVar2.as_ptr()).as_mut_ptr(), name.as_mut_ptr());
     }
 }
 unsafe fn DoTradeAnim() -> u8 {
-    if (*sTradeAnim).isCableTrade != 0 {
+    if (*crate::gl!(sTradeAnim)).isCableTrade != 0 {
         return DoTradeAnim_Cable();
     } else {
         return DoTradeAnim_Wireless();
@@ -4301,26 +4470,38 @@ unsafe fn DoTradeAnim() -> u8 {
 }
 unsafe fn DoTradeAnim_Cable() -> u8 {
     let mut evoTarget: u16 = 0;
-    match (*sTradeAnim).state {
+    match (*crate::gl!(sTradeAnim)).state {
         STATE_START => {
-            gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(0);
-            gSprites[(*sTradeAnim).monSpriteIds[0]].x2 = -180;
-            gSprites[(*sTradeAnim).monSpriteIds[0]].y2 =
-                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
-                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[0]]
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]].set_invisible(0);
+            {
+                let gl_i31 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i31].x2 = -180)
+            };
+            {
+                let gl_v = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*crate::gl!(sTradeAnim)).monSpecies[0]]
                     .y_offset as i16;
-            (*sTradeAnim).state += 1;
-            (*sTradeAnim).cachedMapMusic = GetCurrentMapMusic();
+                let gl_i32 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i32].y2 = gl_v)
+            };
+            (*crate::gl!(sTradeAnim)).state += 1;
+            (*crate::gl!(sTradeAnim)).cachedMapMusic = GetCurrentMapMusic();
             PlayNewMapMusic(MUS_EVOLUTION);
         }
         STATE_MON_SLIDE_IN => {
-            if (*sTradeAnim).bg2hofs > 0 {
-                gSprites[(*sTradeAnim).monSpriteIds[0]].x2 += 3;
-                (*sTradeAnim).bg2hofs -= 3;
+            if (*crate::gl!(sTradeAnim)).bg2hofs > 0 {
+                {
+                    let gl_i33 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i33].x2 += 3)
+                };
+                (*crate::gl!(sTradeAnim)).bg2hofs -= 3;
             } else {
-                gSprites[(*sTradeAnim).monSpriteIds[0]].x2 = 0;
-                (*sTradeAnim).bg2hofs = 0;
-                (*sTradeAnim).state = STATE_SEND_MSG;
+                {
+                    let gl_i34 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i34].x2 = 0)
+                };
+                (*crate::gl!(sTradeAnim)).bg2hofs = 0;
+                (*crate::gl!(sTradeAnim)).state = STATE_SEND_MSG;
             }
         }
         STATE_SEND_MSG => {
@@ -4331,21 +4512,23 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
                     .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
-            if (*sTradeAnim).monSpecies[0] != SPECIES_EGG as u16 {
-                PlayCry_Normal((*sTradeAnim).monSpecies[0], 0);
+            if (*crate::gl!(sTradeAnim)).monSpecies[0] != SPECIES_EGG as u16 {
+                PlayCry_Normal((*crate::gl!(sTradeAnim)).monSpecies[0], 0);
             }
-            (*sTradeAnim).state = STATE_BYE_BYE;
-            (*sTradeAnim).timer = 0;
+            (*crate::gl!(sTradeAnim)).state = STATE_BYE_BYE;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_BYE_BYE => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 80
             {
-                (*sTradeAnim).releasePokeballSpriteId = CreateTradePokeballSprite(
-                    (*sTradeAnim).monSpriteIds[0],
-                    gSprites[(*sTradeAnim).monSpriteIds[0]].oam.paletteNum() as u8,
+                (*crate::gl!(sTradeAnim)).releasePokeballSpriteId = CreateTradePokeballSprite(
+                    (*crate::gl!(sTradeAnim)).monSpriteIds[0],
+                    (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]]
+                        .oam
+                        .paletteNum() as u8,
                     120,
                     32,
                     2,
@@ -4353,7 +4536,7 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
                     0x14,
                     0xfffff,
                 );
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_ByeByeVar1).cast::<CArray<u8, 0>>())
@@ -4364,88 +4547,100 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
             }
         }
         STATE_POKEBALL_DEPART => {
-            if gSprites[(*sTradeAnim).releasePokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i35 = (*crate::gl!(sTradeAnim)).releasePokeballSpriteId;
+                crate::gl!(gSprites[gl_i35].callback)
+            }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
-                (*sTradeAnim).bouncingPokeballSpriteId = CreateSprite(
+                (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
                     120,
                     32,
                     0,
                 );
-                gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback =
-                    Some(SpriteCB_BouncingPokeballDepart);
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).releasePokeballSpriteId]);
-                (*sTradeAnim).state += 1;
+                {
+                    let gl_i36 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                    crate::gl!(gSprites[gl_i36].callback = Some(SpriteCB_BouncingPokeballDepart))
+                };
+                DestroySprite({
+                    let gl_i37 = (*crate::gl!(sTradeAnim)).releasePokeballSpriteId;
+                    crate::gl!(&raw gSprites[gl_i37])
+                });
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_POKEBALL_DEPART_WAIT => {}
         STATE_FADE_OUT_TO_GBA_SEND => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeAnim).state = STATE_WAIT_FADE_OUT_TO_GBA_SEND;
+            (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FADE_OUT_TO_GBA_SEND;
         }
         STATE_WAIT_FADE_OUT_TO_GBA_SEND => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetTradeSequenceBgGpuRegs(4);
                 FillWindowPixelBuffer(0, 255);
                 CopyWindowToVram(0, COPYWIN_FULL);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_FADE_IN_TO_GBA_SEND => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_IN_TO_GBA_SEND => {
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state = STATE_GBA_ZOOM_OUT;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state = STATE_GBA_ZOOM_OUT;
             }
         }
         STATE_GBA_ZOOM_OUT => {
-            if (*sTradeAnim).gbaScale > 0x100 {
-                (*sTradeAnim).gbaScale -= 0x34;
+            if (*crate::gl!(sTradeAnim)).gbaScale > 0x100 {
+                (*crate::gl!(sTradeAnim)).gbaScale -= 0x34;
             } else {
                 SetTradeSequenceBgGpuRegs(1);
-                (*sTradeAnim).gbaScale = 0x80;
-                (*sTradeAnim).state += 1;
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).gbaScale = 0x80;
+                (*crate::gl!(sTradeAnim)).state += 1;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
-            (*sTradeAnim).sXY = div_i32(0x8000, (*sTradeAnim).gbaScale as i32) as u16;
+            (*crate::gl!(sTradeAnim)).sXY =
+                div_i32(0x8000, (*crate::gl!(sTradeAnim)).gbaScale as i32) as u16;
         }
         STATE_GBA_FLASH_SEND => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 20
             {
                 SetTradeBGAffine();
-                (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+                (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                     (&raw const *sSpriteTemplate_GbaScreenFlash_Long).cast_mut(),
                     120,
                     80,
                     0,
                 );
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_GBA_STOP_FLASH_SEND => {
-            if gSprites[(*sTradeAnim).connectionSpriteId2].animEnded() != 0 {
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+            if (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).connectionSpriteId2].animEnded() != 0
+            {
+                DestroySprite({
+                    let gl_i38 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i38])
+                });
                 SetGpuReg(REG_OFFSET_BLDCNT, 1600);
                 SetGpuReg(REG_OFFSET_BLDALPHA, 1036);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_PAN_AWAY_GBA => {
             if ({
-                (*sTradeAnim).bg1vofs -= 1;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs -= 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) == 316
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
-            if (*sTradeAnim).bg1vofs == 328 {
-                (*sTradeAnim).cableEndSpriteId = CreateSprite(
+            if (*crate::gl!(sTradeAnim)).bg1vofs == 328 {
+                (*crate::gl!(sTradeAnim)).cableEndSpriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_CableEnd).cast_mut(),
                     128,
                     65,
@@ -4454,318 +4649,482 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
             }
         }
         STATE_CREATE_LINK_MON_LEAVING => {
-            (*sTradeAnim).connectionSpriteId1 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId1 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonGlow).cast_mut(),
                 128,
                 80,
                 3,
             );
-            (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                 128,
                 80,
                 0,
             );
             StartSpriteAnim(
-                &raw mut gSprites[(*sTradeAnim).connectionSpriteId2],
+                {
+                    let gl_i39 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i39])
+                },
                 ANIM_LINKMON_SMALL,
             );
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_LINK_MON_TRAVEL_OUT => {
             if ({
-                (*sTradeAnim).bg1vofs -= 2;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs -= 2;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) == 166
             {
-                (*sTradeAnim).state = STATE_LINK_MON_TRAVEL_OFFSCREEN;
+                (*crate::gl!(sTradeAnim)).state = STATE_LINK_MON_TRAVEL_OFFSCREEN;
             }
             SetGpuReg(REG_OFFSET_DISPCNT, 4673);
         }
         STATE_LINK_MON_TRAVEL_OFFSCREEN => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y -= 2;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y -= 2;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y < -8 {
-                (*sTradeAnim).state = STATE_FADE_OUT_TO_CROSSING;
+            {
+                let gl_i40 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i40].y -= 2)
+            };
+            {
+                let gl_i41 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i41].y -= 2)
+            };
+            if ({
+                let gl_i42 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i42].y)
+            }) < -8
+            {
+                (*crate::gl!(sTradeAnim)).state = STATE_FADE_OUT_TO_CROSSING;
             }
         }
         STATE_FADE_OUT_TO_CROSSING => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
-            (*sTradeAnim).state = STATE_WAIT_FADE_OUT_TO_CROSSING;
+            (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FADE_OUT_TO_CROSSING;
         }
         STATE_WAIT_FADE_OUT_TO_CROSSING => {
-            if gPaletteFade.active() == 0 {
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId1]);
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                DestroySprite({
+                    let gl_i43 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(&raw gSprites[gl_i43])
+                });
+                DestroySprite({
+                    let gl_i44 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i44])
+                });
                 SetTradeSequenceBgGpuRegs(2);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_FADE_IN_TO_CROSSING => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
-            (*sTradeAnim).connectionSpriteId1 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId1 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                 111,
                 170,
                 0,
             );
-            (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                 129,
                 -10,
                 0,
             );
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_IN_TO_CROSSING => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 PlaySE(SE_WARP_OUT);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 -= 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
+            {
+                let gl_i45 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i45].y2 -= 3)
+            };
+            {
+                let gl_i46 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i46].y2 += 3)
+            };
         }
         STATE_CROSSING_LINK_MONS_ENTER => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 -= 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y2 <= -90 {
-                gSprites[(*sTradeAnim).connectionSpriteId1].data[1] = 1;
-                gSprites[(*sTradeAnim).connectionSpriteId2].data[1] = 1;
-                (*sTradeAnim).state += 1;
+            {
+                let gl_i47 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i47].y2 -= 3)
+            };
+            {
+                let gl_i48 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i48].y2 += 3)
+            };
+            if ({
+                let gl_i49 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i49].y2)
+            }) <= -90
+            {
+                {
+                    let gl_i50 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i50].data[1] = 1)
+                };
+                {
+                    let gl_i51 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(gSprites[gl_i51].data[1] = 1)
+                };
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_CROSSING_BLEND_WHITE_1 => {
             BlendPalettes(0x1, 16, 65535);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_BLEND_WHITE_2 => {
             BlendPalettes(0x1, 0, 65535);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_BLEND_WHITE_3 => {
             BlendPalettes(0x1, 16, 65535);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_CREATE_MON_PICS => {
-            if IsMonSpriteNotFlipped((*sTradeAnim).monSpecies[0]) == 0 {
-                gSprites[(*sTradeAnim).monSpriteIds[0]].affineAnims =
-                    sAffineAnims_CrossingMonPics.as_ptr().cast_mut();
-                gSprites[(*sTradeAnim).monSpriteIds[0]]
+            if IsMonSpriteNotFlipped((*crate::gl!(sTradeAnim)).monSpecies[0]) == 0 {
+                {
+                    let gl_v = sAffineAnims_CrossingMonPics.as_ptr().cast_mut();
+                    let gl_i52 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i52].affineAnims = gl_v)
+                };
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]]
                     .oam
                     .set_affineMode(ST_OAM_AFFINE_DOUBLE);
                 CalcCenterToCornerVec(
-                    &raw mut gSprites[(*sTradeAnim).monSpriteIds[0]],
+                    {
+                        let gl_i53 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                        crate::gl!(&raw gSprites[gl_i53])
+                    },
                     TRADE_PLAYER,
                     ST_OAM_AFFINE_DOUBLE as u8,
                     ST_OAM_AFFINE_DOUBLE as u8,
                 );
-                StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[0]], 0);
+                StartSpriteAffineAnim(
+                    {
+                        let gl_i54 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                        crate::gl!(&raw gSprites[gl_i54])
+                    },
+                    0,
+                );
             } else {
-                StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[0]], 0);
+                StartSpriteAffineAnim(
+                    {
+                        let gl_i55 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                        crate::gl!(&raw gSprites[gl_i55])
+                    },
+                    0,
+                );
             }
-            StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]], 0);
-            gSprites[(*sTradeAnim).monSpriteIds[0]].x = 60;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].x = 180;
-            gSprites[(*sTradeAnim).monSpriteIds[0]].y = 192;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y = -32;
-            gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(0);
-            gSprites[(*sTradeAnim).monSpriteIds[1]].set_invisible(FALSE as u16);
-            (*sTradeAnim).state += 1;
+            StartSpriteAffineAnim(
+                {
+                    let gl_i56 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                    crate::gl!(&raw gSprites[gl_i56])
+                },
+                0,
+            );
+            {
+                let gl_i57 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i57].x = 60)
+            };
+            {
+                let gl_i58 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i58].x = 180)
+            };
+            {
+                let gl_i59 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i59].y = 192)
+            };
+            {
+                let gl_i60 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i60].y = -32)
+            };
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]].set_invisible(0);
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[1]]
+                .set_invisible(FALSE as u16);
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_MON_PICS_MOVE => {
-            gSprites[(*sTradeAnim).monSpriteIds[0]].y2 -= 3;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y2 += 3;
-            if gSprites[(*sTradeAnim).monSpriteIds[0]].y2 < -160
-                && gSprites[(*sTradeAnim).monSpriteIds[0]].y2 >= -163
+            {
+                let gl_i61 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i61].y2 -= 3)
+            };
+            {
+                let gl_i62 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i62].y2 += 3)
+            };
+            if ({
+                let gl_i63 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i63].y2)
+            }) < -160
+                && ({
+                    let gl_i64 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i64].y2)
+                }) >= -163
             {
                 PlaySE(SE_WARP_IN);
             }
-            if gSprites[(*sTradeAnim).monSpriteIds[0]].y2 < -222 {
-                gSprites[(*sTradeAnim).connectionSpriteId1].data[1] = 0;
-                gSprites[(*sTradeAnim).connectionSpriteId2].data[1] = 0;
-                (*sTradeAnim).state += 1;
-                gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(TRUE as u16);
-                gSprites[(*sTradeAnim).monSpriteIds[1]].set_invisible(1);
+            if ({
+                let gl_i65 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i65].y2)
+            }) < -222
+            {
+                {
+                    let gl_i66 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i66].data[1] = 0)
+                };
+                {
+                    let gl_i67 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(gSprites[gl_i67].data[1] = 0)
+                };
+                (*crate::gl!(sTradeAnim)).state += 1;
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]]
+                    .set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[1]].set_invisible(1);
                 BlendPalettes(0x1, 0, 65535);
             }
         }
         STATE_CROSSING_LINK_MONS_EXIT => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 -= 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y2 <= -222 {
+            {
+                let gl_i68 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i68].y2 -= 3)
+            };
+            {
+                let gl_i69 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i69].y2 += 3)
+            };
+            if ({
+                let gl_i70 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i70].y2)
+            }) <= -222
+            {
                 BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
-                (*sTradeAnim).state += 1;
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId1]);
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+                (*crate::gl!(sTradeAnim)).state += 1;
+                DestroySprite({
+                    let gl_i71 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(&raw gSprites[gl_i71])
+                });
+                DestroySprite({
+                    let gl_i72 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i72])
+                });
             }
         }
         STATE_CREATE_LINK_MON_ARRIVING => {
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
                 SetTradeSequenceBgGpuRegs(1);
-                (*sTradeAnim).bg1vofs = 166;
-                (*sTradeAnim).connectionSpriteId1 = CreateSprite(
+                (*crate::gl!(sTradeAnim)).bg1vofs = 166;
+                (*crate::gl!(sTradeAnim)).connectionSpriteId1 = CreateSprite(
                     (&raw const *sSpriteTemplate_LinkMonGlow).cast_mut(),
                     128,
                     -20,
                     3,
                 );
-                (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+                (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                     (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                     128,
                     -20,
                     0,
                 );
                 StartSpriteAnim(
-                    &raw mut gSprites[(*sTradeAnim).connectionSpriteId2],
+                    {
+                        let gl_i73 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                        crate::gl!(&raw gSprites[gl_i73])
+                    },
                     ANIM_LINKMON_SMALL,
                 );
             }
         }
         STATE_FADE_OUT_TO_GBA_RECV => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_OUT_TO_GBA_RECV => {
             SetGpuReg(0x0, 4672);
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_LINK_MON_TRAVEL_IN => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 += 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y2 as i32
-                + gSprites[(*sTradeAnim).connectionSpriteId1].y as i32
+            {
+                let gl_i74 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i74].y2 += 3)
+            };
+            {
+                let gl_i75 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i75].y2 += 3)
+            };
+            if ({
+                let gl_i76 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i76].y2)
+            }) as i32
+                + ({
+                    let gl_i77 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i77].y)
+                }) as i32
                 == 64
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_PAN_TO_GBA => {
             if ({
-                (*sTradeAnim).bg1vofs += 2;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs += 2;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) > 316
             {
-                (*sTradeAnim).bg1vofs = 316;
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs = 316;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_DESTROY_LINK_MON => {
-            DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId1]);
-            DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
-            (*sTradeAnim).state += 1;
-            (*sTradeAnim).timer = 0;
+            DestroySprite({
+                let gl_i78 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(&raw gSprites[gl_i78])
+            });
+            DestroySprite({
+                let gl_i79 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(&raw gSprites[gl_i79])
+            });
+            (*crate::gl!(sTradeAnim)).state += 1;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_LINK_MON_ARRIVED_DELAY => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 10
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_MOVE_GBA_TO_CENTER => {
             if ({
-                (*sTradeAnim).bg1vofs += 1;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs += 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) > 348
             {
-                (*sTradeAnim).bg1vofs = 348;
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs = 348;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
-            if (*sTradeAnim).bg1vofs == 328 && (*sTradeAnim).isCableTrade != 0 {
-                (*sTradeAnim).cableEndSpriteId = CreateSprite(
+            if (*crate::gl!(sTradeAnim)).bg1vofs == 328
+                && (*crate::gl!(sTradeAnim)).isCableTrade != 0
+            {
+                (*crate::gl!(sTradeAnim)).cableEndSpriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_CableEnd).cast_mut(),
                     128,
                     65,
                     0,
                 );
-                gSprites[(*sTradeAnim).cableEndSpriteId].callback =
-                    Some(SpriteCB_CableEndReceiving);
+                {
+                    let gl_i80 = (*crate::gl!(sTradeAnim)).cableEndSpriteId;
+                    crate::gl!(gSprites[gl_i80].callback = Some(SpriteCB_CableEndReceiving))
+                };
             }
         }
         STATE_GBA_FLASH_RECV => {
-            (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                 (&raw const *sSpriteTemplate_GbaScreenFlash_Long).cast_mut(),
                 120,
                 80,
                 0,
             );
-            (*sTradeAnim).state = STATE_GBA_STOP_FLASH_RECV;
+            (*crate::gl!(sTradeAnim)).state = STATE_GBA_STOP_FLASH_RECV;
         }
         STATE_GBA_STOP_FLASH_RECV => {
-            if gSprites[(*sTradeAnim).connectionSpriteId2].animEnded() != 0 {
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+            if (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).connectionSpriteId2].animEnded() != 0
+            {
+                DestroySprite({
+                    let gl_i81 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i81])
+                });
                 SetTradeSequenceBgGpuRegs(6);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
                 PlaySE(SE_M_SAND_ATTACK);
             }
         }
         STATE_GBA_ZOOM_IN => {
-            if (*sTradeAnim).gbaScale < 0x400 {
-                (*sTradeAnim).gbaScale += 0x34;
+            if (*crate::gl!(sTradeAnim)).gbaScale < 0x400 {
+                (*crate::gl!(sTradeAnim)).gbaScale += 0x34;
             } else {
-                (*sTradeAnim).gbaScale = 0x400;
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).gbaScale = 0x400;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
-            (*sTradeAnim).sXY = div_i32(0x8000, (*sTradeAnim).gbaScale as i32) as u16;
+            (*crate::gl!(sTradeAnim)).sXY =
+                div_i32(0x8000, (*crate::gl!(sTradeAnim)).gbaScale as i32) as u16;
         }
         STATE_FADE_OUT_TO_NEW_MON => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeAnim).state = STATE_WAIT_FADE_OUT_TO_NEW_MON;
+            (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FADE_OUT_TO_NEW_MON;
         }
         STATE_WAIT_FADE_OUT_TO_NEW_MON => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetTradeSequenceBgGpuRegs(5);
                 SetTradeSequenceBgGpuRegs(7);
-                gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-                (*sTradeAnim).state += 1;
+                (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_FADE_IN_TO_NEW_MON => {
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_IN_TO_NEW_MON => {
             SetGpuReg(0x0, 5184);
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_POKEBALL_ARRIVE => {
-            (*sTradeAnim).bouncingPokeballSpriteId = CreateSprite(
+            (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId = CreateSprite(
                 (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
                 120,
                 -8,
                 0,
             );
-            gSprites[(*sTradeAnim).bouncingPokeballSpriteId].data[3] = 74;
-            gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback =
-                Some(SpriteCB_BouncingPokeballArrive);
-            StartSpriteAnim(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId], 1);
-            StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId], 2);
+            {
+                let gl_i82 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(gSprites[gl_i82].data[3] = 74)
+            };
+            {
+                let gl_i83 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(gSprites[gl_i83].callback = Some(SpriteCB_BouncingPokeballArrive))
+            };
+            StartSpriteAnim(
+                {
+                    let gl_i84 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                    crate::gl!(&raw gSprites[gl_i84])
+                },
+                1,
+            );
+            StartSpriteAffineAnim(
+                {
+                    let gl_i85 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                    crate::gl!(&raw gSprites[gl_i85])
+                },
+                2,
+            );
             BlendPalettes(
                 shl_i32(
                     1,
-                    16 + gSprites[(*sTradeAnim).bouncingPokeballSpriteId]
+                    16 + (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId]
                         .oam
                         .paletteNum() as u32,
                 ) as u32,
                 16,
                 65535,
             );
-            (*sTradeAnim).state += 1;
-            (*sTradeAnim).timer = 0;
+            (*crate::gl!(sTradeAnim)).state += 1;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_FADE_POKEBALL_TO_NORMAL => {
             BeginNormalPaletteFade(
                 shl_i32(
                     1,
-                    16 + gSprites[(*sTradeAnim).bouncingPokeballSpriteId]
+                    16 + (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId]
                         .oam
                         .paletteNum() as u32,
                 ) as u32,
@@ -4774,47 +5133,76 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
                 0,
                 65535,
             );
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_POKEBALL_ARRIVE_WAIT => {
-            if gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i86 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(gSprites[gl_i86].callback)
+            }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 HandleLoadSpecialPokePic_2(
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
-                        .cast::<CArray<CompressedSpriteSheet, 0>>())[(*sTradeAnim).monSpecies[1]])
+                        .cast::<CArray<CompressedSpriteSheet, 0>>())
+                        [(*crate::gl!(sTradeAnim)).monSpecies[1]])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[3],
-                    (*sTradeAnim).monSpecies[1] as i32,
-                    (*sTradeAnim).monPersonalities[1],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[3],
+                    (*crate::gl!(sTradeAnim)).monSpecies[1] as i32,
+                    (*crate::gl!(sTradeAnim)).monPersonalities[1],
                 );
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_SHOW_NEW_MON => {
-            gSprites[(*sTradeAnim).monSpriteIds[1]].x = 120;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y =
-                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
-                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[1]]
+            {
+                let gl_i87 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i87].x = 120)
+            };
+            {
+                let gl_v = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*crate::gl!(sTradeAnim)).monSpecies[1]]
                     .y_offset as i16
                     + 60;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].x2 = 0;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y2 = 0;
-            StartSpriteAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]], 0);
+                let gl_i88 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i88].y = gl_v)
+            };
+            {
+                let gl_i89 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i89].x2 = 0)
+            };
+            {
+                let gl_i90 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i90].y2 = 0)
+            };
+            StartSpriteAnim(
+                {
+                    let gl_i91 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                    crate::gl!(&raw gSprites[gl_i91])
+                },
+                0,
+            );
             CreatePokeballSpriteToReleaseMon(
-                (*sTradeAnim).monSpriteIds[1],
-                gSprites[(*sTradeAnim).monSpriteIds[1]].oam.paletteNum() as u8,
+                (*crate::gl!(sTradeAnim)).monSpriteIds[1],
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[1]]
+                    .oam
+                    .paletteNum() as u8,
                 120,
                 84,
                 2,
                 1,
                 20,
                 0xfffff,
-                (*sTradeAnim).monSpecies[1],
+                (*crate::gl!(sTradeAnim)).monSpecies[1],
             );
-            FreeSpriteOamMatrix(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId]);
-            DestroySprite(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId]);
-            (*sTradeAnim).state += 1;
+            FreeSpriteOamMatrix({
+                let gl_i92 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(&raw gSprites[gl_i92])
+            });
+            DestroySprite({
+                let gl_i93 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(&raw gSprites[gl_i93])
+            });
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_NEW_MON_MSG => {
             SetGpuReg(0x0, 5440);
@@ -4825,34 +5213,34 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
                     .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
-            (*sTradeAnim).state = STATE_DELAY_FOR_MON_ANIM;
-            (*sTradeAnim).timer = 0;
+            (*crate::gl!(sTradeAnim)).state = STATE_DELAY_FOR_MON_ANIM;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_DELAY_FOR_MON_ANIM => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 60
             {
-                (*sTradeAnim).state = STATE_WAIT_FOR_MON_CRY;
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FOR_MON_CRY;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         STATE_WAIT_FOR_MON_CRY => {
             if IsCryFinished() != 0 {
-                (*sTradeAnim).state = STATE_TAKE_CARE_OF_MON;
+                (*crate::gl!(sTradeAnim)).state = STATE_TAKE_CARE_OF_MON;
             }
         }
         STATE_TAKE_CARE_OF_MON => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 10
             {
                 PlayFanfare(MUS_EVOLVED);
             }
-            if (*sTradeAnim).timer == 250 {
-                (*sTradeAnim).state += 1;
+            if (*crate::gl!(sTradeAnim)).timer == 250 {
+                (*crate::gl!(sTradeAnim)).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_TakeGoodCareOfX)
@@ -4861,61 +5249,67 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
                     .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         STATE_AFTER_NEW_MON_DELAY => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 60
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_CHECK_RIBBONS => {
             CheckPartnersMonForRibbons();
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_END_LINK_TRADE => {
-            if (*sTradeAnim).isLinkTrade != 0 {
+            if (*crate::gl!(sTradeAnim)).isLinkTrade != 0 {
                 return TRUE;
-            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-                (*sTradeAnim).state += 1;
+            } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_TRY_EVOLUTION => {
             TradeMons(gSpecialVar_0x8005 as u8, 0);
-            gCB2_AfterEvolution = Some(CB2_InGameTrade);
+            crate::gl!(gCB2_AfterEvolution = Some(CB2_InGameTrade));
             evoTarget = GetEvolutionTargetSpecies(
-                &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+                {
+                    let gl_i94 = crate::gl!(gSelectedTradeMonPositions[0]);
+                    crate::gl!(&raw gPlayerParty[gl_i94])
+                },
                 EVO_MODE_TRADE,
                 ITEM_NONE,
             );
             if evoTarget != SPECIES_NONE {
                 TradeEvolutionScene(
-                    &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+                    {
+                        let gl_i95 = crate::gl!(gSelectedTradeMonPositions[0]);
+                        crate::gl!(&raw gPlayerParty[gl_i95])
+                    },
                     evoTarget,
-                    (*sTradeAnim).monSpriteIds[1],
-                    gSelectedTradeMonPositions[0],
+                    (*crate::gl!(sTradeAnim)).monSpriteIds[1],
+                    crate::gl!(gSelectedTradeMonPositions[0]),
                 );
             }
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_FADE_OUT_END => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
-        STATE_WAIT_FADE_OUT_END if gPaletteFade.active() == 0 => {
-            PlayNewMapMusic((*sTradeAnim).cachedMapMusic);
-            if !sTradeAnim.is_null() {
+        STATE_WAIT_FADE_OUT_END if (*gPaletteFade.as_ptr()).active() == 0 => {
+            PlayNewMapMusic((*crate::gl!(sTradeAnim)).cachedMapMusic);
+            if !(*sTradeAnim.as_ptr()).is_null() {
                 FreeAllWindowBuffers();
                 Free(GetBgTilemapBuffer(3));
                 Free(GetBgTilemapBuffer(1));
                 Free(GetBgTilemapBuffer(0));
                 FreeMonSpritesGfx();
-                Free(sTradeAnim as *mut c_void);
-                sTradeAnim = null_mut();
+                Free(crate::gl!(sTradeAnim) as *mut c_void);
+                crate::gl!(sTradeAnim = null_mut());
             }
             SetMainCallback2(Some(CB2_ReturnToField));
             BufferInGameTradeMonName();
@@ -4926,26 +5320,38 @@ unsafe fn DoTradeAnim_Cable() -> u8 {
 }
 unsafe fn DoTradeAnim_Wireless() -> u8 {
     let mut evoTarget: u16 = 0;
-    match (*sTradeAnim).state {
+    match (*crate::gl!(sTradeAnim)).state {
         STATE_START => {
-            gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(0);
-            gSprites[(*sTradeAnim).monSpriteIds[0]].x2 = -180;
-            gSprites[(*sTradeAnim).monSpriteIds[0]].y2 =
-                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
-                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[0]]
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]].set_invisible(0);
+            {
+                let gl_i96 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i96].x2 = -180)
+            };
+            {
+                let gl_v = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*crate::gl!(sTradeAnim)).monSpecies[0]]
                     .y_offset as i16;
-            (*sTradeAnim).state += 1;
-            (*sTradeAnim).cachedMapMusic = GetCurrentMapMusic();
+                let gl_i97 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i97].y2 = gl_v)
+            };
+            (*crate::gl!(sTradeAnim)).state += 1;
+            (*crate::gl!(sTradeAnim)).cachedMapMusic = GetCurrentMapMusic();
             PlayNewMapMusic(MUS_EVOLUTION);
         }
         STATE_MON_SLIDE_IN => {
-            if (*sTradeAnim).bg2hofs > 0 {
-                gSprites[(*sTradeAnim).monSpriteIds[0]].x2 += 3;
-                (*sTradeAnim).bg2hofs -= 3;
+            if (*crate::gl!(sTradeAnim)).bg2hofs > 0 {
+                {
+                    let gl_i98 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i98].x2 += 3)
+                };
+                (*crate::gl!(sTradeAnim)).bg2hofs -= 3;
             } else {
-                gSprites[(*sTradeAnim).monSpriteIds[0]].x2 = 0;
-                (*sTradeAnim).bg2hofs = 0;
-                (*sTradeAnim).state = STATE_SEND_MSG;
+                {
+                    let gl_i99 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i99].x2 = 0)
+                };
+                (*crate::gl!(sTradeAnim)).bg2hofs = 0;
+                (*crate::gl!(sTradeAnim)).state = STATE_SEND_MSG;
             }
         }
         STATE_SEND_MSG => {
@@ -4956,21 +5362,23 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
                     .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
-            if (*sTradeAnim).monSpecies[0] != SPECIES_EGG as u16 {
-                PlayCry_Normal((*sTradeAnim).monSpecies[0], 0);
+            if (*crate::gl!(sTradeAnim)).monSpecies[0] != SPECIES_EGG as u16 {
+                PlayCry_Normal((*crate::gl!(sTradeAnim)).monSpecies[0], 0);
             }
-            (*sTradeAnim).state = STATE_BYE_BYE;
-            (*sTradeAnim).timer = 0;
+            (*crate::gl!(sTradeAnim)).state = STATE_BYE_BYE;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_BYE_BYE => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 80
             {
-                (*sTradeAnim).releasePokeballSpriteId = CreateTradePokeballSprite(
-                    (*sTradeAnim).monSpriteIds[0],
-                    gSprites[(*sTradeAnim).monSpriteIds[0]].oam.paletteNum() as u8,
+                (*crate::gl!(sTradeAnim)).releasePokeballSpriteId = CreateTradePokeballSprite(
+                    (*crate::gl!(sTradeAnim)).monSpriteIds[0],
+                    (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]]
+                        .oam
+                        .paletteNum() as u8,
                     120,
                     32,
                     2,
@@ -4978,7 +5386,7 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
                     0x14,
                     0xfffff,
                 );
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_ByeByeVar1).cast::<CArray<u8, 0>>())
@@ -4989,417 +5397,593 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
             }
         }
         STATE_POKEBALL_DEPART => {
-            if gSprites[(*sTradeAnim).releasePokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i100 = (*crate::gl!(sTradeAnim)).releasePokeballSpriteId;
+                crate::gl!(gSprites[gl_i100].callback)
+            }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
-                (*sTradeAnim).bouncingPokeballSpriteId = CreateSprite(
+                (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
                     120,
                     32,
                     0,
                 );
-                gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback =
-                    Some(SpriteCB_BouncingPokeballDepart);
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).releasePokeballSpriteId]);
-                (*sTradeAnim).state += 1;
+                {
+                    let gl_i101 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                    crate::gl!(gSprites[gl_i101].callback = Some(SpriteCB_BouncingPokeballDepart))
+                };
+                DestroySprite({
+                    let gl_i102 = (*crate::gl!(sTradeAnim)).releasePokeballSpriteId;
+                    crate::gl!(&raw gSprites[gl_i102])
+                });
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_POKEBALL_DEPART_WAIT => {}
         STATE_FADE_OUT_TO_GBA_SEND => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeAnim).state = STATE_WAIT_FADE_OUT_TO_GBA_SEND;
+            (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FADE_OUT_TO_GBA_SEND;
         }
         STATE_WAIT_FADE_OUT_TO_GBA_SEND => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetTradeSequenceBgGpuRegs(4);
                 FillWindowPixelBuffer(0, 255);
                 CopyWindowToVram(0, COPYWIN_FULL);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_FADE_IN_TO_GBA_SEND => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_IN_TO_GBA_SEND => {
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state = STATE_GBA_ZOOM_OUT;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state = STATE_GBA_ZOOM_OUT;
             }
         }
         STATE_GBA_ZOOM_OUT => {
-            if (*sTradeAnim).gbaScale > 0x100 {
-                (*sTradeAnim).gbaScale -= 0x34;
+            if (*crate::gl!(sTradeAnim)).gbaScale > 0x100 {
+                (*crate::gl!(sTradeAnim)).gbaScale -= 0x34;
             } else {
                 SetTradeSequenceBgGpuRegs(1);
-                (*sTradeAnim).gbaScale = 0x80;
-                (*sTradeAnim).state = STATE_GBA_FLASH_SEND_WIRELESS;
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).gbaScale = 0x80;
+                (*crate::gl!(sTradeAnim)).state = STATE_GBA_FLASH_SEND_WIRELESS;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
-            (*sTradeAnim).sXY = div_i32(0x8000, (*sTradeAnim).gbaScale as i32) as u16;
+            (*crate::gl!(sTradeAnim)).sXY =
+                div_i32(0x8000, (*crate::gl!(sTradeAnim)).gbaScale as i32) as u16;
         }
         STATE_GBA_FLASH_SEND_WIRELESS => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 20
             {
                 SetTradeSequenceBgGpuRegs(3);
-                (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+                (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                     (&raw const *sSpriteTemplate_GbaScreenFlash_Short).cast_mut(),
                     120,
                     80,
                     0,
                 );
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_GBA_STOP_FLASH_SEND_WIRELESS => {
-            if gSprites[(*sTradeAnim).connectionSpriteId2].animEnded() != 0 {
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+            if (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).connectionSpriteId2].animEnded() != 0
+            {
+                DestroySprite({
+                    let gl_i103 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i103])
+                });
                 SetGpuReg(REG_OFFSET_BLDCNT, 1106);
                 SetGpuReg(REG_OFFSET_BLDALPHA, 1040);
                 CreateTask(Some(Task_AnimateWirelessSignal), 5);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_WAIT_WIRELESS_SIGNAL_SEND => {
             if FuncIsActiveTask(Some(Task_AnimateWirelessSignal)) == 0 {
-                (*sTradeAnim).state = STATE_PAN_AWAY_GBA;
+                (*crate::gl!(sTradeAnim)).state = STATE_PAN_AWAY_GBA;
             }
         }
         STATE_PAN_AWAY_GBA => {
             if ({
-                (*sTradeAnim).bg1vofs -= 1;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs -= 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) == 316
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_CREATE_LINK_MON_LEAVING => {
-            (*sTradeAnim).connectionSpriteId1 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId1 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonGlow).cast_mut(),
                 120,
                 80,
                 3,
             );
-            gSprites[(*sTradeAnim).connectionSpriteId1].callback =
-                Some(SpriteCB_LinkMonGlowWireless);
-            (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+            {
+                let gl_i104 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i104].callback = Some(SpriteCB_LinkMonGlowWireless))
+            };
+            (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                 120,
                 80,
                 0,
             );
             StartSpriteAnim(
-                &raw mut gSprites[(*sTradeAnim).connectionSpriteId2],
+                {
+                    let gl_i105 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i105])
+                },
                 ANIM_LINKMON_SMALL,
             );
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_LINK_MON_TRAVEL_OUT => {
             if ({
-                (*sTradeAnim).bg1vofs -= 3;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs -= 3;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) == 166
             {
-                (*sTradeAnim).state = STATE_LINK_MON_TRAVEL_OFFSCREEN;
+                (*crate::gl!(sTradeAnim)).state = STATE_LINK_MON_TRAVEL_OFFSCREEN;
             }
             SetGpuReg(REG_OFFSET_DISPCNT, 4673);
         }
         STATE_LINK_MON_TRAVEL_OFFSCREEN => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y -= 2;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y -= 2;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y < -8 {
-                (*sTradeAnim).state = STATE_FADE_OUT_TO_CROSSING;
+            {
+                let gl_i106 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i106].y -= 2)
+            };
+            {
+                let gl_i107 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i107].y -= 2)
+            };
+            if ({
+                let gl_i108 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i108].y)
+            }) < -8
+            {
+                (*crate::gl!(sTradeAnim)).state = STATE_FADE_OUT_TO_CROSSING;
             }
         }
         STATE_FADE_OUT_TO_CROSSING => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
-            (*sTradeAnim).state = STATE_WAIT_FADE_OUT_TO_CROSSING;
+            (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FADE_OUT_TO_CROSSING;
         }
         STATE_WAIT_FADE_OUT_TO_CROSSING => {
-            if gPaletteFade.active() == 0 {
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId1]);
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                DestroySprite({
+                    let gl_i109 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(&raw gSprites[gl_i109])
+                });
+                DestroySprite({
+                    let gl_i110 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i110])
+                });
                 SetTradeSequenceBgGpuRegs(2);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_FADE_IN_TO_CROSSING => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
-            (*sTradeAnim).connectionSpriteId1 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId1 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                 111,
                 170,
                 0,
             );
-            (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                 (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                 129,
                 -10,
                 0,
             );
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_IN_TO_CROSSING => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 PlaySE(SE_WARP_OUT);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 -= 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
+            {
+                let gl_i111 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i111].y2 -= 3)
+            };
+            {
+                let gl_i112 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i112].y2 += 3)
+            };
         }
         STATE_CROSSING_LINK_MONS_ENTER => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 -= 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y2 <= -90 {
-                gSprites[(*sTradeAnim).connectionSpriteId1].data[1] = 1;
-                gSprites[(*sTradeAnim).connectionSpriteId2].data[1] = 1;
-                (*sTradeAnim).state += 1;
+            {
+                let gl_i113 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i113].y2 -= 3)
+            };
+            {
+                let gl_i114 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i114].y2 += 3)
+            };
+            if ({
+                let gl_i115 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i115].y2)
+            }) <= -90
+            {
+                {
+                    let gl_i116 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i116].data[1] = 1)
+                };
+                {
+                    let gl_i117 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(gSprites[gl_i117].data[1] = 1)
+                };
+                (*crate::gl!(sTradeAnim)).state += 1;
                 CreateTask(Some(Task_OpenCenterWhiteColumn), 5);
             }
         }
         STATE_CROSSING_BLEND_WHITE_1 => {
             BlendPalettes(0x8, 16, 65535);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_BLEND_WHITE_2 => {
             BlendPalettes(0x8, 16, 65535);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_BLEND_WHITE_3 => {
             BlendPalettes(0x8, 16, 65535);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_CREATE_MON_PICS => {
-            if IsMonSpriteNotFlipped((*sTradeAnim).monSpecies[0]) == 0 {
-                gSprites[(*sTradeAnim).monSpriteIds[0]].affineAnims =
-                    sAffineAnims_CrossingMonPics.as_ptr().cast_mut();
-                gSprites[(*sTradeAnim).monSpriteIds[0]]
+            if IsMonSpriteNotFlipped((*crate::gl!(sTradeAnim)).monSpecies[0]) == 0 {
+                {
+                    let gl_v = sAffineAnims_CrossingMonPics.as_ptr().cast_mut();
+                    let gl_i118 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i118].affineAnims = gl_v)
+                };
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]]
                     .oam
                     .set_affineMode(ST_OAM_AFFINE_DOUBLE);
                 CalcCenterToCornerVec(
-                    &raw mut gSprites[(*sTradeAnim).monSpriteIds[0]],
+                    {
+                        let gl_i119 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                        crate::gl!(&raw gSprites[gl_i119])
+                    },
                     TRADE_PLAYER,
                     ST_OAM_AFFINE_DOUBLE as u8,
                     ST_OAM_AFFINE_DOUBLE as u8,
                 );
-                StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[0]], 0);
+                StartSpriteAffineAnim(
+                    {
+                        let gl_i120 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                        crate::gl!(&raw gSprites[gl_i120])
+                    },
+                    0,
+                );
             } else {
-                StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[0]], 0);
+                StartSpriteAffineAnim(
+                    {
+                        let gl_i121 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                        crate::gl!(&raw gSprites[gl_i121])
+                    },
+                    0,
+                );
             }
-            StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]], 0);
-            gSprites[(*sTradeAnim).monSpriteIds[0]].x = 40;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].x = 200;
-            gSprites[(*sTradeAnim).monSpriteIds[0]].y = 192;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y = -32;
-            gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(0);
-            gSprites[(*sTradeAnim).monSpriteIds[1]].set_invisible(FALSE as u16);
-            (*sTradeAnim).state += 1;
+            StartSpriteAffineAnim(
+                {
+                    let gl_i122 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                    crate::gl!(&raw gSprites[gl_i122])
+                },
+                0,
+            );
+            {
+                let gl_i123 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i123].x = 40)
+            };
+            {
+                let gl_i124 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i124].x = 200)
+            };
+            {
+                let gl_i125 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i125].y = 192)
+            };
+            {
+                let gl_i126 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i126].y = -32)
+            };
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]].set_invisible(0);
+            (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[1]]
+                .set_invisible(FALSE as u16);
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_CROSSING_MON_PICS_MOVE => {
-            gSprites[(*sTradeAnim).monSpriteIds[0]].y2 -= 3;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y2 += 3;
-            if gSprites[(*sTradeAnim).monSpriteIds[0]].y2 < -160
-                && gSprites[(*sTradeAnim).monSpriteIds[0]].y2 >= -163
+            {
+                let gl_i127 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i127].y2 -= 3)
+            };
+            {
+                let gl_i128 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i128].y2 += 3)
+            };
+            if ({
+                let gl_i129 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i129].y2)
+            }) < -160
+                && ({
+                    let gl_i130 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                    crate::gl!(gSprites[gl_i130].y2)
+                }) >= -163
             {
                 PlaySE(SE_WARP_IN);
             }
-            if gSprites[(*sTradeAnim).monSpriteIds[0]].y2 < -222 {
-                gSprites[(*sTradeAnim).connectionSpriteId1].data[1] = 0;
-                gSprites[(*sTradeAnim).connectionSpriteId2].data[1] = 0;
-                (*sTradeAnim).state += 1;
-                gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(TRUE as u16);
-                gSprites[(*sTradeAnim).monSpriteIds[1]].set_invisible(1);
+            if ({
+                let gl_i131 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+                crate::gl!(gSprites[gl_i131].y2)
+            }) < -222
+            {
+                {
+                    let gl_i132 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i132].data[1] = 0)
+                };
+                {
+                    let gl_i133 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(gSprites[gl_i133].data[1] = 0)
+                };
+                (*crate::gl!(sTradeAnim)).state += 1;
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[0]]
+                    .set_invisible(TRUE as u16);
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[1]].set_invisible(1);
                 CreateTask(Some(Task_CloseCenterWhiteColumn), 5);
             }
         }
         STATE_CROSSING_LINK_MONS_EXIT => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 -= 3;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 3;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y2 <= -222 {
+            {
+                let gl_i134 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i134].y2 -= 3)
+            };
+            {
+                let gl_i135 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i135].y2 += 3)
+            };
+            if ({
+                let gl_i136 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i136].y2)
+            }) <= -222
+            {
                 BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 0);
-                (*sTradeAnim).state += 1;
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId1]);
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+                (*crate::gl!(sTradeAnim)).state += 1;
+                DestroySprite({
+                    let gl_i137 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(&raw gSprites[gl_i137])
+                });
+                DestroySprite({
+                    let gl_i138 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i138])
+                });
             }
         }
         STATE_CREATE_LINK_MON_ARRIVING => {
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
                 SetTradeSequenceBgGpuRegs(1);
-                (*sTradeAnim).bg1vofs = 166;
+                (*crate::gl!(sTradeAnim)).bg1vofs = 166;
                 SetTradeSequenceBgGpuRegs(3);
-                (*sTradeAnim).bg2vofs = 412;
-                (*sTradeAnim).connectionSpriteId1 = CreateSprite(
+                (*crate::gl!(sTradeAnim)).bg2vofs = 412;
+                (*crate::gl!(sTradeAnim)).connectionSpriteId1 = CreateSprite(
                     (&raw const *sSpriteTemplate_LinkMonGlow).cast_mut(),
                     120,
                     -20,
                     3,
                 );
-                gSprites[(*sTradeAnim).connectionSpriteId1].callback =
-                    Some(SpriteCB_LinkMonGlowWireless);
-                (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+                {
+                    let gl_i139 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i139].callback = Some(SpriteCB_LinkMonGlowWireless))
+                };
+                (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                     (&raw const *sSpriteTemplate_LinkMonShadow).cast_mut(),
                     120,
                     -20,
                     0,
                 );
                 StartSpriteAnim(
-                    &raw mut gSprites[(*sTradeAnim).connectionSpriteId2],
+                    {
+                        let gl_i140 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                        crate::gl!(&raw gSprites[gl_i140])
+                    },
                     ANIM_LINKMON_SMALL,
                 );
             }
         }
         STATE_FADE_OUT_TO_GBA_RECV => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_OUT_TO_GBA_RECV => {
             SetGpuReg(0x0, 4672);
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_LINK_MON_TRAVEL_IN => {
-            gSprites[(*sTradeAnim).connectionSpriteId1].y2 += 4;
-            gSprites[(*sTradeAnim).connectionSpriteId2].y2 += 4;
-            if gSprites[(*sTradeAnim).connectionSpriteId1].y2 as i32
-                + gSprites[(*sTradeAnim).connectionSpriteId1].y as i32
+            {
+                let gl_i141 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i141].y2 += 4)
+            };
+            {
+                let gl_i142 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(gSprites[gl_i142].y2 += 4)
+            };
+            if ({
+                let gl_i143 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(gSprites[gl_i143].y2)
+            }) as i32
+                + ({
+                    let gl_i144 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                    crate::gl!(gSprites[gl_i144].y)
+                }) as i32
                 == 64
             {
-                (*sTradeAnim).state = STATE_PAN_TO_GBA_WIRELESS;
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).state = STATE_PAN_TO_GBA_WIRELESS;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         STATE_PAN_TO_GBA_WIRELESS => {
             SetGpuReg(0x0, 5696);
-            (*sTradeAnim).bg1vofs += 3;
-            (*sTradeAnim).bg2vofs += 3;
+            (*crate::gl!(sTradeAnim)).bg1vofs += 3;
+            (*crate::gl!(sTradeAnim)).bg2vofs += 3;
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 10
             {
                 let taskId: u8 = CreateTask(Some(Task_AnimateWirelessSignal), 5);
                 task_set(taskId, tSignalComingBack, TRUE as i16);
             }
-            if (*sTradeAnim).bg1vofs > 316 {
-                (*sTradeAnim).bg1vofs = 316;
-                (*sTradeAnim).state += 1;
+            if (*crate::gl!(sTradeAnim)).bg1vofs > 316 {
+                (*crate::gl!(sTradeAnim)).bg1vofs = 316;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_DESTROY_LINK_MON_WIRELESS => {
-            DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId1]);
-            DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
-            (*sTradeAnim).state += 1;
-            (*sTradeAnim).timer = 0;
+            DestroySprite({
+                let gl_i145 = (*crate::gl!(sTradeAnim)).connectionSpriteId1;
+                crate::gl!(&raw gSprites[gl_i145])
+            });
+            DestroySprite({
+                let gl_i146 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                crate::gl!(&raw gSprites[gl_i146])
+            });
+            (*crate::gl!(sTradeAnim)).state += 1;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_WAIT_WIRELESS_SIGNAL_RECV => {
             if FuncIsActiveTask(Some(Task_AnimateWirelessSignal)) == 0 {
-                (*sTradeAnim).state = STATE_LINK_MON_ARRIVED_DELAY;
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).state = STATE_LINK_MON_ARRIVED_DELAY;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         STATE_LINK_MON_ARRIVED_DELAY => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 10
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_MOVE_GBA_TO_CENTER => {
             if ({
-                (*sTradeAnim).bg1vofs += 1;
-                (*sTradeAnim).bg1vofs
+                (*crate::gl!(sTradeAnim)).bg1vofs += 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs
             }) > 348
             {
-                (*sTradeAnim).bg1vofs = 348;
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).bg1vofs = 348;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_GBA_FLASH_RECV => {
-            (*sTradeAnim).connectionSpriteId2 = CreateSprite(
+            (*crate::gl!(sTradeAnim)).connectionSpriteId2 = CreateSprite(
                 (&raw const *sSpriteTemplate_GbaScreenFlash_Long).cast_mut(),
                 120,
                 80,
                 0,
             );
-            (*sTradeAnim).state = STATE_GBA_STOP_FLASH_RECV;
+            (*crate::gl!(sTradeAnim)).state = STATE_GBA_STOP_FLASH_RECV;
         }
         STATE_GBA_STOP_FLASH_RECV => {
-            if gSprites[(*sTradeAnim).connectionSpriteId2].animEnded() != 0 {
-                DestroySprite(&raw mut gSprites[(*sTradeAnim).connectionSpriteId2]);
+            if (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).connectionSpriteId2].animEnded() != 0
+            {
+                DestroySprite({
+                    let gl_i147 = (*crate::gl!(sTradeAnim)).connectionSpriteId2;
+                    crate::gl!(&raw gSprites[gl_i147])
+                });
                 SetTradeSequenceBgGpuRegs(6);
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
                 PlaySE(SE_M_SAND_ATTACK);
             }
         }
         STATE_GBA_ZOOM_IN => {
-            if (*sTradeAnim).gbaScale < 0x400 {
-                (*sTradeAnim).gbaScale += 0x34;
+            if (*crate::gl!(sTradeAnim)).gbaScale < 0x400 {
+                (*crate::gl!(sTradeAnim)).gbaScale += 0x34;
             } else {
-                (*sTradeAnim).gbaScale = 0x400;
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).gbaScale = 0x400;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
-            (*sTradeAnim).sXY = div_i32(0x8000, (*sTradeAnim).gbaScale as i32) as u16;
+            (*crate::gl!(sTradeAnim)).sXY =
+                div_i32(0x8000, (*crate::gl!(sTradeAnim)).gbaScale as i32) as u16;
         }
         STATE_FADE_OUT_TO_NEW_MON => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeAnim).state = STATE_WAIT_FADE_OUT_TO_NEW_MON;
+            (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FADE_OUT_TO_NEW_MON;
         }
         STATE_WAIT_FADE_OUT_TO_NEW_MON => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 SetTradeSequenceBgGpuRegs(5);
                 SetTradeSequenceBgGpuRegs(7);
-                gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-                (*sTradeAnim).state += 1;
+                (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(TRUE as u16);
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_FADE_IN_TO_NEW_MON => {
-            gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
+            (*gPaletteFade.as_ptr()).set_bufferTransferDisabled(FALSE as u16);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_WAIT_FADE_IN_TO_NEW_MON => {
             SetGpuReg(0x0, 5184);
-            if gPaletteFade.active() == 0 {
-                (*sTradeAnim).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_POKEBALL_ARRIVE => {
-            (*sTradeAnim).bouncingPokeballSpriteId = CreateSprite(
+            (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId = CreateSprite(
                 (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
                 120,
                 -8,
                 0,
             );
-            gSprites[(*sTradeAnim).bouncingPokeballSpriteId].data[3] = 74;
-            gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback =
-                Some(SpriteCB_BouncingPokeballArrive);
-            StartSpriteAnim(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId], 1);
-            StartSpriteAffineAnim(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId], 2);
+            {
+                let gl_i148 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(gSprites[gl_i148].data[3] = 74)
+            };
+            {
+                let gl_i149 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(gSprites[gl_i149].callback = Some(SpriteCB_BouncingPokeballArrive))
+            };
+            StartSpriteAnim(
+                {
+                    let gl_i150 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                    crate::gl!(&raw gSprites[gl_i150])
+                },
+                1,
+            );
+            StartSpriteAffineAnim(
+                {
+                    let gl_i151 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                    crate::gl!(&raw gSprites[gl_i151])
+                },
+                2,
+            );
             BlendPalettes(
                 shl_i32(
                     1,
-                    16 + gSprites[(*sTradeAnim).bouncingPokeballSpriteId]
+                    16 + (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId]
                         .oam
                         .paletteNum() as u32,
                 ) as u32,
                 16,
                 65535,
             );
-            (*sTradeAnim).state += 1;
-            (*sTradeAnim).timer = 0;
+            (*crate::gl!(sTradeAnim)).state += 1;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_FADE_POKEBALL_TO_NORMAL => {
             BeginNormalPaletteFade(
                 shl_i32(
                     1,
-                    16 + gSprites[(*sTradeAnim).bouncingPokeballSpriteId]
+                    16 + (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId]
                         .oam
                         .paletteNum() as u32,
                 ) as u32,
@@ -5408,47 +5992,76 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
                 0,
                 65535,
             );
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_POKEBALL_ARRIVE_WAIT => {
-            if gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
+            if ({
+                let gl_i152 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(gSprites[gl_i152].callback)
+            }) == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 HandleLoadSpecialPokePic_2(
                     (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
-                        .cast::<CArray<CompressedSpriteSheet, 0>>())[(*sTradeAnim).monSpecies[1]])
+                        .cast::<CArray<CompressedSpriteSheet, 0>>())
+                        [(*crate::gl!(sTradeAnim)).monSpecies[1]])
                         .cast_mut(),
-                    (*gMonSpritesGfxPtr).sprites.ptr[3],
-                    (*sTradeAnim).monSpecies[1] as i32,
-                    (*sTradeAnim).monPersonalities[1],
+                    (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[3],
+                    (*crate::gl!(sTradeAnim)).monSpecies[1] as i32,
+                    (*crate::gl!(sTradeAnim)).monPersonalities[1],
                 );
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_SHOW_NEW_MON => {
-            gSprites[(*sTradeAnim).monSpriteIds[1]].x = 120;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y =
-                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
-                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[1]]
+            {
+                let gl_i153 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i153].x = 120)
+            };
+            {
+                let gl_v = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*crate::gl!(sTradeAnim)).monSpecies[1]]
                     .y_offset as i16
                     + 60;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].x2 = 0;
-            gSprites[(*sTradeAnim).monSpriteIds[1]].y2 = 0;
-            StartSpriteAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]], 0);
+                let gl_i154 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i154].y = gl_v)
+            };
+            {
+                let gl_i155 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i155].x2 = 0)
+            };
+            {
+                let gl_i156 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                crate::gl!(gSprites[gl_i156].y2 = 0)
+            };
+            StartSpriteAnim(
+                {
+                    let gl_i157 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+                    crate::gl!(&raw gSprites[gl_i157])
+                },
+                0,
+            );
             CreatePokeballSpriteToReleaseMon(
-                (*sTradeAnim).monSpriteIds[1],
-                gSprites[(*sTradeAnim).monSpriteIds[1]].oam.paletteNum() as u8,
+                (*crate::gl!(sTradeAnim)).monSpriteIds[1],
+                (*gSprites.as_ptr())[(*crate::gl!(sTradeAnim)).monSpriteIds[1]]
+                    .oam
+                    .paletteNum() as u8,
                 120,
                 84,
                 2,
                 1,
                 20,
                 0xfffff,
-                (*sTradeAnim).monSpecies[1],
+                (*crate::gl!(sTradeAnim)).monSpecies[1],
             );
-            FreeSpriteOamMatrix(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId]);
-            DestroySprite(&raw mut gSprites[(*sTradeAnim).bouncingPokeballSpriteId]);
-            (*sTradeAnim).state += 1;
+            FreeSpriteOamMatrix({
+                let gl_i158 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(&raw gSprites[gl_i158])
+            });
+            DestroySprite({
+                let gl_i159 = (*crate::gl!(sTradeAnim)).bouncingPokeballSpriteId;
+                crate::gl!(&raw gSprites[gl_i159])
+            });
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_NEW_MON_MSG => {
             SetGpuReg(0x0, 5440);
@@ -5459,34 +6072,34 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
                     .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
-            (*sTradeAnim).state = STATE_DELAY_FOR_MON_ANIM;
-            (*sTradeAnim).timer = 0;
+            (*crate::gl!(sTradeAnim)).state = STATE_DELAY_FOR_MON_ANIM;
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         STATE_DELAY_FOR_MON_ANIM => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 60
             {
-                (*sTradeAnim).state = STATE_WAIT_FOR_MON_CRY;
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).state = STATE_WAIT_FOR_MON_CRY;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         STATE_WAIT_FOR_MON_CRY => {
             if IsCryFinished() != 0 {
-                (*sTradeAnim).state = STATE_TAKE_CARE_OF_MON;
+                (*crate::gl!(sTradeAnim)).state = STATE_TAKE_CARE_OF_MON;
             }
         }
         STATE_TAKE_CARE_OF_MON => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 10
             {
                 PlayFanfare(MUS_EVOLVED);
             }
-            if (*sTradeAnim).timer == 250 {
-                (*sTradeAnim).state += 1;
+            if (*crate::gl!(sTradeAnim)).timer == 250 {
+                (*crate::gl!(sTradeAnim)).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*(&raw const crate::data::strings::gText_TakeGoodCareOfX)
@@ -5495,61 +6108,67 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
                     .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         STATE_AFTER_NEW_MON_DELAY => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 60
             {
-                (*sTradeAnim).state += 1;
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_CHECK_RIBBONS => {
             CheckPartnersMonForRibbons();
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_END_LINK_TRADE => {
-            if (*sTradeAnim).isLinkTrade != 0 {
+            if (*crate::gl!(sTradeAnim)).isLinkTrade != 0 {
                 return TRUE;
-            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-                (*sTradeAnim).state += 1;
+            } else if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
+                (*crate::gl!(sTradeAnim)).state += 1;
             }
         }
         STATE_TRY_EVOLUTION => {
             TradeMons(gSpecialVar_0x8005 as u8, 0);
-            gCB2_AfterEvolution = Some(CB2_InGameTrade);
+            crate::gl!(gCB2_AfterEvolution = Some(CB2_InGameTrade));
             evoTarget = GetEvolutionTargetSpecies(
-                &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+                {
+                    let gl_i160 = crate::gl!(gSelectedTradeMonPositions[0]);
+                    crate::gl!(&raw gPlayerParty[gl_i160])
+                },
                 EVO_MODE_TRADE,
                 ITEM_NONE,
             );
             if evoTarget != SPECIES_NONE {
                 TradeEvolutionScene(
-                    &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+                    {
+                        let gl_i161 = crate::gl!(gSelectedTradeMonPositions[0]);
+                        crate::gl!(&raw gPlayerParty[gl_i161])
+                    },
                     evoTarget,
-                    (*sTradeAnim).monSpriteIds[1],
-                    gSelectedTradeMonPositions[0],
+                    (*crate::gl!(sTradeAnim)).monSpriteIds[1],
+                    crate::gl!(gSelectedTradeMonPositions[0]),
                 );
             }
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
         STATE_FADE_OUT_END => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sTradeAnim).state += 1;
+            (*crate::gl!(sTradeAnim)).state += 1;
         }
-        STATE_WAIT_FADE_OUT_END if gPaletteFade.active() == 0 => {
-            PlayNewMapMusic((*sTradeAnim).cachedMapMusic);
-            if !sTradeAnim.is_null() {
+        STATE_WAIT_FADE_OUT_END if (*gPaletteFade.as_ptr()).active() == 0 => {
+            PlayNewMapMusic((*crate::gl!(sTradeAnim)).cachedMapMusic);
+            if !(*sTradeAnim.as_ptr()).is_null() {
                 FreeAllWindowBuffers();
                 Free(GetBgTilemapBuffer(3));
                 Free(GetBgTilemapBuffer(1));
                 Free(GetBgTilemapBuffer(0));
                 FreeMonSpritesGfx();
-                Free(sTradeAnim as *mut c_void);
-                sTradeAnim = null_mut();
+                Free(crate::gl!(sTradeAnim) as *mut c_void);
+                crate::gl!(sTradeAnim = null_mut());
             }
             SetMainCallback2(Some(CB2_ReturnToField));
             BufferInGameTradeMonName();
@@ -5560,31 +6179,37 @@ unsafe fn DoTradeAnim_Wireless() -> u8 {
 }
 pub(crate) unsafe fn CB2_TryLinkTradeEvolution() {
     let mut evoTarget: u16 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
-            gMain.state = 4;
-            gSoftResetDisabled = TRUE;
+            crate::gl!(gMain.state = 4);
+            gSoftResetDisabled.set(TRUE);
         }
         4 => {
-            gCB2_AfterEvolution = Some(CB2_SaveAndEndTrade);
+            crate::gl!(gCB2_AfterEvolution = Some(CB2_SaveAndEndTrade));
             evoTarget = GetEvolutionTargetSpecies(
-                &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+                {
+                    let gl_i162 = crate::gl!(gSelectedTradeMonPositions[0]);
+                    crate::gl!(&raw gPlayerParty[gl_i162])
+                },
                 EVO_MODE_TRADE,
                 ITEM_NONE,
             );
             if evoTarget != SPECIES_NONE {
                 TradeEvolutionScene(
-                    &raw mut gPlayerParty[gSelectedTradeMonPositions[0]],
+                    {
+                        let gl_i163 = crate::gl!(gSelectedTradeMonPositions[0]);
+                        crate::gl!(&raw gPlayerParty[gl_i163])
+                    },
                     evoTarget,
-                    (*sTradeAnim).monSpriteIds[1],
-                    gSelectedTradeMonPositions[0],
+                    (*crate::gl!(sTradeAnim)).monSpriteIds[1],
+                    crate::gl!(gSelectedTradeMonPositions[0]),
                 );
             } else if IsWirelessTrade() != 0 {
                 SetMainCallback2(Some(CB2_SaveAndEndWirelessTrade));
             } else {
                 SetMainCallback2(Some(CB2_SaveAndEndTrade));
             }
-            gSelectedTradeMonPositions[0] = 255;
+            crate::gl!(gSelectedTradeMonPositions[0] = 255);
         }
         _ => {}
     }
@@ -5599,17 +6224,17 @@ unsafe fn HandleLinkDataReceive() {
     TradeGetMultiplayerId();
     let recvStatus: u8 = GetBlockReceivedStatus();
     if recvStatus as i32 & 1 != 0 {
-        if gBlockRecvBuffer[0][0] == LINKCMD_CONFIRM_FINISH_TRADE {
+        if crate::gl!(gBlockRecvBuffer[0][0]) == LINKCMD_CONFIRM_FINISH_TRADE {
             SetMainCallback2(Some(CB2_TryLinkTradeEvolution));
         }
-        if gBlockRecvBuffer[0][0] == LINKCMD_READY_FINISH_TRADE {
-            (*sTradeAnim).playerFinishStatus = STATUS_READY;
+        if crate::gl!(gBlockRecvBuffer[0][0]) == LINKCMD_READY_FINISH_TRADE {
+            (*crate::gl!(sTradeAnim)).playerFinishStatus = STATUS_READY;
         }
         ResetBlockReceivedFlag(0);
     }
     if recvStatus as i32 & 2 != 0 {
-        if gBlockRecvBuffer[1][0] == LINKCMD_READY_FINISH_TRADE {
-            (*sTradeAnim).partnerFinishStatus = STATUS_READY;
+        if crate::gl!(gBlockRecvBuffer[1][0]) == LINKCMD_READY_FINISH_TRADE {
+            (*crate::gl!(sTradeAnim)).partnerFinishStatus = STATUS_READY;
         }
         ResetBlockReceivedFlag(1);
     }
@@ -5670,7 +6295,7 @@ pub(crate) unsafe fn SpriteCB_BouncingPokeballDepartEnd(sprite: *mut Sprite) {
         }) == 23
         {
             DestroySprite(sprite);
-            (*sTradeAnim).state = STATE_FADE_OUT_TO_GBA_SEND;
+            (*crate::gl!(sTradeAnim)).state = STATE_FADE_OUT_TO_GBA_SEND;
         }
     }
 }
@@ -5720,7 +6345,7 @@ pub unsafe fn GetInGameTradeSpeciesInfo() -> u16 {
             .cast_mut(),
     );
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
             [(*inGameTrade).species]
             .as_ptr()
@@ -5736,15 +6361,18 @@ unsafe fn BufferInGameTradeMonName() {
             .cast_mut()])
         .cast_mut();
     GetMonData3(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i164 = *(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i164])
+        },
         MON_DATA_NICKNAME,
         nickname.as_mut_ptr(),
     );
     StringCopy_Nickname(gStringVar1.as_mut_ptr(), nickname.as_mut_ptr());
     StringCopy(
-        gStringVar2.as_mut_ptr(),
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
             [(*inGameTrade).species]
             .as_ptr()
@@ -5753,10 +6381,13 @@ unsafe fn BufferInGameTradeMonName() {
 }
 unsafe fn CreateInGameTradePokemonInternal(whichPlayerMon: u8, whichInGameTrade: u8) {
     let inGameTrade: *mut InGameTrade = (&raw const sIngameTrades[whichInGameTrade]).cast_mut();
-    let level: u8 = GetMonData2(&raw mut gPlayerParty[whichPlayerMon], MON_DATA_LEVEL) as u8;
+    let level: u8 = GetMonData2(
+        crate::gl!(&raw gPlayerParty[whichPlayerMon]),
+        MON_DATA_LEVEL,
+    ) as u8;
     let mut mail: Mail = zeroed();
     let mut metLocation: u8 = METLOC_IN_GAME_TRADE;
-    let pokemon: *mut Pokemon = &raw mut gEnemyParty[0];
+    let pokemon: *mut Pokemon = crate::gl!(&raw gEnemyParty[0]);
     CreateMon(
         pokemon,
         (*inGameTrade).species,
@@ -5856,7 +6487,7 @@ unsafe fn CreateInGameTradePokemonInternal(whichPlayerMon: u8, whichInGameTrade:
     if (*inGameTrade).heldItem != ITEM_NONE {
         if ItemIsMail((*inGameTrade).heldItem) != 0 {
             GetInGameTradeMail(&raw mut mail, inGameTrade);
-            gTradeMail[0] = mail;
+            crate::gl!(gTradeMail[0] = mail);
             SetMonData(pokemon, MON_DATA_MAIL, &raw mut mailNum as *mut c_void);
             SetMonData(
                 pokemon,
@@ -5871,7 +6502,7 @@ unsafe fn CreateInGameTradePokemonInternal(whichPlayerMon: u8, whichInGameTrade:
             );
         }
     }
-    CalculateMonStats(&raw mut gEnemyParty[0]);
+    CalculateMonStats(crate::gl!(&raw gEnemyParty[0]));
 }
 unsafe fn GetInGameTradeMail(mail: *mut Mail, trade: *mut InGameTrade) {
     for i in 0..(MAIL_WORDS_COUNT as i32) {
@@ -5892,18 +6523,24 @@ unsafe fn GetInGameTradeMail(mail: *mut Mail, trade: *mut InGameTrade) {
 #[unsafe(no_mangle)]
 pub unsafe fn GetTradeSpecies() -> u16 {
     if GetMonData2(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i165 = *(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i165])
+        },
         MON_DATA_IS_EGG,
     ) != 0
     {
         return SPECIES_NONE;
     }
     GetMonData2(
-        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
-            .cast::<u16>()
-            .cast_mut()],
+        {
+            let gl_i166 = *(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut();
+            crate::gl!(&raw gPlayerParty[gl_i166])
+        },
         MON_DATA_SPECIES,
     ) as u16
 }
@@ -5913,15 +6550,21 @@ pub unsafe fn CreateInGameTradePokemon() {
 }
 pub(crate) unsafe fn CB2_UpdateLinkTrade() {
     if DoTradeAnim() == TRUE {
-        DestroySprite(&raw mut gSprites[(*sTradeAnim).monSpriteIds[0]]);
-        FreeSpriteOamMatrix(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]]);
+        DestroySprite({
+            let gl_i167 = (*crate::gl!(sTradeAnim)).monSpriteIds[0];
+            crate::gl!(&raw gSprites[gl_i167])
+        });
+        FreeSpriteOamMatrix({
+            let gl_i168 = (*crate::gl!(sTradeAnim)).monSpriteIds[1];
+            crate::gl!(&raw gSprites[gl_i168])
+        });
         TradeMons(
-            gSelectedTradeMonPositions[0],
-            (gSelectedTradeMonPositions[1] as i32 % 6) as u8,
+            crate::gl!(gSelectedTradeMonPositions[0]),
+            (crate::gl!(gSelectedTradeMonPositions[1]) as i32 % 6) as u8,
         );
         if IsWirelessTrade() == 0 {
-            (*sTradeAnim).linkData[0] = LINKCMD_READY_FINISH_TRADE;
-            (*sTradeAnim).scheduleLinkTransfer = 1;
+            (*crate::gl!(sTradeAnim)).linkData[0] = LINKCMD_READY_FINISH_TRADE;
+            (*crate::gl!(sTradeAnim)).scheduleLinkTransfer = 1;
         }
         SetMainCallback2(Some(CB2_WaitTradeComplete));
     }
@@ -5940,17 +6583,17 @@ pub(crate) unsafe fn CB2_WaitTradeComplete() {
     } else {
         HandleLinkDataReceive();
         if mpId == 0
-            && (*sTradeAnim).playerFinishStatus == STATUS_READY
-            && (*sTradeAnim).partnerFinishStatus == STATUS_READY
+            && (*crate::gl!(sTradeAnim)).playerFinishStatus == STATUS_READY
+            && (*crate::gl!(sTradeAnim)).partnerFinishStatus == STATUS_READY
         {
-            (*sTradeAnim).linkData[0] = LINKCMD_CONFIRM_FINISH_TRADE;
+            (*crate::gl!(sTradeAnim)).linkData[0] = LINKCMD_CONFIRM_FINISH_TRADE;
             SendBlock(
                 BitmaskAllOtherLinkPlayers(),
-                (*sTradeAnim).linkData.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sTradeAnim)).linkData.as_mut_ptr() as *mut c_void,
                 20,
             );
-            (*sTradeAnim).playerFinishStatus = STATUS_CANCEL;
-            (*sTradeAnim).partnerFinishStatus = STATUS_CANCEL;
+            (*crate::gl!(sTradeAnim)).playerFinishStatus = STATUS_CANCEL;
+            (*crate::gl!(sTradeAnim)).partnerFinishStatus = STATUS_CANCEL;
         }
     }
     RunTasks();
@@ -5959,9 +6602,9 @@ pub(crate) unsafe fn CB2_WaitTradeComplete() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn CB2_SaveAndEndTrade() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_CommunicationStandby5)
@@ -5973,29 +6616,29 @@ pub(crate) unsafe fn CB2_SaveAndEndTrade() {
         }
         1 => {
             SetTradeLinkStandbyCallback(0);
-            gMain.state = 100;
-            (*sTradeAnim).timer = 0;
+            crate::gl!(gMain.state = 100);
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         100 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 180
             {
-                gMain.state = 101;
-                (*sTradeAnim).timer = 0;
+                crate::gl!(gMain.state = 101);
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
             if _IsLinkTaskFinished() != 0 {
-                gMain.state = 2;
+                crate::gl!(gMain.state = 2);
             }
         }
         101 => {
             if _IsLinkTaskFinished() != 0 {
-                gMain.state = 2;
+                crate::gl!(gMain.state = 2);
             }
         }
         2 => {
-            gMain.state = 50;
+            crate::gl!(gMain.state = 50);
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
                 (*crate::asmdata::gText_SavingDontTurnOffPower.cast::<CArray<u8, 0>>())
@@ -6008,112 +6651,113 @@ pub(crate) unsafe fn CB2_SaveAndEndTrade() {
             if InUnionRoom() == 0 {
                 IncrementGameStat(GAME_STAT_POKEMON_TRADES);
             }
-            if gWirelessCommType != 0 {
-                MysteryGift_TryIncrementStat(
-                    CARD_STAT_NUM_TRADES,
-                    gLinkPlayers[GetMultiplayerId() as i32 ^ 1].trainerId,
-                );
+            if gWirelessCommType.get() != 0 {
+                MysteryGift_TryIncrementStat(CARD_STAT_NUM_TRADES, {
+                    let gl_i169 = GetMultiplayerId() as i32 ^ 1;
+                    crate::gl!(gLinkPlayers[gl_i169].trainerId)
+                });
             }
             SetContinueGameWarpStatusToDynamicWarp();
             LinkFullSave_Init();
-            gMain.state += 1;
-            (*sTradeAnim).timer = 0;
+            crate::gl!(gMain.state += 1);
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         51 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 5
             {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         52 => {
             if LinkFullSave_WriteSector() != 0 {
                 ClearContinueGameWarpStatus2();
-                gMain.state = 4;
+                crate::gl!(gMain.state = 4);
             } else {
-                (*sTradeAnim).timer = 0;
-                gMain.state = 51;
+                (*crate::gl!(sTradeAnim)).timer = 0;
+                crate::gl!(gMain.state = 51);
             }
         }
         4 => {
             LinkFullSave_ReplaceLastSector();
-            gMain.state = 40;
-            (*sTradeAnim).timer = 0;
+            crate::gl!(gMain.state = 40);
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         40 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 50
             {
                 if GetMultiplayerId() == 0 {
-                    (*sTradeAnim).timer = (Random() as i32 % 30) as u32;
+                    (*crate::gl!(sTradeAnim)).timer = (Random() as i32 % 30) as u32;
                 } else {
-                    (*sTradeAnim).timer = 0;
+                    (*crate::gl!(sTradeAnim)).timer = 0;
                 }
-                gMain.state = 41;
+                crate::gl!(gMain.state = 41);
             }
         }
         41 => {
-            if (*sTradeAnim).timer == 0 {
+            if (*crate::gl!(sTradeAnim)).timer == 0 {
                 SetTradeLinkStandbyCallback(1);
-                gMain.state = 42;
+                crate::gl!(gMain.state = 42);
             } else {
-                (*sTradeAnim).timer -= 1;
+                (*crate::gl!(sTradeAnim)).timer -= 1;
             }
         }
         42 => {
             if _IsLinkTaskFinished() != 0 {
                 LinkFullSave_SetLastSectorSignature();
-                gMain.state = 5;
+                crate::gl!(gMain.state = 5);
             }
         }
         5 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 60
             {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
                 SetTradeLinkStandbyCallback(2);
             }
         }
         6 => {
             if _IsLinkTaskFinished() != 0 {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         7 => {
-            if gPaletteFade.active() == 0 {
+            if (*gPaletteFade.as_ptr()).active() == 0 {
                 FadeOutBGM(3);
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         8 => {
             if IsBGMStopped() == TRUE {
-                if gWirelessCommType != 0
-                    && gMain.savedCallback == Some(CB2_StartCreateTradeMenu as unsafe fn())
+                if gWirelessCommType.get() != 0
+                    && crate::gl!(gMain.savedCallback)
+                        == Some(CB2_StartCreateTradeMenu as unsafe fn())
                 {
                     SetTradeLinkStandbyCallback(3);
                 } else {
                     SetCloseLinkCallback();
                 }
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         9 => {
-            if gWirelessCommType != 0
-                && gMain.savedCallback == Some(CB2_StartCreateTradeMenu as unsafe fn())
+            if gWirelessCommType.get() != 0
+                && crate::gl!(gMain.savedCallback) == Some(CB2_StartCreateTradeMenu as unsafe fn())
             {
                 if _IsLinkTaskFinished() != 0 {
-                    gSoftResetDisabled = FALSE;
+                    gSoftResetDisabled.set(FALSE);
                     SetMainCallback2(Some(CB2_FreeTradeAnim));
                 }
-            } else if gReceivedRemoteLinkPlayers == 0 {
-                gSoftResetDisabled = FALSE;
+            } else if gReceivedRemoteLinkPlayers.get() == 0 {
+                gSoftResetDisabled.set(FALSE);
                 SetMainCallback2(Some(CB2_FreeTradeAnim));
             }
         }
@@ -6127,18 +6771,18 @@ pub(crate) unsafe fn CB2_SaveAndEndTrade() {
     UpdatePaletteFade();
 }
 pub(crate) unsafe fn CB2_FreeTradeAnim() {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         FreeAllWindowBuffers();
         Free(GetBgTilemapBuffer(3));
         Free(GetBgTilemapBuffer(1));
         Free(GetBgTilemapBuffer(0));
         FreeMonSpritesGfx();
-        Free(sTradeAnim as *mut c_void);
-        sTradeAnim = null_mut();
-        if gWirelessCommType != 0 {
+        Free(crate::gl!(sTradeAnim) as *mut c_void);
+        crate::gl!(sTradeAnim = null_mut());
+        if gWirelessCommType.get() != 0 {
             DestroyWirelessStatusIndicatorSprite();
         }
-        SetMainCallback2(gMain.savedCallback);
+        SetMainCallback2(crate::gl!(gMain.savedCallback));
     }
     RunTasks();
     AnimateSprites();
@@ -6152,9 +6796,9 @@ pub unsafe fn DoInGameTradeScene() {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
 }
 pub(crate) unsafe fn Task_InGameTrade(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetMainCallback2(Some(CB2_InitInGameTrade));
-        gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
+        crate::gl!(gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic));
         DestroyTask(taskId);
     }
 }
@@ -6162,7 +6806,10 @@ unsafe fn CheckPartnersMonForRibbons() {
     let mut numRibbons: u8 = 0;
     for i in 0..12u8 {
         numRibbons += GetMonData2(
-            &raw mut gEnemyParty[gSelectedTradeMonPositions[1] as i32 % 6],
+            {
+                let gl_i170 = crate::gl!(gSelectedTradeMonPositions[1]) as i32 % 6;
+                crate::gl!(&raw gEnemyParty[gl_i170])
+            },
             MON_DATA_CHAMPION_RIBBON + i as i32,
         ) as u8;
     }
@@ -6175,9 +6822,9 @@ pub unsafe fn LoadTradeAnimGfx() {
 }
 pub unsafe fn DrawTextOnTradeWindow(windowId: u8, str: *mut u8, speed: u8) {
     FillWindowPixelBuffer(windowId, 255);
-    (*sTradeAnim).textColors[0] = TEXT_DYNAMIC_COLOR_6;
-    (*sTradeAnim).textColors[1] = 0x1;
-    (*sTradeAnim).textColors[2] = TEXT_COLOR_GREEN;
+    (*crate::gl!(sTradeAnim)).textColors[0] = TEXT_DYNAMIC_COLOR_6;
+    (*crate::gl!(sTradeAnim)).textColors[1] = 0x1;
+    (*crate::gl!(sTradeAnim)).textColors[2] = TEXT_COLOR_GREEN;
     AddTextPrinterParameterized4(
         windowId,
         FONT_NORMAL,
@@ -6185,7 +6832,7 @@ pub unsafe fn DrawTextOnTradeWindow(windowId: u8, str: *mut u8, speed: u8) {
         2,
         0,
         0,
-        (*sTradeAnim).textColors.as_mut_ptr(),
+        (*crate::gl!(sTradeAnim)).textColors.as_mut_ptr(),
         speed as i8,
         str,
     );
@@ -6239,52 +6886,56 @@ pub(crate) unsafe fn Task_AnimateWirelessSignal(taskId: u8) {
 pub(crate) unsafe fn Task_OpenCenterWhiteColumn(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
-        (*sTradeAnim).wirelessWinLeft = {
-            (*sTradeAnim).wirelessWinRight = 120;
-            (*sTradeAnim).wirelessWinRight
+        (*crate::gl!(sTradeAnim)).wirelessWinLeft = {
+            (*crate::gl!(sTradeAnim)).wirelessWinRight = 120;
+            (*crate::gl!(sTradeAnim)).wirelessWinRight
         };
-        (*sTradeAnim).wirelessWinTop = 0;
-        (*sTradeAnim).wirelessWinBottom = DISPLAY_HEIGHT as u8;
+        (*crate::gl!(sTradeAnim)).wirelessWinTop = 0;
+        (*crate::gl!(sTradeAnim)).wirelessWinBottom = DISPLAY_HEIGHT as u8;
         SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON);
         SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_OBJ);
         SetGpuReg(REG_OFFSET_WININ, 19);
     }
     SetGpuReg(
         REG_OFFSET_WIN0H,
-        (*sTradeAnim).wirelessWinRight as u16 | ((*sTradeAnim).wirelessWinLeft as u16) << 8,
+        (*crate::gl!(sTradeAnim)).wirelessWinRight as u16
+            | ((*crate::gl!(sTradeAnim)).wirelessWinLeft as u16) << 8,
     );
     SetGpuReg(
         REG_OFFSET_WIN0V,
-        (*sTradeAnim).wirelessWinBottom as u16 | ((*sTradeAnim).wirelessWinTop as u16) << 8,
+        (*crate::gl!(sTradeAnim)).wirelessWinBottom as u16
+            | ((*crate::gl!(sTradeAnim)).wirelessWinTop as u16) << 8,
     );
     *data += 1;
-    (*sTradeAnim).wirelessWinLeft -= 5;
-    (*sTradeAnim).wirelessWinRight += 5;
-    if (*sTradeAnim).wirelessWinLeft < 80 {
+    (*crate::gl!(sTradeAnim)).wirelessWinLeft -= 5;
+    (*crate::gl!(sTradeAnim)).wirelessWinRight += 5;
+    if (*crate::gl!(sTradeAnim)).wirelessWinLeft < 80 {
         DestroyTask(taskId);
     }
 }
 pub(crate) unsafe fn Task_CloseCenterWhiteColumn(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
-        (*sTradeAnim).wirelessWinLeft = 80;
-        (*sTradeAnim).wirelessWinRight = 160;
+        (*crate::gl!(sTradeAnim)).wirelessWinLeft = 80;
+        (*crate::gl!(sTradeAnim)).wirelessWinRight = 160;
         SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_OBJ);
         SetGpuReg(REG_OFFSET_WININ, 19);
     }
     SetGpuReg(
         REG_OFFSET_WIN0H,
-        (*sTradeAnim).wirelessWinRight as u16 | ((*sTradeAnim).wirelessWinLeft as u16) << 8,
+        (*crate::gl!(sTradeAnim)).wirelessWinRight as u16
+            | ((*crate::gl!(sTradeAnim)).wirelessWinLeft as u16) << 8,
     );
     SetGpuReg(
         REG_OFFSET_WIN0V,
-        (*sTradeAnim).wirelessWinBottom as u16 | ((*sTradeAnim).wirelessWinTop as u16) << 8,
+        (*crate::gl!(sTradeAnim)).wirelessWinBottom as u16
+            | ((*crate::gl!(sTradeAnim)).wirelessWinTop as u16) << 8,
     );
-    if (*sTradeAnim).wirelessWinLeft != 120 {
+    if (*crate::gl!(sTradeAnim)).wirelessWinLeft != 120 {
         *data += 1;
-        (*sTradeAnim).wirelessWinLeft += 5;
-        (*sTradeAnim).wirelessWinRight -= 5;
-        if (*sTradeAnim).wirelessWinLeft > 115 {
+        (*crate::gl!(sTradeAnim)).wirelessWinLeft += 5;
+        (*crate::gl!(sTradeAnim)).wirelessWinRight -= 5;
+        if (*crate::gl!(sTradeAnim)).wirelessWinLeft > 115 {
             BlendPalettes(0x8, 0, 65535);
         }
     } else {
@@ -6293,9 +6944,9 @@ pub(crate) unsafe fn Task_CloseCenterWhiteColumn(taskId: u8) {
     }
 }
 pub(crate) unsafe fn CB2_SaveAndEndWirelessTrade() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
-            gMain.state = 1;
+            crate::gl!(gMain.state = 1);
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
                 (*(&raw const crate::data::strings::gText_CommunicationStandby5)
@@ -6307,12 +6958,12 @@ pub(crate) unsafe fn CB2_SaveAndEndWirelessTrade() {
         }
         1 => {
             SetTradeLinkStandbyCallback(0);
-            gMain.state = 2;
-            (*sTradeAnim).timer = 0;
+            crate::gl!(gMain.state = 2);
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         2 => {
             if _IsLinkTaskFinished() != 0 {
-                gMain.state = 3;
+                crate::gl!(gMain.state = 3);
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
                     (*crate::asmdata::gText_SavingDontTurnOffPower.cast::<CArray<u8, 0>>())
@@ -6322,66 +6973,66 @@ pub(crate) unsafe fn CB2_SaveAndEndWirelessTrade() {
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
                 IncrementGameStat(GAME_STAT_POKEMON_TRADES);
                 LinkFullSave_Init();
-                (*sTradeAnim).timer = 0;
+                (*crate::gl!(sTradeAnim)).timer = 0;
             }
         }
         3 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) == 5
             {
-                gMain.state = 4;
+                crate::gl!(gMain.state = 4);
             }
         }
         4 => {
             if LinkFullSave_WriteSector() != 0 {
-                gMain.state = 5;
+                crate::gl!(gMain.state = 5);
             } else {
-                (*sTradeAnim).timer = 0;
-                gMain.state = 3;
+                (*crate::gl!(sTradeAnim)).timer = 0;
+                crate::gl!(gMain.state = 3);
             }
         }
         5 => {
             LinkFullSave_ReplaceLastSector();
-            gMain.state = 6;
-            (*sTradeAnim).timer = 0;
+            crate::gl!(gMain.state = 6);
+            (*crate::gl!(sTradeAnim)).timer = 0;
         }
         6 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 10
             {
                 if GetMultiplayerId() == 0 {
-                    (*sTradeAnim).timer = (Random() as i32 % 30) as u32;
+                    (*crate::gl!(sTradeAnim)).timer = (Random() as i32 % 30) as u32;
                 } else {
-                    (*sTradeAnim).timer = 0;
+                    (*crate::gl!(sTradeAnim)).timer = 0;
                 }
-                gMain.state = 7;
+                crate::gl!(gMain.state = 7);
             }
         }
         7 => {
-            if (*sTradeAnim).timer == 0 {
+            if (*crate::gl!(sTradeAnim)).timer == 0 {
                 SetTradeLinkStandbyCallback(1);
-                gMain.state = 8;
+                crate::gl!(gMain.state = 8);
             } else {
-                (*sTradeAnim).timer -= 1;
+                (*crate::gl!(sTradeAnim)).timer -= 1;
             }
         }
         8 => {
             if _IsLinkTaskFinished() != 0 {
                 LinkFullSave_SetLastSectorSignature();
-                gMain.state = 9;
+                crate::gl!(gMain.state = 9);
             }
         }
         9 => {
             if ({
-                (*sTradeAnim).timer += 1;
-                (*sTradeAnim).timer
+                (*crate::gl!(sTradeAnim)).timer += 1;
+                (*crate::gl!(sTradeAnim)).timer
             }) > 60
             {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
                 SetTradeLinkStandbyCallback(2);
             }
         }
@@ -6389,17 +7040,17 @@ pub(crate) unsafe fn CB2_SaveAndEndWirelessTrade() {
             if _IsLinkTaskFinished() != 0 {
                 FadeOutBGM(3);
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-                gMain.state = 11;
+                crate::gl!(gMain.state = 11);
             }
         }
         11 => {
-            if gPaletteFade.active() == 0 && IsBGMStopped() == TRUE {
+            if (*gPaletteFade.as_ptr()).active() == 0 && IsBGMStopped() == TRUE {
                 SetTradeLinkStandbyCallback(3);
-                gMain.state = 12;
+                crate::gl!(gMain.state = 12);
             }
         }
         12 if _IsLinkTaskFinished() != 0 => {
-            gSoftResetDisabled = FALSE;
+            gSoftResetDisabled.set(FALSE);
             SetMainCallback2(Some(CB2_FreeTradeAnim));
         }
         _ => {}

@@ -143,13 +143,14 @@ static sYellowFlashData: Table<CArray<CArray<u8, 2>, 14>> =
 static sZigzagData: Table<CArray<CArray<i8, 3>, 10>> =
     Table((&raw const crate::data::pokemon_animation::sZigzagData).cast());
 
-pub(crate) static mut sAnims: CArray<PokemonAnimData, 4> = unsafe { zeroed() };
+pub(crate) static sAnims: crate::global::Global<CArray<PokemonAnimData, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
 pub(crate) static sAnimIdx: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sIsSummaryAnim: crate::global::Global<u32> = crate::global::Global::new(0);
 
 /// `ObjAffineSet` with this module's view of its types.
 #[inline]
-unsafe fn ObjAffineSet(a0: *mut ObjAffineSrcData, a1: *mut c_void, a2: i32, a3: i32) {
+fn ObjAffineSet(a0: *mut ObjAffineSrcData, a1: *mut c_void, a2: i32, a3: i32) {
     unsafe {
         crate::syscall::ObjAffineSet(a0 as _, a1 as _, a2, a3);
     }
@@ -219,7 +220,8 @@ pub unsafe fn LaunchAnimationTaskForBackSprite(sprite: *mut Sprite, backAnimSet:
     task_set(taskId, tPtrHi, (sprite as usize as u32 >> 16) as i16);
     task_set(taskId, tPtrLo, sprite as usize as u32 as i16);
     let battler: u8 = (*sprite).data[0] as u8;
-    let nature: u8 = GetNature(&raw mut gPlayerParty[gBattlerPartyIndexes[battler]]);
+    let nature: u8 =
+        GetNature(&raw mut (*gPlayerParty.as_ptr())[crate::gl!(gBattlerPartyIndexes[battler])]);
     let animId: u8 = 3 * backAnimSet + sBackAnimNatureModTable[nature];
     task_set(taskId, tAnimId, sBackAnimationIds[animId] as i16);
 }
@@ -235,19 +237,19 @@ unsafe fn SetAffineData(sprite: *mut Sprite, xScale: i16, yScale: i16, rotation:
     affineSrcData.rotation = rotation;
     matrixNum = (*sprite).oam.matrixNum() as u8;
     ObjAffineSet(&raw mut affineSrcData, &raw mut dest as *mut c_void, 1, 2);
-    (*(&raw const crate::sprite::gOamMatrices)
+    (*(crate::gl!(&raw @at crate::sprite::gOamMatrices;).cast_const())
         .cast::<CArray<OamMatrix, 32>>()
         .cast_mut())[matrixNum]
         .a = dest.a;
-    (*(&raw const crate::sprite::gOamMatrices)
+    (*(crate::gl!(&raw @at crate::sprite::gOamMatrices;).cast_const())
         .cast::<CArray<OamMatrix, 32>>()
         .cast_mut())[matrixNum]
         .b = dest.b;
-    (*(&raw const crate::sprite::gOamMatrices)
+    (*(crate::gl!(&raw @at crate::sprite::gOamMatrices;).cast_const())
         .cast::<CArray<OamMatrix, 32>>()
         .cast_mut())[matrixNum]
         .c = dest.c;
-    (*(&raw const crate::sprite::gOamMatrices)
+    (*(crate::gl!(&raw @at crate::sprite::gOamMatrices;).cast_const())
         .cast::<CArray<OamMatrix, 32>>()
         .cast_mut())[matrixNum]
         .d = dest.d;
@@ -288,15 +290,15 @@ unsafe fn TryFlipX(sprite: *mut Sprite) {
         (*sprite).x2 *= -1;
     }
 }
-unsafe fn InitAnimData(id: u8) -> u32 {
+fn InitAnimData(id: u8) -> u32 {
     if id >= MAX_BATTLERS_COUNT {
         return FALSE as u32;
     } else {
-        sAnims[id].rotation = 0;
-        sAnims[id].delay = 0;
-        sAnims[id].runs = 1;
-        sAnims[id].speed = 0;
-        sAnims[id].data = 0;
+        crate::gl!(sAnims[id].rotation = 0);
+        crate::gl!(sAnims[id].delay = 0);
+        crate::gl!(sAnims[id].runs = 1);
+        crate::gl!(sAnims[id].speed = 0);
+        crate::gl!(sAnims[id].data = 0);
         return TRUE as u32;
     }
     #[allow(unreachable_code)]
@@ -554,18 +556,18 @@ pub(crate) unsafe fn Anim_CircularVibrate(sprite: *mut Sprite) {
 }
 pub(crate) unsafe fn Twist(sprite: *mut Sprite) {
     let id: i16 = (*sprite).data[0];
-    if sAnims[id].delay != 0 {
-        sAnims[id].delay -= 1;
+    if crate::gl!(sAnims[id].delay) != 0 {
+        crate::gl!(sAnims[id].delay -= 1);
     } else {
-        if (*sprite).data[2] == 0 && sAnims[id].data == 0 {
+        if (*sprite).data[2] == 0 && crate::gl!(sAnims[id].data) == 0 {
             HandleStartAffineAnim(sprite);
-            sAnims[id].data += 1;
+            crate::gl!(sAnims[id].data += 1);
         }
-        if (*sprite).data[2] > sAnims[id].rotation {
+        if (*sprite).data[2] > crate::gl!(sAnims[id].rotation) {
             HandleSetAffineData(sprite, 256, 256, 0);
-            if sAnims[id].runs > 1 {
-                sAnims[id].runs -= 1;
-                sAnims[id].delay = 10;
+            if crate::gl!(sAnims[id].runs) > 1 {
+                crate::gl!(sAnims[id].runs -= 1);
+                crate::gl!(sAnims[id].delay = 10);
                 (*sprite).data[2] = 0;
             } else {
                 ResetSpriteAfterAnim(sprite);
@@ -583,8 +585,8 @@ pub(crate) unsafe fn Anim_Twist(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 512;
-    sAnims[id].delay = 0;
+    crate::gl!(sAnims[id].rotation = 512);
+    crate::gl!(sAnims[id].delay = 0);
     Twist(sprite);
     (*sprite).callback = Some(Twist);
 }
@@ -593,12 +595,13 @@ pub(crate) unsafe fn Spin(sprite: *mut Sprite) {
     if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
     }
-    if (*sprite).data[2] as i32 > sAnims[id].delay as i32 {
+    if (*sprite).data[2] as i32 > crate::gl!(sAnims[id].delay) as i32 {
         HandleSetAffineData(sprite, 256, 256, 0);
         ResetSpriteAfterAnim(sprite);
         (*sprite).callback = Some(WaitAnimEnd);
     } else {
-        (*sprite).data[6] = div_i32(0x10000, sAnims[id].data as i32) as i16 * (*sprite).data[2];
+        (*sprite).data[6] =
+            div_i32(0x10000, crate::gl!(sAnims[id].data) as i32) as i16 * (*sprite).data[2];
         HandleSetAffineData(sprite, 256, 256, (*sprite).data[6] as u16);
     }
     (*sprite).data[2] += 1;
@@ -608,24 +611,24 @@ pub(crate) unsafe fn Anim_Spin_Long(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].delay = 60;
-    sAnims[id].data = 20;
+    crate::gl!(sAnims[id].delay = 60);
+    crate::gl!(sAnims[id].data = 20);
     Spin(sprite);
     (*sprite).callback = Some(Spin);
 }
 pub(crate) unsafe fn CircleCounterclockwise(sprite: *mut Sprite) {
     let id: u8 = (*sprite).data[0] as u8;
     TryFlipX(sprite);
-    if (*sprite).data[2] > sAnims[id].rotation {
+    if (*sprite).data[2] > crate::gl!(sAnims[id].rotation) {
         (*sprite).x2 = 0;
         (*sprite).y2 = 0;
         (*sprite).callback = Some(WaitAnimEnd);
     } else {
         let index: i16 = (((*sprite).data[2] as i32 + 192) % 256) as i16;
-        (*sprite).x2 = -Cos(index, sAnims[id].data * 2);
-        (*sprite).y2 = Sin(index, sAnims[id].data) + sAnims[id].data;
+        (*sprite).x2 = -Cos(index, crate::gl!(sAnims[id].data) * 2);
+        (*sprite).y2 = Sin(index, crate::gl!(sAnims[id].data)) + crate::gl!(sAnims[id].data);
     }
-    (*sprite).data[2] += sAnims[id].speed;
+    (*sprite).data[2] += crate::gl!(sAnims[id].speed);
     TryFlipX(sprite);
 }
 pub(crate) unsafe fn Anim_CircleCounterclockwise(sprite: *mut Sprite) {
@@ -633,9 +636,9 @@ pub(crate) unsafe fn Anim_CircleCounterclockwise(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 512;
-    sAnims[id].data = 6;
-    sAnims[id].speed = 24;
+    crate::gl!(sAnims[id].rotation = 512);
+    crate::gl!(sAnims[id].data = 6);
+    crate::gl!(sAnims[id].speed = 24);
     CircleCounterclockwise(sprite);
     (*sprite).callback = Some(CircleCounterclockwise);
 }
@@ -917,11 +920,12 @@ pub(crate) unsafe fn Anim_ShrinkGrow(sprite: *mut Sprite) {
 pub(crate) unsafe fn BounceRotateToSides(sprite: *mut Sprite) {
     TryFlipX(sprite);
     let structId: u8 = (*sprite).data[0] as u8;
-    let var: i16 = sAnims[structId].rotation;
-    let r9: i8 = sBounceRotateToSidesData[sAnims[structId].data][(*sprite).data[4]][0];
-    let r10: i16 =
-        sBounceRotateToSidesData[sAnims[structId].data][(*sprite).data[4]][1] as i16 - r9 as i16;
-    let arrId: u32 = sAnims[structId].data as u32;
+    let var: i16 = crate::gl!(sAnims[structId].rotation);
+    let r9: i8 = sBounceRotateToSidesData[crate::gl!(sAnims[structId].data)][(*sprite).data[4]][0];
+    let r10: i16 = sBounceRotateToSidesData[crate::gl!(sAnims[structId].data)][(*sprite).data[4]][1]
+        as i16
+        - r9 as i16;
+    let arrId: u32 = crate::gl!(sAnims[structId].data) as u32;
     let r7: i16 = (*sprite).data[3];
     if (*sprite).data[2] == 0 {
         HandleStartAffineAnim(sprite);
@@ -962,8 +966,8 @@ pub(crate) unsafe fn Anim_BounceRotateToSides(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 4096;
-    sAnims[id].data = (*sprite).data[6];
+    crate::gl!(sAnims[id].rotation = 4096);
+    crate::gl!(sAnims[id].data = (*sprite).data[6]);
     BounceRotateToSides(sprite);
     (*sprite).callback = Some(BounceRotateToSides);
 }
@@ -1279,19 +1283,30 @@ pub(crate) unsafe fn Anim_TumblingFrontFlip(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].speed = 2;
+    crate::gl!(sAnims[id].speed = 2);
     TumblingFrontFlip(sprite);
     (*sprite).callback = Some(TumblingFrontFlip);
 }
 pub(crate) unsafe fn TumblingFrontFlip(sprite: *mut Sprite) {
-    if sAnims[(*sprite).data[0]].delay != 0 {
-        sAnims[(*sprite).data[0]].delay -= 1;
+    if {
+        let gl_i0 = (*sprite).data[0];
+        crate::gl!(sAnims[gl_i0].delay)
+    } != 0
+    {
+        {
+            let gl_v = 1;
+            let gl_i1 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i1].delay -= gl_v)
+        };
     } else {
         TryFlipX(sprite);
         if (*sprite).data[2] == 0 {
             (*sprite).data[2] += 1;
             HandleStartAffineAnim(sprite);
-            (*sprite).data[7] = sAnims[(*sprite).data[0]].speed;
+            (*sprite).data[7] = {
+                let gl_i2 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i2].speed)
+            };
             (*sprite).data[3] = -1;
             (*sprite).data[4] = -1;
             (*sprite).data[5] = 0;
@@ -1312,11 +1327,23 @@ pub(crate) unsafe fn TumblingFrontFlip(sprite: *mut Sprite) {
         if (*sprite).data[5] > 5 && (*sprite).x2 <= 0 {
             (*sprite).x2 = 0;
             (*sprite).y2 = 0;
-            if sAnims[(*sprite).data[0]].runs > 1 {
-                sAnims[(*sprite).data[0]].runs -= 1;
+            if {
+                let gl_i3 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i3].runs)
+            } > 1
+            {
+                {
+                    let gl_v = 1;
+                    let gl_i4 = (*sprite).data[0];
+                    crate::gl!(sAnims[gl_i4].runs -= gl_v)
+                };
                 (*sprite).data[5] = 0;
                 (*sprite).data[6] = 0;
-                sAnims[(*sprite).data[0]].delay = 10;
+                {
+                    let gl_v = 10;
+                    let gl_i5 = (*sprite).data[0];
+                    crate::gl!(sAnims[gl_i5].delay = gl_v)
+                };
             } else {
                 ResetSpriteAfterAnim(sprite);
                 (*sprite).callback = Some(WaitAnimEnd);
@@ -1389,21 +1416,32 @@ pub(crate) unsafe fn SwingConcave(sprite: *mut Sprite) {
         HandleStartAffineAnim(sprite);
     }
     TryFlipX(sprite);
-    if (*sprite).data[2] > sAnims[(*sprite).data[0]].data {
+    if (*sprite).data[2] > {
+        let gl_i6 = (*sprite).data[0];
+        crate::gl!(sAnims[gl_i6].data)
+    } {
         HandleSetAffineData(sprite, 256, 256, 0);
         (*sprite).x2 = 0;
-        if sAnims[(*sprite).data[0]].runs > 1 {
-            sAnims[(*sprite).data[0]].runs -= 1;
+        if {
+            let gl_i7 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i7].runs)
+        } > 1
+        {
+            {
+                let gl_v = 1;
+                let gl_i8 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i8].runs -= gl_v)
+            };
             (*sprite).data[2] = 0;
         } else {
             ResetSpriteAfterAnim(sprite);
             (*sprite).callback = Some(WaitAnimEnd);
         }
     } else {
-        let index: i16 = div_i32(
-            (*sprite).data[2] as i32 * 256,
-            sAnims[(*sprite).data[0]].data as i32,
-        ) as i16;
+        let index: i16 = div_i32((*sprite).data[2] as i32 * 256, {
+            let gl_i9 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i9].data)
+        } as i32) as i16;
         (*sprite).x2 = -Sin(index, 10);
         HandleSetAffineData(sprite, 256, 256, Sin(index, 3276) as u16);
     }
@@ -1415,7 +1453,7 @@ pub(crate) unsafe fn Anim_SwingConcave_FastShort(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 50;
+    crate::gl!(sAnims[id].data = 50);
     SwingConcave(sprite);
     (*sprite).callback = Some(SwingConcave);
 }
@@ -1424,21 +1462,32 @@ pub(crate) unsafe fn SwingConvex(sprite: *mut Sprite) {
         HandleStartAffineAnim(sprite);
     }
     TryFlipX(sprite);
-    if (*sprite).data[2] > sAnims[(*sprite).data[0]].data {
+    if (*sprite).data[2] > {
+        let gl_i10 = (*sprite).data[0];
+        crate::gl!(sAnims[gl_i10].data)
+    } {
         HandleSetAffineData(sprite, 256, 256, 0);
         (*sprite).x2 = 0;
-        if sAnims[(*sprite).data[0]].runs > 1 {
-            sAnims[(*sprite).data[0]].runs -= 1;
+        if {
+            let gl_i11 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i11].runs)
+        } > 1
+        {
+            {
+                let gl_v = 1;
+                let gl_i12 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i12].runs -= gl_v)
+            };
             (*sprite).data[2] = 0;
         } else {
             ResetSpriteAfterAnim(sprite);
             (*sprite).callback = Some(WaitAnimEnd);
         }
     } else {
-        let index: i16 = div_i32(
-            (*sprite).data[2] as i32 * 256,
-            sAnims[(*sprite).data[0]].data as i32,
-        ) as i16;
+        let index: i16 = div_i32((*sprite).data[2] as i32 * 256, {
+            let gl_i13 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i13].data)
+        } as i32) as i16;
         (*sprite).x2 = -Sin(index, 10);
         HandleSetAffineData(sprite, 256, 256, (Sin(index, 3276) as u16).wrapping_neg());
     }
@@ -1450,7 +1499,7 @@ pub(crate) unsafe fn Anim_SwingConvex_FastShort(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 50;
+    crate::gl!(sAnims[id].data = 50);
     SwingConvex(sprite);
     (*sprite).callback = Some(SwingConvex);
 }
@@ -1497,8 +1546,16 @@ pub(crate) unsafe fn RotateUpSlamDown_2(sprite: *mut Sprite) {
     TryFlipX(sprite);
 }
 pub(crate) unsafe fn DeepVerticalSquishBounce(sprite: *mut Sprite) {
-    if sAnims[(*sprite).data[0]].delay != 0 {
-        sAnims[(*sprite).data[0]].delay -= 1;
+    if {
+        let gl_i14 = (*sprite).data[0];
+        crate::gl!(sAnims[gl_i14].delay)
+    } != 0
+    {
+        {
+            let gl_v = 1;
+            let gl_i15 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i15].delay -= gl_v)
+        };
     } else {
         if (*sprite).data[2] == 0 {
             HandleStartAffineAnim(sprite);
@@ -1521,9 +1578,21 @@ pub(crate) unsafe fn DeepVerticalSquishBounce(sprite: *mut Sprite) {
             (*sprite).data[6] = Sin((*sprite).data[4], 128);
             HandleSetAffineData(sprite, 256 + (*sprite).data[6], 256 - (*sprite).data[7], 0);
             if (*sprite).data[4] == 128 {
-                if sAnims[(*sprite).data[0]].runs > 1 {
-                    sAnims[(*sprite).data[0]].runs -= 1;
-                    sAnims[(*sprite).data[0]].delay = 10;
+                if {
+                    let gl_i16 = (*sprite).data[0];
+                    crate::gl!(sAnims[gl_i16].runs)
+                } > 1
+                {
+                    {
+                        let gl_v = 1;
+                        let gl_i17 = (*sprite).data[0];
+                        crate::gl!(sAnims[gl_i17].runs -= gl_v)
+                    };
+                    {
+                        let gl_v = 10;
+                        let gl_i18 = (*sprite).data[0];
+                        crate::gl!(sAnims[gl_i18].delay = gl_v)
+                    };
                     (*sprite).data[4] = 0;
                     (*sprite).data[5] = 0;
                 } else {
@@ -1533,7 +1602,10 @@ pub(crate) unsafe fn DeepVerticalSquishBounce(sprite: *mut Sprite) {
                 }
             }
         }
-        (*sprite).data[4] += sAnims[(*sprite).data[0]].rotation;
+        (*sprite).data[4] += {
+            let gl_i19 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i19].rotation)
+        };
     }
 }
 pub(crate) unsafe fn Anim_DeepVerticalSquishBounce(sprite: *mut Sprite) {
@@ -1541,7 +1613,7 @@ pub(crate) unsafe fn Anim_DeepVerticalSquishBounce(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 4;
+    crate::gl!(sAnims[id].rotation = 4);
     DeepVerticalSquishBounce(sprite);
     (*sprite).callback = Some(DeepVerticalSquishBounce);
 }
@@ -1578,15 +1650,23 @@ pub(crate) unsafe fn Anim_HorizontalJumpsVerticalStretch(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = -1;
+    crate::gl!(sAnims[id].data = -1);
     HandleStartAffineAnim(sprite);
     (*sprite).data[3] = 0;
     HorizontalJumpsVerticalStretch_0(sprite);
     (*sprite).callback = Some(HorizontalJumpsVerticalStretch_0);
 }
 pub(crate) unsafe fn HorizontalJumpsVerticalStretch_0(sprite: *mut Sprite) {
-    if sAnims[(*sprite).data[0]].delay != 0 {
-        sAnims[(*sprite).data[0]].delay -= 1;
+    if {
+        let gl_i20 = (*sprite).data[0];
+        crate::gl!(sAnims[gl_i20].delay)
+    } != 0
+    {
+        {
+            let gl_v = 1;
+            let gl_i21 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i21].delay -= gl_v)
+        };
     } else {
         TryFlipX(sprite);
         let counter: i32 = (*sprite).data[2] as i32;
@@ -1594,7 +1674,10 @@ pub(crate) unsafe fn HorizontalJumpsVerticalStretch_0(sprite: *mut Sprite) {
             (*sprite).data[2] = 0;
             (*sprite).callback = Some(HorizontalJumpsVerticalStretch_1);
         } else {
-            let var: i32 = 8 * sAnims[(*sprite).data[0]].data as i32;
+            let var: i32 = 8 * {
+                let gl_i22 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i22].data)
+            } as i32;
             (*sprite).x2 = (var * (counter % 128) / 128) as i16;
             (*sprite).y2 = -Sin((counter % 128) as i16, 8);
             (*sprite).data[2] += 12;
@@ -1613,7 +1696,10 @@ pub(crate) unsafe fn HorizontalJumpsVerticalStretch_1(sprite: *mut Sprite) {
         let yScale: i16 = Sin((*sprite).data[4], 64) + 256;
         if (*sprite).data[2] >= 16 && (*sprite).data[2] <= 31 {
             (*sprite).data[3] += 8;
-            (*sprite).x2 -= sAnims[(*sprite).data[0]].data;
+            (*sprite).x2 -= {
+                let gl_i23 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i23].data)
+            };
         }
         let mut yDelta: i16 = 0;
         if yScale > 256 {
@@ -1631,9 +1717,21 @@ pub(crate) unsafe fn HorizontalJumpsVerticalStretch_2(sprite: *mut Sprite) {
     TryFlipX(sprite);
     let counter: i32 = (*sprite).data[2] as i32;
     if counter > 128 {
-        if sAnims[(*sprite).data[0]].runs > 1 {
-            sAnims[(*sprite).data[0]].runs -= 1;
-            sAnims[(*sprite).data[0]].delay = 10;
+        if {
+            let gl_i24 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i24].runs)
+        } > 1
+        {
+            {
+                let gl_v = 1;
+                let gl_i25 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i25].runs -= gl_v)
+            };
+            {
+                let gl_v = 10;
+                let gl_i26 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i26].delay = gl_v)
+            };
             (*sprite).data[3] = 0;
             (*sprite).data[2] = 0;
             (*sprite).data[4] = 0;
@@ -1645,7 +1743,10 @@ pub(crate) unsafe fn HorizontalJumpsVerticalStretch_2(sprite: *mut Sprite) {
         (*sprite).x2 = 0;
         (*sprite).y2 = 0;
     } else {
-        let var: i32 = sAnims[(*sprite).data[0]].data as i32;
+        let var: i32 = {
+            let gl_i27 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i27].data)
+        } as i32;
         (*sprite).x2 = (var * (counter % 128 * 8) / 128) as i16 + 8 * -(var as i16);
         (*sprite).y2 = -Sin((counter % 128) as i16, 8);
     }
@@ -1662,8 +1763,16 @@ pub(crate) unsafe fn RotateToSides(sprite: *mut Sprite) {
         (*sprite).x2 = 0;
         (*sprite).y2 = 0;
         HandleSetAffineData(sprite, 256, 256, 0);
-        if sAnims[(*sprite).data[0]].runs > 1 {
-            sAnims[(*sprite).data[0]].runs -= 1;
+        if {
+            let gl_i28 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i28].runs)
+        } > 1
+        {
+            {
+                let gl_v = 1;
+                let gl_i29 = (*sprite).data[0];
+                crate::gl!(sAnims[gl_i29].runs -= gl_v)
+            };
             (*sprite).data[2] = 0;
             (*sprite).data[7] = 0;
         } else {
@@ -1675,7 +1784,10 @@ pub(crate) unsafe fn RotateToSides(sprite: *mut Sprite) {
         (*sprite).x2 = -Sin((*sprite).data[7], 16);
         let rotation: u16 = Sin((*sprite).data[7], 32) as u16;
         HandleSetAffineData(sprite, 256, 256, rotation << 8);
-        (*sprite).data[7] += sAnims[(*sprite).data[0]].rotation;
+        (*sprite).data[7] += {
+            let gl_i30 = (*sprite).data[0];
+            crate::gl!(sAnims[gl_i30].rotation)
+        };
         TryFlipX(sprite);
     }
 }
@@ -1684,7 +1796,7 @@ pub(crate) unsafe fn Anim_RotateToSides_Fast(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 4;
+    crate::gl!(sAnims[id].rotation = 4);
     RotateToSides(sprite);
     (*sprite).callback = Some(RotateToSides);
 }
@@ -2241,8 +2353,8 @@ pub(crate) unsafe fn Anim_BounceRotateToSides_Small(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 2048;
-    sAnims[id].data = (*sprite).data[6];
+    crate::gl!(sAnims[id].rotation = 2048);
+    crate::gl!(sAnims[id].data = (*sprite).data[6]);
     BounceRotateToSides(sprite);
     (*sprite).callback = Some(BounceRotateToSides);
 }
@@ -2281,9 +2393,9 @@ pub(crate) unsafe fn Anim_Twist_Twice(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 1024;
-    sAnims[id].delay = 0;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].rotation = 1024);
+    crate::gl!(sAnims[id].delay = 0);
+    crate::gl!(sAnims[id].runs = 2);
     Twist(sprite);
     (*sprite).callback = Some(Twist);
 }
@@ -2292,9 +2404,9 @@ pub(crate) unsafe fn Anim_CircleCounterclockwise_Slow(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 512;
-    sAnims[id].data = 3;
-    sAnims[id].speed = 12;
+    crate::gl!(sAnims[id].rotation = 512);
+    crate::gl!(sAnims[id].data = 3);
+    crate::gl!(sAnims[id].speed = 12);
     CircleCounterclockwise(sprite);
     (*sprite).callback = Some(CircleCounterclockwise);
 }
@@ -2318,8 +2430,8 @@ pub(crate) unsafe fn Anim_Spin(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].delay = 60;
-    sAnims[id].data = 30;
+    crate::gl!(sAnims[id].delay = 60);
+    crate::gl!(sAnims[id].data = 30);
     Spin(sprite);
     (*sprite).callback = Some(Spin);
 }
@@ -2328,8 +2440,8 @@ pub(crate) unsafe fn Anim_TumblingFrontFlip_Twice(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].speed = 1;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].speed = 1);
+    crate::gl!(sAnims[id].runs = 2);
     TumblingFrontFlip(sprite);
     (*sprite).callback = Some(TumblingFrontFlip);
 }
@@ -2338,8 +2450,8 @@ pub(crate) unsafe fn Anim_DeepVerticalSquishBounce_Twice(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 4;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].rotation = 4);
+    crate::gl!(sAnims[id].runs = 2);
     DeepVerticalSquishBounce(sprite);
     (*sprite).callback = Some(DeepVerticalSquishBounce);
 }
@@ -2348,8 +2460,8 @@ pub(crate) unsafe fn Anim_HorizontalJumpsVerticalStretch_Twice(sprite: *mut Spri
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 1;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].data = 1);
+    crate::gl!(sAnims[id].runs = 2);
     HandleStartAffineAnim(sprite);
     (*sprite).data[3] = 0;
     HorizontalJumpsVerticalStretch_0(sprite);
@@ -2360,7 +2472,7 @@ pub(crate) unsafe fn Anim_RotateToSides(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 2;
+    crate::gl!(sAnims[id].rotation = 2);
     RotateToSides(sprite);
     (*sprite).callback = Some(RotateToSides);
 }
@@ -2369,8 +2481,8 @@ pub(crate) unsafe fn Anim_RotateToSides_Twice(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 4;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].rotation = 4);
+    crate::gl!(sAnims[id].runs = 2);
     RotateToSides(sprite);
     (*sprite).callback = Some(RotateToSides);
 }
@@ -2379,7 +2491,7 @@ pub(crate) unsafe fn Anim_SwingConcave(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 100;
+    crate::gl!(sAnims[id].data = 100);
     SwingConcave(sprite);
     (*sprite).callback = Some(SwingConcave);
 }
@@ -2388,8 +2500,8 @@ pub(crate) unsafe fn Anim_SwingConcave_Fast(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 50;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].data = 50);
+    crate::gl!(sAnims[id].runs = 2);
     SwingConcave(sprite);
     (*sprite).callback = Some(SwingConcave);
 }
@@ -2398,7 +2510,7 @@ pub(crate) unsafe fn Anim_SwingConvex(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 100;
+    crate::gl!(sAnims[id].data = 100);
     SwingConvex(sprite);
     (*sprite).callback = Some(SwingConvex);
 }
@@ -2407,8 +2519,8 @@ pub(crate) unsafe fn Anim_SwingConvex_Fast(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].data = 50;
-    sAnims[id].runs = 2;
+    crate::gl!(sAnims[id].data = 50);
+    crate::gl!(sAnims[id].runs = 2);
     SwingConvex(sprite);
     (*sprite).callback = Some(SwingConvex);
 }
@@ -2654,9 +2766,9 @@ pub(crate) unsafe fn Anim_CircleCounterclockwise_Long(sprite: *mut Sprite) {
         (*sprite).data[0] = AddNewAnim() as i16;
         (*sprite).data[0]
     }) as u8;
-    sAnims[id].rotation = 1024;
-    sAnims[id].data = 6;
-    sAnims[id].speed = 24;
+    crate::gl!(sAnims[id].rotation = 1024);
+    crate::gl!(sAnims[id].data = 6);
+    crate::gl!(sAnims[id].speed = 24);
     CircleCounterclockwise(sprite);
     (*sprite).callback = Some(CircleCounterclockwise);
 }

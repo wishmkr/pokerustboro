@@ -54,7 +54,7 @@ unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
@@ -135,20 +135,25 @@ static sSpriteTemplate_RotatingGateLarge: Table<SpriteTemplate> =
 static sSpriteTemplate_RotatingGateRegular: Table<SpriteTemplate> =
     Table((&raw const crate::data::rotating_gate::sSpriteTemplate_RotatingGateRegular).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRotatingGate_GateSpriteIds: Aligned<CArray<u8, 12>> =
-    Aligned(unsafe { zeroed() });
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRotatingGate_PuzzleConfig: *mut RotatingGatePuzzle = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRotatingGate_GateSpriteIds: crate::global::Global<Aligned<CArray<u8, 12>>> =
+    crate::global::Global::new(Aligned(unsafe { zeroed() }));
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRotatingGate_PuzzleConfig: crate::global::Global<*mut RotatingGatePuzzle> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sRotatingGate_PuzzleCount: crate::global::Global<u8> =
     crate::global::Global::new(0);
 
 unsafe fn GetCurrentMapRotatingGatePuzzleType() -> i32 {
-    if (*gSaveBlock1Ptr).location.mapGroup == 12 && (*gSaveBlock1Ptr).location.mapNum == 1 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 12
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 1
+    {
         return PUZZLE_FORTREE_CITY_GYM;
     }
-    if (*gSaveBlock1Ptr).location.mapGroup == 29 && (*gSaveBlock1Ptr).location.mapNum == 8 {
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 29
+        && (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 8
+    {
         return PUZZLE_ROUTE110_TRICK_HOUSE_PUZZLE6;
     }
     PUZZLE_NONE
@@ -156,7 +161,7 @@ unsafe fn GetCurrentMapRotatingGatePuzzleType() -> i32 {
 unsafe fn RotatingGate_ResetAllGateOrientations() {
     let ptr: *mut u8 = GetVarPointer(VAR_TEMP_0) as *mut u8;
     for i in 0..(sRotatingGate_PuzzleCount.get() as i32) {
-        *ptr.at(i) = (*sRotatingGate_PuzzleConfig.at(i)).orientation;
+        *ptr.at(i) = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).orientation;
     }
 }
 unsafe fn RotatingGate_GetGateOrientation(gateId: u8) -> i32 {
@@ -183,11 +188,16 @@ unsafe fn RotatingGate_LoadPuzzleConfig() {
     let puzzleType: i32 = GetCurrentMapRotatingGatePuzzleType();
     match puzzleType {
         PUZZLE_FORTREE_CITY_GYM => {
-            sRotatingGate_PuzzleConfig = sRotatingGate_FortreePuzzleConfig.as_ptr().cast_mut();
+            crate::gl!(
+                sRotatingGate_PuzzleConfig = sRotatingGate_FortreePuzzleConfig.as_ptr().cast_mut()
+            );
             sRotatingGate_PuzzleCount.set(8);
         }
         PUZZLE_ROUTE110_TRICK_HOUSE_PUZZLE6 => {
-            sRotatingGate_PuzzleConfig = sRotatingGate_TrickHousePuzzleConfig.as_ptr().cast_mut();
+            crate::gl!(
+                sRotatingGate_PuzzleConfig =
+                    sRotatingGate_TrickHousePuzzleConfig.as_ptr().cast_mut()
+            );
             sRotatingGate_PuzzleCount.set(11);
         }
         _ => {
@@ -195,25 +205,25 @@ unsafe fn RotatingGate_LoadPuzzleConfig() {
         }
     }
     for i in 0..11u32 {
-        sRotatingGate_GateSpriteIds[i] = MAX_SPRITES;
+        crate::gl!(sRotatingGate_GateSpriteIds[i] = MAX_SPRITES);
     }
 }
 unsafe fn RotatingGate_CreateGatesWithinViewport(deltaX: i16, deltaY: i16) {
-    let x: i16 = (*gSaveBlock1Ptr).pos.x - 2;
-    let x2: i16 = (*gSaveBlock1Ptr).pos.x + MAP_OFFSET_W as i16 + 2;
-    let y: i16 = (*gSaveBlock1Ptr).pos.y - 2;
-    let y2: i16 = (*gSaveBlock1Ptr).pos.y + MAP_OFFSET_H as i16;
+    let x: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x - 2;
+    let x2: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x + MAP_OFFSET_W as i16 + 2;
+    let y: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y - 2;
+    let y2: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y + MAP_OFFSET_H as i16;
     let mut i: u8 = 0;
     while i < sRotatingGate_PuzzleCount.get() {
-        let x3: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
-        let y3: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+        let x3: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).x + MAP_OFFSET as i16;
+        let y3: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).y + MAP_OFFSET as i16;
         if y <= y3
             && y2 >= y3
             && x <= x3
             && x2 >= x3
-            && sRotatingGate_GateSpriteIds[i] == MAX_SPRITES
+            && crate::gl!(sRotatingGate_GateSpriteIds[i]) == MAX_SPRITES
         {
-            sRotatingGate_GateSpriteIds[i] = RotatingGate_CreateGate(i, deltaX, deltaY);
+            crate::gl!(sRotatingGate_GateSpriteIds[i] = RotatingGate_CreateGate(i, deltaX, deltaY));
         }
         i += 1;
     }
@@ -222,7 +232,7 @@ unsafe fn RotatingGate_CreateGate(gateId: u8, deltaX: i16, deltaY: i16) -> u8 {
     let mut template: SpriteTemplate = zeroed();
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let gate: *mut RotatingGatePuzzle = sRotatingGate_PuzzleConfig.at(gateId);
+    let gate: *mut RotatingGatePuzzle = (*sRotatingGate_PuzzleConfig.as_ptr()).at(gateId);
     if (*gate).shape == GATE_SHAPE_L1 || (*gate).shape == GATE_SHAPE_T1 {
         template = *sSpriteTemplate_RotatingGateRegular;
     } else {
@@ -235,7 +245,7 @@ unsafe fn RotatingGate_CreateGate(gateId: u8, deltaX: i16, deltaY: i16) -> u8 {
     }
     x = (*gate).x + MAP_OFFSET as i16;
     y = (*gate).y + MAP_OFFSET as i16;
-    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = crate::gl!(&raw gSprites[spriteId]);
     (*sprite).data[0] = gateId as i16;
     (*sprite).set_coordOffsetEnabled(1);
     GetMapCoordsFromSpritePos(
@@ -279,11 +289,11 @@ unsafe fn RotatingGate_HideGatesOutsideViewport(sprite: *mut Sprite) {
     x = (*sprite).x as u16
         + (*sprite).x2 as u16
         + (*sprite).centerToCornerVecX as u16
-        + gSpriteCoordOffsetX as u16;
+        + gSpriteCoordOffsetX.get() as u16;
     y = (*sprite).y as u16
         + (*sprite).y2 as u16
         + (*sprite).centerToCornerVecY as u16
-        + gSpriteCoordOffsetY as u16;
+        + gSpriteCoordOffsetY.get() as u16;
     x2 = x as i16 + 64;
     y2 = y as i16 + 64;
     if x as i16 > 255 || x2 < -16 {
@@ -293,27 +303,30 @@ unsafe fn RotatingGate_HideGatesOutsideViewport(sprite: *mut Sprite) {
         (*sprite).set_invisible(TRUE as u16);
     }
 }
-unsafe fn LoadRotatingGatePics() {
+fn LoadRotatingGatePics() {
     LoadSpriteSheets(sRotatingGatesGraphicsTable.as_ptr().cast_mut());
 }
 unsafe fn RotatingGate_DestroyGatesOutsideViewport() {
-    let x: i16 = (*gSaveBlock1Ptr).pos.x - 2;
-    let x2: i16 = (*gSaveBlock1Ptr).pos.x + MAP_OFFSET_W as i16 + 2;
-    let y: i16 = (*gSaveBlock1Ptr).pos.y - 2;
-    let y2: i16 = (*gSaveBlock1Ptr).pos.y + MAP_OFFSET_H as i16;
+    let x: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x - 2;
+    let x2: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.x + MAP_OFFSET_W as i16 + 2;
+    let y: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y - 2;
+    let y2: i16 = (*crate::gl!(gSaveBlock1Ptr)).pos.y + MAP_OFFSET_H as i16;
     let mut i: i32 = 0;
     while i < sRotatingGate_PuzzleCount.get() as i32 {
         'l1: {
-            let xGate: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
-            let yGate: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
-            if sRotatingGate_GateSpriteIds[i] == MAX_SPRITES {
+            let xGate: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).x + MAP_OFFSET as i16;
+            let yGate: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).y + MAP_OFFSET as i16;
+            if crate::gl!(sRotatingGate_GateSpriteIds[i]) == MAX_SPRITES {
                 break 'l1;
             }
             if xGate < x || xGate > x2 || yGate < y || yGate > y2 {
-                let sprite: *mut Sprite = &raw mut gSprites[sRotatingGate_GateSpriteIds[i]];
+                let sprite: *mut Sprite = {
+                    let gl_i0 = crate::gl!(sRotatingGate_GateSpriteIds[i]);
+                    crate::gl!(&raw gSprites[gl_i0])
+                };
                 FreeSpriteOamMatrix(sprite);
                 DestroySprite(sprite);
-                sRotatingGate_GateSpriteIds[i] = MAX_SPRITES;
+                crate::gl!(sRotatingGate_GateSpriteIds[i] = MAX_SPRITES);
             }
         }
         i += 1;
@@ -336,9 +349,9 @@ unsafe fn RotatingGate_CanRotate(gateId: u8, rotationDirection: i32) -> i32 {
         return FALSE as i32;
     }
     let orientation: u8 = RotatingGate_GetGateOrientation(gateId) as u8;
-    shape = (*sRotatingGate_PuzzleConfig.at(gateId)).shape;
-    x = (*sRotatingGate_PuzzleConfig.at(gateId)).x + MAP_OFFSET as i16;
-    y = (*sRotatingGate_PuzzleConfig.at(gateId)).y + MAP_OFFSET as i16;
+    shape = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(gateId)).shape;
+    x = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(gateId)).x + MAP_OFFSET as i16;
+    y = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(gateId)).y + MAP_OFFSET as i16;
     let mut i: i32 = GATE_ARM_NORTH;
     while i <= GATE_ARM_WEST {
         for j in 0..GATE_ARM_MAX_LENGTH {
@@ -360,12 +373,15 @@ unsafe fn RotatingGate_HasArm(gateId: u8, armInfo: u8) -> i32 {
     let arm: i32 = armInfo as i32 / 2;
     let isLongArm: i32 = armInfo as i32 % 2;
     let armOrientation: i8 = ((arm - RotatingGate_GetGateOrientation(gateId) + 4) % 4) as i8;
-    let shape: i32 = (*sRotatingGate_PuzzleConfig.at(gateId)).shape as i32;
+    let shape: i32 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(gateId)).shape as i32;
     sRotatingGate_ArmLayout[shape][armOrientation as i32 * 2 + isLongArm] as i32
 }
 unsafe fn RotatingGate_TriggerRotationAnimation(gateId: u8, rotationDirection: i32) {
-    if sRotatingGate_GateSpriteIds[gateId] != MAX_SPRITES {
-        let sprite: *mut Sprite = &raw mut gSprites[sRotatingGate_GateSpriteIds[gateId]];
+    if crate::gl!(sRotatingGate_GateSpriteIds[gateId]) != MAX_SPRITES {
+        let sprite: *mut Sprite = {
+            let gl_i1 = crate::gl!(sRotatingGate_GateSpriteIds[gateId]);
+            crate::gl!(&raw gSprites[gl_i1])
+        };
         (*sprite).data[1] = rotationDirection as i16;
         (*sprite).data[2] = RotatingGate_GetGateOrientation(gateId) as i16;
     }
@@ -412,8 +428,8 @@ pub unsafe fn CheckForRotatingGatePuzzleCollision(direction: u8, x: i16, y: i16)
     }
     let mut i: i32 = 0;
     while i < sRotatingGate_PuzzleCount.get() as i32 {
-        let gateX: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
-        let gateY: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+        let gateX: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).x + MAP_OFFSET as i16;
+        let gateY: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).y + MAP_OFFSET as i16;
         if gateX as i32 - 2 <= x as i32
             && x as i32 <= gateX as i32 + 1
             && gateY as i32 - 2 <= y as i32
@@ -449,8 +465,8 @@ pub unsafe fn CheckForRotatingGatePuzzleCollisionWithoutAnimation(
     }
     let mut i: i32 = 0;
     while i < sRotatingGate_PuzzleCount.get() as i32 {
-        let gateX: i16 = (*sRotatingGate_PuzzleConfig.at(i)).x + MAP_OFFSET as i16;
-        let gateY: i16 = (*sRotatingGate_PuzzleConfig.at(i)).y + MAP_OFFSET as i16;
+        let gateX: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).x + MAP_OFFSET as i16;
+        let gateY: i16 = (*(*sRotatingGate_PuzzleConfig.as_ptr()).at(i)).y + MAP_OFFSET as i16;
         if gateX as i32 - 2 <= x as i32
             && x as i32 <= gateX as i32 + 1
             && gateY as i32 - 2 <= y as i32

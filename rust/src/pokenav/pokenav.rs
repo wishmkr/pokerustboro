@@ -115,10 +115,11 @@ const _: () = {
 static PokenavMenuCallbacks: Table<CArray<PokenavCallbacks, 15>> =
     Table((&raw const crate::data::pokenav::PokenavMenuCallbacks).cast());
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub static gNextLoopedTaskId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPokenavResources: *mut PokenavResources = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPokenavResources: crate::global::Global<*mut PokenavResources> =
+    crate::global::Global::new(null_mut());
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -243,11 +244,11 @@ pub(crate) unsafe fn Task_RunLoopedTask_LinkMode(taskId: u8) {
     }
 }
 pub unsafe fn CB2_InitPokeNav() {
-    gPokenavResources = Alloc(92) as *mut PokenavResources;
-    if gPokenavResources.is_null() {
+    crate::gl!(gPokenavResources = Alloc(92) as *mut PokenavResources);
+    if (*gPokenavResources.as_ptr()).is_null() {
         SetMainCallback2(Some(CB2_ReturnToFieldWithOpenMenu));
     } else {
-        InitPokenavResources(gPokenavResources);
+        InitPokenavResources(crate::gl!(gPokenavResources));
         ResetTasks();
         SetVBlankCallback(None);
         CreateTask(Some(Task_Pokenav), 0);
@@ -262,15 +263,15 @@ pub unsafe fn OpenPokenavForTutorial() {
 }
 pub(crate) unsafe fn CB2_InitPokenavForTutorial() {
     UpdatePaletteFade();
-    if gPaletteFade.active() != 0 {
+    if (*gPaletteFade.as_ptr()).active() != 0 {
         return;
     }
-    gPokenavResources = Alloc(92) as *mut PokenavResources;
-    if gPokenavResources.is_null() {
+    crate::gl!(gPokenavResources = Alloc(92) as *mut PokenavResources);
+    if (*gPokenavResources.as_ptr()).is_null() {
         SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
     } else {
-        InitPokenavResources(gPokenavResources);
-        (*gPokenavResources).mode = POKENAV_MODE_FORCE_CALL_READY as u16;
+        InitPokenavResources(crate::gl!(gPokenavResources));
+        (*crate::gl!(gPokenavResources)).mode = POKENAV_MODE_FORCE_CALL_READY as u16;
         ResetTasks();
         ResetSpriteData();
         FreeAllSpritePalettes();
@@ -284,8 +285,8 @@ unsafe fn FreePokenavResources() {
     for i in 0..POKENAV_SUBSTRUCT_COUNT {
         FreePokenavSubstruct(i as u32);
     }
-    Free(gPokenavResources as *mut c_void);
-    gPokenavResources = null_mut();
+    Free(crate::gl!(gPokenavResources) as *mut c_void);
+    crate::gl!(gPokenavResources = null_mut());
     InitKeys();
 }
 unsafe fn InitPokenavResources(resources: *mut PokenavResources) {
@@ -300,9 +301,12 @@ unsafe fn InitPokenavResources(resources: *mut PokenavResources) {
 unsafe fn AnyMonHasRibbon() -> u32 {
     let mut i: i32 = 0;
     while i < PARTY_SIZE {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_HAS_SPECIES) != 0
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_IS_EGG) == 0
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_RIBBON_COUNT) != 0
+        if GetMonData2(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SANITY_HAS_SPECIES,
+        ) != 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SANITY_IS_EGG) == 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_RIBBON_COUNT) != 0
         {
             return TRUE as u32;
         }
@@ -362,10 +366,10 @@ pub(crate) unsafe fn Task_Pokenav(taskId: u8) {
                 ShutdownPokenav();
                 *data = 5;
             } else if menuId >= POKENAV_MENU_IDS_START {
-                PokenavMenuCallbacks[(*gPokenavResources).currentMenuIndex]
+                PokenavMenuCallbacks[(*crate::gl!(gPokenavResources)).currentMenuIndex]
                     .free2
                     .unwrap_unchecked()();
-                PokenavMenuCallbacks[(*gPokenavResources).currentMenuIndex]
+                PokenavMenuCallbacks[(*crate::gl!(gPokenavResources)).currentMenuIndex]
                     .free1
                     .unwrap_unchecked()();
                 if SetActivePokenavMenu(menuId) != 0 {
@@ -391,7 +395,7 @@ pub(crate) unsafe fn Task_Pokenav(taskId: u8) {
         if sw1 == 5 {
             if WaitForPokenavShutdownFade() == 0 {
                 let calledFromScript: u32 =
-                    ((*gPokenavResources).mode != POKENAV_MODE_NORMAL) as u32;
+                    ((*crate::gl!(gPokenavResources)).mode != POKENAV_MODE_NORMAL) as u32;
                 FreeMenuHandlerSubstruct1();
                 FreePokenavResources();
                 if calledFromScript != 0 {
@@ -421,15 +425,17 @@ unsafe fn SetActivePokenavMenu(menuId: u32) -> u32 {
             PokenavMenuCallbacks[index].isLoopTaskActive,
         ),
     );
-    (*gPokenavResources).currentMenuCb1 = PokenavMenuCallbacks[index].callback;
-    (*gPokenavResources).currentMenuIndex = index;
+    (*crate::gl!(gPokenavResources)).currentMenuCb1 = PokenavMenuCallbacks[index].callback;
+    (*crate::gl!(gPokenavResources)).currentMenuIndex = index;
     TRUE as u32
 }
 unsafe fn IsActiveMenuLoopTaskActive_() -> u32 {
     IsActiveMenuLoopTaskActive()
 }
 unsafe fn GetCurrentMenuCB() -> u32 {
-    (*gPokenavResources).currentMenuCb1.unwrap_unchecked()()
+    (*crate::gl!(gPokenavResources))
+        .currentMenuCb1
+        .unwrap_unchecked()()
 }
 unsafe fn InitKeys_() {
     InitKeys();
@@ -441,34 +447,34 @@ pub unsafe fn SetPokenavVBlankCallback() {
     SetVBlankCallback(Some(VBlankCB_Pokenav));
 }
 pub unsafe fn AllocSubstruct(index: u32, size: u32) -> *mut c_void {
-    (*gPokenavResources).substructPtrs[index] = Alloc(size);
-    (*gPokenavResources).substructPtrs[index]
+    (*crate::gl!(gPokenavResources)).substructPtrs[index] = Alloc(size);
+    (*crate::gl!(gPokenavResources)).substructPtrs[index]
 }
 pub unsafe fn GetSubstructPtr(index: u32) -> *mut c_void {
-    (*gPokenavResources).substructPtrs[index]
+    (*crate::gl!(gPokenavResources)).substructPtrs[index]
 }
 pub unsafe fn FreePokenavSubstruct(index: u32) {
-    if !(*gPokenavResources).substructPtrs[index].is_null() {
-        Free((*gPokenavResources).substructPtrs[index]);
-        (*gPokenavResources).substructPtrs[index] = null_mut();
+    if !(*crate::gl!(gPokenavResources)).substructPtrs[index].is_null() {
+        Free((*crate::gl!(gPokenavResources)).substructPtrs[index]);
+        (*crate::gl!(gPokenavResources)).substructPtrs[index] = null_mut();
     }
 }
 pub unsafe fn GetPokenavMode() -> u32 {
-    (*gPokenavResources).mode as u32
+    (*crate::gl!(gPokenavResources)).mode as u32
 }
 pub unsafe fn SetPokenavMode(mode: u16) {
-    (*gPokenavResources).mode = mode;
+    (*crate::gl!(gPokenavResources)).mode = mode;
 }
 pub unsafe fn SetSelectedConditionSearch(cursorPos: u32) {
     let mut searchId: u32 = cursorPos;
     if searchId > 4 {
         searchId = 0;
     }
-    (*gPokenavResources).conditionSearchId = searchId as u16;
+    (*crate::gl!(gPokenavResources)).conditionSearchId = searchId as u16;
 }
 pub unsafe fn GetSelectedConditionSearch() -> u32 {
-    (*gPokenavResources).conditionSearchId as u32
+    (*crate::gl!(gPokenavResources)).conditionSearchId as u32
 }
 pub unsafe fn CanViewRibbonsMenu() -> u32 {
-    (*gPokenavResources).hasAnyRibbons
+    (*crate::gl!(gPokenavResources)).hasAnyRibbons
 }

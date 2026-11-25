@@ -41,8 +41,8 @@ const H_STATE: usize = 0x88c;
 const RM_MAPSEC_TYPE: usize = 0x02;
 const RM_MAPSEC_NAME: usize = 0x04;
 
-#[unsafe(link_section = "ewram_data")]
-static mut HANDLER: *mut u8 = core::ptr::null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static HANDLER: crate::global::Global<*mut u8> = crate::global::Global::new(core::ptr::null_mut());
 
 static BG_TEMPLATES: [BgTemplate; 2] = [
     BgTemplate::new(0, 0, 31, 0, 0, 0, 0),
@@ -126,9 +126,7 @@ unsafe fn DoScheduledBgTilemapCopiesToVram() {
 /// `ScheduleBgCopyTilemapToVram` with this module's view of its types.
 #[inline]
 unsafe fn ScheduleBgCopyTilemapToVram(a0: u8) {
-    unsafe {
-        crate::menu::ScheduleBgCopyTilemapToVram(a0);
-    }
+    crate::menu::ScheduleBgCopyTilemapToVram(a0);
 }
 /// `InitRegionMap` with this module's view of its types.
 #[inline]
@@ -166,7 +164,7 @@ unsafe fn FreeRegionMapIconResources() {
 
 #[inline]
 unsafe fn handler() -> *mut u8 {
-    unsafe { (&raw const HANDLER).read() }
+    unsafe { (crate::gl!(&raw HANDLER).cast_const()).read() }
 }
 
 #[inline]
@@ -183,7 +181,7 @@ unsafe fn advance() {
 pub unsafe fn FieldInitRegionMap(callback: MainCallback) {
     unsafe { SetVBlankCallback(None) };
     let h = unsafe { Alloc(H_SIZE) };
-    unsafe { (&raw mut HANDLER).write(h) };
+    unsafe { (crate::gl!(&raw HANDLER)).write(h) };
     unsafe { state().write(0) };
     unsafe { h.add(H_CALLBACK).cast::<MainCallback>().write(callback) };
     unsafe { SetMainCallback2(init_region_map_registers) };
@@ -270,7 +268,7 @@ unsafe fn field_update_region_map() {
                 let callback = unsafe { h.add(H_CALLBACK).cast::<MainCallback>().read() };
                 unsafe { SetMainCallback2(callback) };
                 unsafe { Free(h) };
-                unsafe { (&raw mut HANDLER).write(core::ptr::null_mut()) };
+                unsafe { (crate::gl!(&raw HANDLER)).write(core::ptr::null_mut()) };
                 unsafe { FreeAllWindowBuffers() };
             }
         }

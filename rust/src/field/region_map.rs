@@ -90,14 +90,14 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LoadSpritePalette` with this module's view of its types.
@@ -254,9 +254,11 @@ static sRegionMap_SpecialPlaceLocations: Table<CArray<CArray<u16, 2>, 24>> =
 static sTerraOrMarineCaveMapSecIds: Table<CArray<u16, 16>> =
     Table((&raw const crate::data::region_map::sTerraOrMarineCaveMapSecIds).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRegionMap: *mut RegionMap = null_mut();
-pub(crate) static mut sFlyMap: *mut typeof___sFlyMap_0_t = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sRegionMap: crate::global::Global<*mut RegionMap> =
+    crate::global::Global::new(null_mut());
+pub(crate) static sFlyMap: crate::global::Global<*mut typeof___sFlyMap_0_t> =
+    crate::global::Global::new(null_mut());
 pub(crate) static sDrawFlyDestTextWindow: crate::global::Global<u32> =
     crate::global::Global::new(0);
 
@@ -290,21 +292,21 @@ unsafe fn Alloc(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -323,38 +325,38 @@ pub unsafe fn InitRegionMap(regionMap: *mut RegionMap, zoomed: u8) {
     while LoadRegionMapGfx() != 0 {}
 }
 pub unsafe fn InitRegionMapData(regionMap: *mut RegionMap, template: *mut BgTemplate, zoomed: u8) {
-    sRegionMap = regionMap;
-    (*sRegionMap).initStep = 0;
-    (*sRegionMap).zoomed = zoomed;
-    (*sRegionMap).inputCallback = if zoomed == TRUE {
+    crate::gl!(sRegionMap = regionMap);
+    (*crate::gl!(sRegionMap)).initStep = 0;
+    (*crate::gl!(sRegionMap)).zoomed = zoomed;
+    (*crate::gl!(sRegionMap)).inputCallback = if zoomed == TRUE {
         Some(ProcessRegionMapInput_Zoomed)
     } else {
         Some(ProcessRegionMapInput_Full)
     };
     if !template.is_null() {
-        (*sRegionMap).bgNum = (*template).bg() as u8;
-        (*sRegionMap).charBaseIdx = (*template).charBaseIndex() as u8;
-        (*sRegionMap).mapBaseIdx = (*template).mapBaseIndex() as u8;
-        (*sRegionMap).bgManaged = TRUE;
+        (*crate::gl!(sRegionMap)).bgNum = (*template).bg() as u8;
+        (*crate::gl!(sRegionMap)).charBaseIdx = (*template).charBaseIndex() as u8;
+        (*crate::gl!(sRegionMap)).mapBaseIdx = (*template).mapBaseIndex() as u8;
+        (*crate::gl!(sRegionMap)).bgManaged = TRUE;
     } else {
-        (*sRegionMap).bgNum = 2;
-        (*sRegionMap).charBaseIdx = 2;
-        (*sRegionMap).mapBaseIdx = 28;
-        (*sRegionMap).bgManaged = FALSE;
+        (*crate::gl!(sRegionMap)).bgNum = 2;
+        (*crate::gl!(sRegionMap)).charBaseIdx = 2;
+        (*crate::gl!(sRegionMap)).mapBaseIdx = 28;
+        (*crate::gl!(sRegionMap)).bgManaged = FALSE;
     }
 }
 pub unsafe fn ShowRegionMapForPokedexAreaScreen(regionMap: *mut RegionMap) {
-    sRegionMap = regionMap;
+    crate::gl!(sRegionMap = regionMap);
     InitMapBasedOnPlayerLocation();
-    (*sRegionMap).playerIconSpritePosX = (*sRegionMap).cursorPosX;
-    (*sRegionMap).playerIconSpritePosY = (*sRegionMap).cursorPosY;
+    (*crate::gl!(sRegionMap)).playerIconSpritePosX = (*crate::gl!(sRegionMap)).cursorPosX;
+    (*crate::gl!(sRegionMap)).playerIconSpritePosY = (*crate::gl!(sRegionMap)).cursorPosY;
 }
 pub unsafe fn LoadRegionMapGfx() -> u8 {
-    match (*sRegionMap).initStep {
+    match (*crate::gl!(sRegionMap)).initStep {
         0 => {
-            if (*sRegionMap).bgManaged != 0 {
+            if (*crate::gl!(sRegionMap)).bgManaged != 0 {
                 DecompressAndCopyTileDataToVram(
-                    (*sRegionMap).bgNum,
+                    (*crate::gl!(sRegionMap)).bgNum,
                     sRegionMapBg_GfxLZ.as_ptr().cast_mut() as *mut c_void,
                     0,
                     0,
@@ -368,10 +370,10 @@ pub unsafe fn LoadRegionMapGfx() -> u8 {
             }
         }
         1 => {
-            if (*sRegionMap).bgManaged != 0 {
+            if (*crate::gl!(sRegionMap)).bgManaged != 0 {
                 if FreeTempTileDataBuffersIfPossible() == 0 {
                     DecompressAndCopyTileDataToVram(
-                        (*sRegionMap).bgNum,
+                        (*crate::gl!(sRegionMap)).bgNum,
                         sRegionMapBg_TilemapLZ.as_ptr().cast_mut() as *mut c_void,
                         0,
                         0,
@@ -393,38 +395,42 @@ pub unsafe fn LoadRegionMapGfx() -> u8 {
         3 => {
             LZ77UnCompWram(
                 sRegionMapCursorSmallGfxLZ.as_ptr().cast_mut(),
-                (*sRegionMap).cursorSmallImage.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sRegionMap)).cursorSmallImage.as_mut_ptr() as *mut c_void,
             );
         }
         4 => {
             LZ77UnCompWram(
                 sRegionMapCursorLargeGfxLZ.as_ptr().cast_mut(),
-                (*sRegionMap).cursorLargeImage.as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sRegionMap)).cursorLargeImage.as_mut_ptr() as *mut c_void,
             );
         }
         5 => {
             InitMapBasedOnPlayerLocation();
-            (*sRegionMap).playerIconSpritePosX = (*sRegionMap).cursorPosX;
-            (*sRegionMap).playerIconSpritePosY = (*sRegionMap).cursorPosY;
-            (*sRegionMap).mapSecId = CorrectSpecialMapSecId_Internal((*sRegionMap).mapSecId);
-            (*sRegionMap).mapSecType = GetMapsecType((*sRegionMap).mapSecId);
+            (*crate::gl!(sRegionMap)).playerIconSpritePosX = (*crate::gl!(sRegionMap)).cursorPosX;
+            (*crate::gl!(sRegionMap)).playerIconSpritePosY = (*crate::gl!(sRegionMap)).cursorPosY;
+            (*crate::gl!(sRegionMap)).mapSecId =
+                CorrectSpecialMapSecId_Internal((*crate::gl!(sRegionMap)).mapSecId);
+            (*crate::gl!(sRegionMap)).mapSecType =
+                GetMapsecType((*crate::gl!(sRegionMap)).mapSecId);
             GetMapName(
-                (*sRegionMap).mapSecName.as_mut_ptr(),
-                (*sRegionMap).mapSecId,
+                (*crate::gl!(sRegionMap)).mapSecName.as_mut_ptr(),
+                (*crate::gl!(sRegionMap)).mapSecId,
                 MAP_NAME_LENGTH,
             );
         }
         6 => {
-            if (*sRegionMap).zoomed == FALSE {
+            if (*crate::gl!(sRegionMap)).zoomed == FALSE {
                 CalcZoomScrollParams(0, 0, 0, 0, 0x100, 0x100, 0);
             } else {
-                (*sRegionMap).scrollX = (*sRegionMap).cursorPosX as i16 * 8 - 0x34;
-                (*sRegionMap).scrollY = (*sRegionMap).cursorPosY as i16 * 8 - 0x44;
-                (*sRegionMap).zoomedCursorPosX = (*sRegionMap).cursorPosX;
-                (*sRegionMap).zoomedCursorPosY = (*sRegionMap).cursorPosY;
+                (*crate::gl!(sRegionMap)).scrollX =
+                    (*crate::gl!(sRegionMap)).cursorPosX as i16 * 8 - 0x34;
+                (*crate::gl!(sRegionMap)).scrollY =
+                    (*crate::gl!(sRegionMap)).cursorPosY as i16 * 8 - 0x44;
+                (*crate::gl!(sRegionMap)).zoomedCursorPosX = (*crate::gl!(sRegionMap)).cursorPosX;
+                (*crate::gl!(sRegionMap)).zoomedCursorPosY = (*crate::gl!(sRegionMap)).cursorPosY;
                 CalcZoomScrollParams(
-                    (*sRegionMap).scrollX,
-                    (*sRegionMap).scrollY,
+                    (*crate::gl!(sRegionMap)).scrollX,
+                    (*crate::gl!(sRegionMap)).scrollY,
                     0x38,
                     0x48,
                     0x80,
@@ -436,150 +442,166 @@ pub unsafe fn LoadRegionMapGfx() -> u8 {
         7 => {
             GetPositionOfCursorWithinMapSec();
             UpdateRegionMapVideoRegs();
-            (*sRegionMap).cursorSprite = null_mut();
-            (*sRegionMap).playerIconSprite = null_mut();
-            (*sRegionMap).cursorMovementFrameCounter = 0;
-            (*sRegionMap).blinkPlayerIcon = FALSE;
-            if (*sRegionMap).bgManaged != 0 {
-                SetBgAttribute((*sRegionMap).bgNum, BG_ATTR_SCREENSIZE, 2);
+            (*crate::gl!(sRegionMap)).cursorSprite = null_mut();
+            (*crate::gl!(sRegionMap)).playerIconSprite = null_mut();
+            (*crate::gl!(sRegionMap)).cursorMovementFrameCounter = 0;
+            (*crate::gl!(sRegionMap)).blinkPlayerIcon = FALSE;
+            if (*crate::gl!(sRegionMap)).bgManaged != 0 {
+                SetBgAttribute((*crate::gl!(sRegionMap)).bgNum, BG_ATTR_SCREENSIZE, 2);
                 SetBgAttribute(
-                    (*sRegionMap).bgNum,
+                    (*crate::gl!(sRegionMap)).bgNum,
                     BG_ATTR_CHARBASEINDEX,
-                    (*sRegionMap).charBaseIdx,
+                    (*crate::gl!(sRegionMap)).charBaseIdx,
                 );
                 SetBgAttribute(
-                    (*sRegionMap).bgNum,
+                    (*crate::gl!(sRegionMap)).bgNum,
                     BG_ATTR_MAPBASEINDEX,
-                    (*sRegionMap).mapBaseIdx,
+                    (*crate::gl!(sRegionMap)).mapBaseIdx,
                 );
-                SetBgAttribute((*sRegionMap).bgNum, BG_ATTR_WRAPAROUND, 1);
-                SetBgAttribute((*sRegionMap).bgNum, BG_ATTR_PALETTEMODE, 1);
+                SetBgAttribute((*crate::gl!(sRegionMap)).bgNum, BG_ATTR_WRAPAROUND, 1);
+                SetBgAttribute((*crate::gl!(sRegionMap)).bgNum, BG_ATTR_PALETTEMODE, 1);
             }
-            (*sRegionMap).initStep += 1;
+            (*crate::gl!(sRegionMap)).initStep += 1;
             return FALSE;
         }
         _ => {
             return FALSE;
         }
     }
-    (*sRegionMap).initStep += 1;
+    (*crate::gl!(sRegionMap)).initStep += 1;
     TRUE
 }
 pub unsafe fn BlendRegionMap(color: u16, coeff: u32) {
     BlendPalettes(0x380, coeff as u8, color);
     CpuSet(
-        &raw mut gPlttBufferFaded[112] as *mut c_void,
-        &raw mut gPlttBufferUnfaded[112] as *mut c_void,
+        crate::gl!(&raw gPlttBufferFaded[112]) as *mut c_void,
+        crate::gl!(&raw gPlttBufferUnfaded[112]) as *mut c_void,
         48,
     );
 }
 #[unsafe(no_mangle)]
 pub unsafe fn FreeRegionMapIconResources() {
-    if !(*sRegionMap).cursorSprite.is_null() {
-        DestroySprite((*sRegionMap).cursorSprite);
-        FreeSpriteTilesByTag((*sRegionMap).cursorTileTag);
-        FreeSpritePaletteByTag((*sRegionMap).cursorPaletteTag);
+    if !(*crate::gl!(sRegionMap)).cursorSprite.is_null() {
+        DestroySprite((*crate::gl!(sRegionMap)).cursorSprite);
+        FreeSpriteTilesByTag((*crate::gl!(sRegionMap)).cursorTileTag);
+        FreeSpritePaletteByTag((*crate::gl!(sRegionMap)).cursorPaletteTag);
     }
-    if !(*sRegionMap).playerIconSprite.is_null() {
-        DestroySprite((*sRegionMap).playerIconSprite);
-        FreeSpriteTilesByTag((*sRegionMap).playerIconTileTag);
-        FreeSpritePaletteByTag((*sRegionMap).playerIconPaletteTag);
+    if !(*crate::gl!(sRegionMap)).playerIconSprite.is_null() {
+        DestroySprite((*crate::gl!(sRegionMap)).playerIconSprite);
+        FreeSpriteTilesByTag((*crate::gl!(sRegionMap)).playerIconTileTag);
+        FreeSpritePaletteByTag((*crate::gl!(sRegionMap)).playerIconPaletteTag);
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoRegionMapInputCallback() -> u8 {
-    (*sRegionMap).inputCallback.unwrap_unchecked()()
+    (*crate::gl!(sRegionMap)).inputCallback.unwrap_unchecked()()
 }
 pub(crate) unsafe fn ProcessRegionMapInput_Full() -> u8 {
     let mut input: u8 = MAP_INPUT_NONE;
-    (*sRegionMap).cursorDeltaX = 0;
-    (*sRegionMap).cursorDeltaY = 0;
-    if gMain.heldKeys as i32 & DPAD_UP != 0 && (*sRegionMap).cursorPosY > MAPCURSOR_Y_MIN {
-        (*sRegionMap).cursorDeltaY = -1;
+    (*crate::gl!(sRegionMap)).cursorDeltaX = 0;
+    (*crate::gl!(sRegionMap)).cursorDeltaY = 0;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_UP != 0
+        && (*crate::gl!(sRegionMap)).cursorPosY > MAPCURSOR_Y_MIN
+    {
+        (*crate::gl!(sRegionMap)).cursorDeltaY = -1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.heldKeys as i32 & DPAD_DOWN != 0 && (*sRegionMap).cursorPosY < MAPCURSOR_Y_MAX {
-        (*sRegionMap).cursorDeltaY = 1;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_DOWN != 0
+        && (*crate::gl!(sRegionMap)).cursorPosY < MAPCURSOR_Y_MAX
+    {
+        (*crate::gl!(sRegionMap)).cursorDeltaY = 1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.heldKeys as i32 & DPAD_LEFT != 0 && (*sRegionMap).cursorPosX > MAPCURSOR_X_MIN {
-        (*sRegionMap).cursorDeltaX = -1;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_LEFT != 0
+        && (*crate::gl!(sRegionMap)).cursorPosX > MAPCURSOR_X_MIN
+    {
+        (*crate::gl!(sRegionMap)).cursorDeltaX = -1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.heldKeys as i32 & DPAD_RIGHT != 0 && (*sRegionMap).cursorPosX < MAPCURSOR_X_MAX {
-        (*sRegionMap).cursorDeltaX = 1;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_RIGHT != 0
+        && (*crate::gl!(sRegionMap)).cursorPosX < MAPCURSOR_X_MAX
+    {
+        (*crate::gl!(sRegionMap)).cursorDeltaX = 1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         input = MAP_INPUT_A_BUTTON;
-    } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+    } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         input = MAP_INPUT_B_BUTTON;
     }
     if input == MAP_INPUT_MOVE_START {
-        (*sRegionMap).cursorMovementFrameCounter = 4;
-        (*sRegionMap).inputCallback = Some(MoveRegionMapCursor_Full);
+        (*crate::gl!(sRegionMap)).cursorMovementFrameCounter = 4;
+        (*crate::gl!(sRegionMap)).inputCallback = Some(MoveRegionMapCursor_Full);
     }
     input
 }
 pub(crate) unsafe fn MoveRegionMapCursor_Full() -> u8 {
-    if (*sRegionMap).cursorMovementFrameCounter != 0 {
+    if (*crate::gl!(sRegionMap)).cursorMovementFrameCounter != 0 {
         return MAP_INPUT_MOVE_CONT;
     }
-    if (*sRegionMap).cursorDeltaX > 0 {
-        (*sRegionMap).cursorPosX += 1;
+    if (*crate::gl!(sRegionMap)).cursorDeltaX > 0 {
+        (*crate::gl!(sRegionMap)).cursorPosX += 1;
     }
-    if (*sRegionMap).cursorDeltaX < 0 {
-        (*sRegionMap).cursorPosX -= 1;
+    if (*crate::gl!(sRegionMap)).cursorDeltaX < 0 {
+        (*crate::gl!(sRegionMap)).cursorPosX -= 1;
     }
-    if (*sRegionMap).cursorDeltaY > 0 {
-        (*sRegionMap).cursorPosY += 1;
+    if (*crate::gl!(sRegionMap)).cursorDeltaY > 0 {
+        (*crate::gl!(sRegionMap)).cursorPosY += 1;
     }
-    if (*sRegionMap).cursorDeltaY < 0 {
-        (*sRegionMap).cursorPosY -= 1;
+    if (*crate::gl!(sRegionMap)).cursorDeltaY < 0 {
+        (*crate::gl!(sRegionMap)).cursorPosY -= 1;
     }
-    let mapSecId: u16 = GetMapSecIdAt((*sRegionMap).cursorPosX, (*sRegionMap).cursorPosY);
-    (*sRegionMap).mapSecType = GetMapsecType(mapSecId);
-    if mapSecId != (*sRegionMap).mapSecId {
-        (*sRegionMap).mapSecId = mapSecId;
+    let mapSecId: u16 = GetMapSecIdAt(
+        (*crate::gl!(sRegionMap)).cursorPosX,
+        (*crate::gl!(sRegionMap)).cursorPosY,
+    );
+    (*crate::gl!(sRegionMap)).mapSecType = GetMapsecType(mapSecId);
+    if mapSecId != (*crate::gl!(sRegionMap)).mapSecId {
+        (*crate::gl!(sRegionMap)).mapSecId = mapSecId;
         GetMapName(
-            (*sRegionMap).mapSecName.as_mut_ptr(),
-            (*sRegionMap).mapSecId,
+            (*crate::gl!(sRegionMap)).mapSecName.as_mut_ptr(),
+            (*crate::gl!(sRegionMap)).mapSecId,
             MAP_NAME_LENGTH,
         );
     }
     GetPositionOfCursorWithinMapSec();
-    (*sRegionMap).inputCallback = Some(ProcessRegionMapInput_Full);
+    (*crate::gl!(sRegionMap)).inputCallback = Some(ProcessRegionMapInput_Full);
     MAP_INPUT_MOVE_END
 }
 pub(crate) unsafe fn ProcessRegionMapInput_Zoomed() -> u8 {
     let mut input: u8 = MAP_INPUT_NONE;
-    (*sRegionMap).zoomedCursorDeltaX = 0;
-    (*sRegionMap).zoomedCursorDeltaY = 0;
-    if gMain.heldKeys as i32 & DPAD_UP != 0 && (*sRegionMap).scrollY > -52 {
-        (*sRegionMap).zoomedCursorDeltaY = -1;
+    (*crate::gl!(sRegionMap)).zoomedCursorDeltaX = 0;
+    (*crate::gl!(sRegionMap)).zoomedCursorDeltaY = 0;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_UP != 0 && (*crate::gl!(sRegionMap)).scrollY > -52 {
+        (*crate::gl!(sRegionMap)).zoomedCursorDeltaY = -1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.heldKeys as i32 & DPAD_DOWN != 0 && (*sRegionMap).scrollY < 0x3c {
-        (*sRegionMap).zoomedCursorDeltaY = 1;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_DOWN != 0
+        && (*crate::gl!(sRegionMap)).scrollY < 0x3c
+    {
+        (*crate::gl!(sRegionMap)).zoomedCursorDeltaY = 1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.heldKeys as i32 & DPAD_LEFT != 0 && (*sRegionMap).scrollX > -44 {
-        (*sRegionMap).zoomedCursorDeltaX = -1;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_LEFT != 0 && (*crate::gl!(sRegionMap)).scrollX > -44
+    {
+        (*crate::gl!(sRegionMap)).zoomedCursorDeltaX = -1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.heldKeys as i32 & DPAD_RIGHT != 0 && (*sRegionMap).scrollX < 0xac {
-        (*sRegionMap).zoomedCursorDeltaX = 1;
+    if crate::gl!(gMain.heldKeys) as i32 & DPAD_RIGHT != 0
+        && (*crate::gl!(sRegionMap)).scrollX < 0xac
+    {
+        (*crate::gl!(sRegionMap)).zoomedCursorDeltaX = 1;
         input = MAP_INPUT_MOVE_START;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         input = MAP_INPUT_A_BUTTON;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         input = MAP_INPUT_B_BUTTON;
     }
     if input == MAP_INPUT_MOVE_START {
-        (*sRegionMap).inputCallback = Some(MoveRegionMapCursor_Zoomed);
-        (*sRegionMap).zoomedCursorMovementFrameCounter = 0;
+        (*crate::gl!(sRegionMap)).inputCallback = Some(MoveRegionMapCursor_Zoomed);
+        (*crate::gl!(sRegionMap)).zoomedCursorMovementFrameCounter = 0;
     }
     input
 }
@@ -587,127 +609,139 @@ pub(crate) unsafe fn MoveRegionMapCursor_Zoomed() -> u8 {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut mapSecId: u16 = 0;
-    (*sRegionMap).scrollY += (*sRegionMap).zoomedCursorDeltaY;
-    (*sRegionMap).scrollX += (*sRegionMap).zoomedCursorDeltaX;
-    RegionMap_SetBG2XAndBG2Y((*sRegionMap).scrollX, (*sRegionMap).scrollY);
-    (*sRegionMap).zoomedCursorMovementFrameCounter += 1;
-    if (*sRegionMap).zoomedCursorMovementFrameCounter == 8 {
-        x = (((*sRegionMap).scrollX as i32 + 0x2c) / 8) as u16 + 1;
-        y = (((*sRegionMap).scrollY as i32 + 0x34) / 8) as u16 + 2;
-        if x != (*sRegionMap).zoomedCursorPosX || y != (*sRegionMap).zoomedCursorPosY {
-            (*sRegionMap).zoomedCursorPosX = x;
-            (*sRegionMap).zoomedCursorPosY = y;
+    (*crate::gl!(sRegionMap)).scrollY += (*crate::gl!(sRegionMap)).zoomedCursorDeltaY;
+    (*crate::gl!(sRegionMap)).scrollX += (*crate::gl!(sRegionMap)).zoomedCursorDeltaX;
+    RegionMap_SetBG2XAndBG2Y(
+        (*crate::gl!(sRegionMap)).scrollX,
+        (*crate::gl!(sRegionMap)).scrollY,
+    );
+    (*crate::gl!(sRegionMap)).zoomedCursorMovementFrameCounter += 1;
+    if (*crate::gl!(sRegionMap)).zoomedCursorMovementFrameCounter == 8 {
+        x = (((*crate::gl!(sRegionMap)).scrollX as i32 + 0x2c) / 8) as u16 + 1;
+        y = (((*crate::gl!(sRegionMap)).scrollY as i32 + 0x34) / 8) as u16 + 2;
+        if x != (*crate::gl!(sRegionMap)).zoomedCursorPosX
+            || y != (*crate::gl!(sRegionMap)).zoomedCursorPosY
+        {
+            (*crate::gl!(sRegionMap)).zoomedCursorPosX = x;
+            (*crate::gl!(sRegionMap)).zoomedCursorPosY = y;
             mapSecId = GetMapSecIdAt(x, y);
-            (*sRegionMap).mapSecType = GetMapsecType(mapSecId);
-            if mapSecId != (*sRegionMap).mapSecId {
-                (*sRegionMap).mapSecId = mapSecId;
+            (*crate::gl!(sRegionMap)).mapSecType = GetMapsecType(mapSecId);
+            if mapSecId != (*crate::gl!(sRegionMap)).mapSecId {
+                (*crate::gl!(sRegionMap)).mapSecId = mapSecId;
                 GetMapName(
-                    (*sRegionMap).mapSecName.as_mut_ptr(),
-                    (*sRegionMap).mapSecId,
+                    (*crate::gl!(sRegionMap)).mapSecName.as_mut_ptr(),
+                    (*crate::gl!(sRegionMap)).mapSecId,
                     MAP_NAME_LENGTH,
                 );
             }
             GetPositionOfCursorWithinMapSec();
         }
-        (*sRegionMap).zoomedCursorMovementFrameCounter = 0;
-        (*sRegionMap).inputCallback = Some(ProcessRegionMapInput_Zoomed);
+        (*crate::gl!(sRegionMap)).zoomedCursorMovementFrameCounter = 0;
+        (*crate::gl!(sRegionMap)).inputCallback = Some(ProcessRegionMapInput_Zoomed);
         return MAP_INPUT_MOVE_END;
     }
     MAP_INPUT_MOVE_CONT
 }
 pub unsafe fn SetRegionMapDataForZoom() {
-    if (*sRegionMap).zoomed == FALSE {
-        (*sRegionMap).scrollY = 0;
-        (*sRegionMap).scrollX = 0;
-        (*sRegionMap).unk_040 = 0;
-        (*sRegionMap).unk_03c = 0;
-        (*sRegionMap).unk_060 = (*sRegionMap).cursorPosX as i16 * 8 - 0x34;
-        (*sRegionMap).unk_062 = (*sRegionMap).cursorPosY as i16 * 8 - 0x44;
-        (*sRegionMap).unk_044 = (((*sRegionMap).unk_060 as i32) << 8) / 16;
-        (*sRegionMap).unk_048 = (((*sRegionMap).unk_062 as i32) << 8) / 16;
-        (*sRegionMap).zoomedCursorPosX = (*sRegionMap).cursorPosX;
-        (*sRegionMap).zoomedCursorPosY = (*sRegionMap).cursorPosY;
-        (*sRegionMap).unk_04c = 0x10000;
-        (*sRegionMap).unk_050 = -2048;
+    if (*crate::gl!(sRegionMap)).zoomed == FALSE {
+        (*crate::gl!(sRegionMap)).scrollY = 0;
+        (*crate::gl!(sRegionMap)).scrollX = 0;
+        (*crate::gl!(sRegionMap)).unk_040 = 0;
+        (*crate::gl!(sRegionMap)).unk_03c = 0;
+        (*crate::gl!(sRegionMap)).unk_060 = (*crate::gl!(sRegionMap)).cursorPosX as i16 * 8 - 0x34;
+        (*crate::gl!(sRegionMap)).unk_062 = (*crate::gl!(sRegionMap)).cursorPosY as i16 * 8 - 0x44;
+        (*crate::gl!(sRegionMap)).unk_044 = (((*crate::gl!(sRegionMap)).unk_060 as i32) << 8) / 16;
+        (*crate::gl!(sRegionMap)).unk_048 = (((*crate::gl!(sRegionMap)).unk_062 as i32) << 8) / 16;
+        (*crate::gl!(sRegionMap)).zoomedCursorPosX = (*crate::gl!(sRegionMap)).cursorPosX;
+        (*crate::gl!(sRegionMap)).zoomedCursorPosY = (*crate::gl!(sRegionMap)).cursorPosY;
+        (*crate::gl!(sRegionMap)).unk_04c = 0x10000;
+        (*crate::gl!(sRegionMap)).unk_050 = -2048;
     } else {
-        (*sRegionMap).unk_03c = (*sRegionMap).scrollX as i32 * 0x100;
-        (*sRegionMap).unk_040 = (*sRegionMap).scrollY as i32 * 0x100;
-        (*sRegionMap).unk_060 = 0;
-        (*sRegionMap).unk_062 = 0;
-        (*sRegionMap).unk_044 = -((*sRegionMap).unk_03c / 16);
-        (*sRegionMap).unk_048 = -((*sRegionMap).unk_040 / 16);
-        (*sRegionMap).cursorPosX = (*sRegionMap).zoomedCursorPosX;
-        (*sRegionMap).cursorPosY = (*sRegionMap).zoomedCursorPosY;
-        (*sRegionMap).unk_04c = 0x8000;
-        (*sRegionMap).unk_050 = 0x800;
+        (*crate::gl!(sRegionMap)).unk_03c = (*crate::gl!(sRegionMap)).scrollX as i32 * 0x100;
+        (*crate::gl!(sRegionMap)).unk_040 = (*crate::gl!(sRegionMap)).scrollY as i32 * 0x100;
+        (*crate::gl!(sRegionMap)).unk_060 = 0;
+        (*crate::gl!(sRegionMap)).unk_062 = 0;
+        (*crate::gl!(sRegionMap)).unk_044 = -((*crate::gl!(sRegionMap)).unk_03c / 16);
+        (*crate::gl!(sRegionMap)).unk_048 = -((*crate::gl!(sRegionMap)).unk_040 / 16);
+        (*crate::gl!(sRegionMap)).cursorPosX = (*crate::gl!(sRegionMap)).zoomedCursorPosX;
+        (*crate::gl!(sRegionMap)).cursorPosY = (*crate::gl!(sRegionMap)).zoomedCursorPosY;
+        (*crate::gl!(sRegionMap)).unk_04c = 0x8000;
+        (*crate::gl!(sRegionMap)).unk_050 = 0x800;
     }
-    (*sRegionMap).unk_06e = 0;
+    (*crate::gl!(sRegionMap)).unk_06e = 0;
     FreeRegionMapCursorSprite();
     HideRegionMapPlayerIcon();
 }
 pub unsafe fn UpdateRegionMapZoom() -> u8 {
     let mut retVal: u8 = 0;
-    if (*sRegionMap).unk_06e >= 16 {
+    if (*crate::gl!(sRegionMap)).unk_06e >= 16 {
         return FALSE;
     }
-    (*sRegionMap).unk_06e += 1;
-    if (*sRegionMap).unk_06e == 16 {
-        (*sRegionMap).unk_044 = 0;
-        (*sRegionMap).unk_048 = 0;
-        (*sRegionMap).scrollX = (*sRegionMap).unk_060;
-        (*sRegionMap).scrollY = (*sRegionMap).unk_062;
-        (*sRegionMap).unk_04c = if (*sRegionMap).zoomed == FALSE {
+    (*crate::gl!(sRegionMap)).unk_06e += 1;
+    if (*crate::gl!(sRegionMap)).unk_06e == 16 {
+        (*crate::gl!(sRegionMap)).unk_044 = 0;
+        (*crate::gl!(sRegionMap)).unk_048 = 0;
+        (*crate::gl!(sRegionMap)).scrollX = (*crate::gl!(sRegionMap)).unk_060;
+        (*crate::gl!(sRegionMap)).scrollY = (*crate::gl!(sRegionMap)).unk_062;
+        (*crate::gl!(sRegionMap)).unk_04c = if (*crate::gl!(sRegionMap)).zoomed == FALSE {
             32768
         } else {
             0x10000
         };
-        (*sRegionMap).zoomed = ((*sRegionMap).zoomed == 0) as u8;
-        (*sRegionMap).inputCallback = if (*sRegionMap).zoomed == FALSE {
+        (*crate::gl!(sRegionMap)).zoomed = ((*crate::gl!(sRegionMap)).zoomed == 0) as u8;
+        (*crate::gl!(sRegionMap)).inputCallback = if (*crate::gl!(sRegionMap)).zoomed == FALSE {
             Some(ProcessRegionMapInput_Full)
         } else {
             Some(ProcessRegionMapInput_Zoomed)
         };
-        CreateRegionMapCursor((*sRegionMap).cursorTileTag, (*sRegionMap).cursorPaletteTag);
+        CreateRegionMapCursor(
+            (*crate::gl!(sRegionMap)).cursorTileTag,
+            (*crate::gl!(sRegionMap)).cursorPaletteTag,
+        );
         UnhideRegionMapPlayerIcon();
         retVal = FALSE;
     } else {
-        (*sRegionMap).unk_03c += (*sRegionMap).unk_044;
-        (*sRegionMap).unk_040 += (*sRegionMap).unk_048;
-        (*sRegionMap).scrollX = ((*sRegionMap).unk_03c >> 8) as i16;
-        (*sRegionMap).scrollY = ((*sRegionMap).unk_040 >> 8) as i16;
-        (*sRegionMap).unk_04c += (*sRegionMap).unk_050;
-        if (*sRegionMap).unk_044 < 0 && (*sRegionMap).scrollX < (*sRegionMap).unk_060
-            || (*sRegionMap).unk_044 > 0 && (*sRegionMap).scrollX > (*sRegionMap).unk_060
+        (*crate::gl!(sRegionMap)).unk_03c += (*crate::gl!(sRegionMap)).unk_044;
+        (*crate::gl!(sRegionMap)).unk_040 += (*crate::gl!(sRegionMap)).unk_048;
+        (*crate::gl!(sRegionMap)).scrollX = ((*crate::gl!(sRegionMap)).unk_03c >> 8) as i16;
+        (*crate::gl!(sRegionMap)).scrollY = ((*crate::gl!(sRegionMap)).unk_040 >> 8) as i16;
+        (*crate::gl!(sRegionMap)).unk_04c += (*crate::gl!(sRegionMap)).unk_050;
+        if (*crate::gl!(sRegionMap)).unk_044 < 0
+            && (*crate::gl!(sRegionMap)).scrollX < (*crate::gl!(sRegionMap)).unk_060
+            || (*crate::gl!(sRegionMap)).unk_044 > 0
+                && (*crate::gl!(sRegionMap)).scrollX > (*crate::gl!(sRegionMap)).unk_060
         {
-            (*sRegionMap).scrollX = (*sRegionMap).unk_060;
-            (*sRegionMap).unk_044 = 0;
+            (*crate::gl!(sRegionMap)).scrollX = (*crate::gl!(sRegionMap)).unk_060;
+            (*crate::gl!(sRegionMap)).unk_044 = 0;
         }
-        if (*sRegionMap).unk_048 < 0 && (*sRegionMap).scrollY < (*sRegionMap).unk_062
-            || (*sRegionMap).unk_048 > 0 && (*sRegionMap).scrollY > (*sRegionMap).unk_062
+        if (*crate::gl!(sRegionMap)).unk_048 < 0
+            && (*crate::gl!(sRegionMap)).scrollY < (*crate::gl!(sRegionMap)).unk_062
+            || (*crate::gl!(sRegionMap)).unk_048 > 0
+                && (*crate::gl!(sRegionMap)).scrollY > (*crate::gl!(sRegionMap)).unk_062
         {
-            (*sRegionMap).scrollY = (*sRegionMap).unk_062;
-            (*sRegionMap).unk_048 = 0;
+            (*crate::gl!(sRegionMap)).scrollY = (*crate::gl!(sRegionMap)).unk_062;
+            (*crate::gl!(sRegionMap)).unk_048 = 0;
         }
-        if (*sRegionMap).zoomed == FALSE {
-            if (*sRegionMap).unk_04c < 32768 {
-                (*sRegionMap).unk_04c = 32768;
-                (*sRegionMap).unk_050 = 0;
+        if (*crate::gl!(sRegionMap)).zoomed == FALSE {
+            if (*crate::gl!(sRegionMap)).unk_04c < 32768 {
+                (*crate::gl!(sRegionMap)).unk_04c = 32768;
+                (*crate::gl!(sRegionMap)).unk_050 = 0;
             }
         } else {
-            if (*sRegionMap).unk_04c > 0x10000 {
-                (*sRegionMap).unk_04c = 0x10000;
-                (*sRegionMap).unk_050 = 0;
+            if (*crate::gl!(sRegionMap)).unk_04c > 0x10000 {
+                (*crate::gl!(sRegionMap)).unk_04c = 0x10000;
+                (*crate::gl!(sRegionMap)).unk_050 = 0;
             }
         }
         retVal = TRUE;
     }
     CalcZoomScrollParams(
-        (*sRegionMap).scrollX,
-        (*sRegionMap).scrollY,
+        (*crate::gl!(sRegionMap)).scrollX,
+        (*crate::gl!(sRegionMap)).scrollY,
         0x38,
         0x48,
-        ((*sRegionMap).unk_04c >> 8) as u16,
-        ((*sRegionMap).unk_04c >> 8) as u16,
+        ((*crate::gl!(sRegionMap)).unk_04c >> 8) as u16,
+        ((*crate::gl!(sRegionMap)).unk_04c >> 8) as u16,
         0,
     );
     retVal
@@ -721,52 +755,60 @@ unsafe fn CalcZoomScrollParams(
     f: u16,
     rotation: u8,
 ) {
-    (*sRegionMap).bg2pa = ((e as i32
+    (*crate::gl!(sRegionMap)).bg2pa = ((e as i32
         * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation as i32 + 64]
             as i32)
         >> 8) as u32;
-    (*sRegionMap).bg2pc = ((e as i32
+    (*crate::gl!(sRegionMap)).bg2pc = ((e as i32
         * -((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation] as i32))
         >> 8) as u32;
-    (*sRegionMap).bg2pb = ((f as i32
+    (*crate::gl!(sRegionMap)).bg2pb = ((f as i32
         * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation] as i32)
         >> 8) as u32;
-    (*sRegionMap).bg2pd = ((f as i32
+    (*crate::gl!(sRegionMap)).bg2pd = ((f as i32
         * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation as i32 + 64]
             as i32)
         >> 8) as u32;
     let var1: i32 = ((scrollX as i32) << 8) + ((c as i32) << 8);
-    let var2: i32 = d as i32 * (*sRegionMap).bg2pb as i32 + (*sRegionMap).bg2pa as i32 * c as i32;
-    (*sRegionMap).bg2x = var1 - var2;
+    let var2: i32 = d as i32 * (*crate::gl!(sRegionMap)).bg2pb as i32
+        + (*crate::gl!(sRegionMap)).bg2pa as i32 * c as i32;
+    (*crate::gl!(sRegionMap)).bg2x = var1 - var2;
     let var3: i32 = ((scrollY as i32) << 8) + ((d as i32) << 8);
-    let var4: i32 = (*sRegionMap).bg2pd as i32 * d as i32 + (*sRegionMap).bg2pc as i32 * c as i32;
-    (*sRegionMap).bg2y = var3 - var4;
-    (*sRegionMap).needUpdateVideoRegs = TRUE;
+    let var4: i32 = (*crate::gl!(sRegionMap)).bg2pd as i32 * d as i32
+        + (*crate::gl!(sRegionMap)).bg2pc as i32 * c as i32;
+    (*crate::gl!(sRegionMap)).bg2y = var3 - var4;
+    (*crate::gl!(sRegionMap)).needUpdateVideoRegs = TRUE;
 }
 unsafe fn RegionMap_SetBG2XAndBG2Y(x: i16, y: i16) {
-    (*sRegionMap).bg2x = ((x as i32) << 8) + 0x1c00;
-    (*sRegionMap).bg2y = ((y as i32) << 8) + 0x2400;
-    (*sRegionMap).needUpdateVideoRegs = TRUE;
+    (*crate::gl!(sRegionMap)).bg2x = ((x as i32) << 8) + 0x1c00;
+    (*crate::gl!(sRegionMap)).bg2y = ((y as i32) << 8) + 0x2400;
+    (*crate::gl!(sRegionMap)).needUpdateVideoRegs = TRUE;
 }
 pub unsafe fn UpdateRegionMapVideoRegs() {
-    if (*sRegionMap).needUpdateVideoRegs != 0 {
-        SetGpuReg(REG_OFFSET_BG2PA, (*sRegionMap).bg2pa as u16);
-        SetGpuReg(REG_OFFSET_BG2PB, (*sRegionMap).bg2pb as u16);
-        SetGpuReg(REG_OFFSET_BG2PC, (*sRegionMap).bg2pc as u16);
-        SetGpuReg(REG_OFFSET_BG2PD, (*sRegionMap).bg2pd as u16);
-        SetGpuReg(REG_OFFSET_BG2X_L, (*sRegionMap).bg2x as u16);
-        SetGpuReg(REG_OFFSET_BG2X_H, ((*sRegionMap).bg2x >> 16) as u16);
-        SetGpuReg(REG_OFFSET_BG2Y_L, (*sRegionMap).bg2y as u16);
-        SetGpuReg(REG_OFFSET_BG2Y_H, ((*sRegionMap).bg2y >> 16) as u16);
-        (*sRegionMap).needUpdateVideoRegs = FALSE;
+    if (*crate::gl!(sRegionMap)).needUpdateVideoRegs != 0 {
+        SetGpuReg(REG_OFFSET_BG2PA, (*crate::gl!(sRegionMap)).bg2pa as u16);
+        SetGpuReg(REG_OFFSET_BG2PB, (*crate::gl!(sRegionMap)).bg2pb as u16);
+        SetGpuReg(REG_OFFSET_BG2PC, (*crate::gl!(sRegionMap)).bg2pc as u16);
+        SetGpuReg(REG_OFFSET_BG2PD, (*crate::gl!(sRegionMap)).bg2pd as u16);
+        SetGpuReg(REG_OFFSET_BG2X_L, (*crate::gl!(sRegionMap)).bg2x as u16);
+        SetGpuReg(
+            REG_OFFSET_BG2X_H,
+            ((*crate::gl!(sRegionMap)).bg2x >> 16) as u16,
+        );
+        SetGpuReg(REG_OFFSET_BG2Y_L, (*crate::gl!(sRegionMap)).bg2y as u16);
+        SetGpuReg(
+            REG_OFFSET_BG2Y_H,
+            ((*crate::gl!(sRegionMap)).bg2y >> 16) as u16,
+        );
+        (*crate::gl!(sRegionMap)).needUpdateVideoRegs = FALSE;
     }
 }
 pub unsafe fn PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(x: i16, y: i16) {
     CalcZoomScrollParams(x, y, 0x38, 0x48, 0x100, 0x100, 0);
     UpdateRegionMapVideoRegs();
-    if !(*sRegionMap).playerIconSprite.is_null() {
-        (*(*sRegionMap).playerIconSprite).x2 = -x;
-        (*(*sRegionMap).playerIconSprite).y2 = -y;
+    if !(*crate::gl!(sRegionMap)).playerIconSprite.is_null() {
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).x2 = -x;
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).y2 = -y;
     }
 }
 unsafe fn GetMapSecIdAt(mut x: u16, mut y: u16) -> u16 {
@@ -786,33 +828,34 @@ unsafe fn InitMapBasedOnPlayerLocation() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut warp: *mut WarpData = null_mut();
-    if (*gSaveBlock1Ptr).location.mapGroup == 25
-        && ((*gSaveBlock1Ptr).location.mapNum == 41
-            || (*gSaveBlock1Ptr).location.mapNum == 42
-            || (*gSaveBlock1Ptr).location.mapNum == 43)
+    if (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup == 25
+        && ((*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 41
+            || (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 42
+            || (*crate::gl!(gSaveBlock1Ptr)).location.mapNum == 43)
     {
         RegionMap_InitializeStateBasedOnSSTidalLocation();
         return;
     }
     match GetMapTypeByGroupAndId(
-        (*gSaveBlock1Ptr).location.mapGroup,
-        (*gSaveBlock1Ptr).location.mapNum,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapGroup,
+        (*crate::gl!(gSaveBlock1Ptr)).location.mapNum,
     ) {
         MAP_TYPE_UNDERGROUND | MAP_TYPE_UNKNOWN => {
-            if gMapHeader.allowEscaping() != 0 {
+            if (*gMapHeader.as_ptr()).allowEscaping() != 0 {
                 mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                    (*gSaveBlock1Ptr).escapeWarp.mapGroup as u16,
-                    (*gSaveBlock1Ptr).escapeWarp.mapNum as u16,
+                    (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.mapGroup as u16,
+                    (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.mapNum as u16,
                 );
-                (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
-                (*sRegionMap).playerIsInCave = TRUE;
+                (*crate::gl!(sRegionMap)).mapSecId = (*mapHeader).regionMapSectionId as u16;
+                (*crate::gl!(sRegionMap)).playerIsInCave = TRUE;
                 mapWidth = (*(*mapHeader).mapLayout).width as u16;
                 mapHeight = (*(*mapHeader).mapLayout).height as u16;
-                x = (*gSaveBlock1Ptr).escapeWarp.x as u16;
-                y = (*gSaveBlock1Ptr).escapeWarp.y as u16;
+                x = (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.x as u16;
+                y = (*crate::gl!(gSaveBlock1Ptr)).escapeWarp.y as u16;
             } else {
-                (*sRegionMap).mapSecId = gMapHeader.regionMapSectionId as u16;
-                (*sRegionMap).playerIsInCave = TRUE;
+                (*crate::gl!(sRegionMap)).mapSecId =
+                    crate::gl!(gMapHeader.regionMapSectionId) as u16;
+                (*crate::gl!(sRegionMap)).playerIsInCave = TRUE;
                 mapWidth = 1;
                 mapHeight = 1;
                 x = 1;
@@ -821,36 +864,36 @@ unsafe fn InitMapBasedOnPlayerLocation() {
         }
         MAP_TYPE_SECRET_BASE => {
             mapHeader = Overworld_GetMapHeaderByGroupAndId(
-                (*gSaveBlock1Ptr).dynamicWarp.mapGroup as u16,
-                (*gSaveBlock1Ptr).dynamicWarp.mapNum as u16,
+                (*crate::gl!(gSaveBlock1Ptr)).dynamicWarp.mapGroup as u16,
+                (*crate::gl!(gSaveBlock1Ptr)).dynamicWarp.mapNum as u16,
             );
-            (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
-            (*sRegionMap).playerIsInCave = TRUE;
+            (*crate::gl!(sRegionMap)).mapSecId = (*mapHeader).regionMapSectionId as u16;
+            (*crate::gl!(sRegionMap)).playerIsInCave = TRUE;
             mapWidth = (*(*mapHeader).mapLayout).width as u16;
             mapHeight = (*(*mapHeader).mapLayout).height as u16;
-            x = (*gSaveBlock1Ptr).dynamicWarp.x as u16;
-            y = (*gSaveBlock1Ptr).dynamicWarp.y as u16;
+            x = (*crate::gl!(gSaveBlock1Ptr)).dynamicWarp.x as u16;
+            y = (*crate::gl!(gSaveBlock1Ptr)).dynamicWarp.y as u16;
         }
         MAP_TYPE_INDOOR => {
-            (*sRegionMap).mapSecId = gMapHeader.regionMapSectionId as u16;
-            if (*sRegionMap).mapSecId != MAPSEC_DYNAMIC {
-                warp = &raw mut (*gSaveBlock1Ptr).escapeWarp;
+            (*crate::gl!(sRegionMap)).mapSecId = crate::gl!(gMapHeader.regionMapSectionId) as u16;
+            if (*crate::gl!(sRegionMap)).mapSecId != MAPSEC_DYNAMIC {
+                warp = &raw mut (*crate::gl!(gSaveBlock1Ptr)).escapeWarp;
                 mapHeader = Overworld_GetMapHeaderByGroupAndId(
                     (*warp).mapGroup as u16,
                     (*warp).mapNum as u16,
                 );
             } else {
-                warp = &raw mut (*gSaveBlock1Ptr).dynamicWarp;
+                warp = &raw mut (*crate::gl!(gSaveBlock1Ptr)).dynamicWarp;
                 mapHeader = Overworld_GetMapHeaderByGroupAndId(
                     (*warp).mapGroup as u16,
                     (*warp).mapNum as u16,
                 );
-                (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
+                (*crate::gl!(sRegionMap)).mapSecId = (*mapHeader).regionMapSectionId as u16;
             }
-            if IsPlayerInAquaHideout((*sRegionMap).mapSecId as u8) != 0 {
-                (*sRegionMap).playerIsInCave = TRUE;
+            if IsPlayerInAquaHideout((*crate::gl!(sRegionMap)).mapSecId as u8) != 0 {
+                (*crate::gl!(sRegionMap)).playerIsInCave = TRUE;
             } else {
-                (*sRegionMap).playerIsInCave = FALSE;
+                (*crate::gl!(sRegionMap)).playerIsInCave = FALSE;
             }
             mapWidth = (*(*mapHeader).mapLayout).width as u16;
             mapHeight = (*(*mapHeader).mapLayout).height as u16;
@@ -858,43 +901,43 @@ unsafe fn InitMapBasedOnPlayerLocation() {
             y = (*warp).y as u16;
         }
         _ => {
-            (*sRegionMap).mapSecId = gMapHeader.regionMapSectionId as u16;
-            (*sRegionMap).playerIsInCave = FALSE;
-            mapWidth = (*gMapHeader.mapLayout).width as u16;
-            mapHeight = (*gMapHeader.mapLayout).height as u16;
-            x = (*gSaveBlock1Ptr).pos.x as u16;
-            y = (*gSaveBlock1Ptr).pos.y as u16;
-            if (*sRegionMap).mapSecId == MAPSEC_UNDERWATER_SEAFLOOR_CAVERN
-                || (*sRegionMap).mapSecId == MAPSEC_UNDERWATER_MARINE_CAVE
+            (*crate::gl!(sRegionMap)).mapSecId = crate::gl!(gMapHeader.regionMapSectionId) as u16;
+            (*crate::gl!(sRegionMap)).playerIsInCave = FALSE;
+            mapWidth = (*crate::gl!(gMapHeader.mapLayout)).width as u16;
+            mapHeight = (*crate::gl!(gMapHeader.mapLayout)).height as u16;
+            x = (*crate::gl!(gSaveBlock1Ptr)).pos.x as u16;
+            y = (*crate::gl!(gSaveBlock1Ptr)).pos.y as u16;
+            if (*crate::gl!(sRegionMap)).mapSecId == MAPSEC_UNDERWATER_SEAFLOOR_CAVERN
+                || (*crate::gl!(sRegionMap)).mapSecId == MAPSEC_UNDERWATER_MARINE_CAVE
             {
-                (*sRegionMap).playerIsInCave = TRUE;
+                (*crate::gl!(sRegionMap)).playerIsInCave = TRUE;
             }
         }
     }
     let xOnMap: u16 = x;
     let mut dimensionScale: u16 = div_i32(
         mapWidth as i32,
-        gRegionMapEntries[(*sRegionMap).mapSecId].width as i32,
+        gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].width as i32,
     ) as u16;
     if dimensionScale == 0 {
         dimensionScale = 1;
     }
     x = div_i32(x as i32, dimensionScale as i32) as u16;
-    if x >= gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 {
-        x = gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 - 1;
+    if x >= gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].width as u16 {
+        x = gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].width as u16 - 1;
     }
     dimensionScale = div_i32(
         mapHeight as i32,
-        gRegionMapEntries[(*sRegionMap).mapSecId].height as i32,
+        gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].height as i32,
     ) as u16;
     if dimensionScale == 0 {
         dimensionScale = 1;
     }
     y = div_i32(y as i32, dimensionScale as i32) as u16;
-    if y >= gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 {
-        y = gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 - 1;
+    if y >= gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].height as u16 {
+        y = gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].height as u16 - 1;
     }
-    match (*sRegionMap).mapSecId {
+    match (*crate::gl!(sRegionMap)).mapSecId {
         MAPSEC_ROUTE_114 => {
             if y != 0 {
                 x = 0;
@@ -902,17 +945,17 @@ unsafe fn InitMapBasedOnPlayerLocation() {
         }
         MAPSEC_ROUTE_126 | MAPSEC_UNDERWATER_126 => {
             x = 0;
-            if (*gSaveBlock1Ptr).pos.x > 32 {
+            if (*crate::gl!(gSaveBlock1Ptr)).pos.x > 32 {
                 x += 1;
             }
-            if (*gSaveBlock1Ptr).pos.x > 51 {
+            if (*crate::gl!(gSaveBlock1Ptr)).pos.x > 51 {
                 x += 1;
             }
             y = 0;
-            if (*gSaveBlock1Ptr).pos.y > 37 {
+            if (*crate::gl!(gSaveBlock1Ptr)).pos.y > 37 {
                 y += 1;
             }
-            if (*gSaveBlock1Ptr).pos.y > 56 {
+            if (*crate::gl!(gSaveBlock1Ptr)).pos.y > 56 {
                 y += 1;
             }
         }
@@ -930,17 +973,17 @@ unsafe fn InitMapBasedOnPlayerLocation() {
         }
         MAPSEC_UNDERWATER_MARINE_CAVE => {
             GetMarineCaveCoords(
-                &raw mut (*sRegionMap).cursorPosX,
-                &raw mut (*sRegionMap).cursorPosY,
+                &raw mut (*crate::gl!(sRegionMap)).cursorPosX,
+                &raw mut (*crate::gl!(sRegionMap)).cursorPosY,
             );
             return;
         }
         _ => {}
     }
-    (*sRegionMap).cursorPosX =
-        gRegionMapEntries[(*sRegionMap).mapSecId].x as u16 + x + MAPCURSOR_X_MIN;
-    (*sRegionMap).cursorPosY =
-        gRegionMapEntries[(*sRegionMap).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
+    (*crate::gl!(sRegionMap)).cursorPosX =
+        gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].x as u16 + x + MAPCURSOR_X_MIN;
+    (*crate::gl!(sRegionMap)).cursorPosY =
+        gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
 }
 unsafe fn RegionMap_InitializeStateBasedOnSSTidalLocation() {
     let mut mapGroup: u8 = 0;
@@ -958,49 +1001,49 @@ unsafe fn RegionMap_InitializeStateBasedOnSSTidalLocation() {
         &raw mut yOnMap,
     ) {
         SS_TIDAL_LOCATION_SLATEPORT => {
-            (*sRegionMap).mapSecId = MAPSEC_SLATEPORT_CITY;
+            (*crate::gl!(sRegionMap)).mapSecId = MAPSEC_SLATEPORT_CITY;
         }
         SS_TIDAL_LOCATION_LILYCOVE => {
-            (*sRegionMap).mapSecId = MAPSEC_LILYCOVE_CITY;
+            (*crate::gl!(sRegionMap)).mapSecId = MAPSEC_LILYCOVE_CITY;
         }
         SS_TIDAL_LOCATION_ROUTE124 => {
-            (*sRegionMap).mapSecId = MAPSEC_ROUTE_124;
+            (*crate::gl!(sRegionMap)).mapSecId = MAPSEC_ROUTE_124;
         }
         SS_TIDAL_LOCATION_ROUTE131 => {
-            (*sRegionMap).mapSecId = MAPSEC_ROUTE_131;
+            (*crate::gl!(sRegionMap)).mapSecId = MAPSEC_ROUTE_131;
         }
         _ => {
             mapHeader = Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16);
-            (*sRegionMap).mapSecId = (*mapHeader).regionMapSectionId as u16;
+            (*crate::gl!(sRegionMap)).mapSecId = (*mapHeader).regionMapSectionId as u16;
             dimensionScale = div_i32(
                 (*(*mapHeader).mapLayout).width,
-                gRegionMapEntries[(*sRegionMap).mapSecId].width as i32,
+                gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].width as i32,
             ) as u16;
             if dimensionScale == 0 {
                 dimensionScale = 1;
             }
             x = div_i32(xOnMap as i32, dimensionScale as i32) as u16;
-            if x >= gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 {
-                x = gRegionMapEntries[(*sRegionMap).mapSecId].width as u16 - 1;
+            if x >= gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].width as u16 {
+                x = gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].width as u16 - 1;
             }
             dimensionScale = div_i32(
                 (*(*mapHeader).mapLayout).height,
-                gRegionMapEntries[(*sRegionMap).mapSecId].height as i32,
+                gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].height as i32,
             ) as u16;
             if dimensionScale == 0 {
                 dimensionScale = 1;
             }
             y = div_i32(yOnMap as i32, dimensionScale as i32) as u16;
-            if y >= gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 {
-                y = gRegionMapEntries[(*sRegionMap).mapSecId].height as u16 - 1;
+            if y >= gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].height as u16 {
+                y = gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].height as u16 - 1;
             }
         }
     }
-    (*sRegionMap).playerIsInCave = FALSE;
-    (*sRegionMap).cursorPosX =
-        gRegionMapEntries[(*sRegionMap).mapSecId].x as u16 + x + MAPCURSOR_X_MIN;
-    (*sRegionMap).cursorPosY =
-        gRegionMapEntries[(*sRegionMap).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
+    (*crate::gl!(sRegionMap)).playerIsInCave = FALSE;
+    (*crate::gl!(sRegionMap)).cursorPosX =
+        gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].x as u16 + x + MAPCURSOR_X_MIN;
+    (*crate::gl!(sRegionMap)).cursorPosY =
+        gRegionMapEntries[(*crate::gl!(sRegionMap)).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
 }
 unsafe fn GetMapsecType(mapSecId: u16) -> u8 {
     match mapSecId {
@@ -1191,16 +1234,16 @@ unsafe fn GetPositionOfCursorWithinMapSec() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut posWithinMapSec: u16 = 0;
-    if (*sRegionMap).mapSecId == MAPSEC_NONE {
-        (*sRegionMap).posWithinMapSec = 0;
+    if (*crate::gl!(sRegionMap)).mapSecId == MAPSEC_NONE {
+        (*crate::gl!(sRegionMap)).posWithinMapSec = 0;
         return;
     }
-    if (*sRegionMap).zoomed == 0 {
-        x = (*sRegionMap).cursorPosX;
-        y = (*sRegionMap).cursorPosY;
+    if (*crate::gl!(sRegionMap)).zoomed == 0 {
+        x = (*crate::gl!(sRegionMap)).cursorPosX;
+        y = (*crate::gl!(sRegionMap)).cursorPosY;
     } else {
-        x = (*sRegionMap).zoomedCursorPosX;
-        y = (*sRegionMap).zoomedCursorPosY;
+        x = (*crate::gl!(sRegionMap)).zoomedCursorPosX;
+        y = (*crate::gl!(sRegionMap)).zoomedCursorPosY;
     }
     posWithinMapSec = 0;
     loop {
@@ -1213,12 +1256,12 @@ unsafe fn GetPositionOfCursorWithinMapSec() {
             }
         } else {
             x -= 1;
-            if GetMapSecIdAt(x, y) == (*sRegionMap).mapSecId {
+            if GetMapSecIdAt(x, y) == (*crate::gl!(sRegionMap)).mapSecId {
                 posWithinMapSec += 1;
             }
         }
     }
-    (*sRegionMap).posWithinMapSec = posWithinMapSec as u8;
+    (*crate::gl!(sRegionMap)).posWithinMapSec = posWithinMapSec as u8;
 }
 unsafe fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 {
     if ({
@@ -1231,7 +1274,7 @@ unsafe fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 {
     }
     let mut x: u16 = MAPCURSOR_X_MIN;
     while x <= MAPCURSOR_X_MAX {
-        if GetMapSecIdAt(x, y) == (*sRegionMap).mapSecId {
+        if GetMapSecIdAt(x, y) == (*crate::gl!(sRegionMap)).mapSecId {
             return TRUE;
         }
         x += 1;
@@ -1239,10 +1282,10 @@ unsafe fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn SpriteCB_CursorMapFull(sprite: *mut Sprite) {
-    if (*sRegionMap).cursorMovementFrameCounter != 0 {
-        (*sprite).x += 2 * (*sRegionMap).cursorDeltaX as i16;
-        (*sprite).y += 2 * (*sRegionMap).cursorDeltaY as i16;
-        (*sRegionMap).cursorMovementFrameCounter -= 1;
+    if (*crate::gl!(sRegionMap)).cursorMovementFrameCounter != 0 {
+        (*sprite).x += 2 * (*crate::gl!(sRegionMap)).cursorDeltaX as i16;
+        (*sprite).y += 2 * (*crate::gl!(sRegionMap)).cursorDeltaY as i16;
+        (*crate::gl!(sRegionMap)).cursorMovementFrameCounter -= 1;
     }
 }
 pub(crate) fn SpriteCB_CursorMapZoomed(sprite: *mut Sprite) {}
@@ -1253,16 +1296,16 @@ pub unsafe fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
     let mut template: SpriteTemplate = *sRegionMapCursorSpriteTemplate;
     sheet.tag = tileTag;
     template.tileTag = tileTag;
-    (*sRegionMap).cursorTileTag = tileTag;
+    (*crate::gl!(sRegionMap)).cursorTileTag = tileTag;
     palette.tag = paletteTag;
     template.paletteTag = paletteTag;
-    (*sRegionMap).cursorPaletteTag = paletteTag;
-    if (*sRegionMap).zoomed == 0 {
-        sheet.data = (*sRegionMap).cursorSmallImage.as_mut_ptr() as *mut c_void;
+    (*crate::gl!(sRegionMap)).cursorPaletteTag = paletteTag;
+    if (*crate::gl!(sRegionMap)).zoomed == 0 {
+        sheet.data = (*crate::gl!(sRegionMap)).cursorSmallImage.as_mut_ptr() as *mut c_void;
         sheet.size = 256;
         template.callback = Some(SpriteCB_CursorMapFull);
     } else {
-        sheet.data = (*sRegionMap).cursorLargeImage.as_mut_ptr() as *mut c_void;
+        sheet.data = (*crate::gl!(sRegionMap)).cursorLargeImage.as_mut_ptr() as *mut c_void;
         sheet.size = 1536;
         template.callback = Some(SpriteCB_CursorMapZoomed);
     }
@@ -1270,35 +1313,37 @@ pub unsafe fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
     LoadSpritePalette(&raw mut palette);
     let spriteId: u8 = CreateSprite(&raw mut template, 56, 72, 0);
     if spriteId != MAX_SPRITES {
-        (*sRegionMap).cursorSprite = &raw mut gSprites[spriteId];
-        if (*sRegionMap).zoomed == TRUE {
-            (*(*sRegionMap).cursorSprite).oam.set_size(2);
-            (*(*sRegionMap).cursorSprite).x -= 8;
-            (*(*sRegionMap).cursorSprite).y -= 8;
-            StartSpriteAnim((*sRegionMap).cursorSprite, 1);
+        (*crate::gl!(sRegionMap)).cursorSprite = crate::gl!(&raw gSprites[spriteId]);
+        if (*crate::gl!(sRegionMap)).zoomed == TRUE {
+            (*(*crate::gl!(sRegionMap)).cursorSprite).oam.set_size(2);
+            (*(*crate::gl!(sRegionMap)).cursorSprite).x -= 8;
+            (*(*crate::gl!(sRegionMap)).cursorSprite).y -= 8;
+            StartSpriteAnim((*crate::gl!(sRegionMap)).cursorSprite, 1);
         } else {
-            (*(*sRegionMap).cursorSprite).oam.set_size(1);
-            (*(*sRegionMap).cursorSprite).x = 8 * (*sRegionMap).cursorPosX as i16 + 4;
-            (*(*sRegionMap).cursorSprite).y = 8 * (*sRegionMap).cursorPosY as i16 + 4;
+            (*(*crate::gl!(sRegionMap)).cursorSprite).oam.set_size(1);
+            (*(*crate::gl!(sRegionMap)).cursorSprite).x =
+                8 * (*crate::gl!(sRegionMap)).cursorPosX as i16 + 4;
+            (*(*crate::gl!(sRegionMap)).cursorSprite).y =
+                8 * (*crate::gl!(sRegionMap)).cursorPosY as i16 + 4;
         }
-        (*(*sRegionMap).cursorSprite).data[1] = 2;
-        (*(*sRegionMap).cursorSprite).data[2] =
+        (*(*crate::gl!(sRegionMap)).cursorSprite).data[1] = 2;
+        (*(*crate::gl!(sRegionMap)).cursorSprite).data[2] =
             0x100 + IndexOfSpritePaletteTag(paletteTag) as i16 * 16 + 1;
-        (*(*sRegionMap).cursorSprite).data[3] = TRUE as i16;
+        (*(*crate::gl!(sRegionMap)).cursorSprite).data[3] = TRUE as i16;
     }
 }
 unsafe fn FreeRegionMapCursorSprite() {
-    if !(*sRegionMap).cursorSprite.is_null() {
-        DestroySprite((*sRegionMap).cursorSprite);
-        FreeSpriteTilesByTag((*sRegionMap).cursorTileTag);
-        FreeSpritePaletteByTag((*sRegionMap).cursorPaletteTag);
+    if !(*crate::gl!(sRegionMap)).cursorSprite.is_null() {
+        DestroySprite((*crate::gl!(sRegionMap)).cursorSprite);
+        FreeSpriteTilesByTag((*crate::gl!(sRegionMap)).cursorTileTag);
+        FreeSpritePaletteByTag((*crate::gl!(sRegionMap)).cursorPaletteTag);
     }
 }
 unsafe fn SetUnkCursorSpriteData() {
-    (*(*sRegionMap).cursorSprite).data[3] = TRUE as i16;
+    (*(*crate::gl!(sRegionMap)).cursorSprite).data[3] = TRUE as i16;
 }
 unsafe fn ClearUnkCursorSpriteData() {
-    (*(*sRegionMap).cursorSprite).data[3] = FALSE as i16;
+    (*(*crate::gl!(sRegionMap)).cursorSprite).data[3] = FALSE as i16;
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16) {
@@ -1320,56 +1365,64 @@ pub unsafe fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16) {
     .as_ptr()
     .cast_mut();
     template.callback = Some(SpriteCallbackDummy);
-    if IsEventIslandMapSecId(gMapHeader.regionMapSectionId) != 0 {
-        (*sRegionMap).playerIconSprite = null_mut();
+    if IsEventIslandMapSecId(crate::gl!(gMapHeader.regionMapSectionId)) != 0 {
+        (*crate::gl!(sRegionMap)).playerIconSprite = null_mut();
         return;
     }
-    if (*gSaveBlock2Ptr).playerGender == FEMALE {
+    if (*crate::gl!(gSaveBlock2Ptr)).playerGender == FEMALE {
         sheet.data = sRegionMapPlayerIcon_MayGfx.as_ptr().cast_mut() as *mut c_void;
         palette.data = sRegionMapPlayerIcon_MayPal.as_ptr().cast_mut();
     }
     LoadSpriteSheet(&raw mut sheet);
     LoadSpritePalette(&raw mut palette);
     let spriteId: u8 = CreateSprite(&raw mut template, 0, 0, 1);
-    (*sRegionMap).playerIconSprite = &raw mut gSprites[spriteId];
-    if (*sRegionMap).zoomed == 0 {
-        (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 8 + 4;
-        (*(*sRegionMap).playerIconSprite).y = (*sRegionMap).playerIconSpritePosY as i16 * 8 + 4;
-        (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapFull);
+    (*crate::gl!(sRegionMap)).playerIconSprite = crate::gl!(&raw gSprites[spriteId]);
+    if (*crate::gl!(sRegionMap)).zoomed == 0 {
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).x =
+            (*crate::gl!(sRegionMap)).playerIconSpritePosX as i16 * 8 + 4;
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).y =
+            (*crate::gl!(sRegionMap)).playerIconSpritePosY as i16 * 8 + 4;
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapFull);
     } else {
-        (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 16 - 0x30;
-        (*(*sRegionMap).playerIconSprite).y = (*sRegionMap).playerIconSpritePosY as i16 * 16 - 0x42;
-        (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapZoomed);
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).x =
+            (*crate::gl!(sRegionMap)).playerIconSpritePosX as i16 * 16 - 0x30;
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).y =
+            (*crate::gl!(sRegionMap)).playerIconSpritePosY as i16 * 16 - 0x42;
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapZoomed);
     }
 }
 unsafe fn HideRegionMapPlayerIcon() {
-    if !(*sRegionMap).playerIconSprite.is_null() {
-        (*(*sRegionMap).playerIconSprite).set_invisible(TRUE as u16);
-        (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCallbackDummy);
+    if !(*crate::gl!(sRegionMap)).playerIconSprite.is_null() {
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).set_invisible(TRUE as u16);
+        (*(*crate::gl!(sRegionMap)).playerIconSprite).callback = Some(SpriteCallbackDummy);
     }
 }
 unsafe fn UnhideRegionMapPlayerIcon() {
-    if !(*sRegionMap).playerIconSprite.is_null() {
-        if (*sRegionMap).zoomed == TRUE {
-            (*(*sRegionMap).playerIconSprite).x =
-                (*sRegionMap).playerIconSpritePosX as i16 * 16 - 0x30;
-            (*(*sRegionMap).playerIconSprite).y =
-                (*sRegionMap).playerIconSpritePosY as i16 * 16 - 0x42;
-            (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapZoomed);
-            (*(*sRegionMap).playerIconSprite).set_invisible(FALSE as u16);
+    if !(*crate::gl!(sRegionMap)).playerIconSprite.is_null() {
+        if (*crate::gl!(sRegionMap)).zoomed == TRUE {
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).x =
+                (*crate::gl!(sRegionMap)).playerIconSpritePosX as i16 * 16 - 0x30;
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).y =
+                (*crate::gl!(sRegionMap)).playerIconSpritePosY as i16 * 16 - 0x42;
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).callback =
+                Some(SpriteCB_PlayerIconMapZoomed);
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).set_invisible(FALSE as u16);
         } else {
-            (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 8 + 4;
-            (*(*sRegionMap).playerIconSprite).y = (*sRegionMap).playerIconSpritePosY as i16 * 8 + 4;
-            (*(*sRegionMap).playerIconSprite).x2 = 0;
-            (*(*sRegionMap).playerIconSprite).y2 = 0;
-            (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapFull);
-            (*(*sRegionMap).playerIconSprite).set_invisible(FALSE as u16);
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).x =
+                (*crate::gl!(sRegionMap)).playerIconSpritePosX as i16 * 8 + 4;
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).y =
+                (*crate::gl!(sRegionMap)).playerIconSpritePosY as i16 * 8 + 4;
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).x2 = 0;
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).y2 = 0;
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).callback =
+                Some(SpriteCB_PlayerIconMapFull);
+            (*(*crate::gl!(sRegionMap)).playerIconSprite).set_invisible(FALSE as u16);
         }
     }
 }
 pub(crate) unsafe fn SpriteCB_PlayerIconMapZoomed(sprite: *mut Sprite) {
-    (*sprite).x2 = -2 * (*sRegionMap).scrollX;
-    (*sprite).y2 = -2 * (*sRegionMap).scrollY;
+    (*sprite).x2 = -2 * (*crate::gl!(sRegionMap)).scrollX;
+    (*sprite).y2 = -2 * (*crate::gl!(sRegionMap)).scrollY;
     (*sprite).data[sY] = (*sprite).y + (*sprite).y2 + (*sprite).centerToCornerVecY as i16;
     (*sprite).data[sX] = (*sprite).x + (*sprite).x2 + (*sprite).centerToCornerVecX as i16;
     if (*sprite).data[sY] < -8
@@ -1391,7 +1444,7 @@ pub(crate) unsafe fn SpriteCB_PlayerIconMapFull(sprite: *mut Sprite) {
     SpriteCB_PlayerIcon(sprite);
 }
 unsafe fn SpriteCB_PlayerIcon(sprite: *mut Sprite) {
-    if (*sRegionMap).blinkPlayerIcon != 0 {
+    if (*crate::gl!(sRegionMap)).blinkPlayerIcon != 0 {
         if ({
             (*sprite).data[sTimer] += 1;
             (*sprite).data[sTimer]
@@ -1411,8 +1464,8 @@ unsafe fn SpriteCB_PlayerIcon(sprite: *mut Sprite) {
     }
 }
 pub unsafe fn TrySetPlayerIconBlink() {
-    if (*sRegionMap).playerIsInCave != 0 {
-        (*sRegionMap).blinkPlayerIcon = TRUE;
+    if (*crate::gl!(sRegionMap)).playerIsInCave != 0 {
+        (*crate::gl!(sRegionMap)).blinkPlayerIcon = TRUE;
     }
 }
 #[unsafe(no_mangle)]
@@ -1496,7 +1549,7 @@ unsafe fn GetMapSecDimensions(
     *height = gRegionMapEntries[mapSecId].height as u16;
 }
 pub unsafe fn IsRegionMapZoomed() -> u8 {
-    (*sRegionMap).zoomed
+    (*crate::gl!(sRegionMap)).zoomed
 }
 pub unsafe fn IsEventIslandMapSecId(mapSecId: u8) -> u32 {
     for i in 0..3u32 {
@@ -1507,7 +1560,7 @@ pub unsafe fn IsEventIslandMapSecId(mapSecId: u8) -> u32 {
     FALSE as u32
 }
 pub unsafe fn CB2_OpenFlyMap() {
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankCallback(None);
             SetGpuReg(0x0, 0);
@@ -1519,59 +1572,59 @@ pub unsafe fn CB2_OpenFlyMap() {
             SetGpuReg(REG_OFFSET_BG2HOFS, 0);
             SetGpuReg(REG_OFFSET_BG3HOFS, 0);
             SetGpuReg(REG_OFFSET_BG3VOFS, 0);
-            sFlyMap = Alloc(2676) as *mut typeof___sFlyMap_0_t;
-            if sFlyMap.is_null() {
+            crate::gl!(sFlyMap = Alloc(2676) as *mut typeof___sFlyMap_0_t);
+            if (*sFlyMap.as_ptr()).is_null() {
                 SetMainCallback2(Some(CB2_ReturnToFieldWithOpenMenu));
             } else {
                 ResetPaletteFade();
                 ResetSpriteData();
                 FreeSpriteTileRanges();
                 FreeAllSpritePalettes();
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         1 => {
             ResetBgsAndClearDma3BusyFlags(0);
             InitBgsFromTemplates(1, sFlyMapBgTemplates.as_ptr().cast_mut(), 3);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             InitWindows(sFlyMapWindowTemplates.as_ptr().cast_mut());
             DeactivateAllTextPrinters();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             LoadUserWindowBorderGfx(0, 0x65, 208);
             ClearScheduledBgCopiesToVram();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         4 => {
-            InitRegionMap(&raw mut (*sFlyMap).regionMap, FALSE);
+            InitRegionMap(&raw mut (*crate::gl!(sFlyMap)).regionMap, FALSE);
             CreateRegionMapCursor(TAG_CURSOR, TAG_CURSOR);
             CreateRegionMapPlayerIcon(TAG_PLAYER_ICON, TAG_PLAYER_ICON);
-            (*sFlyMap).mapSecId = (*sFlyMap).regionMap.mapSecId;
+            (*crate::gl!(sFlyMap)).mapSecId = (*crate::gl!(sFlyMap)).regionMap.mapSecId;
             StringFill(
-                (*sFlyMap).nameBuffer.as_mut_ptr(),
+                (*crate::gl!(sFlyMap)).nameBuffer.as_mut_ptr(),
                 CHAR_SPACE,
                 MAP_NAME_LENGTH,
             );
             sDrawFlyDestTextWindow.set(TRUE as u32);
             DrawFlyDestTextWindow();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
             LZ77UnCompVram(
                 sRegionMapFrameGfxLZ.as_ptr().cast_mut(),
                 0x600c000_usize as *mut u16 as *mut c_void,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         6 => {
             LZ77UnCompVram(
                 sRegionMapFrameTilemapLZ.as_ptr().cast_mut(),
                 0x600f000_usize as *mut u16 as *mut c_void,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             LoadPalette(
@@ -1593,16 +1646,16 @@ pub unsafe fn CB2_OpenFlyMap() {
                 None,
             );
             ScheduleBgCopyTilemapToVram(0);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             LoadFlyDestIcons();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             BlendPalettes(PALETTES_ALL, 16, 0);
             SetVBlankCallback(Some(VBlankCB_FlyMap));
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         10 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -1612,7 +1665,7 @@ pub unsafe fn CB2_OpenFlyMap() {
             ShowBg(2);
             SetFlyMapCallback(Some(CB_FadeInFlyMap));
             SetMainCallback2(Some(CB2_FlyMap));
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         _ => {}
     }
@@ -1623,29 +1676,29 @@ pub(crate) unsafe fn VBlankCB_FlyMap() {
     TransferPlttBuffer();
 }
 pub(crate) unsafe fn CB2_FlyMap() {
-    (*sFlyMap).callback.unwrap_unchecked()();
+    (*crate::gl!(sFlyMap)).callback.unwrap_unchecked()();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
 }
 unsafe fn SetFlyMapCallback(callback: Option<unsafe fn()>) {
-    (*sFlyMap).callback = callback;
-    (*sFlyMap).state = 0;
+    (*crate::gl!(sFlyMap)).callback = callback;
+    (*crate::gl!(sFlyMap)).state = 0;
 }
 unsafe fn DrawFlyDestTextWindow() {
     let mut namePrinted: u32 = 0;
     let mut name: *mut u8 = null_mut();
-    if (*sFlyMap).regionMap.mapSecType > MAPSECTYPE_NONE
-        && (*sFlyMap).regionMap.mapSecType < NUM_MAPSEC_TYPES
+    if (*crate::gl!(sFlyMap)).regionMap.mapSecType > MAPSECTYPE_NONE
+        && (*crate::gl!(sFlyMap)).regionMap.mapSecType < NUM_MAPSEC_TYPES
     {
         namePrinted = FALSE as u32;
         for i in 0..1u16 {
-            if (*sFlyMap).regionMap.mapSecId == sMultiNameFlyDestinations[i].mapSecId {
+            if (*crate::gl!(sFlyMap)).regionMap.mapSecId == sMultiNameFlyDestinations[i].mapSecId {
                 if FlagGet(sMultiNameFlyDestinations[i].flag) != 0 {
                     StringLength(
                         *sMultiNameFlyDestinations[i]
                             .name
-                            .at((*sFlyMap).regionMap.posWithinMapSec),
+                            .at((*crate::gl!(sFlyMap)).regionMap.posWithinMapSec),
                     );
                     namePrinted = TRUE as u32;
                     ClearStdWindowAndFrameToTransparent(WIN_MAPSEC_NAME, FALSE);
@@ -1653,7 +1706,7 @@ unsafe fn DrawFlyDestTextWindow() {
                     AddTextPrinterParameterized(
                         WIN_MAPSEC_NAME_TALL,
                         FONT_NORMAL,
-                        (*sFlyMap).regionMap.mapSecName.as_mut_ptr(),
+                        (*crate::gl!(sFlyMap)).regionMap.mapSecName.as_mut_ptr(),
                         0,
                         1,
                         0,
@@ -1661,7 +1714,7 @@ unsafe fn DrawFlyDestTextWindow() {
                     );
                     name = *sMultiNameFlyDestinations[i]
                         .name
-                        .at((*sFlyMap).regionMap.posWithinMapSec);
+                        .at((*crate::gl!(sFlyMap)).regionMap.posWithinMapSec);
                     AddTextPrinterParameterized(
                         WIN_MAPSEC_NAME_TALL,
                         FONT_NORMAL,
@@ -1687,7 +1740,7 @@ unsafe fn DrawFlyDestTextWindow() {
             AddTextPrinterParameterized(
                 WIN_MAPSEC_NAME,
                 FONT_NORMAL,
-                (*sFlyMap).regionMap.mapSecName.as_mut_ptr(),
+                (*crate::gl!(sFlyMap)).regionMap.mapSecName.as_mut_ptr(),
                 0,
                 1,
                 0,
@@ -1711,9 +1764,9 @@ unsafe fn LoadFlyDestIcons() {
     let mut sheet: SpriteSheet = zeroed();
     LZ77UnCompWram(
         sFlyTargetIcons_Gfx.as_ptr().cast_mut(),
-        (*sFlyMap).tileBuffer.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sFlyMap)).tileBuffer.as_mut_ptr() as *mut c_void,
     );
-    sheet.data = (*sFlyMap).tileBuffer.as_mut_ptr() as *mut c_void;
+    sheet.data = (*crate::gl!(sFlyMap)).tileBuffer.as_mut_ptr() as *mut c_void;
     sheet.size = 448;
     sheet.tag = TAG_FLY_ICON;
     LoadSpriteSheet(&raw mut sheet);
@@ -1754,14 +1807,17 @@ unsafe fn CreateFlyDestIcons() {
             10,
         );
         if spriteId != MAX_SPRITES {
-            gSprites[spriteId].oam.set_shape(shape as u32);
+            (*gSprites.as_ptr())[spriteId].oam.set_shape(shape as u32);
             if FlagGet(canFlyFlag) != 0 {
-                gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon);
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon));
             } else {
                 shape += 3;
             }
-            StartSpriteAnim(&raw mut gSprites[spriteId], shape as u8);
-            gSprites[spriteId].data[sIconMapSec] = mapSecId as i16;
+            StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), shape as u8);
+            {
+                let gl_i0 = sIconMapSec;
+                crate::gl!(gSprites[spriteId].data[gl_i0] = mapSecId as i16)
+            };
         }
         canFlyFlag += 1;
         mapSecId += 1;
@@ -1794,17 +1850,20 @@ unsafe fn TryCreateRedOutlineFlyDestIcons() {
                 10,
             );
             if spriteId != MAX_SPRITES {
-                gSprites[spriteId].oam.set_size(1);
-                gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon);
-                StartSpriteAnim(&raw mut gSprites[spriteId], FLYDESTICON_RED_OUTLINE);
-                gSprites[spriteId].data[sIconMapSec] = mapSecId as i16;
+                (*gSprites.as_ptr())[spriteId].oam.set_size(1);
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon));
+                StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), FLYDESTICON_RED_OUTLINE);
+                {
+                    let gl_i1 = sIconMapSec;
+                    crate::gl!(gSprites[spriteId].data[gl_i1] = mapSecId as i16)
+                };
             }
         }
         i += 1;
     }
 }
 pub(crate) unsafe fn SpriteCB_FlyDestIcon(sprite: *mut Sprite) {
-    if (*sFlyMap).regionMap.mapSecId as i32 == (*sprite).data[sIconMapSec] as i32 {
+    if (*crate::gl!(sFlyMap)).regionMap.mapSecId as i32 == (*sprite).data[sIconMapSec] as i32 {
         if ({
             (*sprite).data[sFlickerTimer] += 1;
             (*sprite).data[sFlickerTimer]
@@ -1825,10 +1884,10 @@ pub(crate) unsafe fn SpriteCB_FlyDestIcon(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn CB_FadeInFlyMap() {
-    match (*sFlyMap).state {
+    match (*crate::gl!(sFlyMap)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sFlyMap).state += 1;
+            (*crate::gl!(sFlyMap)).state += 1;
         }
         1 if UpdatePaletteFade() == 0 => {
             SetFlyMapCallback(Some(CB_HandleFlyMapInput));
@@ -1837,24 +1896,24 @@ pub(crate) unsafe fn CB_FadeInFlyMap() {
     }
 }
 pub(crate) unsafe fn CB_HandleFlyMapInput() {
-    if (*sFlyMap).state == 0 {
+    if (*crate::gl!(sFlyMap)).state == 0 {
         match DoRegionMapInputCallback() {
             MAP_INPUT_NONE | MAP_INPUT_MOVE_START | MAP_INPUT_MOVE_CONT => {}
             MAP_INPUT_MOVE_END => {
                 DrawFlyDestTextWindow();
             }
             MAP_INPUT_A_BUTTON => {
-                if (*sFlyMap).regionMap.mapSecType == MAPSECTYPE_CITY_CANFLY as u8
-                    || (*sFlyMap).regionMap.mapSecType == MAPSECTYPE_BATTLE_FRONTIER
+                if (*crate::gl!(sFlyMap)).regionMap.mapSecType == MAPSECTYPE_CITY_CANFLY as u8
+                    || (*crate::gl!(sFlyMap)).regionMap.mapSecType == MAPSECTYPE_BATTLE_FRONTIER
                 {
                     m4aSongNumStart(SE_SELECT);
-                    (*sFlyMap).choseFlyLocation = TRUE;
+                    (*crate::gl!(sFlyMap)).choseFlyLocation = TRUE;
                     SetFlyMapCallback(Some(CB_ExitFlyMap));
                 }
             }
             MAP_INPUT_B_BUTTON => {
                 m4aSongNumStart(SE_SELECT);
-                (*sFlyMap).choseFlyLocation = FALSE;
+                (*crate::gl!(sFlyMap)).choseFlyLocation = FALSE;
                 SetFlyMapCallback(Some(CB_ExitFlyMap));
             }
             _ => {}
@@ -1862,15 +1921,15 @@ pub(crate) unsafe fn CB_HandleFlyMapInput() {
     }
 }
 pub(crate) unsafe fn CB_ExitFlyMap() {
-    match (*sFlyMap).state {
+    match (*crate::gl!(sFlyMap)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sFlyMap).state += 1;
+            (*crate::gl!(sFlyMap)).state += 1;
         }
         1 if UpdatePaletteFade() == 0 => {
             FreeRegionMapIconResources();
-            if (*sFlyMap).choseFlyLocation != 0 {
-                match (*sFlyMap).regionMap.mapSecId {
+            if (*crate::gl!(sFlyMap)).choseFlyLocation != 0 {
+                match (*crate::gl!(sFlyMap)).regionMap.mapSecId {
                     MAPSEC_SOUTHERN_ISLAND => {
                         SetWarpDestinationToHealLocation(HEAL_LOCATION_SOUTHERN_ISLAND_EXTERIOR);
                     }
@@ -1881,7 +1940,7 @@ pub(crate) unsafe fn CB_ExitFlyMap() {
                     }
                     MAPSEC_LITTLEROOT_TOWN => {
                         SetWarpDestinationToHealLocation(
-                            (if (*gSaveBlock2Ptr).playerGender == MALE {
+                            (if (*crate::gl!(gSaveBlock2Ptr)).playerGender == MALE {
                                 HEAL_LOCATION_LITTLEROOT_TOWN_BRENDANS_HOUSE
                             } else {
                                 HEAL_LOCATION_LITTLEROOT_TOWN_MAYS_HOUSE
@@ -1891,7 +1950,7 @@ pub(crate) unsafe fn CB_ExitFlyMap() {
                     MAPSEC_EVER_GRANDE_CITY => {
                         SetWarpDestinationToHealLocation(
                             (if FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE) != 0
-                                && (*sFlyMap).regionMap.posWithinMapSec == 0
+                                && (*crate::gl!(sFlyMap)).regionMap.posWithinMapSec == 0
                             {
                                 HEAL_LOCATION_EVER_GRANDE_CITY_POKEMON_LEAGUE
                             } else {
@@ -1900,15 +1959,18 @@ pub(crate) unsafe fn CB_ExitFlyMap() {
                         );
                     }
                     _ => {
-                        if sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2] != HEAL_LOCATION_NONE
+                        if sMapHealLocations[(*crate::gl!(sFlyMap)).regionMap.mapSecId][2]
+                            != HEAL_LOCATION_NONE
                         {
                             SetWarpDestinationToHealLocation(
-                                sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2],
+                                sMapHealLocations[(*crate::gl!(sFlyMap)).regionMap.mapSecId][2],
                             );
                         } else {
                             SetWarpDestinationToMapWarp(
-                                sMapHealLocations[(*sFlyMap).regionMap.mapSecId][0] as i8,
-                                sMapHealLocations[(*sFlyMap).regionMap.mapSecId][1] as i8,
+                                sMapHealLocations[(*crate::gl!(sFlyMap)).regionMap.mapSecId][0]
+                                    as i8,
+                                sMapHealLocations[(*crate::gl!(sFlyMap)).regionMap.mapSecId][1]
+                                    as i8,
                                 WARP_ID_NONE,
                             );
                         }
@@ -1918,9 +1980,9 @@ pub(crate) unsafe fn CB_ExitFlyMap() {
             } else {
                 SetMainCallback2(Some(CB2_ReturnToPartyMenuFromFlyMap));
             }
-            if !sFlyMap.is_null() {
-                Free(sFlyMap as *mut c_void);
-                sFlyMap = null_mut();
+            if !(*sFlyMap.as_ptr()).is_null() {
+                Free(crate::gl!(sFlyMap) as *mut c_void);
+                crate::gl!(sFlyMap = null_mut());
             }
             FreeAllWindowBuffers();
         }

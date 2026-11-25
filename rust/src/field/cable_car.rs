@@ -98,7 +98,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -110,7 +110,7 @@ unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
 }
 /// `LoadSpritePalettes` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+fn LoadSpritePalettes(a0: *mut SpritePalette) {
     unsafe {
         crate::sprite::LoadSpritePalettes(a0 as _);
     }
@@ -237,19 +237,20 @@ static sSpriteTemplates_CableCar: Table<CArray<SpriteTemplate, 2>> =
 static sTrees_Tilemap: Table<CArray<u16, 194>> =
     Table((&raw const crate::data::cable_car::sTrees_Tilemap).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCableCar: *mut CableCar = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCableCar: crate::global::Global<*mut CableCar> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sGroundX_Up: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sGroundY_Up: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sGroundSegmentY_Up: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sGroundX_Down: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sGroundY_Down: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sGroundSegmentY_Down: crate::global::Global<u8> = crate::global::Global::new(0);
 
 /// `AllocZeroed` with this module's view of its types.
@@ -266,7 +267,7 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 }
 
 pub(crate) unsafe fn Task_LoadCableCar(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         SetMainCallback2(Some(CB2_LoadCableCar));
         DestroyTask(taskId);
     }
@@ -279,7 +280,7 @@ pub unsafe fn CableCar() {
 }
 pub(crate) unsafe fn CB2_LoadCableCar() {
     let mut sizeOut: u32 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         1 => {
             ResetSpriteData();
             ResetTasks();
@@ -299,48 +300,48 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
             SetBgTilemapBuffer(
                 0,
-                (*sCableCar).bgTilemapBuffers[0].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sCableCar)).bgTilemapBuffers[0].as_mut_ptr() as *mut c_void,
             );
             SetBgTilemapBuffer(
                 1,
-                (*sCableCar).bgTilemapBuffers[1].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sCableCar)).bgTilemapBuffers[1].as_mut_ptr() as *mut c_void,
             );
             SetBgTilemapBuffer(
                 2,
-                (*sCableCar).bgTilemapBuffers[2].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sCableCar)).bgTilemapBuffers[2].as_mut_ptr() as *mut c_void,
             );
             SetBgTilemapBuffer(
                 3,
-                (*sCableCar).bgTilemapBuffers[3].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sCableCar)).bgTilemapBuffers[3].as_mut_ptr() as *mut c_void,
             );
-            gSpriteCoordOffsetX = {
-                gSpriteCoordOffsetY = 0;
-                gSpriteCoordOffsetY
-            };
-            gMain.state += 1;
+            gSpriteCoordOffsetX.set({
+                gSpriteCoordOffsetY.set(0);
+                gSpriteCoordOffsetY.get()
+            });
+            crate::gl!(gMain.state += 1);
         }
         2 => {
             for i in 0..3u8 {
                 LoadCompressedSpriteSheet((&raw const sSpriteSheets[i]).cast_mut());
             }
             LoadSpritePalettes(sSpritePalettes.as_ptr().cast_mut());
-            (*sCableCar).groundTilemap = malloc_and_decompress(
+            (*crate::gl!(sCableCar)).groundTilemap = malloc_and_decompress(
                 sGround_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u16;
-            (*sCableCar).treesTilemap = malloc_and_decompress(
+            (*crate::gl!(sCableCar)).treesTilemap = malloc_and_decompress(
                 sTrees_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u16;
-            (*sCableCar).bgMountainsTilemap = malloc_and_decompress(
+            (*crate::gl!(sCableCar)).bgMountainsTilemap = malloc_and_decompress(
                 sBgMountains_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u16;
-            (*sCableCar).pylonPoleTilemap = malloc_and_decompress(
+            (*crate::gl!(sCableCar)).pylonPoleTilemap = malloc_and_decompress(
                 sPylonPole_Tilemap.as_ptr().cast_mut() as *mut c_void,
                 &raw mut sizeOut,
             ) as *mut u16;
-            (*sCableCar).pylonTopTilemap = sPylonTop_Tilemap.as_ptr().cast_mut();
+            (*crate::gl!(sCableCar)).pylonTopTilemap = sPylonTop_Tilemap.as_ptr().cast_mut();
             DecompressAndCopyTileDataToVram(
                 0,
                 (*(&raw const crate::data::graphics::gCableCarBg_Gfx).cast::<CArray<u32, 0>>())
@@ -350,7 +351,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
                 0,
                 0,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         3 => {
             if FreeTempTileDataBuffersIfPossible() == 0 {
@@ -361,17 +362,17 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
                     0,
                     128,
                 );
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         4 => {
             CreateCableCarSprites();
             RunTasks();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         5 => {
-            if (*sCableCar).weather == WEATHER_VOLCANIC_ASH {
-                gMain.state += 1;
+            if (*crate::gl!(sCableCar)).weather == WEATHER_VOLCANIC_ASH {
+                crate::gl!(gMain.state += 1);
             } else if !(*(*(&raw const crate::data::field_weather::gWeatherPtr)
                 .cast::<*mut Weather>()))
             .sprites
@@ -396,13 +397,13 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
                             .set_priority(0);
                     }
                 }
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         6 => {
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
-                (*sCableCar).treesTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).treesTilemap as *mut c_void,
                 0,
                 17,
                 32,
@@ -411,7 +412,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 2,
-                (*sCableCar).bgMountainsTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).bgMountainsTilemap as *mut c_void,
                 0,
                 0,
                 30,
@@ -420,7 +421,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 3,
-                (*sCableCar).pylonTopTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).pylonTopTilemap as *mut c_void,
                 0,
                 0,
                 5,
@@ -429,20 +430,20 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 3,
-                (*sCableCar).pylonPoleTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).pylonPoleTilemap as *mut c_void,
                 0,
                 2,
                 2,
                 20,
                 17,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         7 => {
             InitGroundTilemapData(gSpecialVar_0x8004 as u8);
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap.at(72) as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap.at(72) as *mut c_void,
                 0,
                 14,
                 12,
@@ -451,7 +452,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap.at(108) as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap.at(108) as *mut c_void,
                 12,
                 17,
                 12,
@@ -460,7 +461,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap.at(144) as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap.at(144) as *mut c_void,
                 24,
                 20,
                 12,
@@ -469,7 +470,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap as *mut c_void,
                 0,
                 17,
                 12,
@@ -478,7 +479,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap.at(36) as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap.at(36) as *mut c_void,
                 0,
                 20,
                 12,
@@ -487,7 +488,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap as *mut c_void,
                 12,
                 20,
                 12,
@@ -496,7 +497,7 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap.at(36) as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap.at(36) as *mut c_void,
                 12,
                 23,
                 12,
@@ -505,20 +506,20 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap as *mut c_void,
                 24,
                 23,
                 12,
                 3,
                 17,
             );
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         8 => {
             BeginNormalPaletteFade(PALETTES_ALL, 3, 16, 0, 0);
             FadeInNewBGM(MUS_CABLE_CAR, 1);
             SetBgRegs(TRUE);
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         9 => {
             {
@@ -534,9 +535,9 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
             SetMainCallback2(Some(CB2_CableCar));
             CreateTask(Some(Task_CableCar), 0);
             if gSpecialVar_0x8004 == 0 {
-                (*sCableCar).bgTaskId = CreateTask(Some(Task_AnimateBgGoingUp), 1);
+                (*crate::gl!(sCableCar)).bgTaskId = CreateTask(Some(Task_AnimateBgGoingUp), 1);
             } else {
-                (*sCableCar).bgTaskId = CreateTask(Some(Task_AnimateBgGoingDown), 1);
+                (*crate::gl!(sCableCar)).bgTaskId = CreateTask(Some(Task_AnimateBgGoingDown), 1);
             }
         }
         _ => {
@@ -622,8 +623,8 @@ pub(crate) unsafe fn CB2_LoadCableCar() {
                     }
                 }
             }
-            sCableCar = AllocZeroed(16656) as *mut CableCar;
-            gMain.state += 1;
+            crate::gl!(sCableCar = AllocZeroed(16656) as *mut CableCar);
+            crate::gl!(gMain.state += 1);
         }
     }
 }
@@ -640,7 +641,7 @@ pub(crate) unsafe fn CB2_EndCableCar() {
     HideBg(2);
     HideBg(3);
     SetBgRegs(FALSE);
-    gSpriteCoordOffsetX = 0;
+    gSpriteCoordOffsetX.set(0);
     SetCurrentAndNextWeatherNoDelay(WEATHER_NONE);
     for i in 0..NUM_ASH_SPRITES {
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
@@ -656,17 +657,17 @@ pub(crate) unsafe fn CB2_EndCableCar() {
     UnsetBgTilemapBuffer(2);
     UnsetBgTilemapBuffer(3);
     ResetBgsAndClearDma3BusyFlags(0);
-    (*sCableCar).pylonTopTilemap = null_mut();
-    Free((*sCableCar).pylonPoleTilemap as *mut c_void);
-    (*sCableCar).pylonPoleTilemap = null_mut();
-    Free((*sCableCar).bgMountainsTilemap as *mut c_void);
-    (*sCableCar).bgMountainsTilemap = null_mut();
-    Free((*sCableCar).treesTilemap as *mut c_void);
-    (*sCableCar).treesTilemap = null_mut();
-    Free((*sCableCar).groundTilemap as *mut c_void);
-    (*sCableCar).groundTilemap = null_mut();
-    Free(sCableCar as *mut c_void);
-    sCableCar = null_mut();
+    (*crate::gl!(sCableCar)).pylonTopTilemap = null_mut();
+    Free((*crate::gl!(sCableCar)).pylonPoleTilemap as *mut c_void);
+    (*crate::gl!(sCableCar)).pylonPoleTilemap = null_mut();
+    Free((*crate::gl!(sCableCar)).bgMountainsTilemap as *mut c_void);
+    (*crate::gl!(sCableCar)).bgMountainsTilemap = null_mut();
+    Free((*crate::gl!(sCableCar)).treesTilemap as *mut c_void);
+    (*crate::gl!(sCableCar)).treesTilemap = null_mut();
+    Free((*crate::gl!(sCableCar)).groundTilemap as *mut c_void);
+    (*crate::gl!(sCableCar)).groundTilemap = null_mut();
+    Free(crate::gl!(sCableCar) as *mut c_void);
+    crate::gl!(sCableCar = null_mut());
     {
         let mut _dest: *mut c_void = VRAM as usize as *mut c_void;
         let mut _size: u32 = VRAM_SIZE;
@@ -747,21 +748,21 @@ pub(crate) unsafe fn CB2_EndCableCar() {
         }
     }
     WarpIntoMap();
-    gFieldCallback = None;
+    crate::gl!(gFieldCallback = None);
     SetMainCallback2(Some(CB2_LoadMap));
 }
 pub(crate) unsafe fn Task_CableCar(taskId: u8) {
     let mut i: u8 = 0;
-    (*sCableCar).timer += 1;
-    match (*sCableCar).state {
+    (*crate::gl!(sCableCar)).timer += 1;
+    match (*crate::gl!(sCableCar)).state {
         0 => {
-            if (*sCableCar).timer == (*sCableCar).weatherDelay {
-                SetNextWeather((*sCableCar).weather);
-                (*sCableCar).state = 1;
+            if (*crate::gl!(sCableCar)).timer == (*crate::gl!(sCableCar)).weatherDelay {
+                SetNextWeather((*crate::gl!(sCableCar)).weather);
+                (*crate::gl!(sCableCar)).state = 1;
             }
         }
         1 => {
-            match (*sCableCar).weather {
+            match (*crate::gl!(sCableCar)).weather {
                 WEATHER_VOLCANIC_ASH => {
                     if !(*(*(&raw const crate::data::field_weather::gWeatherPtr)
                         .cast::<*mut Weather>()))
@@ -796,7 +797,7 @@ pub(crate) unsafe fn Task_CableCar(taskId: u8) {
                             }
                             i += 1;
                         }
-                        (*sCableCar).state = 2;
+                        (*crate::gl!(sCableCar)).state = 2;
                     }
                 }
                 WEATHER_SUNNY => {
@@ -805,8 +806,10 @@ pub(crate) unsafe fn Task_CableCar(taskId: u8) {
                     .currWeather
                         == WEATHER_SUNNY
                     {
-                        (*sCableCar).state = 2;
-                    } else if (*sCableCar).timer as i32 >= (*sCableCar).weatherDelay as i32 + 8 {
+                        (*crate::gl!(sCableCar)).state = 2;
+                    } else if (*crate::gl!(sCableCar)).timer as i32
+                        >= (*crate::gl!(sCableCar)).weatherDelay as i32 + 8
+                    {
                         while i < NUM_ASH_SPRITES {
                             if !(*(*(&raw const crate::data::field_weather::gWeatherPtr)
                                 .cast::<*mut Weather>()))
@@ -827,37 +830,37 @@ pub(crate) unsafe fn Task_CableCar(taskId: u8) {
             }
         }
         2 => {
-            if (*sCableCar).timer == 570 {
-                (*sCableCar).state = 3;
+            if (*crate::gl!(sCableCar)).timer == 570 {
+                (*crate::gl!(sCableCar)).state = 3;
                 BeginNormalPaletteFade(PALETTES_ALL, 3, 0, 16, 0);
                 FadeOutBGM(4);
             }
         }
         3 => {
-            if gPaletteFade.active() == 0 {
-                (*sCableCar).state = STATE_END;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sCableCar)).state = STATE_END;
             }
         }
         STATE_END => {
             SetVBlankCallback(None);
             DestroyTask(taskId);
-            DestroyTask((*sCableCar).bgTaskId);
+            DestroyTask((*crate::gl!(sCableCar)).bgTaskId);
             SetMainCallback2(Some(CB2_EndCableCar));
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn Task_AnimateBgGoingUp(taskId: u8) {
-    if (*sCableCar).state != STATE_END {
-        (*sCableCar).bg3HorizontalOffset -= 1;
-        if (*sCableCar).timer as i32 % 2 == 0 {
-            (*sCableCar).bg3VerticalOffset -= 1;
+    if (*crate::gl!(sCableCar)).state != STATE_END {
+        (*crate::gl!(sCableCar)).bg3HorizontalOffset -= 1;
+        if (*crate::gl!(sCableCar)).timer as i32 % 2 == 0 {
+            (*crate::gl!(sCableCar)).bg3VerticalOffset -= 1;
         }
-        if (*sCableCar).timer as i32 % 8 == 0 {
-            (*sCableCar).bg1HorizontalOffset -= 1;
-            (*sCableCar).bg1VerticalOffset -= 1;
+        if (*crate::gl!(sCableCar)).timer as i32 % 8 == 0 {
+            (*crate::gl!(sCableCar)).bg1HorizontalOffset -= 1;
+            (*crate::gl!(sCableCar)).bg1VerticalOffset -= 1;
         }
-        match (*sCableCar).bg3HorizontalOffset {
+        match (*crate::gl!(sCableCar)).bg3HorizontalOffset {
             175 => {
                 FillBgTilemapBufferRect(3, 0, 0, 22, 2, 10, 17);
             }
@@ -870,7 +873,7 @@ pub(crate) unsafe fn Task_AnimateBgGoingUp(taskId: u8) {
             16 => {
                 CopyToBgTilemapBufferRect_ChangePalette(
                     3,
-                    (*sCableCar).pylonTopTilemap as *mut c_void,
+                    (*crate::gl!(sCableCar)).pylonTopTilemap as *mut c_void,
                     0,
                     0,
                     5,
@@ -879,36 +882,36 @@ pub(crate) unsafe fn Task_AnimateBgGoingUp(taskId: u8) {
                 );
                 CopyToBgTilemapBufferRect_ChangePalette(
                     3,
-                    (*sCableCar).pylonPoleTilemap as *mut c_void,
+                    (*crate::gl!(sCableCar)).pylonPoleTilemap as *mut c_void,
                     0,
                     2,
                     2,
                     30,
                     17,
                 );
-                (*sCableCar).bg3VerticalOffset = 64;
+                (*crate::gl!(sCableCar)).bg3VerticalOffset = 64;
             }
             _ => {}
         }
     }
     AnimateGroundGoingUp();
-    gSpriteCoordOffsetX = ((gSpriteCoordOffsetX as i32 + 1) % 128) as i16;
+    gSpriteCoordOffsetX.set(((gSpriteCoordOffsetX.get() as i32 + 1) % 128) as i16);
 }
 pub(crate) unsafe fn Task_AnimateBgGoingDown(taskId: u8) {
-    if (*sCableCar).state != STATE_END {
-        (*sCableCar).bg3HorizontalOffset += 1;
-        if (*sCableCar).timer as i32 % 2 == 0 {
-            (*sCableCar).bg3VerticalOffset += 1;
+    if (*crate::gl!(sCableCar)).state != STATE_END {
+        (*crate::gl!(sCableCar)).bg3HorizontalOffset += 1;
+        if (*crate::gl!(sCableCar)).timer as i32 % 2 == 0 {
+            (*crate::gl!(sCableCar)).bg3VerticalOffset += 1;
         }
-        if (*sCableCar).timer as i32 % 8 == 0 {
-            (*sCableCar).bg1HorizontalOffset += 1;
-            (*sCableCar).bg1VerticalOffset += 1;
+        if (*crate::gl!(sCableCar)).timer as i32 % 8 == 0 {
+            (*crate::gl!(sCableCar)).bg1HorizontalOffset += 1;
+            (*crate::gl!(sCableCar)).bg1VerticalOffset += 1;
         }
-        match (*sCableCar).bg3HorizontalOffset {
+        match (*crate::gl!(sCableCar)).bg3HorizontalOffset {
             176 => {
                 CopyToBgTilemapBufferRect_ChangePalette(
                     3,
-                    (*sCableCar).pylonPoleTilemap as *mut c_void,
+                    (*crate::gl!(sCableCar)).pylonPoleTilemap as *mut c_void,
                     0,
                     2,
                     2,
@@ -919,24 +922,72 @@ pub(crate) unsafe fn Task_AnimateBgGoingDown(taskId: u8) {
             16 => {
                 FillBgTilemapBufferRect(3, 0, 2, 0, 3, 2, 17);
                 FillBgTilemapBufferRect(3, 0, 0, 22, 2, 10, 17);
-                (*sCableCar).bg3VerticalOffset = 192;
+                (*crate::gl!(sCableCar)).bg3VerticalOffset = 192;
             }
             32 => {
-                FillBgTilemapBufferRect(3, *(*sCableCar).pylonTopTilemap.at(2), 2, 0, 1, 1, 17);
-                FillBgTilemapBufferRect(3, *(*sCableCar).pylonTopTilemap.at(3), 3, 0, 1, 1, 17);
-                FillBgTilemapBufferRect(3, *(*sCableCar).pylonTopTilemap.at(7), 2, 1, 1, 1, 17);
-                FillBgTilemapBufferRect(3, *(*sCableCar).pylonTopTilemap.at(8), 3, 1, 1, 1, 17);
+                FillBgTilemapBufferRect(
+                    3,
+                    *(*crate::gl!(sCableCar)).pylonTopTilemap.at(2),
+                    2,
+                    0,
+                    1,
+                    1,
+                    17,
+                );
+                FillBgTilemapBufferRect(
+                    3,
+                    *(*crate::gl!(sCableCar)).pylonTopTilemap.at(3),
+                    3,
+                    0,
+                    1,
+                    1,
+                    17,
+                );
+                FillBgTilemapBufferRect(
+                    3,
+                    *(*crate::gl!(sCableCar)).pylonTopTilemap.at(7),
+                    2,
+                    1,
+                    1,
+                    1,
+                    17,
+                );
+                FillBgTilemapBufferRect(
+                    3,
+                    *(*crate::gl!(sCableCar)).pylonTopTilemap.at(8),
+                    3,
+                    1,
+                    1,
+                    1,
+                    17,
+                );
             }
             40 => {
-                FillBgTilemapBufferRect(3, *(*sCableCar).pylonTopTilemap.at(4), 4, 0, 1, 1, 17);
-                FillBgTilemapBufferRect(3, *(*sCableCar).pylonTopTilemap.at(9), 4, 1, 1, 1, 17);
+                FillBgTilemapBufferRect(
+                    3,
+                    *(*crate::gl!(sCableCar)).pylonTopTilemap.at(4),
+                    4,
+                    0,
+                    1,
+                    1,
+                    17,
+                );
+                FillBgTilemapBufferRect(
+                    3,
+                    *(*crate::gl!(sCableCar)).pylonTopTilemap.at(9),
+                    4,
+                    1,
+                    1,
+                    1,
+                    17,
+                );
             }
             _ => {}
         }
     }
     AnimateGroundGoingDown();
-    if (*sCableCar).timer < (*sCableCar).weatherDelay {
-        gSpriteCoordOffsetX = ((gSpriteCoordOffsetX as i32 + 247) % 248) as i16;
+    if (*crate::gl!(sCableCar)).timer < (*crate::gl!(sCableCar)).weatherDelay {
+        gSpriteCoordOffsetX.set(((gSpriteCoordOffsetX.get() as i32 + 247) % 248) as i16);
     } else {
         (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
             .ashBaseSpritesX = (((*(*(&raw const crate::data::field_weather::gWeatherPtr)
@@ -949,24 +1000,42 @@ pub(crate) unsafe fn Task_AnimateBgGoingDown(taskId: u8) {
 pub(crate) unsafe fn VBlankCB_CableCar() {
     CopyBgTilemapBufferToVram(0);
     CopyBgTilemapBufferToVram(3);
-    SetGpuReg(REG_OFFSET_BG3HOFS, (*sCableCar).bg3HorizontalOffset as u16);
-    SetGpuReg(REG_OFFSET_BG3VOFS, (*sCableCar).bg3VerticalOffset as u16);
-    SetGpuReg(REG_OFFSET_BG1HOFS, (*sCableCar).bg1HorizontalOffset as u16);
-    SetGpuReg(REG_OFFSET_BG1VOFS, (*sCableCar).bg1VerticalOffset as u16);
-    SetGpuReg(REG_OFFSET_BG0HOFS, (*sCableCar).bg0HorizontalOffset as u16);
-    SetGpuReg(REG_OFFSET_BG0VOFS, (*sCableCar).bg0VerticalOffset as u16);
+    SetGpuReg(
+        REG_OFFSET_BG3HOFS,
+        (*crate::gl!(sCableCar)).bg3HorizontalOffset as u16,
+    );
+    SetGpuReg(
+        REG_OFFSET_BG3VOFS,
+        (*crate::gl!(sCableCar)).bg3VerticalOffset as u16,
+    );
+    SetGpuReg(
+        REG_OFFSET_BG1HOFS,
+        (*crate::gl!(sCableCar)).bg1HorizontalOffset as u16,
+    );
+    SetGpuReg(
+        REG_OFFSET_BG1VOFS,
+        (*crate::gl!(sCableCar)).bg1VerticalOffset as u16,
+    );
+    SetGpuReg(
+        REG_OFFSET_BG0HOFS,
+        (*crate::gl!(sCableCar)).bg0HorizontalOffset as u16,
+    );
+    SetGpuReg(
+        REG_OFFSET_BG0VOFS,
+        (*crate::gl!(sCableCar)).bg0VerticalOffset as u16,
+    );
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
 pub(crate) fn SpriteCB_Cable(sprite: *mut Sprite) {}
 pub(crate) unsafe fn SpriteCB_CableCar(sprite: *mut Sprite) {
-    if (*sCableCar).state != STATE_END {
+    if (*crate::gl!(sCableCar)).state != STATE_END {
         if gSpecialVar_0x8004 == 0 {
             (*sprite).x = (*sprite).data[sXPos]
                 - (0_f32
                     * ({
-                        let v1: i16 = (*sCableCar).timer as i16;
+                        let v1: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v1 as f32;
                         if v1 < 0 {
                             f += 65536.0;
@@ -976,7 +1045,7 @@ pub(crate) unsafe fn SpriteCB_CableCar(sprite: *mut Sprite) {
             (*sprite).y = (*sprite).data[sYPos]
                 - (0_f32
                     * ({
-                        let v2: i16 = (*sCableCar).timer as i16;
+                        let v2: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v2 as f32;
                         if v2 < 0 {
                             f += 65536.0;
@@ -987,7 +1056,7 @@ pub(crate) unsafe fn SpriteCB_CableCar(sprite: *mut Sprite) {
             (*sprite).x = (*sprite).data[sXPos]
                 + (0_f32
                     * ({
-                        let v3: i16 = (*sCableCar).timer as i16;
+                        let v3: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v3 as f32;
                         if v3 < 0 {
                             f += 65536.0;
@@ -997,7 +1066,7 @@ pub(crate) unsafe fn SpriteCB_CableCar(sprite: *mut Sprite) {
             (*sprite).y = (*sprite).data[sYPos]
                 + (0_f32
                     * ({
-                        let v4: i16 = (*sCableCar).timer as i16;
+                        let v4: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v4 as f32;
                         if v4 < 0 {
                             f += 65536.0;
@@ -1008,12 +1077,12 @@ pub(crate) unsafe fn SpriteCB_CableCar(sprite: *mut Sprite) {
     }
 }
 pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {
-    if (*sCableCar).state != STATE_END {
+    if (*crate::gl!(sCableCar)).state != STATE_END {
         if gSpecialVar_0x8004 == 0 {
             (*sprite).x = (*sprite).data[sXPos]
                 - (0_f32
                     * ({
-                        let v1: i16 = (*sCableCar).timer as i16;
+                        let v1: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v1 as f32;
                         if v1 < 0 {
                             f += 65536.0;
@@ -1023,7 +1092,7 @@ pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {
             (*sprite).y = (*sprite).data[sYPos]
                 - (0_f32
                     * ({
-                        let v2: i16 = (*sCableCar).timer as i16;
+                        let v2: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v2 as f32;
                         if v2 < 0 {
                             f += 65536.0;
@@ -1034,7 +1103,7 @@ pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {
             (*sprite).x = (*sprite).data[sXPos]
                 + (0_f32
                     * ({
-                        let v3: i16 = (*sCableCar).timer as i16;
+                        let v3: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v3 as f32;
                         if v3 < 0 {
                             f += 65536.0;
@@ -1044,7 +1113,7 @@ pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {
             (*sprite).y = (*sprite).data[sYPos]
                 + (0_f32
                     * ({
-                        let v4: i16 = (*sCableCar).timer as i16;
+                        let v4: i16 = (*crate::gl!(sCableCar)).timer as i16;
                         let mut f = v4 as f32;
                         if v4 < 0 {
                             f += 65536.0;
@@ -1149,28 +1218,46 @@ unsafe fn SetBgRegs(active: u8) {
             SetGpuReg(REG_OFFSET_WIN0V, 0);
             SetGpuReg(REG_OFFSET_WIN1V, 0);
             if gSpecialVar_0x8004 == 0 {
-                (*sCableCar).bg3HorizontalOffset = 176;
-                (*sCableCar).bg3VerticalOffset = 16;
-                (*sCableCar).bg1HorizontalOffset = 0;
-                (*sCableCar).bg1VerticalOffset = 80;
-                (*sCableCar).bg0VerticalOffset = 0;
-                (*sCableCar).bg0VerticalOffset = 0;
+                (*crate::gl!(sCableCar)).bg3HorizontalOffset = 176;
+                (*crate::gl!(sCableCar)).bg3VerticalOffset = 16;
+                (*crate::gl!(sCableCar)).bg1HorizontalOffset = 0;
+                (*crate::gl!(sCableCar)).bg1VerticalOffset = 80;
+                (*crate::gl!(sCableCar)).bg0VerticalOffset = 0;
+                (*crate::gl!(sCableCar)).bg0VerticalOffset = 0;
             } else {
-                (*sCableCar).bg3HorizontalOffset = 96;
-                (*sCableCar).bg3VerticalOffset = 232;
-                (*sCableCar).bg1HorizontalOffset = 0;
-                (*sCableCar).bg1VerticalOffset = 4;
-                (*sCableCar).bg0VerticalOffset = 0;
-                (*sCableCar).bg0VerticalOffset = 0;
+                (*crate::gl!(sCableCar)).bg3HorizontalOffset = 96;
+                (*crate::gl!(sCableCar)).bg3VerticalOffset = 232;
+                (*crate::gl!(sCableCar)).bg1HorizontalOffset = 0;
+                (*crate::gl!(sCableCar)).bg1VerticalOffset = 4;
+                (*crate::gl!(sCableCar)).bg0VerticalOffset = 0;
+                (*crate::gl!(sCableCar)).bg0VerticalOffset = 0;
             }
-            SetGpuReg(REG_OFFSET_BG3HOFS, (*sCableCar).bg3HorizontalOffset as u16);
-            SetGpuReg(REG_OFFSET_BG3VOFS, (*sCableCar).bg3VerticalOffset as u16);
+            SetGpuReg(
+                REG_OFFSET_BG3HOFS,
+                (*crate::gl!(sCableCar)).bg3HorizontalOffset as u16,
+            );
+            SetGpuReg(
+                REG_OFFSET_BG3VOFS,
+                (*crate::gl!(sCableCar)).bg3VerticalOffset as u16,
+            );
             SetGpuReg(REG_OFFSET_BG2HOFS, 0);
             SetGpuReg(REG_OFFSET_BG2VOFS, 0);
-            SetGpuReg(REG_OFFSET_BG1HOFS, (*sCableCar).bg1HorizontalOffset as u16);
-            SetGpuReg(REG_OFFSET_BG1VOFS, (*sCableCar).bg1VerticalOffset as u16);
-            SetGpuReg(REG_OFFSET_BG0HOFS, (*sCableCar).bg0HorizontalOffset as u16);
-            SetGpuReg(REG_OFFSET_BG0VOFS, (*sCableCar).bg0VerticalOffset as u16);
+            SetGpuReg(
+                REG_OFFSET_BG1HOFS,
+                (*crate::gl!(sCableCar)).bg1HorizontalOffset as u16,
+            );
+            SetGpuReg(
+                REG_OFFSET_BG1VOFS,
+                (*crate::gl!(sCableCar)).bg1VerticalOffset as u16,
+            );
+            SetGpuReg(
+                REG_OFFSET_BG0HOFS,
+                (*crate::gl!(sCableCar)).bg0HorizontalOffset as u16,
+            );
+            SetGpuReg(
+                REG_OFFSET_BG0VOFS,
+                (*crate::gl!(sCableCar)).bg0VerticalOffset as u16,
+            );
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
@@ -1227,7 +1314,7 @@ unsafe fn CreateCableCarSprites() {
         1 => {
             CopyToBgTilemapBufferRect_ChangePalette(
                 0,
-                (*sCableCar).groundTilemap.at(36) as *mut c_void,
+                (*crate::gl!(sCableCar)).groundTilemap.at(36) as *mut c_void,
                 24,
                 26,
                 12,
@@ -1235,18 +1322,21 @@ unsafe fn CreateCableCarSprites() {
                 17,
             );
             spriteId = CreateObjectGraphicsSprite(
-                playerGraphicsIds[(*gSaveBlock2Ptr).playerGender] as u16,
+                playerGraphicsIds[(*crate::gl!(gSaveBlock2Ptr)).playerGender] as u16,
                 Some(SpriteCB_Player),
                 128,
                 39,
                 102,
             );
             if spriteId != MAX_SPRITES {
-                gSprites[spriteId].oam.set_priority(2);
-                gSprites[spriteId].x2 = 8;
-                gSprites[spriteId].y2 = 16;
-                gSprites[spriteId].data[sXPos] = 128;
-                gSprites[spriteId].data[1] = 39;
+                (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
+                crate::gl!(gSprites[spriteId].x2 = 8);
+                crate::gl!(gSprites[spriteId].y2 = 16);
+                {
+                    let gl_i0 = sXPos;
+                    crate::gl!(gSprites[spriteId].data[gl_i0] = 128)
+                };
+                crate::gl!(gSprites[spriteId].data[1] = 39);
             }
             spriteId = CreateSprite(
                 (&raw const sSpriteTemplates_CableCar[0]).cast_mut(),
@@ -1254,40 +1344,51 @@ unsafe fn CreateCableCarSprites() {
                 9,
                 0x67,
             );
-            gSprites[spriteId].x2 = {
-                gSprites[spriteId].y2 = 32;
-                gSprites[spriteId].y2
+            crate::gl!(
+                gSprites[spriteId].x2 = {
+                    crate::gl!(gSprites[spriteId].y2 = 32);
+                    crate::gl!(gSprites[spriteId].y2)
+                }
+            );
+            {
+                let gl_i1 = sXPos;
+                crate::gl!(gSprites[spriteId].data[gl_i1] = 104)
             };
-            gSprites[spriteId].data[sXPos] = 104;
-            gSprites[spriteId].data[1] = 9;
+            crate::gl!(gSprites[spriteId].data[1] = 9);
             spriteId = CreateSprite(
                 (&raw const sSpriteTemplates_CableCar[1]).cast_mut(),
                 128,
                 65,
                 0x65,
             );
-            gSprites[spriteId].x2 = 8;
-            gSprites[spriteId].y2 = 4;
-            gSprites[spriteId].data[sXPos] = 128;
-            gSprites[spriteId].data[1] = 65;
-            (*sCableCar).weather = WEATHER_SUNNY;
-            (*sCableCar).weatherDelay = 265;
+            crate::gl!(gSprites[spriteId].x2 = 8);
+            crate::gl!(gSprites[spriteId].y2 = 4);
+            {
+                let gl_i2 = sXPos;
+                crate::gl!(gSprites[spriteId].data[gl_i2] = 128)
+            };
+            crate::gl!(gSprites[spriteId].data[1] = 65);
+            (*crate::gl!(sCableCar)).weather = WEATHER_SUNNY;
+            (*crate::gl!(sCableCar)).weatherDelay = 265;
             SetCurrentAndNextWeatherNoDelay(WEATHER_VOLCANIC_ASH);
         }
         _ => {
             spriteId = CreateObjectGraphicsSprite(
-                playerGraphicsIds[(*gSaveBlock2Ptr).playerGender] as u16,
+                playerGraphicsIds[(*crate::gl!(gSaveBlock2Ptr)).playerGender] as u16,
                 Some(SpriteCB_Player),
                 200,
                 73,
                 102,
             );
             if spriteId != MAX_SPRITES {
-                gSprites[spriteId].oam.set_priority(2);
-                gSprites[spriteId].x2 = 8;
-                gSprites[spriteId].y2 = 16;
-                gSprites[spriteId].data[sXPos] = 200;
-                gSprites[spriteId].data[1] = 73;
+                (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
+                crate::gl!(gSprites[spriteId].x2 = 8);
+                crate::gl!(gSprites[spriteId].y2 = 16);
+                {
+                    let gl_i3 = sXPos;
+                    crate::gl!(gSprites[spriteId].data[gl_i3] = 200)
+                };
+                crate::gl!(gSprites[spriteId].data[1] = 73);
             }
             spriteId = CreateSprite(
                 (&raw const sSpriteTemplates_CableCar[0]).cast_mut(),
@@ -1295,24 +1396,32 @@ unsafe fn CreateCableCarSprites() {
                 43,
                 0x67,
             );
-            gSprites[spriteId].x2 = {
-                gSprites[spriteId].y2 = 32;
-                gSprites[spriteId].y2
+            crate::gl!(
+                gSprites[spriteId].x2 = {
+                    crate::gl!(gSprites[spriteId].y2 = 32);
+                    crate::gl!(gSprites[spriteId].y2)
+                }
+            );
+            {
+                let gl_i4 = sXPos;
+                crate::gl!(gSprites[spriteId].data[gl_i4] = 176)
             };
-            gSprites[spriteId].data[sXPos] = 176;
-            gSprites[spriteId].data[1] = 43;
+            crate::gl!(gSprites[spriteId].data[1] = 43);
             spriteId = CreateSprite(
                 (&raw const sSpriteTemplates_CableCar[1]).cast_mut(),
                 200,
                 99,
                 0x65,
             );
-            gSprites[spriteId].x2 = 8;
-            gSprites[spriteId].y2 = 4;
-            gSprites[spriteId].data[sXPos] = 200;
-            gSprites[spriteId].data[1] = 99;
-            (*sCableCar).weather = WEATHER_VOLCANIC_ASH;
-            (*sCableCar).weatherDelay = 350;
+            crate::gl!(gSprites[spriteId].x2 = 8);
+            crate::gl!(gSprites[spriteId].y2 = 4);
+            {
+                let gl_i5 = sXPos;
+                crate::gl!(gSprites[spriteId].data[gl_i5] = 200)
+            };
+            crate::gl!(gSprites[spriteId].data[1] = 99);
+            (*crate::gl!(sCableCar)).weather = WEATHER_VOLCANIC_ASH;
+            (*crate::gl!(sCableCar)).weatherDelay = 350;
             SetCurrentAndNextWeatherNoDelay(WEATHER_SUNNY);
         }
     }
@@ -1323,8 +1432,8 @@ unsafe fn CreateCableCarSprites() {
             8 * i as i16 - 8,
             0x68,
         );
-        gSprites[spriteId].x2 = 8;
-        gSprites[spriteId].y2 = 8;
+        crate::gl!(gSprites[spriteId].x2 = 8);
+        crate::gl!(gSprites[spriteId].y2 = 8);
     }
     if rval as i32 % 64 == 0 {
         spriteId = CreateObjectGraphicsSprite(
@@ -1341,90 +1450,109 @@ unsafe fn CreateCableCarSprites() {
             106,
         );
         if spriteId != MAX_SPRITES {
-            gSprites[spriteId].oam.set_priority(2);
-            gSprites[spriteId].x2 = -(gSprites[spriteId].centerToCornerVecX as i16);
-            gSprites[spriteId].y2 = -(gSprites[spriteId].centerToCornerVecY as i16);
+            (*gSprites.as_ptr())[spriteId].oam.set_priority(2);
+            crate::gl!(
+                gSprites[spriteId].x2 = -(crate::gl!(gSprites[spriteId].centerToCornerVecX) as i16)
+            );
+            crate::gl!(
+                gSprites[spriteId].y2 = -(crate::gl!(gSprites[spriteId].centerToCornerVecY) as i16)
+            );
             if gSpecialVar_0x8004 == 0 {
                 if rval as i32 % 2 != 0 {
-                    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_WEST);
-                    gSprites[spriteId].data[1] = TRUE as i16;
-                    gSprites[spriteId].y += 2;
+                    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), ANIM_STD_GO_WEST);
+                    crate::gl!(gSprites[spriteId].data[1] = TRUE as i16);
+                    crate::gl!(gSprites[spriteId].y += 2);
                 } else {
-                    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_EAST);
-                    gSprites[spriteId].data[1] = FALSE as i16;
+                    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), ANIM_STD_GO_EAST);
+                    crate::gl!(gSprites[spriteId].data[1] = FALSE as i16);
                 }
             } else {
                 if rval as i32 % 2 != 0 {
-                    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_EAST);
-                    gSprites[spriteId].data[1] = TRUE as i16;
-                    gSprites[spriteId].y += 2;
+                    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), ANIM_STD_GO_EAST);
+                    crate::gl!(gSprites[spriteId].data[1] = TRUE as i16);
+                    crate::gl!(gSprites[spriteId].y += 2);
                 } else {
-                    StartSpriteAnim(&raw mut gSprites[spriteId], ANIM_STD_GO_WEST);
-                    gSprites[spriteId].data[1] = FALSE as i16;
+                    StartSpriteAnim(crate::gl!(&raw gSprites[spriteId]), ANIM_STD_GO_WEST);
+                    crate::gl!(gSprites[spriteId].data[1] = FALSE as i16);
                 }
             }
-            gSprites[spriteId].data[sDelay] = hikerMovementDelayTable[rval % 4] as i16;
+            {
+                let gl_i6 = sDelay;
+                crate::gl!(
+                    gSprites[spriteId].data[gl_i6] = hikerMovementDelayTable[rval % 4] as i16
+                )
+            };
         }
     }
 }
 unsafe fn BufferNextGroundSegment() {
     let mut k: u8 = 0;
-    let mut offset: u8 = 0x24 * ((*sCableCar).groundTilemapOffset + 2);
+    let mut offset: u8 = 0x24 * ((*crate::gl!(sCableCar)).groundTilemapOffset + 2);
     for i in 0..3u8 {
         for j in 0..12u8 {
-            (*sCableCar).groundTileBuffer[i][j] = *(*sCableCar).groundTilemap.at({
-                let t1 = offset;
-                offset += 1;
-                t1
-            });
-            (*sCableCar).groundTileBuffer[i as i32 + 3][j] = *(*sCableCar).groundTilemap.at(k);
-            (*sCableCar).groundTileBuffer[i as i32 + 6][j] =
-                *(*sCableCar).groundTilemap.at(36).at(k);
+            (*crate::gl!(sCableCar)).groundTileBuffer[i][j] =
+                *(*crate::gl!(sCableCar)).groundTilemap.at({
+                    let t1 = offset;
+                    offset += 1;
+                    t1
+                });
+            (*crate::gl!(sCableCar)).groundTileBuffer[i as i32 + 3][j] =
+                *(*crate::gl!(sCableCar)).groundTilemap.at(k);
+            (*crate::gl!(sCableCar)).groundTileBuffer[i as i32 + 6][j] =
+                *(*crate::gl!(sCableCar)).groundTilemap.at(36).at(k);
             k += 1;
         }
     }
-    (*sCableCar).groundTilemapOffset = (((*sCableCar).groundTilemapOffset as i32 + 1) % 3) as u8;
+    (*crate::gl!(sCableCar)).groundTilemapOffset =
+        (((*crate::gl!(sCableCar)).groundTilemapOffset as i32 + 1) % 3) as u8;
 }
 unsafe fn AnimateGroundGoingUp() {
-    (*sCableCar).groundTimer = (((*sCableCar).groundTimer as i32 + 1) % 96) as u8;
-    (*sCableCar).bg0HorizontalOffset = (*sCableCar).groundXBase - (*sCableCar).groundXOffset;
-    (*sCableCar).bg0VerticalOffset = (*sCableCar).groundYBase - (*sCableCar).groundYOffset;
-    (*sCableCar).groundXOffset += 1;
-    if (*sCableCar).groundXOffset as i32 % 4 == 0 {
-        (*sCableCar).groundYOffset += 1;
+    (*crate::gl!(sCableCar)).groundTimer =
+        (((*crate::gl!(sCableCar)).groundTimer as i32 + 1) % 96) as u8;
+    (*crate::gl!(sCableCar)).bg0HorizontalOffset =
+        (*crate::gl!(sCableCar)).groundXBase - (*crate::gl!(sCableCar)).groundXOffset;
+    (*crate::gl!(sCableCar)).bg0VerticalOffset =
+        (*crate::gl!(sCableCar)).groundYBase - (*crate::gl!(sCableCar)).groundYOffset;
+    (*crate::gl!(sCableCar)).groundXOffset += 1;
+    if (*crate::gl!(sCableCar)).groundXOffset as i32 % 4 == 0 {
+        (*crate::gl!(sCableCar)).groundYOffset += 1;
     }
-    if (*sCableCar).groundXOffset > 16 {
+    if (*crate::gl!(sCableCar)).groundXOffset > 16 {
         DrawNextGroundSegmentGoingUp();
     }
 }
 unsafe fn AnimateGroundGoingDown() {
-    (*sCableCar).groundTimer = (((*sCableCar).groundTimer as i32 + 1) % 96) as u8;
-    (*sCableCar).bg0HorizontalOffset = (*sCableCar).groundXBase + (*sCableCar).groundXOffset;
-    (*sCableCar).bg0VerticalOffset = (*sCableCar).groundYBase + (*sCableCar).groundYOffset;
-    (*sCableCar).groundXOffset += 1;
-    if (*sCableCar).groundXOffset as i32 % 4 == 0 {
-        (*sCableCar).groundYOffset += 1;
+    (*crate::gl!(sCableCar)).groundTimer =
+        (((*crate::gl!(sCableCar)).groundTimer as i32 + 1) % 96) as u8;
+    (*crate::gl!(sCableCar)).bg0HorizontalOffset =
+        (*crate::gl!(sCableCar)).groundXBase + (*crate::gl!(sCableCar)).groundXOffset;
+    (*crate::gl!(sCableCar)).bg0VerticalOffset =
+        (*crate::gl!(sCableCar)).groundYBase + (*crate::gl!(sCableCar)).groundYOffset;
+    (*crate::gl!(sCableCar)).groundXOffset += 1;
+    if (*crate::gl!(sCableCar)).groundXOffset as i32 % 4 == 0 {
+        (*crate::gl!(sCableCar)).groundYOffset += 1;
     }
-    if (*sCableCar).groundXOffset > 16 {
+    if (*crate::gl!(sCableCar)).groundXOffset > 16 {
         DrawNextGroundSegmentGoingDown();
     }
 }
 unsafe fn DrawNextGroundSegmentGoingUp() {
-    (*sCableCar).groundXOffset = {
-        (*sCableCar).groundYOffset = 0;
-        (*sCableCar).groundYOffset
+    (*crate::gl!(sCableCar)).groundXOffset = {
+        (*crate::gl!(sCableCar)).groundYOffset = 0;
+        (*crate::gl!(sCableCar)).groundYOffset
     };
-    (*sCableCar).groundXBase = (*sCableCar).bg0HorizontalOffset;
-    (*sCableCar).groundYBase = (*sCableCar).bg0VerticalOffset;
-    (*sCableCar).groundSegmentXStart = (((*sCableCar).groundSegmentXStart as i32 + 30) % 32) as u8;
-    (*sCableCar).groundTileIdx -= 2;
-    sGroundSegmentY_Up.set((((*sCableCar).groundSegmentYStart as i32 + 23) % 32) as u8);
+    (*crate::gl!(sCableCar)).groundXBase = (*crate::gl!(sCableCar)).bg0HorizontalOffset;
+    (*crate::gl!(sCableCar)).groundYBase = (*crate::gl!(sCableCar)).bg0VerticalOffset;
+    (*crate::gl!(sCableCar)).groundSegmentXStart =
+        (((*crate::gl!(sCableCar)).groundSegmentXStart as i32 + 30) % 32) as u8;
+    (*crate::gl!(sCableCar)).groundTileIdx -= 2;
+    sGroundSegmentY_Up.set((((*crate::gl!(sCableCar)).groundSegmentYStart as i32 + 23) % 32) as u8);
     for i in 0..9u8 {
-        sGroundX_Up.set((*sCableCar).groundSegmentXStart);
+        sGroundX_Up.set((*crate::gl!(sCableCar)).groundSegmentXStart);
         sGroundY_Up.set(((sGroundSegmentY_Up.get() as i32 + i as i32) % 32) as u8);
         FillBgTilemapBufferRect(
             0,
-            (*sCableCar).groundTileBuffer[i][(*sCableCar).groundTileIdx],
+            (*crate::gl!(sCableCar)).groundTileBuffer[i][(*crate::gl!(sCableCar)).groundTileIdx],
             sGroundX_Up.get(),
             sGroundY_Up.get(),
             1,
@@ -1434,7 +1562,8 @@ unsafe fn DrawNextGroundSegmentGoingUp() {
         sGroundX_Up.set(((sGroundX_Up.get() as i32 + 1) % 32) as u8);
         FillBgTilemapBufferRect(
             0,
-            (*sCableCar).groundTileBuffer[i][(*sCableCar).groundTileIdx as i32 + 1],
+            (*crate::gl!(sCableCar)).groundTileBuffer[i]
+                [(*crate::gl!(sCableCar)).groundTileIdx as i32 + 1],
             sGroundX_Up.get(),
             sGroundY_Up.get(),
             1,
@@ -1442,33 +1571,34 @@ unsafe fn DrawNextGroundSegmentGoingUp() {
             17,
         );
     }
-    sGroundX_Up.set((((*sCableCar).groundSegmentXStart as i32 + 30) % 32) as u8);
+    sGroundX_Up.set((((*crate::gl!(sCableCar)).groundSegmentXStart as i32 + 30) % 32) as u8);
     FillBgTilemapBufferRect(0, 0, sGroundX_Up.get(), 0, 2, 32, 17);
-    if (*sCableCar).groundTileIdx == 0 {
-        (*sCableCar).groundSegmentYStart =
-            (((*sCableCar).groundSegmentYStart as i32 + 29) % 32) as u8;
-        (*sCableCar).groundTileIdx = 12;
+    if (*crate::gl!(sCableCar)).groundTileIdx == 0 {
+        (*crate::gl!(sCableCar)).groundSegmentYStart =
+            (((*crate::gl!(sCableCar)).groundSegmentYStart as i32 + 29) % 32) as u8;
+        (*crate::gl!(sCableCar)).groundTileIdx = 12;
         BufferNextGroundSegment();
-        sGroundX_Up.set((((*sCableCar).groundSegmentYStart as i32 + 1) % 32) as u8);
+        sGroundX_Up.set((((*crate::gl!(sCableCar)).groundSegmentYStart as i32 + 1) % 32) as u8);
         FillBgTilemapBufferRect(0, 0, 0, sGroundX_Up.get(), 32, 9, 17);
     }
 }
 unsafe fn DrawNextGroundSegmentGoingDown() {
-    (*sCableCar).groundXOffset = {
-        (*sCableCar).groundYOffset = 0;
-        (*sCableCar).groundYOffset
+    (*crate::gl!(sCableCar)).groundXOffset = {
+        (*crate::gl!(sCableCar)).groundYOffset = 0;
+        (*crate::gl!(sCableCar)).groundYOffset
     };
-    (*sCableCar).groundXBase = (*sCableCar).bg0HorizontalOffset;
-    (*sCableCar).groundYBase = (*sCableCar).bg0VerticalOffset;
-    (*sCableCar).groundSegmentXStart = (((*sCableCar).groundSegmentXStart as i32 + 2) % 32) as u8;
-    (*sCableCar).groundTileIdx += 2;
-    sGroundSegmentY_Down.set((*sCableCar).groundSegmentYStart);
+    (*crate::gl!(sCableCar)).groundXBase = (*crate::gl!(sCableCar)).bg0HorizontalOffset;
+    (*crate::gl!(sCableCar)).groundYBase = (*crate::gl!(sCableCar)).bg0VerticalOffset;
+    (*crate::gl!(sCableCar)).groundSegmentXStart =
+        (((*crate::gl!(sCableCar)).groundSegmentXStart as i32 + 2) % 32) as u8;
+    (*crate::gl!(sCableCar)).groundTileIdx += 2;
+    sGroundSegmentY_Down.set((*crate::gl!(sCableCar)).groundSegmentYStart);
     for i in 0..9u8 {
-        sGroundX_Down.set((*sCableCar).groundSegmentXStart);
+        sGroundX_Down.set((*crate::gl!(sCableCar)).groundSegmentXStart);
         sGroundY_Down.set(((sGroundSegmentY_Down.get() as i32 + i as i32) % 32) as u8);
         FillBgTilemapBufferRect(
             0,
-            (*sCableCar).groundTileBuffer[i][(*sCableCar).groundTileIdx],
+            (*crate::gl!(sCableCar)).groundTileBuffer[i][(*crate::gl!(sCableCar)).groundTileIdx],
             sGroundX_Down.get(),
             sGroundY_Down.get(),
             1,
@@ -1478,7 +1608,8 @@ unsafe fn DrawNextGroundSegmentGoingDown() {
         sGroundX_Down.set(((sGroundX_Down.get() as i32 + 1) % 32) as u8);
         FillBgTilemapBufferRect(
             0,
-            (*sCableCar).groundTileBuffer[i][(*sCableCar).groundTileIdx as i32 + 1],
+            (*crate::gl!(sCableCar)).groundTileBuffer[i]
+                [(*crate::gl!(sCableCar)).groundTileIdx as i32 + 1],
             sGroundX_Down.get(),
             sGroundY_Down.get(),
             1,
@@ -1486,41 +1617,41 @@ unsafe fn DrawNextGroundSegmentGoingDown() {
             17,
         );
     }
-    sGroundY_Down.set((((*sCableCar).groundSegmentYStart as i32 + 23) % 32) as u8);
+    sGroundY_Down.set((((*crate::gl!(sCableCar)).groundSegmentYStart as i32 + 23) % 32) as u8);
     FillBgTilemapBufferRect(
         0,
         0,
-        (*sCableCar).groundSegmentXStart,
+        (*crate::gl!(sCableCar)).groundSegmentXStart,
         sGroundY_Down.get(),
         2,
         9,
         17,
     );
-    if (*sCableCar).groundTileIdx == 10 {
-        (*sCableCar).groundSegmentYStart =
-            (((*sCableCar).groundSegmentYStart as i32 + 3) % 32) as u8;
-        (*sCableCar).groundTileIdx = 254;
+    if (*crate::gl!(sCableCar)).groundTileIdx == 10 {
+        (*crate::gl!(sCableCar)).groundSegmentYStart =
+            (((*crate::gl!(sCableCar)).groundSegmentYStart as i32 + 3) % 32) as u8;
+        (*crate::gl!(sCableCar)).groundTileIdx = 254;
         BufferNextGroundSegment();
     }
 }
 unsafe fn InitGroundTilemapData(goingDown: u8) {
     match goingDown {
         TRUE => {
-            (*sCableCar).groundTilemapOffset = 2;
-            (*sCableCar).groundSegmentXStart = 28;
-            (*sCableCar).groundSegmentYStart = 20;
-            (*sCableCar).groundTileIdx = 4;
+            (*crate::gl!(sCableCar)).groundTilemapOffset = 2;
+            (*crate::gl!(sCableCar)).groundSegmentXStart = 28;
+            (*crate::gl!(sCableCar)).groundSegmentYStart = 20;
+            (*crate::gl!(sCableCar)).groundTileIdx = 4;
             BufferNextGroundSegment();
             DrawNextGroundSegmentGoingDown();
         }
         _ => {
-            (*sCableCar).groundTilemapOffset = 2;
-            (*sCableCar).groundSegmentXStart = 0;
-            (*sCableCar).groundSegmentYStart = 20;
-            (*sCableCar).groundTileIdx = 12;
+            (*crate::gl!(sCableCar)).groundTilemapOffset = 2;
+            (*crate::gl!(sCableCar)).groundSegmentXStart = 0;
+            (*crate::gl!(sCableCar)).groundSegmentYStart = 20;
+            (*crate::gl!(sCableCar)).groundTileIdx = 12;
             BufferNextGroundSegment();
             DrawNextGroundSegmentGoingUp();
         }
     }
-    (*sCableCar).groundTimer = 0;
+    (*crate::gl!(sCableCar)).groundTimer = 0;
 }

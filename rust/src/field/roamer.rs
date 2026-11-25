@@ -104,11 +104,12 @@ static ROAMER_LOCATIONS: [[u8; NUM_LOCATIONS_PER_SET]; NUM_LOCATION_SETS + 1] = 
 const NUM_LOCATION_SETS: usize = 20;
 const NUM_LOCATIONS_PER_SET: usize = 6;
 
-#[unsafe(link_section = "ewram_data")]
-static mut LOCATION_HISTORY: crate::ffi::Align4<[[u8; 2]; 3]> = crate::ffi::Align4([[0; 2]; 3]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static LOCATION_HISTORY: crate::global::Global<crate::ffi::Align4<[[u8; 2]; 3]>> =
+    crate::global::Global::new(crate::ffi::Align4([[0; 2]; 3]));
 
-#[unsafe(link_section = "ewram_data")]
-static mut ROAMER_LOCATION: [u8; 2] = [0; 2];
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static ROAMER_LOCATION: crate::global::Global<[u8; 2]> = crate::global::Global::new([0; 2]);
 
 /// `Random` with this module's view of its types.
 #[inline]
@@ -141,7 +142,7 @@ unsafe fn CreateMonWithIVsPersonality(a0: *mut u8, a1: u16, a2: u32, a3: u32, a4
 #[inline]
 unsafe fn roamer() -> *mut u8 {
     unsafe {
-        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+        (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut())
         .add(SAVE1_ROAMER_OFFSET)
@@ -157,7 +158,7 @@ unsafe fn roamer_active() -> bool {
 #[inline]
 unsafe fn location(index: usize) -> u8 {
     unsafe {
-        (&raw const ROAMER_LOCATION)
+        (crate::gl!(&raw ROAMER_LOCATION).cast_const())
             .cast::<u8>()
             .add(index)
             .read_volatile()
@@ -167,7 +168,7 @@ unsafe fn location(index: usize) -> u8 {
 #[inline]
 unsafe fn set_location(index: usize, value: u8) {
     unsafe {
-        (&raw mut ROAMER_LOCATION)
+        (crate::gl!(&raw ROAMER_LOCATION))
             .cast::<u8>()
             .add(index)
             .write_volatile(value)
@@ -177,7 +178,7 @@ unsafe fn set_location(index: usize, value: u8) {
 #[inline]
 unsafe fn history(slot: usize, index: usize) -> u8 {
     unsafe {
-        (&raw const LOCATION_HISTORY)
+        (crate::gl!(&raw LOCATION_HISTORY).cast_const())
             .cast::<u8>()
             .add(slot * 2 + index)
             .read_volatile()
@@ -187,7 +188,7 @@ unsafe fn history(slot: usize, index: usize) -> u8 {
 #[inline]
 unsafe fn set_history(slot: usize, index: usize, value: u8) {
     unsafe {
-        (&raw mut LOCATION_HISTORY)
+        (crate::gl!(&raw LOCATION_HISTORY))
             .cast::<u8>()
             .add(slot * 2 + index)
             .write_volatile(value)
@@ -197,7 +198,7 @@ unsafe fn set_history(slot: usize, index: usize, value: u8) {
 /// The first mon of the enemy party, which the roamer is built into.
 #[inline]
 unsafe fn enemy_mon() -> *mut u8 {
-    (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+    (&raw mut (*(crate::gl!(&raw @at crate::pokemon::gEnemyParty;).cast_const())
         .cast::<u8>()
         .cast_mut()))
         .cast::<u8>()
@@ -321,7 +322,7 @@ pub unsafe fn UpdateLocationHistoryForRoamer() {
         set_history(
             0,
             MAP_GRP,
-            (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut())
             .add(SAVE1_LOCATION_MAP_GROUP)
@@ -332,7 +333,7 @@ pub unsafe fn UpdateLocationHistoryForRoamer() {
         set_history(
             0,
             MAP_NUM,
-            (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
                 .cast::<*mut u8>()
                 .cast_mut())
             .add(SAVE1_LOCATION_MAP_NUM)
@@ -432,14 +433,14 @@ pub unsafe fn CreateRoamerMonInstance() {
 #[unsafe(no_mangle)]
 pub unsafe fn TryStartRoamerEncounter() -> u8 {
     let map_group = unsafe {
-        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+        (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut())
         .add(SAVE1_LOCATION_MAP_GROUP)
         .read_volatile()
     };
     let map_num = unsafe {
-        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+        (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut())
         .add(SAVE1_LOCATION_MAP_NUM)

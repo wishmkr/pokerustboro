@@ -54,29 +54,29 @@ const MAX_DIMENSION: u8 = 64;
 static sPointillismPoints: Table<CArray<CArray<u8, 3>, 3200>> =
     Table((&raw const crate::data::image_processing_effects::sPointillismPoints).cast());
 
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasColumnStart: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut gCanvasPixels: *mut u16 = null_mut();
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gCanvasPixels: crate::global::Global<*mut u16> = crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasRowEnd: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasHeight: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasColumnEnd: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasRowStart: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasMonPersonality: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasWidth: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut gCanvasPalette: *mut u16 = null_mut();
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gCanvasPalette: crate::global::Global<*mut u16> = crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gCanvasPaletteStart: crate::global::Global<u16> = crate::global::Global::new(0);
 
 pub unsafe fn ApplyImageProcessingEffects(context: *mut ImageProcessingContext) {
-    gCanvasPixels = (*context).canvasPixels as *mut u16;
+    crate::gl!(gCanvasPixels = (*context).canvasPixels as *mut u16);
     gCanvasMonPersonality.set((*context).personality);
     gCanvasColumnStart.set((*context).columnStart);
     gCanvasRowStart.set((*context).rowStart);
@@ -155,8 +155,8 @@ pub unsafe fn ApplyImageProcessingEffects(context: *mut ImageProcessingContext) 
 unsafe fn ApplyImageEffect_RedChannelGrayscale(delta: u8) {
     let mut i: u8 = 0;
     for j in 0..gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -176,8 +176,8 @@ unsafe fn ApplyImageEffect_RedChannelGrayscale(delta: u8) {
 unsafe fn ApplyImageEffect_RedChannelGrayscaleHighlight(highlight: u8) {
     let mut i: u8 = 0;
     for j in 0..gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -202,8 +202,8 @@ unsafe fn ApplyImageEffect_Grayscale() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -221,7 +221,7 @@ unsafe fn ApplyImageEffect_Blur() {
     let mut i: u8 = 0;
     while i < gCanvasColumnEnd.get() {
         let pixelRow: *mut u16 =
-            gCanvasPixels.at(gCanvasRowStart.get() as i32 * gCanvasWidth.get() as i32);
+            (*gCanvasPixels.as_ptr()).at(gCanvasRowStart.get() as i32 * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get() as i32 + i as i32);
         let mut prevPixel: u16 = *pixel;
         j = 1;
@@ -242,8 +242,8 @@ unsafe fn ApplyImageEffect_PersonalityColor(personality: u8) {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -260,8 +260,8 @@ unsafe fn ApplyImageEffect_BlackAndWhite() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -279,8 +279,8 @@ unsafe fn ApplyImageEffect_BlackOutline() {
     let mut pixel: *mut u16 = null_mut();
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         pixel = pixelRow.at(gCanvasColumnStart.get());
         *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(1));
         i = 1;
@@ -297,7 +297,7 @@ unsafe fn ApplyImageEffect_BlackOutline() {
     i = 0;
     while i < gCanvasColumnEnd.get() {
         let pixelRow: *mut u16 =
-            gCanvasPixels.at(gCanvasRowStart.get() as i32 * gCanvasWidth.get() as i32);
+            (*gCanvasPixels.as_ptr()).at(gCanvasRowStart.get() as i32 * gCanvasWidth.get() as i32);
         pixel = pixelRow.at(gCanvasColumnStart.get() as i32 + i as i32);
         *pixel = QuantizePixel_BlackOutline(pixel, pixel.at(gCanvasWidth.get()));
         j = 1;
@@ -316,8 +316,8 @@ unsafe fn ApplyImageEffect_Invert() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -333,7 +333,7 @@ unsafe fn ApplyImageEffect_Invert() {
 unsafe fn ApplyImageEffect_Shimmer() {
     let mut j: u8 = 0;
     let mut prevPixel: u16 = 0;
-    let mut pixel: *mut u16 = gCanvasPixels;
+    let mut pixel: *mut u16 = crate::gl!(gCanvasPixels);
     let mut i: u8 = 0;
     while i < MAX_DIMENSION {
         j = 0;
@@ -348,7 +348,7 @@ unsafe fn ApplyImageEffect_Shimmer() {
     }
     j = 0;
     while j < MAX_DIMENSION {
-        pixel = gCanvasPixels.at(j);
+        pixel = (*gCanvasPixels.as_ptr()).at(j);
         prevPixel = *pixel;
         *pixel = RGB_ALPHA;
         i = 1;
@@ -362,7 +362,7 @@ unsafe fn ApplyImageEffect_Shimmer() {
             pixel = pixel.at(64);
         }
         *pixel = RGB_ALPHA;
-        pixel = gCanvasPixels.at(j);
+        pixel = (*gCanvasPixels.as_ptr()).at(j);
         prevPixel = *pixel;
         *pixel = RGB_ALPHA;
         i = 1;
@@ -378,7 +378,7 @@ unsafe fn ApplyImageEffect_Shimmer() {
         *pixel = RGB_ALPHA;
         j += 1;
     }
-    pixel = gCanvasPixels;
+    pixel = crate::gl!(gCanvasPixels);
     for i in 0..MAX_DIMENSION {
         j = 0;
         while j < MAX_DIMENSION {
@@ -394,8 +394,8 @@ unsafe fn ApplyImageEffect_BlurRight() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         let mut prevPixel: u16 = *pixel;
         i = 1;
@@ -416,7 +416,7 @@ unsafe fn ApplyImageEffect_BlurDown() {
     let mut i: u8 = 0;
     while i < gCanvasColumnEnd.get() {
         let pixelRow: *mut u16 =
-            gCanvasPixels.at(gCanvasRowStart.get() as i32 * gCanvasWidth.get() as i32);
+            (*gCanvasPixels.as_ptr()).at(gCanvasRowStart.get() as i32 * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get() as i32 + i as i32);
         let mut prevPixel: u16 = *pixel;
         j = 1;
@@ -457,7 +457,7 @@ unsafe fn AddPointillismPoints(point: u16) {
     }
     i = 0;
     while (i as u16) < points[0].delta {
-        let pixel: *mut u16 = gCanvasPixels
+        let pixel: *mut u16 = (*gCanvasPixels.as_ptr())
             .at(points[i].row as i32 * MAX_DIMENSION as i32)
             .at(points[i].column);
         if *pixel as i32 & 32768 == 0 {
@@ -798,8 +798,8 @@ pub unsafe fn ConvertImageProcessingToGBA(context: *mut ImageProcessingContext) 
 }
 pub unsafe fn ApplyImageProcessingQuantization(context: *mut ImageProcessingContext) {
     gCanvasPaletteStart.set((*context).paletteStart as u16 * 16);
-    gCanvasPalette = (*context).canvasPalette.at(gCanvasPaletteStart.get());
-    gCanvasPixels = (*context).canvasPixels as *mut u16;
+    crate::gl!(gCanvasPalette = (*context).canvasPalette.at(gCanvasPaletteStart.get()));
+    crate::gl!(gCanvasPixels = (*context).canvasPixels as *mut u16);
     gCanvasColumnStart.set((*context).columnStart);
     gCanvasRowStart.set((*context).rowStart);
     gCanvasColumnEnd.set((*context).columnEnd);
@@ -833,40 +833,41 @@ pub unsafe fn ApplyImageProcessingQuantization(context: *mut ImageProcessingCont
     }
 }
 unsafe fn SetPresetPalette_PrimaryColors() {
-    *gCanvasPalette = 0;
-    *gCanvasPalette.at(1) = 6342;
-    *gCanvasPalette.at(2) = 30653;
-    *gCanvasPalette.at(3) = 11627;
-    *gCanvasPalette.at(4) = 6365;
-    *gCanvasPalette.at(5) = 7078;
-    *gCanvasPalette.at(6) = 29894;
-    *gCanvasPalette.at(7) = 7101;
-    *gCanvasPalette.at(8) = 29917;
-    *gCanvasPalette.at(9) = 30630;
-    *gCanvasPalette.at(10) = 6525;
-    *gCanvasPalette.at(11) = 7083;
-    *gCanvasPalette.at(12) = 30054;
-    *gCanvasPalette.at(13) = 11485;
-    *gCanvasPalette.at(14) = 12198;
-    *gCanvasPalette.at(15) = 29899;
+    *crate::gl!(gCanvasPalette) = 0;
+    *(*gCanvasPalette.as_ptr()).at(1) = 6342;
+    *(*gCanvasPalette.as_ptr()).at(2) = 30653;
+    *(*gCanvasPalette.as_ptr()).at(3) = 11627;
+    *(*gCanvasPalette.as_ptr()).at(4) = 6365;
+    *(*gCanvasPalette.as_ptr()).at(5) = 7078;
+    *(*gCanvasPalette.as_ptr()).at(6) = 29894;
+    *(*gCanvasPalette.as_ptr()).at(7) = 7101;
+    *(*gCanvasPalette.as_ptr()).at(8) = 29917;
+    *(*gCanvasPalette.as_ptr()).at(9) = 30630;
+    *(*gCanvasPalette.as_ptr()).at(10) = 6525;
+    *(*gCanvasPalette.as_ptr()).at(11) = 7083;
+    *(*gCanvasPalette.as_ptr()).at(12) = 30054;
+    *(*gCanvasPalette.as_ptr()).at(13) = 11485;
+    *(*gCanvasPalette.as_ptr()).at(14) = 12198;
+    *(*gCanvasPalette.as_ptr()).at(15) = 29899;
 }
 unsafe fn SetPresetPalette_BlackAndWhite() {
-    *gCanvasPalette = 0;
-    *gCanvasPalette.at(1) = 0;
-    *gCanvasPalette.at(2) = 32767;
+    *crate::gl!(gCanvasPalette) = 0;
+    *(*gCanvasPalette.as_ptr()).at(1) = 0;
+    *(*gCanvasPalette.as_ptr()).at(2) = 32767;
 }
 unsafe fn SetPresetPalette_GrayscaleSmall() {
-    *gCanvasPalette = 0;
-    *gCanvasPalette.at(1) = 0;
+    *crate::gl!(gCanvasPalette) = 0;
+    *(*gCanvasPalette.as_ptr()).at(1) = 0;
     for i in 0..14u8 {
-        *gCanvasPalette.at(i as i32 + 2) =
+        *(*gCanvasPalette.as_ptr()).at(i as i32 + 2) =
             (2 * (i as u16 + 2)) << 10 | (2 * (i as u16 + 2)) << 5 | (2 * (i as u16 + 2));
     }
 }
 unsafe fn SetPresetPalette_Grayscale() {
-    *gCanvasPalette = 0;
+    *crate::gl!(gCanvasPalette) = 0;
     for i in 0..32u8 {
-        *gCanvasPalette.at(i as i32 + 1) = (i as u16) << 10 | (i as u16) << 5 | i as u16;
+        *(*gCanvasPalette.as_ptr()).at(i as i32 + 1) =
+            (i as u16) << 10 | (i as u16) << 5 | i as u16;
     }
 }
 unsafe fn QuantizePalette_Standard(useLimitedPalette: u8) {
@@ -876,14 +877,14 @@ unsafe fn QuantizePalette_Standard(useLimitedPalette: u8) {
     }
     let mut i: u8 = 0;
     while (i as u16) < maxIndex {
-        *gCanvasPalette.at(i) = 0;
+        *(*gCanvasPalette.as_ptr()).at(i) = 0;
         i += 1;
     }
-    *gCanvasPalette.at(maxIndex) = 15855;
+    *(*gCanvasPalette.as_ptr()).at(maxIndex) = 15855;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -893,17 +894,17 @@ unsafe fn QuantizePalette_Standard(useLimitedPalette: u8) {
                 let quantizedColor: u16 = QuantizePixel_Standard(pixel);
                 let mut curIndex: u8 = 1;
                 if (curIndex as u16) < maxIndex {
-                    if *gCanvasPalette.at(curIndex) == 0 {
-                        *gCanvasPalette.at(curIndex) = quantizedColor;
+                    if *(*gCanvasPalette.as_ptr()).at(curIndex) == 0 {
+                        *(*gCanvasPalette.as_ptr()).at(curIndex) = quantizedColor;
                         *pixel = gCanvasPaletteStart.get() + curIndex as u16;
                     } else {
                         while (curIndex as u16) < maxIndex {
-                            if *gCanvasPalette.at(curIndex) == 0 {
-                                *gCanvasPalette.at(curIndex) = quantizedColor;
+                            if *(*gCanvasPalette.as_ptr()).at(curIndex) == 0 {
+                                *(*gCanvasPalette.as_ptr()).at(curIndex) = quantizedColor;
                                 *pixel = gCanvasPaletteStart.get() + curIndex as u16;
                                 break;
                             }
-                            if *gCanvasPalette.at(curIndex) == quantizedColor {
+                            if *(*gCanvasPalette.as_ptr()).at(curIndex) == quantizedColor {
                                 *pixel = gCanvasPaletteStart.get() + curIndex as u16;
                                 break;
                             }
@@ -926,8 +927,8 @@ unsafe fn QuantizePalette_BlackAndWhite() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -950,8 +951,8 @@ unsafe fn QuantizePalette_GrayscaleSmall() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -970,8 +971,8 @@ unsafe fn QuantizePalette_Grayscale() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {
@@ -990,8 +991,8 @@ unsafe fn QuantizePalette_PrimaryColors() {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     while j < gCanvasRowEnd.get() {
-        let pixelRow: *mut u16 =
-            gCanvasPixels.at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
+        let pixelRow: *mut u16 = (*gCanvasPixels.as_ptr())
+            .at((gCanvasRowStart.get() as i32 + j as i32) * gCanvasWidth.get() as i32);
         let mut pixel: *mut u16 = pixelRow.at(gCanvasColumnStart.get());
         i = 0;
         while i < gCanvasColumnEnd.get() {

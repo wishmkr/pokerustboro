@@ -29,29 +29,36 @@ use core::ptr::null_mut;
 
 pub(crate) static sTimerNum: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sTimerCount: crate::global::Global<u16> = crate::global::Global::new(0);
-pub(crate) static mut sTimerReg: *mut u16 = null_mut();
+pub(crate) static sTimerReg: crate::global::Global<*mut u16> =
+    crate::global::Global::new(null_mut());
 pub(crate) static sSavedIme: crate::global::Global<u16> = crate::global::Global::new(0);
-#[unsafe(link_section = "common_data")]
-pub static mut gFlashTimeoutFlag: u8 = 0;
-#[unsafe(link_section = "common_data")]
-pub static mut PollFlashStatus: Option<unsafe fn(*mut u8) -> u8> = None;
-#[unsafe(link_section = "common_data")]
-pub static mut WaitForFlashWrite: Option<unsafe fn(u8, *mut u8, u8) -> u16> = None;
-#[unsafe(link_section = "common_data")]
-pub static mut ProgramFlashSector: Option<unsafe fn(u16, *mut u8) -> u16> = None;
-#[unsafe(link_section = "common_data")]
-pub static mut gFlash: *mut FlashType = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFlashTimeoutFlag: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static PollFlashStatus: crate::global::Global<Option<unsafe fn(*mut u8) -> u8>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static WaitForFlashWrite: crate::global::Global<Option<unsafe fn(u8, *mut u8, u8) -> u16>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static ProgramFlashSector: crate::global::Global<Option<unsafe fn(u16, *mut u8) -> u16>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFlash: crate::global::Global<*mut FlashType> = crate::global::Global::new(null_mut());
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut ProgramFlashByte: Option<unsafe fn(u16, u32, u8) -> u16> = None;
-#[unsafe(link_section = "common_data")]
-pub static mut gFlashNumRemainingBytes: u16 = 0;
-#[unsafe(link_section = "common_data")]
-pub static mut EraseFlashChip: Option<unsafe fn() -> u16> = None;
-#[unsafe(link_section = "common_data")]
-pub static mut EraseFlashSector: Option<unsafe fn(u16) -> u16> = None;
-#[unsafe(link_section = "common_data")]
-pub static mut gFlashMaxTime: *mut u16 = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static ProgramFlashByte: crate::global::Global<Option<unsafe fn(u16, u32, u8) -> u16>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFlashNumRemainingBytes: crate::global::Global<u16> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static EraseFlashChip: crate::global::Global<Option<unsafe fn() -> u16>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static EraseFlashSector: crate::global::Global<Option<unsafe fn(u16) -> u16>> =
+    crate::global::Global::new(None);
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gFlashMaxTime: crate::global::Global<*mut u16> = crate::global::Global::new(null_mut());
 
 pub unsafe fn SwitchFlashBank(bankNum: u8) {
     volatile_write((0xE000000_usize as *mut u8).at(21845), 0xAA);
@@ -101,7 +108,7 @@ pub unsafe extern "C" fn FlashTimerIntr() {
             sTimerCount.get()
         }) == 0
     {
-        gFlashTimeoutFlag = 1;
+        gFlashTimeoutFlag.set(1);
     }
 }
 #[unsafe(no_mangle)]
@@ -113,21 +120,21 @@ pub unsafe fn SetFlashTimerIntr(
         return 1;
     }
     sTimerNum.set(timerNum);
-    sTimerReg = (0x4000100 + sTimerNum.get() as i32 * 4) as usize as *mut u16;
+    crate::gl!(sTimerReg = (0x4000100 + sTimerNum.get() as i32 * 4) as usize as *mut u16);
     *intrFunc = Some(FlashTimerIntr);
     0
 }
 pub unsafe fn StartFlashTimer(phase: u8) {
-    let mut maxTime: *mut u16 = gFlashMaxTime.at(phase as i32 * 3);
+    let mut maxTime: *mut u16 = (*gFlashMaxTime.as_ptr()).at(phase as i32 * 3);
     sSavedIme.set((67109384_usize as *mut u16).read_volatile());
     volatile_write(67109384_usize as *mut u16, 0);
-    volatile_write(sTimerReg.at(1), 0);
+    volatile_write((*sTimerReg.as_ptr()).at(1), 0);
     volatile_write(
         0x4000200_usize as *mut u16,
         (0x4000200_usize as *mut u16).read_volatile()
             | shl_i32(INTR_FLAG_TIMER0, sTimerNum.get() as u32) as u16,
     );
-    gFlashTimeoutFlag = 0;
+    gFlashTimeoutFlag.set(0);
     sTimerCount.set(
         *({
             let t2 = maxTime;
@@ -137,8 +144,8 @@ pub unsafe fn StartFlashTimer(phase: u8) {
     );
     volatile_write(
         {
-            let t3 = sTimerReg;
-            sTimerReg = sTimerReg.at(1);
+            let t3 = crate::gl!(sTimerReg);
+            crate::gl!(sTimerReg = (*sTimerReg.as_ptr()).at(1));
             t3
         },
         *({
@@ -149,8 +156,8 @@ pub unsafe fn StartFlashTimer(phase: u8) {
     );
     volatile_write(
         {
-            let t6 = sTimerReg;
-            sTimerReg = sTimerReg.at(-1);
+            let t6 = crate::gl!(sTimerReg);
+            crate::gl!(sTimerReg = (*sTimerReg.as_ptr()).at(-1));
             t6
         },
         *({
@@ -169,16 +176,16 @@ pub unsafe fn StopFlashTimer() {
     volatile_write(67109384_usize as *mut u16, 0);
     volatile_write(
         {
-            let t1 = sTimerReg;
-            sTimerReg = sTimerReg.at(1);
+            let t1 = crate::gl!(sTimerReg);
+            crate::gl!(sTimerReg = (*sTimerReg.as_ptr()).at(1));
             t1
         },
         0,
     );
     volatile_write(
         {
-            let t2 = sTimerReg;
-            sTimerReg = sTimerReg.at(-1);
+            let t2 = crate::gl!(sTimerReg);
+            crate::gl!(sTimerReg = (*sTimerReg.as_ptr()).at(-1));
             t2
         },
         0,
@@ -207,8 +214,10 @@ pub fn SetReadFlash1(dest: *mut u16) {
             dest.add(i).write_volatile(src.add(i).read_volatile());
             i += 1;
         }
-        PollFlashStatus =
-            core::mem::transmute::<usize, Option<unsafe fn(*mut u8) -> u8>>(dest as usize + 1);
+        crate::gl!(
+            PollFlashStatus =
+                core::mem::transmute::<usize, Option<unsafe fn(*mut u8) -> u8>>(dest as usize + 1)
+        );
     }
 }
 
@@ -275,15 +284,15 @@ fn flash_set_sram_wait_8() {
 
 // struct FlashType: romSize @0, sector.size @4, sector.shift @8 (GCC-probed).
 fn flash_rom_size() -> u32 {
-    unsafe { gFlash.cast::<u32>().read() }
+    unsafe { (*gFlash.as_ptr()).cast::<u32>().read() }
 }
 
 fn flash_sector_shift() -> u32 {
-    unsafe { u32::from(gFlash.cast::<u8>().add(8).read()) }
+    unsafe { u32::from((*gFlash.as_ptr()).cast::<u8>().add(8).read()) }
 }
 
 fn flash_sector_size() -> u32 {
-    unsafe { gFlash.cast::<u8>().add(4).cast::<u32>().read() }
+    unsafe { (*gFlash.as_ptr()).cast::<u8>().add(4).cast::<u32>().read() }
 }
 
 /// Copies `halfwords` halfwords of Thumb code starting at `func` into `buf`
@@ -374,7 +383,7 @@ pub unsafe fn ProgramFlashSectorAndVerify(sectorNum: u16, src: *mut u8) -> u32 {
     let mut result: u32 = 0;
     'l2: for i in 0..3u8 {
         'l1: {
-            result = ProgramFlashSector.unwrap_unchecked()(sectorNum, src) as u32;
+            result = (*ProgramFlashSector.as_ptr()).unwrap_unchecked()(sectorNum, src) as u32;
             if result != 0 {
                 break 'l1;
             }
@@ -390,7 +399,7 @@ pub unsafe fn ProgramFlashSectorAndVerifyNBytes(sectorNum: u16, src: *mut u8, n:
     let mut result: u32 = 0;
     'l2: for i in 0..3u8 {
         'l1: {
-            result = ProgramFlashSector.unwrap_unchecked()(sectorNum, src) as u32;
+            result = (*ProgramFlashSector.as_ptr()).unwrap_unchecked()(sectorNum, src) as u32;
             if result != 0 {
                 break 'l1;
             }

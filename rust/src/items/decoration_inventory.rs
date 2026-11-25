@@ -14,9 +14,10 @@ pub const DECORCAT_COUNT: usize = 8;
 pub const DECOR_NONE: u8 = 0;
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gDecorationInventories: CArray<DecorationInventory, DECORCAT_COUNT> =
-    unsafe { core::mem::zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gDecorationInventories: crate::global::Global<
+    CArray<DecorationInventory, DECORCAT_COUNT>,
+> = crate::global::Global::new(unsafe { core::mem::zeroed() });
 
 /// `InitDecorationContextItems` with this module's view of its types.
 #[inline]
@@ -43,7 +44,7 @@ fn category_of(decor: u8) -> u8 {
 /// and the list not in use elsewhere while the result lives.
 unsafe fn inventory<'a>(category: u8) -> &'a mut [u8] {
     unsafe {
-        let inventories = &*(&raw const gDecorationInventories);
+        let inventories = &*(crate::gl!(&raw gDecorationInventories).cast_const());
         let inv = inventories[category];
         core::slice::from_raw_parts_mut(inv.items, usize::from(inv.size))
     }
@@ -86,7 +87,7 @@ pub fn set_decoration_inventories_pointers() {
                 save.decorationCushions.len(),
             ),
         ];
-        let inventories = &mut *(&raw mut gDecorationInventories);
+        let inventories = &mut *(crate::gl!(&raw gDecorationInventories));
         for (inv, (items, size)) in inventories.0.iter_mut().zip(lists) {
             *inv = DecorationInventory {
                 items,

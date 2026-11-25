@@ -148,7 +148,9 @@ unsafe fn ClearSaveData() {
 #[inline]
 unsafe fn main_state() -> *mut u8 {
     unsafe {
-        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::agb_main::gMain;).cast_const())
+            .cast::<u8>()
+            .cast_mut()))
             .cast::<u8>()
             .add(MAIN_STATE_OFFSET)
     }
@@ -222,7 +224,7 @@ unsafe fn vblank_cb() {
 
 unsafe fn set_palette_color(index: usize, color: u16) {
     unsafe {
-        (&raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+        (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
             .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
             .cast_mut()))
             .cast::<u16>()
@@ -230,7 +232,7 @@ unsafe fn set_palette_color(index: usize, color: u16) {
             .write(color)
     };
     unsafe {
-        (&raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+        (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
             .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
             .cast_mut()))
             .cast::<u16>()

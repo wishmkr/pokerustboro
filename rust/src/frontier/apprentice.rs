@@ -79,11 +79,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
 #[inline]
-unsafe fn SetTaskFuncWithFollowupFunc(
-    a0: u8,
-    a1: Option<unsafe fn(u8)>,
-    a2: Option<unsafe fn(u8)>,
-) {
+fn SetTaskFuncWithFollowupFunc(a0: u8, a1: Option<unsafe fn(u8)>, a2: Option<unsafe fn(u8)>) {
     unsafe {
         crate::task::SetTaskFuncWithFollowupFunc(
             a0,
@@ -161,12 +157,15 @@ static sQuestionPossibilities: Table<CArray<u8, 10>> =
 static sValidApprenticeMoves: Table<CArray<u8, 355>> =
     Table((&raw const crate::data::apprentice::sValidApprenticeMoves).cast());
 
-#[unsafe(link_section = "common_data")]
-pub static mut gApprenticePartyMovesData: *mut ApprenticePartyMovesData = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gApprenticeQuestionData: *mut ApprenticeQuestionData = null_mut();
-#[unsafe(link_section = "common_data")]
-pub static mut gApprenticeFunc: Option<unsafe fn()> = None;
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gApprenticePartyMovesData: crate::global::Global<*mut ApprenticePartyMovesData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gApprenticeQuestionData: crate::global::Global<*mut ApprenticeQuestionData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
+pub static gApprenticeFunc: crate::global::Global<Option<unsafe fn()>> =
+    crate::global::Global::new(None);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
 #[inline]
@@ -203,7 +202,7 @@ unsafe fn GetItemName(a0: u16) -> *mut u8 {
 }
 
 pub unsafe fn BufferApprenticeChallengeText(saveApprenticeId: u8) {
-    let mut num: u8 = (*gSaveBlock2Ptr).apprentices[saveApprenticeId].number;
+    let mut num: u8 = (*crate::gl!(gSaveBlock2Ptr)).apprentices[saveApprenticeId].number;
     let mut i: u8 = 0;
     while num != 0 && i < APPRENTICE_COUNT as u8 {
         num = (num as i32 / 10) as u8;
@@ -211,22 +210,22 @@ pub unsafe fn BufferApprenticeChallengeText(saveApprenticeId: u8) {
     }
     StringCopy_PlayerName(
         gStringVar1.as_mut_ptr(),
-        (*gSaveBlock2Ptr).apprentices[saveApprenticeId]
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[saveApprenticeId]
             .playerName
             .as_mut_ptr(),
     );
     ConvertInternationalString(
         gStringVar1.as_mut_ptr(),
-        (*gSaveBlock2Ptr).apprentices[saveApprenticeId].language,
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[saveApprenticeId].language,
     );
     ConvertIntToDecimalStringN(
-        gStringVar2.as_mut_ptr(),
-        (*gSaveBlock2Ptr).apprentices[saveApprenticeId].number as i32,
+        (*gStringVar2.as_ptr()).as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[saveApprenticeId].number as i32,
         STR_CONV_MODE_RIGHT_ALIGN,
         i,
     );
     let challengeText: *mut u8 =
-        sApprenticeChallengeTexts[(*gSaveBlock2Ptr).apprentices[saveApprenticeId].id()];
+        sApprenticeChallengeTexts[(*crate::gl!(gSaveBlock2Ptr)).apprentices[saveApprenticeId].id()];
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), challengeText);
 }
 pub unsafe fn Apprentice_ScriptContext_Enable() {
@@ -242,48 +241,54 @@ pub unsafe fn ResetApprenticeStruct(apprentice: *mut Apprentice) {
 #[unsafe(no_mangle)]
 pub unsafe fn ResetAllApprenticeData() {
     let mut j: u8 = 0;
-    (*gSaveBlock2Ptr).playerApprentice.set_saveId(0);
+    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.set_saveId(0);
     for i in 0..(APPRENTICE_COUNT as u8) {
         j = 0;
         while j < 6 {
-            (*gSaveBlock2Ptr).apprentices[i].speechWon[j] = EC_EMPTY_WORD;
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].speechWon[j] = EC_EMPTY_WORD;
             j += 1;
         }
-        (*gSaveBlock2Ptr).apprentices[i].set_id(NUM_APPRENTICES);
-        (*gSaveBlock2Ptr).apprentices[i].playerName[0] = EOS;
-        (*gSaveBlock2Ptr).apprentices[i].set_lvlMode(0);
-        (*gSaveBlock2Ptr).apprentices[i].number = 0;
-        (*gSaveBlock2Ptr).apprentices[i].numQuestions = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].set_id(NUM_APPRENTICES);
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].playerName[0] = EOS;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].set_lvlMode(0);
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].number = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].numQuestions = 0;
         for j in 0..TRAINER_ID_LENGTH {
-            (*gSaveBlock2Ptr).apprentices[i].playerId[j] = 0;
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].playerId[j] = 0;
         }
-        (*gSaveBlock2Ptr).apprentices[i].language = gGameLanguage;
-        (*gSaveBlock2Ptr).apprentices[i].checksum = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].language = gGameLanguage;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].checksum = 0;
     }
     Script_ResetPlayerApprentice();
 }
 unsafe fn GivenApprenticeLvlMode() -> u8 {
-    ((*gSaveBlock2Ptr).playerApprentice.lvlMode() != 0) as u8
+    ((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.lvlMode() != 0) as u8
 }
 unsafe fn SetApprenticeId() {
-    if (*gSaveBlock2Ptr).apprentices[0].number == 0 {
+    if (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].number == 0 {
         loop {
-            (*gSaveBlock2Ptr).playerApprentice.id = sInitialApprenticeIds[Random() % 8];
-            if (*gSaveBlock2Ptr).playerApprentice.id != (*gSaveBlock2Ptr).apprentices[0].id() {
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id = sInitialApprenticeIds[Random() % 8];
+            if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id
+                != (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].id()
+            {
                 break;
             }
         }
     } else {
         loop {
-            (*gSaveBlock2Ptr).playerApprentice.id = (Random() as i32 % 16) as u8;
-            if (*gSaveBlock2Ptr).playerApprentice.id != (*gSaveBlock2Ptr).apprentices[0].id() {
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id = (Random() as i32 % 16) as u8;
+            if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id
+                != (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].id()
+            {
                 break;
             }
         }
     }
 }
 unsafe fn SetPlayersApprenticeLvlMode(mode: u8) {
-    (*gSaveBlock2Ptr).playerApprentice.set_lvlMode(mode);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .set_lvlMode(mode);
 }
 pub(crate) unsafe fn ShuffleApprenticeSpecies() {
     let mut species: CArray<u8, 10> = zeroed();
@@ -300,7 +305,7 @@ pub(crate) unsafe fn ShuffleApprenticeSpecies() {
         i += 1;
     }
     for i in 0..(MULTI_PARTY_SIZE as u8) {
-        (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] =
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[i] =
             (species[i as i32 * 2] & 0xF) << 4 | species[i as i32 * 2 + 1] & 0xF;
     }
 }
@@ -312,7 +317,7 @@ unsafe fn GetMonIdForQuestion(questionId: u8, party: *mut u8, partySlot: *mut u8
             monId = (Random() as i32 % 3) as u8;
             count = 0;
             for i in 0..NUM_WHICH_MOVE_QUESTIONS {
-                if (*gApprenticePartyMovesData).moves[monId][i] != MOVE_NONE {
+                if (*crate::gl!(gApprenticePartyMovesData)).moves[monId][i] != MOVE_NONE {
                     count += 1;
                 }
             }
@@ -355,49 +360,56 @@ unsafe fn SetRandomQuestionData() {
         questionOrder[rand1] = questionOrder[rand2];
         questionOrder[rand2] = temp;
     }
-    gApprenticePartyMovesData = AllocZeroed(48) as *mut ApprenticePartyMovesData;
-    (*gApprenticePartyMovesData).moveCounter = 0;
+    crate::gl!(gApprenticePartyMovesData = AllocZeroed(48) as *mut ApprenticePartyMovesData);
+    (*crate::gl!(gApprenticePartyMovesData)).moveCounter = 0;
     i = 0;
     while i < NUM_WHICH_MOVE_QUESTIONS {
         for j in 0..(MULTI_PARTY_SIZE as u8) {
-            (*gApprenticePartyMovesData).moveSlots[j][i] = MAX_MON_MOVES as u8;
+            (*crate::gl!(gApprenticePartyMovesData)).moveSlots[j][i] = MAX_MON_MOVES as u8;
         }
         i += 1;
     }
     let mut partySlot: u8 = 0;
     for i in 0..APPRENTICE_MAX_QUESTIONS {
-        (*gSaveBlock2Ptr).playerApprentice.questions[i].set_questionId(questionOrder[i]);
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i]
+            .set_questionId(questionOrder[i]);
         if questionOrder[i] != QUESTION_ID_WHICH_FIRST {
-            (*gSaveBlock2Ptr).playerApprentice.questions[i].set_monId(GetMonIdForQuestion(
-                questionOrder[i],
-                partyOrder.as_mut_ptr(),
-                &raw mut partySlot,
-            ));
-            id = (*gSaveBlock2Ptr).playerApprentice.questions[i].monId();
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].set_monId(
+                GetMonIdForQuestion(
+                    questionOrder[i],
+                    partyOrder.as_mut_ptr(),
+                    &raw mut partySlot,
+                ),
+            );
+            id = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].monId();
             if questionOrder[i] == QUESTION_ID_WHICH_MOVE {
                 loop {
                     rand1 = (Random() as i32 % 4) as u8;
                     j = 0;
-                    while (j as i32) < (*gApprenticePartyMovesData).moveCounter as i32 + 1 {
-                        if (*gApprenticePartyMovesData).moveSlots[id][j] == rand1 {
+                    while (j as i32)
+                        < (*crate::gl!(gApprenticePartyMovesData)).moveCounter as i32 + 1
+                    {
+                        if (*crate::gl!(gApprenticePartyMovesData)).moveSlots[id][j] == rand1 {
                             break;
                         }
                         j += 1;
                     }
-                    if j as i32 == (*gApprenticePartyMovesData).moveCounter as i32 + 1 {
+                    if j as i32 == (*crate::gl!(gApprenticePartyMovesData)).moveCounter as i32 + 1 {
                         break;
                     }
                 }
-                (*gApprenticePartyMovesData).moveSlots[id]
-                    [(*gApprenticePartyMovesData).moveCounter] = rand1;
-                (*gSaveBlock2Ptr).playerApprentice.questions[i].set_moveSlot(rand1);
-                (*gSaveBlock2Ptr).playerApprentice.questions[i].data =
-                    GetRandomAlternateMove((*gSaveBlock2Ptr).playerApprentice.questions[i].monId());
+                (*crate::gl!(gApprenticePartyMovesData)).moveSlots[id]
+                    [(*crate::gl!(gApprenticePartyMovesData)).moveCounter] = rand1;
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].set_moveSlot(rand1);
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].data =
+                    GetRandomAlternateMove(
+                        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].monId(),
+                    );
             }
         }
     }
-    Free(gApprenticePartyMovesData as *mut c_void);
-    gApprenticePartyMovesData = null_mut();
+    Free(crate::gl!(gApprenticePartyMovesData) as *mut c_void);
+    crate::gl!(gApprenticePartyMovesData = null_mut());
 }
 unsafe fn GetRandomAlternateMove(monId: u8) -> u16 {
     let mut species: u16 = 0;
@@ -407,9 +419,9 @@ unsafe fn GetRandomAlternateMove(monId: u8) -> u16 {
     let mut level: u8 = 0;
     let mut id: u8 = (if monId < 3 {
         shr_i32(
-            (*gSaveBlock2Ptr).playerApprentice.speciesIds[monId] as i32,
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[monId] as i32,
             (shr_i32(
-                (*gSaveBlock2Ptr).playerApprentice.party() as i32,
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party() as i32,
                 monId as u32,
             ) as u32
                 & 1)
@@ -418,10 +430,10 @@ unsafe fn GetRandomAlternateMove(monId: u8) -> u16 {
     } else {
         0
     }) as u8;
-    species = gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id];
+    species = gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[id];
     let learnset: *mut u16 = (*(&raw const crate::data::pokemon::gLevelUpLearnsets)
         .cast::<CArray<*mut u16, 0>>())[species];
-    if (*gSaveBlock2Ptr).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
+    if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
         level = FRONTIER_MAX_LEVEL_50;
     } else {
         level = 60;
@@ -492,21 +504,22 @@ unsafe fn GetRandomAlternateMove(monId: u8) -> u16 {
             i += 1;
         }
     }
-    (*gApprenticePartyMovesData).moveCounter += 1;
+    (*crate::gl!(gApprenticePartyMovesData)).moveCounter += 1;
     r#move
 }
 unsafe fn TrySetMove(monId: u8, r#move: u16) -> u8 {
     for i in 0..NUM_WHICH_MOVE_QUESTIONS {
-        if (*gApprenticePartyMovesData).moves[monId][i] == r#move {
+        if (*crate::gl!(gApprenticePartyMovesData)).moves[monId][i] == r#move {
             return FALSE;
         }
     }
-    (*gApprenticePartyMovesData).moves[monId][(*gApprenticePartyMovesData).moveCounter] = r#move;
+    (*crate::gl!(gApprenticePartyMovesData)).moves[monId]
+        [(*crate::gl!(gApprenticePartyMovesData)).moveCounter] = r#move;
     TRUE
 }
 unsafe fn GetLatestLearnedMoves(species: u16, moves: *mut u16) {
     let mut level: u8 = 0;
-    if (*gSaveBlock2Ptr).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
+    if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
         level = FRONTIER_MAX_LEVEL_50;
     } else {
         level = 60;
@@ -530,31 +543,40 @@ unsafe fn GetLatestLearnedMoves(species: u16, moves: *mut u16) {
 }
 unsafe fn GetDefaultMove(monId: u8, speciesArrayId: u8, moveSlot: u8) -> u16 {
     let mut moves: CArray<u16, 4> = zeroed();
-    if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
+    if (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered()
+        < NUM_WHICH_MON_QUESTIONS
+    {
         return MOVE_NONE;
     }
     let mut numQuestions: u8 = 0;
     let mut i: u8 = 0;
     while i < APPRENTICE_MAX_QUESTIONS
-        && (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != 0
+        && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].questionId() != 0
     {
         numQuestions += 1;
         i += 1;
     }
     GetLatestLearnedMoves(
-        gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[speciesArrayId],
+        gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[speciesArrayId],
         moves.as_mut_ptr(),
     );
     i = 0;
     while i < numQuestions
-        && (i as i32) < (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3
+        && (i as i32)
+            < (*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questionsAnswered() as i32
+                - 3
     {
-        if (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() == QUESTION_ID_WHICH_MOVE
-            && (*gSaveBlock2Ptr).playerApprentice.questions[i].monId() == monId
-            && (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() != 0
+        if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].questionId()
+            == QUESTION_ID_WHICH_MOVE
+            && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].monId() == monId
+            && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].suggestedChange() != 0
         {
-            moves[(*gSaveBlock2Ptr).playerApprentice.questions[i].moveSlot()] =
-                (*gSaveBlock2Ptr).playerApprentice.questions[i].data;
+            moves[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].moveSlot()] =
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].data;
         }
         i += 1;
     }
@@ -565,30 +587,34 @@ unsafe fn SaveApprenticeParty(numQuestions: u8) {
     let mut j: u8 = 0;
     let mut speciesTableId: u32 = 0;
     for i in 0..(MULTI_PARTY_SIZE as u8) {
-        (*gSaveBlock2Ptr).apprentices[0].party[i].species = 0;
-        (*gSaveBlock2Ptr).apprentices[0].party[i].item = ITEM_NONE;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].party[i].species = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].party[i].item = ITEM_NONE;
         for j in 0..(MAX_MON_MOVES as u8) {
-            (*gSaveBlock2Ptr).apprentices[0].party[i].moves[j] = 0;
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].party[i].moves[j] = 0;
         }
     }
-    j = (*gSaveBlock2Ptr).playerApprentice.leadMonId();
+    j = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.leadMonId();
     for i in 0..(MULTI_PARTY_SIZE as u8) {
-        apprenticeMons[j] = &raw mut (*gSaveBlock2Ptr).apprentices[0].party[i];
+        apprenticeMons[j] = &raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].party[i];
         j = ((j as i32 + 1) % 3) as u8;
     }
     let mut i: u8 = 0;
     while i < MULTI_PARTY_SIZE as u8 {
         speciesTableId = (if i < 3 {
             shr_i32(
-                (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] as i32,
-                (shr_i32((*gSaveBlock2Ptr).playerApprentice.party() as i32, i as u32) as u32 & 1)
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[i] as i32,
+                (shr_i32(
+                    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party() as i32,
+                    i as u32,
+                ) as u32
+                    & 1)
                     << 2,
             ) & 0xF
         } else {
             0
         }) as u32;
         (*apprenticeMons[i]).species =
-            gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[speciesTableId];
+            gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[speciesTableId];
         GetLatestLearnedMoves(
             (*apprenticeMons[i]).species,
             (*apprenticeMons[i]).moves.as_mut_ptr(),
@@ -596,19 +622,21 @@ unsafe fn SaveApprenticeParty(numQuestions: u8) {
         i += 1;
     }
     for i in 0..numQuestions {
-        let questionId: u8 = (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId();
-        let monId: u8 = (*gSaveBlock2Ptr).playerApprentice.questions[i].monId();
+        let questionId: u8 =
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].questionId();
+        let monId: u8 = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].monId();
         if questionId == QUESTION_ID_WHAT_ITEM {
-            if (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() != 0 {
+            if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].suggestedChange() != 0 {
                 (*apprenticeMons[monId]).item =
-                    (*gSaveBlock2Ptr).playerApprentice.questions[i].data;
+                    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].data;
             }
         } else if questionId == QUESTION_ID_WHICH_MOVE
-            && (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() != 0
+            && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].suggestedChange() != 0
         {
-            let moveSlot: u32 = (*gSaveBlock2Ptr).playerApprentice.questions[i].moveSlot() as u32;
+            let moveSlot: u32 =
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].moveSlot() as u32;
             (*apprenticeMons[monId]).moves[moveSlot] =
-                (*gSaveBlock2Ptr).playerApprentice.questions[i].data;
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].data;
         }
     }
 }
@@ -639,17 +667,19 @@ unsafe fn CreateApprenticeMenu(menu: u8) {
                 let mut species: u16 = 0;
                 let speciesTableId: u32 = (if i < 3 {
                     shr_i32(
-                        (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] as i32,
-                        (shr_i32((*gSaveBlock2Ptr).playerApprentice.party() as i32, i as u32)
-                            as u32
+                        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[i] as i32,
+                        (shr_i32(
+                            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party() as i32,
+                            i as u32,
+                        ) as u32
                             & 1)
                             << 2,
                     ) & 0xF
                 } else {
                     0
                 }) as u32;
-                species =
-                    gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[speciesTableId];
+                species = gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species
+                    [speciesTableId];
                 strings[i] =
                     (*(&raw const crate::data::data_tables::gSpeciesNames)
                         .cast::<CArray<CArray<u8, 11>, 0>>())[species]
@@ -660,15 +690,21 @@ unsafe fn CreateApprenticeMenu(menu: u8) {
         APPRENTICE_ASK_2SPECIES => {
             left = 18;
             top = 8;
-            if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS {
+            if (*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questionsAnswered()
+                >= NUM_WHICH_MON_QUESTIONS
+            {
                 return;
             }
             strings[1] = (*(&raw const crate::data::data_tables::gSpeciesNames)
-                .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).altSpeciesId]
+                .cast::<CArray<CArray<u8, 11>, 0>>())
+                [(*crate::gl!(gApprenticeQuestionData)).altSpeciesId]
                 .as_ptr()
                 .cast_mut();
             strings[0] = (*(&raw const crate::data::data_tables::gSpeciesNames)
-                .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).speciesId]
+                .cast::<CArray<CArray<u8, 11>, 0>>())
+                [(*crate::gl!(gApprenticeQuestionData)).speciesId]
                 .as_ptr()
                 .cast_mut();
         }
@@ -676,11 +712,13 @@ unsafe fn CreateApprenticeMenu(menu: u8) {
             left = 17;
             top = 8;
             strings[0] = (*(&raw const crate::data::data_tables::gMoveNames)
-                .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move1]
+                .cast::<CArray<CArray<u8, 13>, 355>>())
+                [(*crate::gl!(gApprenticeQuestionData)).move1]
                 .as_ptr()
                 .cast_mut();
             strings[1] = (*(&raw const crate::data::data_tables::gMoveNames)
-                .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move2]
+                .cast::<CArray<CArray<u8, 13>, 355>>())
+                [(*crate::gl!(gApprenticeQuestionData)).move2]
                 .as_ptr()
                 .cast_mut();
         }
@@ -793,21 +831,27 @@ pub unsafe fn CallApprenticeFunction() {
 }
 pub(crate) unsafe fn Script_ResetPlayerApprentice() {
     SetApprenticeId();
-    (*gSaveBlock2Ptr).playerApprentice.set_lvlMode(0);
-    (*gSaveBlock2Ptr).playerApprentice.set_questionsAnswered(0);
-    (*gSaveBlock2Ptr).playerApprentice.set_leadMonId(0);
-    (*gSaveBlock2Ptr).playerApprentice.set_party(0);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .set_lvlMode(0);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .set_questionsAnswered(0);
+    (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .set_leadMonId(0);
+    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.set_party(0);
     let mut i: u8 = 0;
     while i < MULTI_PARTY_SIZE as u8 {
-        (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[i] = 0;
         i += 1;
     }
     for i in 0..APPRENTICE_MAX_QUESTIONS {
-        (*gSaveBlock2Ptr).playerApprentice.questions[i].set_questionId(0);
-        (*gSaveBlock2Ptr).playerApprentice.questions[i].set_monId(0);
-        (*gSaveBlock2Ptr).playerApprentice.questions[i].set_moveSlot(0);
-        (*gSaveBlock2Ptr).playerApprentice.questions[i].set_suggestedChange(0);
-        (*gSaveBlock2Ptr).playerApprentice.questions[i].data = 0;
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].set_questionId(0);
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].set_monId(0);
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].set_moveSlot(0);
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].set_suggestedChange(0);
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].data = 0;
     }
 }
 pub(crate) unsafe fn Script_GivenApprenticeLvlMode() {
@@ -827,22 +871,32 @@ pub(crate) unsafe fn Script_SetRandomQuestionData() {
     SetRandomQuestionData();
 }
 pub(crate) unsafe fn IncrementQuestionsAnswered() {
-    (*gSaveBlock2Ptr)
+    (*crate::gl!(gSaveBlock2Ptr))
         .playerApprentice
-        .set_questionsAnswered((*gSaveBlock2Ptr).playerApprentice.questionsAnswered() + 1);
+        .set_questionsAnswered(
+            (*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questionsAnswered()
+                + 1,
+        );
 }
 pub(crate) unsafe fn GetNumApprenticePartyMonsAssigned() {
-    gSpecialVar_Result = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as u16;
+    gSpecialVar_Result = (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered() as u16;
 }
 pub(crate) unsafe fn IsFinalQuestion() {
-    let questionNum: i32 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3;
+    let questionNum: i32 = (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered() as i32
+        - 3;
     if questionNum < 0 {
         gSpecialVar_Result = FALSE as u16;
     } else {
         if questionNum > 8 {
             gSpecialVar_Result = TRUE as u16;
         }
-        if (*gSaveBlock2Ptr).playerApprentice.questions[questionNum].questionId()
+        if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[questionNum].questionId()
             == QUESTION_ID_WIN_SPEECH
         {
             gSpecialVar_Result = TRUE as u16;
@@ -867,39 +921,43 @@ pub(crate) unsafe fn Task_WaitForPrintingMessage(taskId: u8) {
 unsafe fn PrintApprenticeMessage() {
     let mut string: *mut u8 = null_mut();
     if gSpecialVar_0x8006 == APPRENTICE_MSG_WHICH_MON {
-        string = sApprenticeWhichMonTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
+        string = sApprenticeWhichMonTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][0];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_MON {
-        string = sApprenticeWhichMonTexts[(*gSaveBlock2Ptr).playerApprentice.id][1];
+        string = sApprenticeWhichMonTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][1];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_WHICH_MOVE {
-        string = sApprenticeWhichMoveTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
+        string = sApprenticeWhichMoveTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][0];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_MOVE {
-        string = sApprenticeWhichMoveTexts[(*gSaveBlock2Ptr).playerApprentice.id][1];
+        string = sApprenticeWhichMoveTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][1];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_WHICH_MON_FIRST {
-        string = sApprenticeWhichMonFirstTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
+        string =
+            sApprenticeWhichMonFirstTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][0];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_MON_FIRST {
-        string = sApprenticeWhichMonFirstTexts[(*gSaveBlock2Ptr).playerApprentice.id][1];
+        string =
+            sApprenticeWhichMonFirstTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][1];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_WHAT_HELD_ITEM {
-        string = sApprenticeHeldItemTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
+        string = sApprenticeHeldItemTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][0];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_PICK_WIN_SPEECH {
-        string = sApprenticePickWinSpeechTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
+        string =
+            sApprenticePickWinSpeechTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][0];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_HELD_ITEM {
-        string = sApprenticeHeldItemTexts[(*gSaveBlock2Ptr).playerApprentice.id][3];
+        string = sApprenticeHeldItemTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][3];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_HOLD_NOTHING {
-        string = sApprenticeHeldItemTexts[(*gSaveBlock2Ptr).playerApprentice.id][1];
+        string = sApprenticeHeldItemTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][1];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_ITEM_ALREADY_SUGGESTED {
-        string = sApprenticeHeldItemTexts[(*gSaveBlock2Ptr).playerApprentice.id][4];
+        string = sApprenticeHeldItemTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][4];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_NO_HELD_ITEM {
-        string = sApprenticeHeldItemTexts[(*gSaveBlock2Ptr).playerApprentice.id][2];
+        string = sApprenticeHeldItemTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][2];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_WIN_SPEECH {
-        string = sApprenticePickWinSpeechTexts[(*gSaveBlock2Ptr).playerApprentice.id][1];
+        string =
+            sApprenticePickWinSpeechTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][1];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_PLEASE_TEACH {
-        string = sApprenticeFirstMeetingTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
+        string = sApprenticeFirstMeetingTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][0];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_REJECT {
-        string = sApprenticeFirstMeetingTexts[(*gSaveBlock2Ptr).playerApprentice.id][1];
+        string = sApprenticeFirstMeetingTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][1];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_WHICH_LVL_MODE {
-        string = sApprenticeFirstMeetingTexts[(*gSaveBlock2Ptr).playerApprentice.id][2];
+        string = sApprenticeFirstMeetingTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][2];
     } else if gSpecialVar_0x8006 == APPRENTICE_MSG_THANKS_LVL_MODE {
-        string = sApprenticeFirstMeetingTexts[(*gSaveBlock2Ptr).playerApprentice.id][3];
+        string = sApprenticeFirstMeetingTexts[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id][3];
     } else {
         ScriptContext_Enable();
         return;
@@ -917,13 +975,24 @@ pub(crate) unsafe fn Script_PrintApprenticeMessage() {
     PrintApprenticeMessage();
 }
 pub(crate) unsafe fn ApprenticeGetQuestion() {
-    if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
+    if (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered()
+        < NUM_WHICH_MON_QUESTIONS
+    {
         gSpecialVar_Result = APPRENTICE_QUESTION_WHICH_MON;
-    } else if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() > 11 {
+    } else if (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered()
+        > 11
+    {
         gSpecialVar_Result = APPRENTICE_QUESTION_WIN_SPEECH;
     } else {
-        let id: i32 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3;
-        match (*gSaveBlock2Ptr).playerApprentice.questions[id].questionId() {
+        let id: i32 = (*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered() as i32
+            - 3;
+        match (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[id].questionId() {
             QUESTION_ID_WHAT_ITEM => {
                 gSpecialVar_Result = APPRENTICE_QUESTION_WHAT_ITEM;
             }
@@ -942,18 +1011,26 @@ pub(crate) unsafe fn ApprenticeGetQuestion() {
 pub(crate) unsafe fn SetApprenticePartyMon() {
     if gSpecialVar_0x8005 != 0 {
         let partySlot: u8 = gSpecialVar_0x8006 as u8;
-        (*gSaveBlock2Ptr).playerApprentice.set_party(
-            (*gSaveBlock2Ptr).playerApprentice.party() | shl_i32(1, partySlot as u32) as u8,
+        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.set_party(
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party()
+                | shl_i32(1, partySlot as u32) as u8,
         );
     }
 }
 pub(crate) unsafe fn SetApprenticeMonMove() {
-    if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS {
-        let id: u8 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() - 3;
+    if (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered()
+        >= NUM_WHICH_MON_QUESTIONS
+    {
+        let id: u8 = (*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered()
+            - 3;
         if gSpecialVar_0x8005 != 0 {
-            (*gSaveBlock2Ptr).playerApprentice.questions[id].set_suggestedChange(TRUE);
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[id].set_suggestedChange(TRUE);
         } else {
-            (*gSaveBlock2Ptr).playerApprentice.questions[id].set_suggestedChange(FALSE);
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[id].set_suggestedChange(FALSE);
         }
     }
 }
@@ -963,89 +1040,135 @@ pub(crate) unsafe fn InitQuestionData() {
     let mut id2: u8 = 0;
     let mut i: u8 = 0;
     while i < APPRENTICE_MAX_QUESTIONS
-        && (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != 0
+        && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].questionId() != 0
     {
         count += 1;
         i += 1;
     }
-    gApprenticeQuestionData = AllocZeroed(8) as *mut ApprenticeQuestionData;
+    crate::gl!(gApprenticeQuestionData = AllocZeroed(8) as *mut ApprenticeQuestionData);
     if gSpecialVar_0x8005 == APPRENTICE_QUESTION_WHICH_MON {
-        if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
-            id1 = (*gSaveBlock2Ptr).playerApprentice.speciesIds
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered()]
+        if (*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered()
+            < NUM_WHICH_MON_QUESTIONS
+        {
+            id1 = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[(*crate::gl!(
+                gSaveBlock2Ptr
+            ))
+            .playerApprentice
+            .questionsAnswered()]
                 >> 4;
-            (*gApprenticeQuestionData).altSpeciesId =
-                gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id1];
-            id2 = (*gSaveBlock2Ptr).playerApprentice.speciesIds
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered()]
+            (*crate::gl!(gApprenticeQuestionData)).altSpeciesId =
+                gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[id1];
+            id2 = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[(*crate::gl!(
+                gSaveBlock2Ptr
+            ))
+            .playerApprentice
+            .questionsAnswered()]
                 & 0xF;
-            (*gApprenticeQuestionData).speciesId =
-                gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id2];
+            (*crate::gl!(gApprenticeQuestionData)).speciesId =
+                gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[id2];
         }
     } else if gSpecialVar_0x8005 == APPRENTICE_QUESTION_WHICH_MOVE {
-        if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS
-            && ((*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32)
+        if (*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered()
+            >= NUM_WHICH_MON_QUESTIONS
+            && ((*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questionsAnswered() as i32)
                 < count as i32 + NUM_WHICH_MON_QUESTIONS as i32
-            && (*gSaveBlock2Ptr).playerApprentice.questions
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                .questionId()
+            && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(
+                gSaveBlock2Ptr
+            ))
+            .playerApprentice
+            .questionsAnswered()
+                as i32
+                - 3]
+            .questionId()
                 == QUESTION_ID_WHICH_MOVE
         {
-            count = (*gSaveBlock2Ptr).playerApprentice.questions
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                .monId();
+            count = (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(
+                gSaveBlock2Ptr
+            ))
+            .playerApprentice
+            .questionsAnswered()
+                as i32
+                - 3]
+            .monId();
             id1 = shr_i32(
-                (*gSaveBlock2Ptr).playerApprentice.party() as i32,
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party() as i32,
                 count as u32,
             ) as u8
                 & 1;
             id1 = shr_i32(
-                (*gSaveBlock2Ptr).playerApprentice.speciesIds[count] as i32,
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[count] as i32,
                 (id1 as u32) << 2,
             ) as u8
                 & 0xF;
-            (*gApprenticeQuestionData).speciesId =
-                gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id1];
-            (*gApprenticeQuestionData).move1 = GetDefaultMove(
+            (*crate::gl!(gApprenticeQuestionData)).speciesId =
+                gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[id1];
+            (*crate::gl!(gApprenticeQuestionData)).move1 = GetDefaultMove(
                 count,
                 id1,
-                (*gSaveBlock2Ptr).playerApprentice.questions
-                    [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                    .moveSlot(),
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(
+                    gSaveBlock2Ptr
+                ))
+                .playerApprentice
+                .questionsAnswered()
+                    as i32
+                    - 3]
+                .moveSlot(),
             );
-            (*gApprenticeQuestionData).move2 = (*gSaveBlock2Ptr).playerApprentice.questions
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                .data;
+            (*crate::gl!(gApprenticeQuestionData)).move2 = (*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questions[(*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questionsAnswered() as i32
+                - 3]
+            .data;
         }
     } else if gSpecialVar_0x8005 == APPRENTICE_QUESTION_WHAT_ITEM
-        && (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS
-        && ((*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32)
+        && (*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered()
+            >= NUM_WHICH_MON_QUESTIONS
+        && ((*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered() as i32)
             < count as i32 + NUM_WHICH_MON_QUESTIONS as i32
-        && (*gSaveBlock2Ptr).playerApprentice.questions
-            [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-            .questionId()
+        && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(gSaveBlock2Ptr))
+            .playerApprentice
+            .questionsAnswered()
+            as i32
+            - 3]
+        .questionId()
             == QUESTION_ID_WHAT_ITEM
     {
-        count = (*gSaveBlock2Ptr).playerApprentice.questions
-            [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
+        count =
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(gSaveBlock2Ptr))
+                .playerApprentice
+                .questionsAnswered()
+                as i32
+                - 3]
             .monId();
         id2 = shr_i32(
-            (*gSaveBlock2Ptr).playerApprentice.party() as i32,
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party() as i32,
             count as u32,
         ) as u8
             & 1;
         id2 = shr_i32(
-            (*gSaveBlock2Ptr).playerApprentice.speciesIds[count] as i32,
+            (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds[count] as i32,
             (id2 as u32) << 2,
         ) as u8
             & 0xF;
-        (*gApprenticeQuestionData).speciesId =
-            gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id2];
+        (*crate::gl!(gApprenticeQuestionData)).speciesId =
+            gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].species[id2];
     }
 }
 pub(crate) unsafe fn FreeQuestionData() {
-    Free(gApprenticeQuestionData as *mut c_void);
-    gApprenticeQuestionData = null_mut();
+    Free(crate::gl!(gApprenticeQuestionData) as *mut c_void);
+    crate::gl!(gApprenticeQuestionData = null_mut());
 }
 pub(crate) unsafe fn ApprenticeBufferString() {
     let mut stringDst: *mut u8 = null_mut();
@@ -1059,10 +1182,10 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             stringDst = gStringVar1.as_mut_ptr();
         }
         1 => {
-            stringDst = gStringVar2.as_mut_ptr();
+            stringDst = (*gStringVar2.as_ptr()).as_mut_ptr();
         }
         2 => {
-            stringDst = gStringVar3.as_mut_ptr();
+            stringDst = (*gStringVar3.as_ptr()).as_mut_ptr();
         }
         _ => {
             return;
@@ -1076,7 +1199,8 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).speciesId]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gApprenticeQuestionData)).speciesId]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1085,7 +1209,8 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).altSpeciesId]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gApprenticeQuestionData)).altSpeciesId]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1094,7 +1219,8 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).speciesId]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
+                    [(*crate::gl!(gApprenticeQuestionData)).speciesId]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1103,7 +1229,8 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 (*(&raw const crate::data::data_tables::gMoveNames)
-                    .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move1]
+                    .cast::<CArray<CArray<u8, 13>, 355>>())
+                    [(*crate::gl!(gApprenticeQuestionData)).move1]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1112,7 +1239,8 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 (*(&raw const crate::data::data_tables::gMoveNames)
-                    .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move2]
+                    .cast::<CArray<CArray<u8, 13>, 355>>())
+                    [(*crate::gl!(gApprenticeQuestionData)).move2]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1121,9 +1249,14 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 GetItemName(
-                    (*gSaveBlock2Ptr).playerApprentice.questions
-                        [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                        .data,
+                    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(
+                        gSaveBlock2Ptr
+                    ))
+                    .playerApprentice
+                    .questionsAnswered()
+                        as i32
+                        - 3]
+                    .data,
                 ),
             );
         }
@@ -1131,7 +1264,7 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             TVShowConvertInternationalString(
                 text.as_mut_ptr(),
                 GetApprenticeNameInLanguage(
-                    (*gSaveBlock2Ptr).playerApprentice.id as u32,
+                    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id as u32,
                     GAME_LANGUAGE as i32,
                 ),
                 GAME_LANGUAGE as i32,
@@ -1139,7 +1272,7 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(stringDst, text.as_mut_ptr());
         }
         APPRENTICE_BUFF_LEVEL => {
-            if (*gSaveBlock2Ptr).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
+            if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
                 StringCopy(
                     stringDst,
                     (*(&raw const crate::data::strings::gText_Lv50).cast::<CArray<u8, 0>>())
@@ -1156,17 +1289,22 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             }
         }
         APPRENTICE_BUFF_WIN_SPEECH => {
-            FrontierSpeechToString((*gSaveBlock2Ptr).apprentices[0].speechWon.as_mut_ptr());
+            FrontierSpeechToString(
+                (*crate::gl!(gSaveBlock2Ptr)).apprentices[0]
+                    .speechWon
+                    .as_mut_ptr(),
+            );
             StringCopy(stringDst, gStringVar4.as_mut_ptr());
         }
         APPRENTICE_BUFF_LEAD_MON_SPECIES => {
-            speciesArrayId = (if (*gSaveBlock2Ptr).playerApprentice.leadMonId() < 3 {
+            speciesArrayId = (if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.leadMonId() < 3 {
                 shr_i32(
-                    (*gSaveBlock2Ptr).playerApprentice.speciesIds
-                        [(*gSaveBlock2Ptr).playerApprentice.leadMonId()] as i32,
+                    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.speciesIds
+                        [(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.leadMonId()]
+                        as i32,
                     (shr_i32(
-                        (*gSaveBlock2Ptr).playerApprentice.party() as i32,
-                        (*gSaveBlock2Ptr).playerApprentice.leadMonId() as u32,
+                        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.party() as i32,
+                        (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.leadMonId() as u32,
                     ) as u32
                         & 1)
                         << 2,
@@ -1177,8 +1315,9 @@ pub(crate) unsafe fn ApprenticeBufferString() {
             StringCopy(
                 stringDst,
                 (*(&raw const crate::data::data_tables::gSpeciesNames)
-                    .cast::<CArray<CArray<u8, 11>, 0>>())
-                    [gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[speciesArrayId]]
+                    .cast::<CArray<CArray<u8, 11>, 0>>())[gApprentices
+                    [(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id]
+                    .species[speciesArrayId]]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1187,7 +1326,7 @@ pub(crate) unsafe fn ApprenticeBufferString() {
     }
 }
 pub(crate) unsafe fn SetLeadApprenticeMon() {
-    (*gSaveBlock2Ptr)
+    (*crate::gl!(gSaveBlock2Ptr))
         .playerApprentice
         .set_leadMonId(gSpecialVar_0x8005 as u8);
 }
@@ -1195,33 +1334,58 @@ pub(crate) unsafe fn Script_ApprenticeOpenBagMenu() {
     ApprenticeOpenBagMenu();
 }
 pub(crate) unsafe fn TrySetApprenticeHeldItem() {
-    if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
+    if (*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered()
+        < NUM_WHICH_MON_QUESTIONS
+    {
         return;
     }
     let mut count: u8 = 0;
     for j in 0..APPRENTICE_MAX_QUESTIONS {
-        if (*gSaveBlock2Ptr).playerApprentice.questions[j].questionId() == QUESTION_ID_WIN_SPEECH {
+        if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[j].questionId()
+            == QUESTION_ID_WIN_SPEECH
+        {
             break;
         }
         count += 1;
     }
     'l3: for i in 0..count {
         'l2: {
-            if i as i32 >= (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3 {
+            if i as i32
+                >= (*crate::gl!(gSaveBlock2Ptr))
+                    .playerApprentice
+                    .questionsAnswered() as i32
+                    - 3
+            {
                 break 'l3;
             }
-            if (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != QUESTION_ID_WHAT_ITEM
-                || (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() == 0
+            if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].questionId()
+                != QUESTION_ID_WHAT_ITEM
+                || (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].suggestedChange()
+                    == 0
             {
                 break 'l2;
             }
-            if (*gSaveBlock2Ptr).playerApprentice.questions[i].data == gSpecialVar_0x8005 {
-                (*gSaveBlock2Ptr).playerApprentice.questions
-                    [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                    .set_suggestedChange(FALSE);
-                (*gSaveBlock2Ptr).playerApprentice.questions
-                    [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                    .data = *(&raw const crate::ffi::gSpecialVar_0x8005)
+            if (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].data
+                == gSpecialVar_0x8005
+            {
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(
+                    gSaveBlock2Ptr
+                ))
+                .playerApprentice
+                .questionsAnswered()
+                    as i32
+                    - 3]
+                .set_suggestedChange(FALSE);
+                (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(
+                    gSaveBlock2Ptr
+                ))
+                .playerApprentice
+                .questionsAnswered()
+                    as i32
+                    - 3]
+                .data = *(&raw const crate::ffi::gSpecialVar_0x8005)
                     .cast::<u16>()
                     .cast_mut();
                 gSpecialVar_Result = FALSE as u16;
@@ -1229,24 +1393,29 @@ pub(crate) unsafe fn TrySetApprenticeHeldItem() {
             }
         }
     }
-    (*gSaveBlock2Ptr).playerApprentice.questions
-        [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-        .set_suggestedChange(TRUE);
-    (*gSaveBlock2Ptr).playerApprentice.questions
-        [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-        .data = *(&raw const crate::ffi::gSpecialVar_0x8005)
+    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered() as i32
+        - 3]
+    .set_suggestedChange(TRUE);
+    (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[(*crate::gl!(gSaveBlock2Ptr))
+        .playerApprentice
+        .questionsAnswered() as i32
+        - 3]
+    .data = *(&raw const crate::ffi::gSpecialVar_0x8005)
         .cast::<u16>()
         .cast_mut();
     gSpecialVar_Result = TRUE as u16;
 }
 pub(crate) unsafe fn ShiftSavedApprentices() {
-    if (*gSaveBlock2Ptr).apprentices[0].playerName[0] == EOS {
+    if (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].playerName[0] == EOS {
         return;
     }
     let mut i: i32 = 0;
     while i < 3 {
-        if (*gSaveBlock2Ptr).apprentices[i + 1].playerName[0] == EOS {
-            (*gSaveBlock2Ptr).apprentices[i + 1] = (*gSaveBlock2Ptr).apprentices[0];
+        if (*crate::gl!(gSaveBlock2Ptr)).apprentices[i + 1].playerName[0] == EOS {
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[i + 1] =
+                (*crate::gl!(gSaveBlock2Ptr)).apprentices[0];
             return;
         }
         i += 1;
@@ -1254,44 +1423,55 @@ pub(crate) unsafe fn ShiftSavedApprentices() {
     let mut apprenticeNum: i32 = 0xFFFF;
     let mut apprenticeIdx: i32 = -1;
     for i in 1..APPRENTICE_COUNT {
-        if GetTrainerId((*gSaveBlock2Ptr).apprentices[i].playerId.as_mut_ptr())
-            == GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr())
-            && ((*gSaveBlock2Ptr).apprentices[i].number as i32) < apprenticeNum
+        if GetTrainerId(
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[i]
+                .playerId
+                .as_mut_ptr(),
+        ) == GetTrainerId((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr())
+            && ((*crate::gl!(gSaveBlock2Ptr)).apprentices[i].number as i32) < apprenticeNum
         {
-            apprenticeNum = (*gSaveBlock2Ptr).apprentices[i].number as i32;
+            apprenticeNum = (*crate::gl!(gSaveBlock2Ptr)).apprentices[i].number as i32;
             apprenticeIdx = i;
         }
     }
     if apprenticeIdx > 0 {
-        (*gSaveBlock2Ptr).apprentices[apprenticeIdx] = (*gSaveBlock2Ptr).apprentices[0];
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[apprenticeIdx] =
+            (*crate::gl!(gSaveBlock2Ptr)).apprentices[0];
     }
 }
 pub(crate) unsafe fn SaveApprentice() {
-    (*gSaveBlock2Ptr).apprentices[0].set_id((*gSaveBlock2Ptr).playerApprentice.id);
-    (*gSaveBlock2Ptr).apprentices[0].set_lvlMode((*gSaveBlock2Ptr).playerApprentice.lvlMode());
+    (*crate::gl!(gSaveBlock2Ptr)).apprentices[0]
+        .set_id((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id);
+    (*crate::gl!(gSaveBlock2Ptr)).apprentices[0]
+        .set_lvlMode((*crate::gl!(gSaveBlock2Ptr)).playerApprentice.lvlMode());
     let mut i: u8 = 0;
     while i < APPRENTICE_MAX_QUESTIONS
-        && (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != 0
+        && (*crate::gl!(gSaveBlock2Ptr)).playerApprentice.questions[i].questionId() != 0
     {
         i += 1;
     }
-    (*gSaveBlock2Ptr).apprentices[0].numQuestions = i;
-    (*gSaveBlock2Ptr).apprentices[0].number =
-        (*gSaveBlock2Ptr).apprentices[0].number.saturating_add(1);
-    SaveApprenticeParty((*gSaveBlock2Ptr).apprentices[0].numQuestions);
+    (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].numQuestions = i;
+    (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].number = (*crate::gl!(gSaveBlock2Ptr)).apprentices
+        [0]
+    .number
+    .saturating_add(1);
+    SaveApprenticeParty((*crate::gl!(gSaveBlock2Ptr)).apprentices[0].numQuestions);
     for i in 0..TRAINER_ID_LENGTH {
-        (*gSaveBlock2Ptr).apprentices[0].playerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i];
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].playerId[i] =
+            (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[i];
     }
     StringCopy(
-        (*gSaveBlock2Ptr).apprentices[0].playerName.as_mut_ptr(),
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).apprentices[0]
+            .playerName
+            .as_mut_ptr(),
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr(),
     );
-    (*gSaveBlock2Ptr).apprentices[0].language = gGameLanguage;
-    CalcApprenticeChecksum(&raw mut (*gSaveBlock2Ptr).apprentices[0]);
+    (*crate::gl!(gSaveBlock2Ptr)).apprentices[0].language = gGameLanguage;
+    CalcApprenticeChecksum(&raw mut (*crate::gl!(gSaveBlock2Ptr)).apprentices[0]);
 }
 pub(crate) unsafe fn SetSavedApprenticeTrainerGfxId() {
     let mut objectEventGfxId: u8 = 0;
-    let class: u8 = gApprentices[(*gSaveBlock2Ptr).apprentices[0].id()].facilityClass;
+    let class: u8 = gApprentices[(*crate::gl!(gSaveBlock2Ptr)).apprentices[0].id()].facilityClass;
     let mut i: u8 = 0;
     while i < 30
         && (*(&raw const crate::data::battle_tower::gTowerMaleFacilityClasses)
@@ -1322,7 +1502,7 @@ pub(crate) unsafe fn SetSavedApprenticeTrainerGfxId() {
 }
 pub(crate) unsafe fn SetPlayerApprenticeTrainerGfxId() {
     let mut objectEventGfxId: u8 = 0;
-    let class: u8 = gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].facilityClass;
+    let class: u8 = gApprentices[(*crate::gl!(gSaveBlock2Ptr)).playerApprentice.id].facilityClass;
     let mut i: u8 = 0;
     while i < 30
         && (*(&raw const crate::data::battle_tower::gTowerMaleFacilityClasses)
@@ -1385,17 +1565,23 @@ pub unsafe fn GetApprenticeNameInLanguage(apprenticeId: u32, language: i32) -> *
     }
 }
 pub(crate) unsafe fn Task_SwitchToFollowupFuncAfterButtonPress(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
         SwitchTaskToFollowupFunc(taskId);
     }
 }
 pub(crate) unsafe fn Task_ExecuteFuncAfterButtonPress(taskId: u8) {
-    if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
-        gApprenticeFunc = core::mem::transmute::<_, Option<unsafe fn()>>(
-            (task_get(taskId, 0) as u16 as u32 | (task_get(taskId, 1) as u32) << 16) as usize
-                as *mut c_void,
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
+        || crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0
+    {
+        crate::gl!(
+            gApprenticeFunc = core::mem::transmute::<_, Option<unsafe fn()>>(
+                (task_get(taskId, 0) as u16 as u32 | (task_get(taskId, 1) as u32) << 16) as usize
+                    as *mut c_void,
+            )
         );
-        gApprenticeFunc.unwrap_unchecked()();
+        (*gApprenticeFunc.as_ptr()).unwrap_unchecked()();
         DestroyTask(taskId);
     }
 }

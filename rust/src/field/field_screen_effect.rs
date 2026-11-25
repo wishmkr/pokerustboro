@@ -96,7 +96,7 @@ unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
 }
 /// `ScanlineEffect_SetParams` with this module's view of its types.
 #[inline]
-unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
     unsafe {
         crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
     }
@@ -131,7 +131,7 @@ unsafe fn FillPalBufferWhite() {
         volatile_write(&raw mut tmp, 0x7fff7fff);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+            (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
             0x1000100,
         );
     }
@@ -142,7 +142,7 @@ unsafe fn FillPalBufferBlack() {
         volatile_write(&raw mut tmp, 0);
         CpuFastSet(
             &raw mut tmp as *mut c_void,
-            gPlttBufferFaded.as_mut_ptr() as *mut c_void,
+            (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
             0x1000100,
         );
     }
@@ -363,7 +363,7 @@ pub(crate) unsafe fn Task_ExitDoor(taskId: u8) {
                 SetPlayerVisibility(TRUE);
                 let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventSetHeldMovement(
-                    &raw mut gObjectEvents[objEventId],
+                    crate::gl!(&raw gObjectEvents[objEventId]),
                     MOVEMENT_ACTION_WALK_NORMAL_DOWN,
                 );
                 (*task).data[tState] = 2;
@@ -373,7 +373,7 @@ pub(crate) unsafe fn Task_ExitDoor(taskId: u8) {
             if IsPlayerStandingStill() != 0 {
                 (*task).data[1] = FieldAnimateDoorClose(*x as u32, *y as u32) as i16;
                 let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
-                ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[objEventId]);
+                ObjectEventClearHeldMovementIfFinished(crate::gl!(&raw gObjectEvents[objEventId]));
                 (*task).data[tState] = 3;
             }
         }
@@ -406,7 +406,7 @@ pub(crate) unsafe fn Task_ExitNonAnimDoor(taskId: u8) {
                 SetPlayerVisibility(TRUE);
                 let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventSetHeldMovement(
-                    &raw mut gObjectEvents[objEventId],
+                    crate::gl!(&raw gObjectEvents[objEventId]),
                     GetWalkNormalMovementAction(GetPlayerFacingDirection() as u32),
                 );
                 (*task).data[tState] = 2;
@@ -451,7 +451,7 @@ pub unsafe fn ReturnToFieldOpenStartMenu() {
     CreateTask(Some(Task_WaitForFadeShowStartMenu), 0x50);
     LockPlayerFieldControls();
 }
-pub unsafe fn FieldCB_ReturnToFieldOpenStartMenu() -> u8 {
+pub fn FieldCB_ReturnToFieldOpenStartMenu() -> u8 {
     ShowReturnToFieldStartMenu();
     FALSE
 }
@@ -475,7 +475,7 @@ pub unsafe fn FieldCB_ReturnToFieldNoScriptCheckMusic() {
     CreateTask(Some(Task_ReturnToFieldNoScript), 10);
 }
 unsafe fn PaletteFadeActive() -> u32 {
-    gPaletteFade.active() as u32
+    (*gPaletteFade.as_ptr()).active() as u32
 }
 unsafe fn WaitForWeatherFadeIn() -> u32 {
     if IsWeatherNotFadingIn() == TRUE {
@@ -494,7 +494,7 @@ pub unsafe fn DoWarp() {
     WarpFadeOutScreen();
     PlayRainStoppingSoundEffect();
     PlaySE(SE_EXIT);
-    gFieldCallback = Some(FieldCB_DefaultWarpExit);
+    crate::gl!(gFieldCallback = Some(FieldCB_DefaultWarpExit));
     CreateTask(Some(Task_WarpAndLoadMap), 10);
 }
 #[unsafe(no_mangle)]
@@ -503,7 +503,7 @@ pub unsafe fn DoDiveWarp() {
     TryFadeOutOldMapMusic();
     WarpFadeOutScreen();
     PlayRainStoppingSoundEffect();
-    gFieldCallback = Some(FieldCB_DefaultWarpExit);
+    crate::gl!(gFieldCallback = Some(FieldCB_DefaultWarpExit));
     CreateTask(Some(Task_WarpAndLoadMap), 10);
 }
 pub unsafe fn DoWhiteFadeWarp() {
@@ -511,18 +511,18 @@ pub unsafe fn DoWhiteFadeWarp() {
     TryFadeOutOldMapMusic();
     FadeScreen(FADE_TO_WHITE, 8);
     PlayRainStoppingSoundEffect();
-    gFieldCallback = Some(FieldCB_WarpExitFadeFromWhite);
+    crate::gl!(gFieldCallback = Some(FieldCB_WarpExitFadeFromWhite));
     CreateTask(Some(Task_WarpAndLoadMap), 10);
 }
 pub unsafe fn DoDoorWarp() {
     LockPlayerFieldControls();
-    gFieldCallback = Some(FieldCB_DefaultWarpExit);
+    crate::gl!(gFieldCallback = Some(FieldCB_DefaultWarpExit));
     CreateTask(Some(Task_DoDoorWarp), 10);
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoFallWarp() {
     DoDiveWarp();
-    gFieldCallback = Some(FieldCB_FallWarpExit);
+    crate::gl!(gFieldCallback = Some(FieldCB_FallWarpExit));
 }
 pub unsafe fn DoEscalatorWarp(metatileBehavior: u8) {
     LockPlayerFieldControls();
@@ -542,7 +542,7 @@ pub unsafe fn DoTeleportTileWarp() {
     WarpFadeOutScreen();
     PlaySE(SE_WARP_IN);
     CreateTask(Some(Task_WarpAndLoadMap), 10);
-    gFieldCallback = Some(FieldCB_SpinEnterWarp);
+    crate::gl!(gFieldCallback = Some(FieldCB_SpinEnterWarp));
 }
 pub unsafe fn DoMossdeepGymWarp() {
     SetObjectEventLoadFlag(SKIP_OBJECT_EVENT_LOAD);
@@ -552,14 +552,14 @@ pub unsafe fn DoMossdeepGymWarp() {
     WarpFadeOutScreen();
     PlaySE(SE_WARP_IN);
     CreateTask(Some(Task_WarpAndLoadMap), 10);
-    gFieldCallback = Some(FieldCB_MossdeepGymWarpExit);
+    crate::gl!(gFieldCallback = Some(FieldCB_MossdeepGymWarpExit));
 }
 #[unsafe(no_mangle)]
 pub unsafe fn DoPortholeWarp() {
     LockPlayerFieldControls();
     WarpFadeOutScreen();
     CreateTask(Some(Task_WarpAndLoadMap), 10);
-    gFieldCallback = Some(FieldCB_ShowPortholeView);
+    crate::gl!(gFieldCallback = Some(FieldCB_ShowPortholeView));
 }
 pub(crate) unsafe fn Task_DoCableClubWarp(taskId: u8) {
     let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
@@ -605,7 +605,7 @@ pub(crate) unsafe fn Task_ReturnToWorldFromLinkRoom(taskId: u8) {
                 *data += 1;
             }
         }
-        2 if gReceivedRemoteLinkPlayers == 0 => {
+        2 if gReceivedRemoteLinkPlayers.get() == 0 => {
             WarpIntoMap();
             SetMainCallback2(Some(CB2_LoadMap));
             DestroyTask(taskId);
@@ -659,10 +659,10 @@ pub(crate) unsafe fn Task_DoDoorWarp(taskId: u8) {
         1 => {
             if (*task).data[1] < 0 || (*gTasks.as_ptr())[(*task).data[1]].isActive != 1 {
                 let mut objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
-                ObjectEventClearHeldMovementIfActive(&raw mut gObjectEvents[objEventId]);
+                ObjectEventClearHeldMovementIfActive(crate::gl!(&raw gObjectEvents[objEventId]));
                 objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventSetHeldMovement(
-                    &raw mut gObjectEvents[objEventId],
+                    crate::gl!(&raw gObjectEvents[objEventId]),
                     MOVEMENT_ACTION_WALK_NORMAL_UP,
                 );
                 (*task).data[tState] = 2;
@@ -672,7 +672,7 @@ pub(crate) unsafe fn Task_DoDoorWarp(taskId: u8) {
             if IsPlayerStandingStill() != 0 {
                 (*task).data[1] = FieldAnimateDoorClose(*x as u32, *y as u32 - 1) as i16;
                 let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
-                ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[objEventId]);
+                ObjectEventClearHeldMovementIfFinished(crate::gl!(&raw gObjectEvents[objEventId]));
                 SetPlayerVisibility(FALSE);
                 (*task).data[tState] = 3;
             }
@@ -720,7 +720,7 @@ pub unsafe fn DoContestHallWarp() {
     WarpFadeOutScreen();
     PlayRainStoppingSoundEffect();
     PlaySE(SE_EXIT);
-    gFieldCallback = Some(FieldCB_WarpExitFadeFromBlack);
+    crate::gl!(gFieldCallback = Some(FieldCB_WarpExitFadeFromBlack));
     CreateTask(Some(Task_DoContestHallWarp), 10);
 }
 unsafe fn SetFlashScanlineEffectWindowBoundary(
@@ -856,11 +856,13 @@ pub(crate) unsafe fn UpdateFlashLevelEffect(taskId: u8) {
     match *data {
         0 => {
             SetFlashScanlineEffectWindowBoundaries(
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer]
                     .as_mut_ptr(),
                 *data.at(1) as i32,
@@ -871,11 +873,13 @@ pub(crate) unsafe fn UpdateFlashLevelEffect(taskId: u8) {
         }
         1 => {
             SetFlashScanlineEffectWindowBoundaries(
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer]
                     .as_mut_ptr(),
                 *data.at(1) as i32,
@@ -905,11 +909,13 @@ pub(crate) unsafe fn UpdateOrbFlashEffect(taskId: u8) {
     match *data {
         0 => {
             SetOrbFlashScanlineEffectWindowBoundaries(
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer]
                     .as_mut_ptr(),
                 *data.at(1) as i32,
@@ -920,11 +926,13 @@ pub(crate) unsafe fn UpdateOrbFlashEffect(taskId: u8) {
         }
         1 => {
             SetOrbFlashScanlineEffectWindowBoundaries(
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
-                    .cast::<ScanlineEffect>()
-                    .cast_mut())
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[(*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffect;)
+                    .cast_const())
+                .cast::<ScanlineEffect>()
+                .cast_mut())
                 .srcBuffer]
                     .as_mut_ptr(),
                 *data.at(1) as i32,
@@ -1024,40 +1032,46 @@ pub unsafe fn AnimateFlash(newFlashLevel: u8) {
 pub unsafe fn WriteFlashScanlineEffectBuffer(flashLevel: u8) {
     if flashLevel != 0 {
         SetFlashScanlineEffectWindowBoundaries(
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][0],
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][0],
             120,
             80,
             sFlashLevelToRadius[flashLevel] as i32,
         );
         CpuFastSet(
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0] as *mut c_void,
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1] as *mut c_void,
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0] as *mut c_void,
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1] as *mut c_void,
             480,
         );
     }
 }
 pub unsafe fn WriteBattlePyramidViewScanlineEffectBuffer() {
     SetFlashScanlineEffectWindowBoundaries(
-        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][0],
+        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[0][0],
         120,
         80,
-        (*gSaveBlock2Ptr).frontier.pyramidLightRadius as i32,
+        (*crate::gl!(gSaveBlock2Ptr)).frontier.pyramidLightRadius as i32,
     );
     CpuFastSet(
-        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0] as *mut c_void,
-        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1] as *mut c_void,
+        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[0] as *mut c_void,
+        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[1] as *mut c_void,
         480,
     );
 }
@@ -1109,11 +1123,11 @@ pub(crate) unsafe fn Task_SpinExitWarp(taskId: u8) {
 pub unsafe fn DoSpinEnterWarp() {
     LockPlayerFieldControls();
     CreateTask(Some(Task_WarpAndLoadMap), 10);
-    gFieldCallback = Some(FieldCB_SpinEnterWarp);
+    crate::gl!(gFieldCallback = Some(FieldCB_SpinEnterWarp));
 }
 pub unsafe fn DoSpinExitWarp() {
     LockPlayerFieldControls();
-    gFieldCallback = Some(FieldCB_DefaultWarpExit);
+    crate::gl!(gFieldCallback = Some(FieldCB_DefaultWarpExit));
     CreateTask(Some(Task_SpinExitWarp), 10);
 }
 unsafe fn LoadOrbEffectPalette(blueOrb: u8) {
@@ -1169,7 +1183,7 @@ pub(crate) unsafe fn Task_OrbEffect(taskId: u8) {
             SetBgTilemapPalette(0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT, 0xF);
             ScheduleBgCopyTilemapToVram(0);
             SetOrbFlashScanlineEffectWindowBoundaries(
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[0][0],
                 *data.at(2) as i32,
@@ -1177,10 +1191,10 @@ pub(crate) unsafe fn Task_OrbEffect(taskId: u8) {
                 1,
             );
             CpuFastSet(
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[0] as *mut c_void,
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[1] as *mut c_void,
                 480,

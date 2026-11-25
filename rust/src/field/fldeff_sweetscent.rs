@@ -42,14 +42,12 @@ unsafe fn FieldEffectStart(a0: u8) -> u32 {
 /// `FieldEffectActiveListRemove` with this module's view of its types.
 #[inline]
 unsafe fn FieldEffectActiveListRemove(a0: u8) {
-    unsafe {
-        crate::field_effect::FieldEffectActiveListRemove(a0);
-    }
+    crate::field_effect::FieldEffectActiveListRemove(a0);
 }
 /// `GetPlayerAvatarSpriteId` with this module's view of its types.
 #[inline]
 unsafe fn GetPlayerAvatarSpriteId() -> u8 {
-    unsafe { crate::field_player_avatar::GetPlayerAvatarSpriteId() }
+    crate::field_player_avatar::GetPlayerAvatarSpriteId()
 }
 /// `SetWeatherScreenFadeOut` with this module's view of its types.
 #[inline]
@@ -114,9 +112,10 @@ unsafe fn ScriptContext_SetupScript(a0: *const u8) {
 unsafe fn field_callback_sweet_scent() {
     let _ = unsafe { FieldEffectStart(FLDEFF_SWEET_SCENT) };
     unsafe {
-        (&raw mut (*(&raw const crate::field_effect::gFieldEffectArguments)
-            .cast::<[i32; 8]>()
-            .cast_mut()))
+        (&raw mut (*(crate::gl!(&raw @at crate::field_effect::gFieldEffectArguments;)
+            .cast_const())
+        .cast::<[i32; 8]>()
+        .cast_mut()))
             .cast::<i32>()
             .write(i32::from(GetCursorSelectionMonId()))
     };
@@ -126,24 +125,25 @@ unsafe fn start_sweet_scent_field_effect() {
     unsafe { PlaySE(SE_M_SWEET_SCENT) };
     unsafe {
         CpuFastSet(
-            (&raw const (*(&raw const crate::palette::gPlttBufferUnfaded)
+            (&raw const (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast(),
-            (&raw mut (*(&raw const crate::palette::gPaletteDecompressionBuffer)
-                .cast::<u8>()
-                .cast_mut()))
+            (&raw mut (*(crate::gl!(&raw @at crate::palette::gPaletteDecompressionBuffer;)
+                .cast_const())
+            .cast::<u8>()
+            .cast_mut()))
                 .cast(),
             PLTT_FAST_COPY_WORDS,
         )
     };
     unsafe {
         CpuFastSet(
-            (&raw const (*(&raw const crate::palette::gPlttBufferFaded)
+            (&raw const (*(crate::gl!(&raw @at crate::palette::gPlttBufferFaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast(),
-            (&raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast(),
@@ -192,11 +192,12 @@ unsafe fn fail_sweet_scent_encounter(task_id: u8) {
 
     unsafe {
         CpuFastSet(
-            (&raw const (*(&raw const crate::palette::gPaletteDecompressionBuffer)
-                .cast::<u8>()
-                .cast_mut()))
+            (&raw const (*(crate::gl!(&raw @at crate::palette::gPaletteDecompressionBuffer;)
+                .cast_const())
+            .cast::<u8>()
+            .cast_mut()))
                 .cast(),
-            (&raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            (&raw mut (*(crate::gl!(&raw @at crate::palette::gPlttBufferUnfaded;).cast_const())
                 .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
                 .cast_mut()))
                 .cast(),

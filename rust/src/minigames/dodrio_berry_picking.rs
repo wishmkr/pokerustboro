@@ -171,7 +171,7 @@ unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
@@ -1109,20 +1109,27 @@ static sWindowTemplates_Records: Table<WindowTemplate> =
 static sWindowTemplates_Results: Table<CArray<WindowTemplate, 2>> =
     Table((&raw const crate::data::dodrio_berry_picking::sWindowTemplates_Results).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sGame: *mut DodrioGame = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDodrioSpriteIds: CArray<*mut u16, 5> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCloudSpriteIds: CArray<*mut u16, 2> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBerrySpriteIds: CArray<*mut u16, 11> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBerryIconSpriteIds: CArray<*mut u16, 4> = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStatusBar: *mut StatusBar = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sGfx: *mut DodrioGame_Gfx = null_mut();
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sGame: crate::global::Global<*mut DodrioGame> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sDodrioSpriteIds: crate::global::Global<CArray<*mut u16, 5>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sCloudSpriteIds: crate::global::Global<CArray<*mut u16, 2>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBerrySpriteIds: crate::global::Global<CArray<*mut u16, 11>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sBerryIconSpriteIds: crate::global::Global<CArray<*mut u16, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sStatusBar: crate::global::Global<*mut StatusBar> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sGfx: crate::global::Global<*mut DodrioGame_Gfx> =
+    crate::global::Global::new(null_mut());
 pub(crate) static sExitingGame: crate::global::Global<u32> = crate::global::Global::new(0);
 
 /// `AddTextPrinterParameterized` with this module's view of its types.
@@ -1155,7 +1162,7 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `GetTextWindowPalette` with this module's view of its types.
 #[inline]
-unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+fn GetTextWindowPalette(a0: u8) -> *mut u16 {
     unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
 }
 /// `GetWindowFrameTilesPal` with this module's view of its types.
@@ -1165,7 +1172,7 @@ unsafe fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal {
 }
 /// `LZ77UnCompWram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
     }
@@ -1180,29 +1187,30 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 
 pub unsafe fn StartDodrioBerryPicking(partyId: u16, exitCallback: Option<unsafe fn()>) {
     sExitingGame.set(FALSE as u32);
-    if gReceivedRemoteLinkPlayers != 0
+    if gReceivedRemoteLinkPlayers.get() != 0
         && !({
-            sGame = AllocZeroed(13104) as *mut DodrioGame;
-            sGame
+            crate::gl!(sGame = AllocZeroed(13104) as *mut DodrioGame);
+            crate::gl!(sGame)
         })
         .is_null()
     {
         ResetTasksAndSprites();
-        InitDodrioGame(sGame);
-        (*sGame).exitCallback = exitCallback;
-        (*sGame).multiplayerId = GetMultiplayerId();
-        (*sGame).player = (*sGame).players[(*sGame).multiplayerId];
+        InitDodrioGame(crate::gl!(sGame));
+        (*crate::gl!(sGame)).exitCallback = exitCallback;
+        (*crate::gl!(sGame)).multiplayerId = GetMultiplayerId();
+        (*crate::gl!(sGame)).player =
+            (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId];
         InitMonInfo(
-            &raw mut (*sGame).monInfo[(*sGame).multiplayerId],
-            &raw mut gPlayerParty[partyId],
+            &raw mut (*crate::gl!(sGame)).monInfo[(*crate::gl!(sGame)).multiplayerId],
+            crate::gl!(&raw gPlayerParty[partyId]),
         );
         CreateTask(Some(Task_StartDodrioGame), 1);
         SetMainCallback2(Some(CB2_DodrioGame));
         SetRandomPrize();
         GetActiveBerryColumns(
-            (*sGame).numPlayers,
-            &raw mut (*sGame).berryColStart,
-            &raw mut (*sGame).berryColEnd,
+            (*crate::gl!(sGame)).numPlayers,
+            &raw mut (*crate::gl!(sGame)).berryColStart,
+            &raw mut (*crate::gl!(sGame)).berryColEnd,
         );
         StopMapMusic();
         PlayNewMapMusic(MUS_RG_BERRY_PICK);
@@ -1269,64 +1277,64 @@ unsafe fn InitDodrioGame(game: *mut DodrioGame) {
 }
 pub(crate) unsafe fn Task_StartDodrioGame(taskId: u8) {
     let mut numPlayers: u8 = 0;
-    match (*sGame).startState {
+    match (*crate::gl!(sGame)).startState {
         0 => {
             SetVBlankCallback(None);
             CreateTask_(Some(Task_CommunicateMonInfo), 4);
-            (*sGame).startState += 1;
+            (*crate::gl!(sGame)).startState += 1;
         }
         1 => {
             if FuncIsActiveTask(Some(Task_CommunicateMonInfo)) == 0 {
-                InitGameGfx(&raw mut (*sGame).gfx);
-                (*sGame).startState += 1;
+                InitGameGfx(&raw mut (*crate::gl!(sGame)).gfx);
+                (*crate::gl!(sGame)).startState += 1;
             }
         }
         2 => {
             if IsGfxFuncActive() == 0 {
                 Rfu_SetLinkStandbyCallback();
-                (*sGame).startState += 1;
+                (*crate::gl!(sGame)).startState += 1;
             }
         }
         3 => {
             if IsLinkTaskFinished() != 0 {
-                if gReceivedRemoteLinkPlayers != 0 {
+                if gReceivedRemoteLinkPlayers.get() != 0 {
                     LoadWirelessStatusIndicatorSpriteGfx();
                     CreateWirelessStatusIndicatorSprite(0, 0);
                 }
-                (*sGame).startState += 1;
+                (*crate::gl!(sGame)).startState += 1;
             }
         }
         4 => {
-            numPlayers = (*sGame).numPlayers;
+            numPlayers = (*crate::gl!(sGame)).numPlayers;
             LoadDodrioGfx();
             for i in 0..numPlayers {
                 CreateDodrioSprite(
-                    &raw mut (*sGame).monInfo[(*sGame).posToPlayerId[i]],
+                    &raw mut (*crate::gl!(sGame)).monInfo[(*crate::gl!(sGame)).posToPlayerId[i]],
                     i,
-                    (*sGame).posToPlayerId[i],
-                    (*sGame).numPlayers,
+                    (*crate::gl!(sGame)).posToPlayerId[i],
+                    (*crate::gl!(sGame)).numPlayers,
                 );
             }
-            SetAllDodrioInvisibility(FALSE, (*sGame).numPlayers);
-            (*sGame).startState += 1;
+            SetAllDodrioInvisibility(FALSE, (*crate::gl!(sGame)).numPlayers);
+            (*crate::gl!(sGame)).startState += 1;
         }
         5 => {
             LoadBerryGfx();
             CreateBerrySprites();
             CreateCloudSprites();
             CreateStatusBarSprites();
-            (*sGame).startState += 1;
+            (*crate::gl!(sGame)).startState += 1;
         }
         6 => {
             BlendPalettes(PALETTES_ALL, 0x10, 0x00);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             SetVBlankCallback(Some(VBlankCB_DodrioGame));
-            (*sGame).startState += 1;
+            (*crate::gl!(sGame)).startState += 1;
         }
         7 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
-                (*sGame).startState += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sGame)).startState += 1;
             }
         }
         _ => {
@@ -1337,7 +1345,7 @@ pub(crate) unsafe fn Task_StartDodrioGame(taskId: u8) {
 }
 pub(crate) unsafe fn Task_DodrioGame_Leader(taskId: u8) {
     RecvLinkData_Leader();
-    sLeaderFuncs[(*sGame).funcId].unwrap_unchecked()();
+    sLeaderFuncs[(*crate::gl!(sGame)).funcId].unwrap_unchecked()();
     if sExitingGame.get() == 0 {
         UpdateGame_Leader();
     }
@@ -1345,18 +1353,18 @@ pub(crate) unsafe fn Task_DodrioGame_Leader(taskId: u8) {
 }
 pub(crate) unsafe fn Task_DodrioGame_Member(taskId: u8) {
     RecvLinkData_Member();
-    sMemberFuncs[(*sGame).funcId].unwrap_unchecked()();
+    sMemberFuncs[(*crate::gl!(sGame)).funcId].unwrap_unchecked()();
     if sExitingGame.get() == 0 {
         UpdateGame_Member();
     }
     SendLinkData_Member();
 }
 pub(crate) unsafe fn DoGameIntro() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             StartDodrioIntroAnim(1);
             SetGfxFuncById(GFXFUNC_SHOW_NAMES);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 if IsGfxFuncActive() == 0 => {
             SetGameFunc(FUNC_INIT_COUNTDOWN);
@@ -1365,46 +1373,46 @@ pub(crate) unsafe fn DoGameIntro() {
     }
 }
 pub(crate) unsafe fn InitCountdown() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             InitFirstWaveOfBerries();
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         _ => {
-            (*sGame).startCountdown = TRUE as u32;
+            (*crate::gl!(sGame)).startCountdown = TRUE as u32;
             SetGameFunc(FUNC_COUNTDOWN);
         }
     }
 }
 pub(crate) unsafe fn DoCountdown() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             StartMinigameCountdown(GFXTAG_COUNTDOWN, PALTAG_COUNTDOWN, 120, 80, 0);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 => {
             Rfu_SetLinkStandbyCallback();
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         2 => {
             if IsLinkTaskFinished() != 0 {
-                (*sGame).state += 1;
-                (*sGame).countdownEndDelay = 0;
+                (*crate::gl!(sGame)).state += 1;
+                (*crate::gl!(sGame)).countdownEndDelay = 0;
             }
         }
         3 => {
             if IsMinigameCountdownRunning() == 0 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         4 => {
             if ({
-                (*sGame).countdownEndDelay += 1;
-                (*sGame).countdownEndDelay
+                (*crate::gl!(sGame)).countdownEndDelay += 1;
+                (*crate::gl!(sGame)).countdownEndDelay
             }) > 5
             {
                 Rfu_SetLinkStandbyCallback();
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         5 if IsLinkTaskFinished() != 0 => {
@@ -1414,31 +1422,35 @@ pub(crate) unsafe fn DoCountdown() {
     }
 }
 pub(crate) unsafe fn WaitGameStart() {
-    if (*sGame).state == 0 && (*sGame).startGame != 0 {
+    if (*crate::gl!(sGame)).state == 0 && (*crate::gl!(sGame)).startGame != 0 {
         SetGameFunc(FUNC_PLAY_GAME);
     }
 }
 pub(crate) unsafe fn PlayGame_Leader() {
-    if (*sGame).state == 0 {
-        if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
-            if (*sGame).inputState[0] == INPUTSTATE_NONE {
-                if gMain.newKeys as i32 & DPAD_UP != 0 {
-                    if (*sGame).players[0].comm.pickState == PICK_NONE {
-                        (*sGame).players[0].comm.ateBerry = 0;
-                        (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_MIDDLE);
+    if (*crate::gl!(sGame)).state == 0 {
+        if (*crate::gl!(sGame)).numGraySquares < NUM_STATUS_SQUARES {
+            if (*crate::gl!(sGame)).inputState[0] == INPUTSTATE_NONE {
+                if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
+                    if (*crate::gl!(sGame)).players[0].comm.pickState == PICK_NONE {
+                        (*crate::gl!(sGame)).players[0].comm.ateBerry = 0;
+                        (*crate::gl!(sGame)).players[0].comm.pickState =
+                            UpdatePickStateQueue(PICK_MIDDLE);
                     }
-                } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
-                    if (*sGame).players[0].comm.pickState == PICK_NONE {
-                        (*sGame).players[0].comm.ateBerry = 0;
-                        (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_RIGHT);
+                } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
+                    if (*crate::gl!(sGame)).players[0].comm.pickState == PICK_NONE {
+                        (*crate::gl!(sGame)).players[0].comm.ateBerry = 0;
+                        (*crate::gl!(sGame)).players[0].comm.pickState =
+                            UpdatePickStateQueue(PICK_RIGHT);
                     }
-                } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
-                    if (*sGame).players[0].comm.pickState == PICK_NONE {
-                        (*sGame).players[0].comm.ateBerry = 0;
-                        (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_LEFT);
+                } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
+                    if (*crate::gl!(sGame)).players[0].comm.pickState == PICK_NONE {
+                        (*crate::gl!(sGame)).players[0].comm.ateBerry = 0;
+                        (*crate::gl!(sGame)).players[0].comm.pickState =
+                            UpdatePickStateQueue(PICK_LEFT);
                     }
                 } else {
-                    (*sGame).players[0].comm.pickState = UpdatePickStateQueue(PICK_NONE);
+                    (*crate::gl!(sGame)).players[0].comm.pickState =
+                        UpdatePickStateQueue(PICK_NONE);
                 }
             }
         } else {
@@ -1449,21 +1461,33 @@ pub(crate) unsafe fn PlayGame_Leader() {
     }
 }
 pub(crate) unsafe fn PlayGame_Member() {
-    if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
-            if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
-                (*sGame).player.comm.pickState = PICK_MIDDLE;
+    if (*crate::gl!(sGame)).numGraySquares < NUM_STATUS_SQUARES {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
+            if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState
+                == PICK_NONE
+            {
+                (*crate::gl!(sGame)).player.comm.pickState = PICK_MIDDLE;
             }
-        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
-            if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
-                (*sGame).player.comm.pickState = PICK_RIGHT;
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
+            if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState
+                == PICK_NONE
+            {
+                (*crate::gl!(sGame)).player.comm.pickState = PICK_RIGHT;
             }
-        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
-            if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
-                (*sGame).player.comm.pickState = PICK_LEFT;
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
+            if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState
+                == PICK_NONE
+            {
+                (*crate::gl!(sGame)).player.comm.pickState = PICK_LEFT;
             }
         } else {
-            (*sGame).player.comm.pickState = PICK_NONE;
+            (*crate::gl!(sGame)).player.comm.pickState = PICK_NONE;
         }
     } else {
         SetGameFunc(FUNC_WAIT_END_GAME);
@@ -1478,11 +1502,11 @@ pub(crate) unsafe fn WaitEndGame_Leader() {
         SetMaxBerriesPickedInRow();
         SetGameFunc(FUNC_INIT_RESULTS);
     } else {
-        (*sGame).allReadyToEnd = TRUE as u32;
+        (*crate::gl!(sGame)).allReadyToEnd = TRUE as u32;
         i = 1;
-        while i < (*sGame).numPlayers {
-            if (*sGame).readyToEnd[i] != TRUE as u32 {
-                (*sGame).allReadyToEnd = FALSE as u32;
+        while i < (*crate::gl!(sGame)).numPlayers {
+            if (*crate::gl!(sGame)).readyToEnd[i] != TRUE as u32 {
+                (*crate::gl!(sGame)).allReadyToEnd = FALSE as u32;
                 break;
             }
             i += 1;
@@ -1510,25 +1534,30 @@ unsafe fn AllLinkBlocksReceived() -> u32 {
     }
 }
 pub(crate) unsafe fn InitResults_Leader() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
-            if SendBlock(0, (*sGame).berryResults.as_mut_ptr() as *mut c_void, 60) != 0 {
-                (*sGame).playersReceived = 0;
-                (*sGame).state += 1;
+            if SendBlock(
+                0,
+                (*crate::gl!(sGame)).berryResults.as_mut_ptr() as *mut c_void,
+                60,
+            ) != 0
+            {
+                (*crate::gl!(sGame)).playersReceived = 0;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         1 => {
             if IsLinkTaskFinished() != 0 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
             if AllLinkBlocksReceived() != 0 {
-                (*sGame).playersReceived = (*sGame).numPlayers;
+                (*crate::gl!(sGame)).playersReceived = (*crate::gl!(sGame)).numPlayers;
             }
-            if (*sGame).playersReceived >= (*sGame).numPlayers {
-                (*sGame).timer += 1;
-                (*sGame).state += 1;
+            if (*crate::gl!(sGame)).playersReceived >= (*crate::gl!(sGame)).numPlayers {
+                (*crate::gl!(sGame)).timer += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {
@@ -1541,44 +1570,46 @@ pub(crate) unsafe fn InitResults_Leader() {
 }
 pub(crate) unsafe fn InitResults_Member() {
     let mut i: u8 = 0;
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             if SendBlock(
                 0,
-                (*sGame).berryResults[(*sGame).timer].as_mut_ptr() as *mut c_void,
+                (*crate::gl!(sGame)).berryResults[(*crate::gl!(sGame)).timer].as_mut_ptr()
+                    as *mut c_void,
                 60,
             ) != 0
             {
-                (*sGame).playersReceived = 0;
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).playersReceived = 0;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         1 => {
             if IsLinkTaskFinished() != 0 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
             if AllLinkBlocksReceived() != 0 {
                 i = 0;
-                while i < (*sGame).numPlayers {
+                while i < (*crate::gl!(sGame)).numPlayers {
                     memcpy(
-                        (*sGame).berryResults.as_mut_ptr() as *mut u8,
-                        gBlockRecvBuffer.as_mut_ptr() as *mut u8,
+                        (*crate::gl!(sGame)).berryResults.as_mut_ptr() as *mut u8,
+                        (*gBlockRecvBuffer.as_ptr()).as_mut_ptr() as *mut u8,
                         60,
                     );
-                    (*sGame).playersReceived = (*sGame).numPlayers;
+                    (*crate::gl!(sGame)).playersReceived = (*crate::gl!(sGame)).numPlayers;
                     i += 1;
                 }
             }
-            if (*sGame).playersReceived >= (*sGame).numPlayers {
-                (*sGame).timer += 1;
-                (*sGame).state += 1;
+            if (*crate::gl!(sGame)).playersReceived >= (*crate::gl!(sGame)).numPlayers {
+                (*crate::gl!(sGame)).timer += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {
             if WaitFanfare(TRUE) != 0 {
-                (*sGame).maxBerriesPickedInRow = (*sGame).berryResults[(*sGame).multiplayerId][5];
+                (*crate::gl!(sGame)).maxBerriesPickedInRow =
+                    (*crate::gl!(sGame)).berryResults[(*crate::gl!(sGame)).multiplayerId][5];
                 SetGameFunc(FUNC_RESULTS);
                 FadeOutAndPlayNewMapMusic(MUS_RG_VICTORY_WILD, 4);
             }
@@ -1588,50 +1619,51 @@ pub(crate) unsafe fn InitResults_Member() {
 pub(crate) unsafe fn DoResults() {
     let mut playAgainState: u8 = PLAY_AGAIN_YES;
     let mut i: u8 = 0;
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             TryUpdateRecords();
             SetStatusBarInvisibility(TRUE);
             ResetCloudPos();
             SetCloudInvisibility(TRUE);
             SetGfxFuncById(GFXFUNC_SHOW_RESULTS);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 => {
             if IsGfxFuncActive() == 0 {
                 SetGfxFuncById(GFXFUNC_MSG_COMM_STANDBY);
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
             playAgainState = GetPlayAgainState();
             if SendBlock(0, &raw mut playAgainState as *mut c_void, 1) != 0 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         3 => {
             if IsLinkTaskFinished() != 0 {
-                (*sGame).state += 1;
-                (*sGame).playersReceived = 0;
+                (*crate::gl!(sGame)).state += 1;
+                (*crate::gl!(sGame)).playersReceived = 0;
             }
         }
         4 => {
             if AllLinkBlocksReceived() != 0 {
                 i = 0;
-                while i < (*sGame).numPlayers {
-                    (*sGame).playAgainStates[i] = *(gBlockRecvBuffer[i].as_mut_ptr() as *mut u8);
-                    (*sGame).playersReceived = (*sGame).numPlayers;
+                while i < (*crate::gl!(sGame)).numPlayers {
+                    (*crate::gl!(sGame)).playAgainStates[i] =
+                        *((*gBlockRecvBuffer.as_ptr())[i].as_mut_ptr() as *mut u8);
+                    (*crate::gl!(sGame)).playersReceived = (*crate::gl!(sGame)).numPlayers;
                     i += 1;
                 }
             }
-            if (*sGame).playersReceived >= (*sGame).numPlayers
+            if (*crate::gl!(sGame)).playersReceived >= (*crate::gl!(sGame)).numPlayers
                 && ({
-                    (*sGame).timer += 1;
-                    (*sGame).timer
+                    (*crate::gl!(sGame)).timer += 1;
+                    (*crate::gl!(sGame)).timer
                 }) >= 120
             {
                 SetGfxFuncById(GFXFUNC_ERASE_MSG);
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {
@@ -1644,23 +1676,23 @@ pub(crate) unsafe fn DoResults() {
 pub(crate) unsafe fn AskPlayAgain() {
     let mut playAgainState: u8 = 0;
     let mut i: u8 = 0;
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             if GetHighestScore() >= PRIZE_SCORE {
                 SetGfxFuncById(GFXFUNC_MSG_SAVING);
             }
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 => {
             if IsGfxFuncActive() == 0 {
                 SetGfxFuncById(GFXFUNC_MSG_PLAY_AGAIN);
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
             ResetBerryAndStatusBarSprites();
             ResetForPlayAgainPrompt();
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         3 => {
             if ({
@@ -1668,45 +1700,46 @@ pub(crate) unsafe fn AskPlayAgain() {
                 playAgainState
             }) != PLAY_AGAIN_NONE
             {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         4 => {
             if IsGfxFuncActive() == 0 {
                 SetGfxFuncById(GFXFUNC_MSG_COMM_STANDBY);
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         5 => {
             playAgainState = GetPlayAgainState();
             if SendBlock(0, &raw mut playAgainState as *mut c_void, 1) != 0 {
-                (*sGame).playersReceived = 0;
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).playersReceived = 0;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         6 => {
             if IsLinkTaskFinished() != 0 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         7 => {
             if AllLinkBlocksReceived() != 0 {
                 i = 0;
-                while i < (*sGame).numPlayers {
-                    (*sGame).playAgainStates[i] = *(gBlockRecvBuffer[i].as_mut_ptr() as *mut u8);
-                    (*sGame).playersReceived = (*sGame).numPlayers;
+                while i < (*crate::gl!(sGame)).numPlayers {
+                    (*crate::gl!(sGame)).playAgainStates[i] =
+                        *((*gBlockRecvBuffer.as_ptr())[i].as_mut_ptr() as *mut u8);
+                    (*crate::gl!(sGame)).playersReceived = (*crate::gl!(sGame)).numPlayers;
                     i += 1;
                 }
             }
-            if (*sGame).playersReceived >= (*sGame).numPlayers {
+            if (*crate::gl!(sGame)).playersReceived >= (*crate::gl!(sGame)).numPlayers {
                 if ({
-                    (*sGame).timer += 1;
-                    (*sGame).timer
+                    (*crate::gl!(sGame)).timer += 1;
+                    (*crate::gl!(sGame)).timer
                 }) >= 120
                 {
                     ResetPickState();
                     SetGfxFuncById(GFXFUNC_ERASE_MSG);
-                    (*sGame).state += 1;
+                    (*crate::gl!(sGame)).state += 1;
                 }
             } else {
                 HandleWaitPlayAgainInput();
@@ -1715,8 +1748,8 @@ pub(crate) unsafe fn AskPlayAgain() {
         _ => {
             if IsGfxFuncActive() == 0 {
                 i = 0;
-                while i < (*sGame).numPlayers {
-                    if (*sGame).playAgainStates[i] == PLAY_AGAIN_NO {
+                while i < (*crate::gl!(sGame)).numPlayers {
+                    if (*crate::gl!(sGame)).playAgainStates[i] == PLAY_AGAIN_NO {
                         SetGameFunc(FUNC_END_LINK);
                         return;
                     }
@@ -1728,71 +1761,71 @@ pub(crate) unsafe fn AskPlayAgain() {
     }
 }
 pub(crate) unsafe fn EndLink() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             SetCloseLinkCallback();
             SetGfxFuncById(GFXFUNC_MSG_PLAYER_DROPPED);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 => {
             if IsGfxFuncActive() == 0 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
             if GetPlayAgainState() == PLAY_AGAIN_DROPPED {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {
-            if gReceivedRemoteLinkPlayers == 0 {
+            if gReceivedRemoteLinkPlayers.get() == 0 {
                 SetGameFunc(FUNC_EXIT);
             }
         }
     }
 }
 pub(crate) unsafe fn ExitGame() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
-                (*sGame).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
             FreeBerrySprites();
             FreeStatusBar();
-            FreeDodrioSprites((*sGame).numPlayers);
+            FreeDodrioSprites((*crate::gl!(sGame)).numPlayers);
             FreeCloudSprites();
             sExitingGame.set(TRUE as u32);
             SetGfxFuncById(GFXFUNC_STOP);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         _ => {
             if IsGfxFuncActive() == 0 {
-                SetMainCallback2((*sGame).exitCallback);
-                DestroyTask((*sGame).taskId);
-                Free(sGame as *mut c_void);
+                SetMainCallback2((*crate::gl!(sGame)).exitCallback);
+                DestroyTask((*crate::gl!(sGame)).taskId);
+                Free(crate::gl!(sGame) as *mut c_void);
                 FreeAllWindowBuffers();
             }
         }
     }
 }
 pub(crate) unsafe fn ResetGame() {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             SetGfxFuncById(GFXFUNC_IDLE);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         1 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
-                (*sGame).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         2 => {
@@ -1804,35 +1837,35 @@ pub(crate) unsafe fn ResetGame() {
             ChangeBgY(2, 0, BG_COORD_SET);
             ChangeBgX(3, 0, BG_COORD_SET);
             ChangeBgY(3, 0, BG_COORD_SET);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         3 => {
             StopMapMusic();
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         4 => {
             PlayNewMapMusic(MUS_RG_BERRY_PICK);
             StartCloudMovement();
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         5 => {
             BlendPalettes(PALETTES_ALL, 16, 0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         6 => {
             UpdatePaletteFade();
-            if gPaletteFade.active() == 0 {
-                (*sGame).state += 1;
+            if (*gPaletteFade.as_ptr()).active() == 0 {
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {
-            DestroyTask((*sGame).taskId);
+            DestroyTask((*crate::gl!(sGame)).taskId);
             CreateDodrioGameTask(Some(Task_NewGameIntro));
             ResetGfxState();
-            InitDodrioGame(sGame);
-            if gReceivedRemoteLinkPlayers == 0 {
-                (*sGame).numPlayers = 1;
+            InitDodrioGame(crate::gl!(sGame));
+            if gReceivedRemoteLinkPlayers.get() == 0 {
+                (*crate::gl!(sGame)).numPlayers = 1;
             }
             SetRandomPrize();
             SetCloudInvisibility(FALSE);
@@ -1840,23 +1873,23 @@ pub(crate) unsafe fn ResetGame() {
     }
 }
 pub(crate) unsafe fn Task_NewGameIntro(taskId: u8) {
-    match (*sGame).state {
+    match (*crate::gl!(sGame)).state {
         0 => {
             if SlideTreeBordersOut() == TRUE as u32 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         1 => {
             InitStatusBarPos();
-            (*sGame).state += 1;
+            (*crate::gl!(sGame)).state += 1;
         }
         2 => {
             if DoStatusBarIntro() == TRUE as u32 {
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {
-            if (*sGame).isLeader != 0 {
+            if (*crate::gl!(sGame)).isLeader != 0 {
                 CreateDodrioGameTask(Some(Task_DodrioGame_Leader));
             } else {
                 CreateDodrioGameTask(Some(Task_DodrioGame_Member));
@@ -1872,11 +1905,12 @@ pub(crate) unsafe fn Task_CommunicateMonInfo(taskId: u8) {
         0 => {
             if SendBlock(
                 0,
-                &raw mut (*sGame).monInfo[(*sGame).multiplayerId].isShiny as *mut c_void,
+                &raw mut (*crate::gl!(sGame)).monInfo[(*crate::gl!(sGame)).multiplayerId].isShiny
+                    as *mut c_void,
                 1,
             ) != 0
             {
-                (*sGame).playersReceived = 0;
+                (*crate::gl!(sGame)).playersReceived = 0;
                 *data += 1;
             }
         }
@@ -1888,137 +1922,140 @@ pub(crate) unsafe fn Task_CommunicateMonInfo(taskId: u8) {
         2 => {
             if AllLinkBlocksReceived() != 0 {
                 i = 0;
-                while i < (*sGame).numPlayers {
-                    *(&raw mut (*sGame).monInfo[i] as *mut u8) =
-                        *(gBlockRecvBuffer[i].as_mut_ptr() as *mut u8);
-                    (*sGame).playersReceived = (*sGame).numPlayers;
+                while i < (*crate::gl!(sGame)).numPlayers {
+                    *(&raw mut (*crate::gl!(sGame)).monInfo[i] as *mut u8) =
+                        *((*gBlockRecvBuffer.as_ptr())[i].as_mut_ptr() as *mut u8);
+                    (*crate::gl!(sGame)).playersReceived = (*crate::gl!(sGame)).numPlayers;
                     i += 1;
                 }
             }
-            if (*sGame).playersReceived >= (*sGame).numPlayers {
+            if (*crate::gl!(sGame)).playersReceived >= (*crate::gl!(sGame)).numPlayers {
                 DestroyTask(taskId);
                 SetGfxFuncById(GFXFUNC_ERASE_MSG);
-                (*sGame).state += 1;
+                (*crate::gl!(sGame)).state += 1;
             }
         }
         _ => {}
     }
 }
 unsafe fn RecvLinkData_Gameplay() {
-    let numPlayers: u8 = (*sGame).numPlayers;
-    (*sGame).players[0].receivedGameStatePacket = RecvPacket_GameState(
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
+    (*crate::gl!(sGame)).players[0].receivedGameStatePacket = RecvPacket_GameState(
         0,
-        &raw mut (*sGame).players[0],
-        &raw mut (*sGame).players[0].comm,
-        &raw mut (*sGame).players[1].comm,
-        &raw mut (*sGame).players[2].comm,
-        &raw mut (*sGame).players[3].comm,
-        &raw mut (*sGame).players[4].comm,
-        &raw mut (*sGame).numGraySquares,
-        &raw mut (*sGame).berriesFalling,
-        &raw mut (*sGame).allReadyToEnd,
+        &raw mut (*crate::gl!(sGame)).players[0],
+        &raw mut (*crate::gl!(sGame)).players[0].comm,
+        &raw mut (*crate::gl!(sGame)).players[1].comm,
+        &raw mut (*crate::gl!(sGame)).players[2].comm,
+        &raw mut (*crate::gl!(sGame)).players[3].comm,
+        &raw mut (*crate::gl!(sGame)).players[4].comm,
+        &raw mut (*crate::gl!(sGame)).numGraySquares,
+        &raw mut (*crate::gl!(sGame)).berriesFalling,
+        &raw mut (*crate::gl!(sGame)).allReadyToEnd,
     );
-    (*sGame).clearRecvCmds = TRUE;
+    (*crate::gl!(sGame)).clearRecvCmds = TRUE;
     let mut i: u8 = 1;
     while i < numPlayers {
-        if (*sGame).inputState[i] == INPUTSTATE_NONE
-            && RecvPacket_PickState(i as u32, &raw mut (*sGame).players[i].comm.pickState) == 0
+        if (*crate::gl!(sGame)).inputState[i] == INPUTSTATE_NONE
+            && RecvPacket_PickState(
+                i as u32,
+                &raw mut (*crate::gl!(sGame)).players[i].comm.pickState,
+            ) == 0
         {
-            (*sGame).players[i].comm.pickState = PICK_NONE;
-            (*sGame).clearRecvCmds = FALSE;
+            (*crate::gl!(sGame)).players[i].comm.pickState = PICK_NONE;
+            (*crate::gl!(sGame)).clearRecvCmds = FALSE;
         }
         i += 1;
     }
     if ({
-        (*sGame).clearRecvCmdTimer += 1;
-        (*sGame).clearRecvCmdTimer
+        (*crate::gl!(sGame)).clearRecvCmdTimer += 1;
+        (*crate::gl!(sGame)).clearRecvCmdTimer
     }) >= 60
     {
-        if (*sGame).clearRecvCmds != 0 {
+        if (*crate::gl!(sGame)).clearRecvCmds != 0 {
             ClearRecvCommands();
-            (*sGame).clearRecvCmdTimer = 0;
-        } else if (*sGame).clearRecvCmdTimer > 70 {
+            (*crate::gl!(sGame)).clearRecvCmdTimer = 0;
+        } else if (*crate::gl!(sGame)).clearRecvCmdTimer > 70 {
             ClearRecvCommands();
-            (*sGame).clearRecvCmdTimer = 0;
+            (*crate::gl!(sGame)).clearRecvCmdTimer = 0;
         }
     }
     for i in 0..numPlayers {
-        if (*sGame).players[i].comm.pickState != PICK_NONE
-            && (*sGame).inputState[i] == INPUTSTATE_NONE
+        if (*crate::gl!(sGame)).players[i].comm.pickState != PICK_NONE
+            && (*crate::gl!(sGame)).inputState[i] == INPUTSTATE_NONE
         {
-            (*sGame).inputState[i] = INPUTSTATE_TRY_PICK;
+            (*crate::gl!(sGame)).inputState[i] = INPUTSTATE_TRY_PICK;
         }
-        match (*sGame).inputState[i] {
+        match (*crate::gl!(sGame)).inputState[i] {
             INPUTSTATE_TRY_PICK | INPUTSTATE_PICKED | INPUTSTATE_ATE_BERRY => {
                 if ({
-                    (*sGame).inputDelay[i] += 1;
-                    (*sGame).inputDelay[i]
+                    (*crate::gl!(sGame)).inputDelay[i] += 1;
+                    (*crate::gl!(sGame)).inputDelay[i]
                 }) >= 6
                 {
-                    (*sGame).inputDelay[i] = 0;
-                    (*sGame).inputState[i] = INPUTSTATE_NONE;
-                    (*sGame).players[i].comm.pickState = PICK_NONE;
-                    (*sGame).players[i].comm.ateBerry = FALSE;
-                    (*sGame).players[i].comm.missedBerry = FALSE;
+                    (*crate::gl!(sGame)).inputDelay[i] = 0;
+                    (*crate::gl!(sGame)).inputState[i] = INPUTSTATE_NONE;
+                    (*crate::gl!(sGame)).players[i].comm.pickState = PICK_NONE;
+                    (*crate::gl!(sGame)).players[i].comm.ateBerry = FALSE;
+                    (*crate::gl!(sGame)).players[i].comm.missedBerry = FALSE;
                 }
             }
             INPUTSTATE_BAD_MISS
                 if ({
-                    (*sGame).inputDelay[i] += 1;
-                    (*sGame).inputDelay[i]
+                    (*crate::gl!(sGame)).inputDelay[i] += 1;
+                    (*crate::gl!(sGame)).inputDelay[i]
                 }) >= 40 =>
             {
-                (*sGame).inputDelay[i] = 0;
-                (*sGame).inputState[i] = INPUTSTATE_NONE;
-                (*sGame).players[i].comm.pickState = PICK_NONE;
-                (*sGame).players[i].comm.ateBerry = FALSE;
-                (*sGame).players[i].comm.missedBerry = FALSE;
+                (*crate::gl!(sGame)).inputDelay[i] = 0;
+                (*crate::gl!(sGame)).inputState[i] = INPUTSTATE_NONE;
+                (*crate::gl!(sGame)).players[i].comm.pickState = PICK_NONE;
+                (*crate::gl!(sGame)).players[i].comm.ateBerry = FALSE;
+                (*crate::gl!(sGame)).players[i].comm.missedBerry = FALSE;
             }
             _ => {}
         }
     }
 }
 unsafe fn RecvLinkData_ReadyToEnd() {
-    let numPlayers: u8 = (*sGame).numPlayers;
-    (*sGame).players[0].receivedGameStatePacket = RecvPacket_GameState(
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
+    (*crate::gl!(sGame)).players[0].receivedGameStatePacket = RecvPacket_GameState(
         0,
-        &raw mut (*sGame).players[0],
-        &raw mut (*sGame).players[0].comm,
-        &raw mut (*sGame).players[1].comm,
-        &raw mut (*sGame).players[2].comm,
-        &raw mut (*sGame).players[3].comm,
-        &raw mut (*sGame).players[4].comm,
-        &raw mut (*sGame).numGraySquares,
-        &raw mut (*sGame).berriesFalling,
-        &raw mut (*sGame).allReadyToEnd,
+        &raw mut (*crate::gl!(sGame)).players[0],
+        &raw mut (*crate::gl!(sGame)).players[0].comm,
+        &raw mut (*crate::gl!(sGame)).players[1].comm,
+        &raw mut (*crate::gl!(sGame)).players[2].comm,
+        &raw mut (*crate::gl!(sGame)).players[3].comm,
+        &raw mut (*crate::gl!(sGame)).players[4].comm,
+        &raw mut (*crate::gl!(sGame)).numGraySquares,
+        &raw mut (*crate::gl!(sGame)).berriesFalling,
+        &raw mut (*crate::gl!(sGame)).allReadyToEnd,
     );
-    (*sGame).clearRecvCmds = TRUE;
+    (*crate::gl!(sGame)).clearRecvCmds = TRUE;
     for i in 1..numPlayers {
         if RecvPacket_ReadyToEnd(i as u32) != 0 {
-            (*sGame).readyToEnd[i] = TRUE as u32;
-            (*sGame).clearRecvCmds = FALSE;
+            (*crate::gl!(sGame)).readyToEnd[i] = TRUE as u32;
+            (*crate::gl!(sGame)).clearRecvCmds = FALSE;
         }
     }
     if ({
-        (*sGame).clearRecvCmdTimer += 1;
-        (*sGame).clearRecvCmdTimer
+        (*crate::gl!(sGame)).clearRecvCmdTimer += 1;
+        (*crate::gl!(sGame)).clearRecvCmdTimer
     }) >= 60
     {
-        if (*sGame).clearRecvCmds != 0 {
+        if (*crate::gl!(sGame)).clearRecvCmds != 0 {
             ClearRecvCommands();
-            (*sGame).clearRecvCmdTimer = 0;
-        } else if (*sGame).clearRecvCmdTimer > 70 {
+            (*crate::gl!(sGame)).clearRecvCmdTimer = 0;
+        } else if (*crate::gl!(sGame)).clearRecvCmdTimer > 70 {
             ClearRecvCommands();
-            (*sGame).clearRecvCmdTimer = 0;
+            (*crate::gl!(sGame)).clearRecvCmdTimer = 0;
         }
     }
 }
 pub(crate) unsafe fn RecvLinkData_Leader() {
-    match (*sGame).funcId {
+    match (*crate::gl!(sGame)).funcId {
         FUNC_WAIT_START => {
             if AllPlayersReadyToStart() == TRUE as u32 {
                 ResetReadyToStart();
-                (*sGame).startGame = TRUE as u32;
+                (*crate::gl!(sGame)).startGame = TRUE as u32;
             }
         }
         FUNC_PLAY_GAME => {
@@ -2031,154 +2068,189 @@ pub(crate) unsafe fn RecvLinkData_Leader() {
     }
 }
 pub(crate) unsafe fn SendLinkData_Leader() {
-    match (*sGame).funcId {
+    match (*crate::gl!(sGame)).funcId {
         FUNC_PLAY_GAME => {
             SendPacket_GameState(
-                &raw mut (*sGame).player,
-                &raw mut (*sGame).players[0].comm,
-                &raw mut (*sGame).players[1].comm,
-                &raw mut (*sGame).players[2].comm,
-                &raw mut (*sGame).players[3].comm,
-                &raw mut (*sGame).players[4].comm,
-                (*sGame).numGraySquares,
-                (*sGame).berriesFalling,
-                (*sGame).allReadyToEnd,
+                &raw mut (*crate::gl!(sGame)).player,
+                &raw mut (*crate::gl!(sGame)).players[0].comm,
+                &raw mut (*crate::gl!(sGame)).players[1].comm,
+                &raw mut (*crate::gl!(sGame)).players[2].comm,
+                &raw mut (*crate::gl!(sGame)).players[3].comm,
+                &raw mut (*crate::gl!(sGame)).players[4].comm,
+                (*crate::gl!(sGame)).numGraySquares,
+                (*crate::gl!(sGame)).berriesFalling,
+                (*crate::gl!(sGame)).allReadyToEnd,
             );
         }
         FUNC_WAIT_END_GAME => {
             SendPacket_GameState(
-                &raw mut (*sGame).player,
-                &raw mut (*sGame).players[0].comm,
-                &raw mut (*sGame).players[1].comm,
-                &raw mut (*sGame).players[2].comm,
-                &raw mut (*sGame).players[3].comm,
-                &raw mut (*sGame).players[4].comm,
-                (*sGame).numGraySquares,
-                (*sGame).berriesFalling,
-                (*sGame).allReadyToEnd,
+                &raw mut (*crate::gl!(sGame)).player,
+                &raw mut (*crate::gl!(sGame)).players[0].comm,
+                &raw mut (*crate::gl!(sGame)).players[1].comm,
+                &raw mut (*crate::gl!(sGame)).players[2].comm,
+                &raw mut (*crate::gl!(sGame)).players[3].comm,
+                &raw mut (*crate::gl!(sGame)).players[4].comm,
+                (*crate::gl!(sGame)).numGraySquares,
+                (*crate::gl!(sGame)).berriesFalling,
+                (*crate::gl!(sGame)).allReadyToEnd,
             );
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn RecvLinkData_Member() {
-    match (*sGame).funcId {
+    match (*crate::gl!(sGame)).funcId {
         FUNC_PLAY_GAME => {
             RecvPacket_GameState(
-                (*sGame).multiplayerId as u32,
-                &raw mut (*sGame).players[(*sGame).multiplayerId],
-                &raw mut (*sGame).players[0].comm,
-                &raw mut (*sGame).players[1].comm,
-                &raw mut (*sGame).players[2].comm,
-                &raw mut (*sGame).players[3].comm,
-                &raw mut (*sGame).players[4].comm,
-                &raw mut (*sGame).numGraySquares,
-                &raw mut (*sGame).berriesFalling,
-                &raw mut (*sGame).allReadyToEnd,
+                (*crate::gl!(sGame)).multiplayerId as u32,
+                &raw mut (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId],
+                &raw mut (*crate::gl!(sGame)).players[0].comm,
+                &raw mut (*crate::gl!(sGame)).players[1].comm,
+                &raw mut (*crate::gl!(sGame)).players[2].comm,
+                &raw mut (*crate::gl!(sGame)).players[3].comm,
+                &raw mut (*crate::gl!(sGame)).players[4].comm,
+                &raw mut (*crate::gl!(sGame)).numGraySquares,
+                &raw mut (*crate::gl!(sGame)).berriesFalling,
+                &raw mut (*crate::gl!(sGame)).allReadyToEnd,
             );
         }
         FUNC_WAIT_END_GAME => {
             RecvPacket_GameState(
-                (*sGame).multiplayerId as u32,
-                &raw mut (*sGame).players[(*sGame).multiplayerId],
-                &raw mut (*sGame).players[0].comm,
-                &raw mut (*sGame).players[1].comm,
-                &raw mut (*sGame).players[2].comm,
-                &raw mut (*sGame).players[3].comm,
-                &raw mut (*sGame).players[4].comm,
-                &raw mut (*sGame).numGraySquares,
-                &raw mut (*sGame).berriesFalling,
-                &raw mut (*sGame).allReadyToEnd,
+                (*crate::gl!(sGame)).multiplayerId as u32,
+                &raw mut (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId],
+                &raw mut (*crate::gl!(sGame)).players[0].comm,
+                &raw mut (*crate::gl!(sGame)).players[1].comm,
+                &raw mut (*crate::gl!(sGame)).players[2].comm,
+                &raw mut (*crate::gl!(sGame)).players[3].comm,
+                &raw mut (*crate::gl!(sGame)).players[4].comm,
+                &raw mut (*crate::gl!(sGame)).numGraySquares,
+                &raw mut (*crate::gl!(sGame)).berriesFalling,
+                &raw mut (*crate::gl!(sGame)).allReadyToEnd,
             );
         }
         _ => {}
     }
 }
 pub(crate) unsafe fn SendLinkData_Member() {
-    match (*sGame).funcId {
+    match (*crate::gl!(sGame)).funcId {
         FUNC_WAIT_START => {
             SendPacket_ReadyToStart(TRUE as u32);
-            (*sGame).startGame = TRUE as u32;
+            (*crate::gl!(sGame)).startGame = TRUE as u32;
         }
         FUNC_PLAY_GAME => {
-            if (*sGame).player.comm.pickState != PICK_NONE {
-                SendPacket_PickState((*sGame).player.comm.pickState);
+            if (*crate::gl!(sGame)).player.comm.pickState != PICK_NONE {
+                SendPacket_PickState((*crate::gl!(sGame)).player.comm.pickState);
             }
         }
-        FUNC_WAIT_END_GAME if (*sGame).berriesFalling == 0 && (*sGame).allReadyToEnd == 0 => {
+        FUNC_WAIT_END_GAME
+            if (*crate::gl!(sGame)).berriesFalling == 0
+                && (*crate::gl!(sGame)).allReadyToEnd == 0 =>
+        {
             SendPacket_ReadyToEnd(TRUE as u32);
         }
         _ => {}
     }
 }
 unsafe fn HandleSound_Leader() {
-    if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
+    if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .pickState
+        == PICK_NONE
+    {
         if IsSEPlaying() == 0 {
-            (*sGame).playingPickSound = FALSE;
+            (*crate::gl!(sGame)).playingPickSound = FALSE;
         }
-    } else if (*sGame).players[(*sGame).multiplayerId].comm.ateBerry == TRUE {
-        if (*sGame).playingPickSound == 0 {
+    } else if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .ateBerry
+        == TRUE
+    {
+        if (*crate::gl!(sGame)).playingPickSound == 0 {
             m4aSongNumStop(SE_SUCCESS);
             PlaySE(SE_SUCCESS);
-            (*sGame).playingPickSound = TRUE;
+            (*crate::gl!(sGame)).playingPickSound = TRUE;
         }
-    } else if (*sGame).players[(*sGame).multiplayerId].comm.missedBerry == TRUE
-        && (*sGame).playingPickSound == 0
+    } else if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .missedBerry
+        == TRUE
+        && (*crate::gl!(sGame)).playingPickSound == 0
         && IsSEPlaying() == 0
     {
         PlaySE(SE_BOO);
         StartDodrioMissedAnim(1);
-        (*sGame).playingPickSound = TRUE;
+        (*crate::gl!(sGame)).playingPickSound = TRUE;
     }
-    if (*sGame).endSoundState == 0 && (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+    if (*crate::gl!(sGame)).endSoundState == 0
+        && (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES
+    {
         StopMapMusic();
-        (*sGame).endSoundState = 1;
-    } else if (*sGame).endSoundState == 1 {
+        (*crate::gl!(sGame)).endSoundState = 1;
+    } else if (*crate::gl!(sGame)).endSoundState == 1 {
         PlayFanfareByFanfareNum(FANFARE_TOO_BAD);
-        (*sGame).endSoundState = 2;
+        (*crate::gl!(sGame)).endSoundState = 2;
     }
 }
 unsafe fn HandleSound_Member() {
-    let berryStart: u8 = (*sGame).berryColStart;
-    let berryEnd: u8 = (*sGame).berryColEnd;
-    if (*sGame).players[(*sGame).multiplayerId].comm.pickState == PICK_NONE {
-        if (*sGame).players[(*sGame).multiplayerId].comm.ateBerry != TRUE
-            && (*sGame).players[(*sGame).multiplayerId].comm.missedBerry != TRUE
+    let berryStart: u8 = (*crate::gl!(sGame)).berryColStart;
+    let berryEnd: u8 = (*crate::gl!(sGame)).berryColEnd;
+    if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .pickState
+        == PICK_NONE
+    {
+        if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+            .comm
+            .ateBerry
+            != TRUE
+            && (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .missedBerry
+                != TRUE
         {
-            (*sGame).playingPickSound = 0;
+            (*crate::gl!(sGame)).playingPickSound = 0;
         }
-    } else if (*sGame).players[(*sGame).multiplayerId].comm.ateBerry == TRUE {
-        if (*sGame).playingPickSound == 0 {
+    } else if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .ateBerry
+        == TRUE
+    {
+        if (*crate::gl!(sGame)).playingPickSound == 0 {
             m4aSongNumStop(SE_SUCCESS);
             PlaySE(SE_SUCCESS);
-            (*sGame).playingPickSound = TRUE;
+            (*crate::gl!(sGame)).playingPickSound = TRUE;
         }
-    } else if (*sGame).players[(*sGame).multiplayerId].comm.missedBerry == TRUE
-        && (*sGame).playingPickSound == 0
+    } else if (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .missedBerry
+        == TRUE
+        && (*crate::gl!(sGame)).playingPickSound == 0
         && IsSEPlaying() == 0
     {
         PlaySE(SE_BOO);
         StartDodrioMissedAnim(1);
-        (*sGame).playingPickSound = TRUE;
+        (*crate::gl!(sGame)).playingPickSound = TRUE;
     }
     for i in berryStart..berryEnd {
         let berries: *mut DodrioGame_Berries =
-            &raw mut (*sGame).players[(*sGame).multiplayerId].berries;
+            &raw mut (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId].berries;
         if (*berries).fallDist[i] >= MAX_FALL_DIST {
-            if (*sGame).playingSquishSound[i] == 0 {
+            if (*crate::gl!(sGame)).playingSquishSound[i] == 0 {
                 PlaySE(SE_BALLOON_RED + (*berries).ids[i] as u16);
-                (*sGame).playingSquishSound[i] = TRUE;
+                (*crate::gl!(sGame)).playingSquishSound[i] = TRUE;
             }
         } else {
-            (*sGame).playingSquishSound[i] = FALSE;
+            (*crate::gl!(sGame)).playingSquishSound[i] = FALSE;
         }
     }
-    if (*sGame).endSoundState == 0 && (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+    if (*crate::gl!(sGame)).endSoundState == 0
+        && (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES
+    {
         StopMapMusic();
-        (*sGame).endSoundState = 1;
-    } else if (*sGame).endSoundState == 1 {
+        (*crate::gl!(sGame)).endSoundState = 1;
+    } else if (*crate::gl!(sGame)).endSoundState == 1 {
         PlayFanfareByFanfareNum(FANFARE_TOO_BAD);
-        (*sGame).endSoundState = 2;
+        (*crate::gl!(sGame)).endSoundState = 2;
     }
 }
 pub(crate) unsafe fn CB2_DodrioGame() {
@@ -2199,22 +2271,22 @@ unsafe fn CreateTask_(func: Option<unsafe fn(u8)>, priority: u8) {
     CreateTask(func, priority);
 }
 unsafe fn CreateDodrioGameTask(func: Option<unsafe fn(u8)>) {
-    (*sGame).taskId = CreateTask(func, 1);
-    (*sGame).state = 0;
-    (*sGame).startState = 0;
-    (*sGame).timer = 0;
+    (*crate::gl!(sGame)).taskId = CreateTask(func, 1);
+    (*crate::gl!(sGame)).state = 0;
+    (*crate::gl!(sGame)).startState = 0;
+    (*crate::gl!(sGame)).timer = 0;
 }
 unsafe fn SetGameFunc(funcId: u8) {
-    (*sGame).prevFuncId = (*sGame).funcId;
-    (*sGame).funcId = funcId;
-    (*sGame).state = 0;
-    (*sGame).timer = 0;
+    (*crate::gl!(sGame)).prevFuncId = (*crate::gl!(sGame)).funcId;
+    (*crate::gl!(sGame)).funcId = funcId;
+    (*crate::gl!(sGame)).state = 0;
+    (*crate::gl!(sGame)).timer = 0;
 }
 unsafe fn SlideTreeBordersOut() -> u32 {
-    let x: u8 = ((*sGame).timer as i32 / 4) as u8;
-    (*sGame).timer += 1;
-    if x != 0 && (*sGame).timer as i32 % 4 == 0 {
-        if x < sTreeBorderXPos[(*sGame).numPlayers as i32 - 1] {
+    let x: u8 = ((*crate::gl!(sGame)).timer as i32 / 4) as u8;
+    (*crate::gl!(sGame)).timer += 1;
+    if x != 0 && (*crate::gl!(sGame)).timer as i32 % 4 == 0 {
+        if x < sTreeBorderXPos[(*crate::gl!(sGame)).numPlayers as i32 - 1] {
             SetGpuReg(REG_OFFSET_BG1HOFS, x as u16 * 8);
             SetGpuReg(REG_OFFSET_BG2HOFS, (x as u16 * 8).wrapping_neg());
             return FALSE as u32;
@@ -2230,45 +2302,45 @@ unsafe fn SlideTreeBordersOut() -> u32 {
     }
 }
 unsafe fn InitFirstWaveOfBerries() {
-    let berryStart: u8 = (*sGame).berryColStart;
-    let berryEnd: u8 = (*sGame).berryColEnd;
+    let berryStart: u8 = (*crate::gl!(sGame)).berryColStart;
+    let berryEnd: u8 = (*crate::gl!(sGame)).berryColEnd;
     for i in berryStart..berryEnd {
-        let berries: *mut DodrioGame_Berries = &raw mut (*sGame).player.berries;
+        let berries: *mut DodrioGame_Berries = &raw mut (*crate::gl!(sGame)).player.berries;
         (*berries).fallDist[i] = (if i as i32 % 2 == 0 { 1 } else { 0 }) as u8;
         (*berries).ids[i] = BERRY_BLUE;
     }
 }
 unsafe fn HandlePickBerries() {
-    let berryStart: u8 = (*sGame).berryColStart;
-    let berryEnd: u8 = (*sGame).berryColEnd;
-    let numPlayers: u8 = (*sGame).numPlayers;
+    let berryStart: u8 = (*crate::gl!(sGame)).berryColStart;
+    let berryEnd: u8 = (*crate::gl!(sGame)).berryColEnd;
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
     let mut column: u8 = 0;
-    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+    if (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES {
         return;
     }
     let mut i: u8 = 0;
     while i < numPlayers {
-        let pickState: *mut u8 = &raw mut (*sGame).players[i].comm.pickState;
-        if *pickState != PICK_NONE && (*sGame).inputState[i] == INPUTSTATE_TRY_PICK {
+        let pickState: *mut u8 = &raw mut (*crate::gl!(sGame)).players[i].comm.pickState;
+        if *pickState != PICK_NONE && (*crate::gl!(sGame)).inputState[i] == INPUTSTATE_TRY_PICK {
             for j in berryStart..berryEnd {
                 column = sActiveColumnMap[0][0][j];
-                if (*sGame).playersAttemptingPick[column][0] == i
-                    || (*sGame).playersAttemptingPick[column][1] == i
+                if (*crate::gl!(sGame)).playersAttemptingPick[column][0] == i
+                    || (*crate::gl!(sGame)).playersAttemptingPick[column][1] == i
                 {
                     break;
                 }
                 if TryPickBerry(i, *pickState, column) == TRUE as u32 {
                     for k in 0..2u8 {
-                        if (*sGame).playersAttemptingPick[column][k] == PLAYER_NONE {
-                            (*sGame).playersAttemptingPick[column][k] = i;
-                            (*sGame).inputState[i] = INPUTSTATE_PICKED;
-                            (*sGame).berryState[column] = BERRYSTATE_PICKED;
+                        if (*crate::gl!(sGame)).playersAttemptingPick[column][k] == PLAYER_NONE {
+                            (*crate::gl!(sGame)).playersAttemptingPick[column][k] = i;
+                            (*crate::gl!(sGame)).inputState[i] = INPUTSTATE_PICKED;
+                            (*crate::gl!(sGame)).berryState[column] = BERRYSTATE_PICKED;
                             break;
                         }
                     }
                     break;
                 }
-                if (*sGame).players[i].comm.missedBerry == TRUE {
+                if (*crate::gl!(sGame)).players[i].comm.missedBerry == TRUE {
                     break;
                 }
             }
@@ -2279,36 +2351,37 @@ unsafe fn HandlePickBerries() {
         'l4: {
             let mut playerIdMissed: u8 = PLAYER_NONE;
             column = sActiveColumnMap[0][0][j];
-            if (*sGame).berryState[column] == BERRYSTATE_PICKED {
+            if (*crate::gl!(sGame)).berryState[column] == BERRYSTATE_PICKED {
                 let mut playerIdPicked: u8 = 0;
                 let mut delayStage: u8 =
-                    ((*sGame).difficulty[GetPlayerIdAtColumn(column)] as i32 / 7) as u8;
+                    ((*crate::gl!(sGame)).difficulty[GetPlayerIdAtColumn(column)] as i32 / 7) as u8;
                 if delayStage >= 2 {
                     delayStage = 2;
                 }
-                let delayRemaining: i32 =
-                    sBerryFallDelays[delayStage][(*sGame).players[0].berries.ids[column]] as i32
-                        - (*sGame).fallTimer[column] as i32;
+                let delayRemaining: i32 = sBerryFallDelays[delayStage]
+                    [(*crate::gl!(sGame)).players[0].berries.ids[column]]
+                    as i32
+                    - (*crate::gl!(sGame)).fallTimer[column] as i32;
                 if delayRemaining < 6 {
-                    (*sGame).eatTimer[column] += delayRemaining as u8;
+                    (*crate::gl!(sGame)).eatTimer[column] += delayRemaining as u8;
                 }
                 if ({
-                    (*sGame).eatTimer[column] += 1;
-                    (*sGame).eatTimer[column]
+                    (*crate::gl!(sGame)).eatTimer[column] += 1;
+                    (*crate::gl!(sGame)).eatTimer[column]
                 }) >= 6
                 {
-                    (*sGame).eatTimer[column] = 0;
-                    if (*sGame).playersAttemptingPick[column][0] == PLAYER_NONE
-                        && (*sGame).playersAttemptingPick[column][1] == PLAYER_NONE
+                    (*crate::gl!(sGame)).eatTimer[column] = 0;
+                    if (*crate::gl!(sGame)).playersAttemptingPick[column][0] == PLAYER_NONE
+                        && (*crate::gl!(sGame)).playersAttemptingPick[column][1] == PLAYER_NONE
                     {
                         break 'l4;
-                    } else if (*sGame).playersAttemptingPick[column][0] != PLAYER_NONE
-                        && (*sGame).playersAttemptingPick[column][1] == PLAYER_NONE
+                    } else if (*crate::gl!(sGame)).playersAttemptingPick[column][0] != PLAYER_NONE
+                        && (*crate::gl!(sGame)).playersAttemptingPick[column][1] == PLAYER_NONE
                     {
-                        playerIdPicked = (*sGame).playersAttemptingPick[column][0];
+                        playerIdPicked = (*crate::gl!(sGame)).playersAttemptingPick[column][0];
                     } else {
-                        let playerId1: u8 = (*sGame).playersAttemptingPick[column][0];
-                        i = (*sGame).playersAttemptingPick[column][1];
+                        let playerId1: u8 = (*crate::gl!(sGame)).playersAttemptingPick[column][0];
+                        i = (*crate::gl!(sGame)).playersAttemptingPick[column][1];
                         if Random() as i32 & 1 == 0 {
                             playerIdPicked = playerId1;
                             playerIdMissed = i;
@@ -2317,22 +2390,25 @@ unsafe fn HandlePickBerries() {
                             playerIdMissed = playerId1;
                         }
                     }
-                    (*sGame).player.berries.fallDist[column] = EAT_FALL_DIST;
-                    (*sGame).berryState[column] = BERRYSTATE_EATEN;
-                    (*sGame).inputState[playerIdPicked] = INPUTSTATE_ATE_BERRY;
-                    (*sGame).berryEatenBy[column] = playerIdPicked;
-                    (*sGame).players[playerIdPicked].comm.ateBerry = TRUE;
+                    (*crate::gl!(sGame)).player.berries.fallDist[column] = EAT_FALL_DIST;
+                    (*crate::gl!(sGame)).berryState[column] = BERRYSTATE_EATEN;
+                    (*crate::gl!(sGame)).inputState[playerIdPicked] = INPUTSTATE_ATE_BERRY;
+                    (*crate::gl!(sGame)).berryEatenBy[column] = playerIdPicked;
+                    (*crate::gl!(sGame)).players[playerIdPicked].comm.ateBerry = TRUE;
                     if playerIdMissed != PLAYER_NONE {
-                        (*sGame).players[playerIdMissed].comm.missedBerry = TRUE;
+                        (*crate::gl!(sGame)).players[playerIdMissed]
+                            .comm
+                            .missedBerry = TRUE;
                     }
-                    (*sGame).berriesEaten[playerIdPicked] += 1;
+                    (*crate::gl!(sGame)).berriesEaten[playerIdPicked] += 1;
                     IncrementBerryResult(0, column, playerIdPicked);
                     UpdateBerriesPickedInRow(TRUE as u32);
                     TryIncrementDifficulty(playerIdPicked);
-                    (*sGame).prevBerryIds[column] = (*sGame).player.berries.ids[column];
-                    (*sGame).player.berries.ids[column] = BERRY_MISSED;
-                    (*sGame).playersAttemptingPick[column][0] = PLAYER_NONE;
-                    (*sGame).playersAttemptingPick[column][1] = PLAYER_NONE;
+                    (*crate::gl!(sGame)).prevBerryIds[column] =
+                        (*crate::gl!(sGame)).player.berries.ids[column];
+                    (*crate::gl!(sGame)).player.berries.ids[column] = BERRY_MISSED;
+                    (*crate::gl!(sGame)).playersAttemptingPick[column][0] = PLAYER_NONE;
+                    (*crate::gl!(sGame)).playersAttemptingPick[column][1] = PLAYER_NONE;
                 }
             }
         }
@@ -2340,8 +2416,8 @@ unsafe fn HandlePickBerries() {
 }
 unsafe fn TryPickBerry(playerId: u8, pickState: u8, column: u8) -> u32 {
     let mut pick: i32 = 0;
-    let numPlayersIdx: u8 = (*sGame).numPlayers - 1;
-    let berries: *mut DodrioGame_Berries = &raw mut (*sGame).player.berries;
+    let numPlayersIdx: u8 = (*crate::gl!(sGame)).numPlayers - 1;
+    let berries: *mut DodrioGame_Berries = &raw mut (*crate::gl!(sGame)).player.berries;
     match pickState {
         PICK_MIDDLE => {
             pick = 1;
@@ -2355,10 +2431,10 @@ unsafe fn TryPickBerry(playerId: u8, pickState: u8, column: u8) -> u32 {
     }
     if (*berries).fallDist[column] == 6 || (*berries).fallDist[column] == EAT_FALL_DIST {
         if column == sDodrioHeadToColumnMap[numPlayersIdx][playerId][pick] {
-            if (*sGame).berryState[column] == BERRYSTATE_PICKED
-                || (*sGame).berryState[column] == BERRYSTATE_EATEN
+            if (*crate::gl!(sGame)).berryState[column] == BERRYSTATE_PICKED
+                || (*crate::gl!(sGame)).berryState[column] == BERRYSTATE_EATEN
             {
-                (*sGame).players[playerId].comm.missedBerry = TRUE;
+                (*crate::gl!(sGame)).players[playerId].comm.missedBerry = TRUE;
                 return FALSE as u32;
             } else {
                 return TRUE as u32;
@@ -2366,94 +2442,101 @@ unsafe fn TryPickBerry(playerId: u8, pickState: u8, column: u8) -> u32 {
         }
     } else {
         if column == sDodrioHeadToColumnMap[numPlayersIdx][playerId][pick] {
-            (*sGame).inputState[playerId] = INPUTSTATE_BAD_MISS;
-            (*sGame).players[playerId].comm.missedBerry = TRUE;
+            (*crate::gl!(sGame)).inputState[playerId] = INPUTSTATE_BAD_MISS;
+            (*crate::gl!(sGame)).players[playerId].comm.missedBerry = TRUE;
         }
     }
     FALSE as u32
 }
 unsafe fn UpdateFallingBerries() {
-    let berryStart: u8 = (*sGame).berryColStart;
-    let berryEnd: u8 = (*sGame).berryColEnd;
+    let berryStart: u8 = (*crate::gl!(sGame)).berryColStart;
+    let berryEnd: u8 = (*crate::gl!(sGame)).berryColEnd;
     let mut delayStage: u8 = 0;
     let mut otherBerryMissed: u8 = 0;
-    (*sGame).berriesFalling = FALSE as u32;
+    (*crate::gl!(sGame)).berriesFalling = FALSE as u32;
     let mut i: u8 = berryStart;
     while (i as i32) < berryEnd as i32 - 1 {
-        let game: *mut DodrioGame = sGame;
-        if (*sGame).berryState[i] == BERRYSTATE_NONE || (*sGame).berryState[i] == BERRYSTATE_PICKED
+        let game: *mut DodrioGame = crate::gl!(sGame);
+        if (*crate::gl!(sGame)).berryState[i] == BERRYSTATE_NONE
+            || (*crate::gl!(sGame)).berryState[i] == BERRYSTATE_PICKED
         {
-            (*sGame).berriesFalling = TRUE as u32;
+            (*crate::gl!(sGame)).berriesFalling = TRUE as u32;
             if (*game).player.berries.fallDist[i] >= MAX_FALL_DIST {
                 (*game).player.berries.fallDist[i] = MAX_FALL_DIST;
-                (*sGame).berryState[i] = BERRYSTATE_SQUISHED;
-                if (*sGame).playingSquishSound[i] == 0 {
-                    (*sGame).playingSquishSound[i] = TRUE;
+                (*crate::gl!(sGame)).berryState[i] = BERRYSTATE_SQUISHED;
+                if (*crate::gl!(sGame)).playingSquishSound[i] == 0 {
+                    (*crate::gl!(sGame)).playingSquishSound[i] = TRUE;
                     PlaySE(SE_BALLOON_RED + (*game).player.berries.ids[i] as u16);
                 }
-                if (*sGame).numGraySquares < NUM_STATUS_SQUARES || otherBerryMissed == TRUE {
+                if (*crate::gl!(sGame)).numGraySquares < NUM_STATUS_SQUARES
+                    || otherBerryMissed == TRUE
+                {
                     otherBerryMissed = TRUE;
-                    (*sGame).playingSquishSound[i] = FALSE;
-                    if (*sGame).numGraySquares < NUM_STATUS_SQUARES {
-                        (*sGame).numGraySquares += 1;
+                    (*crate::gl!(sGame)).playingSquishSound[i] = FALSE;
+                    if (*crate::gl!(sGame)).numGraySquares < NUM_STATUS_SQUARES {
+                        (*crate::gl!(sGame)).numGraySquares += 1;
                     }
                     IncrementBerryResult(BERRY_MISSED, i, 0);
                     UpdateBerriesPickedInRow(FALSE as u32);
                 }
             } else {
-                delayStage = ((*sGame).difficulty[GetPlayerIdAtColumn(i)] as i32 / 7) as u8;
+                delayStage =
+                    ((*crate::gl!(sGame)).difficulty[GetPlayerIdAtColumn(i)] as i32 / 7) as u8;
                 if delayStage >= 2 {
                     delayStage = 2;
                 }
                 let delay: u8 = sBerryFallDelays[delayStage][(*game).player.berries.ids[i]];
                 if ({
-                    (*sGame).fallTimer[i] += 1;
-                    (*sGame).fallTimer[i]
+                    (*crate::gl!(sGame)).fallTimer[i] += 1;
+                    (*crate::gl!(sGame)).fallTimer[i]
                 }) >= delay
                 {
                     (*game).player.berries.fallDist[i] += 1;
-                    (*sGame).fallTimer[i] = 0;
+                    (*crate::gl!(sGame)).fallTimer[i] = 0;
                 }
                 HandlePickBerries();
             }
-        } else if (*sGame).berryState[i] == BERRYSTATE_EATEN {
-            (*sGame).berriesFalling = TRUE as u32;
+        } else if (*crate::gl!(sGame)).berryState[i] == BERRYSTATE_EATEN {
+            (*crate::gl!(sGame)).berriesFalling = TRUE as u32;
             if ({
-                (*sGame).newBerryTimer[i] += 1;
-                (*sGame).newBerryTimer[i]
+                (*crate::gl!(sGame)).newBerryTimer[i] += 1;
+                (*crate::gl!(sGame)).newBerryTimer[i]
             }) >= 20
             {
-                (*sGame).players[(*sGame).berryEatenBy[i]].comm.ateBerry = FALSE;
-                (*sGame).newBerryTimer[i] = 0;
-                (*sGame).fallTimer[i] = 0;
-                (*sGame).berryState[i] = BERRYSTATE_NONE;
+                (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).berryEatenBy[i]]
+                    .comm
+                    .ateBerry = FALSE;
+                (*crate::gl!(sGame)).newBerryTimer[i] = 0;
+                (*crate::gl!(sGame)).fallTimer[i] = 0;
+                (*crate::gl!(sGame)).berryState[i] = BERRYSTATE_NONE;
                 (*game).player.berries.fallDist[i] = 1;
                 (*game).player.berries.ids[i] = GetNewBerryId(GetPlayerIdAtColumn(i), i);
             }
-        } else if (*sGame).berryState[i] == BERRYSTATE_SQUISHED
+        } else if (*crate::gl!(sGame)).berryState[i] == BERRYSTATE_SQUISHED
             && ({
-                (*sGame).newBerryTimer[i] += 1;
-                (*sGame).newBerryTimer[i]
+                (*crate::gl!(sGame)).newBerryTimer[i] += 1;
+                (*crate::gl!(sGame)).newBerryTimer[i]
             }) >= 20
-            && (*sGame).numGraySquares < NUM_STATUS_SQUARES
+            && (*crate::gl!(sGame)).numGraySquares < NUM_STATUS_SQUARES
         {
-            (*sGame).newBerryTimer[i] = 0;
-            (*sGame).fallTimer[i] = 0;
-            (*sGame).berryState[i] = BERRYSTATE_NONE;
+            (*crate::gl!(sGame)).newBerryTimer[i] = 0;
+            (*crate::gl!(sGame)).fallTimer[i] = 0;
+            (*crate::gl!(sGame)).berryState[i] = BERRYSTATE_NONE;
             (*game).player.berries.fallDist[i] = 1;
-            (*sGame).prevBerryIds[i] = (*game).player.berries.ids[i];
+            (*crate::gl!(sGame)).prevBerryIds[i] = (*game).player.berries.ids[i];
             (*game).player.berries.ids[i] = GetNewBerryId(GetPlayerIdAtColumn(i), i);
         }
         i += 1;
     }
 }
 unsafe fn UpdateBerrySprites() {
-    let berryStart: u8 = (*sGame).berryColStart;
-    let berryEnd: u8 = (*sGame).berryColEnd;
+    let berryStart: u8 = (*crate::gl!(sGame)).berryColStart;
+    let berryEnd: u8 = (*crate::gl!(sGame)).berryColEnd;
     for i in berryStart..berryEnd {
-        let player: *mut DodrioGame_Player = &raw mut (*sGame).players[(*sGame).multiplayerId];
-        let column: u8 =
-            sActiveColumnMap[(*sGame).numPlayers as i32 - 1][(*sGame).multiplayerId][i];
+        let player: *mut DodrioGame_Player =
+            &raw mut (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId];
+        let column: u8 = sActiveColumnMap[(*crate::gl!(sGame)).numPlayers as i32 - 1]
+            [(*crate::gl!(sGame)).multiplayerId][i];
         if (*player).berries.fallDist[column] != 0 {
             SetBerryInvisibility(i, FALSE);
         } else {
@@ -2474,36 +2557,36 @@ unsafe fn UpdateBerrySprites() {
 }
 unsafe fn UpdateAllDodrioAnims() {
     let mut numPlayers: u8 = 0;
-    numPlayers = (*sGame).numPlayers;
+    numPlayers = (*crate::gl!(sGame)).numPlayers;
     for i in 0..numPlayers {
-        let player: *mut DodrioGame_Player = &raw mut (*sGame).players[i];
+        let player: *mut DodrioGame_Player = &raw mut (*crate::gl!(sGame)).players[i];
         SetDodrioAnim(i, (*player).comm.pickState);
     }
 }
 unsafe fn SetAllDodrioDisabled() {
     let mut numPlayers: u8 = 0;
-    numPlayers = (*sGame).numPlayers;
+    numPlayers = (*crate::gl!(sGame)).numPlayers;
     for i in 0..numPlayers {
         SetDodrioAnim(i, PICK_DISABLED);
     }
 }
 unsafe fn UpdateGame_Leader() {
     UpdateBerrySprites();
-    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+    if (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES {
         SetAllDodrioDisabled();
     } else {
         UpdateAllDodrioAnims();
     }
-    UpdateStatusBarAnim((*sGame).numGraySquares);
+    UpdateStatusBarAnim((*crate::gl!(sGame)).numGraySquares);
 }
 unsafe fn UpdateGame_Member() {
     UpdateBerrySprites();
-    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
+    if (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES {
         SetAllDodrioDisabled();
     } else {
         UpdateAllDodrioAnims();
     }
-    UpdateStatusBarAnim((*sGame).numGraySquares);
+    UpdateStatusBarAnim((*crate::gl!(sGame)).numGraySquares);
 }
 unsafe fn GetActiveBerryColumns(numPlayers: u8, start: *mut u8, end: *mut u8) {
     match numPlayers {
@@ -2532,17 +2615,17 @@ unsafe fn GetActiveBerryColumns(numPlayers: u8, start: *mut u8, end: *mut u8) {
 }
 unsafe fn AllPlayersReadyToStart() -> u32 {
     let mut numPlayers: u8 = 0;
-    numPlayers = (*sGame).numPlayers;
+    numPlayers = (*crate::gl!(sGame)).numPlayers;
     let mut i: u8 = 1;
     while i < numPlayers {
-        if (*sGame).readyToStart[i] == FALSE {
-            (*sGame).readyToStart[i] = RecvPacket_ReadyToStart(i as u32) as u8;
+        if (*crate::gl!(sGame)).readyToStart[i] == FALSE {
+            (*crate::gl!(sGame)).readyToStart[i] = RecvPacket_ReadyToStart(i as u32) as u8;
         }
         i += 1;
     }
     numPlayers = numPlayers;
     while i < numPlayers {
-        if (*sGame).readyToStart[i] == FALSE {
+        if (*crate::gl!(sGame)).readyToStart[i] == FALSE {
             return FALSE as u32;
         }
         i += 1;
@@ -2551,13 +2634,15 @@ unsafe fn AllPlayersReadyToStart() -> u32 {
 }
 unsafe fn ResetReadyToStart() {
     for i in 0..(MAX_RFU_PLAYERS as u8) {
-        (*sGame).readyToStart[i] = FALSE;
+        (*crate::gl!(sGame)).readyToStart[i] = FALSE;
     }
 }
 unsafe fn ReadyToEndGame_Leader() -> u32 {
-    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES && (*sGame).berriesFalling == 0 {
-        (*sGame).numGraySquares = NUM_STATUS_SQUARES;
-        if (*sGame).allReadyToEnd != 0 {
+    if (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES
+        && (*crate::gl!(sGame)).berriesFalling == 0
+    {
+        (*crate::gl!(sGame)).numGraySquares = NUM_STATUS_SQUARES;
+        if (*crate::gl!(sGame)).allReadyToEnd != 0 {
             return TRUE as u32;
         }
     }
@@ -2566,16 +2651,16 @@ unsafe fn ReadyToEndGame_Leader() -> u32 {
 unsafe fn ReadyToEndGame_Member() -> u32 {
     let mut berryStart: u8 = 0;
     let mut berryEnd: u8 = 0;
-    if (*sGame).numGraySquares >= NUM_STATUS_SQUARES {
-        berryStart = (*sGame).berryColStart;
-        berryEnd = (*sGame).berryColEnd;
-        (*sGame).numGraySquares = NUM_STATUS_SQUARES;
-        if (*sGame).allReadyToEnd != 0 {
+    if (*crate::gl!(sGame)).numGraySquares >= NUM_STATUS_SQUARES {
+        berryStart = (*crate::gl!(sGame)).berryColStart;
+        berryEnd = (*crate::gl!(sGame)).berryColEnd;
+        (*crate::gl!(sGame)).numGraySquares = NUM_STATUS_SQUARES;
+        if (*crate::gl!(sGame)).allReadyToEnd != 0 {
             for i in berryStart..berryEnd {
                 let player: *mut DodrioGame_Player =
-                    &raw mut (*sGame).players[(*sGame).multiplayerId];
-                let column: u8 =
-                    sActiveColumnMap[(*sGame).numPlayers as i32 - 1][(*sGame).multiplayerId][i];
+                    &raw mut (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId];
+                let column: u8 = sActiveColumnMap[(*crate::gl!(sGame)).numPlayers as i32 - 1]
+                    [(*crate::gl!(sGame)).multiplayerId][i];
                 if (*player).berries.fallDist[column] != MAX_FALL_DIST {
                     return FALSE as u32;
                 }
@@ -2586,40 +2671,43 @@ unsafe fn ReadyToEndGame_Member() -> u32 {
     FALSE as u32
 }
 unsafe fn TryIncrementDifficulty(playerId: u8) {
-    let threshold: u8 = sDifficultyThresholds[(*sGame).difficulty[playerId] as i32 % 7]
-        + ((*sGame).difficulty[playerId] as i32 / 7) as u8 * 100;
-    if (*sGame).berriesEaten[playerId] >= threshold as u16 {
-        (*sGame).difficulty[playerId] += 1;
+    let threshold: u8 = sDifficultyThresholds[(*crate::gl!(sGame)).difficulty[playerId] as i32 % 7]
+        + ((*crate::gl!(sGame)).difficulty[playerId] as i32 / 7) as u8 * 100;
+    if (*crate::gl!(sGame)).berriesEaten[playerId] >= threshold as u16 {
+        (*crate::gl!(sGame)).difficulty[playerId] += 1;
     }
 }
 unsafe fn GetPlayerIdAtColumn(column: u8) -> u8 {
-    sPlayerIdAtColumn[(*sGame).numPlayers as i32 - 1][column]
+    sPlayerIdAtColumn[(*crate::gl!(sGame)).numPlayers as i32 - 1][column]
 }
 unsafe fn GetNewBerryId(playerId: u8, column: u8) -> u8 {
     let mut highestDifficulty: u8 = 0;
-    let numPlayersIdx: u8 = (*sGame).numPlayers - 1;
+    let numPlayersIdx: u8 = (*crate::gl!(sGame)).numPlayers - 1;
     let leftPlayer: u8 = sDodrioNeighborMap[numPlayersIdx][playerId][0];
     let middlePlayer: u8 = sDodrioNeighborMap[numPlayersIdx][playerId][1];
     let rightPlayer: u8 = sDodrioNeighborMap[numPlayersIdx][playerId][2];
     let mut i: u8 = 0;
     while sUnsharedColumns[numPlayersIdx][i] != 0 {
         if column == sUnsharedColumns[numPlayersIdx][i] {
-            return GetNewBerryIdByDifficulty((*sGame).difficulty[middlePlayer], column);
+            return GetNewBerryIdByDifficulty(
+                (*crate::gl!(sGame)).difficulty[middlePlayer],
+                column,
+            );
         }
         i += 1;
     }
-    if (*sGame).difficulty[leftPlayer] > (*sGame).difficulty[middlePlayer] {
-        highestDifficulty = (*sGame).difficulty[leftPlayer];
+    if (*crate::gl!(sGame)).difficulty[leftPlayer] > (*crate::gl!(sGame)).difficulty[middlePlayer] {
+        highestDifficulty = (*crate::gl!(sGame)).difficulty[leftPlayer];
     } else {
-        highestDifficulty = (*sGame).difficulty[middlePlayer];
+        highestDifficulty = (*crate::gl!(sGame)).difficulty[middlePlayer];
     }
-    if (*sGame).difficulty[rightPlayer] > highestDifficulty {
-        highestDifficulty = (*sGame).difficulty[rightPlayer];
+    if (*crate::gl!(sGame)).difficulty[rightPlayer] > highestDifficulty {
+        highestDifficulty = (*crate::gl!(sGame)).difficulty[rightPlayer];
     }
     GetNewBerryIdByDifficulty(highestDifficulty, column)
 }
 unsafe fn GetNewBerryIdByDifficulty(difficulty: u8, column: u8) -> u8 {
-    let prevBerryId: u8 = (*sGame).prevBerryIds[column];
+    let prevBerryId: u8 = (*crate::gl!(sGame)).prevBerryIds[column];
     'l1: {
         let sw1: i32 = difficulty as i32 % 7;
         let matched =
@@ -2692,127 +2780,128 @@ unsafe fn IsTotalBerriesMissedOver10(berryResults: *mut CArray<u16, 6>) -> u32 {
 }
 unsafe fn IncrementBerryResult(berryIdArg: u8, column: u8, playerId: u8) {
     let mut berryId: u8 = 0;
-    let numPlayers: u8 = (*sGame).numPlayers;
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
     'l1: {
         match berryIdArg {
             BERRY_BLUE | BERRY_GREEN | BERRY_GOLD => {
-                berryId = (*sGame).players[0].berries.ids[column];
-                (*sGame).berryResults[playerId][berryId] =
-                    IncrementWithLimit((*sGame).berryResults[playerId][berryId] as u32, 20000)
-                        as u16;
+                berryId = (*crate::gl!(sGame)).players[0].berries.ids[column];
+                (*crate::gl!(sGame)).berryResults[playerId][berryId] = IncrementWithLimit(
+                    (*crate::gl!(sGame)).berryResults[playerId][berryId] as u32,
+                    20000,
+                ) as u16;
             }
             BERRY_MISSED => {
-                if IsTotalBerriesMissedOver10((*sGame).berryResults.as_mut_ptr()) != 0 {
+                if IsTotalBerriesMissedOver10((*crate::gl!(sGame)).berryResults.as_mut_ptr()) != 0 {
                     break 'l1;
                 }
                 match numPlayers {
                     5 => match column {
                         0 => {
-                            (*sGame).berryResults[2][3] += 1;
-                            (*sGame).berryResults[3][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[3][3] += 1;
                         }
                         1 => {
-                            (*sGame).berryResults[3][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[3][3] += 1;
                         }
                         2 => {
-                            (*sGame).berryResults[3][3] += 1;
-                            (*sGame).berryResults[4][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[3][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[4][3] += 1;
                         }
                         3 => {
-                            (*sGame).berryResults[4][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[4][3] += 1;
                         }
                         4 => {
-                            (*sGame).berryResults[4][3] += 1;
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[4][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         5 => {
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         6 => {
-                            (*sGame).berryResults[0][3] += 1;
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         7 => {
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         8 => {
-                            (*sGame).berryResults[1][3] += 1;
-                            (*sGame).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
                         }
                         9 => {
-                            (*sGame).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
                         }
                         _ => {}
                     },
                     4 => match column {
                         1 => {
-                            (*sGame).berryResults[2][3] += 1;
-                            (*sGame).berryResults[3][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[3][3] += 1;
                         }
                         2 => {
-                            (*sGame).berryResults[3][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[3][3] += 1;
                         }
                         3 => {
-                            (*sGame).berryResults[3][3] += 1;
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[3][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         4 => {
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         5 => {
-                            (*sGame).berryResults[0][3] += 1;
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         6 => {
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         7 => {
-                            (*sGame).berryResults[1][3] += 1;
-                            (*sGame).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
                         }
                         8 => {
-                            (*sGame).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
                         }
                         _ => {}
                     },
                     3 => match column {
                         2 => {
-                            (*sGame).berryResults[1][3] += 1;
-                            (*sGame).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
                         }
                         3 => {
-                            (*sGame).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
                         }
                         4 => {
-                            (*sGame).berryResults[2][3] += 1;
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[2][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         5 => {
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         6 => {
-                            (*sGame).berryResults[0][3] += 1;
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         7 => {
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         _ => {}
                     },
                     2 => match column {
                         3 => {
-                            (*sGame).berryResults[0][3] += 1;
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         4 => {
-                            (*sGame).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
                         }
                         5 => {
-                            (*sGame).berryResults[0][3] += 1;
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[0][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         6 => {
-                            (*sGame).berryResults[1][3] += 1;
+                            (*crate::gl!(sGame)).berryResults[1][3] += 1;
                         }
                         _ => {}
                     },
@@ -2824,61 +2913,61 @@ unsafe fn IncrementBerryResult(berryIdArg: u8, column: u8, playerId: u8) {
     }
 }
 unsafe fn UpdateBerriesPickedInRow(picked: u32) {
-    if (*sGame).numPlayers != MAX_RFU_PLAYERS as u8 {
+    if (*crate::gl!(sGame)).numPlayers != MAX_RFU_PLAYERS as u8 {
         return;
     }
     if picked == TRUE as u32 {
         if ({
-            (*sGame).berriesPickedInRow += 1;
-            (*sGame).berriesPickedInRow
-        }) > (*sGame).maxBerriesPickedInRow
+            (*crate::gl!(sGame)).berriesPickedInRow += 1;
+            (*crate::gl!(sGame)).berriesPickedInRow
+        }) > (*crate::gl!(sGame)).maxBerriesPickedInRow
         {
-            (*sGame).maxBerriesPickedInRow = (*sGame).berriesPickedInRow;
+            (*crate::gl!(sGame)).maxBerriesPickedInRow = (*crate::gl!(sGame)).berriesPickedInRow;
         }
-        if (*sGame).berriesPickedInRow > MAX_BERRIES as u16 {
-            (*sGame).berriesPickedInRow = MAX_BERRIES as u16;
+        if (*crate::gl!(sGame)).berriesPickedInRow > MAX_BERRIES as u16 {
+            (*crate::gl!(sGame)).berriesPickedInRow = MAX_BERRIES as u16;
         }
     } else {
-        if (*sGame).berriesPickedInRow > (*sGame).maxBerriesPickedInRow {
-            (*sGame).maxBerriesPickedInRow = (*sGame).berriesPickedInRow;
+        if (*crate::gl!(sGame)).berriesPickedInRow > (*crate::gl!(sGame)).maxBerriesPickedInRow {
+            (*crate::gl!(sGame)).maxBerriesPickedInRow = (*crate::gl!(sGame)).berriesPickedInRow;
         }
-        (*sGame).berriesPickedInRow = 0;
+        (*crate::gl!(sGame)).berriesPickedInRow = 0;
     }
 }
 unsafe fn SetMaxBerriesPickedInRow() {
     let mut i: u8 = 0;
-    while i < (*sGame).numPlayers {
-        (*sGame).berryResults[i][5] = (*sGame).maxBerriesPickedInRow;
+    while i < (*crate::gl!(sGame)).numPlayers {
+        (*crate::gl!(sGame)).berryResults[i][5] = (*crate::gl!(sGame)).maxBerriesPickedInRow;
         i += 1;
     }
 }
 unsafe fn ResetForPlayAgainPrompt() {
     for i in 0..(MAX_RFU_PLAYERS as u8) {
         for j in 0..NUM_BERRY_COLUMNS {
-            (*sGame).players[i].berries.fallDist[j] = 0;
+            (*crate::gl!(sGame)).players[i].berries.fallDist[j] = 0;
         }
-        (*sGame).players[i].comm.pickState = PICK_NONE;
-        (*sGame).players[i].comm.ateBerry = FALSE;
-        (*sGame).difficulty[i] = 0;
-        (*sGame).berriesEaten[i] = 0;
-        (*sGame).scoreResults[i].ranking = 0;
-        (*sGame).scoreResults[i].score = 0;
-        (*sGame).berryResults[i][0] = 0;
-        (*sGame).berryResults[i][1] = 0;
-        (*sGame).berryResults[i][2] = 0;
-        (*sGame).berryResults[i][3] = 0;
-        (*sGame).berryResults[i][4] = 0;
-        (*sGame).berryResults[i][5] = 0;
+        (*crate::gl!(sGame)).players[i].comm.pickState = PICK_NONE;
+        (*crate::gl!(sGame)).players[i].comm.ateBerry = FALSE;
+        (*crate::gl!(sGame)).difficulty[i] = 0;
+        (*crate::gl!(sGame)).berriesEaten[i] = 0;
+        (*crate::gl!(sGame)).scoreResults[i].ranking = 0;
+        (*crate::gl!(sGame)).scoreResults[i].score = 0;
+        (*crate::gl!(sGame)).berryResults[i][0] = 0;
+        (*crate::gl!(sGame)).berryResults[i][1] = 0;
+        (*crate::gl!(sGame)).berryResults[i][2] = 0;
+        (*crate::gl!(sGame)).berryResults[i][3] = 0;
+        (*crate::gl!(sGame)).berryResults[i][4] = 0;
+        (*crate::gl!(sGame)).berryResults[i][5] = 0;
     }
-    (*sGame).endSoundState = 0;
-    (*sGame).berriesPickedInRow = 0;
-    (*sGame).numGraySquares = 0;
+    (*crate::gl!(sGame)).endSoundState = 0;
+    (*crate::gl!(sGame)).berriesPickedInRow = 0;
+    (*crate::gl!(sGame)).numGraySquares = 0;
     UpdateAllDodrioAnims();
     UpdateBerrySprites();
 }
 unsafe fn SetRandomPrize() {
     let mut prizeSet: u8 = 0;
-    match (*sGame).numPlayers {
+    match (*crate::gl!(sGame)).numPlayers {
         4 => {
             prizeSet = 1;
         }
@@ -2889,73 +2978,89 @@ unsafe fn SetRandomPrize() {
     }
     let prizeIdx: u8 = (Random() % 10) as u8;
     for i in 0..(MAX_RFU_PLAYERS as u8) {
-        (*sGame).berryResults[i][4] = sPrizeBerryIds[prizeSet][prizeIdx] as u16;
+        (*crate::gl!(sGame)).berryResults[i][4] = sPrizeBerryIds[prizeSet][prizeIdx] as u16;
     }
 }
 unsafe fn GetBerriesPicked(playerId: u8) -> u32 {
-    let sum: u32 = (*sGame).berryResults[playerId][0] as u32
-        + (*sGame).berryResults[playerId][1] as u32
-        + (*sGame).berryResults[playerId][2] as u32;
+    let sum: u32 = (*crate::gl!(sGame)).berryResults[playerId][0] as u32
+        + (*crate::gl!(sGame)).berryResults[playerId][1] as u32
+        + (*crate::gl!(sGame)).berryResults[playerId][2] as u32;
     if sum < MAX_BERRIES { sum } else { MAX_BERRIES }
 }
 pub(crate) unsafe fn TryUpdateRecords() {
-    let berriesPicked: u32 = Min(GetBerriesPicked((*sGame).multiplayerId), MAX_BERRIES);
-    let score: u32 = Min(GetScore((*sGame).multiplayerId), MAX_SCORE);
-    if (*gSaveBlock2Ptr).berryPick.bestScore < score {
-        (*gSaveBlock2Ptr).berryPick.bestScore = score;
+    let berriesPicked: u32 = Min(
+        GetBerriesPicked((*crate::gl!(sGame)).multiplayerId),
+        MAX_BERRIES,
+    );
+    let score: u32 = Min(GetScore((*crate::gl!(sGame)).multiplayerId), MAX_SCORE);
+    if (*crate::gl!(gSaveBlock2Ptr)).berryPick.bestScore < score {
+        (*crate::gl!(gSaveBlock2Ptr)).berryPick.bestScore = score;
     }
-    if ((*gSaveBlock2Ptr).berryPick.berriesPicked as u32) < berriesPicked {
-        (*gSaveBlock2Ptr).berryPick.berriesPicked = berriesPicked as u16;
+    if ((*crate::gl!(gSaveBlock2Ptr)).berryPick.berriesPicked as u32) < berriesPicked {
+        (*crate::gl!(gSaveBlock2Ptr)).berryPick.berriesPicked = berriesPicked as u16;
     }
-    if (*gSaveBlock2Ptr).berryPick.berriesPickedInRow < (*sGame).maxBerriesPickedInRow {
-        (*gSaveBlock2Ptr).berryPick.berriesPickedInRow = (*sGame).maxBerriesPickedInRow;
+    if (*crate::gl!(gSaveBlock2Ptr)).berryPick.berriesPickedInRow
+        < (*crate::gl!(sGame)).maxBerriesPickedInRow
+    {
+        (*crate::gl!(gSaveBlock2Ptr)).berryPick.berriesPickedInRow =
+            (*crate::gl!(sGame)).maxBerriesPickedInRow;
     }
 }
 unsafe fn UpdatePickStateQueue(pickState: u8) -> u8 {
-    let nextState: u8 = (*sGame).pickStateQueue[3];
+    let nextState: u8 = (*crate::gl!(sGame)).pickStateQueue[3];
     let mut i: u8 = 3;
     while i != 0 {
-        (*sGame).pickStateQueue[i] = (*sGame).pickStateQueue[i as i32 - 1];
+        (*crate::gl!(sGame)).pickStateQueue[i] = (*crate::gl!(sGame)).pickStateQueue[i as i32 - 1];
         i -= 1;
     }
-    (*sGame).pickStateQueue[0] = pickState;
+    (*crate::gl!(sGame)).pickStateQueue[0] = pickState;
     nextState
 }
 unsafe fn HandleWaitPlayAgainInput() {
-    if (*sGame).inputDelay[(*sGame).multiplayerId] == 0 {
-        if gMain.newKeys as i32 & DPAD_UP != 0 {
-            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_MIDDLE;
-            (*sGame).inputDelay[(*sGame).multiplayerId] = 6;
+    if (*crate::gl!(sGame)).inputDelay[(*crate::gl!(sGame)).multiplayerId] == 0 {
+        if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 {
+            (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState = PICK_MIDDLE;
+            (*crate::gl!(sGame)).inputDelay[(*crate::gl!(sGame)).multiplayerId] = 6;
             PlaySE(SE_M_CHARM);
-        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 {
-            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_LEFT;
-            (*sGame).inputDelay[(*sGame).multiplayerId] = 6;
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_LEFT != 0 {
+            (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState = PICK_LEFT;
+            (*crate::gl!(sGame)).inputDelay[(*crate::gl!(sGame)).multiplayerId] = 6;
             PlaySE(SE_M_CHARM);
-        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 {
-            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_RIGHT;
-            (*sGame).inputDelay[(*sGame).multiplayerId] = 6;
+        } else if crate::gl!(gMain.newKeys) as i32 & DPAD_RIGHT != 0 {
+            (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState = PICK_RIGHT;
+            (*crate::gl!(sGame)).inputDelay[(*crate::gl!(sGame)).multiplayerId] = 6;
             PlaySE(SE_M_CHARM);
         } else {
-            (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_NONE;
+            (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+                .comm
+                .pickState = PICK_NONE;
         }
     } else {
-        (*sGame).inputDelay[(*sGame).multiplayerId] -= 1;
+        (*crate::gl!(sGame)).inputDelay[(*crate::gl!(sGame)).multiplayerId] -= 1;
     }
 }
 unsafe fn ResetPickState() {
-    (*sGame).players[(*sGame).multiplayerId].comm.pickState = PICK_NONE;
+    (*crate::gl!(sGame)).players[(*crate::gl!(sGame)).multiplayerId]
+        .comm
+        .pickState = PICK_NONE;
 }
 pub(crate) unsafe fn GetPrizeItemId() -> u16 {
-    (*sGame).berryResults[(*sGame).multiplayerId][4] + ITEM_CHERI_BERRY
+    (*crate::gl!(sGame)).berryResults[(*crate::gl!(sGame)).multiplayerId][4] + ITEM_CHERI_BERRY
 }
 unsafe fn GetNumPlayers() -> u8 {
-    (*sGame).numPlayers
+    (*crate::gl!(sGame)).numPlayers
 }
 unsafe fn GetPlayerName(id: u8) -> *mut u8 {
-    if gReceivedRemoteLinkPlayers != 0 {
-        return gLinkPlayers[id].name.as_mut_ptr();
+    if gReceivedRemoteLinkPlayers.get() != 0 {
+        return (*gLinkPlayers.as_ptr())[id].name.as_mut_ptr();
     } else {
-        return (*sGame).players[id].name.as_mut_ptr();
+        return (*crate::gl!(sGame)).players[id].name.as_mut_ptr();
     }
     #[allow(unreachable_code)]
     {
@@ -2963,15 +3068,16 @@ unsafe fn GetPlayerName(id: u8) -> *mut u8 {
     }
 }
 unsafe fn GetBerryResult(playerId: u8, berryId: u8) -> u16 {
-    (*sGame).berryResults[playerId][berryId]
+    (*crate::gl!(sGame)).berryResults[playerId][berryId]
 }
 unsafe fn GetScore(playerId: u8) -> u32 {
     let mut score: u32 = 0;
     for i in 0..BERRY_MISSED {
-        score += (*sGame).berryResults[playerId][i] as u32 * sBerryScoreMultipliers[i] as u32;
+        score += (*crate::gl!(sGame)).berryResults[playerId][i] as u32
+            * sBerryScoreMultipliers[i] as u32;
     }
     let scoreLost: u32 =
-        (*sGame).berryResults[playerId][3] as u32 * sBerryScoreMultipliers[3] as u32;
+        (*crate::gl!(sGame)).berryResults[playerId][3] as u32 * sBerryScoreMultipliers[3] as u32;
     if score <= scoreLost {
         return 0;
     } else {
@@ -2983,7 +3089,7 @@ unsafe fn GetScore(playerId: u8) -> u32 {
     }
 }
 unsafe fn GetHighestScore() -> u32 {
-    let numPlayers: u8 = (*sGame).numPlayers;
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
     let mut maxScore: u32 = GetScore(0);
     for i in 1..numPlayers {
         let score: u32 = GetScore(i);
@@ -2994,10 +3100,10 @@ unsafe fn GetHighestScore() -> u32 {
     Min(maxScore, MAX_SCORE)
 }
 unsafe fn GetHighestBerryResult(berryId: u8) -> u32 {
-    let numPlayers: u8 = (*sGame).numPlayers;
-    let mut maxScore: u16 = (*sGame).berryResults[0][berryId];
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
+    let mut maxScore: u16 = (*crate::gl!(sGame)).berryResults[0][berryId];
     for i in 0..numPlayers {
-        let score: u16 = (*sGame).berryResults[i][berryId];
+        let score: u16 = (*crate::gl!(sGame)).berryResults[i][berryId];
         if score > maxScore {
             maxScore = score;
         }
@@ -3008,7 +3114,7 @@ unsafe fn GetScoreByRanking(ranking: u8) -> u32 {
     let mut scores: CArray<u32, 5> = zeroed();
     let mut temp: u32 = 0;
     let mut unsorted: i16 = TRUE as i16;
-    let numPlayers: u8 = (*sGame).numPlayers;
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
     let mut i: u8 = 0;
     while i < numPlayers {
         scores[i] = {
@@ -3037,25 +3143,25 @@ unsafe fn SetScoreResults() -> u32 {
     let mut ranking: u8 = 0;
     let mut nextRanking: u8 = 0;
     let mut playersRanked: u8 = 0;
-    let numPlayers: u8 = (*sGame).numPlayers;
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
     GetHighestScore();
     if GetHighestScore() == 0 {
         for i in 0..numPlayers {
-            (*sGame).scoreResults[i].ranking = 4;
-            (*sGame).scoreResults[i].score = 0;
+            (*crate::gl!(sGame)).scoreResults[i].ranking = 4;
+            (*crate::gl!(sGame)).scoreResults[i].score = 0;
         }
     }
     i = 0;
     while i < numPlayers {
-        (*sGame).scoreResults[i].score = Min(GetScore(i), MAX_SCORE);
+        (*crate::gl!(sGame)).scoreResults[i].score = Min(GetScore(i), MAX_SCORE);
         i += 1;
     }
     loop {
         let score: u32 = GetScoreByRanking(ranking);
         let curRanking: u8 = nextRanking;
         for i in 0..numPlayers {
-            if score == (*sGame).scoreResults[i].score {
-                (*sGame).scoreResults[i].ranking = curRanking;
+            if score == (*crate::gl!(sGame)).scoreResults[i].score {
+                (*crate::gl!(sGame)).scoreResults[i].ranking = curRanking;
                 nextRanking += 1;
                 playersRanked += 1;
             }
@@ -3068,11 +3174,11 @@ unsafe fn SetScoreResults() -> u32 {
     0
 }
 unsafe fn GetScoreResults(dst: *mut DodrioGame_ScoreResults, playerId: u8) {
-    *dst = (*sGame).scoreResults[playerId];
+    *dst = (*crate::gl!(sGame)).scoreResults[playerId];
 }
 unsafe fn GetScoreRanking(playerId: u8) -> u8 {
     let mut ranking: u8 = 0;
-    let numPlayers: u8 = (*sGame).numPlayers;
+    let numPlayers: u8 = (*crate::gl!(sGame)).numPlayers;
     let mut scores: CArray<u32, 5> = CArray([0, 0, 0, 0, 0]);
     let mut i: u8 = 0;
     while i < numPlayers {
@@ -3088,7 +3194,7 @@ unsafe fn GetScoreRanking(playerId: u8) -> u8 {
     ranking
 }
 pub(crate) unsafe fn TryGivePrize() -> u8 {
-    let multiplayerId: u8 = (*sGame).multiplayerId;
+    let multiplayerId: u8 = (*crate::gl!(sGame)).multiplayerId;
     let itemId: u16 = GetPrizeItemId();
     if GetScore(multiplayerId) != GetHighestScore() {
         return NO_PRIZE;
@@ -3125,13 +3231,17 @@ unsafe fn Min(a: u32, b: u32) -> u32 {
     }
 }
 unsafe fn GetPlayerIdByPos(id: u8) -> u8 {
-    (*sGame).posToPlayerId[id]
+    (*crate::gl!(sGame)).posToPlayerId[id]
 }
 #[unsafe(no_mangle)]
 pub unsafe fn IsDodrioInParty() {
     for i in 0..PARTY_SIZE {
-        if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_HAS_SPECIES) != 0
-            && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_DODRIO
+        if GetMonData2(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SANITY_HAS_SPECIES,
+        ) != 0
+            && GetMonData2(crate::gl!(&raw gPlayerParty[i]), MON_DATA_SPECIES_OR_EGG)
+                == SPECIES_DODRIO
         {
             gSpecialVar_Result = TRUE as u16;
             return;
@@ -3183,7 +3293,7 @@ pub(crate) unsafe fn Task_ShowDodrioBerryPickingRecords(taskId: u8) {
             }
         }
         2 => {
-            if gMain.newKeys as i32 & 3 != 0 {
+            if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
                 rbox_fill_rectangle(*data.at(1) as u8);
                 CopyWindowToVram(*data.at(1) as u8, COPYWIN_MAP);
                 *data += 1;
@@ -3201,9 +3311,9 @@ pub(crate) unsafe fn PrintRecordsText(windowId: u8, width: i32) {
     let mut x: i32 = 0;
     let mut numWidth: i32 = 0;
     let mut recordNums: CArray<i32, 3> = zeroed();
-    recordNums[0] = (*gSaveBlock2Ptr).berryPick.berriesPicked as i32;
-    recordNums[1] = (*gSaveBlock2Ptr).berryPick.bestScore as i32;
-    recordNums[2] = (*gSaveBlock2Ptr).berryPick.berriesPickedInRow as i32;
+    recordNums[0] = (*crate::gl!(gSaveBlock2Ptr)).berryPick.berriesPicked as i32;
+    recordNums[1] = (*crate::gl!(gSaveBlock2Ptr)).berryPick.bestScore as i32;
+    recordNums[2] = (*crate::gl!(gSaveBlock2Ptr)).berryPick.berriesPickedInRow as i32;
     LoadUserWindowBorderGfx_(windowId, 0x21D, 208);
     DrawTextBorderOuter(windowId, 0x21D, 13);
     FillWindowPixelBuffer(windowId, 17);
@@ -3255,22 +3365,22 @@ pub(crate) unsafe fn PrintRecordsText(windowId: u8, width: i32) {
     PutWindowTilemap(windowId);
 }
 unsafe fn Debug_UpdateNumPlayers() {
-    (*sGame).numPlayers = GetLinkPlayerCount();
+    (*crate::gl!(sGame)).numPlayers = GetLinkPlayerCount();
 }
 unsafe fn Debug_SetPlayerNamesAndResults() {
-    let mut playerId: u8 = (*sGame).numPlayers;
+    let mut playerId: u8 = (*crate::gl!(sGame)).numPlayers;
     while playerId < 5 {
         StringCopy(
-            gLinkPlayers[playerId].name.as_mut_ptr(),
+            (*gLinkPlayers.as_ptr())[playerId].name.as_mut_ptr(),
             sDebug_PlayerNames[playerId],
         );
         playerId += 1;
     }
-    (*sGame).numPlayers = MAX_RFU_PLAYERS as u8;
+    (*crate::gl!(sGame)).numPlayers = MAX_RFU_PLAYERS as u8;
     for i in 0..NUM_BERRY_TYPES {
         playerId = 0;
-        while playerId < (*sGame).numPlayers {
-            (*sGame).berryResults[playerId][i] = sDebug_BerryResults[playerId][i];
+        while playerId < (*crate::gl!(sGame)).numPlayers {
+            (*crate::gl!(sGame)).berryResults[playerId][i] = sDebug_BerryResults[playerId][i];
             playerId += 1;
         }
     }
@@ -3282,13 +3392,13 @@ unsafe fn SendPacket_ReadyToStart(ready: u32) {
     Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 unsafe fn RecvPacket_ReadyToStart(playerId: u32) -> u32 {
-    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[0][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
-    let packet: *mut ReadyToStartPacket = &raw mut (*(&raw const crate::link::gRecvCmds)
-        .cast::<CArray<CArray<u16, 8>, 5>>()
-        .cast_mut())[playerId][1] as *mut c_void
-        as *mut ReadyToStartPacket;
+    let packet: *mut ReadyToStartPacket =
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
+            .cast::<CArray<CArray<u16, 8>, 5>>()
+            .cast_mut())[playerId][1] as *mut c_void as *mut ReadyToStartPacket;
     if (*packet).id == PACKET_READY_START {
         return (*packet).ready as u32;
     }
@@ -3361,13 +3471,13 @@ unsafe fn RecvPacket_GameState(
     allReadyToEnd: *mut u32,
 ) -> u32 {
     let berries: *mut DodrioGame_Berries = &raw mut (*player).berries;
-    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[0][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
-    let packet: *mut GameStatePacket = &raw mut (*(&raw const crate::link::gRecvCmds)
-        .cast::<CArray<CArray<u16, 8>, 5>>()
-        .cast_mut())[0][1] as *mut c_void
-        as *mut GameStatePacket;
+    let packet: *mut GameStatePacket =
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
+            .cast::<CArray<CArray<u16, 8>, 5>>()
+            .cast_mut())[0][1] as *mut c_void as *mut GameStatePacket;
     if (*packet).id == PACKET_GAME_STATE {
         (*berries).fallDist[0] = (*packet).fallDist_Col0();
         (*berries).fallDist[1] = (*packet).fallDist_Col1();
@@ -3420,13 +3530,13 @@ unsafe fn SendPacket_PickState(pickState: u8) {
     Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 unsafe fn RecvPacket_PickState(playerId: u32, pickState: *mut u8) -> u32 {
-    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[0][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
-    let packet: *mut PickStatePacket = &raw mut (*(&raw const crate::link::gRecvCmds)
-        .cast::<CArray<CArray<u16, 8>, 5>>()
-        .cast_mut())[playerId][1] as *mut c_void
-        as *mut PickStatePacket;
+    let packet: *mut PickStatePacket =
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
+            .cast::<CArray<CArray<u16, 8>, 5>>()
+            .cast_mut())[playerId][1] as *mut c_void as *mut PickStatePacket;
     if (*packet).id == PACKET_PICK_STATE {
         *pickState = (*packet).pickState;
         return TRUE as u32;
@@ -3440,13 +3550,13 @@ unsafe fn SendPacket_ReadyToEnd(ready: u32) {
     Rfu_SendPacket(&raw mut packet as *mut c_void);
 }
 unsafe fn RecvPacket_ReadyToEnd(playerId: u32) -> u32 {
-    if gRecvCmds[0][0] as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
+    if crate::gl!(gRecvCmds[0][0]) as i32 & RFUCMD_MASK != RFUCMD_SEND_PACKET {
         return FALSE as u32;
     }
-    let packet: *mut ReadyToEndPacket = &raw mut (*(&raw const crate::link::gRecvCmds)
-        .cast::<CArray<CArray<u16, 8>, 5>>()
-        .cast_mut())[playerId][1] as *mut c_void
-        as *mut ReadyToEndPacket;
+    let packet: *mut ReadyToEndPacket =
+        &raw mut (*(crate::gl!(&raw @at crate::link::gRecvCmds;).cast_const())
+            .cast::<CArray<CArray<u16, 8>, 5>>()
+            .cast_mut())[playerId][1] as *mut c_void as *mut ReadyToEndPacket;
     if (*packet).id == PACKET_READY_END {
         return (*packet).ready;
     }
@@ -3489,8 +3599,8 @@ unsafe fn CreateDodrioSprite(
     .as_ptr()
     .cast_mut();
     template.callback = Some(SpriteCB_Dodrio);
-    sDodrioSpriteIds[id] = AllocZeroed(4) as *mut u16;
-    *sDodrioSpriteIds[id] = CreateSprite(
+    crate::gl!(sDodrioSpriteIds[id] = AllocZeroed(4) as *mut u16);
+    *crate::gl!(sDodrioSpriteIds[id]) = CreateSprite(
         &raw mut template,
         GetDodrioXPos(playerId, numPlayers),
         136,
@@ -3511,7 +3621,13 @@ pub(crate) unsafe fn SpriteCB_Dodrio(sprite: *mut Sprite) {
     }
 }
 unsafe fn StartDodrioMissedAnim(unused: u8) {
-    let sprite: *mut Sprite = &raw mut gSprites[*sDodrioSpriteIds[GetMultiplayerId()]];
+    let sprite: *mut Sprite = {
+        let gl_i0 = *{
+            let gl_i0 = GetMultiplayerId();
+            crate::gl!(sDodrioSpriteIds[gl_i0])
+        };
+        crate::gl!(&raw gSprites[gl_i0])
+    };
     (*sprite).data[sState] = 1;
     (*sprite).data[sTimer] = 0;
     (*sprite).data[sUnused1] = 0;
@@ -3519,7 +3635,13 @@ unsafe fn StartDodrioMissedAnim(unused: u8) {
     (*sprite).data[sUnused3] = 0;
 }
 unsafe fn StartDodrioIntroAnim(unused: u8) {
-    let sprite: *mut Sprite = &raw mut gSprites[*sDodrioSpriteIds[GetMultiplayerId()]];
+    let sprite: *mut Sprite = {
+        let gl_i1 = *{
+            let gl_i1 = GetMultiplayerId();
+            crate::gl!(sDodrioSpriteIds[gl_i1])
+        };
+        crate::gl!(&raw gSprites[gl_i1])
+    };
     (*sprite).data[sState] = 2;
     (*sprite).data[sTimer] = 0;
     (*sprite).data[sUnused1] = 0;
@@ -3572,14 +3694,17 @@ unsafe fn DoDodrioIntroAnim(sprite: *mut Sprite) -> u32 {
 }
 unsafe fn FreeDodrioSprites(numPlayers: u8) {
     for i in 0..numPlayers {
-        let sprite: *mut Sprite = &raw mut gSprites[*sDodrioSpriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i2 = *crate::gl!(sDodrioSpriteIds[i]);
+            crate::gl!(&raw gSprites[gl_i2])
+        };
         if !sprite.is_null() {
             DestroySpriteAndFreeResources(sprite);
         }
     }
 }
 unsafe fn SetDodrioInvisibility(invisible: u8, id: u8) {
-    gSprites[*sDodrioSpriteIds[id]].set_invisible(invisible as u16);
+    (*gSprites.as_ptr())[*crate::gl!(sDodrioSpriteIds[id])].set_invisible(invisible as u16);
 }
 unsafe fn SetAllDodrioInvisibility(invisible: u8, count: u8) {
     for i in 0..count {
@@ -3587,15 +3712,24 @@ unsafe fn SetAllDodrioInvisibility(invisible: u8, count: u8) {
     }
 }
 unsafe fn SetDodrioAnim(id: u8, pickState: u8) {
-    StartSpriteAnim(&raw mut gSprites[*sDodrioSpriteIds[id]], pickState);
+    StartSpriteAnim(
+        {
+            let gl_i3 = *crate::gl!(sDodrioSpriteIds[id]);
+            crate::gl!(&raw gSprites[gl_i3])
+        },
+        pickState,
+    );
 }
 pub(crate) fn SpriteCB_Status(sprite: *mut Sprite) {}
 unsafe fn InitStatusBarPos() {
     for i in 0..NUM_STATUS_SQUARES {
-        let sprite: *mut Sprite = &raw mut gSprites[(*sStatusBar).spriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i4 = (*crate::gl!(sStatusBar)).spriteIds[i];
+            crate::gl!(&raw gSprites[gl_i4])
+        };
         (*sprite).x = i as i16 * 16 + 48;
         (*sprite).y = -8 - i as i16 * 8;
-        (*sStatusBar).entered[i] = FALSE;
+        (*crate::gl!(sStatusBar)).entered[i] = FALSE;
     }
 }
 unsafe fn CreateStatusBarSprites() {
@@ -3620,11 +3754,11 @@ unsafe fn CreateStatusBarSprites() {
         .as_ptr()
         .cast_mut();
         template.callback = Some(SpriteCB_Status);
-        sStatusBar = AllocZeroed(64) as *mut StatusBar;
+        crate::gl!(sStatusBar = AllocZeroed(64) as *mut StatusBar);
         LoadSpriteSheet(&raw mut sheet);
         LoadSpritePalette(&raw mut pal);
         for i in 0..NUM_STATUS_SQUARES {
-            (*sStatusBar).spriteIds[i] =
+            (*crate::gl!(sStatusBar)).spriteIds[i] =
                 CreateSprite(&raw mut template, i as i16 * 16 + 48, -8 - i as i16 * 8, 0) as u16;
         }
     }
@@ -3632,33 +3766,39 @@ unsafe fn CreateStatusBarSprites() {
 }
 unsafe fn FreeStatusBar() {
     for i in 0..NUM_STATUS_SQUARES {
-        let sprite: *mut Sprite = &raw mut gSprites[(*sStatusBar).spriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i5 = (*crate::gl!(sStatusBar)).spriteIds[i];
+            crate::gl!(&raw gSprites[gl_i5])
+        };
         if !sprite.is_null() {
             DestroySpriteAndFreeResources(sprite);
         }
     }
-    Free(sStatusBar as *mut c_void);
-    sStatusBar = null_mut();
+    Free(crate::gl!(sStatusBar) as *mut c_void);
+    crate::gl!(sStatusBar = null_mut());
 }
 unsafe fn DoStatusBarIntro() -> u32 {
     let mut animActive: u32 = FALSE as u32;
     for i in 0..NUM_STATUS_SQUARES {
         'l1: {
-            let sprite: *mut Sprite = &raw mut gSprites[(*sStatusBar).spriteIds[i]];
-            (*sStatusBar).yChange[i] = 2;
-            if (*sStatusBar).entered[i] != 0 && (*sprite).y == 8 {
+            let sprite: *mut Sprite = {
+                let gl_i6 = (*crate::gl!(sStatusBar)).spriteIds[i];
+                crate::gl!(&raw gSprites[gl_i6])
+            };
+            (*crate::gl!(sStatusBar)).yChange[i] = 2;
+            if (*crate::gl!(sStatusBar)).entered[i] != 0 && (*sprite).y == 8 {
                 break 'l1;
             }
             animActive = TRUE as u32;
             if (*sprite).y == 8 {
-                if (*sStatusBar).entered[i] != 0 {
+                if (*crate::gl!(sStatusBar)).entered[i] != 0 {
                     break 'l1;
                 }
-                (*sStatusBar).entered[i] = TRUE;
-                (*sStatusBar).yChange[i] = -16;
+                (*crate::gl!(sStatusBar)).entered[i] = TRUE;
+                (*crate::gl!(sStatusBar)).yChange[i] = -16;
                 PlaySE(SE_CLICK);
             }
-            (*sprite).y += (*sStatusBar).yChange[i];
+            (*sprite).y += (*crate::gl!(sStatusBar)).yChange[i];
         }
     }
     if animActive != 0 {
@@ -3675,34 +3815,65 @@ unsafe fn UpdateStatusBarAnim(numEmpty: u8) {
     let mut i: u8 = 0;
     if numEmpty > NUM_STATUS_SQUARES {
         for i in 0..NUM_STATUS_SQUARES {
-            StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_GRAY);
+            StartSpriteAnim(
+                {
+                    let gl_i7 = (*crate::gl!(sStatusBar)).spriteIds[i];
+                    crate::gl!(&raw gSprites[gl_i7])
+                },
+                STATUS_GRAY,
+            );
         }
     } else {
         i = 0;
         while (i as i32) < NUM_STATUS_SQUARES as i32 - numEmpty as i32 {
             if numEmpty > 6 {
-                (*sStatusBar).flashTimer += numEmpty as u16 - 6;
-                if (*sStatusBar).flashTimer > 30 {
-                    (*sStatusBar).flashTimer = 0;
-                } else if (*sStatusBar).flashTimer > 10 {
-                    StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_RED);
+                (*crate::gl!(sStatusBar)).flashTimer += numEmpty as u16 - 6;
+                if (*crate::gl!(sStatusBar)).flashTimer > 30 {
+                    (*crate::gl!(sStatusBar)).flashTimer = 0;
+                } else if (*crate::gl!(sStatusBar)).flashTimer > 10 {
+                    StartSpriteAnim(
+                        {
+                            let gl_i8 = (*crate::gl!(sStatusBar)).spriteIds[i];
+                            crate::gl!(&raw gSprites[gl_i8])
+                        },
+                        STATUS_RED,
+                    );
                 } else {
-                    StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_YELLOW);
+                    StartSpriteAnim(
+                        {
+                            let gl_i9 = (*crate::gl!(sStatusBar)).spriteIds[i];
+                            crate::gl!(&raw gSprites[gl_i9])
+                        },
+                        STATUS_YELLOW,
+                    );
                 }
             } else {
-                StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_YELLOW);
+                StartSpriteAnim(
+                    {
+                        let gl_i10 = (*crate::gl!(sStatusBar)).spriteIds[i];
+                        crate::gl!(&raw gSprites[gl_i10])
+                    },
+                    STATUS_YELLOW,
+                );
             }
             i += 1;
         }
         while i < NUM_STATUS_SQUARES {
-            StartSpriteAnim(&raw mut gSprites[(*sStatusBar).spriteIds[i]], STATUS_GRAY);
+            StartSpriteAnim(
+                {
+                    let gl_i11 = (*crate::gl!(sStatusBar)).spriteIds[i];
+                    crate::gl!(&raw gSprites[gl_i11])
+                },
+                STATUS_GRAY,
+            );
             i += 1;
         }
     }
 }
 unsafe fn SetStatusBarInvisibility(invisible: u8) {
     for i in 0..NUM_STATUS_SQUARES {
-        gSprites[(*sStatusBar).spriteIds[i]].set_invisible(invisible as u16);
+        (*gSprites.as_ptr())[(*crate::gl!(sStatusBar)).spriteIds[i]]
+            .set_invisible(invisible as u16);
     }
 }
 pub(crate) unsafe fn LoadBerryGfx() {
@@ -3747,22 +3918,29 @@ pub(crate) unsafe fn CreateBerrySprites() {
     berryIcon.callback = Some(SpriteCallbackDummy);
     let mut i: u8 = 0;
     while i < NUM_BERRY_COLUMNS {
-        sBerrySpriteIds[i] = AllocZeroed(4) as *mut u16;
+        crate::gl!(sBerrySpriteIds[i] = AllocZeroed(4) as *mut u16);
         x = i as i16 * 16;
-        *sBerrySpriteIds[i] = CreateSprite(&raw mut berry, x + i as i16 * 8, 8, 1) as u16;
+        *crate::gl!(sBerrySpriteIds[i]) =
+            CreateSprite(&raw mut berry, x + i as i16 * 8, 8, 1) as u16;
         SetBerryInvisibility(i, TRUE);
         i += 1;
     }
     for i in 0..NUM_BERRY_TYPES {
-        sBerryIconSpriteIds[i] = AllocZeroed(4) as *mut u16;
+        crate::gl!(sBerryIconSpriteIds[i] = AllocZeroed(4) as *mut u16);
         if i == BERRY_MISSED {
-            *sBerryIconSpriteIds[i] =
+            *crate::gl!(sBerryIconSpriteIds[i]) =
                 CreateSprite(&raw mut berryIcon, sBerryIconXCoords[i], 49, 0) as u16;
         } else {
-            *sBerryIconSpriteIds[i] =
+            *crate::gl!(sBerryIconSpriteIds[i]) =
                 CreateSprite(&raw mut berryIcon, sBerryIconXCoords[i], 52, 0) as u16;
         }
-        StartSpriteAnim(&raw mut gSprites[*sBerryIconSpriteIds[i]], i);
+        StartSpriteAnim(
+            {
+                let gl_i12 = *crate::gl!(sBerryIconSpriteIds[i]);
+                crate::gl!(&raw gSprites[gl_i12])
+            },
+            i,
+        );
     }
     SetBerryIconsInvisibility(TRUE);
 }
@@ -3770,51 +3948,66 @@ unsafe fn FreeBerrySprites() {
     let mut sprite: *mut Sprite = null_mut();
     let mut i: u8 = 0;
     while i < NUM_BERRY_COLUMNS {
-        sprite = &raw mut gSprites[*sBerrySpriteIds[i]];
+        sprite = {
+            let gl_i13 = *crate::gl!(sBerrySpriteIds[i]);
+            crate::gl!(&raw gSprites[gl_i13])
+        };
         if !sprite.is_null() {
             DestroySprite(sprite);
         }
-        Free(sBerrySpriteIds[i] as *mut c_void);
-        sBerrySpriteIds[i] = null_mut();
+        Free(crate::gl!(sBerrySpriteIds[i]) as *mut c_void);
+        crate::gl!(sBerrySpriteIds[i] = null_mut());
         i += 1;
     }
     for i in 0..NUM_BERRY_TYPES {
-        sprite = &raw mut gSprites[*sBerryIconSpriteIds[i]];
+        sprite = {
+            let gl_i14 = *crate::gl!(sBerryIconSpriteIds[i]);
+            crate::gl!(&raw gSprites[gl_i14])
+        };
         if !sprite.is_null() {
             DestroySprite(sprite);
         }
-        Free(sBerryIconSpriteIds[i] as *mut c_void);
-        sBerryIconSpriteIds[i] = null_mut();
+        Free(crate::gl!(sBerryIconSpriteIds[i]) as *mut c_void);
+        crate::gl!(sBerryIconSpriteIds[i] = null_mut());
     }
 }
 unsafe fn SetBerryInvisibility(id: u8, invisible: u8) {
-    gSprites[*sBerrySpriteIds[id]].set_invisible(invisible as u16);
+    (*gSprites.as_ptr())[*crate::gl!(sBerrySpriteIds[id])].set_invisible(invisible as u16);
 }
 unsafe fn SetBerryIconsInvisibility(invisible: u8) {
     for i in 0..NUM_BERRY_TYPES {
-        gSprites[*sBerryIconSpriteIds[i]].set_invisible(invisible as u16);
+        (*gSprites.as_ptr())[*crate::gl!(sBerryIconSpriteIds[i])].set_invisible(invisible as u16);
     }
 }
 unsafe fn SetBerryYPos(id: u8, y: u8) {
-    gSprites[*sBerrySpriteIds[id]].y = y as i16 * 8;
+    {
+        let gl_i15 = *crate::gl!(sBerrySpriteIds[id]);
+        crate::gl!(gSprites[gl_i15].y = y as i16 * 8)
+    };
 }
 unsafe fn SetBerryAnim(id: u16, animNum: u8) {
-    StartSpriteAnim(&raw mut gSprites[*sBerrySpriteIds[id]], animNum);
+    StartSpriteAnim(
+        {
+            let gl_i16 = *crate::gl!(sBerrySpriteIds[id]);
+            crate::gl!(&raw gSprites[gl_i16])
+        },
+        animNum,
+    );
 }
-unsafe fn UnusedSetSpritePos(spriteId: u8) {
-    gSprites[spriteId].x = 20 * spriteId as i16 + 50;
-    gSprites[spriteId].y = 50;
+fn UnusedSetSpritePos(spriteId: u8) {
+    crate::gl!(gSprites[spriteId].x = 20 * spriteId as i16 + 50);
+    crate::gl!(gSprites[spriteId].y = 50);
 }
 pub(crate) unsafe fn SpriteCB_Cloud(sprite: *mut Sprite) {
     if (*sprite).data[1] != TRUE as i16 {
         for i in 0..NUM_CLOUDS {
             if ({
-                *sCloudSpriteIds[i].at(1) += 1;
-                *sCloudSpriteIds[i].at(1)
+                *(*sCloudSpriteIds.as_ptr())[i].at(1) += 1;
+                *(*sCloudSpriteIds.as_ptr())[i].at(1)
             }) > moveDelays_0[i] as u16
             {
                 (*sprite).x -= 1;
-                *sCloudSpriteIds[i].at(1) = 0;
+                *(*sCloudSpriteIds.as_ptr())[i].at(1) = 0;
             }
         }
     }
@@ -3844,8 +4037,8 @@ pub(crate) unsafe fn CreateCloudSprites() {
         LoadSpriteSheet(&raw mut sheet);
         LoadSpritePalette(&raw mut pal);
         for i in 0..NUM_CLOUDS {
-            sCloudSpriteIds[i] = AllocZeroed(4) as *mut u16;
-            *sCloudSpriteIds[i] = CreateSprite(
+            crate::gl!(sCloudSpriteIds[i] = AllocZeroed(4) as *mut u16);
+            *crate::gl!(sCloudSpriteIds[i]) = CreateSprite(
                 &raw mut template,
                 sCloudStartCoords[i][0],
                 sCloudStartCoords[i][1],
@@ -3857,7 +4050,10 @@ pub(crate) unsafe fn CreateCloudSprites() {
 }
 unsafe fn ResetCloudPos() {
     for i in 0..NUM_CLOUDS {
-        let sprite: *mut Sprite = &raw mut gSprites[*sCloudSpriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i17 = *crate::gl!(sCloudSpriteIds[i]);
+            crate::gl!(&raw gSprites[gl_i17])
+        };
         (*sprite).data[1] = TRUE as i16;
         (*sprite).x = sCloudStartCoords[i][0];
         (*sprite).y = sCloudStartCoords[i][1];
@@ -3865,23 +4061,29 @@ unsafe fn ResetCloudPos() {
 }
 unsafe fn StartCloudMovement() {
     for i in 0..NUM_CLOUDS {
-        let sprite: *mut Sprite = &raw mut gSprites[*sCloudSpriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i18 = *crate::gl!(sCloudSpriteIds[i]);
+            crate::gl!(&raw gSprites[gl_i18])
+        };
         (*sprite).data[1] = FALSE as i16;
     }
 }
 unsafe fn FreeCloudSprites() {
     for i in 0..NUM_CLOUDS {
-        let sprite: *mut Sprite = &raw mut gSprites[*sCloudSpriteIds[i]];
+        let sprite: *mut Sprite = {
+            let gl_i19 = *crate::gl!(sCloudSpriteIds[i]);
+            crate::gl!(&raw gSprites[gl_i19])
+        };
         if !sprite.is_null() {
             DestroySprite(sprite);
         }
-        Free(sCloudSpriteIds[i] as *mut c_void);
-        sCloudSpriteIds[i] = null_mut();
+        Free(crate::gl!(sCloudSpriteIds[i]) as *mut c_void);
+        crate::gl!(sCloudSpriteIds[i] = null_mut());
     }
 }
 unsafe fn SetCloudInvisibility(invisible: u8) {
     for i in 0..NUM_CLOUDS {
-        gSprites[*sCloudSpriteIds[i]].set_invisible(invisible as u16);
+        (*gSprites.as_ptr())[*crate::gl!(sCloudSpriteIds[i])].set_invisible(invisible as u16);
     }
 }
 unsafe fn GetDodrioXPos(playerId: u8, numPlayers: u8) -> i16 {
@@ -3972,11 +4174,11 @@ unsafe fn LoadUserWindowFrameGfx() {
     LoadUserWindowBorderGfx_(0, 0xA, 176);
 }
 unsafe fn ResetGfxState() {
-    (*sGfx).finished = FALSE as u32;
-    (*sGfx).state = 0;
-    (*sGfx).loadState = 0;
-    (*sGfx).cursorSelection = 0;
-    (*sGfx).playAgainState = PLAY_AGAIN_NONE;
+    (*crate::gl!(sGfx)).finished = FALSE as u32;
+    (*crate::gl!(sGfx)).state = 0;
+    (*crate::gl!(sGfx)).loadState = 0;
+    (*crate::gl!(sGfx)).cursorSelection = 0;
+    (*crate::gl!(sGfx)).playAgainState = PLAY_AGAIN_NONE;
 }
 unsafe fn DrawYesNoMessageWindow(template: *mut WindowTemplate) {
     let pal: u8 = 10;
@@ -4129,13 +4331,13 @@ unsafe fn DrawMessageWindow(template: *mut WindowTemplate) {
     );
 }
 unsafe fn InitGameGfx(ptr: *mut DodrioGame_Gfx) {
-    sGfx = ptr;
-    (*sGfx).finished = FALSE as u32;
-    (*sGfx).state = 0;
-    (*sGfx).loadState = 0;
-    (*sGfx).cursorSelection = 0;
-    (*sGfx).playAgainState = PLAY_AGAIN_NONE;
-    (*sGfx).taskId = CreateTask(Some(Task_TryRunGfxFunc), 3);
+    crate::gl!(sGfx = ptr);
+    (*crate::gl!(sGfx)).finished = FALSE as u32;
+    (*crate::gl!(sGfx)).state = 0;
+    (*crate::gl!(sGfx)).loadState = 0;
+    (*crate::gl!(sGfx)).cursorSelection = 0;
+    (*crate::gl!(sGfx)).playAgainState = PLAY_AGAIN_NONE;
+    (*crate::gl!(sGfx)).taskId = CreateTask(Some(Task_TryRunGfxFunc), 3);
     SetGfxFunc(Some(LoadGfx));
 }
 unsafe fn FreeAllWindowBuffers_() {
@@ -4149,19 +4351,19 @@ unsafe fn SetGfxFuncById(funcId: u8) {
     }
 }
 pub(crate) unsafe fn Task_TryRunGfxFunc(taskId: u8) {
-    if (*sGfx).finished == 0 {
+    if (*crate::gl!(sGfx)).finished == 0 {
         GetGfxFunc().unwrap_unchecked()();
     }
 }
 pub(crate) unsafe fn LoadGfx() {
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
             InitBgs();
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         1 => {
             if LoadBgGfx() == TRUE as u32 {
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         2 => {
@@ -4186,22 +4388,22 @@ pub(crate) unsafe fn LoadGfx() {
             CopyBgTilemapBufferToVram(BG_SCENERY);
             CopyBgTilemapBufferToVram(BG_TREE_LEFT);
             CopyBgTilemapBufferToVram(BG_TREE_RIGHT);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         3 => {
             ShowBg(BG_INTERFACE);
             ShowBg(BG_SCENERY);
             ShowBg(BG_TREE_LEFT);
             ShowBg(BG_TREE_RIGHT);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         4 => {
-            LoadWindowFrameGfx((*gSaveBlock2Ptr).optionsWindowFrameType() as u8);
+            LoadWindowFrameGfx((*crate::gl!(gSaveBlock2Ptr)).optionsWindowFrameType() as u8);
             LoadUserWindowFrameGfx();
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         _ => {
-            (*sGfx).finished = TRUE as u32;
+            (*crate::gl!(sGfx)).finished = TRUE as u32;
         }
     }
 }
@@ -4213,7 +4415,7 @@ pub(crate) unsafe fn ShowNames() {
     let mut left: u32 = 0;
     let mut window: WindowTemplate = zeroed();
     let mut coords: *mut WinCoords = null_mut();
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
             numPlayers = GetNumPlayers();
             coords = sNameWindowCoords[numPlayers as i32 - 1];
@@ -4228,15 +4430,15 @@ pub(crate) unsafe fn ShowNames() {
                 left = (56 - GetStringWidth(FONT_NORMAL, GetPlayerName(playerId), -1) as u32) / 2;
                 window.tilemapLeft = (*coords).left;
                 window.tilemapTop = (*coords).top;
-                (*sGfx).windowIds[i] = AddWindow(&raw mut window) as u8;
-                ClearWindowTilemap((*sGfx).windowIds[i]);
-                FillWindowPixelBuffer((*sGfx).windowIds[i], 17);
+                (*crate::gl!(sGfx)).windowIds[i] = AddWindow(&raw mut window) as u8;
+                ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[i]);
+                FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[i], 17);
                 if playerId == GetMultiplayerId() {
                     colorsId = COLORID_BLUE;
                 }
                 name = GetPlayerName(playerId);
                 AddTextPrinterParameterized3(
-                    (*sGfx).windowIds[i],
+                    (*crate::gl!(sGfx)).windowIds[i],
                     FONT_NORMAL,
                     left as u8,
                     1,
@@ -4244,33 +4446,33 @@ pub(crate) unsafe fn ShowNames() {
                     TEXT_SKIP_DRAW as i8,
                     name,
                 );
-                CopyWindowToVram((*sGfx).windowIds[i], COPYWIN_GFX);
+                CopyWindowToVram((*crate::gl!(sGfx)).windowIds[i], COPYWIN_GFX);
                 window.baseBlock += 0xE;
                 DrawMessageWindow(&raw mut window);
                 coords = coords.at(1);
             }
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 numPlayers = GetNumPlayers();
                 for i in 0..numPlayers {
-                    PutWindowTilemap((*sGfx).windowIds[i]);
+                    PutWindowTilemap((*crate::gl!(sGfx)).windowIds[i]);
                 }
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         _ => {
             if ({
-                (*sGfx).state += 1;
-                (*sGfx).state
+                (*crate::gl!(sGfx)).state += 1;
+                (*crate::gl!(sGfx)).state
             }) > 180
             {
                 numPlayers = GetNumPlayers();
                 for i in 0..numPlayers {
-                    ClearWindowTilemap((*sGfx).windowIds[i]);
-                    RemoveWindow((*sGfx).windowIds[i]);
+                    ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[i]);
+                    RemoveWindow((*crate::gl!(sGfx)).windowIds[i]);
                 }
                 FillBgTilemapBufferRect_Palette0(
                     BG_INTERFACE,
@@ -4281,7 +4483,7 @@ pub(crate) unsafe fn ShowNames() {
                     DISPLAY_TILE_HEIGHT,
                 );
                 CopyBgTilemapBufferToVram(BG_INTERFACE);
-                (*sGfx).finished = TRUE as u32;
+                (*crate::gl!(sGfx)).finished = TRUE as u32;
             }
         }
     }
@@ -4337,7 +4539,7 @@ unsafe fn PrintRankedScores(numPlayers_: u8) {
         let playerId: u8 = playersByRanking[i];
         let points: u32 = scoreResults[playerId].score;
         AddTextPrinterParameterized(
-            (*sGfx).windowIds[1],
+            (*crate::gl!(sGfx)).windowIds[1],
             FONT_NORMAL,
             sRankingTexts[scoreResults[playerId].ranking],
             8,
@@ -4350,7 +4552,7 @@ unsafe fn PrintRankedScores(numPlayers_: u8) {
         }
         name = GetPlayerName(playerId);
         AddTextPrinterParameterized3(
-            (*sGfx).windowIds[1],
+            (*crate::gl!(sGfx)).windowIds[1],
             FONT_NORMAL,
             28,
             sRankingYCoords[i] as u8,
@@ -4366,7 +4568,7 @@ unsafe fn PrintRankedScores(numPlayers_: u8) {
         );
         numWidth = GetStringWidth(FONT_NORMAL, numString.as_mut_ptr(), -1) as u32;
         AddTextPrinterParameterized(
-            (*sGfx).windowIds[1],
+            (*crate::gl!(sGfx)).windowIds[1],
             FONT_NORMAL,
             numString.as_mut_ptr(),
             x as u8 - numWidth as u8,
@@ -4375,7 +4577,7 @@ unsafe fn PrintRankedScores(numPlayers_: u8) {
             None,
         );
         AddTextPrinterParameterized(
-            (*sGfx).windowIds[1],
+            (*crate::gl!(sGfx)).windowIds[1],
             FONT_NORMAL,
             (*(&raw const crate::data::strings::gText_SpacePoints).cast::<CArray<u8, 0>>())
                 .as_ptr()
@@ -4393,26 +4595,26 @@ pub(crate) unsafe fn ShowResults() {
     let mut name: *mut u8 = null_mut();
     let mut strWidth: u32 = 0;
     let mut x: u32 = 0;
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
             SetScoreResults();
-            (*sGfx).timer = 0;
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).timer = 0;
+            (*crate::gl!(sGfx)).state += 1;
         }
         1 => {
-            (*sGfx).windowIds[0] =
+            (*crate::gl!(sGfx)).windowIds[0] =
                 AddWindow((&raw const sWindowTemplates_Results[0]).cast_mut()) as u8;
-            (*sGfx).windowIds[1] =
+            (*crate::gl!(sGfx)).windowIds[1] =
                 AddWindow((&raw const sWindowTemplates_Results[1]).cast_mut()) as u8;
-            ClearWindowTilemap((*sGfx).windowIds[0]);
-            ClearWindowTilemap((*sGfx).windowIds[1]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
             DrawMessageWindow((&raw const sWindowTemplates_Results[0]).cast_mut());
             DrawMessageWindow((&raw const sWindowTemplates_Results[1]).cast_mut());
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         2 => {
-            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
-            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[0], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[1], 17);
             strWidth = GetStringWidth(
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_BerryPickingResults)
@@ -4423,7 +4625,7 @@ pub(crate) unsafe fn ShowResults() {
             ) as u32;
             x = (224 - strWidth) / 2;
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[0],
+                (*crate::gl!(sGfx)).windowIds[0],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_BerryPickingResults)
                     .cast::<CArray<u8, 0>>())
@@ -4435,7 +4637,7 @@ pub(crate) unsafe fn ShowResults() {
                 None,
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_10P30P50P50P).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4452,7 +4654,7 @@ pub(crate) unsafe fn ShowResults() {
                 }
                 name = GetPlayerName(i);
                 AddTextPrinterParameterized3(
-                    (*sGfx).windowIds[1],
+                    (*crate::gl!(sGfx)).windowIds[1],
                     FONT_NORMAL,
                     0,
                     sResultsYCoords[i] as u8,
@@ -4473,7 +4675,7 @@ pub(crate) unsafe fn ShowResults() {
                         GetStringWidth(FONT_NORMAL, gStringVar4.as_mut_ptr(), -1) as u32;
                     if maxBerriesPicked == berriesPicked && maxBerriesPicked != 0 {
                         AddTextPrinterParameterized3(
-                            (*sGfx).windowIds[1],
+                            (*crate::gl!(sGfx)).windowIds[1],
                             FONT_NORMAL,
                             sResultsXCoords[j] as u8 - width as u8,
                             sResultsYCoords[i] as u8,
@@ -4483,7 +4685,7 @@ pub(crate) unsafe fn ShowResults() {
                         );
                     } else {
                         AddTextPrinterParameterized(
-                            (*sGfx).windowIds[1],
+                            (*crate::gl!(sGfx)).windowIds[1],
                             FONT_NORMAL,
                             gStringVar4.as_mut_ptr(),
                             sResultsXCoords[j] as u8 - width as u8,
@@ -4494,35 +4696,35 @@ pub(crate) unsafe fn ShowResults() {
                     }
                 }
             }
-            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
-            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
-            (*sGfx).state += 1;
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[1], COPYWIN_GFX);
+            (*crate::gl!(sGfx)).state += 1;
         }
         3 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sGfx).windowIds[0]);
-                PutWindowTilemap((*sGfx).windowIds[1]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
             SetBerryIconsInvisibility(FALSE);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         4 => {
             if ({
-                (*sGfx).timer += 1;
-                (*sGfx).timer
+                (*crate::gl!(sGfx)).timer += 1;
+                (*crate::gl!(sGfx)).timer
             }) >= 30
-                && gMain.newKeys as i32 & A_BUTTON != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
             {
-                (*sGfx).timer = 0;
+                (*crate::gl!(sGfx)).timer = 0;
                 PlaySE(SE_SELECT);
                 SetBerryIconsInvisibility(TRUE);
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         5 => {
-            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
-            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[0], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[1], 17);
             strWidth = GetStringWidth(
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_AnnouncingRankings)
@@ -4533,7 +4735,7 @@ pub(crate) unsafe fn ShowResults() {
             ) as u32;
             x = (224 - strWidth) / 2;
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[0],
+                (*crate::gl!(sGfx)).windowIds[0],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_AnnouncingRankings)
                     .cast::<CArray<u8, 0>>())
@@ -4544,49 +4746,49 @@ pub(crate) unsafe fn ShowResults() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         6 => {
             PrintRankedScores(numPlayers);
-            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
-            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
-            (*sGfx).state += 1;
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[1], COPYWIN_GFX);
+            (*crate::gl!(sGfx)).state += 1;
         }
         7 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sGfx).windowIds[0]);
-                PutWindowTilemap((*sGfx).windowIds[1]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         8 => {
             if ({
-                (*sGfx).timer += 1;
-                (*sGfx).timer
+                (*crate::gl!(sGfx)).timer += 1;
+                (*crate::gl!(sGfx)).timer
             }) >= 30
-                && gMain.newKeys as i32 & A_BUTTON != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
             {
-                (*sGfx).timer = 0;
+                (*crate::gl!(sGfx)).timer = 0;
                 PlaySE(SE_SELECT);
                 if GetHighestScore() < PRIZE_SCORE {
-                    (*sGfx).state = 127;
+                    (*crate::gl!(sGfx)).state = 127;
                 } else {
                     StopMapMusic();
-                    (*sGfx).state += 1;
+                    (*crate::gl!(sGfx)).state += 1;
                 }
                 FillBgTilemapBufferRect_Palette0(BG_INTERFACE, 0, 0, 5, DISPLAY_TILE_WIDTH, 15);
-                RemoveWindow((*sGfx).windowIds[1]);
-                (*sGfx).windowIds[1] =
+                RemoveWindow((*crate::gl!(sGfx)).windowIds[1]);
+                (*crate::gl!(sGfx)).windowIds[1] =
                     AddWindow((&raw const *sWindowTemplate_Prize).cast_mut()) as u8;
-                ClearWindowTilemap((*sGfx).windowIds[1]);
+                ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
                 DrawMessageWindow((&raw const *sWindowTemplate_Prize).cast_mut());
             }
         }
         9 => {
             PlayNewMapMusic(MUS_LEVEL_UP);
-            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
-            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[0], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[1], 17);
             strWidth = GetStringWidth(
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_AnnouncingPrizes)
@@ -4597,7 +4799,7 @@ pub(crate) unsafe fn ShowResults() {
             ) as u32;
             x = (224 - strWidth) / 2;
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[0],
+                (*crate::gl!(sGfx)).windowIds[0],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_AnnouncingPrizes)
                     .cast::<CArray<u8, 0>>())
@@ -4618,7 +4820,7 @@ pub(crate) unsafe fn ShowResults() {
                     .cast_mut(),
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 gStringVar4.as_mut_ptr(),
                 0,
@@ -4649,7 +4851,7 @@ pub(crate) unsafe fn ShowResults() {
                     );
                 }
                 AddTextPrinterParameterized(
-                    (*sGfx).windowIds[1],
+                    (*crate::gl!(sGfx)).windowIds[1],
                     FONT_NORMAL,
                     gStringVar4.as_mut_ptr(),
                     0,
@@ -4658,36 +4860,36 @@ pub(crate) unsafe fn ShowResults() {
                     None,
                 );
             }
-            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
-            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
-            (*sGfx).state += 1;
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[1], COPYWIN_GFX);
+            (*crate::gl!(sGfx)).state += 1;
         }
         10 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sGfx).windowIds[0]);
-                PutWindowTilemap((*sGfx).windowIds[1]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
             FadeOutAndFadeInNewMapMusic(MUS_RG_VICTORY_WILD, 20, 10);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         11 => {
             if ({
-                (*sGfx).timer += 1;
-                (*sGfx).timer
+                (*crate::gl!(sGfx)).timer += 1;
+                (*crate::gl!(sGfx)).timer
             }) >= 30
-                && gMain.newKeys as i32 & A_BUTTON != 0
+                && crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0
             {
-                (*sGfx).timer = 0;
+                (*crate::gl!(sGfx)).timer = 0;
                 PlaySE(SE_SELECT);
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         _ => {
-            ClearWindowTilemap((*sGfx).windowIds[0]);
-            ClearWindowTilemap((*sGfx).windowIds[1]);
-            RemoveWindow((*sGfx).windowIds[0]);
-            RemoveWindow((*sGfx).windowIds[1]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
+            RemoveWindow((*crate::gl!(sGfx)).windowIds[0]);
+            RemoveWindow((*crate::gl!(sGfx)).windowIds[1]);
             FillBgTilemapBufferRect_Palette0(
                 BG_INTERFACE,
                 0,
@@ -4697,31 +4899,31 @@ pub(crate) unsafe fn ShowResults() {
                 DISPLAY_TILE_HEIGHT,
             );
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).finished = TRUE as u32;
+            (*crate::gl!(sGfx)).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe fn Msg_WantToPlayAgain() {
     let mut y: u8 = 0;
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
-            (*sGfx).windowIds[0] =
+            (*crate::gl!(sGfx)).windowIds[0] =
                 AddWindow((&raw const sWindowTemplates_PlayAgain[0]).cast_mut()) as u8;
-            (*sGfx).windowIds[1] =
+            (*crate::gl!(sGfx)).windowIds[1] =
                 AddWindow((&raw const sWindowTemplates_PlayAgain[1]).cast_mut()) as u8;
-            ClearWindowTilemap((*sGfx).windowIds[0]);
-            ClearWindowTilemap((*sGfx).windowIds[1]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
             DrawMessageWindow((&raw const sWindowTemplates_PlayAgain[0]).cast_mut());
             DrawYesNoMessageWindow((&raw const sWindowTemplates_PlayAgain[1]).cast_mut());
-            (*sGfx).state += 1;
-            (*sGfx).cursorSelection = PLAY_AGAIN_NONE;
-            (*sGfx).playAgainState = PLAY_AGAIN_NONE;
+            (*crate::gl!(sGfx)).state += 1;
+            (*crate::gl!(sGfx)).cursorSelection = PLAY_AGAIN_NONE;
+            (*crate::gl!(sGfx)).playAgainState = PLAY_AGAIN_NONE;
         }
         1 => {
-            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
-            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[0], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[1], 17);
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[0],
+                (*crate::gl!(sGfx)).windowIds[0],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_WantToPlayAgain).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4732,7 +4934,7 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 None,
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_Yes).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4743,7 +4945,7 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 None,
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_No).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4754,7 +4956,7 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 None,
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_SelectorArrow2).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4764,26 +4966,26 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
-            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_GFX);
-            (*sGfx).state += 1;
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[0], COPYWIN_GFX);
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[1], COPYWIN_GFX);
+            (*crate::gl!(sGfx)).state += 1;
         }
         2 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sGfx).windowIds[0]);
-                PutWindowTilemap((*sGfx).windowIds[1]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         3 => {
-            y = (*sGfx).cursorSelection;
+            y = (*crate::gl!(sGfx)).cursorSelection;
             if y == PLAY_AGAIN_NONE {
                 y = PLAY_AGAIN_YES;
             }
-            FillWindowPixelBuffer((*sGfx).windowIds[1], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[1], 17);
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_Yes).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4794,7 +4996,7 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 None,
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_No).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4805,7 +5007,7 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 None,
             );
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[1],
+                (*crate::gl!(sGfx)).windowIds[1],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_SelectorArrow2).cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -4815,39 +5017,39 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sGfx).windowIds[1], COPYWIN_FULL);
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[1], COPYWIN_FULL);
+            if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                if (*sGfx).cursorSelection == PLAY_AGAIN_NONE {
-                    (*sGfx).cursorSelection = PLAY_AGAIN_YES;
+                if (*crate::gl!(sGfx)).cursorSelection == PLAY_AGAIN_NONE {
+                    (*crate::gl!(sGfx)).cursorSelection = PLAY_AGAIN_YES;
                 }
-                (*sGfx).state += 1;
-            } else if gMain.newKeys as i32 & 192 != 0 {
+                (*crate::gl!(sGfx)).state += 1;
+            } else if crate::gl!(gMain.newKeys) as i32 & 192 != 0 {
                 PlaySE(SE_SELECT);
-                match (*sGfx).cursorSelection {
+                match (*crate::gl!(sGfx)).cursorSelection {
                     PLAY_AGAIN_NONE => {
-                        (*sGfx).cursorSelection = PLAY_AGAIN_NO;
+                        (*crate::gl!(sGfx)).cursorSelection = PLAY_AGAIN_NO;
                     }
                     PLAY_AGAIN_YES => {
-                        (*sGfx).cursorSelection = PLAY_AGAIN_NO;
+                        (*crate::gl!(sGfx)).cursorSelection = PLAY_AGAIN_NO;
                     }
                     PLAY_AGAIN_NO => {
-                        (*sGfx).cursorSelection = PLAY_AGAIN_YES;
+                        (*crate::gl!(sGfx)).cursorSelection = PLAY_AGAIN_YES;
                     }
                     _ => {}
                 }
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                (*sGfx).cursorSelection = PLAY_AGAIN_NO;
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).cursorSelection = PLAY_AGAIN_NO;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         _ => {
-            (*sGfx).playAgainState = (*sGfx).cursorSelection;
-            ClearWindowTilemap((*sGfx).windowIds[0]);
-            ClearWindowTilemap((*sGfx).windowIds[1]);
-            RemoveWindow((*sGfx).windowIds[0]);
-            RemoveWindow((*sGfx).windowIds[1]);
+            (*crate::gl!(sGfx)).playAgainState = (*crate::gl!(sGfx)).cursorSelection;
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[1]);
+            RemoveWindow((*crate::gl!(sGfx)).windowIds[0]);
+            RemoveWindow((*crate::gl!(sGfx)).windowIds[1]);
             FillBgTilemapBufferRect_Palette0(
                 BG_INTERFACE,
                 0,
@@ -4857,12 +5059,12 @@ pub(crate) unsafe fn Msg_WantToPlayAgain() {
                 DISPLAY_TILE_HEIGHT,
             );
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).finished = TRUE as u32;
+            (*crate::gl!(sGfx)).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe fn Msg_SavingDontTurnOff() {
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
             DrawDialogueFrame(0, 0);
             AddTextPrinterParameterized2(
@@ -4877,21 +5079,21 @@ pub(crate) unsafe fn Msg_SavingDontTurnOff() {
                 TEXT_COLOR_WHITE,
                 TEXT_COLOR_LIGHT_GRAY,
             );
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         1 => {
             CopyWindowToVram(0, COPYWIN_FULL);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         2 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 CreateTask(Some(Task_LinkFullSave), 0);
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         3 => {
             if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         _ => {
@@ -4904,23 +5106,23 @@ pub(crate) unsafe fn Msg_SavingDontTurnOff() {
                 DISPLAY_TILE_HEIGHT,
             );
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).finished = TRUE as u32;
+            (*crate::gl!(sGfx)).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe fn Msg_CommunicationStandby() {
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
-            (*sGfx).windowIds[0] =
+            (*crate::gl!(sGfx)).windowIds[0] =
                 AddWindow((&raw const *sWindowTemplate_CommStandby).cast_mut()) as u8;
-            ClearWindowTilemap((*sGfx).windowIds[0]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
             DrawMessageWindow((&raw const *sWindowTemplate_CommStandby).cast_mut());
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         1 => {
-            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[0], 17);
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[0],
+                (*crate::gl!(sGfx)).windowIds[0],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_CommunicationStandby3)
                     .cast::<CArray<u8, 0>>())
@@ -4931,24 +5133,24 @@ pub(crate) unsafe fn Msg_CommunicationStandby() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
-            (*sGfx).state += 1;
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[0], COPYWIN_GFX);
+            (*crate::gl!(sGfx)).state += 1;
         }
         2 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sGfx).windowIds[0]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         _ => {
-            (*sGfx).finished = TRUE as u32;
+            (*crate::gl!(sGfx)).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe fn EraseMessage() {
-    ClearWindowTilemap((*sGfx).windowIds[0]);
-    RemoveWindow((*sGfx).windowIds[0]);
+    ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+    RemoveWindow((*crate::gl!(sGfx)).windowIds[0]);
     FillBgTilemapBufferRect_Palette0(
         BG_INTERFACE,
         0,
@@ -4958,24 +5160,24 @@ pub(crate) unsafe fn EraseMessage() {
         DISPLAY_TILE_HEIGHT,
     );
     CopyBgTilemapBufferToVram(BG_INTERFACE);
-    (*sGfx).finished = TRUE as u32;
+    (*crate::gl!(sGfx)).finished = TRUE as u32;
 }
 pub(crate) unsafe fn Msg_SomeoneDroppedOut() {
-    match (*sGfx).state {
+    match (*crate::gl!(sGfx)).state {
         0 => {
-            (*sGfx).windowIds[0] =
+            (*crate::gl!(sGfx)).windowIds[0] =
                 AddWindow((&raw const *sWindowTemplate_DroppedOut).cast_mut()) as u8;
-            ClearWindowTilemap((*sGfx).windowIds[0]);
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
             DrawMessageWindow((&raw const *sWindowTemplate_DroppedOut).cast_mut());
-            (*sGfx).state += 1;
-            (*sGfx).timer = 0;
-            (*sGfx).cursorSelection = 0;
-            (*sGfx).playAgainState = PLAY_AGAIN_NONE;
+            (*crate::gl!(sGfx)).state += 1;
+            (*crate::gl!(sGfx)).timer = 0;
+            (*crate::gl!(sGfx)).cursorSelection = 0;
+            (*crate::gl!(sGfx)).playAgainState = PLAY_AGAIN_NONE;
         }
         1 => {
-            FillWindowPixelBuffer((*sGfx).windowIds[0], 17);
+            FillWindowPixelBuffer((*crate::gl!(sGfx)).windowIds[0], 17);
             AddTextPrinterParameterized(
-                (*sGfx).windowIds[0],
+                (*crate::gl!(sGfx)).windowIds[0],
                 FONT_NORMAL,
                 (*(&raw const crate::data::strings::gText_SomeoneDroppedOut)
                     .cast::<CArray<u8, 0>>())
@@ -4986,29 +5188,29 @@ pub(crate) unsafe fn Msg_SomeoneDroppedOut() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            CopyWindowToVram((*sGfx).windowIds[0], COPYWIN_GFX);
-            (*sGfx).state += 1;
+            CopyWindowToVram((*crate::gl!(sGfx)).windowIds[0], COPYWIN_GFX);
+            (*crate::gl!(sGfx)).state += 1;
         }
         2 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                PutWindowTilemap((*sGfx).windowIds[0]);
+                PutWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
             }
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).state += 1;
+            (*crate::gl!(sGfx)).state += 1;
         }
         3 => {
             if ({
-                (*sGfx).timer += 1;
-                (*sGfx).timer
+                (*crate::gl!(sGfx)).timer += 1;
+                (*crate::gl!(sGfx)).timer
             }) >= 120
             {
-                (*sGfx).state += 1;
+                (*crate::gl!(sGfx)).state += 1;
             }
         }
         _ => {
-            (*sGfx).playAgainState = PLAY_AGAIN_DROPPED;
-            ClearWindowTilemap((*sGfx).windowIds[0]);
-            RemoveWindow((*sGfx).windowIds[0]);
+            (*crate::gl!(sGfx)).playAgainState = PLAY_AGAIN_DROPPED;
+            ClearWindowTilemap((*crate::gl!(sGfx)).windowIds[0]);
+            RemoveWindow((*crate::gl!(sGfx)).windowIds[0]);
             FillBgTilemapBufferRect_Palette0(
                 BG_INTERFACE,
                 0,
@@ -5018,25 +5220,25 @@ pub(crate) unsafe fn Msg_SomeoneDroppedOut() {
                 DISPLAY_TILE_HEIGHT,
             );
             CopyBgTilemapBufferToVram(BG_INTERFACE);
-            (*sGfx).finished = TRUE as u32;
+            (*crate::gl!(sGfx)).finished = TRUE as u32;
         }
     }
 }
 pub(crate) unsafe fn StopGfxFuncs() {
-    DestroyTask((*sGfx).taskId);
-    (*sGfx).finished = TRUE as u32;
+    DestroyTask((*crate::gl!(sGfx)).taskId);
+    (*crate::gl!(sGfx)).finished = TRUE as u32;
 }
 pub(crate) fn GfxIdle() {}
 unsafe fn SetGfxFunc(func: Option<unsafe fn()>) {
-    (*sGfx).state = 0;
-    (*sGfx).finished = FALSE as u32;
-    (*sGfx).func = func;
+    (*crate::gl!(sGfx)).state = 0;
+    (*crate::gl!(sGfx)).finished = FALSE as u32;
+    (*crate::gl!(sGfx)).func = func;
 }
 unsafe fn GetGfxFunc() -> Option<unsafe fn()> {
-    (*sGfx).func
+    (*crate::gl!(sGfx)).func
 }
 unsafe fn IsGfxFuncActive() -> u32 {
-    if (*sGfx).finished == TRUE as u32 {
+    if (*crate::gl!(sGfx)).finished == TRUE as u32 {
         return FALSE as u32;
     } else {
         return TRUE as u32;
@@ -5047,7 +5249,7 @@ unsafe fn IsGfxFuncActive() -> u32 {
     }
 }
 unsafe fn GetPlayAgainState() -> u8 {
-    (*sGfx).playAgainState
+    (*crate::gl!(sGfx)).playAgainState
 }
 unsafe fn InitBgs() {
     {
@@ -5149,19 +5351,19 @@ unsafe fn InitBgs() {
     SetGpuReg(REG_OFFSET_DISPCNT, 4160);
     SetBgTilemapBuffer(
         BG_SCENERY,
-        (*sGfx).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sGfx)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         BG_TREE_LEFT,
-        (*sGfx).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sGfx)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         BG_TREE_RIGHT,
-        (*sGfx).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sGfx)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
 }
 unsafe fn LoadBgGfx() -> u32 {
-    match (*sGfx).loadState {
+    match (*crate::gl!(sGfx)).loadState {
         0 => {
             LoadPalette(sBg_Pal.as_ptr().cast_mut() as *mut c_void, 0, 64);
         }
@@ -5195,10 +5397,10 @@ unsafe fn LoadBgGfx() -> u32 {
             LoadPalette(GetTextWindowPalette(3) as *mut c_void, 208, 32);
         }
         _ => {
-            (*sGfx).loadState = 0;
+            (*crate::gl!(sGfx)).loadState = 0;
             return TRUE as u32;
         }
     }
-    (*sGfx).loadState += 1;
+    (*crate::gl!(sGfx)).loadState += 1;
     FALSE as u32
 }

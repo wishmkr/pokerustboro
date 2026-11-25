@@ -27,7 +27,7 @@ pub const TASK_NONE: u8 = TAIL_SENTINEL;
 const FOLLOWUP_FUNC_INDEX: usize = NUM_TASK_DATA - 2;
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "common_data"))]
 pub static gTasks: Global<CArray<Task, NUM_TASKS>> = Global::new(unsafe { core::mem::zeroed() });
 
 /// The task slots.

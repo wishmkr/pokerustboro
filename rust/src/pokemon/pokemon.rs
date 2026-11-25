@@ -740,25 +740,29 @@ static sStatsToRaise: Table<CArray<u8, 6>> =
 static sTrainerBackSpriteTemplates: Table<CArray<SpriteTemplate, 8>> =
     Table((&raw const crate::data::pokemon::sTrainerBackSpriteTemplates).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLearningMoveTableID: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sLearningMoveTableID: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerPartyCount: u8 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gEnemyPartyCount: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPlayerPartyCount: crate::global::Global<u8> = crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gEnemyPartyCount: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gPlayerParty: CArray<Pokemon, 6> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gPlayerParty: crate::global::Global<CArray<Pokemon, 6>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gEnemyParty: CArray<Pokemon, 6> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gEnemyParty: crate::global::Global<CArray<Pokemon, 6>> =
+    crate::global::Global::new(unsafe { zeroed() });
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gMultiuseSpriteTemplate: SpriteTemplate = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMonSpritesGfxManagers: CArray<*mut MonSpritesGfxManager, 2> =
-    unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gMultiuseSpriteTemplate: crate::global::Global<SpriteTemplate> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMonSpritesGfxManagers: crate::global::Global<
+    CArray<*mut MonSpritesGfxManager, 2>,
+> = crate::global::Global::new(unsafe { zeroed() });
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -791,13 +795,13 @@ pub unsafe fn ZeroMonData(mon: *mut Pokemon) {
 #[unsafe(no_mangle)]
 pub unsafe fn ZeroPlayerPartyMons() {
     for i in 0..PARTY_SIZE {
-        ZeroMonData(&raw mut gPlayerParty[i]);
+        ZeroMonData(crate::gl!(&raw gPlayerParty[i]));
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn ZeroEnemyPartyMons() {
     for i in 0..PARTY_SIZE {
-        ZeroMonData(&raw mut gEnemyParty[i]);
+        ZeroMonData(crate::gl!(&raw gEnemyParty[i]));
     }
 }
 #[unsafe(no_mangle)]
@@ -866,10 +870,10 @@ pub unsafe fn CreateBoxMon(
     } else if otIdType == OT_ID_PRESET {
         value = fixedOtId;
     } else {
-        value = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-            | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-            | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-            | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24;
+        value = (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+            | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+            | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+            | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24;
     }
     SetBoxMonData(boxMon, MON_DATA_OT_ID, &raw mut value as *mut c_void);
     let mut checksum: u16 = CalculateBoxMonChecksum(boxMon);
@@ -889,7 +893,7 @@ pub unsafe fn CreateBoxMon(
     SetBoxMonData(
         boxMon,
         MON_DATA_OT_NAME,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr() as *mut c_void,
     );
     SetBoxMonData(boxMon, MON_DATA_SPECIES, &raw mut species as *mut c_void);
     SetBoxMonData(
@@ -916,7 +920,7 @@ pub unsafe fn CreateBoxMon(
     SetBoxMonData(
         boxMon,
         MON_DATA_OT_GENDER,
-        &raw mut (*gSaveBlock2Ptr).playerGender as *mut c_void,
+        &raw mut (*crate::gl!(gSaveBlock2Ptr)).playerGender as *mut c_void,
     );
     if fixedIV < USE_RANDOM_IVS {
         SetBoxMonData(boxMon, MON_DATA_HP_IV, &raw mut fixedIV as *mut c_void);
@@ -1160,8 +1164,8 @@ pub unsafe fn CreateBattleTowerMon_HandleLevel(
     let mut nickname: CArray<u8, 32> = zeroed();
     let mut level: u8 = 0;
     let mut language: u8 = 0;
-    if (*gSaveBlock2Ptr).frontier.lvlMode() != FRONTIER_LVL_50 {
-        level = GetFrontierEnemyMonLevel((*gSaveBlock2Ptr).frontier.lvlMode());
+    if (*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode() != FRONTIER_LVL_50 {
+        level = GetFrontierEnemyMonLevel((*crate::gl!(gSaveBlock2Ptr)).frontier.lvlMode());
     } else if lvl50 != 0 {
         level = FRONTIER_MAX_LEVEL_50;
     } else {
@@ -1393,22 +1397,26 @@ unsafe fn CreateEventMon(
 pub unsafe fn ShouldIgnoreDeoxysForm(caseId: u8, battler: u8) -> u8 {
     match caseId {
         1 => {
-            if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI == 0 {
                 return FALSE;
             }
-            if gMain.inBattle() == 0 {
+            if (*gMain.as_ptr()).inBattle() == 0 {
                 return FALSE;
             }
-            if gLinkPlayers[GetMultiplayerId()].id == battler as u16 {
+            if ({
+                let gl_i0 = GetMultiplayerId();
+                crate::gl!(gLinkPlayers[gl_i0].id)
+            }) == battler as u16
+            {
                 return FALSE;
             }
         }
         2 => {}
         3 => {
-            if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI == 0 {
                 return FALSE;
             }
-            if gMain.inBattle() == 0 {
+            if (*gMain.as_ptr()).inBattle() == 0 {
                 return FALSE;
             }
             if battler == 1 || battler == 4 || battler == 5 {
@@ -1418,12 +1426,16 @@ pub unsafe fn ShouldIgnoreDeoxysForm(caseId: u8, battler: u8) -> u8 {
         }
         4 => {}
         5 => {
-            if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-                if gMain.inBattle() == 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_LINK != 0 {
+                if (*gMain.as_ptr()).inBattle() == 0 {
                     return FALSE;
                 }
-                if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-                    if gLinkPlayers[GetMultiplayerId()].id == battler as u16 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_MULTI != 0 {
+                    if ({
+                        let gl_i1 = GetMultiplayerId();
+                        crate::gl!(gLinkPlayers[gl_i1].id)
+                    }) == battler as u16
+                    {
                         return FALSE;
                     }
                 } else {
@@ -1432,7 +1444,7 @@ pub unsafe fn ShouldIgnoreDeoxysForm(caseId: u8, battler: u8) -> u8 {
                     }
                 }
             } else {
-                if gMain.inBattle() == 0 {
+                if (*gMain.as_ptr()).inBattle() == 0 {
                     return FALSE;
                 }
                 if GetBattlerSide(battler) == B_SIDE_PLAYER {
@@ -1447,7 +1459,7 @@ pub unsafe fn ShouldIgnoreDeoxysForm(caseId: u8, battler: u8) -> u8 {
     TRUE
 }
 unsafe fn GetDeoxysStat(mon: *mut Pokemon, statId: i32) -> u16 {
-    if gBattleTypeFlags & BATTLE_TYPE_LINK_IN_BATTLE != 0
+    if gBattleTypeFlags.get() & BATTLE_TYPE_LINK_IN_BATTLE != 0
         || GetMonData3(mon, MON_DATA_SPECIES, null_mut()) != SPECIES_DEOXYS
     {
         return 0;
@@ -1466,7 +1478,7 @@ pub unsafe fn SetDeoxysStats() {
     let mut value: i32 = 0;
     for i in 0..PARTY_SIZE {
         'l1: {
-            let mon: *mut Pokemon = &raw mut gPlayerParty[i];
+            let mon: *mut Pokemon = crate::gl!(&raw gPlayerParty[i]);
             if GetMonData3(mon, MON_DATA_SPECIES, null_mut()) != SPECIES_DEOXYS {
                 break 'l1;
             }
@@ -1485,24 +1497,24 @@ pub unsafe fn SetDeoxysStats() {
 }
 pub unsafe fn GetUnionRoomTrainerPic() -> u16 {
     let mut linkId: u8 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
-        linkId = gRecordedBattleMultiplayerId ^ 1;
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED_LINK != 0 {
+        linkId = gRecordedBattleMultiplayerId.get() ^ 1;
     } else {
         linkId = GetMultiplayerId() ^ 1;
     }
-    let mut arrId: u32 = gLinkPlayers[linkId].trainerId % 8;
-    arrId |= gLinkPlayers[linkId].gender as u32 * NUM_UNION_ROOM_CLASSES;
+    let mut arrId: u32 = crate::gl!(gLinkPlayers[linkId].trainerId) % 8;
+    arrId |= crate::gl!(gLinkPlayers[linkId].gender) as u32 * NUM_UNION_ROOM_CLASSES;
     FacilityClassToPicIndex(gUnionRoomFacilityClasses[arrId])
 }
 pub unsafe fn GetUnionRoomTrainerClass() -> u16 {
     let mut linkId: u8 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
-        linkId = gRecordedBattleMultiplayerId ^ 1;
+    if gBattleTypeFlags.get() & BATTLE_TYPE_RECORDED_LINK != 0 {
+        linkId = gRecordedBattleMultiplayerId.get() ^ 1;
     } else {
         linkId = GetMultiplayerId() ^ 1;
     }
-    let mut arrId: u32 = gLinkPlayers[linkId].trainerId % 8;
-    arrId |= gLinkPlayers[linkId].gender as u32 * NUM_UNION_ROOM_CLASSES;
+    let mut arrId: u32 = crate::gl!(gLinkPlayers[linkId].trainerId) % 8;
+    arrId |= crate::gl!(gLinkPlayers[linkId].gender) as u32 * NUM_UNION_ROOM_CLASSES;
     gFacilityClassToTrainerClass[gUnionRoomFacilityClasses[arrId]] as u16
 }
 #[unsafe(no_mangle)]
@@ -1512,7 +1524,7 @@ pub unsafe fn CreateEnemyEventMon() {
     let itemId: i32 = gSpecialVar_0x8006 as i32;
     ZeroEnemyPartyMons();
     CreateEventMon(
-        &raw mut gEnemyParty[0],
+        crate::gl!(&raw gEnemyParty[0]),
         species as u16,
         level as u8,
         USE_RANDOM_IVS,
@@ -1526,7 +1538,7 @@ pub unsafe fn CreateEnemyEventMon() {
         heldItem[0] = itemId as u8;
         heldItem[1] = (itemId >> 8) as u8;
         SetMonData(
-            &raw mut gEnemyParty[0],
+            crate::gl!(&raw gEnemyParty[0]),
             MON_DATA_HELD_ITEM,
             heldItem.as_mut_ptr() as *mut c_void,
         );
@@ -1579,9 +1591,9 @@ pub unsafe fn CalculateMonStats(mon: *mut Pokemon) {
         let n: i32 = 2 * gSpeciesInfo[species].baseHP as i32 + hpIV;
         newMaxHP = (n + hpEV / 4) * level / 100 + level + 10;
     }
-    gBattleScripting.levelUpHP = newMaxHP as u8 - oldMaxHP as u8;
-    if gBattleScripting.levelUpHP == 0 {
-        gBattleScripting.levelUpHP = 1;
+    crate::gl!(gBattleScripting.levelUpHP = newMaxHP as u8 - oldMaxHP as u8);
+    if crate::gl!(gBattleScripting.levelUpHP) == 0 {
+        crate::gl!(gBattleScripting.levelUpHP = 1);
     }
     SetMonData(mon, MON_DATA_MAX_HP, &raw mut newMaxHP as *mut c_void);
     {
@@ -1741,22 +1753,23 @@ pub unsafe fn MonTryLearningNewMove(mon: *mut Pokemon, firstMove: u8) -> u16 {
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
     let level: u8 = GetMonData3(mon, MON_DATA_LEVEL, null_mut()) as u8;
     if firstMove != 0 {
-        sLearningMoveTableID = 0;
-        while *gLevelUpLearnsets[species].at(sLearningMoveTableID) as i32 & LEVEL_UP_MOVE_LV
+        sLearningMoveTableID.set(0);
+        while *gLevelUpLearnsets[species].at(sLearningMoveTableID.get()) as i32 & LEVEL_UP_MOVE_LV
             != (level as i32) << 9
         {
-            sLearningMoveTableID += 1;
-            if *gLevelUpLearnsets[species].at(sLearningMoveTableID) == LEVEL_UP_END {
+            sLearningMoveTableID.set(sLearningMoveTableID.get() + (1));
+            if *gLevelUpLearnsets[species].at(sLearningMoveTableID.get()) == LEVEL_UP_END {
                 return MOVE_NONE;
             }
         }
     }
-    if *gLevelUpLearnsets[species].at(sLearningMoveTableID) as i32 & LEVEL_UP_MOVE_LV
+    if *gLevelUpLearnsets[species].at(sLearningMoveTableID.get()) as i32 & LEVEL_UP_MOVE_LV
         == (level as i32) << 9
     {
-        gMoveToLearn = *gLevelUpLearnsets[species].at(sLearningMoveTableID) & LEVEL_UP_MOVE_ID;
-        sLearningMoveTableID += 1;
-        retVal = GiveMoveToMon(mon, gMoveToLearn) as u32;
+        gMoveToLearn
+            .set(*gLevelUpLearnsets[species].at(sLearningMoveTableID.get()) & LEVEL_UP_MOVE_ID);
+        sLearningMoveTableID.set(sLearningMoveTableID.get() + (1));
+        retVal = GiveMoveToMon(mon, gMoveToLearn.get()) as u32;
     }
     retVal as u16
 }
@@ -1824,9 +1837,9 @@ pub unsafe fn CalculateBaseDamage(
     let mut attackerHoldEffect: u8 = 0;
     let mut attackerHoldEffectParam: u8 = 0;
     if powerOverride == 0 {
-        gBattleMovePower = gBattleMoves[r#move].power as u16;
+        gBattleMovePower.set(gBattleMoves[r#move].power as u16);
     } else {
-        gBattleMovePower = powerOverride;
+        gBattleMovePower.set(powerOverride);
     }
     if typeOverride == 0 {
         r#type = gBattleMoves[r#move].r#type;
@@ -1838,15 +1851,15 @@ pub unsafe fn CalculateBaseDamage(
     spAttack = (*attacker).spAttack;
     spDefense = (*defender).spDefense;
     if (*attacker).item == ITEM_ENIGMA_BERRY {
-        attackerHoldEffect = gEnigmaBerries[battlerIdAtk].holdEffect;
-        attackerHoldEffectParam = gEnigmaBerries[battlerIdAtk].holdEffectParam;
+        attackerHoldEffect = crate::gl!(gEnigmaBerries[battlerIdAtk].holdEffect);
+        attackerHoldEffectParam = crate::gl!(gEnigmaBerries[battlerIdAtk].holdEffectParam);
     } else {
         attackerHoldEffect = GetItemHoldEffect((*attacker).item);
         attackerHoldEffectParam = GetItemHoldEffectParam((*attacker).item);
     }
     if (*defender).item == ITEM_ENIGMA_BERRY {
-        defenderHoldEffect = gEnigmaBerries[battlerIdDef].holdEffect;
-        defenderHoldEffectParam = gEnigmaBerries[battlerIdDef].holdEffectParam;
+        defenderHoldEffect = crate::gl!(gEnigmaBerries[battlerIdDef].holdEffect);
+        defenderHoldEffectParam = crate::gl!(gEnigmaBerries[battlerIdDef].holdEffectParam);
     } else {
         defenderHoldEffect = GetItemHoldEffect((*defender).item);
         defenderHoldEffectParam = GetItemHoldEffectParam((*defender).item);
@@ -1880,13 +1893,13 @@ pub unsafe fn CalculateBaseDamage(
         attack = (150 * attack as i32 / 100) as u16;
     }
     if attackerHoldEffect == HOLD_EFFECT_SOUL_DEW
-        && gBattleTypeFlags & BATTLE_TYPE_FRONTIER == 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER == 0
         && ((*attacker).species == SPECIES_LATIAS || (*attacker).species == SPECIES_LATIOS)
     {
         spAttack = (150 * spAttack as i32 / 100) as u16;
     }
     if defenderHoldEffect == HOLD_EFFECT_SOUL_DEW
-        && gBattleTypeFlags & BATTLE_TYPE_FRONTIER == 0
+        && gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER == 0
         && ((*defender).species == SPECIES_LATIAS || (*defender).species == SPECIES_LATIOS)
     {
         spDefense = (150 * spDefense as i32 / 100) as u16;
@@ -1931,7 +1944,7 @@ pub unsafe fn CalculateBaseDamage(
     if r#type == TYPE_ELECTRIC
         && AbilityBattleEffects(ABILITYEFFECT_FIELD_SPORT, 0, 0, ABILITYEFFECT_MUD_SPORT, 0) != 0
     {
-        gBattleMovePower = (gBattleMovePower as i32 / 2) as u16;
+        gBattleMovePower.set((gBattleMovePower.get() as i32 / 2) as u16);
     }
     if r#type == TYPE_FIRE
         && AbilityBattleEffects(
@@ -1942,37 +1955,37 @@ pub unsafe fn CalculateBaseDamage(
             0,
         ) != 0
     {
-        gBattleMovePower = (gBattleMovePower as i32 / 2) as u16;
+        gBattleMovePower.set((gBattleMovePower.get() as i32 / 2) as u16);
     }
     if r#type == TYPE_GRASS
         && (*attacker).ability == ABILITY_OVERGROW
         && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
     {
-        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+        gBattleMovePower.set((150 * gBattleMovePower.get() as i32 / 100) as u16);
     }
     if r#type == TYPE_FIRE
         && (*attacker).ability == ABILITY_BLAZE
         && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
     {
-        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+        gBattleMovePower.set((150 * gBattleMovePower.get() as i32 / 100) as u16);
     }
     if r#type == TYPE_WATER
         && (*attacker).ability == ABILITY_TORRENT
         && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
     {
-        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+        gBattleMovePower.set((150 * gBattleMovePower.get() as i32 / 100) as u16);
     }
     if r#type == TYPE_BUG
         && (*attacker).ability == ABILITY_SWARM
         && (*attacker).hp as i32 <= (*attacker).maxHP as i32 / 3
     {
-        gBattleMovePower = (150 * gBattleMovePower as i32 / 100) as u16;
+        gBattleMovePower.set((150 * gBattleMovePower.get() as i32 / 100) as u16);
     }
-    if gBattleMoves[gCurrentMove].effect == EFFECT_EXPLOSION {
+    if gBattleMoves[gCurrentMove.get()].effect == EFFECT_EXPLOSION {
         defense = (defense as i32 / 2) as u16;
     }
     if r#type < 9 {
-        if gCritMultiplier == 2 {
+        if gCritMultiplier.get() == 2 {
             if (*attacker).statStages[1] > DEFAULT_STAT_STAGE {
                 damage = attack as i32 * gStatStageRatios[(*attacker).statStages[1]][0] as i32;
                 damage = div_i32(
@@ -1989,9 +2002,9 @@ pub unsafe fn CalculateBaseDamage(
                 gStatStageRatios[(*attacker).statStages[1]][1] as i32,
             );
         }
-        damage *= gBattleMovePower as i32;
+        damage *= gBattleMovePower.get() as i32;
         damage *= 2 * (*attacker).level as i32 / 5 + 2;
-        if gCritMultiplier == 2 {
+        if gCritMultiplier.get() == 2 {
             if (*defender).statStages[2] < DEFAULT_STAT_STAGE {
                 damageHelper =
                     defense as i32 * gStatStageRatios[(*defender).statStages[2]][0] as i32;
@@ -2014,14 +2027,14 @@ pub unsafe fn CalculateBaseDamage(
         if (*attacker).status1 & STATUS1_BURN != 0 && (*attacker).ability != ABILITY_GUTS {
             damage /= 2;
         }
-        if sideStatus as i32 & 1 != 0 && gCritMultiplier == 1 {
-            if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 && CountAliveMonsInBattle(2) == 2 {
+        if sideStatus as i32 & 1 != 0 && gCritMultiplier.get() == 1 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 && CountAliveMonsInBattle(2) == 2 {
                 damage = 2 * (damage / 3);
             } else {
                 damage /= 2;
             }
         }
-        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+        if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
             && gBattleMoves[r#move].target == MOVE_TARGET_BOTH
             && CountAliveMonsInBattle(2) == 2
         {
@@ -2035,7 +2048,7 @@ pub unsafe fn CalculateBaseDamage(
         damage = 0;
     }
     if r#type > 9 {
-        if gCritMultiplier == 2 {
+        if gCritMultiplier.get() == 2 {
             if (*attacker).statStages[4] > DEFAULT_STAT_STAGE {
                 damage = spAttack as i32 * gStatStageRatios[(*attacker).statStages[4]][0] as i32;
                 damage = div_i32(
@@ -2052,9 +2065,9 @@ pub unsafe fn CalculateBaseDamage(
                 gStatStageRatios[(*attacker).statStages[4]][1] as i32,
             );
         }
-        damage *= gBattleMovePower as i32;
+        damage *= gBattleMovePower.get() as i32;
         damage *= 2 * (*attacker).level as i32 / 5 + 2;
-        if gCritMultiplier == 2 {
+        if gCritMultiplier.get() == 2 {
             if (*defender).statStages[5] < DEFAULT_STAT_STAGE {
                 damageHelper =
                     spDefense as i32 * gStatStageRatios[(*defender).statStages[5]][0] as i32;
@@ -2074,14 +2087,14 @@ pub unsafe fn CalculateBaseDamage(
         }
         damage = div_i32(damage, damageHelper);
         damage /= 50;
-        if sideStatus as i32 & SIDE_STATUS_LIGHTSCREEN != 0 && gCritMultiplier == 1 {
-            if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 && CountAliveMonsInBattle(2) == 2 {
+        if sideStatus as i32 & SIDE_STATUS_LIGHTSCREEN != 0 && gCritMultiplier.get() == 1 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0 && CountAliveMonsInBattle(2) == 2 {
                 damage = 2 * (damage / 3);
             } else {
                 damage /= 2;
             }
         }
-        if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
+        if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE != 0
             && gBattleMoves[r#move].target == MOVE_TARGET_BOTH
             && CountAliveMonsInBattle(2) == 2
         {
@@ -2089,7 +2102,7 @@ pub unsafe fn CalculateBaseDamage(
         }
         if AbilityBattleEffects(14, 0, 13, 0, 0) == 0 && AbilityBattleEffects(14, 0, 77, 0, 0) == 0
         {
-            if gBattleWeather as i32 & B_WEATHER_RAIN_TEMPORARY as i32 != 0 {
+            if gBattleWeather.get() as i32 & B_WEATHER_RAIN_TEMPORARY as i32 != 0 {
                 match r#type {
                     TYPE_FIRE => {
                         damage /= 2;
@@ -2100,10 +2113,10 @@ pub unsafe fn CalculateBaseDamage(
                     _ => {}
                 }
             }
-            if gBattleWeather as i32 & 159 != 0 && gCurrentMove == MOVE_SOLAR_BEAM {
+            if gBattleWeather.get() as i32 & 159 != 0 && gCurrentMove.get() == MOVE_SOLAR_BEAM {
                 damage /= 2;
             }
-            if gBattleWeather as i32 & B_WEATHER_SUN != 0 {
+            if gBattleWeather.get() as i32 & B_WEATHER_SUN != 0 {
                 match r#type {
                     TYPE_FIRE => {
                         damage = 15 * damage / 10;
@@ -2115,7 +2128,8 @@ pub unsafe fn CalculateBaseDamage(
                 }
             }
         }
-        if (*(*gBattleResources).flags).flags[battlerIdAtk] & RESOURCE_FLAG_FLASH_FIRE != 0
+        if (*(*crate::gl!(gBattleResources)).flags).flags[battlerIdAtk] & RESOURCE_FLAG_FLASH_FIRE
+            != 0
             && r#type == TYPE_FIRE
         {
             damage = 15 * damage / 10;
@@ -2128,8 +2142,8 @@ pub unsafe fn CountAliveMonsInBattle(caseId: u8) -> u8 {
     match caseId {
         BATTLE_ALIVE_EXCEPT_ACTIVE => {
             for i in 0..(MAX_BATTLERS_COUNT as i32) {
-                if i != gActiveBattler as i32
-                    && gAbsentBattlerFlags as u32
+                if i != gActiveBattler.get() as i32
+                    && gAbsentBattlerFlags.get() as u32
                         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
                         == 0
                 {
@@ -2139,8 +2153,8 @@ pub unsafe fn CountAliveMonsInBattle(caseId: u8) -> u8 {
         }
         BATTLE_ALIVE_ATK_SIDE => {
             for i in 0..(MAX_BATTLERS_COUNT as i32) {
-                if GetBattlerSide(i as u8) == GetBattlerSide(gBattlerAttacker)
-                    && gAbsentBattlerFlags as u32
+                if GetBattlerSide(i as u8) == GetBattlerSide(gBattlerAttacker.get())
+                    && gAbsentBattlerFlags.get() as u32
                         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
                         == 0
                 {
@@ -2150,8 +2164,8 @@ pub unsafe fn CountAliveMonsInBattle(caseId: u8) -> u8 {
         }
         BATTLE_ALIVE_DEF_SIDE => {
             for i in 0..(MAX_BATTLERS_COUNT as i32) {
-                if GetBattlerSide(i as u8) == GetBattlerSide(gBattlerTarget)
-                    && gAbsentBattlerFlags as u32
+                if GetBattlerSide(i as u8) == GetBattlerSide(gBattlerTarget.get())
+                    && gAbsentBattlerFlags.get() as u32
                         & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
                         == 0
                 {
@@ -2164,12 +2178,12 @@ pub unsafe fn CountAliveMonsInBattle(caseId: u8) -> u8 {
     retVal
 }
 unsafe fn ShouldGetStatBadgeBoost(badgeFlag: u16, battler: u8) -> u8 {
-    if gBattleTypeFlags & 0x23f0902 != 0 {
+    if gBattleTypeFlags.get() & 0x23f0902 != 0 {
         return FALSE;
     } else if GetBattlerSide(battler) != B_SIDE_PLAYER {
         return FALSE;
-    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0
-        && gTrainerBattleOpponent_A == TRAINER_SECRET_BASE
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0
+        && gTrainerBattleOpponent_A.get() == TRAINER_SECRET_BASE
     {
         return FALSE;
     } else if FlagGet(badgeFlag) != 0 {
@@ -2184,7 +2198,7 @@ unsafe fn ShouldGetStatBadgeBoost(badgeFlag: u16, battler: u8) -> u8 {
 }
 pub unsafe fn GetDefaultMoveTarget(battler: u8) -> u8 {
     let opposing: u8 = GetBattlerPosition(battler) & 1 ^ 1;
-    if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_DOUBLE == 0 {
         return GetBattlerAtPosition(opposing);
     }
     if CountAliveMonsInBattle(BATTLE_ALIVE_EXCEPT_ACTIVE) > 1 {
@@ -2196,7 +2210,7 @@ pub unsafe fn GetDefaultMoveTarget(battler: u8) -> u8 {
         }
         return GetBattlerAtPosition(position);
     } else {
-        if gAbsentBattlerFlags as u32
+        if gAbsentBattlerFlags.get() as u32
             & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[opposing]
             != 0
         {
@@ -2251,61 +2265,99 @@ pub unsafe fn GetGenderFromSpeciesAndPersonality(species: u16, personality: u32)
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetMultiuseSpriteTemplateToPokemon(speciesTag: u16, battlerPosition: u8) {
-    if !gMonSpritesGfxPtr.is_null() {
-        gMultiuseSpriteTemplate = (*gMonSpritesGfxPtr).templates[battlerPosition];
-    } else if !sMonSpritesGfxManagers[0].is_null() {
-        gMultiuseSpriteTemplate = *(*sMonSpritesGfxManagers[0]).templates.at(battlerPosition);
-    } else if !sMonSpritesGfxManagers[1].is_null() {
-        gMultiuseSpriteTemplate = *(*sMonSpritesGfxManagers[1]).templates.at(battlerPosition);
+    if !(*gMonSpritesGfxPtr.as_ptr()).is_null() {
+        crate::gl!(
+            gMultiuseSpriteTemplate = (*crate::gl!(gMonSpritesGfxPtr)).templates[battlerPosition]
+        );
+    } else if !(*sMonSpritesGfxManagers.as_ptr())[0].is_null() {
+        crate::gl!(
+            gMultiuseSpriteTemplate = *(*crate::gl!(sMonSpritesGfxManagers[0]))
+                .templates
+                .at(battlerPosition)
+        );
+    } else if !(*sMonSpritesGfxManagers.as_ptr())[1].is_null() {
+        crate::gl!(
+            gMultiuseSpriteTemplate = *(*crate::gl!(sMonSpritesGfxManagers[1]))
+                .templates
+                .at(battlerPosition)
+        );
     } else {
-        gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition];
+        crate::gl!(gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition]);
     }
-    gMultiuseSpriteTemplate.paletteTag = speciesTag;
+    crate::gl!(gMultiuseSpriteTemplate.paletteTag = speciesTag);
     if battlerPosition == B_POSITION_PLAYER_LEFT || battlerPosition == B_POSITION_PLAYER_RIGHT {
-        gMultiuseSpriteTemplate.anims = (*(&raw const crate::data::data_tables::gAnims_MonPic)
-            .cast::<CArray<*mut AnimCmd, 0>>())
-        .as_ptr()
-        .cast_mut();
+        crate::gl!(
+            gMultiuseSpriteTemplate.anims = (*(&raw const crate::data::data_tables::gAnims_MonPic)
+                .cast::<CArray<*mut AnimCmd, 0>>())
+            .as_ptr()
+            .cast_mut()
+        );
     } else if speciesTag > SPECIES_SHINY_TAG {
-        gMultiuseSpriteTemplate.anims =
-            (*(&raw const crate::data::data_tables::gMonFrontAnimsPtrTable)
-                .cast::<CArray<*mut *mut AnimCmd, 0>>())
-                [speciesTag as i32 - SPECIES_SHINY_TAG as i32];
+        crate::gl!(
+            gMultiuseSpriteTemplate.anims =
+                (*(&raw const crate::data::data_tables::gMonFrontAnimsPtrTable).cast::<CArray<
+                    *mut *mut AnimCmd,
+                    0,
+                >>(
+                ))[speciesTag as i32 - SPECIES_SHINY_TAG as i32]
+        );
     } else {
-        gMultiuseSpriteTemplate.anims =
-            (*(&raw const crate::data::data_tables::gMonFrontAnimsPtrTable)
-                .cast::<CArray<*mut *mut AnimCmd, 0>>())[speciesTag];
+        crate::gl!(
+            gMultiuseSpriteTemplate.anims =
+                (*(&raw const crate::data::data_tables::gMonFrontAnimsPtrTable).cast::<CArray<
+                    *mut *mut AnimCmd,
+                    0,
+                >>(
+                ))[speciesTag]
+        );
     }
 }
 #[unsafe(no_mangle)]
 pub unsafe fn SetMultiuseSpriteTemplateToTrainerBack(trainerPicId: u16, battlerPosition: u8) {
-    gMultiuseSpriteTemplate.paletteTag = trainerPicId;
+    crate::gl!(gMultiuseSpriteTemplate.paletteTag = trainerPicId);
     if battlerPosition == B_POSITION_PLAYER_LEFT || battlerPosition == B_POSITION_PLAYER_RIGHT {
-        gMultiuseSpriteTemplate = sTrainerBackSpriteTemplates[trainerPicId];
-        gMultiuseSpriteTemplate.anims =
-            (*(&raw const crate::data::data_tables::gTrainerBackAnimsPtrTable)
-                .cast::<CArray<*mut *mut AnimCmd, 0>>())[trainerPicId];
+        crate::gl!(gMultiuseSpriteTemplate = sTrainerBackSpriteTemplates[trainerPicId]);
+        crate::gl!(
+            gMultiuseSpriteTemplate.anims =
+                (*(&raw const crate::data::data_tables::gTrainerBackAnimsPtrTable).cast::<CArray<
+                    *mut *mut AnimCmd,
+                    0,
+                >>(
+                ))[trainerPicId]
+        );
     } else {
-        if !gMonSpritesGfxPtr.is_null() {
-            gMultiuseSpriteTemplate = (*gMonSpritesGfxPtr).templates[battlerPosition];
+        if !(*gMonSpritesGfxPtr.as_ptr()).is_null() {
+            crate::gl!(
+                gMultiuseSpriteTemplate =
+                    (*crate::gl!(gMonSpritesGfxPtr)).templates[battlerPosition]
+            );
         } else {
-            gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition];
+            crate::gl!(gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition]);
         }
-        gMultiuseSpriteTemplate.anims =
-            (*(&raw const crate::data::data_tables::gTrainerFrontAnimsPtrTable)
-                .cast::<CArray<*mut *mut AnimCmd, 0>>())[trainerPicId];
+        crate::gl!(
+            gMultiuseSpriteTemplate.anims =
+                (*(&raw const crate::data::data_tables::gTrainerFrontAnimsPtrTable).cast::<CArray<
+                    *mut *mut AnimCmd,
+                    0,
+                >>(
+                ))[trainerPicId]
+        );
     }
 }
 pub unsafe fn SetMultiuseSpriteTemplateToTrainerFront(trainerPicId: u16, battlerPosition: u8) {
-    if !gMonSpritesGfxPtr.is_null() {
-        gMultiuseSpriteTemplate = (*gMonSpritesGfxPtr).templates[battlerPosition];
+    if !(*gMonSpritesGfxPtr.as_ptr()).is_null() {
+        crate::gl!(
+            gMultiuseSpriteTemplate = (*crate::gl!(gMonSpritesGfxPtr)).templates[battlerPosition]
+        );
     } else {
-        gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition];
+        crate::gl!(gMultiuseSpriteTemplate = gBattlerSpriteTemplates[battlerPosition]);
     }
-    gMultiuseSpriteTemplate.paletteTag = trainerPicId;
-    gMultiuseSpriteTemplate.anims =
-        (*(&raw const crate::data::data_tables::gTrainerFrontAnimsPtrTable)
-            .cast::<CArray<*mut *mut AnimCmd, 0>>())[trainerPicId];
+    crate::gl!(gMultiuseSpriteTemplate.paletteTag = trainerPicId);
+    crate::gl!(
+        gMultiuseSpriteTemplate.anims =
+            (*(&raw const crate::data::data_tables::gTrainerFrontAnimsPtrTable)
+                .cast::<CArray<*mut *mut AnimCmd, 0>>())[trainerPicId]
+    );
 }
 unsafe fn EncryptBoxMon(boxMon: *mut BoxPokemon) {
     for i in 0..12u32 {
@@ -3465,22 +3517,25 @@ pub unsafe fn GiveMonToPlayer(mon: *mut Pokemon) -> u8 {
     SetMonData(
         mon,
         MON_DATA_OT_NAME,
-        (*gSaveBlock2Ptr).playerName.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(gSaveBlock2Ptr)).playerName.as_mut_ptr() as *mut c_void,
     );
     SetMonData(
         mon,
         MON_DATA_OT_GENDER,
-        &raw mut (*gSaveBlock2Ptr).playerGender as *mut c_void,
+        &raw mut (*crate::gl!(gSaveBlock2Ptr)).playerGender as *mut c_void,
     );
     SetMonData(
         mon,
         MON_DATA_OT_ID,
-        (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr() as *mut c_void,
+        (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId.as_mut_ptr() as *mut c_void,
     );
     let mut i: i32 = 0;
     while i < PARTY_SIZE {
-        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
-            == SPECIES_NONE as u32
+        if GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) == SPECIES_NONE as u32
         {
             break;
         }
@@ -3490,11 +3545,11 @@ pub unsafe fn GiveMonToPlayer(mon: *mut Pokemon) -> u8 {
         return CopyMonToPC(mon);
     }
     CopyMon(
-        &raw mut gPlayerParty[i] as *mut c_void,
+        crate::gl!(&raw gPlayerParty[i]) as *mut c_void,
         mon as *mut c_void,
         100,
     );
-    gPlayerPartyCount = i as u8 + 1;
+    gPlayerPartyCount.set(i as u8 + 1);
     MON_GIVEN_TO_PARTY
 }
 unsafe fn CopyMonToPC(mon: *mut Pokemon) -> u8 {
@@ -3531,48 +3586,54 @@ unsafe fn CopyMonToPC(mon: *mut Pokemon) -> u8 {
 }
 #[unsafe(no_mangle)]
 pub unsafe fn CalculatePlayerPartyCount() -> u8 {
-    gPlayerPartyCount = 0;
-    while gPlayerPartyCount < PARTY_SIZE as u8
+    gPlayerPartyCount.set(0);
+    while gPlayerPartyCount.get() < PARTY_SIZE as u8
         && GetMonData3(
-            &raw mut gPlayerParty[gPlayerPartyCount],
+            {
+                let gl_i2 = gPlayerPartyCount.get();
+                crate::gl!(&raw gPlayerParty[gl_i2])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) != SPECIES_NONE as u32
     {
-        gPlayerPartyCount += 1;
+        gPlayerPartyCount.set(gPlayerPartyCount.get() + (1));
     }
-    gPlayerPartyCount
+    gPlayerPartyCount.get()
 }
 pub unsafe fn CalculateEnemyPartyCount() -> u8 {
-    gEnemyPartyCount = 0;
-    while gEnemyPartyCount < PARTY_SIZE as u8
+    gEnemyPartyCount.set(0);
+    while gEnemyPartyCount.get() < PARTY_SIZE as u8
         && GetMonData3(
-            &raw mut gEnemyParty[gEnemyPartyCount],
+            {
+                let gl_i3 = gEnemyPartyCount.get();
+                crate::gl!(&raw gEnemyParty[gl_i3])
+            },
             MON_DATA_SPECIES,
             null_mut(),
         ) != SPECIES_NONE as u32
     {
-        gEnemyPartyCount += 1;
+        gEnemyPartyCount.set(gEnemyPartyCount.get() + (1));
     }
-    gEnemyPartyCount
+    gEnemyPartyCount.get()
 }
 #[unsafe(no_mangle)]
 pub unsafe fn GetMonsStateToDoubles() -> u8 {
     let mut aliveCount: i32 = 0;
     CalculatePlayerPartyCount();
-    if gPlayerPartyCount == 1 {
-        return gPlayerPartyCount;
+    if gPlayerPartyCount.get() == 1 {
+        return gPlayerPartyCount.get();
     }
     let mut i: i32 = 0;
-    while i < gPlayerPartyCount as i32 {
+    while i < gPlayerPartyCount.get() as i32 {
         if GetMonData3(
-            &raw mut gPlayerParty[i],
+            crate::gl!(&raw gPlayerParty[i]),
             MON_DATA_SPECIES_OR_EGG,
             null_mut(),
         ) != SPECIES_EGG
-            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_HP, null_mut()) != 0
+            && GetMonData3(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP, null_mut()) != 0
             && GetMonData3(
-                &raw mut gPlayerParty[i],
+                crate::gl!(&raw gPlayerParty[i]),
                 MON_DATA_SPECIES_OR_EGG,
                 null_mut(),
             ) != SPECIES_NONE as u32
@@ -3591,13 +3652,13 @@ pub unsafe fn GetMonsStateToDoubles_2() -> u8 {
     let mut aliveCount: i32 = 0;
     for i in 0..PARTY_SIZE {
         let species: u32 = GetMonData3(
-            &raw mut gPlayerParty[i],
+            crate::gl!(&raw gPlayerParty[i]),
             MON_DATA_SPECIES_OR_EGG,
             null_mut(),
         );
         if species != SPECIES_EGG
             && species != SPECIES_NONE as u32
-            && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_HP, null_mut()) != 0
+            && GetMonData3(crate::gl!(&raw gPlayerParty[i]), MON_DATA_HP, null_mut()) != 0
         {
             aliveCount += 1;
         }
@@ -3611,13 +3672,13 @@ pub unsafe fn GetMonsStateToDoubles_2() -> u8 {
         PLAYER_HAS_ONE_USABLE_MON
     }) as u8
 }
-pub unsafe fn GetAbilityBySpecies(species: u16, abilityNum: u8) -> u8 {
+pub fn GetAbilityBySpecies(species: u16, abilityNum: u8) -> u8 {
     if abilityNum != 0 {
-        gLastUsedAbility = gSpeciesInfo[species].abilities[1];
+        gLastUsedAbility.set(gSpeciesInfo[species].abilities[1]);
     } else {
-        gLastUsedAbility = gSpeciesInfo[species].abilities[0];
+        gLastUsedAbility.set(gSpeciesInfo[species].abilities[0]);
     }
-    gLastUsedAbility
+    gLastUsedAbility.get()
 }
 pub unsafe fn GetMonAbility(mon: *mut Pokemon) -> u8 {
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
@@ -3628,45 +3689,51 @@ pub unsafe fn GetMonAbility(mon: *mut Pokemon) -> u8 {
 pub unsafe fn CreateSecretBaseEnemyParty(secretBaseRecord: *mut SecretBase) {
     let mut j: i32 = 0;
     ZeroEnemyPartyMons();
-    *(*gBattleResources).secretBase = *secretBaseRecord;
+    *(*crate::gl!(gBattleResources)).secretBase = *secretBaseRecord;
     for i in 0..PARTY_SIZE {
-        if (*(*gBattleResources).secretBase).party.species[i] != 0 {
+        if (*(*crate::gl!(gBattleResources)).secretBase).party.species[i] != 0 {
             CreateMon(
-                &raw mut gEnemyParty[i],
-                (*(*gBattleResources).secretBase).party.species[i],
-                (*(*gBattleResources).secretBase).party.levels[i],
+                crate::gl!(&raw gEnemyParty[i]),
+                (*(*crate::gl!(gBattleResources)).secretBase).party.species[i],
+                (*(*crate::gl!(gBattleResources)).secretBase).party.levels[i],
                 15,
                 TRUE,
-                (*(*gBattleResources).secretBase).party.personality[i],
+                (*(*crate::gl!(gBattleResources)).secretBase)
+                    .party
+                    .personality[i],
                 OT_ID_RANDOM_NO_SHINY,
                 0,
             );
             SetMonData(
-                &raw mut gEnemyParty[i],
+                crate::gl!(&raw gEnemyParty[i]),
                 MON_DATA_HELD_ITEM,
-                &raw mut (*(*gBattleResources).secretBase).party.heldItems[i] as *mut c_void,
+                &raw mut (*(*crate::gl!(gBattleResources)).secretBase)
+                    .party
+                    .heldItems[i] as *mut c_void,
             );
             j = 0;
             while j < NUM_STATS {
                 SetMonData(
-                    &raw mut gEnemyParty[i],
+                    crate::gl!(&raw gEnemyParty[i]),
                     MON_DATA_HP_EV + j,
-                    &raw mut (*(*gBattleResources).secretBase).party.EVs[i] as *mut c_void,
+                    &raw mut (*(*crate::gl!(gBattleResources)).secretBase).party.EVs[i]
+                        as *mut c_void,
                 );
                 j += 1;
             }
             for j in 0..MAX_MON_MOVES {
                 SetMonData(
-                    &raw mut gEnemyParty[i],
+                    crate::gl!(&raw gEnemyParty[i]),
                     MON_DATA_MOVE1 + j,
-                    &raw mut (*(*gBattleResources).secretBase).party.moves[i * MAX_MON_MOVES + j]
-                        as *mut c_void,
+                    &raw mut (*(*crate::gl!(gBattleResources)).secretBase).party.moves
+                        [i * MAX_MON_MOVES + j] as *mut c_void,
                 );
                 SetMonData(
-                    &raw mut gEnemyParty[i],
+                    crate::gl!(&raw gEnemyParty[i]),
                     MON_DATA_PP1 + j,
-                    (&raw const gBattleMoves
-                        [(*(*gBattleResources).secretBase).party.moves[i * MAX_MON_MOVES + j]]
+                    (&raw const gBattleMoves[(*(*crate::gl!(gBattleResources)).secretBase)
+                        .party
+                        .moves[i * MAX_MON_MOVES + j]]
                         .pp)
                         .cast_mut() as *mut c_void,
                 );
@@ -3675,19 +3742,24 @@ pub unsafe fn CreateSecretBaseEnemyParty(secretBaseRecord: *mut SecretBase) {
     }
 }
 pub unsafe fn GetSecretBaseTrainerPicIndex() -> u8 {
-    let facilityClass: u8 = sSecretBaseFacilityClasses[(*(*gBattleResources).secretBase).gender()]
-        [(*(*gBattleResources).secretBase).trainerId[0] as i32 % 5];
+    let facilityClass: u8 = sSecretBaseFacilityClasses
+        [(*(*crate::gl!(gBattleResources)).secretBase).gender()]
+        [(*(*crate::gl!(gBattleResources)).secretBase).trainerId[0] as i32 % 5];
     gFacilityClassToPicIndex[facilityClass]
 }
 pub unsafe fn GetSecretBaseTrainerClass() -> u8 {
-    let facilityClass: u8 = sSecretBaseFacilityClasses[(*(*gBattleResources).secretBase).gender()]
-        [(*(*gBattleResources).secretBase).trainerId[0] as i32 % 5];
+    let facilityClass: u8 = sSecretBaseFacilityClasses
+        [(*(*crate::gl!(gBattleResources)).secretBase).gender()]
+        [(*(*crate::gl!(gBattleResources)).secretBase).trainerId[0] as i32 % 5];
     gFacilityClassToTrainerClass[facilityClass]
 }
 pub unsafe fn IsPlayerPartyAndPokemonStorageFull() -> u8 {
     for i in 0..PARTY_SIZE {
-        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
-            == SPECIES_NONE as u32
+        if GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) == SPECIES_NONE as u32
         {
             return FALSE;
         }
@@ -3743,154 +3815,211 @@ pub unsafe fn RemoveBattleMonPPBonus(mon: *mut BattlePokemon, moveIndex: u8) {
 }
 pub unsafe fn CopyPlayerPartyMonToBattleData(battler: u8, partyIndex: u8) {
     let mut nickname: CArray<u8, 20> = zeroed();
-    gBattleMons[battler].species = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_SPECIES,
-        null_mut(),
-    ) as u16;
-    gBattleMons[battler].item = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_HELD_ITEM,
-        null_mut(),
-    ) as u16;
+    crate::gl!(
+        gBattleMons[battler].species = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].item = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_HELD_ITEM,
+            null_mut(),
+        ) as u16
+    );
     let mut i: i32 = 0;
     while i < MAX_MON_MOVES {
-        gBattleMons[battler].moves[i] = GetMonData3(
-            &raw mut gPlayerParty[partyIndex],
-            MON_DATA_MOVE1 + i,
-            null_mut(),
-        ) as u16;
-        gBattleMons[battler].pp[i] = GetMonData3(
-            &raw mut gPlayerParty[partyIndex],
-            MON_DATA_PP1 + i,
-            null_mut(),
-        ) as u8;
+        crate::gl!(
+            gBattleMons[battler].moves[i] = GetMonData3(
+                crate::gl!(&raw gPlayerParty[partyIndex]),
+                MON_DATA_MOVE1 + i,
+                null_mut(),
+            ) as u16
+        );
+        crate::gl!(
+            gBattleMons[battler].pp[i] = GetMonData3(
+                crate::gl!(&raw gPlayerParty[partyIndex]),
+                MON_DATA_PP1 + i,
+                null_mut(),
+            ) as u8
+        );
         i += 1;
     }
-    gBattleMons[battler].ppBonuses = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_PP_BONUSES,
-        null_mut(),
-    ) as u8;
-    gBattleMons[battler].friendship = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_FRIENDSHIP,
-        null_mut(),
-    ) as u8;
-    gBattleMons[battler].experience =
-        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_EXP, null_mut());
-    gBattleMons[battler].set_hpIV(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    crate::gl!(
+        gBattleMons[battler].ppBonuses = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_PP_BONUSES,
+            null_mut(),
+        ) as u8
+    );
+    crate::gl!(
+        gBattleMons[battler].friendship = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_FRIENDSHIP,
+            null_mut(),
+        ) as u8
+    );
+    crate::gl!(
+        gBattleMons[battler].experience = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_EXP,
+            null_mut()
+        )
+    );
+    (*gBattleMons.as_ptr())[battler].set_hpIV(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_HP_IV,
         null_mut(),
     ));
-    gBattleMons[battler].set_attackIV(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    (*gBattleMons.as_ptr())[battler].set_attackIV(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_ATK_IV,
         null_mut(),
     ));
-    gBattleMons[battler].set_defenseIV(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    (*gBattleMons.as_ptr())[battler].set_defenseIV(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_DEF_IV,
         null_mut(),
     ));
-    gBattleMons[battler].set_speedIV(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    (*gBattleMons.as_ptr())[battler].set_speedIV(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_SPEED_IV,
         null_mut(),
     ));
-    gBattleMons[battler].set_spAttackIV(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    (*gBattleMons.as_ptr())[battler].set_spAttackIV(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_SPATK_IV,
         null_mut(),
     ));
-    gBattleMons[battler].set_spDefenseIV(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    (*gBattleMons.as_ptr())[battler].set_spDefenseIV(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_SPDEF_IV,
         null_mut(),
     ));
-    gBattleMons[battler].personality = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_PERSONALITY,
-        null_mut(),
+    crate::gl!(
+        gBattleMons[battler].personality = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_PERSONALITY,
+            null_mut(),
+        )
     );
-    gBattleMons[battler].status1 = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_STATUS,
-        null_mut(),
+    crate::gl!(
+        gBattleMons[battler].status1 = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_STATUS,
+            null_mut(),
+        )
     );
-    gBattleMons[battler].level = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_LEVEL,
-        null_mut(),
-    ) as u8;
-    gBattleMons[battler].hp =
-        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_HP, null_mut()) as u16;
-    gBattleMons[battler].maxHP = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_MAX_HP,
-        null_mut(),
-    ) as u16;
-    gBattleMons[battler].attack =
-        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_ATK, null_mut()) as u16;
-    gBattleMons[battler].defense =
-        GetMonData3(&raw mut gPlayerParty[partyIndex], MON_DATA_DEF, null_mut()) as u16;
-    gBattleMons[battler].speed = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_SPEED,
-        null_mut(),
-    ) as u16;
-    gBattleMons[battler].spAttack = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_SPATK,
-        null_mut(),
-    ) as u16;
-    gBattleMons[battler].spDefense = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_SPDEF,
-        null_mut(),
-    ) as u16;
-    gBattleMons[battler].set_isEgg(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    crate::gl!(
+        gBattleMons[battler].level = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_LEVEL,
+            null_mut(),
+        ) as u8
+    );
+    crate::gl!(
+        gBattleMons[battler].hp = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_HP,
+            null_mut()
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].maxHP = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_MAX_HP,
+            null_mut(),
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].attack = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_ATK,
+            null_mut()
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].defense = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_DEF,
+            null_mut()
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].speed = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_SPEED,
+            null_mut(),
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].spAttack = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_SPATK,
+            null_mut(),
+        ) as u16
+    );
+    crate::gl!(
+        gBattleMons[battler].spDefense = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_SPDEF,
+            null_mut(),
+        ) as u16
+    );
+    (*gBattleMons.as_ptr())[battler].set_isEgg(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_IS_EGG,
         null_mut(),
     ));
-    gBattleMons[battler].set_abilityNum(GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+    (*gBattleMons.as_ptr())[battler].set_abilityNum(GetMonData3(
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_ABILITY_NUM,
         null_mut(),
     ));
-    gBattleMons[battler].otId = GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
-        MON_DATA_OT_ID,
-        null_mut(),
+    crate::gl!(
+        gBattleMons[battler].otId = GetMonData3(
+            crate::gl!(&raw gPlayerParty[partyIndex]),
+            MON_DATA_OT_ID,
+            null_mut(),
+        )
     );
-    gBattleMons[battler].types[0] = gSpeciesInfo[gBattleMons[battler].species].types[0];
-    gBattleMons[battler].types[1] = gSpeciesInfo[gBattleMons[battler].species].types[1];
-    gBattleMons[battler].ability = GetAbilityBySpecies(
-        gBattleMons[battler].species,
-        gBattleMons[battler].abilityNum() as u8,
+    crate::gl!(
+        gBattleMons[battler].types[0] =
+            gSpeciesInfo[crate::gl!(gBattleMons[battler].species)].types[0]
+    );
+    crate::gl!(
+        gBattleMons[battler].types[1] =
+            gSpeciesInfo[crate::gl!(gBattleMons[battler].species)].types[1]
+    );
+    crate::gl!(
+        gBattleMons[battler].ability = GetAbilityBySpecies(
+            crate::gl!(gBattleMons[battler].species),
+            (*gBattleMons.as_ptr())[battler].abilityNum() as u8,
+        )
     );
     GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_NICKNAME,
         nickname.as_mut_ptr(),
     );
     StringCopy_Nickname(
-        gBattleMons[battler].nickname.as_mut_ptr(),
+        (*gBattleMons.as_ptr())[battler].nickname.as_mut_ptr(),
         nickname.as_mut_ptr(),
     );
     GetMonData3(
-        &raw mut gPlayerParty[partyIndex],
+        crate::gl!(&raw gPlayerParty[partyIndex]),
         MON_DATA_OT_NAME,
-        gBattleMons[battler].otName.as_mut_ptr(),
+        (*gBattleMons.as_ptr())[battler].otName.as_mut_ptr(),
     );
-    let hpSwitchout: *mut u16 = &raw mut (*gBattleStruct).hpOnSwitchout[GetBattlerSide(battler)];
-    *hpSwitchout = gBattleMons[battler].hp;
+    let hpSwitchout: *mut u16 =
+        &raw mut (*crate::gl!(gBattleStruct)).hpOnSwitchout[GetBattlerSide(battler)];
+    *hpSwitchout = crate::gl!(gBattleMons[battler].hp);
     for i in 0..NUM_BATTLE_STATS {
-        gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+        crate::gl!(gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE);
     }
-    gBattleMons[battler].status2 = 0;
+    crate::gl!(gBattleMons[battler].status2 = 0);
     UpdateSentPokesToOpponentValue(battler);
     ClearTemporarySpeciesSpriteData(battler, FALSE);
 }
@@ -3927,27 +4056,30 @@ pub unsafe fn PokemonUseItemEffects(
     let mut evCount: u16 = 0;
     let heldItem: u16 = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
     if heldItem == ITEM_ENIGMA_BERRY {
-        if gMain.inBattle() != 0 {
-            holdEffect = gEnigmaBerries[gBattlerInMenuId].holdEffect;
+        if (*gMain.as_ptr()).inBattle() != 0 {
+            holdEffect = {
+                let gl_i0 = gBattlerInMenuId.get();
+                crate::gl!(gEnigmaBerries[gl_i0].holdEffect)
+            };
         } else {
-            holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+            holdEffect = (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.holdEffect;
         }
     } else {
         holdEffect = GetItemHoldEffect(heldItem);
     }
-    gPotentialItemEffectBattler = gBattlerInMenuId;
-    if gMain.inBattle() != 0 {
-        gActiveBattler = gBattlerInMenuId;
-        i = (GetBattlerSide(gActiveBattler) != B_SIDE_PLAYER) as i32;
-        while i < gBattlersCount as i32 {
-            if gBattlerPartyIndexes[i] == partyIndex as u16 {
+    gPotentialItemEffectBattler.set(gBattlerInMenuId.get());
+    if (*gMain.as_ptr()).inBattle() != 0 {
+        gActiveBattler.set(gBattlerInMenuId.get());
+        i = (GetBattlerSide(gActiveBattler.get()) != B_SIDE_PLAYER) as i32;
+        while i < gBattlersCount.get() as i32 {
+            if crate::gl!(gBattlerPartyIndexes[i]) == partyIndex as u16 {
                 battler = i as u8;
                 break;
             }
             i += 2;
         }
     } else {
-        gActiveBattler = 0;
+        gActiveBattler.set(0);
         battler = MAX_BATTLERS_COUNT;
     }
     if !(item >= ITEM_POTION as u16 && item <= ITEM_UNUSED_BERRY_3) {
@@ -3957,10 +4089,15 @@ pub unsafe fn PokemonUseItemEffects(
         return TRUE;
     }
     if item == ITEM_ENIGMA_BERRY {
-        if gMain.inBattle() != 0 {
-            itemEffect = gEnigmaBerries[gActiveBattler].itemEffect.as_mut_ptr();
+        if (*gMain.as_ptr()).inBattle() != 0 {
+            itemEffect = (*gEnigmaBerries.as_ptr())[gActiveBattler.get()]
+                .itemEffect
+                .as_mut_ptr();
         } else {
-            itemEffect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
+            itemEffect = (*crate::gl!(gSaveBlock1Ptr))
+                .enigmaBerry
+                .itemEffect
+                .as_mut_ptr();
         }
     } else {
         itemEffect = gItemEffectTable[item as i32 - ITEM_POTION];
@@ -3969,79 +4106,167 @@ pub unsafe fn PokemonUseItemEffects(
         match i {
             0 => {
                 if *itemEffect.at(i) as i32 & ITEM0_INFATUATION != 0
-                    && gMain.inBattle() != 0
+                    && (*gMain.as_ptr()).inBattle() != 0
                     && battler != MAX_BATTLERS_COUNT
-                    && gBattleMons[battler].status2 & STATUS2_INFATUATION != 0
+                    && crate::gl!(gBattleMons[battler].status2) & STATUS2_INFATUATION != 0
                 {
-                    gBattleMons[battler].status2 &= 0xfff0ffff;
+                    crate::gl!(gBattleMons[battler].status2 &= 0xfff0ffff);
                     retVal = FALSE;
                 }
                 if *itemEffect.at(i) as i32 & ITEM0_DIRE_HIT != 0
-                    && gBattleMons[gActiveBattler].status2 & STATUS2_FOCUS_ENERGY == 0
+                    && ({
+                        let gl_i4 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i4].status2)
+                    }) & STATUS2_FOCUS_ENERGY
+                        == 0
                 {
-                    gBattleMons[gActiveBattler].status2 |= STATUS2_FOCUS_ENERGY;
+                    {
+                        let gl_i5 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i5].status2 |= STATUS2_FOCUS_ENERGY)
+                    };
                     retVal = FALSE;
                 }
                 if *itemEffect.at(i) as i32 & ITEM0_X_ATTACK != 0
-                    && gBattleMons[gActiveBattler].statStages[1] < MAX_STAT_STAGE
+                    && ({
+                        let gl_i6 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i6].statStages[1])
+                    }) < MAX_STAT_STAGE
                 {
-                    gBattleMons[gActiveBattler].statStages[1] +=
-                        *itemEffect.at(i) as i8 & ITEM0_X_ATTACK as i8;
-                    if gBattleMons[gActiveBattler].statStages[1] > MAX_STAT_STAGE {
-                        gBattleMons[gActiveBattler].statStages[1] = MAX_STAT_STAGE;
+                    {
+                        let gl_i7 = gActiveBattler.get();
+                        crate::gl!(
+                            gBattleMons[gl_i7].statStages[1] +=
+                                *itemEffect.at(i) as i8 & ITEM0_X_ATTACK as i8
+                        )
+                    };
+                    if ({
+                        let gl_i8 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i8].statStages[1])
+                    }) > MAX_STAT_STAGE
+                    {
+                        {
+                            let gl_i9 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i9].statStages[1] = MAX_STAT_STAGE)
+                        };
                     }
                     retVal = FALSE;
                 }
             }
             1 => {
                 if *itemEffect.at(i) as i32 & ITEM1_X_DEFEND != 0
-                    && gBattleMons[gActiveBattler].statStages[2] < MAX_STAT_STAGE
+                    && ({
+                        let gl_i10 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i10].statStages[2])
+                    }) < MAX_STAT_STAGE
                 {
-                    gBattleMons[gActiveBattler].statStages[2] +=
-                        ((*itemEffect.at(i) as i32 & ITEM1_X_DEFEND) >> 4) as i8;
-                    if gBattleMons[gActiveBattler].statStages[2] > MAX_STAT_STAGE {
-                        gBattleMons[gActiveBattler].statStages[2] = MAX_STAT_STAGE;
+                    {
+                        let gl_i11 = gActiveBattler.get();
+                        crate::gl!(
+                            gBattleMons[gl_i11].statStages[2] +=
+                                ((*itemEffect.at(i) as i32 & ITEM1_X_DEFEND) >> 4) as i8
+                        )
+                    };
+                    if ({
+                        let gl_i12 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i12].statStages[2])
+                    }) > MAX_STAT_STAGE
+                    {
+                        {
+                            let gl_i13 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i13].statStages[2] = MAX_STAT_STAGE)
+                        };
                     }
                     retVal = FALSE;
                 }
                 if *itemEffect.at(i) as i32 & ITEM1_X_SPEED != 0
-                    && gBattleMons[gActiveBattler].statStages[3] < MAX_STAT_STAGE
+                    && ({
+                        let gl_i14 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i14].statStages[3])
+                    }) < MAX_STAT_STAGE
                 {
-                    gBattleMons[gActiveBattler].statStages[3] +=
-                        *itemEffect.at(i) as i8 & ITEM1_X_SPEED as i8;
-                    if gBattleMons[gActiveBattler].statStages[3] > MAX_STAT_STAGE {
-                        gBattleMons[gActiveBattler].statStages[3] = MAX_STAT_STAGE;
+                    {
+                        let gl_i15 = gActiveBattler.get();
+                        crate::gl!(
+                            gBattleMons[gl_i15].statStages[3] +=
+                                *itemEffect.at(i) as i8 & ITEM1_X_SPEED as i8
+                        )
+                    };
+                    if ({
+                        let gl_i16 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i16].statStages[3])
+                    }) > MAX_STAT_STAGE
+                    {
+                        {
+                            let gl_i17 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i17].statStages[3] = MAX_STAT_STAGE)
+                        };
                     }
                     retVal = FALSE;
                 }
             }
             2 => {
                 if *itemEffect.at(i) as i32 & ITEM2_X_ACCURACY != 0
-                    && gBattleMons[gActiveBattler].statStages[6] < MAX_STAT_STAGE
+                    && ({
+                        let gl_i18 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i18].statStages[6])
+                    }) < MAX_STAT_STAGE
                 {
-                    gBattleMons[gActiveBattler].statStages[6] +=
-                        ((*itemEffect.at(i) as i32 & ITEM2_X_ACCURACY) >> 4) as i8;
-                    if gBattleMons[gActiveBattler].statStages[6] > MAX_STAT_STAGE {
-                        gBattleMons[gActiveBattler].statStages[6] = MAX_STAT_STAGE;
+                    {
+                        let gl_i19 = gActiveBattler.get();
+                        crate::gl!(
+                            gBattleMons[gl_i19].statStages[6] +=
+                                ((*itemEffect.at(i) as i32 & ITEM2_X_ACCURACY) >> 4) as i8
+                        )
+                    };
+                    if ({
+                        let gl_i20 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i20].statStages[6])
+                    }) > MAX_STAT_STAGE
+                    {
+                        {
+                            let gl_i21 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i21].statStages[6] = MAX_STAT_STAGE)
+                        };
                     }
                     retVal = FALSE;
                 }
                 if *itemEffect.at(i) as i32 & ITEM2_X_SPATK != 0
-                    && gBattleMons[gActiveBattler].statStages[4] < MAX_STAT_STAGE
+                    && ({
+                        let gl_i22 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i22].statStages[4])
+                    }) < MAX_STAT_STAGE
                 {
-                    gBattleMons[gActiveBattler].statStages[4] +=
-                        *itemEffect.at(i) as i8 & ITEM2_X_SPATK as i8;
-                    if gBattleMons[gActiveBattler].statStages[4] > MAX_STAT_STAGE {
-                        gBattleMons[gActiveBattler].statStages[4] = MAX_STAT_STAGE;
+                    {
+                        let gl_i23 = gActiveBattler.get();
+                        crate::gl!(
+                            gBattleMons[gl_i23].statStages[4] +=
+                                *itemEffect.at(i) as i8 & ITEM2_X_SPATK as i8
+                        )
+                    };
+                    if ({
+                        let gl_i24 = gActiveBattler.get();
+                        crate::gl!(gBattleMons[gl_i24].statStages[4])
+                    }) > MAX_STAT_STAGE
+                    {
+                        {
+                            let gl_i25 = gActiveBattler.get();
+                            crate::gl!(gBattleMons[gl_i25].statStages[4] = MAX_STAT_STAGE)
+                        };
                     }
                     retVal = FALSE;
                 }
             }
             3 => {
-                if *itemEffect.at(i) as i32 & ITEM3_GUARD_SPEC != 0
-                    && gSideTimers[GetBattlerSide(gActiveBattler)].mistTimer == 0
+                if *itemEffect.at(i) as i32 & ITEM3_GUARD_SPEC != 0 && {
+                    let gl_i1 = GetBattlerSide(gActiveBattler.get());
+                    crate::gl!(gSideTimers[gl_i1].mistTimer)
+                } == 0
                 {
-                    gSideTimers[GetBattlerSide(gActiveBattler)].mistTimer = 5;
+                    {
+                        let gl_v = 5;
+                        let gl_i2 = GetBattlerSide(gActiveBattler.get());
+                        crate::gl!(gSideTimers[gl_i2].mistTimer = gl_v)
+                    };
                     retVal = FALSE;
                 }
                 if *itemEffect.at(i) as i32 & ITEM3_LEVEL_UP != 0
@@ -4058,7 +4283,7 @@ pub unsafe fn PokemonUseItemEffects(
                     && HealStatusConditions(mon, partyIndex as u32, STATUS1_SLEEP, battler) == 0
                 {
                     if battler != MAX_BATTLERS_COUNT {
-                        gBattleMons[battler].status2 &= 0xf7ffffff;
+                        crate::gl!(gBattleMons[battler].status2 &= 0xf7ffffff);
                     }
                     retVal = FALSE;
                 }
@@ -4083,11 +4308,11 @@ pub unsafe fn PokemonUseItemEffects(
                     retVal = FALSE;
                 }
                 if *itemEffect.at(i) as i32 & ITEM3_CONFUSION != 0
-                    && gMain.inBattle() != 0
+                    && (*gMain.as_ptr()).inBattle() != 0
                     && battler != MAX_BATTLERS_COUNT
-                    && gBattleMons[battler].status2 & STATUS2_CONFUSION != 0
+                    && crate::gl!(gBattleMons[battler].status2) & STATUS2_CONFUSION != 0
                 {
-                    gBattleMons[battler].status2 &= 0xfffffff8;
+                    crate::gl!(gBattleMons[battler].status2 &= 0xfffffff8);
                     retVal = FALSE;
                 }
             }
@@ -4188,27 +4413,39 @@ pub unsafe fn PokemonUseItemEffects(
                                             itemEffectParam += 1;
                                             break 'l5;
                                         }
-                                        if gMain.inBattle() != 0 {
+                                        if (*gMain.as_ptr()).inBattle() != 0 {
                                             if battler != MAX_BATTLERS_COUNT {
-                                                gAbsentBattlerFlags &= !(gBitTable[battler] as u8);
+                                                gAbsentBattlerFlags.set(
+                                                    gAbsentBattlerFlags.get()
+                                                        & (!(gBitTable[battler] as u8)),
+                                                );
                                                 CopyPlayerPartyMonToBattleData(
                                                     battler,
-                                                    GetPartyIdFromBattlePartyId(
-                                                        gBattlerPartyIndexes[battler] as u8,
-                                                    ),
+                                                    GetPartyIdFromBattlePartyId(crate::gl!(
+                                                        gBattlerPartyIndexes[battler]
+                                                    )
+                                                        as u8),
                                                 );
-                                                if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
-                                                    && gBattleResults.numRevivesUsed < 255
+                                                if GetBattlerSide(gActiveBattler.get())
+                                                    == B_SIDE_PLAYER
+                                                    && crate::gl!(gBattleResults.numRevivesUsed)
+                                                        < 255
                                                 {
-                                                    gBattleResults.numRevivesUsed += 1;
+                                                    crate::gl!(gBattleResults.numRevivesUsed += 1);
                                                 }
                                             } else {
-                                                gAbsentBattlerFlags &=
-                                                    !(gBitTable[gActiveBattler as i32 ^ 2] as u8);
-                                                if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
-                                                    && gBattleResults.numRevivesUsed < 255
+                                                gAbsentBattlerFlags.set(
+                                                    gAbsentBattlerFlags.get()
+                                                        & (!(gBitTable
+                                                            [gActiveBattler.get() as i32 ^ 2]
+                                                            as u8)),
+                                                );
+                                                if GetBattlerSide(gActiveBattler.get())
+                                                    == B_SIDE_PLAYER
+                                                    && crate::gl!(gBattleResults.numRevivesUsed)
+                                                        < 255
                                                 {
-                                                    gBattleResults.numRevivesUsed += 1;
+                                                    crate::gl!(gBattleResults.numRevivesUsed += 1);
                                                 }
                                             }
                                         }
@@ -4237,7 +4474,8 @@ pub unsafe fn PokemonUseItemEffects(
                                             }
                                         }
                                         253 => {
-                                            dataUnsigned = gBattleScripting.levelUpHP as u32;
+                                            dataUnsigned =
+                                                crate::gl!(gBattleScripting.levelUpHP) as u32;
                                         }
                                         _ => {}
                                     }
@@ -4258,31 +4496,37 @@ pub unsafe fn PokemonUseItemEffects(
                                                 MON_DATA_HP,
                                                 &raw mut dataUnsigned as *mut c_void,
                                             );
-                                            if gMain.inBattle() != 0
+                                            if (*gMain.as_ptr()).inBattle() != 0
                                                 && battler != MAX_BATTLERS_COUNT
                                             {
-                                                gBattleMons[battler].hp = dataUnsigned as u16;
+                                                crate::gl!(
+                                                    gBattleMons[battler].hp = dataUnsigned as u16
+                                                );
                                                 if effectFlags as i32 & 16 == 0
-                                                    && GetBattlerSide(gActiveBattler)
+                                                    && GetBattlerSide(gActiveBattler.get())
                                                         == B_SIDE_PLAYER
                                                 {
-                                                    gBattleResults.numHealingItemsUsed =
-                                                        gBattleResults
-                                                            .numHealingItemsUsed
-                                                            .saturating_add(1);
-                                                    temp2 = gActiveBattler as u32;
-                                                    gActiveBattler = battler;
+                                                    crate::gl!(
+                                                        gBattleResults.numHealingItemsUsed =
+                                                            (*gBattleResults.as_ptr())
+                                                                .numHealingItemsUsed
+                                                                .saturating_add(1)
+                                                    );
+                                                    temp2 = gActiveBattler.get() as u32;
+                                                    gActiveBattler.set(battler);
                                                     BtlController_EmitGetMonData(
                                                         B_COMM_TO_CONTROLLER,
                                                         REQUEST_ALL_BATTLE,
                                                         0,
                                                     );
-                                                    MarkBattlerForControllerExec(gActiveBattler);
-                                                    gActiveBattler = temp2 as u8;
+                                                    MarkBattlerForControllerExec(
+                                                        gActiveBattler.get(),
+                                                    );
+                                                    gActiveBattler.set(temp2 as u8);
                                                 }
                                             }
                                         } else {
-                                            gBattleMoveDamage = -(dataUnsigned as i32);
+                                            gBattleMoveDamage.set(-(dataUnsigned as i32));
                                         }
                                         retVal = FALSE;
                                     }
@@ -4360,18 +4604,22 @@ pub unsafe fn PokemonUseItemEffects(
                                                     MON_DATA_PP1 + temp2 as i32,
                                                     &raw mut dataUnsigned as *mut c_void,
                                                 );
-                                                if gMain.inBattle() != 0
+                                                if (*gMain.as_ptr()).inBattle() != 0
                                                     && battler != MAX_BATTLERS_COUNT
-                                                    && (gBattleMons[battler].status2 & 0x200000
+                                                    && (crate::gl!(gBattleMons[battler].status2)
+                                                        & 0x200000
                                                         == 0
-                                                        && gDisableStructs[battler].mimickedMoves()
+                                                        && (*gDisableStructs.as_ptr())[battler]
+                                                            .mimickedMoves()
                                                             as u32
                                                             & (*(&raw const crate::util::gBitTable)
                                                                 .cast::<CArray<u32, 0>>())[temp2]
                                                             == 0)
                                                 {
-                                                    gBattleMons[battler].pp[temp2] =
-                                                        dataUnsigned as u8;
+                                                    crate::gl!(
+                                                        gBattleMons[battler].pp[temp2] =
+                                                            dataUnsigned as u8
+                                                    );
                                                 }
                                                 retVal = FALSE;
                                             }
@@ -4446,17 +4694,22 @@ pub unsafe fn PokemonUseItemEffects(
                                                 MON_DATA_PP1 + moveIndex as i32,
                                                 &raw mut dataUnsigned as *mut c_void,
                                             );
-                                            if gMain.inBattle() != 0
+                                            if (*gMain.as_ptr()).inBattle() != 0
                                                 && battler != MAX_BATTLERS_COUNT
-                                                && (gBattleMons[battler].status2 & 0x200000 == 0
-                                                    && gDisableStructs[battler].mimickedMoves()
+                                                && (crate::gl!(gBattleMons[battler].status2)
+                                                    & 0x200000
+                                                    == 0
+                                                    && (*gDisableStructs.as_ptr())[battler]
+                                                        .mimickedMoves()
                                                         as u32
                                                         & (*(&raw const crate::util::gBitTable)
                                                             .cast::<CArray<u32, 0>>())[moveIndex]
                                                         == 0)
                                             {
-                                                gBattleMons[battler].pp[moveIndex] =
-                                                    dataUnsigned as u8;
+                                                crate::gl!(
+                                                    gBattleMons[battler].pp[moveIndex] =
+                                                        dataUnsigned as u8
+                                                );
                                             }
                                             retVal = FALSE;
                                         }
@@ -4732,8 +4985,8 @@ pub unsafe fn HealStatusConditions(
     if status & healMask != 0 {
         status &= !healMask;
         SetMonData(mon, MON_DATA_STATUS, &raw mut status as *mut c_void);
-        if gMain.inBattle() != 0 && battler != MAX_BATTLERS_COUNT {
-            gBattleMons[battler].status1 &= !healMask;
+        if (*gMain.as_ptr()).inBattle() != 0 && battler != MAX_BATTLERS_COUNT {
+            crate::gl!(gBattleMons[battler].status1 &= !healMask);
         }
         return FALSE;
     } else {
@@ -4754,7 +5007,9 @@ pub unsafe fn GetItemEffectParamOffset(itemId: u16, effectByte: u8, mut effectBi
         return 0;
     }
     if itemId == ITEM_ENIGMA_BERRY {
-        temp = gEnigmaBerries[gActiveBattler].itemEffect.as_mut_ptr();
+        temp = (*gEnigmaBerries.as_ptr())[gActiveBattler.get()]
+            .itemEffect
+            .as_mut_ptr();
     }
     itemEffect = temp;
     for i in 0..(ITEM_EFFECT_ARG_START as i32) {
@@ -4856,14 +5111,14 @@ pub unsafe fn GetItemEffectParamOffset(itemId: u16, effectByte: u8, mut effectBi
     offset
 }
 unsafe fn BufferStatRoseMessage(statIdx: i32) {
-    gBattlerTarget = gBattlerInMenuId;
+    gBattlerTarget.set(gBattlerInMenuId.get());
     StringCopy(
-        gBattleTextBuff1.as_mut_ptr(),
+        (*gBattleTextBuff1.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::battle_message::gStatNamesTable).cast::<CArray<*mut u8, 0>>())
             [sStatsToRaise[statIdx]],
     );
     StringCopy(
-        gBattleTextBuff2.as_mut_ptr(),
+        (*gBattleTextBuff2.as_ptr()).as_mut_ptr(),
         (*(&raw const crate::data::battle_message::gText_StatRose).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
@@ -4878,15 +5133,20 @@ unsafe fn BufferStatRoseMessage(statIdx: i32) {
 pub unsafe fn UseStatIncreaseItem(itemId: u16) -> *mut u8 {
     let mut itemEffect: *mut u8 = null_mut();
     if itemId == ITEM_ENIGMA_BERRY {
-        if gMain.inBattle() != 0 {
-            itemEffect = gEnigmaBerries[gBattlerInMenuId].itemEffect.as_mut_ptr();
+        if (*gMain.as_ptr()).inBattle() != 0 {
+            itemEffect = (*gEnigmaBerries.as_ptr())[gBattlerInMenuId.get()]
+                .itemEffect
+                .as_mut_ptr();
         } else {
-            itemEffect = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
+            itemEffect = (*crate::gl!(gSaveBlock1Ptr))
+                .enigmaBerry
+                .itemEffect
+                .as_mut_ptr();
         }
     } else {
         itemEffect = gItemEffectTable[itemId as i32 - ITEM_POTION];
     }
-    gPotentialItemEffectBattler = gBattlerInMenuId;
+    gPotentialItemEffectBattler.set(gBattlerInMenuId.get());
     for i in 0..3i32 {
         if *itemEffect.at(i) as i32 & 15 != 0 {
             BufferStatRoseMessage(i * 2);
@@ -4895,7 +5155,7 @@ pub unsafe fn UseStatIncreaseItem(itemId: u16) -> *mut u8 {
             if i != 0 {
                 BufferStatRoseMessage(i * 2 + 1);
             } else {
-                gBattlerAttacker = gBattlerInMenuId;
+                gBattlerAttacker.set(gBattlerInMenuId.get());
                 BattleStringExpandPlaceholdersToDisplayedString(
                     (*(&raw const crate::data::battle_message::gText_PkmnGettingPumped)
                         .cast::<CArray<u8, 0>>())
@@ -4906,7 +5166,7 @@ pub unsafe fn UseStatIncreaseItem(itemId: u16) -> *mut u8 {
         }
     }
     if *itemEffect.at(3) as i32 & ITEM3_GUARD_SPEC != 0 {
-        gBattlerAttacker = gBattlerInMenuId;
+        gBattlerAttacker.set(gBattlerInMenuId.get());
         BattleStringExpandPlaceholdersToDisplayedString(
             (*(&raw const crate::data::battle_message::gText_PkmnShroudedInMist)
                 .cast::<CArray<u8, 0>>())
@@ -4914,7 +5174,7 @@ pub unsafe fn UseStatIncreaseItem(itemId: u16) -> *mut u8 {
             .cast_mut(),
         );
     }
-    gDisplayedStringBattle.as_mut_ptr()
+    (*gDisplayedStringBattle.as_ptr()).as_mut_ptr()
 }
 pub unsafe fn GetNature(mon: *mut Pokemon) -> u8 {
     (GetMonData3(mon, MON_DATA_PERSONALITY, null_mut()) % 25) as u8
@@ -4933,7 +5193,7 @@ pub unsafe fn GetEvolutionTargetSpecies(mon: *mut Pokemon, mode: u8, evolutionIt
     let upperPersonality: u16 = (personality >> 16) as u16;
     let mut holdEffect: u8 = 0;
     if heldItem == ITEM_ENIGMA_BERRY {
-        holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+        holdEffect = (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.holdEffect;
     } else {
         holdEffect = GetItemHoldEffect(heldItem);
     }
@@ -4953,8 +5213,8 @@ pub unsafe fn GetEvolutionTargetSpecies(mon: *mut Pokemon, mode: u8, evolutionIt
                     }
                     EVO_FRIENDSHIP_DAY => {
                         RtcCalcLocalTime();
-                        if gLocalTime.hours >= DAY_EVO_HOUR_BEGIN
-                            && gLocalTime.hours < DAY_EVO_HOUR_END
+                        if crate::gl!(gLocalTime.hours) >= DAY_EVO_HOUR_BEGIN
+                            && crate::gl!(gLocalTime.hours) < DAY_EVO_HOUR_END
                             && friendship >= FRIENDSHIP_EVO_THRESHOLD
                         {
                             targetSpecies = gEvolutionTable[species][i].targetSpecies;
@@ -4962,8 +5222,8 @@ pub unsafe fn GetEvolutionTargetSpecies(mon: *mut Pokemon, mode: u8, evolutionIt
                     }
                     EVO_FRIENDSHIP_NIGHT => {
                         RtcCalcLocalTime();
-                        if gLocalTime.hours >= NIGHT_EVO_HOUR_BEGIN
-                            && gLocalTime.hours < NIGHT_EVO_HOUR_END
+                        if crate::gl!(gLocalTime.hours) >= NIGHT_EVO_HOUR_BEGIN
+                            && crate::gl!(gLocalTime.hours) < NIGHT_EVO_HOUR_END
                             && friendship >= FRIENDSHIP_EVO_THRESHOLD
                         {
                             targetSpecies = gEvolutionTable[species][i].targetSpecies;
@@ -5122,8 +5382,8 @@ pub fn SpeciesToCryId(species: u16) -> u16 {
 }
 unsafe fn DrawSpindaSpotsUnused(species: u16, mut personality: u32, dest: *mut u8) {
     if species == SPECIES_SPINDA
-        && !core::ptr::addr_eq(dest, (*gMonSpritesGfxPtr).sprites.ptr[0])
-        && !core::ptr::addr_eq(dest, (*gMonSpritesGfxPtr).sprites.ptr[2])
+        && !core::ptr::addr_eq(dest, (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[0])
+        && !core::ptr::addr_eq(dest, (*crate::gl!(gMonSpritesGfxPtr)).sprites.ptr[2])
     {
         for i in 0..4i32 {
             let x: u8 = gSpindaSpotGraphics[i].x + ((personality as u8 & 0x0F) - 8);
@@ -5213,7 +5473,10 @@ pub unsafe fn EvolutionRenameMon(mon: *mut Pokemon, oldSpecies: u16, newSpecies:
 }
 pub unsafe fn GetPlayerFlankId() -> u8 {
     let mut flankId: u8 = 0;
-    match gLinkPlayers[GetMultiplayerId()].id {
+    match {
+        let gl_i26 = GetMultiplayerId();
+        crate::gl!(gLinkPlayers[gl_i26].id)
+    } {
         0 | 3 => {
             flankId = 0;
         }
@@ -5224,9 +5487,9 @@ pub unsafe fn GetPlayerFlankId() -> u8 {
     }
     flankId
 }
-pub unsafe fn GetLinkTrainerFlankId(linkPlayerId: u8) -> u16 {
+pub fn GetLinkTrainerFlankId(linkPlayerId: u8) -> u16 {
     let mut flankId: u16 = 0;
-    match gLinkPlayers[linkPlayerId].id {
+    match crate::gl!(gLinkPlayers[linkPlayerId].id) {
         0 | 3 => {
             flankId = 0;
         }
@@ -5240,7 +5503,7 @@ pub unsafe fn GetLinkTrainerFlankId(linkPlayerId: u8) -> u16 {
 pub unsafe fn GetBattlerMultiplayerId(id: u16) -> i32 {
     let mut multiplayerId: i32 = 0;
     while multiplayerId < MAX_LINK_PLAYERS {
-        if gLinkPlayers[multiplayerId].id == id {
+        if crate::gl!(gLinkPlayers[multiplayerId].id) == id {
             break;
         }
         multiplayerId += 1;
@@ -5293,10 +5556,10 @@ pub unsafe fn AdjustFriendship(mon: *mut Pokemon, event: u8) {
     let species: u16 = GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
     let heldItem: u16 = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
     if heldItem == ITEM_ENIGMA_BERRY {
-        if gMain.inBattle() != 0 {
-            holdEffect = gEnigmaBerries[0].holdEffect;
+        if (*gMain.as_ptr()).inBattle() != 0 {
+            holdEffect = crate::gl!(gEnigmaBerries[0].holdEffect);
         } else {
-            holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+            holdEffect = (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.holdEffect;
         }
     } else {
         holdEffect = GetItemHoldEffect(heldItem);
@@ -5314,20 +5577,20 @@ pub unsafe fn AdjustFriendship(mon: *mut Pokemon, event: u8) {
             return;
         }
         if event == FRIENDSHIP_EVENT_LEAGUE_BATTLE {
-            if gBattleTypeFlags & BATTLE_TYPE_TRAINER == 0 {
+            if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER == 0 {
                 return;
             }
             if !((*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-                [gTrainerBattleOpponent_A]
-                .trainerClass
+                [gTrainerBattleOpponent_A.get()]
+            .trainerClass
                 == TRAINER_CLASS_LEADER
                 || (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-                    [gTrainerBattleOpponent_A]
-                    .trainerClass
+                    [gTrainerBattleOpponent_A.get()]
+                .trainerClass
                     == TRAINER_CLASS_ELITE_FOUR
                 || (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
-                    [gTrainerBattleOpponent_A]
-                    .trainerClass
+                    [gTrainerBattleOpponent_A.get()]
+                .trainerClass
                     == TRAINER_CLASS_CHAMPION)
             {
                 return;
@@ -5402,10 +5665,10 @@ pub unsafe fn MonGainEVs(mon: *mut Pokemon, defeatedSpecies: u16) {
         }
         heldItem = GetMonData3(mon, MON_DATA_HELD_ITEM, null_mut()) as u16;
         if heldItem == ITEM_ENIGMA_BERRY {
-            if gMain.inBattle() != 0 {
-                holdEffect = gEnigmaBerries[0].holdEffect;
+            if (*gMain.as_ptr()).inBattle() != 0 {
+                holdEffect = crate::gl!(gEnigmaBerries[0].holdEffect);
             } else {
-                holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
+                holdEffect = (*crate::gl!(gSaveBlock1Ptr)).enigmaBerry.holdEffect;
             }
         } else {
             holdEffect = GetItemHoldEffect(heldItem);
@@ -5517,9 +5780,17 @@ pub unsafe fn CheckPartyHasHadPokerus(party: *mut Pokemon, mut selection: u8) ->
 #[unsafe(no_mangle)]
 pub unsafe fn UpdatePartyPokerusTime(days: u16) {
     for i in 0..PARTY_SIZE {
-        if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) != 0 {
-            let mut pokerus: u8 =
-                GetMonData3(&raw mut gPlayerParty[i], MON_DATA_POKERUS, null_mut()) as u8;
+        if GetMonData3(
+            crate::gl!(&raw gPlayerParty[i]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) != 0
+        {
+            let mut pokerus: u8 = GetMonData3(
+                crate::gl!(&raw gPlayerParty[i]),
+                MON_DATA_POKERUS,
+                null_mut(),
+            ) as u8;
             if pokerus as i32 & 0xF != 0 {
                 if pokerus as i32 & 0xF < days as i32 || days > 4 {
                     pokerus &= 0xF0;
@@ -5530,7 +5801,7 @@ pub unsafe fn UpdatePartyPokerusTime(days: u16) {
                     pokerus = 0x10;
                 }
                 SetMonData(
-                    &raw mut gPlayerParty[i],
+                    crate::gl!(&raw gPlayerParty[i]),
                     MON_DATA_POKERUS,
                     &raw mut pokerus as *mut c_void,
                 );
@@ -5759,7 +6030,7 @@ pub unsafe fn SpeciesToPokedexNum(mut species: u16) -> u16 {
         0
     }
 }
-pub unsafe fn IsSpeciesInHoennDex(species: u16) -> u32 {
+pub fn IsSpeciesInHoennDex(species: u16) -> u32 {
     if SpeciesToHoennPokedexNum(species) > HOENN_DEX_DEOXYS {
         return FALSE as u32;
     } else {
@@ -5770,28 +6041,28 @@ pub unsafe fn IsSpeciesInHoennDex(species: u16) -> u32 {
         0
     }
 }
-pub unsafe fn ClearBattleMonForms() {
+pub fn ClearBattleMonForms() {
     for i in 0..(MAX_BATTLERS_COUNT as i32) {
-        gBattleMonForms[i] = 0;
+        crate::gl!(gBattleMonForms[i] = 0);
     }
 }
 pub unsafe fn GetBattleBGM() -> u16 {
-    if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
         return MUS_VS_KYOGRE_GROUDON;
-    } else if gBattleTypeFlags & BATTLE_TYPE_REGI != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_REGI != 0 {
         return MUS_VS_REGI;
-    } else if gBattleTypeFlags & 0x2000002 != 0 {
+    } else if gBattleTypeFlags.get() & 0x2000002 != 0 {
         return MUS_VS_TRAINER;
-    } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
+    } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER != 0 {
         let mut trainerClass: u8 = 0;
-        if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-            trainerClass = GetFrontierOpponentClass(gTrainerBattleOpponent_A);
-        } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
+        if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
+            trainerClass = GetFrontierOpponentClass(gTrainerBattleOpponent_A.get());
+        } else if gBattleTypeFlags.get() & BATTLE_TYPE_TRAINER_HILL != 0 {
             trainerClass = TRAINER_CLASS_EXPERT;
         } else {
             trainerClass = (*(&raw const crate::data::data_tables::gTrainers)
-                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                .trainerClass;
+                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+            .trainerClass;
         }
         match trainerClass {
             TRAINER_CLASS_AQUA_LEADER | TRAINER_CLASS_MAGMA_LEADER => {
@@ -5810,15 +6081,15 @@ pub unsafe fn GetBattleBGM() -> u16 {
                 return MUS_VS_CHAMPION;
             }
             TRAINER_CLASS_RIVAL => {
-                if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+                if gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
                     return MUS_VS_RIVAL;
                 }
                 if StringCompare(
                     (*(&raw const crate::data::data_tables::gTrainers)
-                        .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
-                        .trainerName
-                        .as_ptr()
-                        .cast_mut(),
+                        .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A.get()]
+                    .trainerName
+                    .as_ptr()
+                    .cast_mut(),
                     (*(&raw const crate::data::battle_message::gText_BattleWallyName)
                         .cast::<CArray<u8, 0>>())
                     .as_ptr()
@@ -5981,14 +6252,14 @@ pub unsafe fn IsTradedMon(mon: *mut Pokemon) -> u8 {
 }
 pub unsafe fn IsOtherTrainer(otId: u32, otName: *mut u8) -> u8 {
     if otId
-        == (*gSaveBlock2Ptr).playerTrainerId[0] as u32
-            | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
-            | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
-            | ((*gSaveBlock2Ptr).playerTrainerId[3] as u32) << 24
+        == (*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[0] as u32
+            | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[1] as u32) << 8
+            | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[2] as u32) << 16
+            | ((*crate::gl!(gSaveBlock2Ptr)).playerTrainerId[3] as u32) << 24
     {
         let mut i: i32 = 0;
         while *otName.at(i) != EOS {
-            if *otName.at(i) != (*gSaveBlock2Ptr).playerName[i] {
+            if *otName.at(i) != (*crate::gl!(gSaveBlock2Ptr)).playerName[i] {
                 return TRUE;
             }
             i += 1;
@@ -6011,24 +6282,37 @@ pub unsafe fn BoxMonRestorePP(boxMon: *mut BoxPokemon) {
     }
 }
 pub unsafe fn SetMonPreventsSwitchingString() {
-    gLastUsedAbility = (*gBattleStruct).abilityPreventingSwitchout;
-    gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN;
-    gBattleTextBuff1[1] = B_BUFF_MON_NICK_WITH_PREFIX;
-    gBattleTextBuff1[2] = (*gBattleStruct).battlerPreventingSwitchout;
-    gBattleTextBuff1[4] = B_BUFF_EOS;
-    if GetBattlerSide((*gBattleStruct).battlerPreventingSwitchout) == B_SIDE_PLAYER {
-        gBattleTextBuff1[3] = GetPartyIdFromBattlePartyId(
-            gBattlerPartyIndexes[(*gBattleStruct).battlerPreventingSwitchout] as u8,
+    gLastUsedAbility.set((*crate::gl!(gBattleStruct)).abilityPreventingSwitchout);
+    crate::gl!(gBattleTextBuff1[0] = B_BUFF_PLACEHOLDER_BEGIN);
+    crate::gl!(gBattleTextBuff1[1] = B_BUFF_MON_NICK_WITH_PREFIX);
+    crate::gl!(gBattleTextBuff1[2] = (*crate::gl!(gBattleStruct)).battlerPreventingSwitchout);
+    crate::gl!(gBattleTextBuff1[4] = B_BUFF_EOS);
+    if GetBattlerSide((*crate::gl!(gBattleStruct)).battlerPreventingSwitchout) == B_SIDE_PLAYER {
+        crate::gl!(
+            gBattleTextBuff1[3] = GetPartyIdFromBattlePartyId(
+                (*gBattlerPartyIndexes.as_ptr())
+                    [(*crate::gl!(gBattleStruct)).battlerPreventingSwitchout] as u8,
+            )
         );
     } else {
-        gBattleTextBuff1[3] =
-            gBattlerPartyIndexes[(*gBattleStruct).battlerPreventingSwitchout] as u8;
+        crate::gl!(
+            gBattleTextBuff1[3] = (*gBattlerPartyIndexes.as_ptr())
+                [(*crate::gl!(gBattleStruct)).battlerPreventingSwitchout]
+                as u8
+        );
     }
-    gBattleTextBuff2[0] = 0xFD;
-    gBattleTextBuff2[1] = 4;
-    gBattleTextBuff2[2] = gBattlerInMenuId;
-    gBattleTextBuff2[3] = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[gBattlerInMenuId] as u8);
-    gBattleTextBuff2[4] = 0xFF;
+    crate::gl!(gBattleTextBuff2[0] = 0xFD);
+    crate::gl!(gBattleTextBuff2[1] = 4);
+    crate::gl!(gBattleTextBuff2[2] = gBattlerInMenuId.get());
+    crate::gl!(
+        gBattleTextBuff2[3] = GetPartyIdFromBattlePartyId(
+            ({
+                let gl_i27 = gBattlerInMenuId.get();
+                crate::gl!(gBattlerPartyIndexes[gl_i27])
+            }) as u8
+        )
+    );
+    crate::gl!(gBattleTextBuff2[4] = 0xFF);
     BattleStringExpandPlaceholders(
         (*(&raw const crate::data::battle_message::gText_PkmnsXPreventsSwitching)
             .cast::<CArray<u8, 0>>())
@@ -6046,26 +6330,33 @@ fn GetWildMonTableIdInAlteringCave(species: u16) -> i32 {
     0
 }
 pub unsafe fn SetWildMonHeldItem() {
-    if gBattleTypeFlags & 0x302008 == 0 {
+    if gBattleTypeFlags.get() & 0x302008 == 0 {
         let rnd: u16 = (Random() as i32 % 100) as u16;
-        let species: u16 =
-            GetMonData3(&raw mut gEnemyParty[0], MON_DATA_SPECIES, null_mut()) as u16;
+        let species: u16 = GetMonData3(
+            crate::gl!(&raw gEnemyParty[0]),
+            MON_DATA_SPECIES,
+            null_mut(),
+        ) as u16;
         let mut chanceNoItem: u16 = 45;
         let mut chanceNotRare: u16 = 95;
-        if GetMonData3(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG, null_mut()) == 0
-            && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_COMPOUND_EYES
+        if GetMonData3(
+            crate::gl!(&raw gPlayerParty[0]),
+            MON_DATA_SANITY_IS_EGG,
+            null_mut(),
+        ) == 0
+            && GetMonAbility(crate::gl!(&raw gPlayerParty[0])) == ABILITY_COMPOUND_EYES
         {
             chanceNoItem = 20;
             chanceNotRare = 80;
         }
-        if gMapHeader.mapLayoutId == LAYOUT_ALTERING_CAVE {
+        if crate::gl!(gMapHeader.mapLayoutId) == LAYOUT_ALTERING_CAVE {
             let alteringCaveId: i32 = GetWildMonTableIdInAlteringCave(species);
             if alteringCaveId != 0 {
                 if rnd < chanceNotRare {
                     return;
                 }
                 SetMonData(
-                    &raw mut gEnemyParty[0],
+                    crate::gl!(&raw gEnemyParty[0]),
                     MON_DATA_HELD_ITEM,
                     (&raw const sAlteringCaveWildMonHeldItems[alteringCaveId].item).cast_mut()
                         as *mut c_void,
@@ -6076,13 +6367,13 @@ pub unsafe fn SetWildMonHeldItem() {
                 }
                 if rnd < chanceNotRare {
                     SetMonData(
-                        &raw mut gEnemyParty[0],
+                        crate::gl!(&raw gEnemyParty[0]),
                         MON_DATA_HELD_ITEM,
                         (&raw const gSpeciesInfo[species].itemCommon).cast_mut() as *mut c_void,
                     );
                 } else {
                     SetMonData(
-                        &raw mut gEnemyParty[0],
+                        crate::gl!(&raw gEnemyParty[0]),
                         MON_DATA_HELD_ITEM,
                         (&raw const gSpeciesInfo[species].itemRare).cast_mut() as *mut c_void,
                     );
@@ -6093,7 +6384,7 @@ pub unsafe fn SetWildMonHeldItem() {
                 && gSpeciesInfo[species].itemCommon != ITEM_NONE
             {
                 SetMonData(
-                    &raw mut gEnemyParty[0],
+                    crate::gl!(&raw gEnemyParty[0]),
                     MON_DATA_HELD_ITEM,
                     (&raw const gSpeciesInfo[species].itemCommon).cast_mut() as *mut c_void,
                 );
@@ -6103,13 +6394,13 @@ pub unsafe fn SetWildMonHeldItem() {
                 }
                 if rnd < chanceNotRare {
                     SetMonData(
-                        &raw mut gEnemyParty[0],
+                        crate::gl!(&raw gEnemyParty[0]),
                         MON_DATA_HELD_ITEM,
                         (&raw const gSpeciesInfo[species].itemCommon).cast_mut() as *mut c_void,
                     );
                 } else {
                     SetMonData(
-                        &raw mut gEnemyParty[0],
+                        crate::gl!(&raw gEnemyParty[0]),
                         MON_DATA_HELD_ITEM,
                         (&raw const gSpeciesInfo[species].itemRare).cast_mut() as *mut c_void,
                     );
@@ -6135,22 +6426,23 @@ pub fn IsShinyOtIdPersonality(otId: u32, personality: u32) -> u8 {
     retVal
 }
 pub unsafe fn GetTrainerPartnerName() -> *mut u8 {
-    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 {
-        if gPartnerTrainerId == TRAINER_STEVEN_PARTNER {
+    if gBattleTypeFlags.get() & BATTLE_TYPE_INGAME_PARTNER != 0 {
+        if gPartnerTrainerId.get() == TRAINER_STEVEN_PARTNER {
             return (*(&raw const crate::data::data_tables::gTrainers)
                 .cast::<CArray<Trainer, 0>>())[804]
                 .trainerName
                 .as_ptr()
                 .cast_mut();
         } else {
-            GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gPartnerTrainerId);
+            GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gPartnerTrainerId.get());
             return gStringVar1.as_mut_ptr();
         }
     } else {
         let id: u8 = GetMultiplayerId();
-        return gLinkPlayers[GetBattlerMultiplayerId(gLinkPlayers[id].id ^ 2)]
-            .name
-            .as_mut_ptr();
+        return (*gLinkPlayers.as_ptr())
+            [GetBattlerMultiplayerId(crate::gl!(gLinkPlayers[id].id) ^ 2)]
+        .name
+        .as_mut_ptr();
     }
     #[allow(unreachable_code)]
     {
@@ -6187,7 +6479,7 @@ pub(crate) unsafe fn Task_PokemonSummaryAnimateAfterDelay(taskId: u8) {
     }
 }
 pub unsafe fn BattleAnimateFrontSprite(sprite: *mut Sprite, species: u16, noCry: u8, panMode: u8) {
-    if gHitMarker & HITMARKER_NO_ANIMATIONS != 0 && gBattleTypeFlags & 0x2000002 == 0 {
+    if gHitMarker.get() & HITMARKER_NO_ANIMATIONS != 0 && gBattleTypeFlags.get() & 0x2000002 == 0 {
         DoMonFrontSpriteAnimation(sprite, species, noCry, panMode | SKIP_FRONT_ANIM);
     } else {
         DoMonFrontSpriteAnimation(sprite, species, noCry, panMode);
@@ -6274,7 +6566,7 @@ pub unsafe fn StopPokemonAnimationDelayTask() {
     }
 }
 pub unsafe fn BattleAnimateBackSprite(sprite: *mut Sprite, species: u16) {
-    if gHitMarker & HITMARKER_NO_ANIMATIONS != 0 && gBattleTypeFlags & 0x2000002 == 0 {
+    if gHitMarker.get() & HITMARKER_NO_ANIMATIONS != 0 && gBattleTypeFlags.get() & 0x2000002 == 0 {
         (*sprite).callback = Some(SpriteCallbackDummy);
     } else {
         LaunchAnimationTaskForBackSprite(sprite, GetSpeciesBackAnimSet(species));
@@ -6284,7 +6576,7 @@ pub unsafe fn BattleAnimateBackSprite(sprite: *mut Sprite, species: u16) {
 unsafe fn GetOwnOpposingLinkMultiBattlerId(rightSide: u8) -> u8 {
     let mut battler: i32 = 0;
     let multiplayerId: u8 = GetMultiplayerId();
-    match gLinkPlayers[multiplayerId].id {
+    match crate::gl!(gLinkPlayers[multiplayerId].id) {
         0 | 2 => {
             battler = if rightSide != 0 { 1 } else { 3 };
         }
@@ -6295,16 +6587,16 @@ unsafe fn GetOwnOpposingLinkMultiBattlerId(rightSide: u8) -> u8 {
     }
     let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
-        if gLinkPlayers[i].id as i32 == battler as i16 as i32 {
+        if crate::gl!(gLinkPlayers[i].id) as i32 == battler as i16 as i32 {
             break;
         }
         i += 1;
     }
     i as u8
 }
-pub unsafe fn GetOpposingLinkMultiBattlerId(rightSide: u8, multiplayerId: u8) -> u8 {
+pub fn GetOpposingLinkMultiBattlerId(rightSide: u8, multiplayerId: u8) -> u8 {
     let mut battler: i32 = 0;
-    match gLinkPlayers[multiplayerId].id {
+    match crate::gl!(gLinkPlayers[multiplayerId].id) {
         0 | 2 => {
             battler = if rightSide != 0 { 1 } else { 3 };
         }
@@ -6315,7 +6607,7 @@ pub unsafe fn GetOpposingLinkMultiBattlerId(rightSide: u8, multiplayerId: u8) ->
     }
     let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
-        if gLinkPlayers[i].id as i32 == battler as i16 as i32 {
+        if crate::gl!(gLinkPlayers[i].id) as i32 == battler as i16 as i32 {
             break;
         }
         i += 1;
@@ -6345,10 +6637,10 @@ pub unsafe fn HandleSetPokedexFlag(nationalNum: u16, caseId: u8, personality: u3
     if GetSetPokedexFlag(nationalNum, getFlagCaseId) == 0 {
         GetSetPokedexFlag(nationalNum, caseId);
         if NationalPokedexNumToSpecies(nationalNum) == SPECIES_UNOWN {
-            (*gSaveBlock2Ptr).pokedex.unownPersonality = personality;
+            (*crate::gl!(gSaveBlock2Ptr)).pokedex.unownPersonality = personality;
         }
         if NationalPokedexNumToSpecies(nationalNum) == SPECIES_SPINDA {
-            (*gSaveBlock2Ptr).pokedex.spindaPersonality = personality;
+            (*crate::gl!(gSaveBlock2Ptr)).pokedex.spindaPersonality = personality;
         }
     }
 }
@@ -6379,10 +6671,10 @@ pub unsafe fn HasTwoFramesAnimation(species: u16) -> u8 {
         && species != SPECIES_UNOWN) as u8
 }
 unsafe fn ShouldSkipFriendshipChange() -> u8 {
-    if gMain.inBattle() != 0 && gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
+    if (*gMain.as_ptr()).inBattle() != 0 && gBattleTypeFlags.get() & BATTLE_TYPE_FRONTIER != 0 {
         return TRUE;
     }
-    if gMain.inBattle() == 0
+    if (*gMain.as_ptr()).inBattle() == 0
         && (InBattlePike() != 0 || CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         return TRUE;
@@ -6514,13 +6806,13 @@ pub unsafe fn CreateMonSpritesGfxManager(mut managerId: u8, mode: u8) -> *mut Mo
         Free(gfx as *mut c_void);
     } else {
         (*gfx).set_active(GFX_MANAGER_ACTIVE);
-        sMonSpritesGfxManagers[managerId] = gfx;
+        crate::gl!(sMonSpritesGfxManagers[managerId] = gfx);
     }
-    sMonSpritesGfxManagers[managerId]
+    crate::gl!(sMonSpritesGfxManagers[managerId])
 }
 pub unsafe fn DestroyMonSpritesGfxManager(mut managerId: u8) {
     managerId = (managerId as i32 % 2) as u8;
-    let gfx: *mut MonSpritesGfxManager = sMonSpritesGfxManagers[managerId];
+    let gfx: *mut MonSpritesGfxManager = crate::gl!(sMonSpritesGfxManagers[managerId]);
     if gfx.is_null() {
         return;
     }
@@ -6548,7 +6840,10 @@ pub unsafe fn DestroyMonSpritesGfxManager(mut managerId: u8) {
     }
 }
 pub unsafe fn MonSpritesGfxManager_GetSpritePtr(managerId: u8, mut spriteNum: u8) -> *mut u8 {
-    let gfx: *mut MonSpritesGfxManager = sMonSpritesGfxManagers[managerId as i32 % 2];
+    let gfx: *mut MonSpritesGfxManager = {
+        let gl_i3 = managerId as i32 % 2;
+        crate::gl!(sMonSpritesGfxManagers[gl_i3])
+    };
     if (*gfx).active() != GFX_MANAGER_ACTIVE {
         return null_mut();
     } else {

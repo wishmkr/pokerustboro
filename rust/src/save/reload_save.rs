@@ -102,12 +102,12 @@ pub fn reload_save() {
         ResetMenuAndMonGlobals();
         Save_ResetSaveCounters();
         LoadGameSave(SAVE_NORMAL);
-        let status = *(&raw const gSaveFileStatus);
+        let status = *(gSaveFileStatus.as_ptr().cast_const());
         if status == u16::from(SAVE_STATUS_EMPTY) || status == SAVE_STATUS_CORRUPT {
             Sav2_ClearSetDefault();
         }
         SetPokemonCryStereo(save_block2().optionsSound().into());
-        InitHeap((&raw mut gHeap).cast::<u8>(), HEAP_SIZE);
+        InitHeap((crate::gl!(&raw gHeap)).cast::<u8>(), HEAP_SIZE);
         SetMainCallback2(CB2_ContinueSavedGame);
     }
 }

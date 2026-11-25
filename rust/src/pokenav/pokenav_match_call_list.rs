@@ -111,19 +111,19 @@ pub unsafe fn FreeMatchCallSubstruct1() {
 }
 pub(crate) unsafe fn CB2_HandleMatchCallInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
     let mut selection: i32 = 0;
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         return POKENAV_MC_FUNC_UP;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         return POKENAV_MC_FUNC_DOWN;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_LEFT != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_LEFT != 0 {
         return POKENAV_MC_FUNC_PG_UP;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_RIGHT != 0 {
         return POKENAV_MC_FUNC_PG_DOWN;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         (*state).callback = Some(CB2_HandleMatchCallOptionsInput);
         (*state).optionCursorPos = 0;
         selection = PokenavList_GetSelectedIndex() as i32;
@@ -138,7 +138,7 @@ pub(crate) unsafe fn CB2_HandleMatchCallInput(state: *mut Pokenav_MatchCallMenu)
         }
         return POKENAV_MC_FUNC_SELECT;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         if GetPokenavMode() != POKENAV_MODE_FORCE_CALL_READY {
             (*state).callback = Some(GetExitMatchCallMenuId);
             return POKENAV_MC_FUNC_EXIT;
@@ -152,15 +152,17 @@ pub(crate) unsafe fn GetExitMatchCallMenuId(state: *mut Pokenav_MatchCallMenu) -
     POKENAV_MAIN_MENU_CURSOR_ON_MATCH_CALL
 }
 pub(crate) unsafe fn CB2_HandleMatchCallOptionsInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
-    if gMain.newKeys as i32 & DPAD_UP != 0 && (*state).optionCursorPos != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_UP != 0 && (*state).optionCursorPos != 0 {
         (*state).optionCursorPos -= 1;
         return POKENAV_MC_FUNC_MOVE_OPTIONS_CURSOR;
     }
-    if gMain.newKeys as i32 & DPAD_DOWN != 0 && (*state).optionCursorPos < (*state).maxOptionId {
+    if crate::gl!(gMain.newKeys) as i32 & DPAD_DOWN != 0
+        && (*state).optionCursorPos < (*state).maxOptionId
+    {
         (*state).optionCursorPos += 1;
         return POKENAV_MC_FUNC_MOVE_OPTIONS_CURSOR;
     }
-    if gMain.newKeys as i32 & A_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
         match *(*state).matchCallOptions.at((*state).optionCursorPos) {
             MATCH_CALL_OPTION_CANCEL => {
                 (*state).callback = Some(CB2_HandleMatchCallInput);
@@ -183,27 +185,27 @@ pub(crate) unsafe fn CB2_HandleMatchCallOptionsInput(state: *mut Pokenav_MatchCa
             _ => {}
         }
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*state).callback = Some(CB2_HandleMatchCallInput);
         return POKENAV_MC_FUNC_CANCEL;
     }
     POKENAV_MC_FUNC_NONE
 }
 pub(crate) unsafe fn CB2_HandleCheckPageInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
-    if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_UP != 0 {
         return POKENAV_MC_FUNC_CHECK_PAGE_UP;
     }
-    if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
+    if crate::gl!(gMain.newAndRepeatedKeys) as i32 & DPAD_DOWN != 0 {
         return POKENAV_MC_FUNC_CHECK_PAGE_DOWN;
     }
-    if gMain.newKeys as i32 & B_BUTTON != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
         (*state).callback = Some(CB2_HandleMatchCallInput);
         return POKENAV_MC_FUNC_EXIT_CHECK_PAGE;
     }
     POKENAV_MC_FUNC_NONE
 }
 pub(crate) unsafe fn CB2_HandleCallExitInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         (*state).callback = Some(CB2_HandleMatchCallInput);
         return POKENAV_MC_FUNC_EXIT_CALL;
     }
@@ -334,7 +336,7 @@ pub unsafe fn ShouldDrawRematchPokeballIcon(mut index: i32) -> u32 {
     if index == REMATCH_TABLE_ENTRIES {
         return FALSE as u32;
     }
-    ((*gSaveBlock1Ptr).trainerRematches[index] != 0) as u32
+    ((*crate::gl!(gSaveBlock1Ptr)).trainerRematches[index] != 0) as u32
 }
 pub unsafe fn GetMatchCallTrainerPic(mut index: i32) -> i32 {
     let mut headerId: i32 = 0;
@@ -362,7 +364,7 @@ pub unsafe fn GetMatchCallMessageText(index: i32, newRematchRequest: *mut u8) ->
     let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     *newRematchRequest = FALSE;
-    if Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == 0 {
+    if Overworld_MapTypeAllowsTeleportAndFly(crate::gl!(gMapHeader.mapType)) == 0 {
         return (*(&raw const crate::data::strings::gText_CallCantBeMadeHere)
             .cast::<CArray<u8, 0>>())
         .as_ptr()
@@ -491,7 +493,9 @@ pub unsafe fn GetIndexDeltaOfNextCheckPageUp(mut index: i32) -> i32 {
 unsafe fn HasRematchEntry() -> u32 {
     let mut i: i32 = 0;
     while i < REMATCH_TABLE_ENTRIES {
-        if IsRematchEntryRegistered(i) != 0 && (*gSaveBlock1Ptr).trainerRematches[i] != 0 {
+        if IsRematchEntryRegistered(i) != 0
+            && (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[i] != 0
+        {
             return TRUE as u32;
         }
         i += 1;
@@ -499,7 +503,7 @@ unsafe fn HasRematchEntry() -> u32 {
     for i in 0..(MC_HEADER_COUNT as i32) {
         if MatchCall_GetEnabled(i as u32) != 0 {
             let index: i32 = MatchCall_GetRematchTableIdx(i as u32) as i32;
-            if (*gSaveBlock1Ptr).trainerRematches[index] != 0 {
+            if (*crate::gl!(gSaveBlock1Ptr)).trainerRematches[index] != 0 {
                 return TRUE as u32;
             }
         }
@@ -511,15 +515,16 @@ unsafe fn ShouldDoNearbyMessage() -> u32 {
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     let selection: i32 = PokenavList_GetSelectedIndex() as i32;
     if (*state).matchCallEntries[selection].isSpecialTrainer == 0 {
-        if GetMatchCallMapSec(selection) == gMapHeader.regionMapSectionId as u16
-            && (*gSaveBlock1Ptr).trainerRematches[(*state).matchCallEntries[selection].headerId]
+        if GetMatchCallMapSec(selection) == crate::gl!(gMapHeader.regionMapSectionId) as u16
+            && (*crate::gl!(gSaveBlock1Ptr)).trainerRematches
+                [(*state).matchCallEntries[selection].headerId]
                 == 0
         {
             return TRUE as u32;
         }
     } else {
         if (*state).matchCallEntries[selection].headerId == MC_HEADER_WATTSON
-            && GetMatchCallMapSec(selection) == gMapHeader.regionMapSectionId as u16
+            && GetMatchCallMapSec(selection) == crate::gl!(gMapHeader.regionMapSectionId) as u16
             && FlagGet(FLAG_BADGE05_GET) == TRUE
             && FlagGet(FLAG_WATTSON_REMATCH_AVAILABLE) == 0
         {

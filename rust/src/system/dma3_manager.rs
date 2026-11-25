@@ -27,22 +27,25 @@ struct Dma3Request {
 
 unsafe impl Sync for Dma3Request {}
 
-static mut REQUESTS: [Dma3Request; MAX_DMA_REQUESTS] = [const {
-    Dma3Request {
-        src: core::ptr::null(),
-        dest: core::ptr::null_mut(),
-        size: 0,
-        mode: 0,
-        value: 0,
-    }
-}; MAX_DMA_REQUESTS];
+static REQUESTS: crate::global::Global<[Dma3Request; MAX_DMA_REQUESTS]> =
+    crate::global::Global::new(
+        [const {
+            Dma3Request {
+                src: core::ptr::null(),
+                dest: core::ptr::null_mut(),
+                size: 0,
+                mode: 0,
+                value: 0,
+            }
+        }; MAX_DMA_REQUESTS],
+    );
 
 static MANAGER_LOCKED: crate::global::Global<bool> = crate::global::Global::new(false);
 static REQUEST_CURSOR: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[inline]
 unsafe fn request(index: usize) -> *mut Dma3Request {
-    unsafe { (&raw mut REQUESTS).cast::<Dma3Request>().add(index) }
+    unsafe { (crate::gl!(&raw REQUESTS)).cast::<Dma3Request>().add(index) }
 }
 
 #[inline]

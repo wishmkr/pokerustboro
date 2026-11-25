@@ -100,7 +100,7 @@ unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
 }
 /// `LoadSpriteSheets` with this module's view of its types.
 #[inline]
-unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+fn LoadSpriteSheets(a0: *mut SpriteSheet) {
     unsafe {
         crate::sprite::LoadSpriteSheets(a0 as _);
     }
@@ -231,7 +231,7 @@ unsafe fn AddTextPrinterParameterized(
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
@@ -243,7 +243,7 @@ unsafe fn GetConditionGraphMenuCurrentLoadIndex() -> i8 {
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -1015,8 +1015,8 @@ unsafe fn CreateMonMarkingsOrPokeballIndicators() {
             spriteId = CreateSprite(&raw mut sprTemplate, 226, i as i16 * 20 + 8, 0) as u16;
             if spriteId != MAX_SPRITES as u16 {
                 (*menu).partyPokeballSpriteIds[i] = spriteId as u8;
-                gSprites[spriteId].data[0] = i as i16;
-                gSprites[spriteId].callback = Some(SpriteCB_PartyPokeball);
+                crate::gl!(gSprites[spriteId].data[0] = i as i16);
+                crate::gl!(gSprites[spriteId].callback = Some(SpriteCB_PartyPokeball));
             } else {
                 (*menu).partyPokeballSpriteIds[i] = SPRITE_NONE;
             }
@@ -1028,7 +1028,7 @@ unsafe fn CreateMonMarkingsOrPokeballIndicators() {
             spriteId = CreateSprite(&raw mut sprTemplate, 230, i as i16 * 20 + 8, 0) as u16;
             if spriteId != MAX_SPRITES as u16 {
                 (*menu).partyPokeballSpriteIds[i] = spriteId as u8;
-                gSprites[spriteId].oam.set_size(0);
+                (*gSprites.as_ptr())[spriteId].oam.set_size(0);
             } else {
                 (*menu).partyPokeballSpriteIds[i] = SPRITE_NONE;
             }
@@ -1039,8 +1039,8 @@ unsafe fn CreateMonMarkingsOrPokeballIndicators() {
         spriteId = CreateSprite(&raw mut sprTemplate, 222, i as i16 * 20 + 8, 0) as u16;
         if spriteId != MAX_SPRITES as u16 {
             (*menu).partyPokeballSpriteIds[i] = spriteId as u8;
-            gSprites[spriteId].oam.set_shape(1);
-            gSprites[spriteId].oam.set_size(2);
+            (*gSprites.as_ptr())[spriteId].oam.set_shape(1);
+            (*gSprites.as_ptr())[spriteId].oam.set_size(2);
         } else {
             (*menu).partyPokeballSpriteIds[i] = SPRITE_NONE;
         }
@@ -1059,7 +1059,10 @@ unsafe fn FreeConditionMenuGfx(menu: *mut Pokenav_ConditionMenuGfx) {
         FreeSpritePaletteByTag(TAG_CONDITION_MON_MARKINGS);
     } else {
         for i in 0..7u8 {
-            DestroySprite(&raw mut gSprites[(*menu).partyPokeballSpriteIds[i]]);
+            DestroySprite({
+                let gl_i0 = (*menu).partyPokeballSpriteIds[i];
+                crate::gl!(&raw gSprites[gl_i0])
+            });
         }
         FreeSpriteTilesByTag(TAG_CONDITION_BALL);
         FreeSpriteTilesByTag(TAG_CONDITION_CANCEL);
@@ -1068,7 +1071,10 @@ unsafe fn FreeConditionMenuGfx(menu: *mut Pokenav_ConditionMenuGfx) {
         FreeSpritePaletteByTag(TAG_CONDITION_CANCEL);
     }
     if (*menu).monPicSpriteId != SPRITE_NONE {
-        DestroySprite(&raw mut gSprites[(*menu).monPicSpriteId]);
+        DestroySprite({
+            let gl_i1 = (*menu).monPicSpriteId;
+            crate::gl!(&raw gSprites[gl_i1])
+        });
         FreeSpriteTilesByTag(TAG_CONDITION_MON);
         FreeSpritePaletteByTag(TAG_CONDITION_MON);
     }
@@ -1118,7 +1124,10 @@ unsafe fn CreateConditionMonPic(id: u8) {
             (*menu).monPicSpriteId = SPRITE_NONE;
         } else {
             (*menu).monPicSpriteId = spriteId;
-            gSprites[(*menu).monPicSpriteId].callback = Some(MonPicGfxSpriteCallback);
+            {
+                let gl_i2 = (*menu).monPicSpriteId;
+                crate::gl!(gSprites[gl_i2].callback = Some(MonPicGfxSpriteCallback))
+            };
             (*menu).monGfxPtr =
                 ((VRAM as usize as *mut c_void as *mut u8).at(0x10000) as *mut c_void as *mut u8)
                     .at((*menu).monGfxTileStart as i32 * 32) as *mut c_void;

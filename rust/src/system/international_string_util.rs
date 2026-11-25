@@ -344,7 +344,7 @@ pub unsafe fn FillWindowTilesByRow(
     num_rows: c_int,
 ) {
     let window = unsafe {
-        (&raw mut gWindows)
+        (crate::gl!(&raw gWindows))
             .cast::<u8>()
             .add(window_id as usize * WINDOW_STRIDE)
     };

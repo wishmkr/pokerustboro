@@ -75,7 +75,7 @@ unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
 }
 /// `CopyRectToBgTilemapBufferRect` with this module's view of its types.
 #[inline]
-unsafe fn CopyRectToBgTilemapBufferRect(
+fn CopyRectToBgTilemapBufferRect(
     a0: u8,
     a1: *mut c_void,
     a2: u8,
@@ -98,12 +98,12 @@ unsafe fn CopyRectToBgTilemapBufferRect(
 }
 /// `CreateInvisibleSprite` with this module's view of its types.
 #[inline]
-unsafe fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
     unsafe { crate::sprite::CreateInvisibleSprite(core::mem::transmute(a0)) }
 }
 /// `CreateSpriteAtEnd` with this module's view of its types.
 #[inline]
-unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
     unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
 }
 /// `CreateTask` with this module's view of its types.
@@ -497,10 +497,11 @@ pub(crate) static sDebug_RectangularSpiralData: crate::global::Global<i16> =
 pub(crate) static sTestingTransitionId: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static sTestingTransitionState: crate::global::Global<u8> =
     crate::global::Global::new(0);
-pub(crate) static mut sRectangularSpiralLines: CArray<RectangularSpiralLine, 4> =
-    unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTransitionData: *mut TransitionData = null_mut();
+pub(crate) static sRectangularSpiralLines: crate::global::Global<CArray<RectangularSpiralLine, 4>> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sTransitionData: crate::global::Global<*mut TransitionData> =
+    crate::global::Global::new(null_mut());
 
 /// `AllocZeroed` with this module's view of its types.
 #[inline]
@@ -509,14 +510,14 @@ unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
 }
 /// `CpuSet` with this module's view of its types.
 #[inline]
-unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
     unsafe {
         crate::syscall::CpuSet(a0 as _, a1 as _, a2);
     }
 }
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -551,7 +552,7 @@ unsafe fn TestBattleTransition(transitionId: u8) {
     SetMainCallback2(Some(CB2_TestBattleTransition));
 }
 pub unsafe fn BattleTransition_StartOnField(transitionId: u8) {
-    gMain.callback2 = Some(CB2_OverworldBasic);
+    crate::gl!(gMain.callback2 = Some(CB2_OverworldBasic));
     LaunchBattleTransitionTask(transitionId);
 }
 pub unsafe fn BattleTransition_Start(transitionId: u8) {
@@ -561,8 +562,8 @@ pub unsafe fn IsBattleTransitionDone() -> u8 {
     let taskId: u8 = FindTaskIdByFunc(Some(Task_BattleTransition));
     if task_get(taskId, tTransitionDone) != 0 {
         DestroyTask(taskId);
-        Free(sTransitionData as *mut c_void);
-        sTransitionData = null_mut();
+        Free(crate::gl!(sTransitionData) as *mut c_void);
+        crate::gl!(sTransitionData = null_mut());
         return TRUE;
     } else {
         return FALSE;
@@ -575,7 +576,7 @@ pub unsafe fn IsBattleTransitionDone() -> u8 {
 unsafe fn LaunchBattleTransitionTask(transitionId: u8) {
     let taskId: u8 = CreateTask(Some(Task_BattleTransition), 2);
     task_set(taskId, tTransitionId, transitionId as i16);
-    sTransitionData = AllocZeroed(60) as *mut TransitionData;
+    crate::gl!(sTransitionData = AllocZeroed(60) as *mut TransitionData);
 }
 pub(crate) unsafe fn Task_BattleTransition(taskId: u8) {
     while sTaskHandlers[task_get(taskId, tState)].unwrap_unchecked()(
@@ -586,8 +587,8 @@ pub(crate) unsafe fn Task_BattleTransition(taskId: u8) {
 pub(crate) unsafe fn Transition_StartIntro(task: *mut Task) -> u8 {
     SetWeatherScreenFadeOut();
     CpuSet(
-        gPlttBufferFaded.as_mut_ptr() as *mut c_void,
-        gPlttBufferUnfaded.as_mut_ptr() as *mut c_void,
+        (*gPlttBufferFaded.as_ptr()).as_mut_ptr() as *mut c_void,
+        (*gPlttBufferUnfaded.as_ptr()).as_mut_ptr() as *mut c_void,
         0x4000100,
     );
     if sTasks_Intro[(*task).data[tTransitionId]].is_some() {
@@ -669,7 +670,7 @@ pub(crate) unsafe fn Blur_Main(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn Blur_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let taskId: u8 = FindTaskIdByFunc(Some(Task_Blur));
         DestroyTask(taskId);
     }
@@ -686,11 +687,11 @@ pub(crate) unsafe fn Swirl_Init(task: *mut Task) -> u8 {
     ScanlineEffect_Clear();
     BeginNormalPaletteFade(PALETTES_ALL, 4, 0, 16, 0);
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1]
             .as_mut_ptr() as *mut i16,
-        (*sTransitionData).cameraX,
+        (*crate::gl!(sTransitionData)).cameraX,
         0,
         2,
         0,
@@ -703,49 +704,51 @@ pub(crate) unsafe fn Swirl_Init(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn Swirl_End(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     (*task).data[1] += 4;
     (*task).data[2] += 8;
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
-        (*sTransitionData).cameraX,
+        (*crate::gl!(sTransitionData)).cameraX,
         (*task).data[1],
         2,
         (*task).data[2],
         DISPLAY_HEIGHT as i16,
     );
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let taskId: u8 = FindTaskIdByFunc(Some(Task_Swirl));
         DestroyTask(taskId);
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn VBlankCB_Swirl() {
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -756,9 +759,10 @@ pub(crate) unsafe fn VBlankCB_Swirl() {
     }
 }
 pub(crate) unsafe fn HBlankCB_Swirl() {
-    let var: u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
+    let var: u16 = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+        .cast_const())
+    .cast::<CArray<CArray<u16, 960>, 2>>()
+    .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
     volatile_write(67108884_usize as *mut u16, var);
     volatile_write(67108888_usize as *mut u16, var);
     volatile_write(67108892_usize as *mut u16, var);
@@ -774,11 +778,11 @@ pub(crate) unsafe fn Shuffle_Init(task: *mut Task) -> u8 {
     ScanlineEffect_Clear();
     BeginNormalPaletteFade(PALETTES_ALL, 4, 0, 16, 0);
     memset(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1]
             .as_mut_ptr() as *mut u8,
-        (*sTransitionData).cameraY as i32,
+        (*crate::gl!(sTransitionData)).cameraY as i32,
         320,
     );
     SetVBlankCallback(Some(VBlankCB_Shuffle));
@@ -788,7 +792,7 @@ pub(crate) unsafe fn Shuffle_Init(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn Shuffle_End(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     let mut sinVal: u16 = (*task).data[tSinVal] as u16;
     let amplitude: u16 = ((*task).data[2] >> 8) as u16;
     (*task).data[tSinVal] += 4224;
@@ -796,41 +800,43 @@ pub(crate) unsafe fn Shuffle_End(task: *mut Task) -> u8 {
     let mut i: u8 = 0;
     while i < DISPLAY_HEIGHT as u8 {
         let sinIndex: u16 = (sinVal as i32 / 256) as u16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][i] =
-            (*sTransitionData).cameraY as u16 + Sin(sinIndex as i16, amplitude as i16) as u16;
+            .cast_mut())[0][i] = (*crate::gl!(sTransitionData)).cameraY as u16
+            + Sin(sinIndex as i16, amplitude as i16) as u16;
         i += 1;
         sinVal += 4224;
     }
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(FindTaskIdByFunc(Some(Task_Shuffle)));
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn VBlankCB_Shuffle() {
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -841,9 +847,10 @@ pub(crate) unsafe fn VBlankCB_Shuffle() {
     }
 }
 pub(crate) unsafe fn HBlankCB_Shuffle() {
-    let var: u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
+    let var: u16 = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+        .cast_const())
+    .cast::<CArray<CArray<u16, 960>, 2>>()
+    .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
     volatile_write(67108886_usize as *mut u16, var);
     volatile_write(67108890_usize as *mut u16, var);
     volatile_write(67108894_usize as *mut u16, var);
@@ -897,14 +904,15 @@ unsafe fn InitPatternWeaveTransition(task: *mut Task) {
     (*task).data[2] = 0;
     (*task).data[4] = 0;
     (*task).data[5] = 0x4000;
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
-    (*sTransitionData).WINOUT = 0;
-    (*sTransitionData).WIN0H = DISPLAY_WIDTH;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
-    (*sTransitionData).BLDCNT = 16193;
-    (*sTransitionData).BLDALPHA = ((*task).data[1] as u16) << 8 | (*task).data[2] as u16;
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WINOUT = 0;
+    (*crate::gl!(sTransitionData)).WIN0H = DISPLAY_WIDTH;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).BLDCNT = 16193;
+    (*crate::gl!(sTransitionData)).BLDALPHA =
+        ((*task).data[1] as u16) << 8 | (*task).data[2] as u16;
     for i in 0..(DISPLAY_HEIGHT as i32) {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = DISPLAY_WIDTH;
     }
@@ -1038,7 +1046,7 @@ pub(crate) unsafe fn BigPokeball_SetGfx(task: *mut Task) -> u8 {
         }
     }
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1060,7 +1068,7 @@ pub(crate) unsafe fn Aqua_SetGfx(task: *mut Task) -> u8 {
         tilemap as *mut c_void,
     );
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1082,7 +1090,7 @@ pub(crate) unsafe fn Magma_SetGfx(task: *mut Task) -> u8 {
         tilemap as *mut c_void,
     );
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1106,7 +1114,7 @@ pub(crate) unsafe fn Regice_SetGfx(task: *mut Task) -> u8 {
         640,
     );
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1134,7 +1142,7 @@ pub(crate) unsafe fn Registeel_SetGfx(task: *mut Task) -> u8 {
         640,
     );
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1162,7 +1170,7 @@ pub(crate) unsafe fn Regirock_SetGfx(task: *mut Task) -> u8 {
         640,
     );
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1241,7 +1249,7 @@ pub(crate) unsafe fn WeatherDuo_FadeOut(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn WeatherDuo_End(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         {
             let dmaRegs: *mut u16 = 67109040_usize as *mut u16;
             volatile_write(dmaRegs.at(5), (dmaRegs.at(5)).read_volatile() & 50687);
@@ -1254,7 +1262,7 @@ pub(crate) unsafe fn WeatherDuo_End(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn PatternWeave_Blend1(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     if (*task).data[tBlendDelay] == 0
         || ({
             (*task).data[tBlendDelay] -= 1;
@@ -1264,14 +1272,15 @@ pub(crate) unsafe fn PatternWeave_Blend1(task: *mut Task) -> u8 {
         (*task).data[2] += 1;
         (*task).data[tBlendDelay] = 2;
     }
-    (*sTransitionData).BLDALPHA = ((*task).data[1] as u16) << 8 | (*task).data[2] as u16;
+    (*crate::gl!(sTransitionData)).BLDALPHA =
+        ((*task).data[1] as u16) << 8 | (*task).data[2] as u16;
     if (*task).data[2] > 15 {
         (*task).data[tState] += 1;
     }
     (*task).data[4] += 8;
     (*task).data[5] -= 256;
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1282,13 +1291,13 @@ pub(crate) unsafe fn PatternWeave_Blend1(task: *mut Task) -> u8 {
         DISPLAY_HEIGHT as i16,
     );
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn PatternWeave_Blend2(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     if (*task).data[tBlendDelay] == 0
         || ({
             (*task).data[tBlendDelay] -= 1;
@@ -1298,14 +1307,15 @@ pub(crate) unsafe fn PatternWeave_Blend2(task: *mut Task) -> u8 {
         (*task).data[1] -= 1;
         (*task).data[tBlendDelay] = 2;
     }
-    (*sTransitionData).BLDALPHA = ((*task).data[1] as u16) << 8 | (*task).data[2] as u16;
+    (*crate::gl!(sTransitionData)).BLDALPHA =
+        ((*task).data[1] as u16) << 8 | (*task).data[2] as u16;
     if (*task).data[1] == 0 {
         (*task).data[tState] += 1;
     }
     (*task).data[4] += 8;
     (*task).data[5] -= 256;
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1316,17 +1326,17 @@ pub(crate) unsafe fn PatternWeave_Blend2(task: *mut Task) -> u8 {
         DISPLAY_HEIGHT as i16,
     );
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn PatternWeave_FinishAppear(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     (*task).data[4] += 8;
     (*task).data[5] -= 256;
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -1343,8 +1353,8 @@ pub(crate) unsafe fn PatternWeave_FinishAppear(task: *mut Task) -> u8 {
         (*task).data[tVBlankSet] = FALSE as i16;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -1364,13 +1374,13 @@ pub(crate) unsafe fn WeatherTrio_BgFadeBlack(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn WeatherTrio_WaitFade(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         (*task).data[tState] += 1;
     }
     FALSE
 }
 pub(crate) unsafe fn PatternWeave_CircularMask(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     if (*task).data[tRadiusDelta] < 1024 {
         (*task).data[tRadiusDelta] += 128;
     }
@@ -1381,7 +1391,7 @@ pub(crate) unsafe fn PatternWeave_CircularMask(task: *mut Task) -> u8 {
         }
     }
     SetCircularMask(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr(),
@@ -1405,8 +1415,8 @@ pub(crate) unsafe fn PatternWeave_CircularMask(task: *mut Task) -> u8 {
             SetVBlankCallback(Some(VBlankCB_CircularMask));
         }
         volatile_write(
-            &raw mut (*sTransitionData).VBlank_DMA,
-            (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+            &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+            (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
         );
     }
     FALSE
@@ -1419,23 +1429,25 @@ unsafe fn VBlankCB_SetWinAndBlend() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -1444,11 +1456,26 @@ unsafe fn VBlankCB_SetWinAndBlend() {
             }
         }
     }
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
-    volatile_write(67108944_usize as *mut u16, (*sTransitionData).BLDCNT);
-    volatile_write(67108946_usize as *mut u16, (*sTransitionData).BLDALPHA);
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
+    volatile_write(
+        67108944_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDCNT,
+    );
+    volatile_write(
+        67108946_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDALPHA,
+    );
 }
 pub(crate) unsafe fn VBlankCB_PatternWeave() {
     VBlankCB_SetWinAndBlend();
@@ -1457,9 +1484,10 @@ pub(crate) unsafe fn VBlankCB_PatternWeave() {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108880_usize as *mut u16 as usize as u32);
@@ -1475,9 +1503,10 @@ pub(crate) unsafe fn VBlankCB_CircularMask() {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108928_usize as *mut u16 as usize as u32);
@@ -1536,10 +1565,10 @@ pub(crate) unsafe fn PokeballsTrail_Main(task: *mut Task) -> u8 {
     let mut side: i16 = Random() as i16 & 1;
     let mut i: i16 = 0;
     while i < NUM_POKEBALL_TRAILS {
-        gFieldEffectArguments[0] = startX[side] as i32;
-        gFieldEffectArguments[1] = i as i32 * 32 + 16;
-        gFieldEffectArguments[2] = side as i32;
-        gFieldEffectArguments[3] = delays[i] as i32;
+        crate::gl!(gFieldEffectArguments[0] = startX[side] as i32);
+        crate::gl!(gFieldEffectArguments[1] = i as i32 * 32 + 16);
+        crate::gl!(gFieldEffectArguments[2] = side as i32);
+        crate::gl!(gFieldEffectArguments[3] = delays[i] as i32);
         FieldEffectStart(FLDEFF_POKEBALL_TRAIL);
         i += 1;
         side ^= 1;
@@ -1558,17 +1587,29 @@ pub(crate) unsafe fn PokeballsTrail_End(task: *mut Task) -> u8 {
 pub unsafe fn FldEff_PokeballTrail() -> u8 {
     let spriteId: u8 = CreateSpriteAtEnd(
         (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
-        gFieldEffectArguments[0] as i16,
-        gFieldEffectArguments[1] as i16,
+        crate::gl!(gFieldEffectArguments[0]) as i16,
+        crate::gl!(gFieldEffectArguments[1]) as i16,
         0,
     );
-    gSprites[spriteId].oam.set_priority(0);
-    gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
-    gSprites[spriteId].data[sSide] = gFieldEffectArguments[2] as i16;
-    gSprites[spriteId].data[1] = gFieldEffectArguments[3] as i16;
-    gSprites[spriteId].data[sPrevX] = -1;
-    InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
-    StartSpriteAffineAnim(&raw mut gSprites[spriteId], gFieldEffectArguments[2] as u8);
+    (*gSprites.as_ptr())[spriteId].oam.set_priority(0);
+    (*gSprites.as_ptr())[spriteId]
+        .oam
+        .set_affineMode(ST_OAM_AFFINE_NORMAL);
+    {
+        let gl_v = crate::gl!(gFieldEffectArguments[2]) as i16;
+        let gl_i0 = sSide;
+        crate::gl!(gSprites[spriteId].data[gl_i0] = gl_v)
+    };
+    crate::gl!(gSprites[spriteId].data[1] = crate::gl!(gFieldEffectArguments[3]) as i16);
+    {
+        let gl_i1 = sPrevX;
+        crate::gl!(gSprites[spriteId].data[gl_i1] = -1)
+    };
+    InitSpriteAffineAnim(crate::gl!(&raw gSprites[spriteId]));
+    StartSpriteAffineAnim(
+        crate::gl!(&raw gSprites[spriteId]),
+        crate::gl!(gFieldEffectArguments[2]) as u8,
+    );
     FALSE
 }
 pub(crate) unsafe fn SpriteCB_FldEffPokeballTrail(sprite: *mut Sprite) {
@@ -1622,48 +1663,48 @@ pub(crate) unsafe fn Task_ClockwiseWipe(taskId: u8) {
 pub(crate) unsafe fn ClockwiseWipe_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
-    (*sTransitionData).WININ = 0;
-    (*sTransitionData).WINOUT = WINOUT_WIN01_ALL;
-    (*sTransitionData).WIN0H = 61681;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).WININ = 0;
+    (*crate::gl!(sTransitionData)).WINOUT = WINOUT_WIN01_ALL;
+    (*crate::gl!(sTransitionData)).WIN0H = 61681;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..DISPLAY_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = 62452;
     }
     SetVBlankCallback(Some(VBlankCB_ClockwiseWipe));
-    (*sTransitionData).data[tWipeEndX] = 120;
+    (*crate::gl!(sTransitionData)).data[tWipeEndX] = 120;
     (*task).data[tState] += 1;
     TRUE
 }
 pub(crate) unsafe fn ClockwiseWipe_TopRight(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     InitBlackWipe(
-        (*sTransitionData).data.as_mut_ptr(),
+        (*crate::gl!(sTransitionData)).data.as_mut_ptr(),
         120,
         80,
-        (*sTransitionData).data[tWipeEndX],
+        (*crate::gl!(sTransitionData)).data[tWipeEndX],
         0,
         1,
         1,
     );
     loop {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] =
-            ((*sTransitionData).data[tWipeCurrX] as u16 + 1) | 30720;
-        if UpdateBlackWipe((*sTransitionData).data.as_mut_ptr(), TRUE, TRUE) != 0 {
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] =
+            ((*crate::gl!(sTransitionData)).data[tWipeCurrX] as u16 + 1) | 30720;
+        if UpdateBlackWipe((*crate::gl!(sTransitionData)).data.as_mut_ptr(), TRUE, TRUE) != 0 {
             break;
         }
     }
-    (*sTransitionData).data[tWipeEndX] += 16;
-    if (*sTransitionData).data[tWipeEndX] >= DISPLAY_WIDTH as i16 {
-        (*sTransitionData).data[tWipeEndY] = 0;
+    (*crate::gl!(sTransitionData)).data[tWipeEndX] += 16;
+    if (*crate::gl!(sTransitionData)).data[tWipeEndX] >= DISPLAY_WIDTH as i16 {
+        (*crate::gl!(sTransitionData)).data[tWipeEndY] = 0;
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -1672,82 +1713,86 @@ pub(crate) unsafe fn ClockwiseWipe_Right(task: *mut Task) -> u8 {
     let mut end: i16 = 0;
     let mut finished: u8 = 0;
     volatile_write(&raw mut finished, FALSE);
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     InitBlackWipe(
-        (*sTransitionData).data.as_mut_ptr(),
+        (*crate::gl!(sTransitionData)).data.as_mut_ptr(),
         120,
         80,
         DISPLAY_WIDTH as i16,
-        (*sTransitionData).data[tWipeEndY],
+        (*crate::gl!(sTransitionData)).data[tWipeEndY],
         1,
         1,
     );
     loop {
         start = 120;
-        end = (*sTransitionData).data[tWipeCurrX] + 1;
-        if (*sTransitionData).data[tWipeEndY] >= 80 {
-            start = (*sTransitionData).data[tWipeCurrX];
+        end = (*crate::gl!(sTransitionData)).data[tWipeCurrX] + 1;
+        if (*crate::gl!(sTransitionData)).data[tWipeEndY] >= 80 {
+            start = (*crate::gl!(sTransitionData)).data[tWipeCurrX];
             end = DISPLAY_WIDTH as i16;
         }
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] = end as u16 | (start as u16) << 8;
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] =
+            end as u16 | (start as u16) << 8;
         if (&raw mut finished).read_volatile() != 0 {
             break;
         }
         volatile_write(
             &raw mut finished,
-            UpdateBlackWipe((*sTransitionData).data.as_mut_ptr(), TRUE, TRUE),
+            UpdateBlackWipe((*crate::gl!(sTransitionData)).data.as_mut_ptr(), TRUE, TRUE),
         );
     }
-    (*sTransitionData).data[tWipeEndY] += 8;
-    if (*sTransitionData).data[tWipeEndY] >= DISPLAY_HEIGHT as i16 {
-        (*sTransitionData).data[tWipeEndX] = DISPLAY_WIDTH as i16;
+    (*crate::gl!(sTransitionData)).data[tWipeEndY] += 8;
+    if (*crate::gl!(sTransitionData)).data[tWipeEndY] >= DISPLAY_HEIGHT as i16 {
+        (*crate::gl!(sTransitionData)).data[tWipeEndX] = DISPLAY_WIDTH as i16;
         (*task).data[tState] += 1;
     } else {
-        while (*sTransitionData).data[tWipeCurrY] < (*sTransitionData).data[tWipeEndY] {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][{
-                (*sTransitionData).data[tWipeCurrY] += 1;
-                (*sTransitionData).data[tWipeCurrY]
+        while (*crate::gl!(sTransitionData)).data[tWipeCurrY]
+            < (*crate::gl!(sTransitionData)).data[tWipeEndY]
+        {
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][{
+                (*crate::gl!(sTransitionData)).data[tWipeCurrY] += 1;
+                (*crate::gl!(sTransitionData)).data[tWipeCurrY]
             }] = end as u16 | (start as u16) << 8;
         }
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn ClockwiseWipe_Bottom(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     InitBlackWipe(
-        (*sTransitionData).data.as_mut_ptr(),
+        (*crate::gl!(sTransitionData)).data.as_mut_ptr(),
         120,
         80,
-        (*sTransitionData).data[tWipeEndX],
+        (*crate::gl!(sTransitionData)).data[tWipeEndX],
         DISPLAY_HEIGHT as i16,
         1,
         1,
     );
     loop {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] =
-            ((*sTransitionData).data[tWipeCurrX] as u16) << 8 | DISPLAY_WIDTH;
-        if UpdateBlackWipe((*sTransitionData).data.as_mut_ptr(), TRUE, TRUE) != 0 {
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] =
+            ((*crate::gl!(sTransitionData)).data[tWipeCurrX] as u16) << 8 | DISPLAY_WIDTH;
+        if UpdateBlackWipe((*crate::gl!(sTransitionData)).data.as_mut_ptr(), TRUE, TRUE) != 0 {
             break;
         }
     }
-    (*sTransitionData).data[tWipeEndX] -= 16;
-    if (*sTransitionData).data[tWipeEndX] <= 0 {
-        (*sTransitionData).data[tWipeEndY] = DISPLAY_HEIGHT as i16;
+    (*crate::gl!(sTransitionData)).data[tWipeEndX] -= 16;
+    if (*crate::gl!(sTransitionData)).data[tWipeEndX] <= 0 {
+        (*crate::gl!(sTransitionData)).data[tWipeEndY] = DISPLAY_HEIGHT as i16;
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -1757,90 +1802,95 @@ pub(crate) unsafe fn ClockwiseWipe_Left(task: *mut Task) -> u8 {
     let mut temp: i16 = 0;
     let mut finished: u8 = 0;
     volatile_write(&raw mut finished, FALSE);
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     InitBlackWipe(
-        (*sTransitionData).data.as_mut_ptr(),
+        (*crate::gl!(sTransitionData)).data.as_mut_ptr(),
         120,
         80,
         0,
-        (*sTransitionData).data[tWipeEndY],
+        (*crate::gl!(sTransitionData)).data[tWipeEndY],
         1,
         1,
     );
     loop {
-        end = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] as i16
+        end = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] as i16
             & 0xFF;
-        start = (*sTransitionData).data[tWipeCurrX];
-        if (*sTransitionData).data[tWipeEndY] <= 80 {
+        start = (*crate::gl!(sTransitionData)).data[tWipeCurrX];
+        if (*crate::gl!(sTransitionData)).data[tWipeEndY] <= 80 {
             start = 120;
-            end = (*sTransitionData).data[tWipeCurrX];
+            end = (*crate::gl!(sTransitionData)).data[tWipeCurrX];
         }
         temp = end | start << 8;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] = temp as u16;
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] = temp as u16;
         if (&raw mut finished).read_volatile() != 0 {
             break;
         }
         volatile_write(
             &raw mut finished,
-            UpdateBlackWipe((*sTransitionData).data.as_mut_ptr(), TRUE, TRUE),
+            UpdateBlackWipe((*crate::gl!(sTransitionData)).data.as_mut_ptr(), TRUE, TRUE),
         );
     }
-    (*sTransitionData).data[tWipeEndY] -= 8;
-    if (*sTransitionData).data[tWipeEndY] <= 0 {
-        (*sTransitionData).data[tWipeEndX] = 0;
+    (*crate::gl!(sTransitionData)).data[tWipeEndY] -= 8;
+    if (*crate::gl!(sTransitionData)).data[tWipeEndY] <= 0 {
+        (*crate::gl!(sTransitionData)).data[tWipeEndX] = 0;
         (*task).data[tState] += 1;
     } else {
-        while (*sTransitionData).data[tWipeCurrY] > (*sTransitionData).data[tWipeEndY] {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][{
-                (*sTransitionData).data[tWipeCurrY] -= 1;
-                (*sTransitionData).data[tWipeCurrY]
+        while (*crate::gl!(sTransitionData)).data[tWipeCurrY]
+            > (*crate::gl!(sTransitionData)).data[tWipeEndY]
+        {
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][{
+                (*crate::gl!(sTransitionData)).data[tWipeCurrY] -= 1;
+                (*crate::gl!(sTransitionData)).data[tWipeCurrY]
             }] = end as u16 | (start as u16) << 8;
         }
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn ClockwiseWipe_TopLeft(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     InitBlackWipe(
-        (*sTransitionData).data.as_mut_ptr(),
+        (*crate::gl!(sTransitionData)).data.as_mut_ptr(),
         120,
         80,
-        (*sTransitionData).data[tWipeEndX],
+        (*crate::gl!(sTransitionData)).data[tWipeEndX],
         0,
         1,
         1,
     );
     loop {
         let mut start: i16 = 120;
-        let mut end: i16 = (*sTransitionData).data[tWipeCurrX];
-        if (*sTransitionData).data[tWipeCurrX] >= 120 {
+        let mut end: i16 = (*crate::gl!(sTransitionData)).data[tWipeCurrX];
+        if (*crate::gl!(sTransitionData)).data[tWipeCurrX] >= 120 {
             start = 0;
             end = DISPLAY_WIDTH as i16;
         }
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] = end as u16 | (start as u16) << 8;
-        if UpdateBlackWipe((*sTransitionData).data.as_mut_ptr(), TRUE, TRUE) != 0 {
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] =
+            end as u16 | (start as u16) << 8;
+        if UpdateBlackWipe((*crate::gl!(sTransitionData)).data.as_mut_ptr(), TRUE, TRUE) != 0 {
             break;
         }
     }
-    (*sTransitionData).data[tWipeEndX] += 16;
-    if (*sTransitionData).data[tWipeCurrX] > 120 {
+    (*crate::gl!(sTransitionData)).data[tWipeEndX] += 16;
+    if (*crate::gl!(sTransitionData)).data[tWipeCurrX] > 120 {
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -1863,23 +1913,25 @@ pub(crate) unsafe fn VBlankCB_ClockwiseWipe() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -1888,12 +1940,21 @@ pub(crate) unsafe fn VBlankCB_ClockwiseWipe() {
             }
         }
     }
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
     volatile_write(
         67108928_usize as *mut u16,
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][0],
     );
@@ -1902,9 +1963,10 @@ pub(crate) unsafe fn VBlankCB_ClockwiseWipe() {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108928_usize as *mut u16 as usize as u32);
@@ -1923,9 +1985,9 @@ pub(crate) unsafe fn Ripple_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
     for i in 0..(DISPLAY_HEIGHT as u8) {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1][i] = (*sTransitionData).cameraY as u16;
+            .cast_mut())[1][i] = (*crate::gl!(sTransitionData)).cameraY as u16;
     }
     SetVBlankCallback(Some(VBlankCB_Ripple));
     SetHBlankCallback(Some(HBlankCB_Ripple));
@@ -1934,7 +1996,7 @@ pub(crate) unsafe fn Ripple_Init(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn Ripple_Main(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     let amplitude: i16 = (*task).data[tAmplitudeVal] >> 8;
     let mut sinVal: u16 = (*task).data[tSinVal] as u16;
     let speed: u16 = 0x180;
@@ -1945,10 +2007,10 @@ pub(crate) unsafe fn Ripple_Main(task: *mut Task) -> u8 {
     let mut i: u8 = 0;
     while i < DISPLAY_HEIGHT as u8 {
         let sinIndex: i16 = (sinVal >> 8) as i16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][i] =
-            (*sTransitionData).cameraY as u16 + Sin(sinIndex, amplitude) as u16;
+            (*crate::gl!(sTransitionData)).cameraY as u16 + Sin(sinIndex, amplitude) as u16;
         i += 1;
         sinVal += speed;
     }
@@ -1960,34 +2022,36 @@ pub(crate) unsafe fn Ripple_Main(task: *mut Task) -> u8 {
         (*task).data[tFadeStarted] += 1;
         BeginNormalPaletteFade(PALETTES_ALL, -2, 0, 16, 0);
     }
-    if (*task).data[tFadeStarted] != 0 && gPaletteFade.active() == 0 {
+    if (*task).data[tFadeStarted] != 0 && (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(FindTaskIdByFunc(Some(Task_Ripple)));
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn VBlankCB_Ripple() {
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -1998,9 +2062,10 @@ pub(crate) unsafe fn VBlankCB_Ripple() {
     }
 }
 pub(crate) unsafe fn HBlankCB_Ripple() {
-    let var: u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
+    let var: u16 = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+        .cast_const())
+    .cast::<CArray<CArray<u16, 960>, 2>>()
+    .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
     volatile_write(67108886_usize as *mut u16, var);
     volatile_write(67108890_usize as *mut u16, var);
     volatile_write(67108894_usize as *mut u16, var);
@@ -2014,12 +2079,12 @@ pub(crate) unsafe fn Task_Wave(taskId: u8) {
 pub(crate) unsafe fn Wave_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
-    (*sTransitionData).WINOUT = 0;
-    (*sTransitionData).WIN0H = DISPLAY_WIDTH;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WINOUT = 0;
+    (*crate::gl!(sTransitionData)).WIN0H = DISPLAY_WIDTH;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..(DISPLAY_HEIGHT as u8) {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = 242;
     }
@@ -2028,11 +2093,12 @@ pub(crate) unsafe fn Wave_Init(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn Wave_Main(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
-    let mut toStore: *mut u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[0]
-        .as_mut_ptr();
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
+    let mut toStore: *mut u16 =
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0]
+            .as_mut_ptr();
     let mut sinIndex: u8 = (*task).data[2] as u8;
     (*task).data[2] += 16;
     (*task).data[tX] += 8;
@@ -2058,8 +2124,8 @@ pub(crate) unsafe fn Wave_Main(task: *mut Task) -> u8 {
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -2082,23 +2148,25 @@ pub(crate) unsafe fn VBlankCB_Wave() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -2107,17 +2175,27 @@ pub(crate) unsafe fn VBlankCB_Wave() {
             }
         }
     }
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
     {
         {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108928_usize as *mut u16 as usize as u32);
@@ -2159,11 +2237,11 @@ pub(crate) unsafe fn Mugshot_Init(task: *mut Task) -> u8 {
     (*task).data[1] = 0;
     (*task).data[tTopBannerX] = 1;
     (*task).data[tBottomBannerX] = 239;
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
-    (*sTransitionData).WINOUT = 62;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WINOUT = 62;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..(DISPLAY_HEIGHT as u8) {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = 61681;
     }
@@ -2188,7 +2266,7 @@ pub(crate) unsafe fn Mugshot_SetGfx(task: *mut Task) -> u8 {
         32,
     );
     LoadPalette(
-        sPlayerMugshotsPals[(*gSaveBlock2Ptr).playerGender] as *mut c_void,
+        sPlayerMugshotsPals[(*crate::gl!(gSaveBlock2Ptr)).playerGender] as *mut c_void,
         250,
         12,
     );
@@ -2208,11 +2286,12 @@ pub(crate) unsafe fn Mugshot_SetGfx(task: *mut Task) -> u8 {
 }
 pub(crate) unsafe fn Mugshot_ShowBanner(task: *mut Task) -> u8 {
     let mut x: i16 = 0;
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
-    let mut toStore: *mut u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[0]
-        .as_mut_ptr();
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
+    let mut toStore: *mut u16 =
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0]
+            .as_mut_ptr();
     let mut sinIndex: u8 = (*task).data[1] as u8;
     (*task).data[1] += 16;
     let mut i: u8 = 0;
@@ -2253,21 +2332,22 @@ pub(crate) unsafe fn Mugshot_ShowBanner(task: *mut Task) -> u8 {
     if (*task).data[tTopBannerX] == DISPLAY_WIDTH as i16 && (*task).data[tBottomBannerX] == 0 {
         (*task).data[tState] += 1;
     }
-    (*sTransitionData).BG0HOFS_Lower -= 8;
-    (*sTransitionData).BG0HOFS_Upper += 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Lower -= 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Upper += 8;
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn Mugshot_StartOpponentSlide(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     let mut i: u8 = 0;
-    let mut toStore: *mut u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[0]
-        .as_mut_ptr();
+    let mut toStore: *mut u16 =
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0]
+            .as_mut_ptr();
     while i < DISPLAY_HEIGHT as u8 {
         *toStore = DISPLAY_WIDTH;
         i += 1;
@@ -2277,21 +2357,21 @@ pub(crate) unsafe fn Mugshot_StartOpponentSlide(task: *mut Task) -> u8 {
     (*task).data[1] = 0;
     (*task).data[tTopBannerX] = 0;
     (*task).data[tBottomBannerX] = 0;
-    (*sTransitionData).BG0HOFS_Lower -= 8;
-    (*sTransitionData).BG0HOFS_Upper += 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Lower -= 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Upper += 8;
     SetTrainerPicSlideDirection((*task).data[tOpponentSpriteId], 0);
     SetTrainerPicSlideDirection((*task).data[tPlayerSpriteId], 1);
     IncrementTrainerPicState((*task).data[tOpponentSpriteId]);
     PlaySE(SE_MUGSHOT);
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn Mugshot_WaitStartPlayerSlide(task: *mut Task) -> u8 {
-    (*sTransitionData).BG0HOFS_Lower -= 8;
-    (*sTransitionData).BG0HOFS_Upper += 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Lower -= 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Upper += 8;
     if IsTrainerPicSlideDone((*task).data[tOpponentSpriteId]) != 0 {
         (*task).data[tState] += 1;
         IncrementTrainerPicState((*task).data[tPlayerSpriteId]);
@@ -2299,10 +2379,10 @@ pub(crate) unsafe fn Mugshot_WaitStartPlayerSlide(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn Mugshot_WaitPlayerSlide(task: *mut Task) -> u8 {
-    (*sTransitionData).BG0HOFS_Lower -= 8;
-    (*sTransitionData).BG0HOFS_Upper += 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Lower -= 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Upper += 8;
     if IsTrainerPicSlideDone((*task).data[tPlayerSpriteId]) != 0 {
-        volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+        volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
         SetVBlankCallback(None);
         {
             let dmaRegs: *mut u16 = 67109040_usize as *mut u16;
@@ -2311,17 +2391,19 @@ pub(crate) unsafe fn Mugshot_WaitPlayerSlide(task: *mut Task) -> u8 {
             let _ = (dmaRegs.at(5)).read_volatile();
         }
         memset(
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0]
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0]
                 .as_mut_ptr() as *mut u8,
             0,
             320,
         );
         memset(
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1]
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1]
                 .as_mut_ptr() as *mut u8,
             0,
             320,
@@ -2331,16 +2413,16 @@ pub(crate) unsafe fn Mugshot_WaitPlayerSlide(task: *mut Task) -> u8 {
         (*task).data[tState] += 1;
         (*task).data[3] = 0;
         (*task).data[tFadeSpread] = 0;
-        (*sTransitionData).BLDCNT = 191;
+        (*crate::gl!(sTransitionData)).BLDCNT = 191;
         SetVBlankCallback(Some(VBlankCB_MugshotsFadeOut));
     }
     FALSE
 }
 pub(crate) unsafe fn Mugshot_GradualWhiteFade(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     let mut active: u32 = TRUE as u32;
-    (*sTransitionData).BG0HOFS_Lower -= 8;
-    (*sTransitionData).BG0HOFS_Upper += 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Lower -= 8;
+    (*crate::gl!(sTransitionData)).BG0HOFS_Upper += 8;
     if (*task).data[tFadeSpread] < 80 {
         (*task).data[tFadeSpread] += 2;
     }
@@ -2359,25 +2441,29 @@ pub(crate) unsafe fn Mugshot_GradualWhiteFade(task: *mut Task) -> u8 {
         while i <= (*task).data[tFadeSpread] {
             let index1: i16 = 80 - i;
             let index2: i16 = 80 + i;
-            if (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][index1]
+            if (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][index1]
                 <= 15
             {
                 active = TRUE as u32;
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0][index1] += 1;
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][index1] += 1;
             }
-            if (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][index2]
+            if (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][index2]
                 <= 15
             {
                 active = TRUE as u32;
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[0][index2] += 1;
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][index2] += 1;
             }
             i += 1;
         }
@@ -2386,24 +2472,24 @@ pub(crate) unsafe fn Mugshot_GradualWhiteFade(task: *mut Task) -> u8 {
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn Mugshot_InitFadeWhiteToBlack(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     BlendPalettes(PALETTES_ALL, 16, 32767);
-    (*sTransitionData).BLDCNT = 0xFF;
+    (*crate::gl!(sTransitionData)).BLDCNT = 0xFF;
     (*task).data[3] = 0;
     (*task).data[tState] += 1;
     TRUE
 }
 pub(crate) unsafe fn Mugshot_FadeToBlack(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     (*task).data[3] += 1;
     memset(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut u8,
@@ -2414,8 +2500,8 @@ pub(crate) unsafe fn Mugshot_FadeToBlack(task: *mut Task) -> u8 {
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -2438,23 +2524,25 @@ pub(crate) unsafe fn VBlankCB_Mugshots() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -2465,19 +2553,29 @@ pub(crate) unsafe fn VBlankCB_Mugshots() {
     }
     volatile_write(
         67108882_usize as *mut u16,
-        (*sTransitionData).BG0VOFS as u16,
+        (*crate::gl!(sTransitionData)).BG0VOFS as u16,
     );
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
     {
         {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108928_usize as *mut u16 as usize as u32);
@@ -2494,23 +2592,25 @@ pub(crate) unsafe fn VBlankCB_MugshotsFadeOut() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -2519,15 +2619,19 @@ pub(crate) unsafe fn VBlankCB_MugshotsFadeOut() {
             }
         }
     }
-    volatile_write(67108944_usize as *mut u16, (*sTransitionData).BLDCNT);
+    volatile_write(
+        67108944_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDCNT,
+    );
     {
         {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108948_usize as *mut u16 as usize as u32);
@@ -2540,12 +2644,12 @@ pub(crate) unsafe fn HBlankCB_Mugshots() {
     if (67108870_usize as *mut u16).read_volatile() < 80 {
         volatile_write(
             67108880_usize as *mut u16,
-            (*sTransitionData).BG0HOFS_Lower as u16,
+            (*crate::gl!(sTransitionData)).BG0HOFS_Lower as u16,
         );
     } else {
         volatile_write(
             67108880_usize as *mut u16,
-            (*sTransitionData).BG0HOFS_Upper as u16,
+            (*crate::gl!(sTransitionData)).BG0HOFS_Upper as u16,
         );
     }
 }
@@ -2556,23 +2660,29 @@ unsafe fn Mugshots_CreateTrainerPics(task: *mut Task) {
         sMugshotsOpponentCoords[mugshotId][0] - 32,
         sMugshotsOpponentCoords[mugshotId][1] + 42,
         0,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr(),
     ) as i16;
     (*task).data[tPlayerSpriteId] = CreateTrainerSprite(
-        PlayerGenderToFrontTrainerPicId((*gSaveBlock2Ptr).playerGender) as u8,
+        PlayerGenderToFrontTrainerPicId((*crate::gl!(gSaveBlock2Ptr)).playerGender) as u8,
         272,
         106,
         0,
-        (*(&raw const crate::decompress::gDecompressionBuffer)
+        (*(crate::gl!(&raw @at crate::decompress::gDecompressionBuffer;).cast_const())
             .cast::<CArray<u8, 16384>>()
             .cast_mut())
         .as_mut_ptr(),
     ) as i16;
-    let opponentSprite: *mut Sprite = &raw mut gSprites[(*task).data[tOpponentSpriteId]];
-    let playerSprite: *mut Sprite = &raw mut gSprites[(*task).data[tPlayerSpriteId]];
+    let opponentSprite: *mut Sprite = {
+        let gl_i2 = (*task).data[tOpponentSpriteId];
+        crate::gl!(&raw gSprites[gl_i2])
+    };
+    let playerSprite: *mut Sprite = {
+        let gl_i3 = (*task).data[tPlayerSpriteId];
+        crate::gl!(&raw gSprites[gl_i3])
+    };
     (*opponentSprite).callback = Some(SpriteCB_MugshotTrainerPic);
     (*playerSprite).callback = Some(SpriteCB_MugshotTrainerPic);
     (*opponentSprite).oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
@@ -2655,13 +2765,22 @@ pub(crate) unsafe fn MugshotTrainerPic_SlideOffscreen(sprite: *mut Sprite) -> u8
     FALSE
 }
 unsafe fn SetTrainerPicSlideDirection(spriteId: i16, dirId: i16) {
-    gSprites[spriteId].data[sSlideDir] = dirId;
+    {
+        let gl_i4 = sSlideDir;
+        crate::gl!(gSprites[spriteId].data[gl_i4] = dirId)
+    };
 }
 unsafe fn IncrementTrainerPicState(spriteId: i16) {
-    gSprites[spriteId].data[sState] += 1;
+    {
+        let gl_i5 = sState;
+        crate::gl!(gSprites[spriteId].data[gl_i5] += 1)
+    };
 }
 unsafe fn IsTrainerPicSlideDone(spriteId: i16) -> i16 {
-    gSprites[spriteId].data[sDone]
+    {
+        let gl_i6 = sDone;
+        crate::gl!(gSprites[spriteId].data[gl_i6])
+    }
 }
 pub(crate) unsafe fn Task_Slice(taskId: u8) {
     while sSlice_Funcs[task_get(taskId, tState)].unwrap_unchecked()(
@@ -2674,15 +2793,15 @@ pub(crate) unsafe fn Slice_Init(task: *mut Task) -> u8 {
     ScanlineEffect_Clear();
     (*task).data[tSpeed] = 256;
     (*task).data[tAccel] = 1;
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
-    (*sTransitionData).WINOUT = 0;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WINOUT = 0;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     for i in 0..DISPLAY_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1][i] = (*sTransitionData).cameraX as u16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast_mut())[1][i] = (*crate::gl!(sTransitionData)).cameraX as u16;
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][DISPLAY_HEIGHT as i32 + i as i32] = DISPLAY_WIDTH;
     }
@@ -2694,7 +2813,7 @@ pub(crate) unsafe fn Slice_Init(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn Slice_Main(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     (*task).data[tEffectX] += (*task).data[tSpeed] >> 8;
     if (*task).data[tEffectX] > DISPLAY_WIDTH as i16 {
         (*task).data[tEffectX] = DISPLAY_WIDTH as i16;
@@ -2707,18 +2826,22 @@ pub(crate) unsafe fn Slice_Main(task: *mut Task) -> u8 {
     }
     for i in 0..DISPLAY_HEIGHT {
         let storeLoc1: *mut u16 =
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i];
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i];
         let storeLoc2: *mut u16 =
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][i as i32 + DISPLAY_HEIGHT as i32];
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i as i32 + DISPLAY_HEIGHT as i32];
         if i as i32 % 2 != 0 {
-            *storeLoc1 = (*sTransitionData).cameraX as u16 + (*task).data[tEffectX] as u16;
+            *storeLoc1 =
+                (*crate::gl!(sTransitionData)).cameraX as u16 + (*task).data[tEffectX] as u16;
             *storeLoc2 = DISPLAY_WIDTH - (*task).data[tEffectX] as u16;
         } else {
-            *storeLoc1 = (*sTransitionData).cameraX as u16 - (*task).data[tEffectX] as u16;
+            *storeLoc1 =
+                (*crate::gl!(sTransitionData)).cameraX as u16 - (*task).data[tEffectX] as u16;
             *storeLoc2 = ((*task).data[tEffectX] as u16) << 8 | 241;
         }
     }
@@ -2726,8 +2849,8 @@ pub(crate) unsafe fn Slice_Main(task: *mut Task) -> u8 {
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -2750,26 +2873,37 @@ pub(crate) unsafe fn VBlankCB_Slice() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x80000140);
@@ -2783,7 +2917,7 @@ pub(crate) unsafe fn VBlankCB_Slice() {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[1][160] as usize as u32,
             );
@@ -2795,9 +2929,10 @@ pub(crate) unsafe fn VBlankCB_Slice() {
 }
 pub(crate) unsafe fn HBlankCB_Slice() {
     if (67108870_usize as *mut u16).read_volatile() < DISPLAY_HEIGHT {
-        let var: u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
+        let var: u16 = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
         volatile_write(67108884_usize as *mut u16, var);
         volatile_write(67108888_usize as *mut u16, var);
         volatile_write(67108892_usize as *mut u16, var);
@@ -2812,29 +2947,29 @@ pub(crate) unsafe fn Task_ShredSplit(taskId: u8) {
 pub(crate) unsafe fn ShredSplit_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
-    (*sTransitionData).WINOUT = 0;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WINOUT = 0;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..DISPLAY_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1][i] = (*sTransitionData).cameraX as u16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast_mut())[1][i] = (*crate::gl!(sTransitionData)).cameraX as u16;
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][DISPLAY_HEIGHT as i32 + i as i32] = DISPLAY_WIDTH;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][i] = (*sTransitionData).cameraX as u16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast_mut())[0][i] = (*crate::gl!(sTransitionData)).cameraX as u16;
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][DISPLAY_HEIGHT as i32 + i as i32] = DISPLAY_WIDTH;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][320 + i as i32] = 0;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][480 + i as i32] = 256;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][640 + i as i32] = 1;
     }
@@ -2865,7 +3000,7 @@ pub(crate) unsafe fn ShredSplit_Main(task: *mut Task) -> u8 {
         sShredSplit_SectionMoveDirs.as_ptr().cast_mut() as *mut u8,
         4,
     );
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     let mut linesFinished: u8 = 0;
     let mut i: u16 = 0;
     while i as i32 <= (*task).data[tExtent] as i32 {
@@ -2874,15 +3009,15 @@ pub(crate) unsafe fn ShredSplit_Main(task: *mut Task) -> u8 {
                 y = baseY[j] as i16 + moveDirs[k] * -(i as i16) * 2;
                 if y >= 0 && (y != 79 || j != 1) {
                     ptr4 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + 320];
                     ptr3 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + 480];
                     ptr1 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + 640];
                     if *ptr4 >= DISPLAY_WIDTH {
@@ -2898,14 +3033,14 @@ pub(crate) unsafe fn ShredSplit_Main(task: *mut Task) -> u8 {
                         }
                     }
                     ptr2 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y];
                     ptr3 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + DISPLAY_HEIGHT as i32];
-                    *ptr2 = (*sTransitionData).cameraX as u16 + *ptr4;
+                    *ptr2 = (*crate::gl!(sTransitionData)).cameraX as u16 + *ptr4;
                     *ptr3 = DISPLAY_WIDTH - *ptr4;
                     if i == 0 {
                         break;
@@ -2918,15 +3053,15 @@ pub(crate) unsafe fn ShredSplit_Main(task: *mut Task) -> u8 {
                 y = baseY[j] as i16 + 1 + moveDirs[k] * -(i as i16) * 2;
                 if y <= DISPLAY_HEIGHT as i16 && (y != 80 || j != 1) {
                     ptr4 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + 320];
                     ptr3 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + 480];
                     ptr1 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + 640];
                     if *ptr4 >= DISPLAY_WIDTH {
@@ -2942,14 +3077,14 @@ pub(crate) unsafe fn ShredSplit_Main(task: *mut Task) -> u8 {
                         }
                     }
                     ptr2 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y];
                     ptr3 =
-                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                        &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                             .cast::<CArray<CArray<u16, 960>, 2>>()
                             .cast_mut())[0][y as i32 + DISPLAY_HEIGHT as i32];
-                    *ptr2 = (*sTransitionData).cameraX as u16 - *ptr4;
+                    *ptr2 = (*crate::gl!(sTransitionData)).cameraX as u16 - *ptr4;
                     *ptr3 = *ptr4 << 8 | 241;
                     if i == 0 {
                         break;
@@ -2974,8 +3109,8 @@ pub(crate) unsafe fn ShredSplit_Main(task: *mut Task) -> u8 {
         (*task).data[tState] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -2983,13 +3118,14 @@ pub(crate) unsafe fn ShredSplit_BrokenCheck(task: *mut Task) -> u8 {
     let mut done: u32 = TRUE as u32;
     let checkVar2: u16 = 0xFF10;
     for i in 0..DISPLAY_HEIGHT {
-        if (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        if (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i]
             != DISPLAY_WIDTH
-            && (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i]
+            && (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i]
                 != checkVar2
         {
             done = FALSE as u32;
@@ -3026,12 +3162,12 @@ pub(crate) unsafe fn Task_BlackholePulsate(taskId: u8) {
 pub(crate) unsafe fn Blackhole_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
-    (*sTransitionData).WININ = 0;
-    (*sTransitionData).WINOUT = WINOUT_WIN01_ALL;
-    (*sTransitionData).WIN0H = DISPLAY_WIDTH;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).WININ = 0;
+    (*crate::gl!(sTransitionData)).WINOUT = WINOUT_WIN01_ALL;
+    (*crate::gl!(sTransitionData)).WIN0H = DISPLAY_WIDTH;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..(DISPLAY_HEIGHT as i32) {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = 0;
     }
@@ -3053,7 +3189,7 @@ pub(crate) unsafe fn Blackhole_GrowEnd(task: *mut Task) -> u8 {
         SetVBlankCallback(None);
         DestroyTask(FindTaskIdByFunc((*task).func));
     } else {
-        volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+        volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
         if (*task).data[tGrowSpeed] < 1024 {
             (*task).data[tGrowSpeed] += 128;
         }
@@ -3064,9 +3200,10 @@ pub(crate) unsafe fn Blackhole_GrowEnd(task: *mut Task) -> u8 {
             (*task).data[tRadius] = DISPLAY_HEIGHT as i16;
         }
         SetCircularMask(
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0]
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0]
                 .as_mut_ptr(),
             120,
             80,
@@ -3077,15 +3214,15 @@ pub(crate) unsafe fn Blackhole_GrowEnd(task: *mut Task) -> u8 {
             FadeScreenBlack();
         } else {
             volatile_write(
-                &raw mut (*sTransitionData).VBlank_DMA,
-                (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+                &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+                (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
             );
         }
     }
     FALSE
 }
 pub(crate) unsafe fn Blackhole_Vibrate(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     if (*task).data[tFlag] == FALSE as i16 {
         (*task).data[tFlag] += 1;
         (*task).data[tRadius] = 48;
@@ -3094,7 +3231,7 @@ pub(crate) unsafe fn Blackhole_Vibrate(task: *mut Task) -> u8 {
     (*task).data[tRadius] += sBlackhole_Vibrations[(*task).data[tVibrateId]];
     (*task).data[tVibrateId] = (((*task).data[tVibrateId] as i32 + 1) % 2) as i16;
     SetCircularMask(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr(),
@@ -3107,14 +3244,14 @@ pub(crate) unsafe fn Blackhole_Vibrate(task: *mut Task) -> u8 {
         (*task).data[tFlag] = FALSE as i16;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn BlackholePulsate_Main(task: *mut Task) -> u8 {
     let mut amplitude: i16 = 0;
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     if (*task).data[tFlag] == FALSE as i16 {
         (*task).data[tFlag] += 1;
         (*task).data[5] = 2;
@@ -3124,7 +3261,7 @@ pub(crate) unsafe fn BlackholePulsate_Main(task: *mut Task) -> u8 {
         (*task).data[tRadius] = DISPLAY_HEIGHT as i16;
     }
     SetCircularMask(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr(),
@@ -3159,8 +3296,8 @@ pub(crate) unsafe fn BlackholePulsate_Main(task: *mut Task) -> u8 {
         (*task).data[6] += 1;
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -3202,26 +3339,26 @@ pub(crate) unsafe fn RectangularSpiral_Init(task: *mut Task) -> u8 {
     );
     (*task).data[3] = 1;
     (*task).data[tState] += 1;
-    sRectangularSpiralLines[0].state = 0;
-    sRectangularSpiralLines[0].position = -1;
-    sRectangularSpiralLines[0].moveIndex = 1;
-    sRectangularSpiralLines[0].reboundPosition = 308;
-    sRectangularSpiralLines[0].outward = 0;
-    sRectangularSpiralLines[1].state = SPIRAL_INWARD_START;
-    sRectangularSpiralLines[1].position = -1;
-    sRectangularSpiralLines[1].moveIndex = 1;
-    sRectangularSpiralLines[1].reboundPosition = 308;
-    sRectangularSpiralLines[1].outward = FALSE;
-    sRectangularSpiralLines[2].state = SPIRAL_INWARD_START;
-    sRectangularSpiralLines[2].position = -3;
-    sRectangularSpiralLines[2].moveIndex = 1;
-    sRectangularSpiralLines[2].reboundPosition = 307;
-    sRectangularSpiralLines[2].outward = FALSE;
-    sRectangularSpiralLines[3].state = SPIRAL_INWARD_START;
-    sRectangularSpiralLines[3].position = -3;
-    sRectangularSpiralLines[3].moveIndex = 1;
-    sRectangularSpiralLines[3].reboundPosition = 307;
-    sRectangularSpiralLines[3].outward = FALSE;
+    crate::gl!(sRectangularSpiralLines[0].state = 0);
+    crate::gl!(sRectangularSpiralLines[0].position = -1);
+    crate::gl!(sRectangularSpiralLines[0].moveIndex = 1);
+    crate::gl!(sRectangularSpiralLines[0].reboundPosition = 308);
+    crate::gl!(sRectangularSpiralLines[0].outward = 0);
+    crate::gl!(sRectangularSpiralLines[1].state = SPIRAL_INWARD_START);
+    crate::gl!(sRectangularSpiralLines[1].position = -1);
+    crate::gl!(sRectangularSpiralLines[1].moveIndex = 1);
+    crate::gl!(sRectangularSpiralLines[1].reboundPosition = 308);
+    crate::gl!(sRectangularSpiralLines[1].outward = FALSE);
+    crate::gl!(sRectangularSpiralLines[2].state = SPIRAL_INWARD_START);
+    crate::gl!(sRectangularSpiralLines[2].position = -3);
+    crate::gl!(sRectangularSpiralLines[2].moveIndex = 1);
+    crate::gl!(sRectangularSpiralLines[2].reboundPosition = 307);
+    crate::gl!(sRectangularSpiralLines[2].outward = FALSE);
+    crate::gl!(sRectangularSpiralLines[3].state = SPIRAL_INWARD_START);
+    crate::gl!(sRectangularSpiralLines[3].position = -3);
+    crate::gl!(sRectangularSpiralLines[3].moveIndex = 1);
+    crate::gl!(sRectangularSpiralLines[3].reboundPosition = 307);
+    crate::gl!(sRectangularSpiralLines[3].outward = FALSE);
     FALSE
 }
 pub(crate) unsafe fn RectangularSpiral_Main(task: *mut Task) -> u8 {
@@ -3236,11 +3373,11 @@ pub(crate) unsafe fn RectangularSpiral_Main(task: *mut Task) -> u8 {
             let mut y: i16 = 0;
             if UpdateRectangularSpiralLine(
                 sRectangularSpiral_MoveDataTables[j as i32 / 2],
-                &raw mut sRectangularSpiralLines[j],
+                crate::gl!(&raw sRectangularSpiralLines[j]),
             ) != 0
             {
                 done = FALSE as u32;
-                position = sRectangularSpiralLines[j].position;
+                position = crate::gl!(sRectangularSpiralLines[j].position);
                 if j as i32 % 2 == 1 {
                     position = 637 - position;
                 }
@@ -3416,7 +3553,7 @@ pub(crate) unsafe fn Rayquaza_Init(task: *mut Task) -> u8 {
         tileset as *mut c_void,
         4096,
     );
-    (*sTransitionData).counter = 0;
+    (*crate::gl!(sTransitionData)).counter = 0;
     (*task).data[tState] += 1;
     LoadPalette(
         (&raw const sRayquaza_Palette[80]).cast_mut() as *mut c_void,
@@ -3424,10 +3561,10 @@ pub(crate) unsafe fn Rayquaza_Init(task: *mut Task) -> u8 {
         32,
     );
     for i in 0..DISPLAY_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][i] = 0;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = 0x100;
     }
@@ -3475,8 +3612,8 @@ pub(crate) unsafe fn Rayquaza_FadeToBlack(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn Rayquaza_WaitFade(task: *mut Task) -> u8 {
-    if gPaletteFade.active() == 0 {
-        (*sTransitionData).counter = 1;
+    if (*gPaletteFade.as_ptr()).active() == 0 {
+        (*crate::gl!(sTransitionData)).counter = 1;
         (*task).data[tState] += 1;
     }
     FALSE
@@ -3498,14 +3635,15 @@ pub(crate) unsafe fn Rayquaza_TriRing(task: *mut Task) -> u8 {
         (*task).data[1]
     }) >= 40
     {
-        (*sTransitionData).WININ = 0;
-        (*sTransitionData).WINOUT = WINOUT_WIN01_ALL;
-        (*sTransitionData).WIN0H = DISPLAY_WIDTH;
-        (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+        (*crate::gl!(sTransitionData)).WININ = 0;
+        (*crate::gl!(sTransitionData)).WINOUT = WINOUT_WIN01_ALL;
+        (*crate::gl!(sTransitionData)).WIN0H = DISPLAY_WIDTH;
+        (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
         for i in 0..DISPLAY_HEIGHT {
-            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[1][i] = 0;
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = 0;
         }
         SetVBlankCallback(Some(VBlankCB_CircularMask));
         (*task).data[tState] += 1;
@@ -3524,20 +3662,23 @@ pub(crate) unsafe fn VBlankCB_Rayquaza() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (*sTransitionData).counter == 0 {
-        dmaSrc = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0]
+    if (*crate::gl!(sTransitionData)).counter == 0 {
+        dmaSrc = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[0]
             .as_mut_ptr() as *mut c_void;
-    } else if (*sTransitionData).counter == 1 {
-        dmaSrc = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1]
+    } else if (*crate::gl!(sTransitionData)).counter == 1 {
+        dmaSrc = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[1]
             .as_mut_ptr() as *mut c_void;
     } else {
-        dmaSrc = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-            .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0]
+        dmaSrc = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+            .cast_const())
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[0]
             .as_mut_ptr() as *mut c_void;
     }
     {
@@ -3559,16 +3700,16 @@ pub(crate) unsafe fn Task_WhiteBarsFade(taskId: u8) {
 pub(crate) unsafe fn WhiteBarsFade_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
-    (*sTransitionData).BLDCNT = 191;
-    (*sTransitionData).BLDY = 0;
-    (*sTransitionData).WININ = 30;
-    (*sTransitionData).WINOUT = WINOUT_WIN01_ALL;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).BLDCNT = 191;
+    (*crate::gl!(sTransitionData)).BLDY = 0;
+    (*crate::gl!(sTransitionData)).WININ = 30;
+    (*crate::gl!(sTransitionData)).WINOUT = WINOUT_WIN01_ALL;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..DISPLAY_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i] = 0;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][i as i32 + DISPLAY_HEIGHT as i32] = DISPLAY_WIDTH;
     }
@@ -3589,7 +3730,10 @@ pub(crate) unsafe fn WhiteBarsFade_StartBars(task: *mut Task) -> u8 {
     let mut i: i16 = 0;
     let mut posY: i16 = 0;
     while i < NUM_WHITE_BARS {
-        sprite = &raw mut gSprites[CreateInvisibleSprite(Some(SpriteCB_WhiteBarFade))];
+        sprite = {
+            let gl_i7 = CreateInvisibleSprite(Some(SpriteCB_WhiteBarFade));
+            crate::gl!(&raw gSprites[gl_i7])
+        };
         (*sprite).x = DISPLAY_WIDTH as i16;
         (*sprite).y = posY;
         (*sprite).data[5] = delays[i];
@@ -3601,15 +3745,15 @@ pub(crate) unsafe fn WhiteBarsFade_StartBars(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn WhiteBarsFade_WaitBars(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, 0);
-    if (*sTransitionData).counter >= NUM_WHITE_BARS {
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, 0);
+    if (*crate::gl!(sTransitionData)).counter >= NUM_WHITE_BARS {
         BlendPalettes(PALETTES_ALL, 16, 32767);
         (*task).data[tState] += 1;
     }
     FALSE
 }
 pub(crate) unsafe fn WhiteBarsFade_BlendToBlack(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, 0);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, 0);
     {
         let dmaRegs: *mut u16 = 67109040_usize as *mut u16;
         volatile_write(dmaRegs.at(5), (dmaRegs.at(5)).read_volatile() & 50687);
@@ -3618,18 +3762,18 @@ pub(crate) unsafe fn WhiteBarsFade_BlendToBlack(task: *mut Task) -> u8 {
     }
     SetVBlankCallback(None);
     SetHBlankCallback(None);
-    (*sTransitionData).WIN0H = DISPLAY_WIDTH;
-    (*sTransitionData).BLDY = 0;
-    (*sTransitionData).BLDCNT = 0xFF;
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WIN0H = DISPLAY_WIDTH;
+    (*crate::gl!(sTransitionData)).BLDY = 0;
+    (*crate::gl!(sTransitionData)).BLDCNT = 0xFF;
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
     SetVBlankCallback(Some(VBlankCB_WhiteBarsFade_Blend));
     (*task).data[tState] += 1;
     FALSE
 }
 pub(crate) unsafe fn WhiteBarsFade_End(task: *mut Task) -> u8 {
     if ({
-        (*sTransitionData).BLDY += 1;
-        (*sTransitionData).BLDY
+        (*crate::gl!(sTransitionData)).BLDY += 1;
+        (*crate::gl!(sTransitionData)).BLDY
     }) > 16
     {
         FadeScreenBlack();
@@ -3645,27 +3789,41 @@ pub(crate) unsafe fn VBlankCB_WhiteBarsFade() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    volatile_write(67108944_usize as *mut u16, (*sTransitionData).BLDCNT);
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    volatile_write(
+        67108944_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDCNT,
+    );
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x80000140);
@@ -3679,7 +3837,7 @@ pub(crate) unsafe fn VBlankCB_WhiteBarsFade() {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
                     .cast::<CArray<CArray<u16, 960>, 2>>()
                     .cast_mut())[1][160] as usize as u32,
             );
@@ -3691,17 +3849,35 @@ pub(crate) unsafe fn VBlankCB_WhiteBarsFade() {
 }
 pub(crate) unsafe fn VBlankCB_WhiteBarsFade_Blend() {
     VBlankCB_BattleTransition();
-    volatile_write(67108948_usize as *mut u16, (*sTransitionData).BLDY);
-    volatile_write(67108944_usize as *mut u16, (*sTransitionData).BLDCNT);
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108928_usize as *mut u16, (*sTransitionData).WIN0H);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
+    volatile_write(
+        67108948_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDY,
+    );
+    volatile_write(
+        67108944_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDCNT,
+    );
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108928_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0H,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
 }
 pub(crate) unsafe fn HBlankCB_WhiteBarsFade() {
     volatile_write(
         67108948_usize as *mut u16,
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()],
     );
@@ -3710,17 +3886,19 @@ pub(crate) unsafe fn SpriteCB_WhiteBarFade(sprite: *mut Sprite) {
     if (*sprite).data[5] != 0 {
         (*sprite).data[5] -= 1;
         if (*sprite).data[sIsMainSprite] != 0 {
-            volatile_write(&raw mut (*sTransitionData).VBlank_DMA, 1);
+            volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, 1);
         }
     } else {
         let ptr1: *mut u16 =
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][(*sprite).y];
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][(*sprite).y];
         let ptr2: *mut u16 =
-            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                .cast::<CArray<CArray<u16, 960>, 2>>()
-                .cast_mut())[0][(*sprite).y as i32 + DISPLAY_HEIGHT as i32];
+            &raw mut (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][(*sprite).y as i32 + DISPLAY_HEIGHT as i32];
         for i in 0..20u16 {
             *ptr1.at(i) = ((*sprite).data[sFade] >> 8) as u16;
             *ptr2.at(i) = (*sprite).x as u8 as u16;
@@ -3737,18 +3915,18 @@ pub(crate) unsafe fn SpriteCB_WhiteBarFade(sprite: *mut Sprite) {
             (*sprite).data[sFade] = FADE_TARGET;
         }
         if (*sprite).data[sIsMainSprite] != 0 {
-            volatile_write(&raw mut (*sTransitionData).VBlank_DMA, 1);
+            volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, 1);
         }
         if (*sprite).data[sFinished] != 0
             && ((*sprite).data[sIsMainSprite] == 0
-                || (*sTransitionData).counter >= 7
+                || (*crate::gl!(sTransitionData)).counter >= 7
                     && ({
                         let t1 = (*sprite).data[sDestroyAttempts];
                         (*sprite).data[sDestroyAttempts] += 1;
                         t1
                     }) > 7)
         {
-            (*sTransitionData).counter += 1;
+            (*crate::gl!(sTransitionData)).counter += 1;
             DestroySprite(sprite);
         }
     }
@@ -3827,20 +4005,20 @@ pub(crate) unsafe fn Task_AngledWipes(taskId: u8) {
 pub(crate) unsafe fn AngledWipes_Init(task: *mut Task) -> u8 {
     InitTransitionData();
     ScanlineEffect_Clear();
-    (*sTransitionData).WININ = WININ_WIN0_ALL;
-    (*sTransitionData).WINOUT = 0;
-    (*sTransitionData).WIN0V = DISPLAY_HEIGHT;
+    (*crate::gl!(sTransitionData)).WININ = WININ_WIN0_ALL;
+    (*crate::gl!(sTransitionData)).WINOUT = 0;
+    (*crate::gl!(sTransitionData)).WIN0V = DISPLAY_HEIGHT;
     for i in 0..DISPLAY_HEIGHT {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0][i] = DISPLAY_WIDTH;
     }
     CpuSet(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut c_void,
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1]
             .as_mut_ptr() as *mut c_void,
@@ -3852,7 +4030,7 @@ pub(crate) unsafe fn AngledWipes_Init(task: *mut Task) -> u8 {
 }
 pub(crate) unsafe fn AngledWipes_SetWipeData(task: *mut Task) -> u8 {
     InitBlackWipe(
-        (*sTransitionData).data.as_mut_ptr(),
+        (*crate::gl!(sTransitionData)).data.as_mut_ptr(),
         sAngledWipes_MoveData[(*task).data[tWipeId]][0],
         sAngledWipes_MoveData[(*task).data[tWipeId]][1],
         sAngledWipes_MoveData[(*task).data[tWipeId]][2],
@@ -3865,44 +4043,49 @@ pub(crate) unsafe fn AngledWipes_SetWipeData(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn AngledWipes_DoWipe(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, 0);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, 0);
     let mut finished: u8 = 0;
     for i in 0..16i16 {
-        let mut r3: i16 = ((*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        let mut r3: i16 =
+            ((*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]]
-            >> 8) as i16;
-        let mut r4: i16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]]
+                >> 8) as i16;
+        let mut r4: i16 =
+            (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                .cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] as i16
-            & 0xFF;
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] as i16
+                & 0xFF;
         if (*task).data[2] == 0 {
-            if r3 < (*sTransitionData).data[2] {
-                r3 = (*sTransitionData).data[2];
+            if r3 < (*crate::gl!(sTransitionData)).data[2] {
+                r3 = (*crate::gl!(sTransitionData)).data[2];
             }
             if r3 > r4 {
                 r3 = r4;
             }
         } else {
-            if r4 > (*sTransitionData).data[2] {
-                r4 = (*sTransitionData).data[2];
+            if r4 > (*crate::gl!(sTransitionData)).data[2] {
+                r4 = (*crate::gl!(sTransitionData)).data[2];
             }
             if r4 <= r3 {
                 r4 = r3;
             }
         }
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][(*sTransitionData).data[tWipeCurrY]] = r4 as u16 | (r3 as u16) << 8;
+            .cast_mut())[0][(*crate::gl!(sTransitionData)).data[tWipeCurrY]] =
+            r4 as u16 | (r3 as u16) << 8;
         if finished != 0 {
             (*task).data[tState] += 1;
             break;
         }
-        finished = UpdateBlackWipe((*sTransitionData).data.as_mut_ptr(), TRUE, TRUE);
+        finished = UpdateBlackWipe((*crate::gl!(sTransitionData)).data.as_mut_ptr(), TRUE, TRUE);
     }
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
@@ -3950,23 +4133,25 @@ pub(crate) unsafe fn VBlankCB_AngledWipes() {
         let _ = (dmaRegs.at(5)).read_volatile();
     }
     VBlankCB_BattleTransition();
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -3975,12 +4160,21 @@ pub(crate) unsafe fn VBlankCB_AngledWipes() {
             }
         }
     }
-    volatile_write(67108936_usize as *mut u16, (*sTransitionData).WININ);
-    volatile_write(67108938_usize as *mut u16, (*sTransitionData).WINOUT);
-    volatile_write(67108932_usize as *mut u16, (*sTransitionData).WIN0V);
+    volatile_write(
+        67108936_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WININ,
+    );
+    volatile_write(
+        67108938_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WINOUT,
+    );
+    volatile_write(
+        67108932_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).WIN0V,
+    );
     volatile_write(
         67108928_usize as *mut u16,
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[1][0],
     );
@@ -3989,9 +4183,10 @@ pub(crate) unsafe fn VBlankCB_AngledWipes() {
             let dmaRegs: *mut u32 = 67109040_usize as *mut u32;
             volatile_write(
                 dmaRegs,
-                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                    .cast::<CArray<CArray<u16, 960>, 2>>()
-                    .cast_mut())[1]
+                (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                    .cast_const())
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1]
                     .as_mut_ptr() as usize as u32,
             );
             volatile_write(dmaRegs.at(1), 67108928_usize as *mut u16 as usize as u32);
@@ -4081,10 +4276,10 @@ pub(crate) unsafe fn TransitionIntro_FadeFromGray(task: *mut Task) -> u8 {
     FALSE
 }
 unsafe fn InitTransitionData() {
-    memset(sTransitionData as *mut u8, 0, 60);
+    memset(crate::gl!(sTransitionData) as *mut u8, 0, 60);
     GetCameraOffsetWithPan(
-        &raw mut (*sTransitionData).cameraX,
-        &raw mut (*sTransitionData).cameraY,
+        &raw mut (*crate::gl!(sTransitionData)).cameraX,
+        &raw mut (*crate::gl!(sTransitionData)).cameraY,
     );
 }
 unsafe fn VBlankCB_BattleTransition() {
@@ -4292,7 +4487,7 @@ pub(crate) unsafe fn FrontierLogoWiggle_SetGfx(task: *mut Task) -> u8 {
         tilemap as *mut c_void,
     );
     SetSinWave(
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
             .cast_mut())[0]
             .as_mut_ptr() as *mut i16,
@@ -4328,10 +4523,17 @@ pub(crate) unsafe fn FrontierLogoWave_Init(task: *mut Task) -> u8 {
     (*task).data[5] = 0;
     (*task).data[6] = 16;
     (*task).data[tSinDecrement] = 2560;
-    (*sTransitionData).BLDCNT = 16193;
-    (*sTransitionData).BLDALPHA = ((*task).data[6] as u16) << 8 | (*task).data[5] as u16;
-    volatile_write(67108944_usize as *mut u16, (*sTransitionData).BLDCNT);
-    volatile_write(67108946_usize as *mut u16, (*sTransitionData).BLDALPHA);
+    (*crate::gl!(sTransitionData)).BLDCNT = 16193;
+    (*crate::gl!(sTransitionData)).BLDALPHA =
+        ((*task).data[6] as u16) << 8 | (*task).data[5] as u16;
+    volatile_write(
+        67108944_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDCNT,
+    );
+    volatile_write(
+        67108946_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDALPHA,
+    );
     GetBg0TilesDst(&raw mut tilemap, &raw mut tileset);
     {
         {
@@ -4353,7 +4555,7 @@ pub(crate) unsafe fn FrontierLogoWave_Init(task: *mut Task) -> u8 {
         240,
         32,
     );
-    (*sTransitionData).cameraY = 0;
+    (*crate::gl!(sTransitionData)).cameraY = 0;
     (*task).data[tState] += 1;
     FALSE
 }
@@ -4370,9 +4572,9 @@ pub(crate) unsafe fn FrontierLogoWave_SetGfx(task: *mut Task) -> u8 {
 }
 pub(crate) unsafe fn FrontierLogoWave_InitScanline(task: *mut Task) -> u8 {
     for i in 0..(DISPLAY_HEIGHT as u8) {
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[1][i] = (*sTransitionData).cameraY as u16;
+            .cast_mut())[1][i] = (*crate::gl!(sTransitionData)).cameraY as u16;
     }
     SetVBlankCallback(Some(VBlankCB_FrontierLogoWave));
     SetHBlankCallback(Some(HBlankCB_FrontierLogoWave));
@@ -4381,7 +4583,7 @@ pub(crate) unsafe fn FrontierLogoWave_InitScanline(task: *mut Task) -> u8 {
     TRUE
 }
 pub(crate) unsafe fn FrontierLogoWave_Main(task: *mut Task) -> u8 {
-    volatile_write(&raw mut (*sTransitionData).VBlank_DMA, FALSE);
+    volatile_write(&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA, FALSE);
     let amplitude: u16 = ((*task).data[tAmplitudeVal] >> 8) as u16;
     let mut sinVal: u16 = (*task).data[tSinVal] as u16;
     let sinSpread: u16 = 384;
@@ -4399,15 +4601,16 @@ pub(crate) unsafe fn FrontierLogoWave_Main(task: *mut Task) -> u8 {
         } else if (*task).data[6] > 0 {
             (*task).data[6] -= 1;
         }
-        (*sTransitionData).BLDALPHA = ((*task).data[6] as u16) << 8 | (*task).data[5] as u16;
+        (*crate::gl!(sTransitionData)).BLDALPHA =
+            ((*task).data[6] as u16) << 8 | (*task).data[5] as u16;
     }
     let mut i: u8 = 0;
     while i < DISPLAY_HEIGHT as u8 {
         let index: i16 = (sinVal as i32 / 256) as i16;
-        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;).cast_const())
             .cast::<CArray<CArray<u16, 960>, 2>>()
-            .cast_mut())[0][i] =
-            (*sTransitionData).cameraY as u16 + Sin(index & 0xff, amplitude as i16) as u16;
+            .cast_mut())[0][i] = (*crate::gl!(sTransitionData)).cameraY as u16
+            + Sin(index & 0xff, amplitude as i16) as u16;
         i += 1;
         sinVal += sinSpread;
     }
@@ -4419,37 +4622,45 @@ pub(crate) unsafe fn FrontierLogoWave_Main(task: *mut Task) -> u8 {
         (*task).data[tStartedFade] += 1;
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     }
-    if (*task).data[tStartedFade] != 0 && gPaletteFade.active() == 0 {
+    if (*task).data[tStartedFade] != 0 && (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(FindTaskIdByFunc(Some(Task_FrontierLogoWave)));
     }
     (*task).data[tSinDecrement] -= 17;
     volatile_write(
-        &raw mut (*sTransitionData).VBlank_DMA,
-        (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() + 1,
+        &raw mut (*crate::gl!(sTransitionData)).VBlank_DMA,
+        (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() + 1,
     );
     FALSE
 }
 pub(crate) unsafe fn VBlankCB_FrontierLogoWave() {
     VBlankCB_BattleTransition();
-    volatile_write(67108944_usize as *mut u16, (*sTransitionData).BLDCNT);
-    volatile_write(67108946_usize as *mut u16, (*sTransitionData).BLDALPHA);
-    if (&raw mut (*sTransitionData).VBlank_DMA).read_volatile() != 0 {
+    volatile_write(
+        67108944_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDCNT,
+    );
+    volatile_write(
+        67108946_usize as *mut u16,
+        (*crate::gl!(sTransitionData)).BLDALPHA,
+    );
+    if (&raw mut (*crate::gl!(sTransitionData)).VBlank_DMA).read_volatile() != 0 {
         {
             {
                 {
                     let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[0]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[0]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-                            .cast::<CArray<CArray<u16, 960>, 2>>()
-                            .cast_mut())[1]
+                        (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+                            .cast_const())
+                        .cast::<CArray<CArray<u16, 960>, 2>>()
+                        .cast_mut())[1]
                             .as_mut_ptr() as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
@@ -4460,9 +4671,10 @@ pub(crate) unsafe fn VBlankCB_FrontierLogoWave() {
     }
 }
 pub(crate) unsafe fn HBlankCB_FrontierLogoWave() {
-    let var: u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
-        .cast::<CArray<CArray<u16, 960>, 2>>()
-        .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
+    let var: u16 = (*(crate::gl!(&raw @at crate::scanline_effect::gScanlineEffectRegBuffers;)
+        .cast_const())
+    .cast::<CArray<CArray<u16, 960>, 2>>()
+    .cast_mut())[1][(67108870_usize as *mut u16).read_volatile()];
     volatile_write(67108882_usize as *mut u16, var);
 }
 pub(crate) unsafe fn Task_FrontierSquares(taskId: u8) {
@@ -4552,8 +4764,8 @@ pub(crate) unsafe fn FrontierSquares_Shrink(task: *mut Task) -> u8 {
         match (*task).data[tShrinkState] {
             0 => {
                 for i in 250..255u8 {
-                    gPlttBufferUnfaded[i] = 0;
-                    gPlttBufferFaded[i] = 0;
+                    crate::gl!(gPlttBufferUnfaded[i] = 0);
+                    crate::gl!(gPlttBufferFaded[i] = 0);
                 }
             }
             1 => {
@@ -4718,10 +4930,16 @@ pub(crate) unsafe fn Task_ScrollBg(taskId: u8) {
         task_get(taskId, tScrollUpdateFlag)
     }) == 0
     {
-        SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_X);
-        SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_Y);
-        gBattle_BG0_X += task_get(taskId, tScrollXDir) as u16;
-        gBattle_BG0_Y += task_get(taskId, tScrollYDir) as u16;
+        SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_X.get());
+        SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_Y.get());
+        {
+            let rhs = task_get(taskId, tScrollXDir) as u16;
+            gBattle_BG0_X.set(gBattle_BG0_X.get() + rhs)
+        };
+        {
+            let rhs = task_get(taskId, tScrollYDir) as u16;
+            gBattle_BG0_Y.set(gBattle_BG0_Y.get() + rhs)
+        };
     }
 }
 pub(crate) unsafe fn FrontierSquaresScroll_Init(task: *mut Task) -> u8 {
@@ -4739,10 +4957,10 @@ pub(crate) unsafe fn FrontierSquaresScroll_Init(task: *mut Task) -> u8 {
         240,
         32,
     );
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
-    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_X);
-    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_Y);
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_X.get());
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_Y.get());
     (*task).data[tSquareNum] = 0;
     let taskId: u8 = CreateTask(Some(Task_ScrollBg), 1);
     match Random() as i32 % 4 {
@@ -4826,10 +5044,10 @@ pub(crate) unsafe fn FrontierSquaresScroll_Erase(task: *mut Task) -> u8 {
     FALSE
 }
 pub(crate) unsafe fn FrontierSquaresScroll_End(task: *mut Task) -> u8 {
-    gBattle_BG0_X = 0;
-    gBattle_BG0_Y = 0;
+    gBattle_BG0_X.set(0);
+    gBattle_BG0_Y.set(0);
     SetGpuReg(REG_OFFSET_BG0VOFS, 0);
-    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_Y);
+    SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_Y.get());
     FillBgTilemapBufferRect_Palette0(0, 1, 0, 0, 32, 32);
     CopyBgTilemapBufferToVram(0);
     BlendPalettes(PALETTES_ALL, 16, 0);

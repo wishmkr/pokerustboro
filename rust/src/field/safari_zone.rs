@@ -44,21 +44,24 @@ const BATTLE_RESULTS_POKEBLOCK_THROWS: usize = 31;
 type MainCallback = unsafe fn();
 
 #[unsafe(no_mangle)]
-#[unsafe(link_section = "ewram_data")]
-pub static mut gNumSafariBalls: u8 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gNumSafariBalls: crate::global::Global<u8> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static STEP_COUNTER: crate::global::Global<u16> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static CAUGHT_MONS: crate::global::Global<u8> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 static PKBLK_USES: crate::global::Global<u8> = crate::global::Global::new(0);
 
-#[unsafe(link_section = "ewram_data")]
-static mut POKEBLOCK_FEEDERS: crate::ffi::Align4<[[u8; FEEDER_STRIDE]; NUM_POKEBLOCK_FEEDERS]> =
-    crate::ffi::Align4([[0; FEEDER_STRIDE]; NUM_POKEBLOCK_FEEDERS]);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+static POKEBLOCK_FEEDERS: crate::global::Global<
+    crate::ffi::Align4<[[u8; FEEDER_STRIDE]; NUM_POKEBLOCK_FEEDERS]>,
+> = crate::global::Global::new(crate::ffi::Align4(
+    [[0; FEEDER_STRIDE]; NUM_POKEBLOCK_FEEDERS],
+));
 
 /// `IncrementGameStat` with this module's view of its types.
 #[inline]
@@ -155,7 +158,7 @@ unsafe fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16) {
 #[inline]
 unsafe fn feeder(index: usize) -> *mut u8 {
     unsafe {
-        (&raw mut POKEBLOCK_FEEDERS)
+        (crate::gl!(&raw POKEBLOCK_FEEDERS))
             .cast::<u8>()
             .add(index * FEEDER_STRIDE)
     }
@@ -174,7 +177,7 @@ unsafe fn feeder_u8(index: usize, offset: usize) -> u8 {
 #[inline]
 unsafe fn current_map_num() -> u8 {
     unsafe {
-        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+        (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
             .cast::<*mut u8>()
             .cast_mut())
         .add(SAVE1_LOCATION_MAP_NUM)
@@ -200,7 +203,7 @@ pub unsafe fn ResetSafariZoneFlag() {
 unsafe fn clear_all_pokeblock_feeders() {
     unsafe {
         core::ptr::write_bytes(
-            (&raw mut POKEBLOCK_FEEDERS).cast::<u8>(),
+            (crate::gl!(&raw POKEBLOCK_FEEDERS)).cast::<u8>(),
             0,
             FEEDER_STRIDE * NUM_POKEBLOCK_FEEDERS,
         )
@@ -212,7 +215,7 @@ pub unsafe fn EnterSafariMode() {
     unsafe { IncrementGameStat(GAME_STAT_ENTERED_SAFARI_ZONE) };
     unsafe { SetSafariZoneFlag() };
     unsafe { clear_all_pokeblock_feeders() };
-    unsafe { (&raw mut gNumSafariBalls).write_volatile(SAFARI_BALLS) };
+    unsafe { (gNumSafariBalls.as_ptr()).write_volatile(SAFARI_BALLS) };
     unsafe { (STEP_COUNTER.as_ptr()).write_volatile(SAFARI_STEPS) };
     unsafe { (CAUGHT_MONS.as_ptr()).write_volatile(0) };
     unsafe { (PKBLK_USES.as_ptr()).write_volatile(0) };
@@ -228,7 +231,7 @@ pub unsafe fn ExitSafariMode() {
     };
     unsafe { ResetSafariZoneFlag() };
     unsafe { clear_all_pokeblock_feeders() };
-    unsafe { (&raw mut gNumSafariBalls).write_volatile(0) };
+    unsafe { (gNumSafariBalls.as_ptr()).write_volatile(0) };
     unsafe { (STEP_COUNTER.as_ptr()).write_volatile(0) };
 }
 
@@ -279,7 +282,7 @@ pub unsafe fn SafariZoneRetirePrompt() {
 #[unsafe(no_mangle)]
 pub unsafe fn CB2_EndSafariBattle() {
     let throws = unsafe {
-        (&raw const (*(&raw const crate::battle_main::gBattleResults)
+        (&raw const (*(crate::gl!(&raw @at crate::battle_main::gBattleResults;).cast_const())
             .cast::<u8>()
             .cast_mut()))
             .add(BATTLE_RESULTS_POKEBLOCK_THROWS)
@@ -288,13 +291,13 @@ pub unsafe fn CB2_EndSafariBattle() {
     let uses = unsafe { (PKBLK_USES.as_ptr().cast_const()).read_volatile() }.wrapping_add(throws);
     unsafe { (PKBLK_USES.as_ptr()).write_volatile(uses) };
 
-    let outcome = unsafe { (&raw const gBattleOutcome).read_volatile() };
+    let outcome = unsafe { (gBattleOutcome.as_ptr().cast_const()).read_volatile() };
     if outcome == B_OUTCOME_CAUGHT {
         let caught = unsafe { (CAUGHT_MONS.as_ptr().cast_const()).read_volatile() }.wrapping_add(1);
         unsafe { (CAUGHT_MONS.as_ptr()).write_volatile(caught) };
     }
 
-    if unsafe { (&raw const gNumSafariBalls).read_volatile() } != 0 {
+    if unsafe { (gNumSafariBalls.as_ptr().cast_const()).read_volatile() } != 0 {
         unsafe { SetMainCallback2(CB2_ReturnToField) };
     } else if outcome == B_OUTCOME_NO_SAFARI_BALLS {
         // Ran out mid-battle: warp out and tell the player on arrival.
@@ -306,7 +309,7 @@ pub unsafe fn CB2_EndSafariBattle() {
         };
         unsafe { WarpIntoMap() };
         unsafe {
-            (&raw mut (*(&raw const crate::overworld::gFieldCallback)
+            (&raw mut (*(crate::gl!(&raw @at crate::overworld::gFieldCallback;).cast_const())
                 .cast::<Option<MainCallback>>()
                 .cast_mut()))
                 .write(Some(FieldCB_ReturnToFieldNoScriptCheckMusic))
@@ -422,7 +425,7 @@ pub unsafe fn SafariZoneActivatePokeblockFeeder(pkbl_id: u8) {
         unsafe { slot.add(FEEDER_MAP_NUM).write_volatile(current_map_num()) };
         unsafe {
             core::ptr::copy_nonoverlapping(
-                (*(&raw const crate::load_save::gSaveBlock1Ptr)
+                (*(crate::gl!(&raw @at crate::load_save::gSaveBlock1Ptr;).cast_const())
                     .cast::<*mut u8>()
                     .cast_mut())
                 .add(SAVE1_POKEBLOCKS + pkbl_id as usize * POKEBLOCK_SIZE),
@@ -448,7 +451,7 @@ pub unsafe fn GetInFrontFeederPokeblockAndSteps() -> u8 {
     let steps = unsafe { feeder_u8(result as usize, FEEDER_STEP_COUNTER) };
     let _ = unsafe {
         ConvertIntToDecimalStringN(
-            (&raw mut gStringVar2).cast::<u8>(),
+            (crate::gl!(&raw gStringVar2)).cast::<u8>(),
             i32::from(steps),
             STR_CONV_MODE_LEADING_ZEROS,
             3,

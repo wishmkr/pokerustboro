@@ -125,7 +125,7 @@ unsafe fn Free(a0: *mut c_void) {
 }
 /// `GetMaxWidthInMenuTable` with this module's view of its types.
 #[inline]
-unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
     unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
 }
 /// `GetStringRightAlignXOffset` with this module's view of its types.
@@ -135,19 +135,19 @@ unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
 }
 /// `InitBgsFromTemplates` with this module's view of its types.
 #[inline]
-unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
     unsafe {
         crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
     }
 }
 /// `InitWindows` with this module's view of its types.
 #[inline]
-unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+fn InitWindows(a0: *mut WindowTemplate) -> u16 {
     unsafe { crate::window::InitWindows(a0 as _) }
 }
 /// `LZDecompressWram` with this module's view of its types.
 #[inline]
-unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::decompress::LZDecompressWram(a0 as _, a1 as _);
     }
@@ -286,18 +286,23 @@ static sShopMenuWindowTemplates: Table<CArray<WindowTemplate, 2>> =
 static sShopPurchaseYesNoFuncs: Table<YesNoFuncTable> =
     Table((&raw const crate::data::shop::sShopPurchaseYesNoFuncs).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMartInfo: MartInfo = unsafe { zeroed() };
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sShopData: *mut ShopData = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sListMenuItems: *mut ListMenuItem = null_mut();
-#[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sItemNames: *mut CArray<u8, 16> = null_mut();
-#[unsafe(link_section = "ewram_data")]
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sMartInfo: crate::global::Global<MartInfo> =
+    crate::global::Global::new(unsafe { zeroed() });
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sShopData: crate::global::Global<*mut ShopData> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sListMenuItems: crate::global::Global<*mut ListMenuItem> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub(crate) static sItemNames: crate::global::Global<*mut CArray<u8, 16>> =
+    crate::global::Global::new(null_mut());
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
 pub(crate) static sPurchaseHistoryId: crate::global::Global<u8> = crate::global::Global::new(0);
-#[unsafe(link_section = "ewram_data")]
-pub static mut gMartPurchaseHistory: CArray<ItemSlot, 3> = unsafe { zeroed() };
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gMartPurchaseHistory: crate::global::Global<CArray<ItemSlot, 3>> =
+    crate::global::Global::new(unsafe { zeroed() });
 
 /// `Alloc` with this module's view of its types.
 #[inline]
@@ -332,42 +337,42 @@ unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
 unsafe fn CreateShopMenu(martType: u8) -> u8 {
     let mut numMenuItems: i32 = 0;
     LockPlayerFieldControls();
-    sMartInfo.martType = martType;
+    crate::gl!(sMartInfo.martType = martType);
     if martType == MART_TYPE_NORMAL {
         let mut winTemplate: WindowTemplate = sShopMenuWindowTemplates[0];
         winTemplate.width =
             GetMaxWidthInMenuTable(sShopMenuActions_BuySellQuit.as_ptr().cast_mut(), 3) as u8;
-        sMartInfo.windowId = AddWindow(&raw mut winTemplate) as u8;
-        sMartInfo.menuActions = sShopMenuActions_BuySellQuit.as_ptr().cast_mut();
+        crate::gl!(sMartInfo.windowId = AddWindow(&raw mut winTemplate) as u8);
+        crate::gl!(sMartInfo.menuActions = sShopMenuActions_BuySellQuit.as_ptr().cast_mut());
         numMenuItems = 3;
     } else {
         let mut winTemplate: WindowTemplate = sShopMenuWindowTemplates[1];
         winTemplate.width =
             GetMaxWidthInMenuTable(sShopMenuActions_BuyQuit.as_ptr().cast_mut(), 2) as u8;
-        sMartInfo.windowId = AddWindow(&raw mut winTemplate) as u8;
-        sMartInfo.menuActions = sShopMenuActions_BuyQuit.as_ptr().cast_mut();
+        crate::gl!(sMartInfo.windowId = AddWindow(&raw mut winTemplate) as u8);
+        crate::gl!(sMartInfo.menuActions = sShopMenuActions_BuyQuit.as_ptr().cast_mut());
         numMenuItems = 2;
     }
-    SetStandardWindowBorderStyle(sMartInfo.windowId, FALSE);
+    SetStandardWindowBorderStyle(crate::gl!(sMartInfo.windowId), FALSE);
     PrintMenuTable(
-        sMartInfo.windowId,
+        crate::gl!(sMartInfo.windowId),
         numMenuItems as u8,
-        sMartInfo.menuActions,
+        crate::gl!(sMartInfo.menuActions),
     );
-    InitMenuInUpperLeftCornerNormal(sMartInfo.windowId, numMenuItems as u8, 0);
-    PutWindowTilemap(sMartInfo.windowId);
-    CopyWindowToVram(sMartInfo.windowId, COPYWIN_MAP);
+    InitMenuInUpperLeftCornerNormal(crate::gl!(sMartInfo.windowId), numMenuItems as u8, 0);
+    PutWindowTilemap(crate::gl!(sMartInfo.windowId));
+    CopyWindowToVram(crate::gl!(sMartInfo.windowId), COPYWIN_MAP);
     CreateTask(Some(Task_ShopMenu), 8)
 }
-unsafe fn SetShopMenuCallback(callback: Option<unsafe fn()>) {
-    sMartInfo.callback = callback;
+fn SetShopMenuCallback(callback: Option<unsafe fn()>) {
+    crate::gl!(sMartInfo.callback = callback);
 }
 unsafe fn SetShopItemsForSale(items: *mut u16) {
     let mut i: u16 = 0;
-    sMartInfo.itemList = items;
-    sMartInfo.itemCount = 0;
-    while *sMartInfo.itemList.at(i) != 0 {
-        sMartInfo.itemCount += 1;
+    crate::gl!(sMartInfo.itemList = items);
+    crate::gl!(sMartInfo.itemCount = 0);
+    while *(*sMartInfo.as_ptr()).itemList.at(i) != 0 {
+        crate::gl!(sMartInfo.itemCount += 1);
         i += 1;
     }
 }
@@ -380,7 +385,7 @@ pub(crate) unsafe fn Task_ShopMenu(taskId: u8) {
             Task_HandleShopMenuQuit(taskId);
         }
         _ => {
-            (*sMartInfo.menuActions.at(inputCode))
+            (*(*sMartInfo.as_ptr()).menuActions.at(inputCode))
                 .func
                 .void_u8
                 .unwrap_unchecked()(taskId);
@@ -402,22 +407,22 @@ pub(crate) unsafe fn Task_HandleShopMenuSell(taskId: u8) {
     FadeScreen(FADE_TO_BLACK, 0);
 }
 pub unsafe fn CB2_ExitSellMenu() {
-    gFieldCallback = Some(MapPostLoadHook_ReturnToShopMenu);
+    crate::gl!(gFieldCallback = Some(MapPostLoadHook_ReturnToShopMenu));
     SetMainCallback2(Some(CB2_ReturnToField));
 }
 pub(crate) unsafe fn Task_HandleShopMenuQuit(taskId: u8) {
-    ClearStdWindowAndFrameToTransparent(sMartInfo.windowId, 2);
-    RemoveWindow(sMartInfo.windowId);
+    ClearStdWindowAndFrameToTransparent(crate::gl!(sMartInfo.windowId), 2);
+    RemoveWindow(crate::gl!(sMartInfo.windowId));
     TryPutSmartShopperOnAir();
     UnlockPlayerFieldControls();
     DestroyTask(taskId);
-    if sMartInfo.callback.is_some() {
-        sMartInfo.callback.unwrap_unchecked()();
+    if (*sMartInfo.as_ptr()).callback.is_some() {
+        (*sMartInfo.as_ptr()).callback.unwrap_unchecked()();
     }
 }
 pub(crate) unsafe fn Task_GoToBuyOrSellMenu(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         DestroyTask(taskId);
         SetMainCallback2(core::mem::transmute::<usize, Option<unsafe fn()>>(
             ((*data.at(8) as u16 as i32) << 16 | *data.at(9) as u16 as i32) as usize,
@@ -430,7 +435,7 @@ pub(crate) unsafe fn MapPostLoadHook_ReturnToShopMenu() {
 }
 pub(crate) unsafe fn Task_ReturnToShopMenu(taskId: u8) {
     if IsWeatherNotFadingIn() == TRUE {
-        if sMartInfo.martType == MART_TYPE_DECOR2 {
+        if crate::gl!(sMartInfo.martType) == MART_TYPE_DECOR2 {
             DisplayItemMessageOnField(
                 taskId,
                 (*(&raw const crate::data::strings::gText_CanIHelpWithAnythingElse)
@@ -452,7 +457,7 @@ pub(crate) unsafe fn Task_ReturnToShopMenu(taskId: u8) {
     }
 }
 pub(crate) unsafe fn ShowShopMenuAfterExitingBuyOrSellMenu(taskId: u8) {
-    CreateShopMenu(sMartInfo.martType);
+    CreateShopMenu(crate::gl!(sMartInfo.martType));
     DestroyTask(taskId);
 }
 pub(crate) unsafe fn CB2_BuyMenu() {
@@ -469,7 +474,7 @@ pub(crate) unsafe fn VBlankCB_BuyMenu() {
 }
 pub(crate) unsafe fn CB2_InitBuyMenu() {
     let mut taskId: u8 = 0;
-    match gMain.state {
+    match crate::gl!(gMain.state) {
         0 => {
             SetVBlankHBlankCallbacksToNull();
             {
@@ -488,10 +493,10 @@ pub(crate) unsafe fn CB2_InitBuyMenu() {
             ResetSpriteData();
             ResetTasks();
             ClearScheduledBgCopiesToVram();
-            sShopData = AllocZeroed(8368) as *mut ShopData;
-            (*sShopData).scrollIndicatorsTaskId = TASK_NONE;
-            (*sShopData).itemSpriteIds[0] = SPRITE_NONE;
-            (*sShopData).itemSpriteIds[1] = SPRITE_NONE;
+            crate::gl!(sShopData = AllocZeroed(8368) as *mut ShopData);
+            (*crate::gl!(sShopData)).scrollIndicatorsTaskId = TASK_NONE;
+            (*crate::gl!(sShopData)).itemSpriteIds[0] = SPRITE_NONE;
+            (*crate::gl!(sShopData)).itemSpriteIds[1] = SPRITE_NONE;
             BuyMenuBuildListMenuTemplate();
             BuyMenuInitBgs();
             FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x20, 0x20);
@@ -500,11 +505,11 @@ pub(crate) unsafe fn CB2_InitBuyMenu() {
             FillBgTilemapBufferRect_Palette0(3, 0, 0, 0, 0x20, 0x20);
             BuyMenuInitWindows();
             BuyMenuDecompressBgGraphics();
-            gMain.state += 1;
+            crate::gl!(gMain.state += 1);
         }
         1 => {
             if FreeTempTileDataBuffersIfPossible() == 0 {
-                gMain.state += 1;
+                crate::gl!(gMain.state += 1);
             }
         }
         _ => {
@@ -514,7 +519,7 @@ pub(crate) unsafe fn CB2_InitBuyMenu() {
             task_set(
                 taskId,
                 tListTaskId,
-                ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0) as i16,
+                ListMenuInit(crate::gl!(&raw gMultiuseListMenuTemplate), 0, 0) as i16,
             );
             BlendPalettes(PALETTES_ALL, 16, 0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
@@ -524,43 +529,51 @@ pub(crate) unsafe fn CB2_InitBuyMenu() {
     }
 }
 unsafe fn BuyMenuFreeMemory() {
-    Free(sShopData as *mut c_void);
-    Free(sListMenuItems as *mut c_void);
-    Free(sItemNames as *mut c_void);
+    Free(crate::gl!(sShopData) as *mut c_void);
+    Free(crate::gl!(sListMenuItems) as *mut c_void);
+    Free(crate::gl!(sItemNames) as *mut c_void);
     FreeAllWindowBuffers();
 }
 unsafe fn BuyMenuBuildListMenuTemplate() {
-    sListMenuItems = Alloc((sMartInfo.itemCount as u32 + 1) * 8) as *mut ListMenuItem;
-    sItemNames = Alloc((sMartInfo.itemCount as u32 + 1) * 16) as *mut CArray<u8, 16>;
+    crate::gl!(
+        sListMenuItems =
+            Alloc((crate::gl!(sMartInfo.itemCount) as u32 + 1) * 8) as *mut ListMenuItem
+    );
+    crate::gl!(
+        sItemNames =
+            Alloc((crate::gl!(sMartInfo.itemCount) as u32 + 1) * 16) as *mut CArray<u8, 16>
+    );
     let mut i: u16 = 0;
-    while i < sMartInfo.itemCount {
+    while i < crate::gl!(sMartInfo.itemCount) {
         BuyMenuSetListEntry(
-            sListMenuItems.at(i),
-            *sMartInfo.itemList.at(i),
-            (*sItemNames.at(i)).as_mut_ptr(),
+            (*sListMenuItems.as_ptr()).at(i),
+            *(*sMartInfo.as_ptr()).itemList.at(i),
+            (*(*sItemNames.as_ptr()).at(i)).as_mut_ptr(),
         );
         i += 1;
     }
     StringCopy(
-        (*sItemNames.at(i)).as_mut_ptr(),
+        (*(*sItemNames.as_ptr()).at(i)).as_mut_ptr(),
         (*(&raw const crate::data::strings::gText_Cancel2).cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut(),
     );
-    (*sListMenuItems.at(i)).name = (*sItemNames.at(i)).as_mut_ptr();
-    (*sListMenuItems.at(i)).id = LIST_CANCEL;
-    gMultiuseListMenuTemplate = *sShopBuyMenuListTemplate;
-    gMultiuseListMenuTemplate.items = sListMenuItems;
-    gMultiuseListMenuTemplate.totalItems = sMartInfo.itemCount + 1;
-    if gMultiuseListMenuTemplate.totalItems > MAX_ITEMS_SHOWN {
-        gMultiuseListMenuTemplate.maxShowed = MAX_ITEMS_SHOWN;
+    (*(*sListMenuItems.as_ptr()).at(i)).name = (*(*sItemNames.as_ptr()).at(i)).as_mut_ptr();
+    (*(*sListMenuItems.as_ptr()).at(i)).id = LIST_CANCEL;
+    crate::gl!(gMultiuseListMenuTemplate = *sShopBuyMenuListTemplate);
+    crate::gl!(gMultiuseListMenuTemplate.items = crate::gl!(sListMenuItems));
+    crate::gl!(gMultiuseListMenuTemplate.totalItems = crate::gl!(sMartInfo.itemCount) + 1);
+    if crate::gl!(gMultiuseListMenuTemplate.totalItems) > MAX_ITEMS_SHOWN {
+        crate::gl!(gMultiuseListMenuTemplate.maxShowed = MAX_ITEMS_SHOWN);
     } else {
-        gMultiuseListMenuTemplate.maxShowed = gMultiuseListMenuTemplate.totalItems;
+        crate::gl!(
+            gMultiuseListMenuTemplate.maxShowed = crate::gl!(gMultiuseListMenuTemplate.totalItems)
+        );
     }
-    (*sShopData).itemsShowed = gMultiuseListMenuTemplate.maxShowed;
+    (*crate::gl!(sShopData)).itemsShowed = crate::gl!(gMultiuseListMenuTemplate.maxShowed);
 }
 unsafe fn BuyMenuSetListEntry(menuItem: *mut ListMenuItem, item: u16, name: *mut u8) {
-    if sMartInfo.martType == MART_TYPE_NORMAL {
+    if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
         CopyItemName(item, name);
     } else {
         StringCopy(
@@ -585,14 +598,14 @@ pub(crate) unsafe fn BuyMenuPrintItemDescriptionAndShowItemIcon(
         PlaySE(SE_SELECT);
     }
     if item != LIST_CANCEL {
-        BuyMenuAddItemIcon(item as u16, (*sShopData).iconSlot);
+        BuyMenuAddItemIcon(item as u16, (*crate::gl!(sShopData)).iconSlot);
     } else {
-        BuyMenuAddItemIcon(ITEM_LIST_END, (*sShopData).iconSlot);
+        BuyMenuAddItemIcon(ITEM_LIST_END, (*crate::gl!(sShopData)).iconSlot);
     }
-    BuyMenuRemoveItemIcon(item as u16, (*sShopData).iconSlot ^ 1);
-    (*sShopData).iconSlot ^= 1;
+    BuyMenuRemoveItemIcon(item as u16, (*crate::gl!(sShopData)).iconSlot ^ 1);
+    (*crate::gl!(sShopData)).iconSlot ^= 1;
     if item != LIST_CANCEL {
-        if sMartInfo.martType == MART_TYPE_NORMAL {
+        if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
             description = GetItemDescription(item as u16);
         } else {
             description = (*(&raw const crate::data::decoration::gDecorations)
@@ -611,7 +624,7 @@ pub(crate) unsafe fn BuyMenuPrintItemDescriptionAndShowItemIcon(
 pub(crate) unsafe fn BuyMenuPrintPriceInList(windowId: u8, itemId: u32, y: u8) {
     let mut x: u8 = 0;
     if itemId != LIST_CANCEL as u32 {
-        if sMartInfo.martType == MART_TYPE_NORMAL {
+        if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
                 shr_i32(
@@ -652,25 +665,25 @@ pub(crate) unsafe fn BuyMenuPrintPriceInList(windowId: u8, itemId: u32, y: u8) {
     }
 }
 unsafe fn BuyMenuAddScrollIndicatorArrows() {
-    if (*sShopData).scrollIndicatorsTaskId == TASK_NONE
-        && sMartInfo.itemCount as i32 + 1 > MAX_ITEMS_SHOWN as i32
+    if (*crate::gl!(sShopData)).scrollIndicatorsTaskId == TASK_NONE
+        && crate::gl!(sMartInfo.itemCount) as i32 + 1 > MAX_ITEMS_SHOWN as i32
     {
-        (*sShopData).scrollIndicatorsTaskId = AddScrollIndicatorArrowPairParameterized(
+        (*crate::gl!(sShopData)).scrollIndicatorsTaskId = AddScrollIndicatorArrowPairParameterized(
             SCROLL_ARROW_UP,
             172,
             12,
             148,
-            sMartInfo.itemCount as i32 - 7,
+            crate::gl!(sMartInfo.itemCount) as i32 - 7,
             TAG_SCROLL_ARROW,
             TAG_SCROLL_ARROW,
-            &raw mut (*sShopData).scrollOffset,
+            &raw mut (*crate::gl!(sShopData)).scrollOffset,
         );
     }
 }
 unsafe fn BuyMenuRemoveScrollIndicatorArrows() {
-    if (*sShopData).scrollIndicatorsTaskId != TASK_NONE {
-        RemoveScrollIndicatorArrowPair((*sShopData).scrollIndicatorsTaskId);
-        (*sShopData).scrollIndicatorsTaskId = TASK_NONE;
+    if (*crate::gl!(sShopData)).scrollIndicatorsTaskId != TASK_NONE {
+        RemoveScrollIndicatorArrowPair((*crate::gl!(sShopData)).scrollIndicatorsTaskId);
+        (*crate::gl!(sShopData)).scrollIndicatorsTaskId = TASK_NONE;
     }
 }
 unsafe fn BuyMenuPrintCursor(scrollIndicatorsTaskId: u8, colorSet: u8) {
@@ -688,11 +701,11 @@ unsafe fn BuyMenuPrintCursor(scrollIndicatorsTaskId: u8, colorSet: u8) {
 }
 unsafe fn BuyMenuAddItemIcon(item: u16, iconSlot: u8) {
     let mut spriteId: u8 = 0;
-    let spriteIdPtr: *mut u8 = &raw mut (*sShopData).itemSpriteIds[iconSlot];
+    let spriteIdPtr: *mut u8 = &raw mut (*crate::gl!(sShopData)).itemSpriteIds[iconSlot];
     if *spriteIdPtr != SPRITE_NONE {
         return;
     }
-    if sMartInfo.martType == MART_TYPE_NORMAL || item == ITEM_LIST_END {
+    if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL || item == ITEM_LIST_END {
         spriteId = AddItemIconSprite(
             iconSlot as u16 + TAG_ITEM_ICON_BASE,
             iconSlot as u16 + TAG_ITEM_ICON_BASE,
@@ -700,8 +713,8 @@ unsafe fn BuyMenuAddItemIcon(item: u16, iconSlot: u8) {
         );
         if spriteId != MAX_SPRITES {
             *spriteIdPtr = spriteId;
-            gSprites[spriteId].x2 = 24;
-            gSprites[spriteId].y2 = 88;
+            crate::gl!(gSprites[spriteId].x2 = 24);
+            crate::gl!(gSprites[spriteId].y2 = 88);
         }
     } else {
         spriteId = AddDecorationIconObject(
@@ -718,13 +731,16 @@ unsafe fn BuyMenuAddItemIcon(item: u16, iconSlot: u8) {
     }
 }
 unsafe fn BuyMenuRemoveItemIcon(item: u16, iconSlot: u8) {
-    let spriteIdPtr: *mut u8 = &raw mut (*sShopData).itemSpriteIds[iconSlot];
+    let spriteIdPtr: *mut u8 = &raw mut (*crate::gl!(sShopData)).itemSpriteIds[iconSlot];
     if *spriteIdPtr == SPRITE_NONE {
         return;
     }
     FreeSpriteTilesByTag(iconSlot as u16 + TAG_ITEM_ICON_BASE);
     FreeSpritePaletteByTag(iconSlot as u16 + TAG_ITEM_ICON_BASE);
-    DestroySprite(&raw mut gSprites[*spriteIdPtr]);
+    DestroySprite({
+        let gl_i0 = *spriteIdPtr;
+        crate::gl!(&raw gSprites[gl_i0])
+    });
     *spriteIdPtr = SPRITE_NONE;
 }
 unsafe fn BuyMenuInitBgs() {
@@ -732,15 +748,15 @@ unsafe fn BuyMenuInitBgs() {
     InitBgsFromTemplates(0, sShopBuyMenuBgTemplates.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
         1,
-        (*sShopData).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sShopData)).tilemapBuffers[1].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         2,
-        (*sShopData).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sShopData)).tilemapBuffers[3].as_mut_ptr() as *mut c_void,
     );
     SetBgTilemapBuffer(
         3,
-        (*sShopData).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sShopData)).tilemapBuffers[2].as_mut_ptr() as *mut c_void,
     );
     SetGpuReg(REG_OFFSET_BG0HOFS, 0);
     SetGpuReg(REG_OFFSET_BG0VOFS, 0);
@@ -771,7 +787,7 @@ unsafe fn BuyMenuDecompressBgGraphics() {
         (*(&raw const crate::data::graphics::gShopMenu_Tilemap).cast::<CArray<u32, 0>>())
             .as_ptr()
             .cast_mut(),
-        (*sShopData).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
+        (*crate::gl!(sShopData)).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
     LoadCompressedPalette(
         (*(&raw const crate::data::graphics::gShopMenu_Pal).cast::<CArray<u32, 0>>())
@@ -824,7 +840,7 @@ unsafe fn BuyMenuDrawGraphics() {
         WIN_MONEY,
         1,
         13,
-        GetMoney(&raw mut (*gSaveBlock1Ptr).money) as i32,
+        GetMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money) as i32,
     );
     ScheduleBgCopyTilemapToVram(0);
     ScheduleBgCopyTilemapToVram(1);
@@ -842,7 +858,7 @@ unsafe fn BuyMenuDrawMapBg() {
     let mut mapLayout: *mut MapLayout = null_mut();
     let mut metatile: u16 = 0;
     let mut metatileLayerType: u8 = 0;
-    mapLayout = gMapHeader.mapLayout;
+    mapLayout = crate::gl!(gMapHeader.mapLayout);
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
     x -= 4;
     y -= 4;
@@ -884,13 +900,13 @@ unsafe fn BuyMenuDrawMapMetatile(x: i16, y: i16, src: *mut u16, metatileLayerTyp
     match metatileLayerType {
         0 => {
             BuyMenuDrawMapMetatileLayer(
-                (*sShopData).tilemapBuffers[3].as_mut_ptr(),
+                (*crate::gl!(sShopData)).tilemapBuffers[3].as_mut_ptr(),
                 offset1 as i16,
                 offset2 as i16,
                 src,
             );
             BuyMenuDrawMapMetatileLayer(
-                (*sShopData).tilemapBuffers[1].as_mut_ptr(),
+                (*crate::gl!(sShopData)).tilemapBuffers[1].as_mut_ptr(),
                 offset1 as i16,
                 offset2 as i16,
                 src.at(4),
@@ -898,13 +914,13 @@ unsafe fn BuyMenuDrawMapMetatile(x: i16, y: i16, src: *mut u16, metatileLayerTyp
         }
         1 => {
             BuyMenuDrawMapMetatileLayer(
-                (*sShopData).tilemapBuffers[2].as_mut_ptr(),
+                (*crate::gl!(sShopData)).tilemapBuffers[2].as_mut_ptr(),
                 offset1 as i16,
                 offset2 as i16,
                 src,
             );
             BuyMenuDrawMapMetatileLayer(
-                (*sShopData).tilemapBuffers[3].as_mut_ptr(),
+                (*crate::gl!(sShopData)).tilemapBuffers[3].as_mut_ptr(),
                 offset1 as i16,
                 offset2 as i16,
                 src.at(4),
@@ -912,13 +928,13 @@ unsafe fn BuyMenuDrawMapMetatile(x: i16, y: i16, src: *mut u16, metatileLayerTyp
         }
         2 => {
             BuyMenuDrawMapMetatileLayer(
-                (*sShopData).tilemapBuffers[2].as_mut_ptr(),
+                (*crate::gl!(sShopData)).tilemapBuffers[2].as_mut_ptr(),
                 offset1 as i16,
                 offset2 as i16,
                 src,
             );
             BuyMenuDrawMapMetatileLayer(
-                (*sShopData).tilemapBuffers[1].as_mut_ptr(),
+                (*crate::gl!(sShopData)).tilemapBuffers[1].as_mut_ptr(),
                 offset1 as i16,
                 offset2 as i16,
                 src.at(4),
@@ -939,32 +955,37 @@ unsafe fn BuyMenuCollectObjectEventData() {
     let mut numObjects: u8 = 0;
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut facingX, &raw mut facingY);
     for y in 0..OBJECT_EVENTS_COUNT {
-        (*sShopData).viewportObjects[y][0] = OBJECT_EVENTS_COUNT as i16;
+        (*crate::gl!(sShopData)).viewportObjects[y][0] = OBJECT_EVENTS_COUNT as i16;
     }
     for y in 0..5u8 {
         for x in 0..7u8 {
             let objEventId: u8 =
                 GetObjectEventIdByXY(facingX - 4 + x as i16, facingY - 2 + y as i16);
             if objEventId != OBJECT_EVENTS_COUNT {
-                (*sShopData).viewportObjects[numObjects][0] = objEventId as i16;
-                (*sShopData).viewportObjects[numObjects][1] = x as i16;
-                (*sShopData).viewportObjects[numObjects][2] = y as i16;
-                (*sShopData).viewportObjects[numObjects][4] = MapGridGetMetatileLayerTypeAt(
-                    facingX as i32 - 4 + x as i32,
-                    facingY as i32 - 2 + y as i32,
-                ) as i16;
-                match gObjectEvents[objEventId].facingDirection() {
+                (*crate::gl!(sShopData)).viewportObjects[numObjects][0] = objEventId as i16;
+                (*crate::gl!(sShopData)).viewportObjects[numObjects][1] = x as i16;
+                (*crate::gl!(sShopData)).viewportObjects[numObjects][2] = y as i16;
+                (*crate::gl!(sShopData)).viewportObjects[numObjects][4] =
+                    MapGridGetMetatileLayerTypeAt(
+                        facingX as i32 - 4 + x as i32,
+                        facingY as i32 - 2 + y as i32,
+                    ) as i16;
+                match (*gObjectEvents.as_ptr())[objEventId].facingDirection() {
                     1 => {
-                        (*sShopData).viewportObjects[numObjects][3] = ANIM_STD_FACE_SOUTH;
+                        (*crate::gl!(sShopData)).viewportObjects[numObjects][3] =
+                            ANIM_STD_FACE_SOUTH;
                     }
                     2 => {
-                        (*sShopData).viewportObjects[numObjects][3] = ANIM_STD_FACE_NORTH;
+                        (*crate::gl!(sShopData)).viewportObjects[numObjects][3] =
+                            ANIM_STD_FACE_NORTH;
                     }
                     3 => {
-                        (*sShopData).viewportObjects[numObjects][3] = ANIM_STD_FACE_WEST;
+                        (*crate::gl!(sShopData)).viewportObjects[numObjects][3] =
+                            ANIM_STD_FACE_WEST;
                     }
                     _ => {
-                        (*sShopData).viewportObjects[numObjects][3] = ANIM_STD_FACE_EAST;
+                        (*crate::gl!(sShopData)).viewportObjects[numObjects][3] =
+                            ANIM_STD_FACE_EAST;
                     }
                 }
                 numObjects += 1;
@@ -977,29 +998,32 @@ unsafe fn BuyMenuDrawObjectEvents() {
     let mut graphicsInfo: *mut ObjectEventGraphicsInfo = null_mut();
     for i in 0..OBJECT_EVENTS_COUNT {
         'l1: {
-            if (*sShopData).viewportObjects[i][0] == OBJECT_EVENTS_COUNT as i16 {
+            if (*crate::gl!(sShopData)).viewportObjects[i][0] == OBJECT_EVENTS_COUNT as i16 {
                 break 'l1;
             }
             graphicsInfo = GetObjectEventGraphicsInfo(
-                gObjectEvents[(*sShopData).viewportObjects[i][0]].graphicsId,
+                (*gObjectEvents.as_ptr())[(*crate::gl!(sShopData)).viewportObjects[i][0]]
+                    .graphicsId,
             );
             spriteId = CreateObjectGraphicsSprite(
-                gObjectEvents[(*sShopData).viewportObjects[i][0]].graphicsId as u16,
+                (*gObjectEvents.as_ptr())[(*crate::gl!(sShopData)).viewportObjects[i][0]].graphicsId
+                    as u16,
                 Some(SpriteCallbackDummy),
-                (*sShopData).viewportObjects[i][1] as u16 as i16 * 16 + 8,
-                (*sShopData).viewportObjects[i][2] as u16 as i16 * 16 + 48
+                (*crate::gl!(sShopData)).viewportObjects[i][1] as u16 as i16 * 16 + 8,
+                (*crate::gl!(sShopData)).viewportObjects[i][2] as u16 as i16 * 16 + 48
                     - (*graphicsInfo).height / 2,
                 2,
             );
-            if BuyMenuCheckIfObjectEventOverlapsMenuBg((*sShopData).viewportObjects[i].as_mut_ptr())
-                == TRUE
+            if BuyMenuCheckIfObjectEventOverlapsMenuBg(
+                (*crate::gl!(sShopData)).viewportObjects[i].as_mut_ptr(),
+            ) == TRUE
             {
-                gSprites[spriteId].set_subspriteTableNum(4);
-                gSprites[spriteId].set_subspriteMode(SUBSPRITES_ON);
+                (*gSprites.as_ptr())[spriteId].set_subspriteTableNum(4);
+                (*gSprites.as_ptr())[spriteId].set_subspriteMode(SUBSPRITES_ON);
             }
             StartSpriteAnim(
-                &raw mut gSprites[spriteId],
-                (*sShopData).viewportObjects[i][3] as u8,
+                crate::gl!(&raw gSprites[spriteId]),
+                (*crate::gl!(sShopData)).viewportObjects[i][3] as u8,
             );
         }
     }
@@ -1018,8 +1042,8 @@ unsafe fn BuyMenuCheckIfObjectEventOverlapsMenuBg(object: *mut i16) -> u8 {
     }
 }
 unsafe fn BuyMenuCopyMenuBgToBg1TilemapBuffer() {
-    let dest: *mut u16 = (*sShopData).tilemapBuffers[1].as_mut_ptr();
-    let src: *mut u16 = (*sShopData).tilemapBuffers[0].as_mut_ptr();
+    let dest: *mut u16 = (*crate::gl!(sShopData)).tilemapBuffers[1].as_mut_ptr();
+    let src: *mut u16 = (*crate::gl!(sShopData)).tilemapBuffers[0].as_mut_ptr();
     for i in 0..1024i16 {
         if *src.at(i) != 0 {
             *dest.at(i) = *src.at(i) + 50147;
@@ -1027,7 +1051,7 @@ unsafe fn BuyMenuCopyMenuBgToBg1TilemapBuffer() {
     }
 }
 unsafe fn BuyMenuCheckForOverlapWithMenuBg(x: i32, y: i32) -> u8 {
-    let metatile: *mut u16 = (*sShopData).tilemapBuffers[0].as_mut_ptr();
+    let metatile: *mut u16 = (*crate::gl!(sShopData)).tilemapBuffers[0].as_mut_ptr();
     let offset1: i32 = x * 2;
     let offset2: i32 = y * 64;
     if *metatile.at(offset2 + offset1) == 0
@@ -1041,12 +1065,12 @@ unsafe fn BuyMenuCheckForOverlapWithMenuBg(x: i32, y: i32) -> u8 {
 }
 pub(crate) unsafe fn Task_BuyMenu(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         let itemId: i32 = ListMenu_ProcessInput(*data.at(7) as u8);
         ListMenuGetScrollAndRow(
             *data.at(7) as u8,
-            &raw mut (*sShopData).scrollOffset,
-            &raw mut (*sShopData).selectedRow,
+            &raw mut (*crate::gl!(sShopData)).scrollOffset,
+            &raw mut (*crate::gl!(sShopData)).selectedRow,
         );
         match itemId {
             LIST_NOTHING_CHOSEN => {}
@@ -1060,17 +1084,22 @@ pub(crate) unsafe fn Task_BuyMenu(taskId: u8) {
                 ClearWindowTilemap(WIN_ITEM_DESCRIPTION);
                 BuyMenuRemoveScrollIndicatorArrows();
                 BuyMenuPrintCursor(*data.at(7) as u8, COLORID_GRAY_CURSOR);
-                if sMartInfo.martType == MART_TYPE_NORMAL {
-                    (*sShopData).totalCost = shr_i32(
+                if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
+                    (*crate::gl!(sShopData)).totalCost = shr_i32(
                         GetItemPrice(itemId as u16) as i32,
                         IsPokeNewsActive(POKENEWS_SLATEPORT) as u32,
                     ) as u32;
                 } else {
-                    (*sShopData).totalCost = (*(&raw const crate::data::decoration::gDecorations)
-                        .cast::<CArray<Decoration, 0>>())[itemId]
-                        .price as u32;
+                    (*crate::gl!(sShopData)).totalCost =
+                        (*(&raw const crate::data::decoration::gDecorations)
+                            .cast::<CArray<Decoration, 0>>())[itemId]
+                            .price as u32;
                 }
-                if IsEnoughMoney(&raw mut (*gSaveBlock1Ptr).money, (*sShopData).totalCost) == 0 {
+                if IsEnoughMoney(
+                    &raw mut (*crate::gl!(gSaveBlock1Ptr)).money,
+                    (*crate::gl!(sShopData)).totalCost,
+                ) == 0
+                {
                     BuyMenuDisplayMessage(
                         taskId,
                         (*(&raw const crate::data::strings::gText_YouDontHaveMoney)
@@ -1080,11 +1109,11 @@ pub(crate) unsafe fn Task_BuyMenu(taskId: u8) {
                         Some(BuyMenuReturnToItemList),
                     );
                 } else {
-                    if sMartInfo.martType == MART_TYPE_NORMAL {
+                    if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
                         CopyItemName(itemId as u16, gStringVar1.as_mut_ptr());
                         if GetItemPocket(itemId as u16) == POCKET_TM_HM {
                             StringCopy(
-                                gStringVar2.as_mut_ptr(),
+                                (*gStringVar2.as_ptr()).as_mut_ptr(),
                                 (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
                                     CArray<u8, 13>,
                                     355,
@@ -1124,12 +1153,12 @@ pub(crate) unsafe fn Task_BuyMenu(taskId: u8) {
                                 .cast_mut(),
                         );
                         ConvertIntToDecimalStringN(
-                            gStringVar2.as_mut_ptr(),
-                            (*sShopData).totalCost as i32,
+                            (*gStringVar2.as_ptr()).as_mut_ptr(),
+                            (*crate::gl!(sShopData)).totalCost as i32,
                             STR_CONV_MODE_LEFT_ALIGN,
                             6,
                         );
-                        if sMartInfo.martType == MART_TYPE_DECOR {
+                        if crate::gl!(sMartInfo.martType) == MART_TYPE_DECOR {
                             StringExpandPlaceholders(
                                 gStringVar4.as_mut_ptr(),
                                 (*(&raw const crate::data::strings::gText_Var1IsItThatllBeVar2)
@@ -1183,27 +1212,29 @@ pub(crate) unsafe fn Task_BuyHowManyDialogueInit(taskId: u8) {
     BuyMenuPrintItemQuantityAndPrice(taskId);
     ScheduleBgCopyTilemapToVram(0);
     let maxQuantity: u16 = div_u32(
-        GetMoney(&raw mut (*gSaveBlock1Ptr).money),
-        (*sShopData).totalCost,
+        GetMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money),
+        (*crate::gl!(sShopData)).totalCost,
     ) as u16;
     if maxQuantity > MAX_BAG_ITEM_CAPACITY {
-        (*sShopData).maxQuantity = MAX_BAG_ITEM_CAPACITY as u8;
+        (*crate::gl!(sShopData)).maxQuantity = MAX_BAG_ITEM_CAPACITY as u8;
     } else {
-        (*sShopData).maxQuantity = maxQuantity as u8;
+        (*crate::gl!(sShopData)).maxQuantity = maxQuantity as u8;
     }
     task_set_func(taskId, Some(Task_BuyHowManyDialogueHandleInput));
 }
 pub(crate) unsafe fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if AdjustQuantityAccordingToDPadInput(data.at(1), (*sShopData).maxQuantity as u16) == TRUE {
-        (*sShopData).totalCost = shr_i32(
+    if AdjustQuantityAccordingToDPadInput(data.at(1), (*crate::gl!(sShopData)).maxQuantity as u16)
+        == TRUE
+    {
+        (*crate::gl!(sShopData)).totalCost = shr_i32(
             GetItemPrice(*data.at(5) as u16) as i32,
             IsPokeNewsActive(POKENEWS_SLATEPORT) as u32,
         ) as u32
             * *data.at(1) as u32;
         BuyMenuPrintItemQuantityAndPrice(taskId);
     } else {
-        if gMain.newKeys as i32 & A_BUTTON != 0 {
+        if crate::gl!(gMain.newKeys) as i32 & A_BUTTON != 0 {
             PlaySE(SE_SELECT);
             ClearStdWindowAndFrameToTransparent(WIN_QUANTITY_PRICE, FALSE);
             ClearStdWindowAndFrameToTransparent(WIN_QUANTITY_IN_BAG, FALSE);
@@ -1212,14 +1243,14 @@ pub(crate) unsafe fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
             PutWindowTilemap(WIN_ITEM_LIST);
             CopyItemName(*data.at(5) as u16, gStringVar1.as_mut_ptr());
             ConvertIntToDecimalStringN(
-                gStringVar2.as_mut_ptr(),
+                (*gStringVar2.as_ptr()).as_mut_ptr(),
                 *data.at(1) as i32,
                 STR_CONV_MODE_LEFT_ALIGN,
                 BAG_ITEM_CAPACITY_DIGITS,
             );
             ConvertIntToDecimalStringN(
-                gStringVar3.as_mut_ptr(),
-                (*sShopData).totalCost as i32,
+                (*gStringVar3.as_ptr()).as_mut_ptr(),
+                (*crate::gl!(sShopData)).totalCost as i32,
                 STR_CONV_MODE_LEFT_ALIGN,
                 6,
             );
@@ -1231,7 +1262,7 @@ pub(crate) unsafe fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
                 .cast_mut(),
                 Some(BuyMenuConfirmPurchase),
             );
-        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+        } else if crate::gl!(gMain.newKeys) as i32 & B_BUTTON != 0 {
             PlaySE(SE_SELECT);
             ClearStdWindowAndFrameToTransparent(WIN_QUANTITY_PRICE, FALSE);
             ClearStdWindowAndFrameToTransparent(WIN_QUANTITY_IN_BAG, FALSE);
@@ -1256,7 +1287,7 @@ pub(crate) unsafe fn BuyMenuConfirmPurchase(taskId: u8) {
 pub(crate) unsafe fn BuyMenuTryMakePurchase(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     PutWindowTilemap(WIN_ITEM_LIST);
-    if sMartInfo.martType == MART_TYPE_NORMAL {
+    if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
         if AddBagItem(*data.at(5) as u16, *data.at(1) as u16) == TRUE {
             BuyMenuDisplayMessage(
                 taskId,
@@ -1279,7 +1310,7 @@ pub(crate) unsafe fn BuyMenuTryMakePurchase(taskId: u8) {
         }
     } else {
         if DecorationAdd(*data.at(5) as u8) != 0 {
-            if sMartInfo.martType == MART_TYPE_DECOR {
+            if crate::gl!(sMartInfo.martType) == MART_TYPE_DECOR {
                 BuyMenuDisplayMessage(
                     taskId,
                     (*(&raw const crate::data::strings::gText_ThankYouIllSendItHome)
@@ -1312,14 +1343,17 @@ pub(crate) unsafe fn BuyMenuTryMakePurchase(taskId: u8) {
 }
 pub(crate) unsafe fn BuyMenuSubtractMoney(taskId: u8) {
     IncrementGameStat(GAME_STAT_SHOPPED);
-    RemoveMoney(&raw mut (*gSaveBlock1Ptr).money, (*sShopData).totalCost);
+    RemoveMoney(
+        &raw mut (*crate::gl!(gSaveBlock1Ptr)).money,
+        (*crate::gl!(sShopData)).totalCost,
+    );
     PlaySE(SE_SHOP);
     PrintMoneyAmountInMoneyBox(
         WIN_MONEY,
-        GetMoney(&raw mut (*gSaveBlock1Ptr).money) as i32,
+        GetMoney(&raw mut (*crate::gl!(gSaveBlock1Ptr)).money) as i32,
         0,
     );
-    if sMartInfo.martType == MART_TYPE_NORMAL {
+    if crate::gl!(sMartInfo.martType) == MART_TYPE_NORMAL {
         task_set_func(taskId, Some(Task_ReturnToItemListAfterItemPurchase));
     } else {
         task_set_func(taskId, Some(Task_ReturnToItemListAfterDecorationPurchase));
@@ -1327,7 +1361,7 @@ pub(crate) unsafe fn BuyMenuSubtractMoney(taskId: u8) {
 }
 pub(crate) unsafe fn Task_ReturnToItemListAfterItemPurchase(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         if *data.at(5) == ITEM_POKE_BALL as i16
             && *data.at(1) >= 10
@@ -1347,7 +1381,7 @@ pub(crate) unsafe fn Task_ReturnToItemListAfterItemPurchase(taskId: u8) {
     }
 }
 pub(crate) unsafe fn Task_ReturnToItemListAfterDecorationPurchase(taskId: u8) {
-    if gMain.newKeys as i32 & 3 != 0 {
+    if crate::gl!(gMain.newKeys) as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         BuyMenuReturnToItemList(taskId);
     }
@@ -1369,7 +1403,7 @@ unsafe fn BuyMenuPrintItemQuantityAndPrice(taskId: u8) {
         WIN_QUANTITY_PRICE,
         38,
         1,
-        (*sShopData).totalCost as i32,
+        (*crate::gl!(sShopData)).totalCost as i32,
         TEXT_SKIP_DRAW,
     );
     ConvertIntToDecimalStringN(
@@ -1394,12 +1428,12 @@ unsafe fn BuyMenuPrintItemQuantityAndPrice(taskId: u8) {
     );
 }
 unsafe fn ExitBuyMenu(taskId: u8) {
-    gFieldCallback = Some(MapPostLoadHook_ReturnToShopMenu);
+    crate::gl!(gFieldCallback = Some(MapPostLoadHook_ReturnToShopMenu));
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     task_set_func(taskId, Some(Task_ExitBuyMenu));
 }
 pub(crate) unsafe fn Task_ExitBuyMenu(taskId: u8) {
-    if gPaletteFade.active() == 0 {
+    if (*gPaletteFade.as_ptr()).active() == 0 {
         RemoveMoneyLabelObject();
         BuyMenuFreeMemory();
         SetMainCallback2(Some(CB2_ReturnToField));
@@ -1408,25 +1442,37 @@ pub(crate) unsafe fn Task_ExitBuyMenu(taskId: u8) {
 }
 unsafe fn ClearItemPurchases() {
     sPurchaseHistoryId.set(0);
-    memset(gMartPurchaseHistory.as_mut_ptr() as *mut u8, 0, 12);
+    memset(
+        (*gMartPurchaseHistory.as_ptr()).as_mut_ptr() as *mut u8,
+        0,
+        12,
+    );
 }
 unsafe fn RecordItemPurchase(taskId: u8) {
     let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     for i in 0..3u16 {
-        if gMartPurchaseHistory[i].itemId as i32 == *data.at(5) as i32
-            && gMartPurchaseHistory[i].quantity != 0
+        if crate::gl!(gMartPurchaseHistory[i].itemId) as i32 == *data.at(5) as i32
+            && crate::gl!(gMartPurchaseHistory[i].quantity) != 0
         {
-            if gMartPurchaseHistory[i].quantity as i32 + *data.at(1) as i32 > 255 {
-                gMartPurchaseHistory[i].quantity = 255;
+            if crate::gl!(gMartPurchaseHistory[i].quantity) as i32 + *data.at(1) as i32 > 255 {
+                crate::gl!(gMartPurchaseHistory[i].quantity = 255);
             } else {
-                gMartPurchaseHistory[i].quantity += *data.at(1) as u16;
+                crate::gl!(gMartPurchaseHistory[i].quantity += *data.at(1) as u16);
             }
             return;
         }
     }
     if sPurchaseHistoryId.get() < 3 {
-        gMartPurchaseHistory[sPurchaseHistoryId.get()].itemId = *data.at(5) as u16;
-        gMartPurchaseHistory[sPurchaseHistoryId.get()].quantity = *data.at(1) as u16;
+        {
+            let gl_v = *data.at(5) as u16;
+            let gl_i0 = sPurchaseHistoryId.get();
+            crate::gl!(gMartPurchaseHistory[gl_i0].itemId = gl_v)
+        };
+        {
+            let gl_v = *data.at(1) as u16;
+            let gl_i1 = sPurchaseHistoryId.get();
+            crate::gl!(gMartPurchaseHistory[gl_i1].quantity = gl_v)
+        };
         sPurchaseHistoryId.set(sPurchaseHistoryId.get() + 1);
     }
 }

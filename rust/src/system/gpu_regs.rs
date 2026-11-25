@@ -20,8 +20,10 @@ const VBLANK_LAST_LINE: u16 = 225;
 #[repr(C, align(4))]
 struct RegBuffer([u8; GPU_REG_BUF_SIZE]);
 
-static mut GPU_REG_BUFFER: RegBuffer = RegBuffer([0; GPU_REG_BUF_SIZE]);
-static mut GPU_REG_WAITING_LIST: [u8; GPU_REG_BUF_SIZE] = [0; GPU_REG_BUF_SIZE];
+static GPU_REG_BUFFER: crate::global::Global<RegBuffer> =
+    crate::global::Global::new(RegBuffer([0; GPU_REG_BUF_SIZE]));
+static GPU_REG_WAITING_LIST: crate::global::Global<[u8; GPU_REG_BUF_SIZE]> =
+    crate::global::Global::new([0; GPU_REG_BUF_SIZE]);
 static GPU_REG_BUFFER_LOCKED: crate::global::Global<bool> = crate::global::Global::new(false);
 static SHOULD_SYNC_REG_IE: crate::global::Global<bool> = crate::global::Global::new(false);
 static REG_IE_SHADOW: crate::global::Global<u16> = crate::global::Global::new(0);
@@ -30,7 +32,7 @@ static REG_IE_SHADOW: crate::global::Global<u16> = crate::global::Global::new(0)
 #[inline]
 unsafe fn buffered(reg_offset: u8) -> u16 {
     unsafe {
-        (&raw const GPU_REG_BUFFER)
+        (crate::gl!(&raw GPU_REG_BUFFER).cast_const())
             .cast::<u8>()
             .add(reg_offset as usize)
             .cast::<u16>()
@@ -41,7 +43,7 @@ unsafe fn buffered(reg_offset: u8) -> u16 {
 #[inline]
 unsafe fn set_buffered(reg_offset: u8, value: u16) {
     unsafe {
-        (&raw mut GPU_REG_BUFFER)
+        (crate::gl!(&raw GPU_REG_BUFFER))
             .cast::<u8>()
             .add(reg_offset as usize)
             .cast::<u16>()
@@ -52,7 +54,7 @@ unsafe fn set_buffered(reg_offset: u8, value: u16) {
 #[inline]
 unsafe fn waiting(index: usize) -> u8 {
     unsafe {
-        (&raw const GPU_REG_WAITING_LIST)
+        (crate::gl!(&raw GPU_REG_WAITING_LIST).cast_const())
             .cast::<u8>()
             .add(index)
             .read_volatile()
@@ -62,7 +64,7 @@ unsafe fn waiting(index: usize) -> u8 {
 #[inline]
 unsafe fn set_waiting(index: usize, value: u8) {
     unsafe {
-        (&raw mut GPU_REG_WAITING_LIST)
+        (crate::gl!(&raw GPU_REG_WAITING_LIST))
             .cast::<u8>()
             .add(index)
             .write_volatile(value)
@@ -79,7 +81,7 @@ pub unsafe fn InitGpuRegManager() {
     let mut i = 0usize;
     while i < GPU_REG_BUF_SIZE {
         unsafe {
-            (&raw mut GPU_REG_BUFFER)
+            (crate::gl!(&raw GPU_REG_BUFFER))
                 .cast::<u8>()
                 .add(i)
                 .write_volatile(0)

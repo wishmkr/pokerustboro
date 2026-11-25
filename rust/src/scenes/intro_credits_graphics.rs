@@ -215,16 +215,19 @@ static sTrees_Pal: Table<CArray<u16, 16>> =
 static sTrees_Tilemap: Table<CArray<u32, 193>> =
     Table((&raw const crate::data::intro_credits_graphics::sTrees_Tilemap).cast());
 
-#[unsafe(link_section = "ewram_data")]
-pub static mut gIntroCredits_MovingSceneryVBase: u16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gIntroCredits_MovingSceneryVOffset: i16 = 0;
-#[unsafe(link_section = "ewram_data")]
-pub static mut gIntroCredits_MovingSceneryState: i16 = 0;
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gIntroCredits_MovingSceneryVBase: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gIntroCredits_MovingSceneryVOffset: crate::global::Global<i16> =
+    crate::global::Global::new(0);
+#[cfg_attr(target_os = "none", unsafe(link_section = "ewram_data"))]
+pub static gIntroCredits_MovingSceneryState: crate::global::Global<i16> =
+    crate::global::Global::new(0);
 
 /// `LZ77UnCompVram` with this module's view of its types.
 #[inline]
-unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
     unsafe {
         crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
     }
@@ -271,8 +274,8 @@ pub unsafe fn LoadIntroPart2Graphics(scenery: u8) {
             CreateCloudSprites();
         }
     }
-    gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_NORMAL;
-    gReservedSpritePaletteCount = 8;
+    gIntroCredits_MovingSceneryState.set(INTROCRED_SCENERY_NORMAL);
+    gReservedSpritePaletteCount.set(8);
 }
 pub unsafe fn SetIntroPart2BgCnt(scenery: u8) {
     match scenery {
@@ -404,8 +407,8 @@ pub unsafe fn LoadCreditsSceneGraphics(scene: u8) {
             CreateCloudSprites();
         }
     }
-    gReservedSpritePaletteCount = 8;
-    gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_NORMAL;
+    gReservedSpritePaletteCount.set(8);
+    gIntroCredits_MovingSceneryState.set(INTROCRED_SCENERY_NORMAL);
 }
 pub unsafe fn SetCreditsSceneBgCnt(scene: u8) {
     SetGpuReg(REG_OFFSET_BG3CNT, 1539);
@@ -445,7 +448,8 @@ pub(crate) unsafe fn Task_BicycleBgAnimation(taskId: u8) {
         SetGpuReg(REG_OFFSET_BG1HOFS, task_get(taskId, tBg1PosHi) as u16);
         SetGpuReg(
             REG_OFFSET_BG1VOFS,
-            gIntroCredits_MovingSceneryVBase + gIntroCredits_MovingSceneryVOffset as u16,
+            gIntroCredits_MovingSceneryVBase.get()
+                + gIntroCredits_MovingSceneryVOffset.get() as u16,
         );
     }
     let bg2Speed: i16 = task_get(taskId, tBg2Speed);
@@ -459,10 +463,11 @@ pub(crate) unsafe fn Task_BicycleBgAnimation(taskId: u8) {
         if task_get(taskId, tMode) != 0 {
             SetGpuReg(
                 REG_OFFSET_BG2VOFS,
-                gIntroCredits_MovingSceneryVBase + gIntroCredits_MovingSceneryVOffset as u16,
+                gIntroCredits_MovingSceneryVBase.get()
+                    + gIntroCredits_MovingSceneryVOffset.get() as u16,
             );
         } else {
-            SetGpuReg(REG_OFFSET_BG2VOFS, gIntroCredits_MovingSceneryVBase);
+            SetGpuReg(REG_OFFSET_BG2VOFS, gIntroCredits_MovingSceneryVBase.get());
         }
     }
     let bg3Speed: i16 = task_get(taskId, tBg3Speed);
@@ -473,7 +478,7 @@ pub(crate) unsafe fn Task_BicycleBgAnimation(taskId: u8) {
         task_set(taskId, tBg3PosHi, (offset >> 16) as i16);
         task_set(taskId, tBg3PosLo, offset as i16);
         SetGpuReg(REG_OFFSET_BG3HOFS, task_get(taskId, tBg3PosHi) as u16);
-        SetGpuReg(REG_OFFSET_BG3VOFS, gIntroCredits_MovingSceneryVBase);
+        SetGpuReg(REG_OFFSET_BG3VOFS, gIntroCredits_MovingSceneryVBase.get());
     }
 }
 pub unsafe fn CycleSceneryPalette(mode: u8) {
@@ -482,10 +487,12 @@ pub unsafe fn CycleSceneryPalette(mode: u8) {
     'l1: {
         match mode {
             2 => {
-                if gMain.vblankCounter1 & 3 != 0 || gPaletteFade.active() != 0 {
+                if crate::gl!(gMain.vblankCounter1) & 3 != 0
+                    || (*gPaletteFade.as_ptr()).active() != 0
+                {
                     break 'l1;
                 }
-                if gMain.vblankCounter1 & 4 != 0 {
+                if crate::gl!(gMain.vblankCounter1) & 4 != 0 {
                     x = 15655;
                     y = 661;
                 } else {
@@ -497,15 +504,17 @@ pub unsafe fn CycleSceneryPalette(mode: u8) {
             }
             1 => {}
             _ => {
-                if gMain.vblankCounter1 & 3 != 0 || gPaletteFade.active() != 0 {
+                if crate::gl!(gMain.vblankCounter1) & 3 != 0
+                    || (*gPaletteFade.as_ptr()).active() != 0
+                {
                     break 'l1;
                 }
-                if gMain.vblankCounter1 & 4 != 0 {
-                    x = gPlttBufferUnfaded[9];
-                    y = gPlttBufferUnfaded[10];
+                if crate::gl!(gMain.vblankCounter1) & 4 != 0 {
+                    x = crate::gl!(gPlttBufferUnfaded[9]);
+                    y = crate::gl!(gPlttBufferUnfaded[10]);
                 } else {
-                    x = gPlttBufferUnfaded[10];
-                    y = gPlttBufferUnfaded[9];
+                    x = crate::gl!(gPlttBufferUnfaded[10]);
+                    y = crate::gl!(gPlttBufferUnfaded[9]);
                 }
                 LoadPalette(&raw mut x as *mut c_void, 9, 2);
                 LoadPalette(&raw mut y as *mut c_void, 10, 2);
@@ -515,7 +524,7 @@ pub unsafe fn CycleSceneryPalette(mode: u8) {
 }
 pub(crate) unsafe fn SpriteCB_MovingScenery(sprite: *mut Sprite) {
     let mut x: i32 = 0;
-    let state: i16 = gIntroCredits_MovingSceneryState;
+    let state: i16 = gIntroCredits_MovingSceneryState.get();
     if state != INTROCRED_SCENERY_FROZEN {
         match state {
             INTROCRED_SCENERY_NORMAL => {
@@ -527,10 +536,10 @@ pub(crate) unsafe fn SpriteCB_MovingScenery(sprite: *mut Sprite) {
                     (*sprite).x = -32;
                 }
                 if (*sprite).data[tHasVerticalMove] != 0 {
-                    (*sprite).y2 = -(gIntroCredits_MovingSceneryVBase as i16
-                        + gIntroCredits_MovingSceneryVOffset);
+                    (*sprite).y2 = -(gIntroCredits_MovingSceneryVBase.get() as i16
+                        + gIntroCredits_MovingSceneryVOffset.get());
                 } else {
-                    (*sprite).y2 = -(gIntroCredits_MovingSceneryVBase as i16);
+                    (*sprite).y2 = -(gIntroCredits_MovingSceneryVBase.get() as i16);
                 }
             }
             _ => {
@@ -553,24 +562,36 @@ unsafe fn CreateMovingScenerySprites(
             (*metadata.at(i)).subpriority,
         );
         CalcCenterToCornerVec(
-            &raw mut gSprites[sprite],
+            crate::gl!(&raw gSprites[sprite]),
             (*metadata.at(i)).shape(),
             (*metadata.at(i)).size(),
             ST_OAM_AFFINE_OFF as u8,
         );
-        gSprites[sprite].oam.set_priority(3);
-        gSprites[sprite]
+        (*gSprites.as_ptr())[sprite].oam.set_priority(3);
+        (*gSprites.as_ptr())[sprite]
             .oam
             .set_shape((*metadata.at(i)).shape() as u32);
-        gSprites[sprite]
+        (*gSprites.as_ptr())[sprite]
             .oam
             .set_size((*metadata.at(i)).size() as u32);
-        gSprites[sprite].oam.set_paletteNum(0);
-        gSprites[sprite].anims = anims;
-        StartSpriteAnim(&raw mut gSprites[sprite], (*metadata.at(i)).animNum());
-        gSprites[sprite].data[tHasVerticalMove] = hasVerticalMove as i16;
-        gSprites[sprite].data[tXOffset] = (*metadata.at(i)).xOff as i16;
-        gSprites[sprite].data[tXPos] = 0;
+        (*gSprites.as_ptr())[sprite].oam.set_paletteNum(0);
+        crate::gl!(gSprites[sprite].anims = anims);
+        StartSpriteAnim(
+            crate::gl!(&raw gSprites[sprite]),
+            (*metadata.at(i)).animNum(),
+        );
+        {
+            let gl_i0 = tHasVerticalMove;
+            crate::gl!(gSprites[sprite].data[gl_i0] = hasVerticalMove as i16)
+        };
+        {
+            let gl_i1 = tXOffset;
+            crate::gl!(gSprites[sprite].data[gl_i1] = (*metadata.at(i)).xOff as i16)
+        };
+        {
+            let gl_i2 = tXPos;
+            crate::gl!(gSprites[sprite].data[gl_i2] = 0)
+        };
     }
 }
 pub(crate) unsafe fn CreateCloudSprites() {
@@ -597,13 +618,25 @@ unsafe fn CreateHouseSprites() {
         6,
     );
 }
-pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {}
+pub(crate) fn SpriteCB_Player(sprite: *mut Sprite) {}
 pub(crate) unsafe fn SpriteCB_Bicycle(sprite: *mut Sprite) {
-    (*sprite).set_invisible(gSprites[(*sprite).data[sPlayerSpriteId]].invisible());
-    (*sprite).x = gSprites[(*sprite).data[sPlayerSpriteId]].x;
-    (*sprite).y = gSprites[(*sprite).data[sPlayerSpriteId]].y + 8;
-    (*sprite).x2 = gSprites[(*sprite).data[sPlayerSpriteId]].x2;
-    (*sprite).y2 = gSprites[(*sprite).data[sPlayerSpriteId]].y2;
+    (*sprite).set_invisible((*gSprites.as_ptr())[(*sprite).data[sPlayerSpriteId]].invisible());
+    (*sprite).x = {
+        let gl_i3 = (*sprite).data[sPlayerSpriteId];
+        crate::gl!(gSprites[gl_i3].x)
+    };
+    (*sprite).y = ({
+        let gl_i4 = (*sprite).data[sPlayerSpriteId];
+        crate::gl!(gSprites[gl_i4].y)
+    }) + 8;
+    (*sprite).x2 = {
+        let gl_i5 = (*sprite).data[sPlayerSpriteId];
+        crate::gl!(gSprites[gl_i5].x2)
+    };
+    (*sprite).y2 = {
+        let gl_i6 = (*sprite).data[sPlayerSpriteId];
+        crate::gl!(gSprites[gl_i6].y2)
+    };
 }
 pub unsafe fn CreateIntroBrendanSprite(x: i16, y: i16) -> u8 {
     let playerSpriteId: u8 =
@@ -614,7 +647,10 @@ pub unsafe fn CreateIntroBrendanSprite(x: i16, y: i16) -> u8 {
         y + 8,
         3,
     );
-    gSprites[bicycleSpriteId].data[sPlayerSpriteId] = playerSpriteId as i16;
+    {
+        let gl_i7 = sPlayerSpriteId;
+        crate::gl!(gSprites[bicycleSpriteId].data[gl_i7] = playerSpriteId as i16)
+    };
     playerSpriteId
 }
 pub unsafe fn CreateIntroMaySprite(x: i16, y: i16) -> u8 {
@@ -625,15 +661,27 @@ pub unsafe fn CreateIntroMaySprite(x: i16, y: i16) -> u8 {
         y + 8,
         3,
     );
-    gSprites[bicycleSpriteId].data[sPlayerSpriteId] = playerSpriteId as i16;
+    {
+        let gl_i8 = sPlayerSpriteId;
+        crate::gl!(gSprites[bicycleSpriteId].data[gl_i8] = playerSpriteId as i16)
+    };
     playerSpriteId
 }
 pub(crate) fn SpriteCB_FlygonLeftHalf(sprite: *mut Sprite) {}
 pub(crate) unsafe fn SpriteCB_FlygonRightHalf(sprite: *mut Sprite) {
-    (*sprite).set_invisible(gSprites[(*sprite).data[sLeftSpriteId]].invisible());
-    (*sprite).y = gSprites[(*sprite).data[sLeftSpriteId]].y;
-    (*sprite).x2 = gSprites[(*sprite).data[sLeftSpriteId]].x2;
-    (*sprite).y2 = gSprites[(*sprite).data[sLeftSpriteId]].y2;
+    (*sprite).set_invisible((*gSprites.as_ptr())[(*sprite).data[sLeftSpriteId]].invisible());
+    (*sprite).y = {
+        let gl_i9 = (*sprite).data[sLeftSpriteId];
+        crate::gl!(gSprites[gl_i9].y)
+    };
+    (*sprite).x2 = {
+        let gl_i10 = (*sprite).data[sLeftSpriteId];
+        crate::gl!(gSprites[gl_i10].x2)
+    };
+    (*sprite).y2 = {
+        let gl_i11 = (*sprite).data[sLeftSpriteId];
+        crate::gl!(gSprites[gl_i11].y2)
+    };
 }
 unsafe fn CreateIntroFlygonSprite_Unused(x: i16, y: i16) -> u8 {
     let leftSpriteId: u8 = CreateSprite(
@@ -648,9 +696,14 @@ unsafe fn CreateIntroFlygonSprite_Unused(x: i16, y: i16) -> u8 {
         y,
         6,
     );
-    gSprites[rightSpriteId].data[sLeftSpriteId] = leftSpriteId as i16;
-    StartSpriteAnim(&raw mut gSprites[rightSpriteId], 1);
-    gSprites[rightSpriteId].callback = Some(SpriteCB_FlygonRightHalf as unsafe fn(*mut Sprite));
+    {
+        let gl_i12 = sLeftSpriteId;
+        crate::gl!(gSprites[rightSpriteId].data[gl_i12] = leftSpriteId as i16)
+    };
+    StartSpriteAnim(crate::gl!(&raw gSprites[rightSpriteId]), 1);
+    crate::gl!(
+        gSprites[rightSpriteId].callback = Some(SpriteCB_FlygonRightHalf as unsafe fn(*mut Sprite))
+    );
     leftSpriteId
 }
 pub unsafe fn CreateIntroFlygonSprite(x: i16, y: i16) -> u8 {
@@ -666,8 +719,13 @@ pub unsafe fn CreateIntroFlygonSprite(x: i16, y: i16) -> u8 {
         y,
         6,
     );
-    gSprites[rightSpriteId].data[sLeftSpriteId] = leftSpriteId as i16;
-    StartSpriteAnim(&raw mut gSprites[rightSpriteId], 1);
-    gSprites[rightSpriteId].callback = Some(SpriteCB_FlygonRightHalf as unsafe fn(*mut Sprite));
+    {
+        let gl_i13 = sLeftSpriteId;
+        crate::gl!(gSprites[rightSpriteId].data[gl_i13] = leftSpriteId as i16)
+    };
+    StartSpriteAnim(crate::gl!(&raw gSprites[rightSpriteId]), 1);
+    crate::gl!(
+        gSprites[rightSpriteId].callback = Some(SpriteCB_FlygonRightHalf as unsafe fn(*mut Sprite))
+    );
     leftSpriteId
 }
